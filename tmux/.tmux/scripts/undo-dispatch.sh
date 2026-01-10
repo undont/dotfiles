@@ -21,7 +21,7 @@ case "$undo_type" in
         exec "$SCRIPT_DIR/undo-window.sh"
         ;;
     session)
-        exec "$SCRIPT_DIR/session-undo.sh"
+        exec "$SCRIPT_DIR/undo-session.sh"
         ;;
     *)
         show_centered_message "Nothing to undo" \

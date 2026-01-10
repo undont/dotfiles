@@ -12,6 +12,8 @@ local centredApps = {
 	"WebStorm",
 	"PyCharm",
 	"Rider",
+	"Discord",
+	"Slack",
 }
 
 for _, appName in ipairs(centredApps) do
