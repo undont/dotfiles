@@ -18,13 +18,32 @@ print_header "Dotfiles Rollback"
 
 # Check if rollback state exists
 if ! has_rollback_state; then
-    error "No installation state found to rollback"
+    # No state, but check for backups
+    BACKUP_BASE="$HOME/.dotfiles-backup"
+    if [[ -d "$BACKUP_BASE" ]]; then
+        # Find most recent backup
+        LATEST_BACKUP=$(find "$BACKUP_BASE" -mindepth 1 -maxdepth 1 -type d | sort -r | head -1)
+        if [[ -n "$LATEST_BACKUP" ]] && [[ -d "$LATEST_BACKUP" ]]; then
+            warn "No installation state found, but backup exists."
+            echo ""
+            echo "Found backup: $LATEST_BACKUP"
+            echo ""
+            if confirm "Restore from this backup?"; then
+                restore_from_backup "$LATEST_BACKUP"
+                echo ""
+                success "Restore completed from: $LATEST_BACKUP"
+                exit 0
+            else
+                echo "Rollback cancelled"
+                exit 0
+            fi
+        fi
+    fi
+
+    error "No installation state or backups found to rollback"
     echo ""
     echo "Rollback state is created during installation and cleaned up"
     echo "after successful completion."
-    echo ""
-    echo "To manually restore from a backup, check:"
-    echo "  ls -la ~/.dotfiles-backup/"
     exit 1
 fi
 
