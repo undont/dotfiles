@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.1] - 2026-01-11
+
+### Added
+- `alerts.sh` library: centralised alert utilities for tmux scripts
+- `list-windows.sh`: window listing script with ⚡ indicator for Claude alerts
+- Session switcher now shows ⚡ indicator for sessions containing Claude alerts
+
+### Fixed
+- Claude alerts now properly cleared when killing windows or sessions (prevents orphaned alerts)
+- Window timestamp hook clears alerts as safety net when switching windows
+
 ## [0.1.0] - 2026-01-10
 
 Initial public release of the dotfiles configuration.
