@@ -9,9 +9,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.1.8] - 2026-01-11
 
 ### Added
-- Tmux: manual Claude alert clearing with `prefix + a` keybinding
+- Tmux: Claude instance switcher with fzf (`prefix + c`) - shows all running Claude Code instances across sessions with alerts highlighted
 - Tmux: automatic alert tracking update when windows are renamed (prevents stale alerts)
 - Hammerspoon: Notion app added to auto-centre windows on creation
+
+### Changed
+- `list-claude.sh` now outputs fzf-friendly format (use `--verbose` flag for coloured CLI output)
+- `prefix + c` keybinding added for interactive Claude instance switcher
+
+### Removed
+- `tclaude` shell command (replaced by `prefix + c` fzf picker)
 
 ### Fixed
 - Tmux: stale Claude alerts persisting after window renames

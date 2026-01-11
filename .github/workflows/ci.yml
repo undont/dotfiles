@@ -56,6 +56,16 @@ jobs:
           # Tests gracefully skip tmux-dependent tests when not in tmux
           tmux/.tmux/scripts/_lib/test.sh || true
 
+      - name: Run tmux script tests
+        run: |
+          # Run standalone script tests (not tmux-dependent)
+          if [[ -f tmux/.tmux/scripts/tests/test-list-claude.sh ]]; then
+            tmux/.tmux/scripts/tests/test-list-claude.sh || true
+          fi
+          if [[ -f tmux/.tmux/scripts/tests/test-dotfiles-status.sh ]]; then
+            tmux/.tmux/scripts/tests/test-dotfiles-status.sh || true
+          fi
+
       - name: Run installation library tests
         run: |
           if [[ -f scripts/_lib/test.sh ]]; then

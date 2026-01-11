@@ -234,10 +234,6 @@ tkill() {
   ~/.tmux/scripts/resurrect-delete.sh "$@"
 }
 
-# List running Claude Code instances
-tclaude() {
-  ~/.tmux/scripts/list-claude.sh "$@"
-}
 
 # Tab completion for tmux commands
 _tmux_sessions_backup() {

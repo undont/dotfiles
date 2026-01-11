@@ -12,7 +12,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | Save sessions         | `prefix + w` (like vim :w)        |
 | List backups          | `prefix + S` or `tls`             |
 | Restore session       | `prefix + R` or `trestore <name>` |
-| List Claude instances | `tclaude`                         |
+| List Claude instances | `prefix + c`                      |
 
 ## Setup Guide (New Machine)
 
@@ -213,7 +213,7 @@ Navigation keys (`j`, `k`, `g`, `G`, `f`, `b`, `d`, `u`) are automatically unbou
 
 **Undo:** When you kill a session or window with `Opt+x`, press `Opt+u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
-**Claude Alerts:** Sessions and windows with pending Claude Code alerts display a ⚡ indicator. Alerts are automatically cleared when you switch to that window, or when the window/session is killed. To manually clear an alert, press `prefix + a`. Window renames automatically update alert tracking to prevent stale alerts.
+**Claude Alerts:** Sessions and windows with pending Claude Code alerts display a ⚡ indicator. Press `prefix + c` to open an fzf picker showing all running Claude Code instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
 
 ### Plugins (TPM)
 
@@ -253,7 +253,6 @@ Location: `~/.local/launchers/tnew`
 | `trestore <name>` | Restore a specific saved session                                                                                                               |
 | `tkill <name>`    | Kill a specific session and remove its backup                                                                                                  |
 | `tattach <name>`  | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
-| `tclaude`         | List all running Claude Code instances across all tmux sessions with session, window, and pane information                                     |
 | `dana`            | Launch/attach to the dana project session                                                                                                      |
 
 ---
