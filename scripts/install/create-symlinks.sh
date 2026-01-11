@@ -65,6 +65,12 @@ echo "Tmux configuration:"
 create_link "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
 create_link "$DOTFILES_DIR/tmux/.tmux" "$HOME/.tmux"
 
+# Dotfiles CLI (minimal)
+echo ""
+echo "Dotfiles CLI:"
+mkdir -p "$HOME/bin"
+create_link "$DOTFILES_DIR/scripts/dotfiles" "$HOME/bin/dotfiles"
+
 # Neovim (core)
 if should_install "core"; then
     echo ""
