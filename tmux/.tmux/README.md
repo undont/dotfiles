@@ -8,10 +8,11 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | --------------------- | --------------------------------- |
 | **Prefix**            | `` ` `` (backtick)                |
 | **Start dev session** | `tnew` (from any directory)       |
-| Help popup            | `` ` h ``                         |
-| Save sessions         | `` ` w `` (like vim :w)           |
+| Help popup            | `prefix + h`                      |
+| Save sessions         | `prefix + w` (like vim :w)        |
 | List backups          | `prefix + S` or `tls`             |
 | Restore session       | `prefix + R` or `trestore <name>` |
+| List Claude instances | `tclaude`                         |
 
 ## Setup Guide (New Machine)
 
@@ -78,7 +79,7 @@ Then reload: `source ~/.zshrc`
 
 ### 6. Optional: Create help file
 
-Create `~/.tmux/tmux-help.txt` with keybinding reference (displayed with `` ` h ``).
+Create `~/.tmux/tmux-help.txt` with keybinding reference (displayed with `prefix + h`).
 
 ---
 
@@ -90,7 +91,7 @@ The prefix key is **`` ` ``** (backtick - double-tap for literal).
 
 ### Help Popup
 
-Press `` ` h `` to display the keybinding reference. Close it by pressing `Esc`.
+Press `prefix + h` to display the keybinding reference. Close it by pressing `Esc`.
 
 ### Windows (Tabs)
 
@@ -170,7 +171,7 @@ Restores the last closed pane or window (whichever was killed most recently). Re
 | ------------------------ | ------------------------------ |
 | Switch window (fzf)      | `prefix + f`                   |
 | Switch session (fzf)     | `prefix + s`                   |
-| Save all sessions        | `` ` w `` or `prefix + Ctrl+s` |
+| Save all sessions        | `prefix + w` or `prefix + Ctrl+s` |
 | Restore all sessions     | `prefix + Ctrl+r`              |
 | List saved backups       | `prefix + S`                   |
 | Restore specific session | `prefix + R`                   |
@@ -252,6 +253,7 @@ Location: `~/.local/launchers/tnew`
 | `trestore <name>` | Restore a specific saved session                                                                                                               |
 | `tkill <name>`    | Kill a specific session and remove its backup                                                                                                  |
 | `tattach <name>`  | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
+| `tclaude`         | List all running Claude Code instances across all tmux sessions with session, window, and pane information                                     |
 | `dana`            | Launch/attach to the dana project session                                                                                                      |
 
 ---
@@ -262,7 +264,7 @@ This setup extends tmux-resurrect with custom per-session backup and restore.
 
 ### How Saving Works
 
-1. Press `` ` w `` to save all sessions
+1. Press `prefix + w` to save all sessions
 2. tmux-resurrect saves everything to a single timestamped file
 3. The post-save hook (`resurrect-split.sh`) automatically splits this into individual per-session files
 4. Each session gets its own backup file in `sessions/` directory
@@ -377,7 +379,7 @@ Manages plugin installation and updates.
 Saves and restores tmux sessions (windows, panes, working directories).
 
 - Repository: https://github.com/tmux-plugins/tmux-resurrect
-- Save: `` ` w `` (or `prefix + Ctrl+s`)
+- Save: `prefix + w` (or `prefix + Ctrl+s`)
 - Restore: `prefix + Ctrl+r`
 
 ### tmux-continuum
