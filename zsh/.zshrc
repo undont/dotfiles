@@ -231,7 +231,7 @@ _tmux_sessions_backup() {
 }
 
 _tmux_sessions_running() {
-  # Complete with running tmux sessions (for tkill and ta)
+  # Complete with running tmux sessions (for tkill and tattach)
   local -a sessions
   sessions=(${(f)"$(tmux list-sessions -F '#{session_name}' 2>/dev/null)"})
   _describe 'running tmux sessions' sessions
@@ -240,10 +240,10 @@ _tmux_sessions_running() {
 # Register completion functions
 compdef _tmux_sessions_backup trestore
 compdef _tmux_sessions_running tkill
-compdef _tmux_sessions_running ta
+compdef _tmux_sessions_running tattach
 
 # Attach to tmux session, restoring from backup if needed
-ta() {
+tattach() {
   # Try to attach to running session
   if tmux a -t "$1" 2>/dev/null; then return 0; fi
 

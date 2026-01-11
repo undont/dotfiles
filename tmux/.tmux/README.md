@@ -7,7 +7,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | Action                | Keybinding / Command              |
 | --------------------- | --------------------------------- |
 | **Prefix**            | `` ` `` (backtick)                |
-| **Start dev session** | `tm` (from any directory)         |
+| **Start dev session** | `tnew` (from any directory)       |
 | Help popup            | `` ` h ``                         |
 | Save sessions         | `` ` w `` (like vim :w)           |
 | List backups          | `prefix + S` or `tls`             |
@@ -32,7 +32,7 @@ Copy the following to your home directory:
 │   ├── resurrect-restore.sh
 │   └── resurrect-split.sh
 ~/.local/launchers/
-├── tm                          # Dev session launcher
+├── tnew                        # Dev session launcher
 └── dana                        # Project-specific launcher (optional)
 ```
 
@@ -57,7 +57,7 @@ alias trestore="~/.tmux/scripts/resurrect-restore.sh"
 alias tkill="tmux kill-server; rm -rf ~/.tmux/resurrect/*"
 
 # Smart attach: connects to running session, or restores from backup
-ta() {
+tattach() {
   if tmux a -t "$1" 2>/dev/null; then return 0; fi
   local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
   if [[ -f "$backup" ]]; then
@@ -226,13 +226,13 @@ Navigation keys (`j`, `k`, `g`, `G`, `f`, `b`, `d`, `u`) are automatically unbou
 
 ## Shell Commands & Aliases
 
-### `tm` - Dev Session Launcher
+### `tnew` - Dev Session Launcher
 
 Start a tmux dev session named after the current directory:
 
 ```bash
 cd ~/src/myproject
-tm
+tnew
 ```
 
 This creates a session called `myproject` with:
@@ -240,9 +240,9 @@ This creates a session called `myproject` with:
 - **Window 1 (dev):** Claude Code + terminal (side-by-side split panes)
 - **Window 2 (edit):** neovim
 
-If a session with that name already exists, `tm` attaches to it instead of creating a new one.
+If a session with that name already exists, `tnew` attaches to it instead of creating a new one.
 
-Location: `~/.local/launchers/tm`
+Location: `~/.local/launchers/tnew`
 
 ### Aliases
 
@@ -251,7 +251,7 @@ Location: `~/.local/launchers/tm`
 | `tls`             | List saved session backups with window/pane counts                                                                                             |
 | `trestore <name>` | Restore a specific saved session                                                                                                               |
 | `tkill <name>`    | Kill a specific session and remove its backup                                                                                                  |
-| `ta <name>`       | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
+| `tattach <name>`  | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `dana`            | Launch/attach to the dana project session                                                                                                      |
 
 ---
@@ -350,7 +350,7 @@ Available session backups:
 └── README.md                             # This file
 
 ~/.local/launchers/
-├── tm                                    # Dev session launcher
+├── tnew                                  # Dev session launcher
 └── dana                                  # Dana project launcher
 ```
 

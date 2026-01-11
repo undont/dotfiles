@@ -27,7 +27,7 @@ dotfiles/
 │       ├── core/     # Options, keymaps, autocmds
 │       └── plugins/  # Plugin configurations
 ├── launchers/        # Session launch scripts
-│   ├── tm            # Tmux dev session launcher
+│   ├── tnew          # Tmux dev session launcher
 │   └── dana          # Dana project launcher
 ├── hammerspoon/      # macOS automation
 │   └── init.lua
@@ -134,7 +134,7 @@ ln -sf ~/dotfiles/nvim ~/.config/nvim
 
 # Session launchers
 mkdir -p ~/.local/launchers
-ln -sf ~/dotfiles/launchers/tm ~/.local/launchers/tm
+ln -sf ~/dotfiles/launchers/tnew ~/.local/launchers/tnew
 ln -sf ~/dotfiles/launchers/dana ~/.local/launchers/dana
 
 # Hammerspoon

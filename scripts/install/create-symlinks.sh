@@ -117,7 +117,7 @@ if should_install "core"; then
     echo ""
     echo "Session launchers:"
     mkdir -p "$HOME/.local/launchers"
-    create_link "$DOTFILES_DIR/launchers/tm" "$HOME/.local/launchers/tm"
+    create_link "$DOTFILES_DIR/launchers/tnew" "$HOME/.local/launchers/tnew"
     create_link "$DOTFILES_DIR/launchers/dana" "$HOME/.local/launchers/dana"
 fi
 

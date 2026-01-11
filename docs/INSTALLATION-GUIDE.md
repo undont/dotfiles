@@ -78,7 +78,7 @@ The installer supports three presets to customise what gets installed:
 - Editor: Neovim with LSP, Telescope, and plugins
 - Terminal: Ghostty configuration
 - AI Tools: Claude Code, development CLI tools
-- Custom scripts: `tm`, `dana`
+- Custom scripts: `tnew`, `dana`
 - Ideal for: Linux desktops, cross-platform setups
 
 **Full** (`--full`, default):
@@ -305,7 +305,7 @@ Karabiner:
   ~/.config/karabiner/karabiner.json -> ~/dotfiles/karabiner/karabiner.json
 
 Session Launchers:
-  ~/.local/launchers/tm    -> ~/dotfiles/launchers/tm
+  ~/.local/launchers/tnew  -> ~/dotfiles/launchers/tnew
   ~/.local/launchers/dana  -> ~/dotfiles/launchers/dana
 ```
 
@@ -409,7 +409,7 @@ The health check confirms the installation completed successfully. It catches is
 | TPM | `~/.tmux/plugins/tpm` exists |
 | lazy.nvim | `~/.local/share/nvim/lazy` exists (after first nvim launch) |
 | Secrets | `~/.zsh/.secrets.zsh` exists with mode 600 |
-| Scripts | `tm` and `dana` commands are in PATH |
+| Scripts | `tnew` and `dana` commands are in PATH |
 
 **What you'll see**:
 ```

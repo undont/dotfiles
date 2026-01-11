@@ -6,10 +6,10 @@ set -euo pipefail
 # Help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat << 'EOF'
-tm - tmux development session launcher
+tnew - tmux development session launcher
 
 USAGE:
-    tm [DIRECTORY]
+    tnew [DIRECTORY]
 
 DESCRIPTION:
     Creates or attaches to a tmux development session with a 3-window layout:
@@ -27,13 +27,13 @@ OPTIONS:
 
 EXAMPLES:
     # Create session for current directory
-    tm
+    tnew
 
     # Create session for specific project
-    tm ~/src/my-project
+    tnew ~/src/my-project
 
     # Create session using relative path
-    tm ../other-project
+    tnew ../other-project
 
 NOTES:
     • If a session with the same name exists, attaches to it instead
@@ -43,6 +43,7 @@ NOTES:
 
 SEE ALSO:
     dana           Project-specific launcher for Dana project
+    tattach        Smart attach to session (restores from backup if needed)
     trestore       Restore tmux sessions from backup
 EOF
     exit 0

@@ -56,7 +56,7 @@ Initial public release of the dotfiles configuration.
 - Ghostty terminal configuration
 
 ### Project Tooling
-- `launchers/tm`: Generic tmux development session launcher
+- `launchers/tnew`: Generic tmux development session launcher
 - `launchers/dana`: Dana project-specific multi-window tmux session
 - Automated installation script with rollback support
 - Health check and prerequisites verification scripts
@@ -68,7 +68,7 @@ Initial public release of the dotfiles configuration.
 - Per-component README files (tmux, nvim, hammerspoon, etc.)
 
 ### Added
-- Help text (`-h`/`--help`) for `launchers/dana`, `launchers/tm`, and install scripts
+- Help text (`-h`/`--help`) for `launchers/dana`, `launchers/tnew`, and install scripts
 - Dana project launcher documentation in README.md
 - macOS and Linux compatibility badges in README.md
 - `show_error()` helper function in common.sh for popup error display

@@ -39,7 +39,8 @@ NOTES:
     • Works both inside and outside of tmux
 
 SEE ALSO:
-    tm             Generic development session launcher
+    tnew           Generic development session launcher
+    tattach        Smart attach to session (restores from backup if needed)
     trestore       Restore tmux sessions from backup
 EOF
     exit 0

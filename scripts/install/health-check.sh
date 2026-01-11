@@ -177,23 +177,23 @@ echo "Secrets:"
 echo "--------"
 check_file "$HOME/.zsh/.secrets.zsh" "Secrets file"
 
-# Custom Scripts (core)
+# Session Launchers (core)
 if should_install "core"; then
     echo ""
-    echo "Custom Scripts:"
-    echo "---------------"
-    if command_exists tm; then
-        printf "Checking %-30s${GREEN}OK${NC}\n" "tm command"
+    echo "Session Launchers:"
+    echo "------------------"
+    if command_exists tnew; then
+        printf "Checking %-30s${GREEN}OK${NC}\n" "tnew command"
     else
-        printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "tm command"
-        echo "  Add ~/.local/bin to your PATH"
+        printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "tnew command"
+        echo "  Add ~/.local/launchers to your PATH"
     fi
 
     if command_exists dana; then
         printf "Checking %-30s${GREEN}OK${NC}\n" "dana command"
     else
         printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "dana command"
-        echo "  Add ~/.local/bin to your PATH"
+        echo "  Add ~/.local/launchers to your PATH"
     fi
 fi
 
