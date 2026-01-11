@@ -17,6 +17,7 @@ Windows from these apps are automatically centred when created:
 - JetBrains IDEs (GoLand, WebStorm, PyCharm, Rider)
 - Discord
 - Slack
+- Notion
 
 ## Installation
 
