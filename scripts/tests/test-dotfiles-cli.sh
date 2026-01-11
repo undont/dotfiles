@@ -263,6 +263,763 @@ else
     skip "create-symlinks.sh not found"
 fi
 
+section "Create Symlinks - ShellCheck"
+
+if command -v shellcheck &>/dev/null; then
+    if shellcheck -x -S warning -e SC1091 "$symlinks_script" 2>/dev/null; then
+        pass "create-symlinks.sh passes shellcheck"
+    else
+        fail "create-symlinks.sh has shellcheck warnings"
+    fi
+else
+    skip "shellcheck not installed"
+fi
+
+section "Create Symlinks - Structure"
+
+if [[ "$symlinks_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
+    pass "create-symlinks sources common.sh"
+else
+    fail "create-symlinks should source common.sh"
+fi
+
+if [[ "$symlinks_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
+    pass "create-symlinks sources rollback library"
+else
+    fail "create-symlinks should source rollback library"
+fi
+
+if [[ "$symlinks_content" == *'create_link()'* ]]; then
+    pass "create-symlinks defines create_link function"
+else
+    fail "create-symlinks should define create_link function"
+fi
+
+if [[ "$symlinks_content" == *'record_symlink'* ]]; then
+    pass "create-symlinks records symlinks for rollback"
+else
+    fail "create-symlinks should record symlinks for rollback"
+fi
+
+section "Create Symlinks - Core Configs"
+
+if [[ "$symlinks_content" == *'.zshrc'* ]]; then
+    pass "create-symlinks links .zshrc"
+else
+    fail "create-symlinks should link .zshrc"
+fi
+
+if [[ "$symlinks_content" == *'.zprofile'* ]]; then
+    pass "create-symlinks links .zprofile"
+else
+    fail "create-symlinks should link .zprofile"
+fi
+
+if [[ "$symlinks_content" == *'.p10k.zsh'* ]]; then
+    pass "create-symlinks links .p10k.zsh"
+else
+    fail "create-symlinks should link .p10k.zsh"
+fi
+
+if [[ "$symlinks_content" == *'.tmux.conf'* ]]; then
+    pass "create-symlinks links .tmux.conf"
+else
+    fail "create-symlinks should link .tmux.conf"
+fi
+
+section "Create Symlinks - Ghostty and Karabiner"
+
+if [[ "$symlinks_content" == *'ghostty/config'* ]]; then
+    pass "create-symlinks links ghostty/config"
+else
+    fail "create-symlinks should link ghostty/config"
+fi
+
+if [[ "$symlinks_content" == *'karabiner/karabiner.json'* ]]; then
+    pass "create-symlinks links karabiner.json"
+else
+    fail "create-symlinks should link karabiner.json"
+fi
+
+section "Create Symlinks - Launchers"
+
+if [[ "$symlinks_content" == *'.local/launchers'* ]]; then
+    pass "create-symlinks creates launchers directory"
+else
+    fail "create-symlinks should create launchers directory"
+fi
+
+if [[ "$symlinks_content" == *'launchers/tnew'* ]]; then
+    pass "create-symlinks links tnew launcher"
+else
+    fail "create-symlinks should link tnew launcher"
+fi
+
+if [[ "$symlinks_content" == *'launchers/dana'* ]]; then
+    pass "create-symlinks links dana launcher"
+else
+    fail "create-symlinks should link dana launcher"
+fi
+
+if [[ "$symlinks_content" == *'launchers/code'* ]]; then
+    pass "create-symlinks links code launcher"
+else
+    fail "create-symlinks should link code launcher"
+fi
+
+section "Create Symlinks - Preset Hierarchy"
+
+if [[ "$symlinks_content" == *'should_install "core"'* ]]; then
+    pass "create-symlinks uses should_install for core"
+else
+    fail "create-symlinks should use should_install for core"
+fi
+
+if [[ "$symlinks_content" == *'should_install "full"'* ]]; then
+    pass "create-symlinks uses should_install for full"
+else
+    fail "create-symlinks should use should_install for full"
+fi
+
+# ===========================================================================
+# Uninstall Script Tests
+# ===========================================================================
+
+UNINSTALL_SCRIPT="$DOTFILES_DIR/scripts/install/uninstall.sh"
+
+section "Uninstall Script - Existence and Executable"
+
+if [[ -f "$UNINSTALL_SCRIPT" ]]; then
+    pass "uninstall.sh exists"
+else
+    fail "uninstall.sh not found at $UNINSTALL_SCRIPT"
+fi
+
+if [[ -x "$UNINSTALL_SCRIPT" ]]; then
+    pass "uninstall.sh is executable"
+else
+    fail "uninstall.sh is not executable"
+fi
+
+section "Uninstall Script - ShellCheck"
+
+if command -v shellcheck &>/dev/null; then
+    if shellcheck -x -S warning -e SC1091 "$UNINSTALL_SCRIPT" 2>/dev/null; then
+        pass "uninstall.sh passes shellcheck"
+    else
+        fail "uninstall.sh has shellcheck warnings"
+    fi
+else
+    skip "shellcheck not installed"
+fi
+
+section "Uninstall Script - Help"
+
+uninstall_help=$("$UNINSTALL_SCRIPT" --help 2>&1) || true
+
+if [[ "$uninstall_help" == *"USAGE:"* ]]; then
+    pass "uninstall help shows USAGE section"
+else
+    fail "uninstall help should show USAGE section"
+fi
+
+if [[ "$uninstall_help" == *"--restore-backup"* ]]; then
+    pass "uninstall help documents --restore-backup"
+else
+    fail "uninstall help should document --restore-backup"
+fi
+
+if [[ "$uninstall_help" == *"--remove-brew-packages"* ]]; then
+    pass "uninstall help documents --remove-brew-packages"
+else
+    fail "uninstall help should document --remove-brew-packages"
+fi
+
+section "Uninstall Script - Structure"
+
+uninstall_content=$(cat "$UNINSTALL_SCRIPT")
+
+if [[ "$uninstall_content" == *'SYMLINKS=('* ]]; then
+    pass "uninstall defines SYMLINKS array"
+else
+    fail "uninstall should define SYMLINKS array"
+fi
+
+if [[ "$uninstall_content" == *'$HOME/.zshrc'* ]]; then
+    pass "uninstall includes .zshrc in symlinks"
+else
+    fail "uninstall should include .zshrc"
+fi
+
+if [[ "$uninstall_content" == *'$HOME/.config/nvim'* ]]; then
+    pass "uninstall includes nvim config"
+else
+    fail "uninstall should include nvim config"
+fi
+
+if [[ "$uninstall_content" == *'.zprofile'* ]]; then
+    pass "uninstall includes .zprofile"
+else
+    fail "uninstall should include .zprofile"
+fi
+
+if [[ "$uninstall_content" == *'.p10k.zsh'* ]]; then
+    pass "uninstall includes .p10k.zsh"
+else
+    fail "uninstall should include .p10k.zsh"
+fi
+
+if [[ "$uninstall_content" == *'ghostty/config'* ]]; then
+    pass "uninstall includes ghostty/config"
+else
+    fail "uninstall should include ghostty/config"
+fi
+
+if [[ "$uninstall_content" == *'karabiner.json'* ]]; then
+    pass "uninstall includes karabiner.json"
+else
+    fail "uninstall should include karabiner.json"
+fi
+
+if [[ "$uninstall_content" == *'.local/launchers'* ]]; then
+    pass "uninstall includes launchers"
+else
+    fail "uninstall should include launchers"
+fi
+
+if [[ "$uninstall_content" == *'-L "$link"'* ]]; then
+    pass "uninstall checks symlink before removal"
+else
+    fail "uninstall should check symlink before removal"
+fi
+
+if [[ "$uninstall_content" == *'confirm'* ]]; then
+    pass "uninstall uses confirmation prompt"
+else
+    fail "uninstall should use confirmation prompt"
+fi
+
+if [[ "$uninstall_content" == *'../*'* ]] || [[ "$uninstall_content" == *'suspicious path'* ]]; then
+    pass "uninstall has path traversal protection"
+else
+    fail "uninstall should have path traversal protection"
+fi
+
+if [[ "$uninstall_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
+    pass "uninstall sources common.sh"
+else
+    fail "uninstall should source common.sh"
+fi
+
+section "Uninstall Script - Brew Package Removal"
+
+if [[ "$uninstall_content" == *'filter_brewfile()'* ]]; then
+    pass "uninstall defines filter_brewfile function"
+else
+    fail "uninstall should define filter_brewfile function"
+fi
+
+if [[ "$uninstall_content" == *'FILTERED_BREWFILE'* ]]; then
+    pass "uninstall creates filtered Brewfile"
+else
+    fail "uninstall should create filtered Brewfile"
+fi
+
+if [[ "$uninstall_content" == *'@preset: minimal'* ]]; then
+    pass "uninstall handles minimal preset in Brewfile"
+else
+    fail "uninstall should handle minimal preset"
+fi
+
+if [[ "$uninstall_content" == *'@preset: core'* ]]; then
+    pass "uninstall handles core preset in Brewfile"
+else
+    fail "uninstall should handle core preset"
+fi
+
+if [[ "$uninstall_content" == *'@preset: full'* ]]; then
+    pass "uninstall handles full preset in Brewfile"
+else
+    fail "uninstall should handle full preset"
+fi
+
+if [[ "$uninstall_content" == *'brew uninstall'* ]]; then
+    pass "uninstall removes brew packages"
+else
+    fail "uninstall should remove brew packages"
+fi
+
+if [[ "$uninstall_content" == *'brew uninstall --cask'* ]]; then
+    pass "uninstall removes cask packages"
+else
+    fail "uninstall should remove cask packages"
+fi
+
+section "Uninstall Script - Cleanup"
+
+if [[ "$uninstall_content" == *'XDG_CONFIG_HOME'* ]]; then
+    pass "uninstall uses XDG_CONFIG_HOME"
+else
+    fail "uninstall should use XDG_CONFIG_HOME"
+fi
+
+if [[ "$uninstall_content" == *'dotfiles/preset'* ]]; then
+    pass "uninstall handles preset config file"
+else
+    fail "uninstall should handle preset config file"
+fi
+
+if [[ "$uninstall_content" == *'.secrets.zsh'* ]]; then
+    pass "uninstall handles secrets file"
+else
+    fail "uninstall should handle secrets file"
+fi
+
+if [[ "$uninstall_content" == *'-s "$HOME/.zsh/.secrets.zsh"'* ]]; then
+    pass "uninstall checks if secrets file has content"
+else
+    fail "uninstall should check secrets file content"
+fi
+
+if [[ "$uninstall_content" == *'.tmux/plugins/tpm'* ]]; then
+    pass "uninstall handles TPM cleanup"
+else
+    fail "uninstall should handle TPM cleanup"
+fi
+
+if [[ "$uninstall_content" == *'rmdir'* ]]; then
+    pass "uninstall cleans up empty directories"
+else
+    fail "uninstall should clean up empty directories"
+fi
+
+section "Uninstall Script - Safety"
+
+if [[ "$uninstall_content" == *'readlink "$link"'* ]]; then
+    pass "uninstall shows symlink targets before removal"
+else
+    fail "uninstall should show symlink targets"
+fi
+
+if [[ "$uninstall_content" == *'exists but not a symlink'* ]]; then
+    pass "uninstall warns about non-symlink files"
+else
+    fail "uninstall should warn about non-symlink files"
+fi
+
+if [[ "$uninstall_content" == *'--ignore-dependencies'* ]]; then
+    pass "uninstall uses --ignore-dependencies for brew"
+else
+    fail "uninstall should use --ignore-dependencies"
+fi
+
+if [[ "$uninstall_content" == *'Backups are preserved'* ]]; then
+    pass "uninstall reminds about preserved backups"
+else
+    fail "uninstall should remind about preserved backups"
+fi
+
+# ===========================================================================
+# Rollback Script Tests
+# ===========================================================================
+
+ROLLBACK_SCRIPT="$DOTFILES_DIR/scripts/install/rollback.sh"
+
+section "Rollback Script - Existence and Executable"
+
+if [[ -f "$ROLLBACK_SCRIPT" ]]; then
+    pass "rollback.sh exists"
+else
+    fail "rollback.sh not found"
+fi
+
+if [[ -x "$ROLLBACK_SCRIPT" ]]; then
+    pass "rollback.sh is executable"
+else
+    fail "rollback.sh is not executable"
+fi
+
+section "Rollback Script - ShellCheck"
+
+if command -v shellcheck &>/dev/null; then
+    if shellcheck -x -S warning -e SC1091 "$ROLLBACK_SCRIPT" 2>/dev/null; then
+        pass "rollback.sh passes shellcheck"
+    else
+        fail "rollback.sh has shellcheck warnings"
+    fi
+else
+    skip "shellcheck not installed"
+fi
+
+section "Rollback Script - Structure"
+
+rollback_content=$(cat "$ROLLBACK_SCRIPT")
+
+if [[ "$rollback_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
+    pass "rollback sources common.sh"
+else
+    fail "rollback should source common.sh"
+fi
+
+if [[ "$rollback_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
+    pass "rollback sources rollback library"
+else
+    fail "rollback should source rollback library"
+fi
+
+if [[ "$rollback_content" == *'has_rollback_state'* ]]; then
+    pass "rollback checks for rollback state"
+else
+    fail "rollback should check for rollback state"
+fi
+
+if [[ "$rollback_content" == *'perform_rollback'* ]]; then
+    pass "rollback calls perform_rollback"
+else
+    fail "rollback should call perform_rollback"
+fi
+
+if [[ "$rollback_content" == *'--force'* ]]; then
+    pass "rollback supports --force flag"
+else
+    fail "rollback should support --force flag"
+fi
+
+if [[ "$rollback_content" == *'confirm'* ]]; then
+    pass "rollback uses confirmation prompt"
+else
+    fail "rollback should use confirmation prompt"
+fi
+
+if [[ "$rollback_content" == *'.dotfiles-backup'* ]]; then
+    pass "rollback references backup directory"
+else
+    fail "rollback should reference backup directory"
+fi
+
+if [[ "$rollback_content" == *'restore_from_backup'* ]]; then
+    pass "rollback can restore from backup without state"
+else
+    fail "rollback should restore from backup without state"
+fi
+
+# ===========================================================================
+# Rollback Library Tests
+# ===========================================================================
+
+ROLLBACK_LIB="$DOTFILES_DIR/scripts/_lib/rollback.sh"
+
+section "Rollback Library - Existence"
+
+if [[ -f "$ROLLBACK_LIB" ]]; then
+    pass "rollback library exists"
+else
+    fail "rollback library not found"
+fi
+
+section "Rollback Library - ShellCheck"
+
+if command -v shellcheck &>/dev/null; then
+    if shellcheck -x -S warning -e SC1091 "$ROLLBACK_LIB" 2>/dev/null; then
+        pass "rollback library passes shellcheck"
+    else
+        fail "rollback library has shellcheck warnings"
+    fi
+else
+    skip "shellcheck not installed"
+fi
+
+section "Rollback Library - Functions"
+
+rollback_lib_content=$(cat "$ROLLBACK_LIB")
+
+if [[ "$rollback_lib_content" == *'init_rollback_state()'* ]]; then
+    pass "rollback lib defines init_rollback_state"
+else
+    fail "rollback lib should define init_rollback_state"
+fi
+
+if [[ "$rollback_lib_content" == *'record_step()'* ]]; then
+    pass "rollback lib defines record_step"
+else
+    fail "rollback lib should define record_step"
+fi
+
+if [[ "$rollback_lib_content" == *'get_last_step()'* ]]; then
+    pass "rollback lib defines get_last_step"
+else
+    fail "rollback lib should define get_last_step"
+fi
+
+if [[ "$rollback_lib_content" == *'record_backup_location()'* ]]; then
+    pass "rollback lib defines record_backup_location"
+else
+    fail "rollback lib should define record_backup_location"
+fi
+
+if [[ "$rollback_lib_content" == *'get_backup_location()'* ]]; then
+    pass "rollback lib defines get_backup_location"
+else
+    fail "rollback lib should define get_backup_location"
+fi
+
+if [[ "$rollback_lib_content" == *'record_symlink()'* ]]; then
+    pass "rollback lib defines record_symlink"
+else
+    fail "rollback lib should define record_symlink"
+fi
+
+if [[ "$rollback_lib_content" == *'get_created_symlinks()'* ]]; then
+    pass "rollback lib defines get_created_symlinks"
+else
+    fail "rollback lib should define get_created_symlinks"
+fi
+
+if [[ "$rollback_lib_content" == *'has_rollback_state()'* ]]; then
+    pass "rollback lib defines has_rollback_state"
+else
+    fail "rollback lib should define has_rollback_state"
+fi
+
+if [[ "$rollback_lib_content" == *'cleanup_rollback_state()'* ]]; then
+    pass "rollback lib defines cleanup_rollback_state"
+else
+    fail "rollback lib should define cleanup_rollback_state"
+fi
+
+if [[ "$rollback_lib_content" == *'restore_from_backup()'* ]]; then
+    pass "rollback lib defines restore_from_backup"
+else
+    fail "rollback lib should define restore_from_backup"
+fi
+
+if [[ "$rollback_lib_content" == *'perform_rollback()'* ]]; then
+    pass "rollback lib defines perform_rollback"
+else
+    fail "rollback lib should define perform_rollback"
+fi
+
+section "Rollback Library - State Files"
+
+if [[ "$rollback_lib_content" == *'ROLLBACK_STATE_DIR'* ]]; then
+    pass "rollback lib defines state directory"
+else
+    fail "rollback lib should define state directory"
+fi
+
+if [[ "$rollback_lib_content" == *'.install-state'* ]]; then
+    pass "rollback lib uses .install-state directory"
+else
+    fail "rollback lib should use .install-state directory"
+fi
+
+if [[ "$rollback_lib_content" == *'state.txt'* ]]; then
+    pass "rollback lib uses state.txt"
+else
+    fail "rollback lib should use state.txt"
+fi
+
+if [[ "$rollback_lib_content" == *'symlinks.txt'* ]]; then
+    pass "rollback lib uses symlinks.txt"
+else
+    fail "rollback lib should use symlinks.txt"
+fi
+
+if [[ "$rollback_lib_content" == *'backup-location.txt'* ]]; then
+    pass "rollback lib uses backup-location.txt"
+else
+    fail "rollback lib should use backup-location.txt"
+fi
+
+section "Rollback Library - Security"
+
+if [[ "$rollback_lib_content" == *'chmod 700'* ]]; then
+    pass "rollback lib sets secure permissions on state dir"
+else
+    fail "rollback lib should set secure permissions"
+fi
+
+if [[ "$rollback_lib_content" == *'../*'* ]] && [[ "$rollback_lib_content" == *'/../'* ]]; then
+    pass "rollback lib has path traversal protection"
+else
+    fail "rollback lib should have path traversal protection"
+fi
+
+if [[ "$rollback_lib_content" == *'resolved_dir'* ]] || [[ "$rollback_lib_content" == *'$HOME'* ]]; then
+    pass "rollback lib validates paths are under HOME"
+else
+    fail "rollback lib should validate paths"
+fi
+
+# ===========================================================================
+# Check Prerequisites Script Tests
+# ===========================================================================
+
+PREREQ_SCRIPT="$DOTFILES_DIR/scripts/install/check-prerequisites.sh"
+
+section "Check Prerequisites - Existence and Executable"
+
+if [[ -f "$PREREQ_SCRIPT" ]]; then
+    pass "check-prerequisites.sh exists"
+else
+    fail "check-prerequisites.sh not found"
+fi
+
+if [[ -x "$PREREQ_SCRIPT" ]]; then
+    pass "check-prerequisites.sh is executable"
+else
+    fail "check-prerequisites.sh is not executable"
+fi
+
+section "Check Prerequisites - ShellCheck"
+
+if command -v shellcheck &>/dev/null; then
+    if shellcheck -x -S warning -e SC1091 "$PREREQ_SCRIPT" 2>/dev/null; then
+        pass "check-prerequisites.sh passes shellcheck"
+    else
+        fail "check-prerequisites.sh has shellcheck warnings"
+    fi
+else
+    skip "shellcheck not installed"
+fi
+
+section "Check Prerequisites - Help"
+
+prereq_help=$("$PREREQ_SCRIPT" --help 2>&1) || true
+
+if [[ "$prereq_help" == *"USAGE:"* ]]; then
+    pass "prerequisites help shows USAGE"
+else
+    fail "prerequisites help should show USAGE"
+fi
+
+if [[ "$prereq_help" == *"DESCRIPTION:"* ]]; then
+    pass "prerequisites help shows DESCRIPTION"
+else
+    fail "prerequisites help should show DESCRIPTION"
+fi
+
+prereq_help_short=$("$PREREQ_SCRIPT" -h 2>&1) || true
+if [[ "$prereq_help_short" == *"USAGE:"* ]]; then
+    pass "prerequisites -h flag works"
+else
+    fail "prerequisites -h should work"
+fi
+
+section "Check Prerequisites - Structure"
+
+prereq_content=$(cat "$PREREQ_SCRIPT")
+
+if [[ "$prereq_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
+    pass "prerequisites sources common.sh"
+else
+    fail "prerequisites should source common.sh"
+fi
+
+if [[ "$prereq_content" == *'set -euo pipefail'* ]]; then
+    pass "prerequisites uses strict mode"
+else
+    fail "prerequisites should use strict mode"
+fi
+
+if [[ "$prereq_content" == *'PRESET='* ]] || [[ "$prereq_content" == *'DOTFILES_PRESET'* ]]; then
+    pass "prerequisites supports preset configuration"
+else
+    fail "prerequisites should support preset configuration"
+fi
+
+if [[ "$prereq_content" == *'check()'* ]] || [[ "$prereq_content" == *'check_command'* ]]; then
+    pass "prerequisites defines check function"
+else
+    fail "prerequisites should define check function"
+fi
+
+if [[ "$prereq_content" == *'check_optional'* ]]; then
+    pass "prerequisites supports optional checks"
+else
+    fail "prerequisites should support optional checks"
+fi
+
+section "Check Prerequisites - Required Tools"
+
+if [[ "$prereq_content" == *'"git"'* ]]; then
+    pass "prerequisites checks for git"
+else
+    fail "prerequisites should check for git"
+fi
+
+if [[ "$prereq_content" == *'"zsh"'* ]]; then
+    pass "prerequisites checks for zsh"
+else
+    fail "prerequisites should check for zsh"
+fi
+
+if [[ "$prereq_content" == *'"tmux"'* ]]; then
+    pass "prerequisites checks for tmux"
+else
+    fail "prerequisites should check for tmux"
+fi
+
+if [[ "$prereq_content" == *'"neovim"'* ]] || [[ "$prereq_content" == *'"nvim"'* ]]; then
+    pass "prerequisites checks for neovim"
+else
+    fail "prerequisites should check for neovim"
+fi
+
+if [[ "$prereq_content" == *'"fzf"'* ]]; then
+    pass "prerequisites checks for fzf"
+else
+    fail "prerequisites should check for fzf"
+fi
+
+section "Check Prerequisites - Preset Hierarchy"
+
+if [[ "$prereq_content" == *'should_install "core"'* ]]; then
+    pass "prerequisites uses should_install for core"
+else
+    fail "prerequisites should use should_install for core"
+fi
+
+if [[ "$prereq_content" == *'should_install "full"'* ]]; then
+    pass "prerequisites uses should_install for full"
+else
+    fail "prerequisites should use should_install for full"
+fi
+
+section "Check Prerequisites - macOS Checks"
+
+if [[ "$prereq_content" == *'is_macos'* ]]; then
+    pass "prerequisites has macOS-specific checks"
+else
+    fail "prerequisites should have macOS-specific checks"
+fi
+
+if [[ "$prereq_content" == *'Ghostty.app'* ]]; then
+    pass "prerequisites checks for Ghostty app"
+else
+    fail "prerequisites should check for Ghostty app"
+fi
+
+if [[ "$prereq_content" == *'Karabiner'* ]]; then
+    pass "prerequisites checks for Karabiner"
+else
+    fail "prerequisites should check for Karabiner"
+fi
+
+section "Check Prerequisites - Exit Codes"
+
+if [[ "$prereq_content" == *'FAILED=0'* ]] || [[ "$prereq_content" == *'FAILED='* ]]; then
+    pass "prerequisites tracks failure state"
+else
+    fail "prerequisites should track failure state"
+fi
+
+if [[ "$prereq_content" == *'exit 0'* ]] && [[ "$prereq_content" == *'exit 1'* ]]; then
+    pass "prerequisites has proper exit codes"
+else
+    fail "prerequisites should have proper exit codes"
+fi
+
 # ===========================================================================
 # Summary
 # ===========================================================================
