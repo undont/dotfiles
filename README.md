@@ -161,7 +161,7 @@ Then reload your shell: `source ~/.zshrc`
 - Backtick (`` ` ``) as prefix key
 - Vim-style navigation
 - Session save/restore (tmux-resurrect + continuum)
-- fzf session switcher
+- fzf session/window switcher with ⚡ indicators for Claude Code alerts
 - Dracula theme
 
 ### Neovim

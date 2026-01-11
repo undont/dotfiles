@@ -212,6 +212,8 @@ Navigation keys (`j`, `k`, `g`, `G`, `f`, `b`, `d`, `u`) are automatically unbou
 
 **Undo:** When you kill a session or window with `Opt+x`, press `Opt+u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
+**Claude Alerts:** Sessions and windows with pending Claude Code alerts display a ⚡ indicator. Alerts are automatically cleared when you switch to that window, or when the window/session is killed.
+
 ### Plugins (TPM)
 
 | Action          | Keybinding       |
@@ -322,6 +324,7 @@ Available session backups:
 │   └── last                              # Symlink to latest save
 ├── scripts/
 │   ├── _lib/                             # Shared utility libraries
+│   │   ├── alerts.sh                     # Claude Code alert utilities
 │   │   ├── common.sh                     # Error handling, validation
 │   │   ├── paths.sh                      # Undo file path definitions
 │   │   ├── session.sh                    # Session management utilities
@@ -330,6 +333,8 @@ Available session backups:
 │   ├── kill-pane.sh                      # Kill pane (Opt+s, saves state)
 │   ├── kill-session.sh                   # Kill session (picker, with confirm)
 │   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
+│   ├── list-sessions.sh                  # Session listing with alert indicators
+│   ├── list-windows.sh                   # Window listing with alert indicators
 │   ├── new-session.sh                    # Create new session dialog
 │   ├── rename-session.sh                 # Rename session dialog
 │   ├── rename-window.sh                  # Rename window dialog
