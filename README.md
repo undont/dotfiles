@@ -1,10 +1,10 @@
 # Dotfiles
 
 [![CI](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
-[![macOS](https://img.shields.io/badge/macOS-compatible-black?logo=apple)](https://www.apple.com/macos/)
-[![Linux](https://img.shields.io/badge/Linux-compatible-orange?logo=linux)](https://www.linux.org/)
-[![Neovim](https://img.shields.io/badge/Neovim-0.9+-green?logo=neovim)](https://neovim.io/)
-[![Tmux](https://img.shields.io/badge/Tmux-3.3+-orange?logo=tmux)](https://github.com/tmux/tmux)
+[![macOS](https://img.shields.io/badge/macOS-compatible-A2AAAD?logo=apple&logoColor=white)](https://www.apple.com/macos/)
+[![Linux](https://img.shields.io/badge/Linux-compatible-blue?logo=linux&logoColor=white)](https://www.linux.org/)
+[![Neovim](https://img.shields.io/badge/Neovim-0.9+-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
+[![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
 Personal configuration files for zsh, tmux, neovim, hammerspoon, ghostty, and karabiner.
@@ -136,9 +136,10 @@ ln -sf ~/dotfiles/karabiner/karabiner.json ~/.config/karabiner/karabiner.json
 
 </details>
 
-### Troubleshooting
+### Documentation
 
-See [docs/TROUBLESHOOTING.md](docs/TROUBLESHOOTING.md) for common issues and solutions.
+- [Installation Guide](docs/INSTALLATION-GUIDE.md) - Detailed walkthrough of each installation step
+- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Updating
 
