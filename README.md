@@ -28,7 +28,8 @@ dotfiles/
 │       └── plugins/  # Plugin configurations
 ├── launchers/        # Session launch scripts
 │   ├── tnew          # Tmux dev session launcher
-│   └── dana          # Dana project launcher
+│   ├── dana          # Dana project launcher
+│   └── code          # VS Code dynamic launcher
 ├── hammerspoon/      # macOS automation
 │   └── init.lua
 ├── ghostty/          # Terminal emulator
@@ -36,9 +37,14 @@ dotfiles/
 ├── karabiner/        # Keyboard customisation
 │   └── karabiner.json
 ├── scripts/          # Installation and utility scripts
+│   ├── dotfiles      # CLI for managing dotfiles
 │   ├── install/      # Installer modules
 │   ├── hooks/        # Tool hooks (e.g. Claude alerts)
+│   ├── tests/        # Test suites
 │   └── _lib/         # Shared shell libraries
+├── docs/             # Documentation
+│   ├── INSTALLATION-GUIDE.md
+│   └── TROUBLESHOOTING.md
 └── Brewfile          # Homebrew dependencies
 ```
 
@@ -136,6 +142,11 @@ ln -sf ~/dotfiles/nvim ~/.config/nvim
 mkdir -p ~/.local/launchers
 ln -sf ~/dotfiles/launchers/tnew ~/.local/launchers/tnew
 ln -sf ~/dotfiles/launchers/dana ~/.local/launchers/dana
+ln -sf ~/dotfiles/launchers/code ~/.local/launchers/code
+
+# Dotfiles CLI
+mkdir -p ~/.local/bin
+ln -sf ~/dotfiles/scripts/dotfiles ~/.local/bin/dotfiles
 
 # Hammerspoon
 ln -sf ~/dotfiles/hammerspoon ~/.hammerspoon
@@ -158,9 +169,20 @@ ln -sf ~/dotfiles/karabiner/karabiner.json ~/.config/karabiner/karabiner.json
 
 ## Updating
 
+Use the `dotfiles` CLI to keep your configuration up-to-date:
+
 ```bash
-cd ~/dotfiles
-git pull
+dotfiles update    # Pull latest changes and re-run installer
+dotfiles status    # Check if updates are available
+dotfiles sync      # Preview incoming changes without applying
+dotfiles health    # Run full health check
+```
+
+The `update` command remembers your installation preset (minimal/core/full) and re-applies it automatically.
+
+For manual updates:
+```bash
+cd ~/dotfiles && git pull
 ```
 
 Then reload your shell: `source ~/.zshrc`
@@ -237,5 +259,5 @@ The `dana` script creates a tmux session with pre-configured windows:
 | Find files | `Space sf` |
 | Live grep | `Space sg` |
 | File explorer | `Space e` |
-| Git (Neogit) | `Space g` |
+| Git (LazyGit) | `Space g` |
 | Format | `Space f` |

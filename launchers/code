@@ -1,0 +1,40 @@
+#!/usr/bin/env bash
+# VS Code launcher - dynamically finds VS Code installation
+#
+# Uses macOS Spotlight to locate VS Code, falling back to common paths.
+# This avoids hardcoding paths that can break with updates or reinstalls.
+
+set -euo pipefail
+
+find_vscode() {
+    # Try Spotlight first (most reliable)
+    local app
+    app=$(mdfind "kMDItemCFBundleIdentifier == 'com.microsoft.VSCode'" 2>/dev/null | head -1)
+    if [[ -n "$app" && -d "$app" ]]; then
+        echo "$app/Contents/Resources/app/bin/code"
+        return 0
+    fi
+
+    # Fallback to common paths
+    local paths=(
+        "/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+        "$HOME/Applications/Visual Studio Code.app/Contents/Resources/app/bin/code"
+        "/opt/homebrew-cask/Caskroom/visual-studio-code/latest/Visual Studio Code.app/Contents/Resources/app/bin/code"
+    )
+
+    for path in "${paths[@]}"; do
+        if [[ -x "$path" ]]; then
+            echo "$path"
+            return 0
+        fi
+    done
+
+    return 1
+}
+
+CODE_BIN=$(find_vscode) || {
+    echo "Error: VS Code not found. Install it with: brew install --cask visual-studio-code" >&2
+    exit 1
+}
+
+exec "$CODE_BIN" "$@"

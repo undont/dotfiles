@@ -415,6 +415,74 @@ else
 fi
 
 # ===========================================================================
+# Zshrc Quick Wins Tests
+# ===========================================================================
+
+section "Zshrc Shell Profiler"
+
+ZSHRC_FILE="$DOTFILES_DIR/zsh/.zshrc"
+if [[ -f "$ZSHRC_FILE" ]]; then
+    zshrc_content=$(cat "$ZSHRC_FILE")
+
+    # Check for zprof module loading
+    if [[ "$zshrc_content" == *'zmodload zsh/zprof'* ]]; then
+        pass ".zshrc has zprof module loading"
+    else
+        fail ".zshrc missing zprof module loading"
+    fi
+
+    # Check for ZPROF conditional
+    if [[ "$zshrc_content" == *'[[ -n "$ZPROF" ]]'* ]]; then
+        pass ".zshrc has ZPROF conditional"
+    else
+        fail ".zshrc missing ZPROF conditional"
+    fi
+
+    # Check for zsh-profile function
+    if [[ "$zshrc_content" == *'zsh-profile()'* ]]; then
+        pass ".zshrc has zsh-profile function"
+    else
+        fail ".zshrc missing zsh-profile function"
+    fi
+
+    # Check for zsh-profile-detailed function
+    if [[ "$zshrc_content" == *'zsh-profile-detailed()'* ]]; then
+        pass ".zshrc has zsh-profile-detailed function"
+    else
+        fail ".zshrc missing zsh-profile-detailed function"
+    fi
+else
+    fail ".zshrc not found at $ZSHRC_FILE"
+fi
+
+section "Zshrc Dotfiles CLI Completion"
+
+if [[ -f "$ZSHRC_FILE" ]]; then
+    # Check for _dotfiles completion function
+    if [[ "$zshrc_content" == *'_dotfiles()'* ]]; then
+        pass ".zshrc has _dotfiles completion function"
+    else
+        fail ".zshrc missing _dotfiles completion function"
+    fi
+
+    # Check for compdef registration
+    if [[ "$zshrc_content" == *'compdef _dotfiles dotfiles'* ]]; then
+        pass ".zshrc registers dotfiles completion"
+    else
+        fail ".zshrc missing dotfiles completion registration"
+    fi
+
+    # Check completion includes expected commands
+    if [[ "$zshrc_content" == *"'update:"* ]] && \
+       [[ "$zshrc_content" == *"'status:"* ]] && \
+       [[ "$zshrc_content" == *"'health:"* ]]; then
+        pass ".zshrc completion includes expected commands"
+    else
+        fail ".zshrc completion missing expected commands"
+    fi
+fi
+
+# ===========================================================================
 # Summary
 # ===========================================================================
 
