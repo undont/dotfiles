@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.8] - 2026-01-11
+
+### Added
+- Tmux: manual Claude alert clearing with `prefix + a` keybinding
+- Tmux: automatic alert tracking update when windows are renamed (prevents stale alerts)
+
+### Fixed
+- Tmux: stale Claude alerts persisting after window renames
+- Tmux: improved alert file handling with literal string matching
+
 ## [0.1.7] - 2026-01-11
 
 ### Fixed
