@@ -52,7 +52,8 @@ dotfiles/
 
 ### Prerequisites
 
-- macOS (some features are macOS-specific, keybind remapping is Macbook Pro specific)
+- macOS/Linux (some features are macOS-only; keyboard remapping is optimised for Apple Silicon MacBook Pro)
+  - **Fresh macOS**: Install Xcode Command Line Tools first: `xcode-select --install`
 
 ### Automatic Installation
 
