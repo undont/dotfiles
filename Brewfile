@@ -7,8 +7,7 @@
 #   @preset: full    - included in full only
 
 # Taps
-tap "homebrew/bundle"
-tap "homebrew/cask-fonts"
+tap "oven-sh/bun"
 
 # =============================================================================
 # @preset: minimal
@@ -54,7 +53,7 @@ brew "bat"                    # Cat with syntax highlighting
 
 # Node.js (via fnm - Fast Node Manager)
 brew "fnm"
-brew "bun"                    # >= 1.0
+brew "oven-sh/bun/bun"        # >= 1.0
 
 # Go
 brew "go"

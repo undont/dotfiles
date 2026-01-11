@@ -10,6 +10,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Homebrew PATH not available in step 2 of fresh installations (subshell PATH issue)
+- Bun formula not found on fresh installs (now uses `oven-sh/bun` tap)
+- Removed deprecated `homebrew/bundle` and `homebrew/cask-fonts` taps
 
 ## [0.1.4] - 2026-01-11
 
