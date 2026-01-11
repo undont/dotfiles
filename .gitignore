@@ -12,6 +12,9 @@ tmux/.tmux/resurrect/
 *~
 *.backup
 
+# Installation state (runtime data)
+.install-state/
+
 # Neovim generated/cache
 nvim/.luarc.json
 .luarc.json
