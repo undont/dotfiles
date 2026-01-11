@@ -161,6 +161,13 @@ if [[ $SKIP_BREW -eq 0 ]]; then
     print_step 1 "Setting up Homebrew..."
     "$DOTFILES_DIR/scripts/install/install-homebrew.sh"
     record_step "homebrew"
+
+    # Ensure Homebrew is in PATH for subsequent steps
+    # (The install script runs in a subshell, so PATH changes don't propagate)
+    HOMEBREW_PREFIX=$(get_homebrew_prefix)
+    if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
+        eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
+    fi
     echo ""
 else
     print_skip 1 "Homebrew setup" "--skip-brew flag"
