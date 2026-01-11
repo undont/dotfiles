@@ -232,6 +232,7 @@ filter_brewfile() {
 
 # Create test Brewfile
 TEST_BREWFILE=$(mktemp)
+trap 'rm -f "$TEST_BREWFILE"' EXIT
 cat > "$TEST_BREWFILE" << 'EOF'
 tap "homebrew/bundle"
 # @preset: minimal
@@ -278,7 +279,7 @@ else
     fail "full preset should include hammerspoon"
 fi
 
-rm -f "$TEST_BREWFILE"
+# TEST_BREWFILE cleanup is handled by trap
 
 section "should_install Helper"
 
@@ -368,6 +369,50 @@ check_reads_preset "$SCRIPT_DIR/../install/create-symlinks.sh" "create-symlinks.
 check_reads_preset "$SCRIPT_DIR/../install/backup-existing.sh" "backup-existing.sh"
 check_reads_preset "$SCRIPT_DIR/../install/health-check.sh" "health-check.sh"
 check_reads_preset "$SCRIPT_DIR/../install/check-prerequisites.sh" "check-prerequisites.sh"
+
+section "Common Library should_install"
+
+# Test the actual should_install function from common.sh
+# Run in subshells to get a clean environment with the common.sh function
+# The common.sh should_install uses PRESET env var (not a second arg)
+
+# Test minimal preset - should only include minimal
+if ( source "$SCRIPT_DIR/common.sh" 2>/dev/null; PRESET=minimal; should_install "minimal" ); then
+    pass "common.sh: minimal PRESET allows 'minimal'"
+else
+    fail "common.sh: minimal PRESET should allow 'minimal'"
+fi
+if ! ( source "$SCRIPT_DIR/common.sh" 2>/dev/null; PRESET=minimal; should_install "core" ); then
+    pass "common.sh: minimal PRESET blocks 'core'"
+else
+    fail "common.sh: minimal PRESET should block 'core'"
+fi
+
+# Test core preset - should include minimal and core
+if ( source "$SCRIPT_DIR/common.sh" 2>/dev/null; PRESET=core; should_install "core" ); then
+    pass "common.sh: core PRESET allows 'core'"
+else
+    fail "common.sh: core PRESET should allow 'core'"
+fi
+if ! ( source "$SCRIPT_DIR/common.sh" 2>/dev/null; PRESET=core; should_install "full" ); then
+    pass "common.sh: core PRESET blocks 'full'"
+else
+    fail "common.sh: core PRESET should block 'full'"
+fi
+
+# Test full preset - should include all
+if ( source "$SCRIPT_DIR/common.sh" 2>/dev/null; PRESET=full; should_install "full" ); then
+    pass "common.sh: full PRESET allows 'full'"
+else
+    fail "common.sh: full PRESET should allow 'full'"
+fi
+
+# Test invalid preset returns error
+if ! ( source "$SCRIPT_DIR/common.sh" 2>/dev/null; PRESET=full; should_install "invalid" 2>/dev/null ); then
+    pass "common.sh: invalid required_preset returns error"
+else
+    fail "common.sh: invalid required_preset should return error"
+fi
 
 # ===========================================================================
 # Summary

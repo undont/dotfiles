@@ -60,22 +60,6 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 PRESET="${DOTFILES_PRESET:-full}"
 FAILED=0
 
-# Helper to check if a component should be installed for the current preset
-should_install() {
-    local required_preset="$1"
-    case "$required_preset" in
-        minimal)
-            return 0  # Always include minimal
-            ;;
-        core)
-            [[ "$PRESET" == "core" || "$PRESET" == "full" ]]
-            ;;
-        full)
-            [[ "$PRESET" == "full" ]]
-            ;;
-    esac
-}
-
 check() {
     if ! check_command "$1" "$2" "$3"; then
         FAILED=1

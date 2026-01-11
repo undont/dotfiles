@@ -50,23 +50,19 @@ filter_brewfile() {
 
     awk -v inc_min="$include_minimal" -v inc_core="$include_core" -v inc_full="$include_full" '
     BEGIN {
-        current_section = "header"  # header lines before any preset marker
-        include = 1
+        include = 1  # Include header lines before any preset marker
     }
 
     # Detect preset section markers
     /^# @preset: minimal/ {
-        current_section = "minimal"
         include = (inc_min == "true") ? 1 : 0
         next
     }
     /^# @preset: core/ {
-        current_section = "core"
         include = (inc_core == "true") ? 1 : 0
         next
     }
     /^# @preset: full/ {
-        current_section = "full"
         include = (inc_full == "true") ? 1 : 0
         next
     }

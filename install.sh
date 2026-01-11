@@ -105,6 +105,18 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Validate preset value
+case "$PRESET" in
+    minimal|core|full)
+        # Valid preset
+        ;;
+    *)
+        error "Invalid preset: $PRESET"
+        echo "Valid presets are: minimal, core, full"
+        exit 1
+        ;;
+esac
+
 # Export preset for sub-scripts
 export DOTFILES_PRESET="$PRESET"
 
@@ -214,7 +226,8 @@ print_step 6 "Installing plugin managers..."
 # TPM (Tmux Plugin Manager) - all presets
 if [[ ! -d "$HOME/.tmux/plugins/tpm" ]]; then
     echo "Installing TPM..."
-    git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
+    # Clone TPM at a known stable version for reproducibility
+    git clone --branch v3.1.0 --depth 1 https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
     success "TPM installed. Press prefix + I inside tmux to install plugins."
 else
     echo "TPM already installed."
@@ -236,8 +249,12 @@ if [[ ! -f "$HOME/.zsh/.secrets.zsh" ]]; then
         warn "Created secrets file from template."
         echo "Edit ~/.zsh/.secrets.zsh to add your API keys and tokens."
     else
-        touch "$HOME/.zsh/.secrets.zsh"
-        chmod 600 "$HOME/.zsh/.secrets.zsh"
+        # Create secrets file with restrictive permissions from the start
+        (
+            umask 077
+            touch "$HOME/.zsh/.secrets.zsh"
+        )
+        chmod 600 "$HOME/.zsh/.secrets.zsh"  # Belt and suspenders
         warn "Created empty secrets file."
     fi
 else

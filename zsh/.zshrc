@@ -152,7 +152,9 @@ precmd() {
 }
 
 preexec() {
-  print -Pn "\e]0;$(echo $1 | cut -d' ' -f1)\a"
+  # Extract first word safely using parameter expansion
+  local cmd="${1%% *}"
+  print -Pn "\e]0;${cmd}\a"
 }
 
 # =============================================================================

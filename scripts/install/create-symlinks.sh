@@ -15,23 +15,6 @@ source "$SCRIPT_DIR/../_lib/rollback.sh"
 PRESET="${DOTFILES_PRESET:-full}"
 FAILED=0
 
-# Helper to check if a component should be installed for the current preset
-# Usage: should_install "core" returns true if preset is core or full
-should_install() {
-    local required_preset="$1"
-    case "$required_preset" in
-        minimal)
-            return 0  # Always include minimal
-            ;;
-        core)
-            [[ "$PRESET" == "core" || "$PRESET" == "full" ]]
-            ;;
-        full)
-            [[ "$PRESET" == "full" ]]
-            ;;
-    esac
-}
-
 create_link() {
     local source="$1"
     local dest="$2"

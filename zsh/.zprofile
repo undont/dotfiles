@@ -11,10 +11,10 @@
 # Load order: .zshenv → .zprofile (login) → .zshrc (interactive) → .zlogin
 
 # JetBrains Toolbox CLI tools (added by Toolbox App installer)
-export PATH="$PATH:/Users/bssmnt/Library/Application Support/JetBrains/Toolbox/scripts"
+export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 
 # Python pipx (added by pipx installer - 2025-07-15)
-export PATH="$PATH:/Users/bssmnt/.local/bin"
+export PATH="$PATH:$HOME/.local/bin"
 
 # Session launchers (tnew, dana)
 export PATH="$PATH:$HOME/.local/launchers"

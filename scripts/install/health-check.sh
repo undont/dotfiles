@@ -46,26 +46,15 @@ fi
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+# Derive DOTFILES_DIR from script location if not set
+if [[ -z "${DOTFILES_DIR:-}" ]]; then
+    DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+fi
+export DOTFILES_DIR
+
 PRESET="${DOTFILES_PRESET:-full}"
 
 ISSUES=0
-
-# Helper to check if a component should be installed for the current preset
-should_install() {
-    local required_preset="$1"
-    case "$required_preset" in
-        minimal)
-            return 0  # Always include minimal
-            ;;
-        core)
-            [[ "$PRESET" == "core" || "$PRESET" == "full" ]]
-            ;;
-        full)
-            [[ "$PRESET" == "full" ]]
-            ;;
-    esac
-}
 
 check_symlink() {
     local link="$1"
@@ -123,6 +112,7 @@ check_file() {
         return 0
     else
         printf "${YELLOW}MISSING${NC}\n"
+        ISSUES=1
         return 1
     fi
 }

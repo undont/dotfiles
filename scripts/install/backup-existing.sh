@@ -10,23 +10,7 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/rollback.sh"
 
 PRESET="${DOTFILES_PRESET:-full}"
-BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
-
-# Helper to check if a component should be installed for the current preset
-should_install() {
-    local required_preset="$1"
-    case "$required_preset" in
-        minimal)
-            return 0  # Always include minimal
-            ;;
-        core)
-            [[ "$PRESET" == "core" || "$PRESET" == "full" ]]
-            ;;
-        full)
-            [[ "$PRESET" == "full" ]]
-            ;;
-    esac
-}
+BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)-$$"
 
 backup_if_exists() {
     local source="$1"
