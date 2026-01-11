@@ -99,7 +99,27 @@ perform_rollback() {
         find "$backup_dir" -type f | while read -r backup_file; do
             # Calculate original path
             local relative_path="${backup_file#"$backup_dir"/}"
+
+            # Sanitise path to prevent traversal attacks
+            if [[ "$relative_path" == ../* ]] || [[ "$relative_path" == */../* ]] || [[ "$relative_path" == */./* ]]; then
+                warn "Skipping suspicious path: $relative_path"
+                continue
+            fi
+
             local original_path="$HOME/$relative_path"
+
+            # Verify resolved path is still under $HOME
+            local resolved_dir
+            resolved_dir=$(cd "$(dirname "$original_path")" 2>/dev/null && pwd) || {
+                warn "Cannot resolve path: $original_path"
+                continue
+            }
+
+            if [[ "$resolved_dir" != "$HOME"* ]]; then
+                warn "Path resolves outside home directory: $original_path"
+                continue
+            fi
+
             local original_dir
             original_dir=$(dirname "$original_path")
 
