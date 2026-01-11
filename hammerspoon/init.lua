@@ -14,6 +14,7 @@ local centredApps = {
 	"Rider",
 	"Discord",
 	"Slack",
+	"Notion",
 }
 
 -- Store filters to prevent garbage collection
@@ -48,8 +49,8 @@ for _, appName in ipairs(centredApps) do
 			local screenCenterY = sf.y + (sf.h / 2)
 
 			-- Skip if window is already centered (within 50px tolerance)
-			local isAlreadyCentered = math.abs(windowCenterX - screenCenterX) < 50 and
-			                          math.abs(windowCenterY - screenCenterY) < 50
+			local isAlreadyCentered = math.abs(windowCenterX - screenCenterX) < 50
+				and math.abs(windowCenterY - screenCenterY) < 50
 
 			if isAlreadyCentered then
 				print("Window already centred, skipping: " .. appName)
