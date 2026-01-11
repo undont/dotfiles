@@ -165,7 +165,7 @@ if [[ -f "$HOME/.zsh/.secrets.zsh" ]]; then
 fi
 
 # Android SDK platform tools (adb, fastboot)
-export PATH=$PATH:$ANDROID_HOME/platform-tools
+[[ -n "$ANDROID_HOME" ]] && export PATH=$PATH:$ANDROID_HOME/platform-tools
 
 # =============================================================================
 # .NET

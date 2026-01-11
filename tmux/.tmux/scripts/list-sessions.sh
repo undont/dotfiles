@@ -1,7 +1,5 @@
 #!/bin/bash
-# List tmux sessions with Claude alert indicators
+# List tmux sessions sorted by activity (most recent first)
 # Used by the session switcher (prefix + s)
-
-ALERTS_FILE="$HOME/.claude/alerts"
 
 tmux list-sessions -F '#{session_activity} #{session_name}' | sort -rn | cut -d' ' -f2-

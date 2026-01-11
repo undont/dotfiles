@@ -328,21 +328,20 @@ Available session backups:
 │   │   ├── test.sh                       # Test suite for libraries
 │   │   └── ui.sh                         # Terminal UI (dialogs, prompts)
 │   ├── kill-pane.sh                      # Kill pane (Opt+s, saves state)
+│   ├── kill-session.sh                   # Kill session (picker, with confirm)
 │   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
+│   ├── new-session.sh                    # Create new session dialog
+│   ├── rename-session.sh                 # Rename session dialog
+│   ├── rename-window.sh                  # Rename window dialog
 │   ├── resurrect-delete.sh               # Delete session backup
 │   ├── resurrect-restore.sh              # Individual session restore
 │   ├── resurrect-split.sh                # Post-save hook (splits backups)
-│   ├── session-kill.sh                   # Kill session (picker, with confirm)
-│   ├── session-new.sh                    # Create new session dialog
-│   ├── session-rename.sh                 # Rename session dialog
-│   ├── session-undo.sh                   # Restore killed session (picker)
 │   ├── timestamp.sh                      # Window access tracking hook
 │   ├── undo-dispatch.sh                  # Undo dispatcher (Opt+u)
 │   ├── undo-pane.sh                      # Restore killed pane
-│   ├── undo-session.sh                   # Restore killed session (silent)
+│   ├── undo-session.sh                   # Restore killed session
 │   ├── undo-window.sh                    # Restore killed window
-│   ├── url-picker.sh                     # URL picker (Opt+y)
-│   └── window-kill.sh                    # Kill window (picker, saves state)
+│   └── url-picker.sh                     # URL picker (Opt+y)
 └── README.md                             # This file
 
 ~/bin/

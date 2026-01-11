@@ -3,6 +3,48 @@ set -euo pipefail
 
 # Dana project launcher - creates a multi-window tmux session
 
+# Help flag handling
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    cat << 'EOF'
+dana - Dana project tmux session launcher
+
+USAGE:
+    dana
+
+DESCRIPTION:
+    Creates or attaches to the 'dana' tmux session with a pre-configured
+    multi-window layout for the Dana project located at ~/src/dana.
+
+WINDOWS:
+    1. backend           Backend development (~/src/dana/backend)
+    2. web               Web frontend (~/src/dana/web)
+    3. mobile            Mobile app (~/src/dana/mobile)
+    4. tools             Split panes running development servers:
+                         • Left pane: npx expo (mobile dev server)
+                         • Right pane: bun dev (web dev server)
+    5. commit-and-push   Git operations (~/src/dana)
+    6. zsh               General shell (~)
+
+OPTIONS:
+    -h, --help   Show this help message
+
+EXAMPLES:
+    # Launch or attach to dana session
+    dana
+
+NOTES:
+    • Requires ~/src/dana directory to exist
+    • If session 'dana' exists, attaches instead of creating
+    • Development servers auto-start in window 4 (tools)
+    • Works both inside and outside of tmux
+
+SEE ALSO:
+    tm             Generic development session launcher
+    trestore       Restore tmux sessions from backup
+EOF
+    exit 0
+fi
+
 SESSION="dana"
 PROJECT_DIR="$HOME/src/dana"
 

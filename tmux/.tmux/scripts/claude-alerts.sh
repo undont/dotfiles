@@ -7,8 +7,9 @@ CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 
 if [[ -f "$ALERTS_FILE" && -s "$ALERTS_FILE" ]]; then
     # Read unique alerts, excluding current session
-    alerts=$(grep -v "^${CURRENT_SESSION}:" "$ALERTS_FILE" 2>/dev/null | sort -u | head -3 | tr '\n' ' ' | sed 's/ $//')
-    count=$(grep -v "^${CURRENT_SESSION}:" "$ALERTS_FILE" 2>/dev/null | sort -u | wc -l | tr -d ' ')
+    # Use grep -vF for fixed string matching to prevent regex metacharacter issues
+    alerts=$(grep -vF "${CURRENT_SESSION}:" "$ALERTS_FILE" 2>/dev/null | sort -u | head -3 | tr '\n' ' ' | sed 's/ $//')
+    count=$(grep -vF "${CURRENT_SESSION}:" "$ALERTS_FILE" 2>/dev/null | sort -u | wc -l | tr -d ' ')
 
     # Only show if there are alerts from other sessions
     if [[ $count -gt 0 && -n "$alerts" ]]; then

@@ -38,21 +38,22 @@ if [[ "$newname" == "$current_session" ]]; then
 fi
 
 # Validate session name
-if ! validate_session_name "$newname"; then
-    error "Invalid session name"
+if ! validate_session_name "$newname" 2>/dev/null; then
+    show_error "Invalid session name: '$newname'"
     exit 1
 fi
 
 # Check if target name already exists
 if session_exists "$newname"; then
-    error "Session '$newname' already exists"
+    show_error "Session '$newname' already exists"
     exit 1
 fi
 
 # Clear any existing alerts for the old session name before renaming
+# Use grep -F for fixed string matching to prevent regex metacharacter issues
 ALERTS_FILE="$HOME/.claude/alerts"
 if [[ -f "$ALERTS_FILE" ]]; then
-    grep -v "^${current_session}:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
+    grep -vF "${current_session}:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
         mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE" || rm -f "${ALERTS_FILE}.tmp"
 fi
 # Clear @claude_alert options for all windows in the session
@@ -61,4 +62,7 @@ for win in $(tmux list-windows -t "$current_session" -F '#W' 2>/dev/null); do
 done
 
 # Rename the session
-tmux rename-session -t "$current_session" "$newname"
+if ! tmux rename-session -t "$current_session" "$newname" 2>/dev/null; then
+    show_error "Failed to rename '$current_session' to '$newname'"
+    exit 1
+fi
