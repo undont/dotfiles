@@ -65,16 +65,22 @@ done
 print_header "Dotfiles Uninstall"
 
 # Define all symlinks that install.sh creates
+# Must match create-symlinks.sh exactly
 SYMLINKS=(
     "$HOME/.zshrc"
-    "$HOME/.zshenv"
+    "$HOME/.zprofile"
+    "$HOME/.p10k.zsh"
     "$HOME/.zsh"
     "$HOME/.tmux.conf"
     "$HOME/.tmux"
+    "$HOME/.local/bin/dotfiles"
     "$HOME/.config/nvim"
-    "$HOME/.config/ghostty"
-    "$HOME/.config/karabiner"
+    "$HOME/.config/ghostty/config"
+    "$HOME/.config/karabiner/karabiner.json"
     "$HOME/.hammerspoon"
+    "$HOME/.local/launchers/tnew"
+    "$HOME/.local/launchers/dana"
+    "$HOME/.local/launchers/code"
 )
 
 echo "This will remove the following symlinks:"
