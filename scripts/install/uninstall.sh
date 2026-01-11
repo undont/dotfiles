@@ -181,28 +181,80 @@ if [[ -f "$HOME/.zsh/.secrets.zsh" ]]; then
     fi
 fi
 
-# Remove preset config
-PRESET_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
-if [[ -f "$PRESET_FILE" ]]; then
-    rm -f "$PRESET_FILE"
-    rmdir "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles" 2>/dev/null || true
-    success "Removed preset configuration"
-fi
-
 # Step 4: Remove Homebrew packages if requested
 if [[ $REMOVE_BREW -eq 1 ]]; then
     echo ""
     info "Removing Homebrew packages..."
 
     if [[ -f "$DOTFILES_DIR/Brewfile" ]] && command_exists brew; then
-        # Use brew bundle cleanup to remove packages
-        if confirm "This will remove packages listed in Brewfile. Continue?"; then
-            brew bundle cleanup --file="$DOTFILES_DIR/Brewfile" --force || true
+        # Load saved preset
+        PRESET_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
+        if [[ -f "$PRESET_FILE" ]]; then
+            PRESET=$(cat "$PRESET_FILE")
+            echo "Using saved preset: $PRESET"
+        else
+            PRESET="full"
+            echo "No saved preset found, assuming: $PRESET"
+        fi
+
+        # Filter Brewfile based on preset (same logic as install-packages.sh)
+        filter_brewfile() {
+            local preset="$1"
+            local brewfile="$2"
+            local include_minimal=true
+            local include_core=false
+            local include_full=false
+
+            case "$preset" in
+                minimal) include_minimal=true ;;
+                core) include_minimal=true; include_core=true ;;
+                full) include_minimal=true; include_core=true; include_full=true ;;
+            esac
+
+            awk -v inc_min="$include_minimal" -v inc_core="$include_core" -v inc_full="$include_full" '
+            BEGIN { include = 1 }
+            /^# @preset: minimal/ { include = (inc_min == "true") ? 1 : 0; next }
+            /^# @preset: core/ { include = (inc_core == "true") ? 1 : 0; next }
+            /^# @preset: full/ { include = (inc_full == "true") ? 1 : 0; next }
+            include { print }
+            ' "$brewfile"
+        }
+
+        # Create filtered Brewfile
+        FILTERED_BREWFILE=$(mktemp)
+        trap 'rm -f "$FILTERED_BREWFILE"' EXIT
+        filter_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile" > "$FILTERED_BREWFILE"
+
+        echo ""
+        echo "Packages to remove (based on $PRESET preset):"
+        grep -E '^(brew|cask) "' "$FILTERED_BREWFILE" | head -20
+        TOTAL=$(grep -cE '^(brew|cask) "' "$FILTERED_BREWFILE" || echo 0)
+        if [[ $TOTAL -gt 20 ]]; then
+            echo "  ... and $((TOTAL - 20)) more"
+        fi
+        echo ""
+
+        if confirm "Remove these $TOTAL packages?"; then
+            # Uninstall each package
+            grep -E '^brew "' "$FILTERED_BREWFILE" | sed 's/brew "//;s/".*//' | while read -r pkg; do
+                brew uninstall --ignore-dependencies "$pkg" 2>/dev/null || true
+            done
+            grep -E '^cask "' "$FILTERED_BREWFILE" | sed 's/cask "//;s/".*//' | while read -r pkg; do
+                brew uninstall --cask "$pkg" 2>/dev/null || true
+            done
             success "Homebrew packages removed"
         fi
     else
         warn "Brewfile not found or brew not installed"
     fi
+fi
+
+# Step 5: Remove preset config (after brew removal since we need to read it)
+PRESET_CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
+if [[ -f "$PRESET_CONFIG_FILE" ]]; then
+    rm -f "$PRESET_CONFIG_FILE"
+    rmdir "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles" 2>/dev/null || true
+    success "Removed preset configuration"
 fi
 
 echo ""

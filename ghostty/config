@@ -61,4 +61,3 @@ macos-option-as-alt = left
 
 keybind = shift+enter=text:\x1b\r
 keybind = opt+c=text:\x1bc
-keybind = caps_lock=esc
