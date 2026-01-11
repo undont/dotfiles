@@ -84,6 +84,8 @@ if [[ -f "$SCRIPT_DIR/../_lib/test.sh" ]]; then
     run_test_suite "Installation Library Tests" "$SCRIPT_DIR/../_lib/test.sh"
 fi
 
+run_test_suite "Install Presets Tests" "$SCRIPT_DIR/test-presets.sh"
+
 # Integration tests (require tmux)
 if [[ "$RUN_INTEGRATION" == "--integration" ]]; then
     if [[ -n "${TMUX:-}" ]]; then

@@ -115,9 +115,6 @@ cask "ghostty"
 # Cloud
 cask "gcloud-cli"
 
-# Music
-cask "music-presence"         # Discord Rich Presence for Apple Music
-
 # Nerd Fonts for terminal icons
 cask "font-meslo-lg-nerd-font"
 cask "font-jetbrains-mono-nerd-font"
@@ -130,3 +127,6 @@ cask "font-jetbrains-mono-nerd-font"
 # Automation
 cask "hammerspoon"
 cask "karabiner-elements"     # Keyboard customisation
+
+# Music
+cask "music-presence"         # Discord Rich Presence for Apple Music
