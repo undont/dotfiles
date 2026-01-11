@@ -7,7 +7,9 @@
 #   @preset: full    - included in full only
 
 # Taps
+tap "libsql/sqld"
 tap "oven-sh/bun"
+tap "teamookla/speedtest"
 
 # =============================================================================
 # @preset: minimal
@@ -82,7 +84,7 @@ brew "sonar-scanner"
 brew "postgresql@14"
 brew "mongosh"
 brew "turso"
-brew "sqld"
+brew "libsql/sqld/sqld"
 
 # Containers & Infrastructure
 cask "docker"
@@ -101,8 +103,8 @@ brew "golang-migrate"
 
 brew "ffmpeg"
 brew "imagemagick"
-brew "neofetch"
-brew "speedtest"
+brew "fastfetch"              # neofetch replacement (faster, maintained)
+brew "teamookla/speedtest/speedtest"
 brew "glow"                   # Markdown renderer
 
 # =============================================================================
