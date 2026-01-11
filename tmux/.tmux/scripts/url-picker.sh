@@ -46,4 +46,7 @@ selected=$(echo "$urls" | fzf \
 
 if [[ -n "$selected" ]]; then
     open "$selected"
+    # Tell Hammerspoon to centre the Arc window
+    sleep 0.3
+    hs -c 'local w = hs.application.get("Arc"):focusedWindow(); if w then local sf = w:screen():frame(); w:setSize(sf.w * 0.7, sf.h * 0.7); w:centerOnScreen() end' 2>/dev/null || true
 fi
