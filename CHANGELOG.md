@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Tmux: manual Claude alert clearing with `prefix + a` keybinding
 - Tmux: automatic alert tracking update when windows are renamed (prevents stale alerts)
+- Hammerspoon: Notion app added to auto-centre windows on creation
 
 ### Fixed
 - Tmux: stale Claude alerts persisting after window renames
