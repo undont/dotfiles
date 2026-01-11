@@ -4,10 +4,11 @@ return {
   -- Treesitter for syntax highlighting
   {
     'nvim-treesitter/nvim-treesitter',
+    lazy = false, -- treesitter doesn't support lazy loading
     build = ':TSUpdate',
     config = function()
       ---@diagnostic disable-next-line: missing-fields
-      require('nvim-treesitter.configs').setup({
+      require('nvim-treesitter').setup({
         ensure_installed = {
           'bash',
           'c',
@@ -32,11 +33,8 @@ return {
           'yaml',
         },
         auto_install = true,
-        highlight = {
-          enable = true,
-          additional_vim_regex_highlighting = { 'ruby' },
-        },
-        indent = { enable = true, disable = { 'ruby' } },
+        highlight = { enable = true },
+        indent = { enable = true },
       })
     end,
   },
