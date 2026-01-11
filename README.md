@@ -55,13 +55,17 @@ dotfiles/
 git clone https://github.com/seanhalberthal/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
-# Run the installer
+# Run the installer (defaults to full preset)
 ./install.sh
+
+# Or choose a specific preset
+./install.sh --core       # Cross-platform dev setup
+./install.sh --minimal    # Lightweight server setup
 ```
 
 The installer will:
 1. Install/update Homebrew
-2. Install all packages from `Brewfile`
+2. Install packages from `Brewfile` (filtered by preset)
 3. Check prerequisites
 4. Backup existing configuration
 5. Create symlinks
@@ -69,10 +73,21 @@ The installer will:
 7. Create secrets file from template
 8. Run a health check
 
+### Install Presets
+
+| Preset | Components | Use Case |
+|--------|------------|----------|
+| `--minimal` | zsh, tmux | Servers, remote machines, SSH |
+| `--core` | + nvim, ghostty, AI/CLI tools, bin scripts | Linux desktop, cross-platform dev |
+| `--full` | + Hammerspoon, Karabiner | macOS power user (default) |
+
 ### Installation Options
 
 ```bash
-./install.sh              # Full installation
+./install.sh              # Full installation (default)
+./install.sh --minimal    # Lightweight server setup
+./install.sh --core       # Cross-platform dev setup
+./install.sh --full       # Everything including macOS apps
 ./install.sh --skip-brew  # Skip Homebrew/package installation
 ./install.sh --skip-backup # Skip backing up existing configs
 ./install.sh --check-only  # Only run prerequisite and health checks
