@@ -27,8 +27,14 @@ tmux set-option -wt "${SESSION}:${WINDOW}" -u @claude_alert 2>/dev/null
 
 # Remove from alerts file (using grep for portability across macOS/Linux)
 if [[ -f "$ALERTS_FILE" ]]; then
-    grep -v "^${SESSION}:${WINDOW}$" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
-        mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE" || rm -f "${ALERTS_FILE}.tmp"
+    TARGET="${SESSION}:${WINDOW}"
+
+    # Use grep -F for literal string matching, then atomic move
+    if grep -Fxv "$TARGET" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null; then
+        mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE"
+    else
+        rm -f "${ALERTS_FILE}.tmp"
+    fi
 fi
 
 # Update timestamp for window sorting
