@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.7] - 2026-01-11
+
+### Fixed
+- Hammerspoon auto-center: removed invalid `setAlpha()` calls causing errors
+- Hammerspoon auto-center: position-based detection prevents window flicker when opening URLs from browser
+
 ## [0.1.6] - 2026-01-11
 
 ### Added
