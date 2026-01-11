@@ -31,7 +31,7 @@ Copy the following to your home directory:
 ├── scripts/
 │   ├── resurrect-restore.sh
 │   └── resurrect-split.sh
-~/bin/
+~/.local/launchers/
 ├── tm                          # Dev session launcher
 └── dana                        # Project-specific launcher (optional)
 ```
@@ -242,7 +242,7 @@ This creates a session called `myproject` with:
 
 If a session with that name already exists, `tm` attaches to it instead of creating a new one.
 
-Location: `~/bin/tm`
+Location: `~/.local/launchers/tm`
 
 ### Aliases
 
@@ -349,7 +349,7 @@ Available session backups:
 │   └── url-picker.sh                     # URL picker (Opt+y)
 └── README.md                             # This file
 
-~/bin/
+~/.local/launchers/
 ├── tm                                    # Dev session launcher
 └── dana                                  # Dana project launcher
 ```

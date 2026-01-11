@@ -26,7 +26,7 @@ dotfiles/
 │   └── lua/custom/   # Modular config
 │       ├── core/     # Options, keymaps, autocmds
 │       └── plugins/  # Plugin configurations
-├── bin/              # Custom scripts
+├── launchers/        # Session launch scripts
 │   ├── tm            # Tmux dev session launcher
 │   └── dana          # Dana project launcher
 ├── hammerspoon/      # macOS automation
@@ -78,7 +78,7 @@ The installer will:
 | Preset | Components | Use Case |
 |--------|------------|----------|
 | `--minimal` | zsh, tmux | Servers, remote machines, SSH |
-| `--core` | + nvim, ghostty, AI/CLI tools, bin scripts | Linux desktop, cross-platform dev |
+| `--core` | + nvim, ghostty, AI/CLI tools, session launch scripts | Linux desktop, cross-platform dev |
 | `--full` | + Hammerspoon, Karabiner | macOS power user (default) |
 
 ### Installation Options
@@ -132,10 +132,10 @@ ln -sf ~/dotfiles/tmux/.tmux ~/.tmux
 # Neovim
 ln -sf ~/dotfiles/nvim ~/.config/nvim
 
-# Custom scripts
-mkdir -p ~/.local/bin
-ln -sf ~/dotfiles/bin/tm ~/.local/bin/tm
-ln -sf ~/dotfiles/bin/dana ~/.local/bin/dana
+# Session launchers
+mkdir -p ~/.local/launchers
+ln -sf ~/dotfiles/launchers/tm ~/.local/launchers/tm
+ln -sf ~/dotfiles/launchers/dana ~/.local/launchers/dana
 
 # Hammerspoon
 ln -sf ~/dotfiles/hammerspoon ~/.hammerspoon

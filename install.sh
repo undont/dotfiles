@@ -14,7 +14,7 @@ source "$DOTFILES_DIR/scripts/_lib/rollback.sh"
 
 # Preset definitions:
 #   minimal - zsh + tmux only (servers, remote machines)
-#   core    - minimal + nvim + ghostty + AI/CLI tools + bin scripts (cross-platform dev)
+#   core    - minimal + nvim + ghostty + AI/CLI tools + session launch scripts (cross-platform dev)
 #   full    - core + Hammerspoon + Karabiner (macOS power user)
 
 # Error handler for automatic rollback
@@ -122,7 +122,7 @@ case "$PRESET" in
         echo "Components: zsh, tmux"
         ;;
     core)
-        echo "Components: zsh, tmux, nvim, ghostty, AI/CLI tools, bin scripts"
+        echo "Components: zsh, tmux, nvim, ghostty, AI/CLI tools, session launch scripts"
         ;;
     full)
         echo "Components: Everything (core + Hammerspoon, Karabiner)"

@@ -15,3 +15,6 @@ export PATH="$PATH:/Users/bssmnt/Library/Application Support/JetBrains/Toolbox/s
 
 # Python pipx (added by pipx installer - 2025-07-15)
 export PATH="$PATH:/Users/bssmnt/.local/bin"
+
+# Session launchers (tm, dana)
+export PATH="$PATH:$HOME/.local/launchers"

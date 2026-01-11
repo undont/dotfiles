@@ -63,7 +63,7 @@ The installer supports three presets to customise what gets installed:
 | Preset | Flag | Components | Use Case |
 |--------|------|------------|----------|
 | **Minimal** | `--minimal` | zsh, tmux | Servers, remote machines, SSH environments |
-| **Core** | `--core` | + nvim, ghostty, AI/CLI tools, bin scripts | Linux desktop, cross-platform development |
+| **Core** | `--core` | + nvim, ghostty, AI/CLI tools, session launch scripts | Linux desktop, cross-platform development |
 | **Full** | `--full` | + Hammerspoon, Karabiner | macOS power user (default) |
 
 ### Preset Details
@@ -105,7 +105,7 @@ The installer supports three presets to customise what gets installed:
 Dotfiles directory: /Users/you/dotfiles
 
 Selected preset: core
-Components: zsh, tmux, nvim, ghostty, AI/CLI tools, bin scripts
+Components: zsh, tmux, nvim, ghostty, AI/CLI tools, session launch scripts
 
 Proceed with core installation? [y/N]
 ```
@@ -304,9 +304,9 @@ Ghostty:
 Karabiner:
   ~/.config/karabiner/karabiner.json -> ~/dotfiles/karabiner/karabiner.json
 
-Custom Scripts:
-  ~/.local/bin/tm    -> ~/dotfiles/bin/tm
-  ~/.local/bin/dana  -> ~/dotfiles/bin/dana
+Session Launchers:
+  ~/.local/launchers/tm    -> ~/dotfiles/launchers/tm
+  ~/.local/launchers/dana  -> ~/dotfiles/launchers/dana
 ```
 
 **What you'll see**:

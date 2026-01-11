@@ -112,13 +112,13 @@ if should_install "full"; then
     create_link "$DOTFILES_DIR/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
 fi
 
-# Custom scripts (core)
+# Session launchers (core)
 if should_install "core"; then
     echo ""
-    echo "Custom scripts (bin):"
-    mkdir -p "$HOME/.local/bin"
-    create_link "$DOTFILES_DIR/bin/tm" "$HOME/.local/bin/tm"
-    create_link "$DOTFILES_DIR/bin/dana" "$HOME/.local/bin/dana"
+    echo "Session launchers:"
+    mkdir -p "$HOME/.local/launchers"
+    create_link "$DOTFILES_DIR/launchers/tm" "$HOME/.local/launchers/tm"
+    create_link "$DOTFILES_DIR/launchers/dana" "$HOME/.local/launchers/dana"
 fi
 
 echo ""
