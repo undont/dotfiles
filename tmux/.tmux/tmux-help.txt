@@ -21,7 +21,7 @@
 ║  hjkl               navigate        ║  ` w                save all       ║
 ║  f / b              page down/up    ║  ` d                detach         ║
 ║  d / u              half-page       ║  ` h                this help      ║
-║  g / G              top / bottom    ║  ` a                clear alert    ║
+║  g / G              top / bottom    ║  ` c                Claude picker  ║
 ║                                     ║  Opt+y              open URL picker║
 ║                                     ║  Opt+u              undo pane/win  ║
 ║  / / ?              search ↓ / ↑    ╠═ FZF SWITCHERS ════════════════════╣
