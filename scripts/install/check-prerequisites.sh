@@ -4,6 +4,56 @@ set -euo pipefail
 # Check all prerequisites for dotfiles installation
 # Returns 0 if all checks pass, 1 otherwise
 
+# Help flag handling
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    cat << 'EOF'
+check-prerequisites.sh - Verify installation prerequisites
+
+USAGE:
+    ./scripts/install/check-prerequisites.sh
+
+DESCRIPTION:
+    Checks that all required tools and dependencies are installed before
+    running the dotfiles installation:
+      • Core tools (git, tmux, zsh, neovim, etc.)
+      • AI & development tools (claude, dotnet, etc.)
+      • Database clients (psql, mongosh, turso)
+      • Utilities (neofetch, speedtest, glow)
+      • macOS applications (Karabiner)
+      • Optional but recommended tools
+
+    This script is automatically run by install.sh but can be run standalone
+    to verify your system is ready.
+
+OPTIONS:
+    -h, --help   Show this help message
+
+EXAMPLES:
+    # Check prerequisites before installation
+    ./scripts/install/check-prerequisites.sh
+
+    # Verify system after fresh OS install
+    ./scripts/install/check-prerequisites.sh
+
+OUTPUT:
+    For each prerequisite:
+      ✓ Tool found (green OK)
+      ✗ Tool missing (red MISSING with installation hint)
+
+    Exit code 0 if all required tools found, non-zero otherwise.
+
+NOTES:
+    • Missing optional tools generate warnings but don't fail the check
+    • Installation hints are provided for each missing tool
+    • Automatically run by ./install.sh - manual run optional
+
+SEE ALSO:
+    ./install.sh              Main installation script
+    Brewfile                  List of Homebrew packages to install
+EOF
+    exit 0
+fi
+
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 

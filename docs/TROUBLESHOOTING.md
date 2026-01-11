@@ -4,15 +4,120 @@ Common issues and solutions for the dotfiles configuration.
 
 ## Table of Contents
 
+- [Common Error Messages](#common-error-messages)
 - [Installation Issues](#installation-issues)
+  - [Installation Failed Mid-Way](#installation-failed-mid-way)
+  - [Symlinks Not Working](#symlinks-not-working)
+  - [Permission Denied on Scripts](#permission-denied-on-scripts)
+  - [Backup Restoration](#backup-restoration)
+- [Platform-Specific Issues](#platform-specific-issues)
+  - [Linux Compatibility](#linux-compatibility)
+  - [Apple Silicon vs Intel Mac](#apple-silicon-vs-intel-mac)
 - [Zsh Issues](#zsh-issues)
+  - [Slow Shell Startup](#slow-shell-startup)
+  - [fnm / Node.js Not Working](#fnm--nodejs-not-working)
+  - [ANDROID_HOME Issues](#android_home-issues)
+  - [Powerlevel10k Not Loading](#powerlevel10k-not-loading)
+  - [fzf Keybindings Not Working](#fzf-keybindings-not-working)
 - [Tmux Issues](#tmux-issues)
 - [Neovim Issues](#neovim-issues)
 - [Debugging Commands](#debugging-commands)
 
 ---
 
+## Common Error Messages
+
+Quick reference for error messages and where to find solutions:
+
+| Error Message | Likely Cause | Solution |
+|---------------|--------------|----------|
+| `Permission denied: ./install.sh` | Scripts not executable | [Permission Denied](#permission-denied-on-scripts) |
+| `command not found: fnm` | fnm not installed | [fnm Not Working](#fnm--nodejs-not-working) |
+| `command not found: node` | Node.js not installed via fnm | [fnm Not Working](#fnm--nodejs-not-working) |
+| `already exists and is not a symlink` | Existing config files | [Installation Failed](#installation-failed-mid-way) |
+| `Directory not found: ~/src/dana` | Dana project path wrong | Check `bin/dana` PROJECT_DIR variable |
+| `tmux: command not found` | tmux not installed | Run `brew install tmux` |
+| `no matches found` (fzf) | No results for search | Expand search query |
+| `ANDROID_HOME: unbound variable` | ANDROID_HOME not set | See [ANDROID_HOME Issues](#android_home-issues) |
+| `lazy.nvim: not found` | Neovim plugin manager not installed | Launch `nvim`, lazy.nvim auto-installs |
+| `LSP server not found` | Mason LSP not installed | Run `:Mason` in Neovim, install server |
+
+---
+
 ## Installation Issues
+
+### Installation Failed Mid-Way
+
+**Symptom**: Install script exited with error before completion, partial configuration applied.
+
+**Diagnosis**:
+```bash
+# Check if rollback state exists
+ls -la ~/dotfiles/.install-state/
+
+# Check install log for error
+cat ~/dotfiles/.install-state/install.log 2>/dev/null | tail -50
+```
+
+**Solution**:
+```bash
+# Option 1: Run rollback to restore original configuration
+./scripts/install/rollback.sh
+
+# Fix the issue that caused failure, then re-run install
+./install.sh
+
+# Option 2: If rollback state doesn't exist, manually restore
+# (if you have backups in ~/dotfiles/.install-state/backups/)
+```
+
+**Common Installation Failures**:
+
+1. **Homebrew installation fails**:
+   ```bash
+   # Install Homebrew manually first
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+   # Then run dotfiles install with --skip-brew
+   ./install.sh --skip-brew
+   ```
+
+2. **Existing config files conflict**:
+   ```bash
+   # The install script backs up existing files automatically
+   # If it fails, check for files that aren't symlinks:
+   file ~/.zshrc ~/.tmux.conf ~/.config/nvim
+
+   # Manually backup if needed
+   mv ~/.zshrc ~/.zshrc.backup
+   mv ~/.tmux.conf ~/.tmux.conf.backup
+
+   # Then re-run install
+   ./install.sh
+   ```
+
+3. **TPM (Tmux Plugin Manager) clone fails**:
+   ```bash
+   # Manually clone TPM
+   git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
+
+   # Then re-run install
+   ./install.sh
+   ```
+
+4. **Permission errors**:
+   ```bash
+   # Ensure scripts are executable
+   chmod +x install.sh scripts/**/*.sh bin/*
+
+   # Then re-run install
+   ./install.sh
+   ```
+
+**Notes**:
+- The install script creates automatic backups in `.install-state/backups/`
+- Rollback script restores from these backups
+- If installation fails, always check `.install-state/install.log` for details
 
 ### Symlinks Not Working
 
@@ -24,7 +129,7 @@ Common issues and solutions for the dotfiles configuration.
 ls -la ~/.zshrc ~/.tmux.conf ~/.config/nvim
 
 # Run health check
-./scripts/health-check.sh
+./scripts/install/health-check.sh
 ```
 
 **Solution**:
@@ -63,6 +168,106 @@ cp -r ~/.dotfiles-backup-YYYYMMDD-HHMMSS/* ~/
 
 ---
 
+## Platform-Specific Issues
+
+### Linux Compatibility
+
+**Known Differences**:
+
+| Feature | macOS | Linux |
+|---------|-------|-------|
+| Homebrew path | `/opt/homebrew` | `/home/linuxbrew/.linuxbrew` |
+| Cask apps | Hammerspoon, Karabiner, Ghostty | Not available (macOS-only) |
+| Clipboard | `pbcopy` / `pbpaste` | `xclip` or `xsel` |
+| Package manager | `brew` | `brew` (Linuxbrew) or native (`apt`, `yum`) |
+
+**Symptom**: Commands not found or apps not available on Linux.
+
+**Solution**:
+
+1. **Homebrew path not in PATH**:
+   ```bash
+   # Add to ~/.zshrc (already handled by dotfiles)
+   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+
+   # Reload shell
+   exec zsh
+   ```
+
+2. **Cask applications**:
+   ```bash
+   # Skip macOS-only casks during install
+   # Edit Brewfile and comment out:
+   # - Hammerspoon (macOS-only)
+   # - Karabiner (macOS-only)
+   # - Ghostty (macOS-only for now)
+
+   # Then run
+   brew bundle install --file=~/dotfiles/Brewfile
+   ```
+
+3. **Clipboard commands**:
+   ```bash
+   # Install xclip for Linux
+   sudo apt install xclip  # Debian/Ubuntu
+   sudo yum install xclip  # RHEL/CentOS
+
+   # Create aliases (add to ~/.zsh/.secrets.zsh or ~/.zshrc.local)
+   alias pbcopy='xclip -selection clipboard'
+   alias pbpaste='xclip -selection clipboard -o'
+   ```
+
+4. **tmux clipboard integration**:
+   Edit `~/.tmux.conf` and change:
+   ```bash
+   # macOS (default)
+   bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
+
+   # Linux (change to)
+   bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xclip -selection clipboard"
+   ```
+
+### Apple Silicon vs Intel Mac
+
+**Symptom**: Homebrew commands not found, or wrong architecture binaries.
+
+**Diagnosis**:
+```bash
+# Check architecture
+uname -m
+# arm64 = Apple Silicon
+# x86_64 = Intel
+
+# Check Homebrew path
+echo $HOMEBREW_PREFIX
+# /opt/homebrew = Apple Silicon
+# /usr/local = Intel
+```
+
+**Solution**:
+
+1. **Homebrew in wrong location**:
+   ```bash
+   # Apple Silicon: reinstall to /opt/homebrew
+   /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
+
+   # Intel: reinstall to /usr/local
+   # (Homebrew installer detects architecture automatically)
+   ```
+
+2. **Rosetta 2 required for some packages**:
+   ```bash
+   # Install Rosetta 2 (if needed)
+   softwareupdate --install-rosetta
+   ```
+
+**Notes**:
+- The dotfiles detect architecture automatically via `common.sh`
+- Most packages are universal or have ARM64 builds now
+- If a package requires Rosetta 2, Homebrew will warn you
+
+---
+
 ## Zsh Issues
 
 ### Slow Shell Startup
@@ -89,6 +294,143 @@ zprof
 - Use fnm instead of NVM (already configured)
 - Ensure compinit caching is working
 - Check `~/.zcompdump` exists and is recent
+
+### fnm / Node.js Not Working
+
+**Symptom**: `command not found: node`, `command not found: fnm`, or Node.js version not switching.
+
+**Diagnosis**:
+```bash
+# Check if fnm is installed
+which fnm
+
+# Check fnm version
+fnm --version
+
+# List installed Node versions
+fnm list
+
+# Check current Node version
+node --version
+
+# Check if fnm environment is loaded
+echo $FNM_DIR
+```
+
+**Solution**:
+
+1. **fnm not installed**:
+   ```bash
+   # Install via Homebrew
+   brew install fnm
+
+   # Reload shell
+   exec zsh
+
+   # Install Node.js LTS
+   fnm install --lts
+   fnm default lts-latest
+   ```
+
+2. **fnm not initialised**:
+   ```bash
+   # The .zshrc should have this (line 103):
+   eval "$(fnm env --use-on-cd)"
+
+   # If missing, add manually
+   echo 'eval "$(fnm env --use-on-cd)"' >> ~/.zshrc
+
+   # Reload shell
+   exec zsh
+   ```
+
+3. **No Node.js version installed**:
+   ```bash
+   # List available versions
+   fnm list-remote
+
+   # Install LTS version
+   fnm install --lts
+
+   # Set as default
+   fnm default lts-latest
+
+   # Verify
+   node --version
+   ```
+
+4. **Node version not switching automatically**:
+   ```bash
+   # Ensure --use-on-cd is in fnm env command
+   eval "$(fnm env --use-on-cd)"
+
+   # Test with a project that has .nvmrc or .node-version
+   cd ~/src/project-with-node-version
+   node --version  # Should match .nvmrc
+   ```
+
+5. **PATH issues with fnm**:
+   ```bash
+   # Check if fnm shims are in PATH
+   echo $PATH | grep fnm
+
+   # Should see something like:
+   # /Users/you/Library/Application Support/fnm/aliases/default/bin
+
+   # If missing, fnm env may not be loaded - check .zshrc
+   ```
+
+**Notes**:
+- fnm is a fast Node.js version manager (replaces nvm)
+- `.nvmrc` and `.node-version` files trigger automatic version switching
+- Default version is used when no version file exists
+- fnm stores versions in `~/Library/Application Support/fnm/`
+
+### ANDROID_HOME Issues
+
+**Symptom**: Error about `ANDROID_HOME` being unbound or invalid PATH entry `/platform-tools`.
+
+**Diagnosis**:
+```bash
+# Check if ANDROID_HOME is set
+echo $ANDROID_HOME
+
+# Check PATH for invalid entries
+echo $PATH | tr ':' '\n' | grep platform-tools
+```
+
+**Solution**:
+
+1. **ANDROID_HOME not set but needed**:
+   ```bash
+   # Add to ~/.zsh/.secrets.zsh
+   export ANDROID_HOME="$HOME/Library/Android/sdk"  # macOS
+   export ANDROID_HOME="$HOME/Android/Sdk"          # Linux
+
+   # Reload shell
+   exec zsh
+   ```
+
+2. **ANDROID_HOME undefined but PATH entry added** (bug fixed in quick wins):
+
+   **Old .zshrc (buggy)**:
+   ```bash
+   # Line 168 - WRONG
+   export PATH=$PATH:$ANDROID_HOME/platform-tools
+   ```
+
+   **Fixed .zshrc**:
+   ```bash
+   # Line 168 - CORRECT
+   [[ -n "$ANDROID_HOME" ]] && export PATH=$PATH:$ANDROID_HOME/platform-tools
+   ```
+
+   If you're experiencing this, update your `.zshrc` to use the conditional version.
+
+**Notes**:
+- `ANDROID_HOME` is only needed for Android development
+- If you don't develop for Android, you can ignore this
+- The conditional check prevents invalid PATH entries
 
 ### Powerlevel10k Not Loading
 
@@ -348,7 +690,7 @@ cat startup.log
 
 ```bash
 # Run health check
-./scripts/health-check.sh
+./scripts/install/health-check.sh
 
 # Check all symlinks
 ls -la ~/{.zshrc,.zprofile,.p10k.zsh,.tmux.conf} ~/.config/{nvim,ghostty}

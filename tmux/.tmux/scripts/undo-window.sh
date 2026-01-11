@@ -6,6 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
+source "$SCRIPT_DIR/_lib/ui.sh"
 
 # Get undo file paths
 UNDO_FILE=$(get_window_undo_file)
@@ -13,8 +14,22 @@ UNDO_STATE=$(get_window_undo_state)
 UNDO_CONTENTS_DIR=$(get_window_undo_contents_dir)
 
 # Check if there's something to undo
-[[ ! -f "$UNDO_FILE" ]] && exit 0
-[[ ! -f "$UNDO_STATE" ]] && { rm -f "$UNDO_FILE"; exit 0; }
+if [[ ! -f "$UNDO_FILE" ]]; then
+    show_centered_message "No window to restore" \
+        "" \
+        "No recently killed window found."
+    sleep 2
+    exit 0
+fi
+
+if [[ ! -f "$UNDO_STATE" ]]; then
+    rm -f "$UNDO_FILE"
+    show_centered_message "State not found" \
+        "" \
+        "Window state file is missing."
+    sleep 2
+    exit 0
+fi
 
 WINDOW_TARGET=$(cat "$UNDO_FILE")
 SESSION_NAME="${WINDOW_TARGET%%:*}"
@@ -41,6 +56,7 @@ d=$'\t'
 WINDOW_LINE=$(grep "^window${d}" "$UNDO_STATE" | head -1)
 WINDOW_NAME=$(echo "$WINDOW_LINE" | cut -d"$d" -f4 | sed 's/^://')
 WINDOW_LAYOUT=$(echo "$WINDOW_LINE" | cut -d"$d" -f7)
+AUTO_RENAME=$(echo "$WINDOW_LINE" | cut -d"$d" -f8)
 
 # Get first pane's directory
 FIRST_DIR=$(grep "^pane${d}" "$UNDO_STATE" | head -1 | cut -d"$d" -f8 | sed 's/^://' | sed 's/\\ / /g')
@@ -49,6 +65,15 @@ FIRST_DIR="${FIRST_DIR/#\~/$HOME}"
 
 # Create the window
 tmux new-window -t "${SESSION_NAME}:${WINDOW_INDEX}" -n "$WINDOW_NAME" -c "$FIRST_DIR"
+
+# Restore automatic-rename setting and window name
+if [[ -n "$AUTO_RENAME" ]]; then
+    tmux set-window-option -t "${SESSION_NAME}:${WINDOW_INDEX}" automatic-rename "$AUTO_RENAME"
+    # If auto-rename is off, explicitly set the name again to ensure it wasn't changed
+    if [[ "$AUTO_RENAME" == "off" ]]; then
+        tmux rename-window -t "${SESSION_NAME}:${WINDOW_INDEX}" "$WINDOW_NAME"
+    fi
+fi
 
 # Create additional panes if needed
 grep "^pane${d}" "$UNDO_STATE" | tail -n +2 | while IFS="$d" read -r _ _ _ _ _ _pane_index _pane_title pane_dir _pane_active _pane_cmd _; do

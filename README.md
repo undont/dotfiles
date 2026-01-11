@@ -1,6 +1,8 @@
 # Dotfiles
 
 [![CI](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
+[![macOS](https://img.shields.io/badge/macOS-compatible-black?logo=apple)](https://www.apple.com/macos/)
+[![Linux](https://img.shields.io/badge/Linux-compatible-orange?logo=linux)](https://www.linux.org/)
 [![Neovim](https://img.shields.io/badge/Neovim-0.9+-green?logo=neovim)](https://neovim.io/)
 [![Tmux](https://img.shields.io/badge/Tmux-3.3+-orange?logo=tmux)](https://github.com/tmux/tmux)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
@@ -182,6 +184,18 @@ Then reload your shell: `source ~/.zshrc`
 - Caps Lock to Escape (Ghostty only)
 - Right Option to Left Control
 - UK keyboard layout fixes for Apple keyboards
+
+### Dana Project Launcher
+The `dana` script creates a tmux session with pre-configured windows:
+
+| Window | Name | Directory | Purpose |
+|--------|------|-----------|---------|
+| 1 | backend | ~/src/dana/backend | Backend development |
+| 2 | web | ~/src/dana/web | Web frontend |
+| 3 | mobile | ~/src/dana/mobile | Mobile app |
+| 4 | tools | split panes | Left: `npx expo`, Right: `bun dev` |
+| 5 | commit-and-push | ~/src/dana | Git operations |
+| 6 | zsh | ~ | General shell |
 
 ## Keybinding Quick Reference
 

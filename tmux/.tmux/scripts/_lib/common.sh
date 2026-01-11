@@ -32,6 +32,12 @@ success() {
     printf "${GREEN}%s${NC}\n" "$1"
 }
 
+# Show error via tmux display-message (visible after popup closes)
+# Use this for errors in popup/fzf contexts instead of error()
+show_error() {
+    tmux display-message "Error: $1"
+}
+
 # Check if tmux is running
 require_tmux() {
     if ! command -v tmux &>/dev/null; then
@@ -97,10 +103,10 @@ validate_window_index() {
     return 0
 }
 
-# Check if a session exists
+# Check if a session exists (exact match, not prefix)
 session_exists() {
     local session="$1"
-    tmux has-session -t "$session" 2>/dev/null
+    tmux list-sessions -F '#{session_name}' 2>/dev/null | grep -qxF "$session"
 }
 
 # Get the number of windows in a session

@@ -3,6 +3,51 @@ set -euo pipefail
 
 # Dev session launcher - creates a 3-window layout for development
 
+# Help flag handling
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    cat << 'EOF'
+tm - tmux development session launcher
+
+USAGE:
+    tm [DIRECTORY]
+
+DESCRIPTION:
+    Creates or attaches to a tmux development session with a 3-window layout:
+      • Window 1 (dev): Split panes with Claude Code (left) and terminal (right)
+      • Window 2 (edit): Neovim editor
+
+    The session name is derived from the directory basename.
+
+ARGUMENTS:
+    DIRECTORY    Directory to create session in (default: current directory)
+                 Can be absolute or relative path
+
+OPTIONS:
+    -h, --help   Show this help message
+
+EXAMPLES:
+    # Create session for current directory
+    tm
+
+    # Create session for specific project
+    tm ~/src/my-project
+
+    # Create session using relative path
+    tm ../other-project
+
+NOTES:
+    • If a session with the same name exists, attaches to it instead
+    • Session names are sanitised (alphanumeric, underscore, dot, dash only)
+    • Works both inside and outside of tmux (uses switch-client vs attach-session)
+    • Claude Code is launched via the 'claude' CLI command
+
+SEE ALSO:
+    dana           Project-specific launcher for Dana project
+    trestore       Restore tmux sessions from backup
+EOF
+    exit 0
+fi
+
 # Default to current directory if no argument provided
 dir="${1:-$(pwd)}"
 

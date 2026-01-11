@@ -4,6 +4,45 @@ set -euo pipefail
 # Verify dotfiles installation is correct
 # Checks symlinks, plugin managers, and basic functionality
 
+# Help flag handling
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    cat << 'EOF'
+health-check.sh - Dotfiles installation health check
+
+USAGE:
+    ./scripts/install/health-check.sh
+
+DESCRIPTION:
+    Runs comprehensive health checks on the dotfiles installation:
+      • Verifies all symlinks point to correct locations
+      • Checks plugin managers are installed (TPM, lazy.nvim)
+      • Validates secrets file exists
+      • Tests custom scripts are in PATH
+
+OPTIONS:
+    -h, --help   Show this help message
+
+EXAMPLES:
+    # Run health check from dotfiles root
+    ./scripts/install/health-check.sh
+
+    # Run from anywhere (if in PATH)
+    health-check.sh
+
+OUTPUT:
+    Displays status for each check:
+      ✓ Check passed (green OK)
+      ✗ Check failed (red MISSING or WRONG TARGET)
+
+    Exit code 0 if all checks pass, non-zero otherwise.
+
+SEE ALSO:
+    ./install.sh --check-only    Dry-run installation without changes
+    ./scripts/install/rollback.sh  Restore backup if issues found
+EOF
+    exit 0
+fi
+
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
