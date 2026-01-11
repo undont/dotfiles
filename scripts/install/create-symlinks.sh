@@ -2,7 +2,7 @@
 # shellcheck disable=SC1091
 set -euo pipefail
 
-# Create symlinks for all dotfiles
+# Create symlinks for all dotfiles based on preset
 # Requires DOTFILES_DIR to be set
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -12,6 +12,7 @@ export DOTFILES_DIR
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/rollback.sh"
 
+PRESET="${DOTFILES_PRESET:-full}"
 FAILED=0
 
 create_link() {
@@ -48,43 +49,60 @@ create_link() {
 
 print_section "Creating symlinks"
 echo "Source: $DOTFILES_DIR"
+echo "Preset: $PRESET"
 echo ""
 
-# Zsh
+# Zsh (minimal)
 echo "Zsh configuration:"
 create_link "$DOTFILES_DIR/zsh/.zshrc" "$HOME/.zshrc"
 create_link "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.zprofile"
 create_link "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
 create_link "$DOTFILES_DIR/zsh/.zsh" "$HOME/.zsh"
 
+# Tmux (minimal)
 echo ""
 echo "Tmux configuration:"
 create_link "$DOTFILES_DIR/tmux/.tmux.conf" "$HOME/.tmux.conf"
 create_link "$DOTFILES_DIR/tmux/.tmux" "$HOME/.tmux"
 
-echo ""
-echo "Neovim configuration:"
-create_link "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
+# Neovim (core)
+if should_install "core"; then
+    echo ""
+    echo "Neovim configuration:"
+    create_link "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
+fi
 
-echo ""
-echo "Hammerspoon configuration:"
-create_link "$DOTFILES_DIR/hammerspoon" "$HOME/.hammerspoon"
+# Hammerspoon (full)
+if should_install "full"; then
+    echo ""
+    echo "Hammerspoon configuration:"
+    create_link "$DOTFILES_DIR/hammerspoon" "$HOME/.hammerspoon"
+fi
 
-echo ""
-echo "Ghostty configuration:"
-mkdir -p "$HOME/.config/ghostty"
-create_link "$DOTFILES_DIR/ghostty/config" "$HOME/.config/ghostty/config"
+# Ghostty (core)
+if should_install "core"; then
+    echo ""
+    echo "Ghostty configuration:"
+    mkdir -p "$HOME/.config/ghostty"
+    create_link "$DOTFILES_DIR/ghostty/config" "$HOME/.config/ghostty/config"
+fi
 
-echo ""
-echo "Karabiner configuration:"
-mkdir -p "$HOME/.config/karabiner"
-create_link "$DOTFILES_DIR/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+# Karabiner (full)
+if should_install "full"; then
+    echo ""
+    echo "Karabiner configuration:"
+    mkdir -p "$HOME/.config/karabiner"
+    create_link "$DOTFILES_DIR/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+fi
 
-echo ""
-echo "Custom scripts (bin):"
-mkdir -p "$HOME/.local/bin"
-create_link "$DOTFILES_DIR/bin/tm" "$HOME/.local/bin/tm"
-create_link "$DOTFILES_DIR/bin/dana" "$HOME/.local/bin/dana"
+# Session launchers (core)
+if should_install "core"; then
+    echo ""
+    echo "Session launchers:"
+    mkdir -p "$HOME/.local/launchers"
+    create_link "$DOTFILES_DIR/launchers/tnew" "$HOME/.local/launchers/tnew"
+    create_link "$DOTFILES_DIR/launchers/dana" "$HOME/.local/launchers/dana"
+fi
 
 echo ""
 

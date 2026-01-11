@@ -46,7 +46,13 @@ fi
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+# Derive DOTFILES_DIR from script location if not set
+if [[ -z "${DOTFILES_DIR:-}" ]]; then
+    DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+fi
+export DOTFILES_DIR
+
+PRESET="${DOTFILES_PRESET:-full}"
 
 ISSUES=0
 
@@ -106,51 +112,79 @@ check_file() {
         return 0
     else
         printf "${YELLOW}MISSING${NC}\n"
+        ISSUES=1
         return 1
     fi
 }
 
 print_section "Dotfiles Health Check"
+echo "Preset: $PRESET"
+echo ""
 
 echo "Symlinks:"
 echo "---------"
+
+# Zsh (minimal)
 check_symlink "$HOME/.zshrc" "$DOTFILES_DIR/zsh/.zshrc" ".zshrc"
 check_symlink "$HOME/.zprofile" "$DOTFILES_DIR/zsh/.zprofile" ".zprofile"
 check_symlink "$HOME/.p10k.zsh" "$DOTFILES_DIR/zsh/.p10k.zsh" ".p10k.zsh"
 check_symlink "$HOME/.zsh" "$DOTFILES_DIR/zsh/.zsh" ".zsh"
+
+# Tmux (minimal)
 check_symlink "$HOME/.tmux.conf" "$DOTFILES_DIR/tmux/.tmux.conf" ".tmux.conf"
 check_symlink "$HOME/.tmux" "$DOTFILES_DIR/tmux/.tmux" ".tmux"
-check_symlink "$HOME/.config/nvim" "$DOTFILES_DIR/nvim" "nvim config"
-check_symlink "$HOME/.hammerspoon" "$DOTFILES_DIR/hammerspoon" "hammerspoon"
-check_symlink "$HOME/.config/ghostty/config" "$DOTFILES_DIR/ghostty/config" "ghostty config"
-check_symlink "$HOME/.config/karabiner/karabiner.json" "$DOTFILES_DIR/karabiner/karabiner.json" "karabiner config"
+
+# Neovim (core)
+if should_install "core"; then
+    check_symlink "$HOME/.config/nvim" "$DOTFILES_DIR/nvim" "nvim config"
+fi
+
+# Hammerspoon (full)
+if should_install "full"; then
+    check_symlink "$HOME/.hammerspoon" "$DOTFILES_DIR/hammerspoon" "hammerspoon"
+fi
+
+# Ghostty (core)
+if should_install "core"; then
+    check_symlink "$HOME/.config/ghostty/config" "$DOTFILES_DIR/ghostty/config" "ghostty config"
+fi
+
+# Karabiner (full)
+if should_install "full"; then
+    check_symlink "$HOME/.config/karabiner/karabiner.json" "$DOTFILES_DIR/karabiner/karabiner.json" "karabiner config"
+fi
 
 echo ""
 echo "Plugin Managers:"
 echo "----------------"
 check_directory "$HOME/.tmux/plugins/tpm" "TPM (Tmux Plugin Manager)"
-check_directory "$HOME/.local/share/nvim/lazy" "lazy.nvim (Neovim)"
+if should_install "core"; then
+    check_directory "$HOME/.local/share/nvim/lazy" "lazy.nvim (Neovim)"
+fi
 
 echo ""
 echo "Secrets:"
 echo "--------"
 check_file "$HOME/.zsh/.secrets.zsh" "Secrets file"
 
-echo ""
-echo "Custom Scripts:"
-echo "---------------"
-if command_exists tm; then
-    printf "Checking %-30s${GREEN}OK${NC}\n" "tm command"
-else
-    printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "tm command"
-    echo "  Add ~/.local/bin to your PATH"
-fi
+# Session Launchers (core)
+if should_install "core"; then
+    echo ""
+    echo "Session Launchers:"
+    echo "------------------"
+    if command_exists tnew; then
+        printf "Checking %-30s${GREEN}OK${NC}\n" "tnew command"
+    else
+        printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "tnew command"
+        echo "  Add ~/.local/launchers to your PATH"
+    fi
 
-if command_exists dana; then
-    printf "Checking %-30s${GREEN}OK${NC}\n" "dana command"
-else
-    printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "dana command"
-    echo "  Add ~/.local/bin to your PATH"
+    if command_exists dana; then
+        printf "Checking %-30s${GREEN}OK${NC}\n" "dana command"
+    else
+        printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "dana command"
+        echo "  Add ~/.local/launchers to your PATH"
+    fi
 fi
 
 echo ""

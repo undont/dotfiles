@@ -1,21 +1,31 @@
 # Brewfile - Homebrew Bundle
 # Install with: brew bundle install
+#
+# Preset markers:
+#   @preset: minimal - included in minimal, core, and full
+#   @preset: core    - included in core and full
+#   @preset: full    - included in full only
 
 # Taps
 tap "homebrew/bundle"
 tap "homebrew/cask-fonts"
 
 # =============================================================================
-# Core CLI Tools
+# @preset: minimal
+# Shell & Terminal Essentials (zsh + tmux)
 # =============================================================================
 
-# Shell & Terminal
 brew "zsh"
 brew "tmux"                   # >= 3.3 required for popup support
 brew "powerlevel10k"
 brew "zsh-autosuggestions"
 brew "fzf"                    # >= 0.40 for --tmux flag
 brew "direnv"
+
+# =============================================================================
+# @preset: core
+# Editors & Development Tools
+# =============================================================================
 
 # Editors
 brew "neovim"                 # >= 0.9 required for lazy.nvim
@@ -37,6 +47,7 @@ brew "wget"
 brew "bat"                    # Cat with syntax highlighting
 
 # =============================================================================
+# @preset: core
 # Languages & Runtimes
 # =============================================================================
 
@@ -59,6 +70,7 @@ cask "zulu@17"
 cask "dotnet-sdk"
 
 # =============================================================================
+# @preset: core
 # Development Tools
 # =============================================================================
 
@@ -82,6 +94,7 @@ brew "swift-format"
 brew "golang-migrate"
 
 # =============================================================================
+# @preset: core
 # Media & Utilities
 # =============================================================================
 
@@ -92,26 +105,28 @@ brew "speedtest"
 brew "glow"                   # Markdown renderer
 
 # =============================================================================
-# macOS Applications (Casks)
+# @preset: core
+# Terminal & Fonts
 # =============================================================================
 
 # Terminal
 cask "ghostty"
 
-# Automation
-cask "hammerspoon"
-cask "karabiner-elements"     # Keyboard customisation
-
 # Cloud
 cask "gcloud-cli"
-
-# Music
-cask "music-presence"         # Discord Rich Presence for Apple Music
-
-# =============================================================================
-# Fonts
-# =============================================================================
 
 # Nerd Fonts for terminal icons
 cask "font-meslo-lg-nerd-font"
 cask "font-jetbrains-mono-nerd-font"
+
+# =============================================================================
+# @preset: full
+# macOS-Specific Applications
+# =============================================================================
+
+# Automation
+cask "hammerspoon"
+cask "karabiner-elements"     # Keyboard customisation
+
+# Music
+cask "music-presence"         # Discord Rich Presence for Apple Music

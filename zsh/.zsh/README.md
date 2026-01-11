@@ -221,7 +221,7 @@ direnv allow
 
 | Function       | Usage                        | Description                                                                                                                                    |
 | -------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `ta <name>`    | `ta myproject`               | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
+| `tattach <name>` | `tattach myproject`        | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tkill <name>` | `tkill myproject`            | Kills the specified tmux session and removes its backup file from `~/.tmux/resurrect/sessions/`. |
 | `trestore`     | `trestore <name> [options]`  | Restore a tmux session from backup. Options: `--replace` (kill existing first), `--delete` (delete backup). |
 | `brewup`       | `brewup`                     | Runs `brew update && brew upgrade`. |
@@ -234,7 +234,7 @@ Custom tab completion is enabled for tmux session management commands:
 | ---------- | -------------------------- | --------------------------------- |
 | `trestore` | Saved session backups      | Lists `~/.tmux/resurrect/sessions/*.txt` |
 | `tkill`    | Running tmux sessions      | Lists currently active sessions   |
-| `ta`       | Running tmux sessions      | Lists currently active sessions   |
+| `tattach`  | Running tmux sessions      | Lists currently active sessions   |
 
 **Usage:** Type the command and press `Tab` to see available sessions.
 

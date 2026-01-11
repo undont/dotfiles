@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.2] - 2026-01-11
+
+### Added
+- **Install presets**: Three installation modes for different use cases
+  - `--minimal`: zsh + tmux only (servers, remote machines)
+  - `--core`: minimal + nvim, ghostty, AI/CLI tools, session launchers (cross-platform dev)
+  - `--full`: core + Hammerspoon, Karabiner, music-presence (macOS power user)
+- Brewfile sections with `# @preset:` markers for preset-based filtering
+- Preset-aware scripts: backup, symlinks, health-check, prerequisites all respect preset
+- Test suite for preset filtering and `should_install` helper function
+- Session launchers directory (`launchers/`) added to PATH in .zprofile
+
+### Changed
+- **Renamed**: `bin/tm` → `launchers/tnew`, `bin/ta` removed (use `tattach` function)
+- **Renamed**: `bin/dana` → `launchers/dana`
+- Moved `music-presence` cask to full preset (macOS-only)
+- Installation guide updated with preset documentation
+- TPM (Tmux Plugin Manager) pinned to v3.1.0 for reproducibility
+
+### Fixed
+- Security: command injection vulnerability in zsh preexec function
+- Security: hardcoded username paths in .zprofile replaced with $HOME
+- Security: path traversal vulnerability in rollback restore
+- Security: race condition when creating secrets file (now uses umask)
+- Health check exit code now reflects all check failures
+- DOTFILES_DIR default derived from script location instead of hardcoded path
+- Install preset validation rejects invalid values with clear error
+- Backup directory names include PID for uniqueness
+
 ## [0.1.1] - 2026-01-11
 
 ### Added
@@ -56,8 +85,8 @@ Initial public release of the dotfiles configuration.
 - Ghostty terminal configuration
 
 ### Project Tooling
-- `bin/tm`: Generic tmux development session launcher
-- `bin/dana`: Dana project-specific multi-window tmux session
+- `launchers/tnew`: Generic tmux development session launcher
+- `launchers/dana`: Dana project-specific multi-window tmux session
 - Automated installation script with rollback support
 - Health check and prerequisites verification scripts
 - CI workflow with shellcheck, stylua, and library tests
@@ -68,7 +97,7 @@ Initial public release of the dotfiles configuration.
 - Per-component README files (tmux, nvim, hammerspoon, etc.)
 
 ### Added
-- Help text (`-h`/`--help`) for `bin/dana`, `bin/tm`, and install scripts
+- Help text (`-h`/`--help`) for `launchers/dana`, `launchers/tnew`, and install scripts
 - Dana project launcher documentation in README.md
 - macOS and Linux compatibility badges in README.md
 - `show_error()` helper function in common.sh for popup error display

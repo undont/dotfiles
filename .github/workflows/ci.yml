@@ -36,10 +36,10 @@ jobs:
           shellcheck -x $EXCLUDES tmux/.tmux/scripts/*.sh
           shellcheck -x $EXCLUDES tmux/.tmux/scripts/_lib/*.sh
 
-      - name: Run ShellCheck on bin utilities
+      - name: Run ShellCheck on session launchers
         run: |
           EXCLUDES="-e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034"
-          for f in bin/*; do
+          for f in launchers/*; do
             if file "$f" | grep -q "shell script"; then
               shellcheck -x $EXCLUDES "$f"
             fi

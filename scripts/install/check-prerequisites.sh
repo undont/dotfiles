@@ -57,6 +57,7 @@ fi
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
+PRESET="${DOTFILES_PRESET:-full}"
 FAILED=0
 
 check() {
@@ -70,62 +71,75 @@ check_optional() {
 }
 
 print_section "Dotfiles Prerequisites Check"
+echo "Preset: $PRESET"
+echo ""
 
-echo "Required - Core Tools:"
-echo "----------------------"
+# Minimal preset tools
+echo "Required - Shell & Terminal:"
+echo "----------------------------"
 check "git" "git" "xcode-select --install"
 check "zsh" "zsh" "brew install zsh"
 check "tmux" "tmux" "brew install tmux"
-check "neovim" "nvim" "brew install neovim"
 check "fzf" "fzf" "brew install fzf"
-check "bun" "bun" "brew install bun"
-check "ghostty" "ghostty" "brew install --cask ghostty"
-check "go" "go" "brew install go"
-check "ripgrep" "rg" "brew install ripgrep"
-check "lazygit" "lazygit" "brew install lazygit"
-check "gh" "gh" "brew install gh"
 check "direnv" "direnv" "brew install direnv"
-check "jq" "jq" "brew install jq"
-check "tree" "tree" "brew install tree"
-check "shellcheck" "shellcheck" "brew install shellcheck"
 
-echo ""
-echo "Required - AI & Dev Tools:"
-echo "--------------------------"
-check "claude" "claude" "brew install --cask claude-code"
-check "dotnet" "dotnet" "brew install --cask dotnet-sdk"
-check "act" "act" "brew install act"
-check "cmake" "cmake" "brew install cmake"
-check "staticcheck" "staticcheck" "brew install staticcheck"
-check "swift-format" "swift-format" "brew install swift-format"
-check "golang-migrate" "migrate" "brew install golang-migrate"
+# Core preset tools
+if should_install "core"; then
+    echo ""
+    echo "Required - Editor & Dev Tools:"
+    echo "------------------------------"
+    check "neovim" "nvim" "brew install neovim"
+    check "ghostty" "ghostty" "brew install --cask ghostty"
+    check "bun" "bun" "brew install bun"
+    check "go" "go" "brew install go"
+    check "ripgrep" "rg" "brew install ripgrep"
+    check "lazygit" "lazygit" "brew install lazygit"
+    check "gh" "gh" "brew install gh"
+    check "jq" "jq" "brew install jq"
+    check "tree" "tree" "brew install tree"
+    check "shellcheck" "shellcheck" "brew install shellcheck"
 
-echo ""
-echo "Required - Databases:"
-echo "---------------------"
-check "postgresql" "psql" "brew install postgresql@14"
-check "mongosh" "mongosh" "brew install mongosh"
-check "turso" "turso" "brew install turso"
-check "sqld" "sqld" "brew install sqld"
+    echo ""
+    echo "Required - AI & Dev Tools:"
+    echo "--------------------------"
+    check "claude" "claude" "brew install --cask claude-code"
+    check "dotnet" "dotnet" "brew install --cask dotnet-sdk"
+    check "act" "act" "brew install act"
+    check "cmake" "cmake" "brew install cmake"
+    check "staticcheck" "staticcheck" "brew install staticcheck"
+    check "swift-format" "swift-format" "brew install swift-format"
+    check "golang-migrate" "migrate" "brew install golang-migrate"
 
-echo ""
-echo "Required - Utilities:"
-echo "---------------------"
-check "neofetch" "neofetch" "brew install neofetch"
-check "speedtest" "speedtest" "brew install speedtest"
-check "glow" "glow" "brew install glow"
+    echo ""
+    echo "Required - Databases:"
+    echo "---------------------"
+    check "postgresql" "psql" "brew install postgresql@14"
+    check "mongosh" "mongosh" "brew install mongosh"
+    check "turso" "turso" "brew install turso"
+    check "sqld" "sqld" "brew install sqld"
 
-echo ""
-echo "Required - macOS Apps:"
-echo "----------------------"
-# Karabiner is checked via app existence since CLI isn't in PATH
-printf "Checking %-20s" "karabiner..."
-if [[ -d "/Applications/Karabiner-Elements.app" ]]; then
-    printf "${GREEN}OK${NC}\n"
-else
-    printf "${RED}MISSING${NC}\n"
-    printf "  ${YELLOW}Install with:${NC} brew install --cask karabiner-elements\n"
-    FAILED=1
+    echo ""
+    echo "Required - Utilities:"
+    echo "---------------------"
+    check "neofetch" "neofetch" "brew install neofetch"
+    check "speedtest" "speedtest" "brew install speedtest"
+    check "glow" "glow" "brew install glow"
+fi
+
+# Full preset tools (macOS-specific)
+if should_install "full"; then
+    echo ""
+    echo "Required - macOS Apps:"
+    echo "----------------------"
+    # Karabiner is checked via app existence since CLI isn't in PATH
+    printf "Checking %-20s" "karabiner..."
+    if [[ -d "/Applications/Karabiner-Elements.app" ]]; then
+        printf "${GREEN}OK${NC}\n"
+    else
+        printf "${RED}MISSING${NC}\n"
+        printf "  ${YELLOW}Install with:${NC} brew install --cask karabiner-elements\n"
+        FAILED=1
+    fi
 fi
 
 echo ""
@@ -134,9 +148,13 @@ echo "---------------"
 check_optional "fnm" "fnm" "brew install fnm"
 check_optional "python" "python3" "brew install python"
 check_optional "gcloud" "gcloud" "brew install --cask gcloud-cli"
-check_optional "hammerspoon" "hs" "brew install --cask hammerspoon"
-check_optional "fd" "fd" "brew install fd"
-check_optional "bat" "bat" "brew install bat"
+if should_install "full"; then
+    check_optional "hammerspoon" "hs" "brew install --cask hammerspoon"
+fi
+if should_install "core"; then
+    check_optional "fd" "fd" "brew install fd"
+    check_optional "bat" "bat" "brew install bat"
+fi
 
 echo ""
 
