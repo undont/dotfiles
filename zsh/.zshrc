@@ -72,6 +72,9 @@ export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
 # Python pipx (isolated CLI tool installation)
 export PATH="$PATH:$HOME/.local/bin"
 
+# Launchers (tmux session launchers, VS Code launcher, etc.)
+export PATH="$PATH:$HOME/.local/launchers"
+
 # User scripts directory (custom shell scripts)
 export PATH="$HOME/bin:$PATH"
 
@@ -229,6 +232,11 @@ trestore() {
 
 tkill() {
   ~/.tmux/scripts/resurrect-delete.sh "$@"
+}
+
+# List running Claude Code instances
+tclaude() {
+  ~/.tmux/scripts/list-claude.sh "$@"
 }
 
 # Tab completion for tmux commands
