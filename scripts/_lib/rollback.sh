@@ -75,6 +75,47 @@ cleanup_rollback_state() {
     rm -rf "$ROLLBACK_STATE_DIR"
 }
 
+# Restore from a specific backup directory (without state)
+restore_from_backup() {
+    local backup_dir="$1"
+
+    if [[ ! -d "$backup_dir" ]]; then
+        error "Backup directory not found: $backup_dir"
+        return 1
+    fi
+
+    info "Restoring from backup: $backup_dir"
+
+    # Find all files in backup and restore them
+    find "$backup_dir" -type f | while read -r backup_file; do
+        local relative_path="${backup_file#"$backup_dir"/}"
+
+        # Sanitise path to prevent traversal attacks
+        if [[ "$relative_path" == ../* ]] || [[ "$relative_path" == */../* ]] || [[ "$relative_path" == */./* ]]; then
+            warn "Skipping suspicious path: $relative_path"
+            continue
+        fi
+
+        local original_path="$HOME/$relative_path"
+
+        # Remove existing symlink if present
+        if [[ -L "$original_path" ]]; then
+            rm -f "$original_path"
+        fi
+
+        # Create directory if needed
+        local original_dir
+        original_dir=$(dirname "$original_path")
+        mkdir -p "$original_dir"
+
+        # Restore file
+        cp -p "$backup_file" "$original_path"
+        success "Restored: $original_path"
+    done
+
+    success "Backup restored"
+}
+
 # Perform rollback
 perform_rollback() {
     local backup_dir
