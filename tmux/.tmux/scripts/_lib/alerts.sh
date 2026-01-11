@@ -14,9 +14,10 @@ clear_window_alert() {
 
     # Remove from alerts file
     # grep -v exit codes: 0=lines remain, 1=no lines (all filtered), 2+=error
+    # Use || true to prevent errexit from triggering on exit code 1
     if [[ -f "$CLAUDE_ALERTS_FILE" ]]; then
-        grep -v "^${session}:${window}$" "$CLAUDE_ALERTS_FILE" > "${CLAUDE_ALERTS_FILE}.tmp" 2>/dev/null
-        local grep_exit=$?
+        local grep_exit=0
+        grep -v "^${session}:${window}$" "$CLAUDE_ALERTS_FILE" > "${CLAUDE_ALERTS_FILE}.tmp" 2>/dev/null || grep_exit=$?
         if [[ $grep_exit -le 1 ]]; then
             mv "${CLAUDE_ALERTS_FILE}.tmp" "$CLAUDE_ALERTS_FILE"
         else
@@ -39,9 +40,10 @@ clear_session_alerts() {
 
     # Remove all entries for this session from alerts file
     # grep -v exit codes: 0=lines remain, 1=no lines (all filtered), 2+=error
+    # Use || true to prevent errexit from triggering on exit code 1
     if [[ -f "$CLAUDE_ALERTS_FILE" ]]; then
-        grep -vF "${session}:" "$CLAUDE_ALERTS_FILE" > "${CLAUDE_ALERTS_FILE}.tmp" 2>/dev/null
-        local grep_exit=$?
+        local grep_exit=0
+        grep -vF "${session}:" "$CLAUDE_ALERTS_FILE" > "${CLAUDE_ALERTS_FILE}.tmp" 2>/dev/null || grep_exit=$?
         if [[ $grep_exit -le 1 ]]; then
             mv "${CLAUDE_ALERTS_FILE}.tmp" "$CLAUDE_ALERTS_FILE"
         else
