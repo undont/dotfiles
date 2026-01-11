@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Dotfiles installation script
-# Usage: ./install.sh [--skip-backup] [--skip-brew] [--check-only]
+# Usage: ./install.sh [--minimal|--core|--full] [OPTIONS]
 
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DOTFILES_DIR
@@ -11,6 +11,11 @@ export DOTFILES_DIR
 # Source shared utilities
 source "$DOTFILES_DIR/scripts/_lib/common.sh"
 source "$DOTFILES_DIR/scripts/_lib/rollback.sh"
+
+# Preset definitions:
+#   minimal - zsh + tmux only (servers, remote machines)
+#   core    - minimal + nvim + ghostty + AI/CLI tools + bin scripts (cross-platform dev)
+#   full    - core + Hammerspoon + Karabiner (macOS power user)
 
 # Error handler for automatic rollback
 on_error() {
@@ -42,9 +47,22 @@ trap 'on_error $LINENO' ERR
 SKIP_BACKUP=0
 SKIP_BREW=0
 CHECK_ONLY=0
+PRESET="full"  # Default preset
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --minimal)
+            PRESET="minimal"
+            shift
+            ;;
+        --core)
+            PRESET="core"
+            shift
+            ;;
+        --full)
+            PRESET="full"
+            shift
+            ;;
         --skip-backup)
             SKIP_BACKUP=1
             shift
@@ -58,13 +76,23 @@ while [[ $# -gt 0 ]]; do
             shift
             ;;
         -h|--help)
-            echo "Usage: ./install.sh [OPTIONS]"
+            echo "Usage: ./install.sh [PRESET] [OPTIONS]"
+            echo ""
+            echo "Presets:"
+            echo "  --minimal        Install zsh + tmux only (servers, remote machines)"
+            echo "  --core           Install zsh, tmux, nvim, ghostty, CLI/AI tools"
+            echo "  --full           Install everything including macOS apps (default)"
             echo ""
             echo "Options:"
             echo "  --skip-backup    Skip backing up existing config files"
             echo "  --skip-brew      Skip Homebrew installation and packages"
             echo "  --check-only     Only run prerequisite and health checks"
             echo "  -h, --help       Show this help message"
+            echo ""
+            echo "Examples:"
+            echo "  ./install.sh                # Full installation (default)"
+            echo "  ./install.sh --core         # Cross-platform dev setup"
+            echo "  ./install.sh --minimal      # Lightweight server setup"
             echo ""
             echo "To rollback a failed installation:"
             echo "  ./scripts/install/rollback.sh"
@@ -77,12 +105,44 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Export preset for sub-scripts
+export DOTFILES_PRESET="$PRESET"
+
 # Initialise rollback state
 init_rollback_state
 
 print_header "Dotfiles Installation"
 echo "Dotfiles directory: $DOTFILES_DIR"
 echo ""
+
+# Display preset info and confirmation
+echo "Selected preset: ${CYAN}${PRESET}${NC}"
+case "$PRESET" in
+    minimal)
+        echo "Components: zsh, tmux"
+        ;;
+    core)
+        echo "Components: zsh, tmux, nvim, ghostty, AI/CLI tools, bin scripts"
+        ;;
+    full)
+        echo "Components: Everything (core + Hammerspoon, Karabiner)"
+        ;;
+esac
+echo ""
+
+# Confirmation prompt
+printf "Proceed with ${CYAN}${PRESET}${NC} installation? [y/N] "
+read -r response
+case "$response" in
+    [yY][eE][sS]|[yY])
+        echo ""
+        ;;
+    *)
+        echo ""
+        info "Installation cancelled."
+        exit 0
+        ;;
+esac
 
 # Step 1: Install/Update Homebrew
 if [[ $SKIP_BREW -eq 0 ]]; then
@@ -151,7 +211,7 @@ record_step "symlinks"
 echo ""
 print_step 6 "Installing plugin managers..."
 
-# TPM (Tmux Plugin Manager)
+# TPM (Tmux Plugin Manager) - all presets
 if [[ ! -d "$HOME/.tmux/plugins/tpm" ]]; then
     echo "Installing TPM..."
     git clone https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
@@ -161,8 +221,10 @@ else
 fi
 record_step "plugin-managers"
 
-# lazy.nvim is auto-installed by Neovim config
-echo "lazy.nvim will be auto-installed when you first open Neovim."
+# lazy.nvim is auto-installed by Neovim config (core preset and above)
+if [[ "$PRESET" == "core" || "$PRESET" == "full" ]]; then
+    echo "lazy.nvim will be auto-installed when you first open Neovim."
+fi
 
 # Step 7: Create secrets file if needed
 echo ""
@@ -195,12 +257,21 @@ cleanup_rollback_state
 # Done
 print_header "Installation Complete!"
 
+echo "Preset: $PRESET"
+echo ""
 echo "Next steps:"
-echo "  1. Restart your terminal or run: source ~/.zshrc"
-echo "  2. Open tmux and press \` + I to install plugins"
-echo "  3. Open Neovim to trigger lazy.nvim plugin installation"
-echo "  4. Install Node.js: fnm install --lts && fnm default lts-latest"
-echo "  5. Edit ~/.zsh/.secrets.zsh to add your API keys"
+STEP=1
+echo "  $STEP. Restart your terminal or run: source ~/.zshrc"
+((STEP++))
+echo "  $STEP. Open tmux and press \` + I to install plugins"
+((STEP++))
+if [[ "$PRESET" == "core" || "$PRESET" == "full" ]]; then
+    echo "  $STEP. Open Neovim to trigger lazy.nvim plugin installation"
+    ((STEP++))
+    echo "  $STEP. Install Node.js: fnm install --lts && fnm default lts-latest"
+    ((STEP++))
+fi
+echo "  $STEP. Edit ~/.zsh/.secrets.zsh to add your API keys"
 echo ""
 if [[ $SKIP_BACKUP -eq 0 ]] && [[ -d "${BACKUP_DIR:-}" ]]; then
     echo "Backup location: $BACKUP_DIR"

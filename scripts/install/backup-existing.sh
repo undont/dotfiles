@@ -9,7 +9,24 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/rollback.sh"
 
+PRESET="${DOTFILES_PRESET:-full}"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)"
+
+# Helper to check if a component should be installed for the current preset
+should_install() {
+    local required_preset="$1"
+    case "$required_preset" in
+        minimal)
+            return 0  # Always include minimal
+            ;;
+        core)
+            [[ "$PRESET" == "core" || "$PRESET" == "full" ]]
+            ;;
+        full)
+            [[ "$PRESET" == "full" ]]
+            ;;
+    esac
+}
 
 backup_if_exists() {
     local source="$1"
@@ -25,30 +42,40 @@ backup_if_exists() {
 }
 
 print_section "Backing up existing configuration files"
+echo "Preset: $PRESET"
+echo ""
 
 BACKED_UP=0
 
-# Zsh
+# Zsh (minimal)
 backup_if_exists "$HOME/.zshrc" "$BACKUP_DIR/.zshrc" && BACKED_UP=1
 backup_if_exists "$HOME/.zprofile" "$BACKUP_DIR/.zprofile" && BACKED_UP=1
 backup_if_exists "$HOME/.p10k.zsh" "$BACKUP_DIR/.p10k.zsh" && BACKED_UP=1
 backup_if_exists "$HOME/.zsh" "$BACKUP_DIR/.zsh" && BACKED_UP=1
 
-# Tmux
+# Tmux (minimal)
 backup_if_exists "$HOME/.tmux.conf" "$BACKUP_DIR/.tmux.conf" && BACKED_UP=1
 backup_if_exists "$HOME/.tmux" "$BACKUP_DIR/.tmux" && BACKED_UP=1
 
-# Neovim
-backup_if_exists "$HOME/.config/nvim" "$BACKUP_DIR/.config/nvim" && BACKED_UP=1
+# Neovim (core)
+if should_install "core"; then
+    backup_if_exists "$HOME/.config/nvim" "$BACKUP_DIR/.config/nvim" && BACKED_UP=1
+fi
 
-# Hammerspoon
-backup_if_exists "$HOME/.hammerspoon" "$BACKUP_DIR/.hammerspoon" && BACKED_UP=1
+# Hammerspoon (full)
+if should_install "full"; then
+    backup_if_exists "$HOME/.hammerspoon" "$BACKUP_DIR/.hammerspoon" && BACKED_UP=1
+fi
 
-# Ghostty
-backup_if_exists "$HOME/.config/ghostty" "$BACKUP_DIR/.config/ghostty" && BACKED_UP=1
+# Ghostty (core)
+if should_install "core"; then
+    backup_if_exists "$HOME/.config/ghostty" "$BACKUP_DIR/.config/ghostty" && BACKED_UP=1
+fi
 
-# Karabiner
-backup_if_exists "$HOME/.config/karabiner" "$BACKUP_DIR/.config/karabiner" && BACKED_UP=1
+# Karabiner (full)
+if should_install "full"; then
+    backup_if_exists "$HOME/.config/karabiner" "$BACKUP_DIR/.config/karabiner" && BACKED_UP=1
+fi
 
 echo ""
 

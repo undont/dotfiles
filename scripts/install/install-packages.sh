@@ -1,12 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Install packages from Brewfile
+# Install packages from Brewfile based on preset
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+PRESET="${DOTFILES_PRESET:-full}"
 
 print_section "Installing Homebrew Packages"
 
@@ -22,12 +23,72 @@ if ! command_exists brew; then
     exit 1
 fi
 
+# Filter Brewfile based on preset
+# The Brewfile uses section markers like "# @preset: minimal"
+# We include sections based on hierarchy: minimal < core < full
+filter_brewfile() {
+    local preset="$1"
+    local brewfile="$2"
+    local include_minimal=true
+    local include_core=false
+    local include_full=false
+
+    case "$preset" in
+        minimal)
+            include_minimal=true
+            ;;
+        core)
+            include_minimal=true
+            include_core=true
+            ;;
+        full)
+            include_minimal=true
+            include_core=true
+            include_full=true
+            ;;
+    esac
+
+    awk -v inc_min="$include_minimal" -v inc_core="$include_core" -v inc_full="$include_full" '
+    BEGIN {
+        current_section = "header"  # header lines before any preset marker
+        include = 1
+    }
+
+    # Detect preset section markers
+    /^# @preset: minimal/ {
+        current_section = "minimal"
+        include = (inc_min == "true") ? 1 : 0
+        next
+    }
+    /^# @preset: core/ {
+        current_section = "core"
+        include = (inc_core == "true") ? 1 : 0
+        next
+    }
+    /^# @preset: full/ {
+        current_section = "full"
+        include = (inc_full == "true") ? 1 : 0
+        next
+    }
+
+    # Print lines if we should include this section
+    include { print }
+    ' "$brewfile"
+}
+
+# Create filtered Brewfile
+FILTERED_BREWFILE=$(mktemp)
+trap 'rm -f "$FILTERED_BREWFILE"' EXIT
+
+echo "Filtering Brewfile for preset: $PRESET"
+filter_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile" > "$FILTERED_BREWFILE"
+
 # Install packages from Brewfile
 echo "Installing packages from Brewfile..."
 echo "This may take a while on first run."
 echo ""
 
-if brew bundle install --file="$DOTFILES_DIR/Brewfile"; then
+if brew bundle install --file="$FILTERED_BREWFILE"; then
     echo ""
     success "All packages installed successfully"
 else
