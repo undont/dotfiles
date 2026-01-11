@@ -8,6 +8,7 @@ source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/ui.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 source "$SCRIPT_DIR/_lib/session.sh"
+source "$SCRIPT_DIR/_lib/alerts.sh"
 
 require_tmux
 
@@ -62,6 +63,9 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
         exit 1
     fi
 fi
+
+# Clear all claude alerts for this session before killing
+clear_session_alerts "$SESSION_NAME"
 
 # Kill the session
 tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
