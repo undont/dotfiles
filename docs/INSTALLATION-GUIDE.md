@@ -6,6 +6,7 @@ A detailed explanation of what each step of the installation process does and wh
 
 - [Overview](#overview)
 - [Quick Start](#quick-start)
+- [Install Presets](#install-presets)
 - [Installation Steps](#installation-steps)
   - [Step 1: Install/Update Homebrew](#step-1-installupdate-homebrew)
   - [Step 2: Install Packages from Brewfile](#step-2-install-packages-from-brewfile)
@@ -28,8 +29,8 @@ The installation script (`install.sh`) orchestrates a complete development envir
 
 - **Safe**: Backs up existing configuration before making changes
 - **Recoverable**: Supports automatic rollback on failure
-- **Flexible**: Offers skip options for partial installations
-- **Transparent**: Provides detailed progress feedback
+- **Flexible**: Offers presets and skip options for customised installations
+- **Transparent**: Provides detailed progress feedback with confirmation prompts
 
 The entire process typically takes 5-15 minutes depending on network speed and existing packages.
 
@@ -42,11 +43,71 @@ The entire process typically takes 5-15 minutes depending on network speed and e
 git clone https://github.com/your-username/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
-# Run full installation
+# Run full installation (default)
 ./install.sh
+
+# Or choose a specific preset
+./install.sh --core       # Cross-platform dev setup
+./install.sh --minimal    # Lightweight server setup
 
 # Or check prerequisites only (no changes made)
 ./install.sh --check-only
+```
+
+---
+
+## Install Presets
+
+The installer supports three presets to customise what gets installed:
+
+| Preset | Flag | Components | Use Case |
+|--------|------|------------|----------|
+| **Minimal** | `--minimal` | zsh, tmux | Servers, remote machines, SSH environments |
+| **Core** | `--core` | + nvim, ghostty, AI/CLI tools, session launch scripts | Linux desktop, cross-platform development |
+| **Full** | `--full` | + Hammerspoon, Karabiner | macOS power user (default) |
+
+### Preset Details
+
+**Minimal** (`--minimal`):
+- Shell: zsh with Powerlevel10k prompt
+- Terminal multiplexer: tmux with custom keybindings
+- Ideal for: SSH servers, containers, remote development
+
+**Core** (`--core`):
+- Everything in Minimal, plus:
+- Editor: Neovim with LSP, Telescope, and plugins
+- Terminal: Ghostty configuration
+- AI Tools: Claude Code, development CLI tools
+- Custom scripts: `tnew`, `dana`
+- Ideal for: Linux desktops, cross-platform setups
+
+**Full** (`--full`, default):
+- Everything in Core, plus:
+- Hammerspoon: macOS window automation
+- Karabiner Elements: keyboard customisation
+- Ideal for: macOS primary workstations
+
+### How Presets Work
+
+1. **Brewfile filtering**: The `Brewfile` is organised into sections marked with `# @preset: minimal/core/full`. Only packages for your selected preset (and below) are installed.
+
+2. **Selective symlinks**: Only configuration files relevant to your preset are symlinked.
+
+3. **Targeted prerequisites**: The prerequisite check only validates tools needed for your preset.
+
+4. **Confirmation prompt**: Before installation begins, you'll see which preset is selected and be asked to confirm.
+
+```
+╔════════════════════════════════════════════╗
+║           Dotfiles Installation            ║
+╚════════════════════════════════════════════╝
+
+Dotfiles directory: /Users/you/dotfiles
+
+Selected preset: core
+Components: zsh, tmux, nvim, ghostty, AI/CLI tools, session launch scripts
+
+Proceed with core installation? [y/N]
 ```
 
 ---
@@ -243,9 +304,9 @@ Ghostty:
 Karabiner:
   ~/.config/karabiner/karabiner.json -> ~/dotfiles/karabiner/karabiner.json
 
-Custom Scripts:
-  ~/.local/bin/tm    -> ~/dotfiles/bin/tm
-  ~/.local/bin/dana  -> ~/dotfiles/bin/dana
+Session Launchers:
+  ~/.local/launchers/tnew  -> ~/dotfiles/launchers/tnew
+  ~/.local/launchers/dana  -> ~/dotfiles/launchers/dana
 ```
 
 **What you'll see**:
@@ -348,7 +409,7 @@ The health check confirms the installation completed successfully. It catches is
 | TPM | `~/.tmux/plugins/tpm` exists |
 | lazy.nvim | `~/.local/share/nvim/lazy` exists (after first nvim launch) |
 | Secrets | `~/.zsh/.secrets.zsh` exists with mode 600 |
-| Scripts | `tm` and `dana` commands are in PATH |
+| Scripts | `tnew` and `dana` commands are in PATH |
 
 **What you'll see**:
 ```
@@ -365,6 +426,16 @@ Installation complete!
 
 ## Command-Line Options
 
+### Presets
+
+| Option | Description |
+|--------|-------------|
+| `--minimal` | Install zsh + tmux only (servers, remote machines) |
+| `--core` | Install zsh, tmux, nvim, ghostty, AI/CLI tools |
+| `--full` | Install everything including macOS apps (default) |
+
+### Other Options
+
 | Option | Description |
 |--------|-------------|
 | `--skip-brew` | Skip Homebrew installation and package installation (steps 1-2) |
@@ -374,14 +445,20 @@ Installation complete!
 
 **Examples**:
 ```bash
-# Full installation
+# Full installation (default)
 ./install.sh
+
+# Cross-platform dev setup
+./install.sh --core
+
+# Lightweight server setup
+./install.sh --minimal
 
 # Skip Homebrew (if packages already installed)
 ./install.sh --skip-brew
 
-# Skip backup (if you're sure you don't need it)
-./install.sh --skip-backup
+# Combine options
+./install.sh --core --skip-backup
 
 # Just check if everything is set up correctly
 ./install.sh --check-only

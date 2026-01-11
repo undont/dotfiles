@@ -153,3 +153,27 @@ get_script_dir() {
 get_lib_path() {
     echo "$(get_script_dir)/_lib"
 }
+
+# Check if a component should be installed based on preset hierarchy
+# Usage: should_install "core" returns true if preset is core or full
+# Requires PRESET variable to be set (defaults to "full")
+should_install() {
+    local required_preset="$1"
+    local current_preset="${PRESET:-full}"
+
+    case "$required_preset" in
+        minimal)
+            return 0  # Always include minimal
+            ;;
+        core)
+            [[ "$current_preset" == "core" || "$current_preset" == "full" ]]
+            ;;
+        full)
+            [[ "$current_preset" == "full" ]]
+            ;;
+        *)
+            error "Unknown preset: $required_preset"
+            return 1
+            ;;
+    esac
+}
