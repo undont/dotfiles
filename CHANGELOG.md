@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - Claude alerts now properly cleared when killing windows or sessions (prevents orphaned alerts)
 - Window timestamp hook clears alerts as safety net when switching windows
+- alerts.sh: prevent errexit from triggering on grep exit code 1
 
 ## [0.1.0] - 2026-01-10
 
