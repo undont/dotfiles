@@ -188,6 +188,23 @@ cd ~/dotfiles && git pull
 
 Then reload your shell: `source ~/.zshrc`
 
+## Uninstalling
+
+To remove the dotfiles installation:
+
+```bash
+# Remove symlinks only
+./scripts/install/uninstall.sh
+
+# Remove symlinks and restore original configs from backup
+./scripts/install/uninstall.sh --restore-backup
+
+# Full uninstall including Homebrew packages
+./scripts/install/uninstall.sh --restore-backup --remove-brew-packages
+```
+
+The uninstall script uses your saved preset to determine which packages to remove.
+
 ## Key Features
 
 ### Zsh

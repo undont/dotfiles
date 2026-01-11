@@ -6,10 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.1.5] - 2026-01-11
+## [0.1.6] - 2026-01-11
+
+### Added
+- `uninstall.sh` script with preset-aware Homebrew package removal
+- Inline backup during symlink creation (handles existing files gracefully)
+- Rollback now works from backups even after successful installation
 
 ### Changed
 - Replaced deprecated `neofetch` with `fastfetch` (faster, actively maintained)
+- Prerequisites check now uses app paths for casks (Ghostty, Karabiner)
+- nvim-treesitter updated to new API (no longer uses deprecated `.configs` module)
 
 ### Fixed
 - Homebrew PATH not available in step 2 of fresh installations (subshell PATH issue)
@@ -17,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Removed deprecated `homebrew/bundle` and `homebrew/cask-fonts` taps
 - `sqld` formula not found (now uses `libsql/sqld` tap)
 - `speedtest` formula not found (now uses `teamookla/speedtest` tap)
+- Removed `turso` (build issues on ARM)
+- Invalid Ghostty keybind removed
+- Symlinks now created even when files already exist (backed up inline)
+- First-time nvim launch no longer errors (pcall fallback for treesitter)
 
 ## [0.1.4] - 2026-01-11
 
