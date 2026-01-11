@@ -11,6 +11,7 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 source "$SCRIPT_DIR/_lib/session.sh"
+source "$SCRIPT_DIR/_lib/alerts.sh"
 
 require_tmux
 
@@ -91,6 +92,9 @@ WINDOW_COUNT=$(get_window_count "$TARGET_SESSION")
 if [[ "$TARGET_SESSION" == "$CURRENT_SESSION" && "$WINDOW_COUNT" -eq 1 ]]; then
     switch_to_other_session "$TARGET_SESSION" || true
 fi
+
+# Clear any claude alert for this window before killing
+clear_window_alert "$TARGET_SESSION" "$WINDOW_NAME"
 
 # Kill the window
 tmux kill-window -t "$WINDOW_TARGET"
