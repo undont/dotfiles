@@ -20,6 +20,13 @@ if [[ -z "$SSH_CONNECTION" && -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-p
 fi
 
 # =============================================================================
+# STARTUP PROFILING (optional)
+# =============================================================================
+# Enable with: ZPROF=1 zsh -i -c exit
+# Or use: zsh-profile-detailed
+[[ -n "$ZPROF" ]] && zmodload zsh/zprof
+
+# =============================================================================
 # PLATFORM DETECTION
 # =============================================================================
 # Detect platform for conditional configuration (must be before Homebrew-installed tools)
@@ -286,3 +293,44 @@ export KEYTIMEOUT=1                    # Wait 10ms for more chars after ESC
 # Ensure common word deletion shortcuts work correctly
 bindkey '^[^?' backward-kill-word      # Option+Backspace: delete word backwards
 bindkey '^W' backward-kill-word        # Ctrl+W: delete word backwards
+
+# =============================================================================
+# DOTFILES CLI
+# =============================================================================
+# Tab completion for dotfiles command
+_dotfiles() {
+  local -a commands
+  commands=(
+    'update:Pull latest changes and re-run installer'
+    'status:Show sync status and quick health summary'
+    'health:Run full health check'
+    'edit:Open dotfiles directory in $EDITOR'
+    'cd:Print dotfiles path'
+    'sync:Fetch from origin and show what'\''s changed'
+    'help:Show help message'
+  )
+  _describe 'dotfiles command' commands
+}
+compdef _dotfiles dotfiles
+
+# =============================================================================
+# SHELL STARTUP PROFILING
+# =============================================================================
+# Quick benchmark: runs zsh 5 times and shows startup time
+zsh-profile() {
+  echo "Running 5 iterations..."
+  for i in {1..5}; do
+    time zsh -i -c exit
+  done
+}
+
+# Detailed profiling: shows what's taking time during startup
+zsh-profile-detailed() {
+  ZPROF=1 zsh -i -c exit
+}
+
+# =============================================================================
+# ZPROF OUTPUT (end of startup)
+# =============================================================================
+# Print profiling results if ZPROF is set
+[[ -n "$ZPROF" ]] && zprof

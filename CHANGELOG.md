@@ -6,6 +6,36 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.3] - 2026-01-11
+
+### Added
+- **Dotfiles CLI** (`scripts/dotfiles`): Manage your installation with simple commands
+  - `dotfiles update`: Pull latest changes and re-run installer with saved preset
+  - `dotfiles status`: Show sync status and local changes
+  - `dotfiles sync`: Preview incoming changes without applying
+  - `dotfiles health`: Run full health check
+  - `dotfiles edit`: Open dotfiles directory in $EDITOR
+  - `dotfiles cd`: Print dotfiles path for navigation
+- `launchers/code`: VS Code dynamic launcher using macOS Spotlight
+- `visual-studio-code` and `docker` casks to Brewfile (Containers & Infrastructure section)
+- Tmux status bar sync indicator (↓↑↕) shows when dotfiles are behind/ahead of origin
+- Shell startup profiling with `zsh-profile` and `zsh-profile-detailed` functions
+- Tab completion for `dotfiles` command in zsh
+- **Nvim LSP/Treesitter**: Expanded language support
+  - LSP servers: bashls, cssls, html, jsonls, yamlls
+  - Treesitter parsers: C#, CSS, Go, JavaScript, JSON, Python, TypeScript/TSX, YAML
+  - Formatters: goimports, prettier (JS/TS/JSON/YAML)
+  - Linter: golangci-lint
+
+### Changed
+- Dotfiles CLI installed to `~/.local/bin/dotfiles` (XDG-compliant)
+- Installer saves preset to `~/.config/dotfiles/preset` for future updates
+- Nvim Mason tool installer reorganised for clearer LSP server vs formatter/linter separation
+
+### Fixed
+- Header centering calculation in `print_header` function
+- Nvim LSP cursor position errors when jumping to invalid locations
+
 ## [0.1.2] - 2026-01-11
 
 ### Added

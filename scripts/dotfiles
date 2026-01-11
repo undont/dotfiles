@@ -1,0 +1,255 @@
+#!/usr/bin/env bash
+# Dotfiles CLI - manage your dotfiles installation
+# Usage: dotfiles <command> [options]
+#
+# Commands:
+#   update    Pull latest changes and re-run installer
+#   status    Show sync status and quick health summary
+#   health    Run full health check
+#   edit      Open dotfiles directory in $EDITOR
+#   cd        Print dotfiles path (use: cd "$(dotfiles cd)")
+#   sync      Fetch from origin and show what's changed
+#   help      Show this help message
+
+set -euo pipefail
+
+# Detect script location to find DOTFILES_DIR
+SCRIPT_PATH="${BASH_SOURCE[0]}"
+# Resolve symlinks to find the real script location
+while [[ -L "$SCRIPT_PATH" ]]; do
+    SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+    SCRIPT_PATH="$(readlink "$SCRIPT_PATH")"
+    [[ "$SCRIPT_PATH" != /* ]] && SCRIPT_PATH="$SCRIPT_DIR/$SCRIPT_PATH"
+done
+SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
+
+# DOTFILES_DIR is parent of scripts/
+DOTFILES_DIR="${DOTFILES_DIR:-$(dirname "$SCRIPT_DIR")}"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+PRESET_FILE="$CONFIG_DIR/preset"
+
+# Source common utilities
+# shellcheck disable=SC1091
+source "$DOTFILES_DIR/scripts/_lib/common.sh"
+
+# Get the saved preset or default to full
+get_preset() {
+    if [[ -f "$PRESET_FILE" ]]; then
+        cat "$PRESET_FILE"
+    else
+        echo "full"
+    fi
+}
+
+# Get the default remote branch
+get_remote_branch() {
+    cd "$DOTFILES_DIR"
+    local ref
+    ref=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null) || {
+        # Fallback: try common names
+        if git rev-parse --verify origin/main &>/dev/null; then
+            echo "origin/main"
+        elif git rev-parse --verify origin/master &>/dev/null; then
+            echo "origin/master"
+        else
+            echo "origin/main"  # Default guess
+        fi
+        return
+    }
+    echo "${ref#refs/remotes/}"
+}
+
+cmd_update() {
+    local preset remote_branch
+
+    cd "$DOTFILES_DIR"
+
+    preset=$(get_preset)
+    remote_branch=$(get_remote_branch)
+    local_branch=$(git rev-parse --abbrev-ref HEAD)
+
+    print_header "Dotfiles Update"
+
+    info "Current preset: $preset"
+    info "Branch: $local_branch (tracking ${remote_branch})"
+    echo ""
+
+    # Fetch and check status
+    info "Fetching from origin..."
+    git fetch origin --quiet
+
+    local behind ahead
+    behind=$(git rev-list HEAD.."$remote_branch" --count 2>/dev/null) || behind=0
+    ahead=$(git rev-list "$remote_branch"..HEAD --count 2>/dev/null) || ahead=0
+
+    if [[ $behind -eq 0 && $ahead -eq 0 ]]; then
+        success "Already up-to-date!"
+        echo ""
+        return 0
+    fi
+
+    if [[ $ahead -gt 0 ]]; then
+        warn "You have $ahead unpushed commit(s)"
+    fi
+
+    if [[ $behind -gt 0 ]]; then
+        info "Pulling $behind new commit(s)..."
+        echo ""
+        git pull --ff-only origin "$local_branch" || {
+            error "Pull failed. You may have local changes that conflict."
+            echo "Try: cd $DOTFILES_DIR && git status"
+            return 1
+        }
+        echo ""
+
+        # Re-run installer with saved preset
+        info "Re-running installer with --$preset preset..."
+        echo ""
+        "$DOTFILES_DIR/install.sh" "--$preset" --skip-backup
+    fi
+}
+
+cmd_status() {
+    cd "$DOTFILES_DIR"
+
+    local preset remote_branch behind ahead
+
+    preset=$(get_preset)
+    remote_branch=$(get_remote_branch)
+
+    print_header "Dotfiles Status"
+
+    # Git status
+    info "Preset: $preset"
+    info "Directory: $DOTFILES_DIR"
+    info "Branch: $(git rev-parse --abbrev-ref HEAD)"
+    echo ""
+
+    # Fetch quietly
+    git fetch origin --quiet 2>/dev/null || true
+
+    behind=$(git rev-list HEAD.."$remote_branch" --count 2>/dev/null) || behind=0
+    ahead=$(git rev-list "$remote_branch"..HEAD --count 2>/dev/null) || ahead=0
+
+    if [[ $behind -eq 0 && $ahead -eq 0 ]]; then
+        success "Up-to-date with $remote_branch"
+    else
+        if [[ $behind -gt 0 ]]; then
+            warn "$behind commit(s) behind $remote_branch"
+        fi
+        if [[ $ahead -gt 0 ]]; then
+            warn "$ahead commit(s) ahead of $remote_branch"
+        fi
+    fi
+
+    # Local changes
+    if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
+        echo ""
+        warn "Uncommitted local changes:"
+        git status --short
+    fi
+
+    echo ""
+}
+
+cmd_health() {
+    "$DOTFILES_DIR/scripts/install/health-check.sh"
+}
+
+cmd_edit() {
+    cd "$DOTFILES_DIR"
+    ${EDITOR:-vim} .
+}
+
+cmd_cd() {
+    echo "$DOTFILES_DIR"
+}
+
+cmd_sync() {
+    cd "$DOTFILES_DIR"
+
+    local remote_branch behind
+
+    remote_branch=$(get_remote_branch)
+
+    info "Fetching from origin..."
+    git fetch origin --quiet
+
+    behind=$(git rev-list HEAD.."$remote_branch" --count 2>/dev/null) || behind=0
+
+    if [[ $behind -eq 0 ]]; then
+        success "Already up-to-date with $remote_branch"
+        return 0
+    fi
+
+    echo ""
+    info "$behind new commit(s) available:"
+    echo ""
+    git log --oneline HEAD.."$remote_branch"
+    echo ""
+    info "Run 'dotfiles update' to apply these changes."
+}
+
+cmd_help() {
+    cat << 'EOF'
+Dotfiles CLI - manage your dotfiles installation
+
+Usage: dotfiles <command> [options]
+
+Commands:
+  update    Pull latest changes and re-run installer with saved preset
+  status    Show sync status, preset, and local changes
+  health    Run full health check (symlinks, plugins, secrets)
+  edit      Open dotfiles directory in $EDITOR
+  cd        Print dotfiles path (use: cd "$(dotfiles cd)")
+  sync      Fetch from origin and show what's new (without applying)
+  help      Show this help message
+
+Examples:
+  dotfiles status          # Check if updates are available
+  dotfiles update          # Pull and re-install
+  dotfiles sync            # Preview incoming changes
+  cd "$(dotfiles cd)"      # Navigate to dotfiles directory
+
+Configuration:
+  Preset is saved to ~/.config/dotfiles/preset during installation.
+  The 'update' command re-uses your saved preset (minimal/core/full).
+EOF
+}
+
+# Main dispatch
+main() {
+    local cmd="${1:-help}"
+
+    case "$cmd" in
+        update)
+            cmd_update
+            ;;
+        status)
+            cmd_status
+            ;;
+        health)
+            cmd_health
+            ;;
+        edit)
+            cmd_edit
+            ;;
+        cd)
+            cmd_cd
+            ;;
+        sync)
+            cmd_sync
+            ;;
+        help|--help|-h)
+            cmd_help
+            ;;
+        *)
+            error "Unknown command: $cmd"
+            echo ""
+            cmd_help
+            exit 1
+            ;;
+    esac
+}
+
+main "$@"

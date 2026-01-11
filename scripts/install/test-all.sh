@@ -84,6 +84,9 @@ if [[ -f "$SCRIPT_DIR/../_lib/test.sh" ]]; then
     run_test_suite "Installation Library Tests" "$SCRIPT_DIR/../_lib/test.sh"
 fi
 
+run_test_suite "Dotfiles Status Indicator Tests" "$DOTFILES_DIR/tmux/.tmux/scripts/tests/test-dotfiles-status.sh"
+run_test_suite "Dotfiles CLI Tests" "$DOTFILES_DIR/scripts/tests/test-dotfiles-cli.sh"
+
 # Integration tests (require tmux)
 if [[ "$RUN_INTEGRATION" == "--integration" ]]; then
     if [[ -n "${TMUX:-}" ]]; then

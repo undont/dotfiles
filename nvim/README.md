@@ -152,12 +152,31 @@ Press **`Space h`** in normal mode to open the keybinding help popup.
 
 LSP servers are managed by Mason. The following are configured:
 
+- **Bash** - bashls
 - **C/C++** - clangd
+- **C#** - omnisharp
+- **CSS** - cssls
 - **Go** - gopls
+- **HTML** - html
+- **JSON** - jsonls
+- **Lua** - lua_ls (with Neovim API support)
 - **Python** - pyright
 - **JavaScript/TypeScript** - ts_ls
-- **Lua** - lua_ls (with Neovim API support)
-- **C#** - omnisharp
+- **YAML** - yamlls
+
+### Formatters & Linters
+
+The following formatters and linters are automatically installed:
+
+**Formatters:**
+- stylua (Lua)
+- prettier (JS/TS/JSON/YAML)
+- goimports + gofmt (Go)
+- csharpier (C#)
+
+**Linters:**
+- eslint_d (JavaScript/TypeScript)
+- golangci-lint (Go)
 
 ### Installing Additional LSP Servers
 

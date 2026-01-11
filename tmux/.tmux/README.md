@@ -330,6 +330,12 @@ Available session backups:
 │   │   ├── session.sh                    # Session management utilities
 │   │   ├── test.sh                       # Test suite for libraries
 │   │   └── ui.sh                         # Terminal UI (dialogs, prompts)
+│   ├── tests/                            # Test suites
+│   │   └── test-dotfiles-status.sh       # Tests for dotfiles sync indicator
+│   ├── claude-alerts.sh                  # Status bar: Claude alerts (⚡)
+│   ├── clear-claude-alert.sh             # Clear Claude alerts for window
+│   ├── dotfiles-status.sh                # Status bar: sync indicator (↓↑↕)
+│   ├── duplicate-window.sh               # Duplicate window (Opt+Shift+d)
 │   ├── kill-pane.sh                      # Kill pane (Opt+s, saves state)
 │   ├── kill-session.sh                   # Kill session (picker, with confirm)
 │   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
@@ -351,7 +357,8 @@ Available session backups:
 
 ~/.local/launchers/
 ├── tnew                                  # Dev session launcher
-└── dana                                  # Dana project launcher
+├── dana                                  # Dana project launcher
+└── code                                  # VS Code dynamic launcher
 ```
 
 ---
@@ -443,7 +450,7 @@ Key settings:
 - Auto-rename: shows directory name or running command
 - Auto-save: every 1 minute
 - Status refresh: every 2 seconds
-- Status bar: shows zoom indicator (yellow `Z`), CPU (⚙), RAM (☰), and battery % with Dracula-themed colour indicators
+- Status bar: shows dotfiles sync indicator (↓↑↕ cyan), Claude alerts (⚡ yellow), zoom indicator (cyan `Z`), CPU (⚙), RAM (☰), and battery % with Dracula-themed colour indicators
 - Status bar time: background aligned with powerlevel10k right prompt edge
 - Bell monitoring: windows are highlighted in red when they send a bell (used by Claude Code hooks to signal when attention is needed)
 

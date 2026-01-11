@@ -26,7 +26,7 @@
 ┌─ TEXT OBJECTS / SURROUND ────────────┬─ TOOLS ──────────────────────────┐
 │                                      │                                  │
 │  iw / aw             inner/around    │  Space e           file tree     │
-│  i" / i( / i{        inside quotes   │  Space g           git (neogit)  │
+│  i" / i( / i{        inside quotes   │  Space g           git (lazygit) │
 │                                      │  Space f           format file   │
 │  saiw"               surround add    │  Space q           diagnostics   │
 │  sd'                 surround del    │                                  │
