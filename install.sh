@@ -268,6 +268,15 @@ print_step 8 "Running health check..."
 "$DOTFILES_DIR/scripts/install/health-check.sh" || true
 record_step "health-check"
 
+# Step 9: Save preset for future updates
+echo ""
+print_step 9 "Saving preset configuration..."
+PRESET_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+mkdir -p "$PRESET_CONFIG_DIR"
+echo "$PRESET" > "$PRESET_CONFIG_DIR/preset"
+success "Preset '$PRESET' saved to $PRESET_CONFIG_DIR/preset"
+record_step "save-preset"
+
 # Clean up rollback state on success
 cleanup_rollback_state
 

@@ -123,12 +123,38 @@ return {
       -- LSP capabilities with blink.cmp
       local capabilities = require('blink.cmp').get_lsp_capabilities()
 
+      -- Override show_document to handle cursor position errors
+      local show_document = vim.lsp.util.show_document
+      vim.lsp.util.show_document = function(location, offset_encoding, opts)
+        -- Try to show the document, catching cursor position errors
+        local ok, ret = pcall(show_document, location, offset_encoding, opts)
+
+        if not ok then
+          -- If error contains "Cursor position outside buffer", try to handle it
+          if ret:match 'Cursor position outside buffer' then
+            -- Open the file without jumping to the position
+            local uri = location.uri or location.targetUri
+            if uri then
+              vim.cmd('edit ' .. vim.uri_to_fname(uri))
+              vim.notify('Jumped to file (cursor position was invalid)', vim.log.levels.WARN)
+              return true
+            end
+          end
+          -- Re-throw other errors
+          error(ret)
+        end
+
+        return ret
+      end
+
       -- Server configurations
       local servers = {
+        bashls = {},
         clangd = {},
+        cssls = {},
         gopls = {},
-        pyright = {},
-        ts_ls = {},
+        html = {},
+        jsonls = {},
         lua_ls = {
           settings = {
             Lua = {
@@ -144,21 +170,14 @@ return {
             return require('lspconfig.util').root_pattern('*.slnx', '*.sln')(fname) or vim.loop.cwd()
           end,
         },
+        pyright = {},
+        ts_ls = {},
+        yamlls = {},
       }
 
-      -- Tools to install
-      local ensure_installed = vim.tbl_keys(servers or {})
-      vim.list_extend(ensure_installed, {
-        'stylua',
-        'eslint_d',
-        'prettier',
-        'csharpier',
-      })
-
-      require('mason-tool-installer').setup { ensure_installed = ensure_installed }
-
+      -- Setup LSP servers with mason-lspconfig
       require('mason-lspconfig').setup {
-        ensure_installed = {},
+        ensure_installed = vim.tbl_keys(servers or {}),
         automatic_installation = false,
         handlers = {
           function(server_name)
@@ -166,6 +185,33 @@ return {
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
           end,
+        },
+      }
+
+      -- Install additional tools (formatters, linters)
+      -- Note: These are NOT LSP servers, just CLI tools
+      require('mason-tool-installer').setup {
+        ensure_installed = {
+          -- LSP servers
+          'bashls',
+          'clangd',
+          'cssls',
+          'gopls',
+          'html',
+          'jsonls',
+          'lua_ls',
+          'omnisharp',
+          'pyright',
+          'ts_ls',
+          'yamlls',
+          -- Formatters
+          'csharpier',
+          'goimports',
+          'prettier',
+          'stylua',
+          -- Linters
+          'eslint_d',
+          'golangci-lint',
         },
       }
     end,
@@ -199,13 +245,22 @@ return {
         }
       end,
       formatters_by_ft = {
-        lua = { 'stylua' },
         csharp = { 'csharpier' },
-        go = { 'gofmt' },
+        go = { 'goimports', 'gofmt' },
+        javascript = { 'prettier' },
+        javascriptreact = { 'prettier' },
+        json = { 'prettier' },
+        lua = { 'stylua' },
+        typescript = { 'prettier' },
+        typescriptreact = { 'prettier' },
+        yaml = { 'prettier' },
       },
       formatters = {
         csharpier = {
           command = vim.fn.stdpath 'data' .. '/mason/packages/csharpier/csharpier',
+        },
+        goimports = {
+          command = vim.fn.stdpath 'data' .. '/mason/bin/goimports',
         },
       },
     },

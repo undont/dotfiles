@@ -29,6 +29,7 @@ brew "direnv"
 
 # Editors
 brew "neovim"                 # >= 0.9 required for lazy.nvim
+cask "visual-studio-code"
 
 # AI Coding Assistants
 brew "opencode"
@@ -84,7 +85,8 @@ brew "mongosh"
 brew "turso"
 brew "sqld"
 
-# Cloud & Infrastructure
+# Containers & Infrastructure
+cask "docker"
 brew "act"                    # GitHub Actions locally
 
 # Misc Dev Tools

@@ -219,6 +219,19 @@ direnv allow
 | `dot`      | `cd ~/dotfiles`                 | Navigate to dotfiles directory     |
 | `claudeconfig` | `cd ~/claude-config`        | Navigate to claude-config directory |
 
+### Dotfiles CLI
+
+| Command          | Description                                        |
+| ---------------- | -------------------------------------------------- |
+| `dotfiles update` | Pull latest changes and re-run installer          |
+| `dotfiles status` | Show sync status and local changes                |
+| `dotfiles sync`  | Preview incoming changes without applying          |
+| `dotfiles health` | Run full health check                             |
+| `dotfiles edit`  | Open dotfiles directory in $EDITOR                 |
+| `dotfiles cd`    | Print dotfiles path (use: `cd "$(dotfiles cd)"`)  |
+
+Tab completion is available for all dotfiles commands.
+
 | Function       | Usage                        | Description                                                                                                                                    |
 | -------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tattach <name>` | `tattach myproject`        | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
@@ -228,15 +241,16 @@ direnv allow
 
 ### Tab Completion
 
-Custom tab completion is enabled for tmux session management commands:
+Custom tab completion is enabled for these commands:
 
 | Command    | Completion Source          | Description                       |
 | ---------- | -------------------------- | --------------------------------- |
+| `dotfiles` | CLI subcommands            | Lists available commands (update, status, etc.) |
 | `trestore` | Saved session backups      | Lists `~/.tmux/resurrect/sessions/*.txt` |
 | `tkill`    | Running tmux sessions      | Lists currently active sessions   |
 | `tattach`  | Running tmux sessions      | Lists currently active sessions   |
 
-**Usage:** Type the command and press `Tab` to see available sessions.
+**Usage:** Type the command and press `Tab` to see available options.
 
 ---
 
@@ -245,13 +259,13 @@ Custom tab completion is enabled for tmux session management commands:
 The PATH is built from multiple sources:
 
 ```
-$HOME/bin                           # User scripts
+$HOME/.local/bin                    # User scripts, dotfiles CLI
 /opt/homebrew/bin                   # Homebrew (Apple Silicon)
 /opt/homebrew/opt/openjdk/bin       # Java
 $GOPATH/bin                         # Go binaries
-$HOME/.local/bin                    # Python pipx
 $HOME/.bun/bin                      # Bun runtime
 $ANDROID_HOME/platform-tools        # Android SDK
+$HOME/.local/launchers              # Session launchers (from .zprofile)
 JetBrains Toolbox scripts           # (from .zprofile)
 Google Cloud SDK                    # (lazy loaded)
 fnm-managed Node.js                 # (~5ms init, auto-switches on cd)
@@ -497,16 +511,24 @@ The prompt appears immediately by caching the previous prompt state. This is han
 
 ### Profiling Startup Time
 
-To measure your shell startup time:
+Built-in profiling functions are available:
+
+```bash
+# Quick benchmark (runs 5 iterations)
+zsh-profile
+
+# Detailed profiling (shows what's taking time)
+zsh-profile-detailed
+```
+
+Or manually measure startup time:
 
 ```bash
 # Quick measurement
 time zsh -i -c exit
 
-# Detailed profiling (add to top of .zshrc temporarily)
-zmodload zsh/zprof
-# ... then at the end of .zshrc:
-zprof
+# Enable ZPROF for a single session
+ZPROF=1 zsh -i -c exit
 ```
 
 ### Maintenance
