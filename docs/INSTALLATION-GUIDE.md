@@ -20,6 +20,7 @@ A detailed explanation of what each step of the installation process does and wh
 - [Post-Installation](#post-installation)
 - [What Gets Installed](#what-gets-installed)
 - [Error Handling and Rollback](#error-handling-and-rollback)
+- [Uninstalling](#uninstalling)
 
 ---
 
@@ -171,7 +172,7 @@ The Brewfile is a declarative list of all tools needed for the development envir
 | Git Tools | gh (GitHub CLI), lazygit |
 | Search & Navigation | ripgrep, fd, tree, jq, bat |
 | Languages | fnm (Node.js), bun, Go, Python 3.13 |
-| Databases | PostgreSQL, mongosh, turso |
+| Databases | PostgreSQL, mongosh, sqld |
 | macOS Apps | ghostty, hammerspoon, karabiner-elements |
 | Fonts | Meslo LG Nerd Font, JetBrains Mono Nerd Font |
 
@@ -208,7 +209,7 @@ This step catches configuration issues early. If a required tool isn't properly 
 | Core | git, zsh, tmux, nvim, fzf, go, ripgrep | fd, bat |
 | Development | gh, direnv, jq, tree, shellcheck | fnm, python3 |
 | AI & Tools | claude, dotnet, cmake | gcloud |
-| Databases | psql, mongosh, turso | - |
+| Databases | psql, mongosh, sqld | - |
 | macOS | Karabiner Elements | Hammerspoon |
 
 **What you'll see**:
@@ -599,6 +600,28 @@ cp ~/.dotfiles-backup/YYYYMMDD-HHMMSS/.tmux.conf ~/.tmux.conf
 # Or restore everything
 cp -r ~/.dotfiles-backup/YYYYMMDD-HHMMSS/.* ~/
 ```
+
+### Uninstalling
+
+To completely remove the dotfiles installation:
+
+```bash
+# Remove symlinks only
+./scripts/install/uninstall.sh
+
+# Remove symlinks and restore original configs
+./scripts/install/uninstall.sh --restore-backup
+
+# Full uninstall including Homebrew packages
+./scripts/install/uninstall.sh --restore-backup --remove-brew-packages
+```
+
+The uninstall script:
+- Removes all symlinks created during installation
+- Optionally restores files from your most recent backup
+- Optionally removes Homebrew packages (filtered by your saved preset)
+- Removes TPM plugins (with confirmation)
+- Cleans up the preset configuration file
 
 ---
 

@@ -27,11 +27,19 @@ create_link() {
         rm "$dest"
     fi
 
-    # Fail if destination exists and is not a symlink
+    # If destination exists and is not a symlink, back it up inline
     if [[ -e "$dest" ]]; then
-        printf "${RED}FAILED:${NC} %s already exists and is not a symlink\n" "$dest"
-        FAILED=1
-        return 1
+        local backup_base="$HOME/.dotfiles-backup"
+        local backup_dir
+        backup_dir="$backup_base/inline-$(date +%Y%m%d-%H%M%S)-$$"
+        mkdir -p "$backup_dir"
+
+        local relative_path="${dest#"$HOME"/}"
+        local backup_path="$backup_dir/$relative_path"
+        mkdir -p "$(dirname "$backup_path")"
+
+        mv "$dest" "$backup_path"
+        printf "${YELLOW}Backed up:${NC} %s -> %s\n" "$dest" "$backup_path"
     fi
 
     # Create symlink

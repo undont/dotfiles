@@ -18,8 +18,8 @@ DESCRIPTION:
       • Core tools (git, tmux, zsh, neovim, etc.)
       • AI & development tools (claude, dotnet, etc.)
       • Database clients (psql, mongosh, turso)
-      • Utilities (neofetch, speedtest, glow)
-      • macOS applications (Karabiner)
+      • Utilities (fastfetch, speedtest, glow)
+      • macOS applications (Karabiner, Ghostty)
       • Optional but recommended tools
 
     This script is automatically run by install.sh but can be run standalone
@@ -89,8 +89,18 @@ if should_install "core"; then
     echo "Required - Editor & Dev Tools:"
     echo "------------------------------"
     check "neovim" "nvim" "brew install neovim"
-    check "ghostty" "ghostty" "brew install --cask ghostty"
-    check "bun" "bun" "brew install bun"
+    # ghostty is checked via app existence (cask installs to /Applications)
+    if is_macos; then
+        printf "Checking %-20s" "ghostty..."
+        if [[ -d "/Applications/Ghostty.app" ]]; then
+            printf "${GREEN}OK${NC}\n"
+        else
+            printf "${RED}MISSING${NC}\n"
+            printf "  ${YELLOW}Install with:${NC} brew install --cask ghostty\n"
+            FAILED=1
+        fi
+    fi
+    check "bun" "bun" "brew install oven-sh/bun/bun"
     check "go" "go" "brew install go"
     check "ripgrep" "rg" "brew install ripgrep"
     check "lazygit" "lazygit" "brew install lazygit"
@@ -115,14 +125,13 @@ if should_install "core"; then
     echo "---------------------"
     check "postgresql" "psql" "brew install postgresql@14"
     check "mongosh" "mongosh" "brew install mongosh"
-    check "turso" "turso" "brew install turso"
-    check "sqld" "sqld" "brew install sqld"
+    check "sqld" "sqld" "brew install libsql/sqld/sqld"
 
     echo ""
     echo "Required - Utilities:"
     echo "---------------------"
-    check "neofetch" "neofetch" "brew install neofetch"
-    check "speedtest" "speedtest" "brew install speedtest"
+    check "fastfetch" "fastfetch" "brew install fastfetch"
+    check "speedtest" "speedtest" "brew install teamookla/speedtest/speedtest"
     check "glow" "glow" "brew install glow"
 fi
 
