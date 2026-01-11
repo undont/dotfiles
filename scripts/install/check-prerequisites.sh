@@ -89,9 +89,16 @@ if should_install "core"; then
     echo "Required - Editor & Dev Tools:"
     echo "------------------------------"
     check "neovim" "nvim" "brew install neovim"
-    # ghostty is macOS-only (cask)
+    # ghostty is checked via app existence (cask installs to /Applications)
     if is_macos; then
-        check "ghostty" "ghostty" "brew install --cask ghostty"
+        printf "Checking %-20s" "ghostty..."
+        if [[ -d "/Applications/Ghostty.app" ]]; then
+            printf "${GREEN}OK${NC}\n"
+        else
+            printf "${RED}MISSING${NC}\n"
+            printf "  ${YELLOW}Install with:${NC} brew install --cask ghostty\n"
+            FAILED=1
+        fi
     fi
     check "bun" "bun" "brew install oven-sh/bun/bun"
     check "go" "go" "brew install go"
@@ -118,7 +125,6 @@ if should_install "core"; then
     echo "---------------------"
     check "postgresql" "psql" "brew install postgresql@14"
     check "mongosh" "mongosh" "brew install mongosh"
-    check "turso" "turso" "brew install turso"
     check "sqld" "sqld" "brew install libsql/sqld/sqld"
 
     echo ""

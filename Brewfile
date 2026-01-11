@@ -83,7 +83,6 @@ brew "sonar-scanner"
 # Database
 brew "postgresql@14"
 brew "mongosh"
-brew "turso"
 brew "libsql/sqld/sqld"
 
 # Containers & Infrastructure
