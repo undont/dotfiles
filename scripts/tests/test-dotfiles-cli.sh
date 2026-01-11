@@ -254,10 +254,10 @@ if [[ -f "$symlinks_script" ]]; then
         fail "create-symlinks.sh should link dotfiles CLI"
     fi
 
-    if [[ "$symlinks_content" == *'$HOME/bin/dotfiles'* ]]; then
-        pass "dotfiles CLI linked to ~/bin/dotfiles"
+    if [[ "$symlinks_content" == *'$HOME/.local/bin/dotfiles'* ]]; then
+        pass "dotfiles CLI linked to ~/.local/bin/dotfiles"
     else
-        fail "dotfiles CLI should be linked to ~/bin/dotfiles"
+        fail "dotfiles CLI should be linked to ~/.local/bin/dotfiles"
     fi
 else
     skip "create-symlinks.sh not found"

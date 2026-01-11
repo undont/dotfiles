@@ -68,8 +68,8 @@ create_link "$DOTFILES_DIR/tmux/.tmux" "$HOME/.tmux"
 # Dotfiles CLI (minimal)
 echo ""
 echo "Dotfiles CLI:"
-mkdir -p "$HOME/bin"
-create_link "$DOTFILES_DIR/scripts/dotfiles" "$HOME/bin/dotfiles"
+mkdir -p "$HOME/.local/bin"
+create_link "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
 
 # Neovim (core)
 if should_install "core"; then
@@ -101,13 +101,14 @@ if should_install "full"; then
     create_link "$DOTFILES_DIR/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
 fi
 
-# Session launchers (core)
+# Launchers (core)
 if should_install "core"; then
     echo ""
-    echo "Session launchers:"
+    echo "Launchers:"
     mkdir -p "$HOME/.local/launchers"
     create_link "$DOTFILES_DIR/launchers/tnew" "$HOME/.local/launchers/tnew"
     create_link "$DOTFILES_DIR/launchers/dana" "$HOME/.local/launchers/dana"
+    create_link "$DOTFILES_DIR/launchers/code" "$HOME/.local/launchers/code"
 fi
 
 echo ""

@@ -34,7 +34,7 @@ print_header() {
     local title="$1"
     echo ""
     echo "${CYAN}╔════════════════════════════════════════════╗${NC}"
-    printf "${CYAN}║%*s%s%*s║${NC}\n" $(( (42 - ${#title}) / 2 )) "" "$title" $(( (43 - ${#title}) / 2 )) ""
+    printf "${CYAN}║%*s%s%*s║${NC}\n" $(( (44 - ${#title}) / 2 )) "" "$title" $(( (45 - ${#title}) / 2 )) ""
     echo "${CYAN}╚════════════════════════════════════════════╝${NC}"
     echo ""
 }
