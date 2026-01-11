@@ -213,7 +213,7 @@ Navigation keys (`j`, `k`, `g`, `G`, `f`, `b`, `d`, `u`) are automatically unbou
 
 **Undo:** When you kill a session or window with `Opt+x`, press `Opt+u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
-**Claude Alerts:** Sessions and windows with pending Claude Code alerts display a ⚡ indicator. Alerts are automatically cleared when you switch to that window, or when the window/session is killed.
+**Claude Alerts:** Sessions and windows with pending Claude Code alerts display a ⚡ indicator. Alerts are automatically cleared when you switch to that window, or when the window/session is killed. To manually clear an alert, press `prefix + a`. Window renames automatically update alert tracking to prevent stale alerts.
 
 ### Plugins (TPM)
 
