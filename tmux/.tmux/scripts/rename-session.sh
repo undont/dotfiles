@@ -32,6 +32,9 @@ if [[ -z "$newname" ]]; then
     exit 0
 fi
 
+# Sanitise session name (convert spaces and invalid chars to dashes, then trim trailing dashes)
+newname=$(echo "$newname" | tr -c '[:alnum:]_.-' '-' | sed 's/-*$//')
+
 # No change needed
 if [[ "$newname" == "$current_session" ]]; then
     exit 0

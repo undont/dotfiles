@@ -25,10 +25,10 @@ fi | sort -rn | cut -d' ' -f2- | while read -r line; do
     session_idx=$(echo "$line" | cut -d' ' -f1)      # e.g., "dotfiles:1"
     session_name="${session_idx%%:*}"                 # e.g., "dotfiles"
     window_name=$(echo "$line" | cut -d' ' -f2-)      # e.g., "dev"
-    alert_key="${session_name}:${window_name}"        # e.g., "dotfiles:dev"
+    alert_key="${session_name}:${window_name}:"       # e.g., "dotfiles:dev:" (prefix match)
 
-    # Check if this window has an alert
-    if [[ -f "$CLAUDE_ALERTS_FILE" ]] && grep -qxF "$alert_key" "$CLAUDE_ALERTS_FILE" 2>/dev/null; then
+    # Check if this window has an alert (any agent)
+    if [[ -f "$ALERTS_FILE" ]] && grep -qF "$alert_key" "$ALERTS_FILE" 2>/dev/null; then
         echo "$line ⚡"
     else
         echo "$line"
