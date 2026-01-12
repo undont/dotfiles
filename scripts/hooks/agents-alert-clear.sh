@@ -9,6 +9,7 @@ DOTFILES_DIR=$(cd "$SCRIPT_DIR/../../" && pwd)
 ALERTS_LIB="$DOTFILES_DIR/tmux/.tmux/scripts/_lib/alerts.sh"
 
 if [[ -f "$ALERTS_LIB" ]]; then
+    # shellcheck source=../../tmux/.tmux/scripts/_lib/alerts.sh
     source "$ALERTS_LIB"
     
     # Get current session and window
