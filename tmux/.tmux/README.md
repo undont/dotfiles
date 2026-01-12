@@ -333,7 +333,7 @@ Available session backups:
 │   │   └── ui.sh                         # Terminal UI (dialogs, prompts)
 │   ├── tests/                            # Test suites
 │   │   └── test-dotfiles-status.sh       # Tests for dotfiles sync indicator
-│   ├── claude-alerts.sh                  # Status bar: Claude alerts (⚡)
+│   ├── agent-alerts.sh                   # Status bar: Agent alerts (⚡)
 │   ├── clear-claude-alert.sh             # Clear Claude alerts for window
 │   ├── dotfiles-status.sh                # Status bar: sync indicator (↓↑↕)
 │   ├── duplicate-window.sh               # Duplicate window (Opt+Shift+d)

@@ -30,13 +30,14 @@ fi
 # Store results
 claude_panes=()
 
-# Iterate through all panes in all sessions
+# Iterate through all panes in all sessions, sorted by last viewed (most recent first)
 while IFS= read -r line; do
-    # Parse the pane info: session:window_index.pane_index command
-    session=$(echo "$line" | cut -d: -f1)
+    # Parse the pane info: last_viewed session:window_index.pane_index command
+    last_viewed=$(echo "$line" | cut -d' ' -f1)
+    session=$(echo "$line" | cut -d' ' -f2 | cut -d: -f1)
     window_idx=$(echo "$line" | cut -d: -f2 | cut -d. -f1)
     pane_idx=$(echo "$line" | cut -d. -f2 | cut -d' ' -f1)
-    command=$(echo "$line" | cut -d' ' -f2-)
+    command=$(echo "$line" | cut -d' ' -f3-)
 
     # Check if the command is claude
     if [[ "$command" == "claude" ]]; then
@@ -46,15 +47,15 @@ while IFS= read -r line; do
         # Build target (session:window.pane)
         target="${session}:${window_idx}.${pane_idx}"
 
-        # Check if this window has an alert
-        alert_key="${session}:${window_name}"
-        if [[ -f "$CLAUDE_ALERTS_FILE" ]] && grep -qxF "$alert_key" "$CLAUDE_ALERTS_FILE" 2>/dev/null; then
+        # Check if this window has an alert for claude
+        # New format: session:window:agent
+        if [[ -f "$ALERTS_FILE" ]] && grep -q "^${session}:${window_name}:claude$" "$ALERTS_FILE" 2>/dev/null; then
             claude_panes+=("${target} ${window_name} ⚡")
         else
             claude_panes+=("${target} ${window_name}")
         fi
     fi
-done < <(tmux list-panes -a -F '#{session_name}:#{window_index}.#{pane_index} #{pane_current_command}')
+done < <(tmux list-panes -a -F '#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_current_command}' | sort -rn)
 
 # Display results
 if [[ ${#claude_panes[@]} -eq 0 ]]; then
