@@ -9,8 +9,19 @@ source "$SCRIPT_DIR/_lib/alerts.sh"
 # Get sessions sorted by activity
 while read -r session; do
     # Check if this session has any alerts
-    if [[ -f "$CLAUDE_ALERTS_FILE" ]] && grep -qF "${session}:" "$CLAUDE_ALERTS_FILE" 2>/dev/null; then
-        echo "${session} ⚡"
+    # Alerts file format: SESSION:WINDOW:AGENT
+    if [[ -f "$ALERTS_FILE" ]]; then
+        alert_line=$(grep "^${session}:" "$ALERTS_FILE" 2>/dev/null | head -1)
+        if [[ -n "$alert_line" ]]; then
+            agent=$(echo "$alert_line" | cut -d: -f3)
+            icon="⚡"
+            if [[ "$agent" == "gemini" ]]; then
+                icon="🤖"
+            fi
+            echo "${session} ${icon}"
+        else
+            echo "$session"
+        fi
     else
         echo "$session"
     fi

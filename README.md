@@ -227,6 +227,11 @@ The uninstall script uses your saved preset to determine which packages to remov
 - GitHub Copilot (disabled for sensitive files)
 - Treesitter syntax highlighting
 
+### AI Coding Assistants
+- Claude Code
+- Gemini CLI
+- OpenCode
+
 ### Hammerspoon
 - Auto-centre windows for specified apps
 - CLI enabled via IPC
@@ -266,6 +271,7 @@ The `dana` script creates a tmux session with pre-configured windows:
 | Rename window | `Opt+r` |
 | Close pane | `Opt+s` |
 | Close window | `Opt+x` |
+| Equalise sizes | `Opt+Shift+0` |
 | URL picker | `Opt+y` |
 | Undo pane/window | `Opt+u` |
 

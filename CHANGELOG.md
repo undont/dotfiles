@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-01-12
+
+### Added
+- `gemini-cli` added to Brewfile (Core preset)
+- Post-installation reminder for Gemini CLI in `install-packages.sh`
+
+### Changed
+- Tmux: `rename-window.sh`, `new-session.sh`, and `rename-session.sh` now replace spaces with hyphens in names for better hook compatibility
+- Hooks: Renamed `claude-alert-clear.sh` to `agents-alert-clear.sh` and generalized it for multiple agents
+- Hooks: `claude-alert.sh` is now a wrapper around a new generalized `agent-alert.sh`
+
 ## [0.1.8] - 2026-01-11
 
 ### Added

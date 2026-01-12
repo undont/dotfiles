@@ -34,6 +34,9 @@ if [[ -z "$newname" ]]; then
     exit 0
 fi
 
+# Replace spaces with hyphens for better hook compatibility
+newname="${newname// /-}"
+
 # No change needed
 if [[ "$newname" == "$CURRENT_NAME" ]]; then
     exit 0

@@ -121,6 +121,7 @@ Press `prefix + h` to display the keybinding reference. Close it by pressing `Es
 | Close pane        | `Opt+s`             |
 | Undo close        | `Opt+u`             |
 | Zoom (fullscreen) | `Opt+z`             |
+| Equalise sizes    | `Opt+Shift+0`       |
 | Swap up/down      | `prefix + H/J/K/L`  |
 | Resize left       | `Opt+Shift+h`       |
 | Resize down       | `Opt+Shift+j`       |

@@ -123,5 +123,12 @@ if command_exists pipx; then
     pipx ensurepath 2>/dev/null || true
 fi
 
+# gemini-cli setup reminder
+if command_exists gemini; then
+    echo ""
+    info "Gemini CLI installed. To start:"
+    echo "  gemini"
+fi
+
 echo ""
 success "Package installation complete"

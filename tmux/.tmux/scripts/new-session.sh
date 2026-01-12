@@ -29,6 +29,9 @@ if [[ -z "$newname" ]]; then
     exit 0
 fi
 
+# Replace spaces with hyphens for better hook compatibility
+newname="${newname// /-}"
+
 # Validate session name
 if ! validate_session_name "$newname"; then
     error "Invalid session name"

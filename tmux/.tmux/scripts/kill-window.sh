@@ -93,8 +93,8 @@ if [[ "$TARGET_SESSION" == "$CURRENT_SESSION" && "$WINDOW_COUNT" -eq 1 ]]; then
     switch_to_other_session "$TARGET_SESSION" || true
 fi
 
-# Clear any claude alert for this window before killing
-clear_window_alert "$TARGET_SESSION" "$WINDOW_NAME"
+# Clear any agent alerts for this window before killing
+clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME"
 
 # Kill the window
 tmux kill-window -t "$WINDOW_TARGET"

@@ -28,8 +28,14 @@ fi | sort -rn | cut -d' ' -f2- | while read -r line; do
     alert_key="${session_name}:${window_name}"        # e.g., "dotfiles:dev"
 
     # Check if this window has an alert
-    if [[ -f "$CLAUDE_ALERTS_FILE" ]] && grep -qxF "$alert_key" "$CLAUDE_ALERTS_FILE" 2>/dev/null; then
-        echo "$line ⚡"
+    alert_line=$(grep "^${session_name}:${window_name}:" "$ALERTS_FILE" 2>/dev/null | head -1)
+    if [[ -n "$alert_line" ]]; then
+        agent=$(echo "$alert_line" | cut -d: -f3)
+        icon="⚡"
+        if [[ "$agent" == "gemini" ]]; then
+            icon="🤖"
+        fi
+        echo "$line $icon"
     else
         echo "$line"
     fi
