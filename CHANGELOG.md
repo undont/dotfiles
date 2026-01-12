@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.9] - 2026-01-12
+
+### Added
+- Scripts: `agent-alert.sh` - generic foundation for multi-agent alert support
+- Scripts: `agents-alert-clear.sh` - unified alert clearing across agents
+- Tmux: `move-window.sh` script for window management
+
+### Changed
+- Tmux: refactored alert system with `session:window:agent` format (internal) for future multi-agent support
+- Tmux: renamed `claude-alerts.sh` to `agent-alerts.sh` reflecting generic architecture
+- Scripts: `claude-alert.sh` simplified to wrapper around `agent-alert.sh`
+- Tmux: `list-claude.sh` now sorts by last-viewed timestamp for better recency ordering
+- Tmux: alert clearing centralized with `clear_window_alerts()` function
+
+### Fixed
+- Scripts: `/dev/tty` unavailable errors in hook scripts
+- Tmux: alert display deduplicates windows when multiple agents present
+- Tmux: session and window pickers correctly show alerts with new internal format
+
 ## [0.1.8] - 2026-01-11
 
 ### Added
