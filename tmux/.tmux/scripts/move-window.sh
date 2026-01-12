@@ -16,8 +16,8 @@ SOURCE_SESSION="${SOURCE_WINDOW%%:*}"
 WINDOW_INDEX="${SOURCE_WINDOW##*:}"
 
 # Remove any trailing indicators (⚡, 🤖, etc.) from the window identifier
-SOURCE_SESSION=$(echo "$SOURCE_SESSION" | sed 's/[[:space:]].*$//')
-WINDOW_INDEX=$(echo "$WINDOW_INDEX" | sed 's/[[:space:]].*$//')
+SOURCE_SESSION="${SOURCE_SESSION%% *}"
+WINDOW_INDEX="${WINDOW_INDEX%% *}"
 
 # Get the window name for display purposes
 WINDOW_NAME=$(tmux display-message -p -t "${SOURCE_SESSION}:${WINDOW_INDEX}" '#{window_name}' 2>/dev/null)
