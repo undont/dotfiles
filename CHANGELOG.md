@@ -12,9 +12,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tmux: `cleanup-tests.sh` script to clean up orphaned test servers and session backups
 - Tmux: `tcleanup` shell alias for test cleanup script
 - Tmux: trap handlers in test scripts for automatic cleanup on exit/interrupt
+- Scripts: `run-tests.sh` - dynamic test discovery runner with per-suite summaries
+- CI: ShellCheck now lints test scripts in `tmux/.tmux/scripts/tests/` and `scripts/tests/`
+- CI: Dynamic test discovery automatically finds and runs all test files
+
+### Changed
+- CI: Replaced manual test execution with dynamic discovery via `run-tests.sh`
+- CI: Renamed "Library Tests" job to "All Tests" to reflect comprehensive coverage
+- Tests: Standardised patterns in test runner (boolean comparisons, counter management, skip handling)
 
 ### Fixed
 - Tmux: test scripts now properly clean up resources even when interrupted
+- CI: Now runs all 12 tests instead of only 4 (discovered 8 previously uncovered tests)
 
 ## [0.1.10] - 2026-01-14
 
