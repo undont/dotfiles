@@ -116,16 +116,16 @@ else
 fi
 
 # Check for alert indicator integration
-if [[ "$script_content" == *'CLAUDE_ALERTS_FILE'* ]]; then
+if [[ "$script_content" == *'ALERTS_FILE'* ]]; then
     pass "Integrates with Claude alerts system"
 else
     fail "Should integrate with Claude alerts"
 fi
 
-if [[ "$script_content" == *'⚡'* ]]; then
-    pass "Uses ⚡ indicator for alerts"
+if [[ "$script_content" == *'get_agent_display'* ]]; then
+    pass "Uses agent-specific indicator for alerts"
 else
-    fail "Should use ⚡ indicator"
+    fail "Should use agent-specific indicator"
 fi
 
 section "Verbose Mode"

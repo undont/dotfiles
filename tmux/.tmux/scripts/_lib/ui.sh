@@ -2,6 +2,57 @@
 # Terminal UI utilities for tmux scripts
 # Source this file after common.sh
 
+# Display a visual confirmation popup
+# Usage: show_visual_confirm "Title" "Message" "command to execute on yes"
+# Returns: 0 if confirmed and executed, 1 if cancelled
+show_visual_confirm() {
+    local title="$1"
+    local message="$2"
+    local command="$3"
+    
+    # Get script directory for tmux-confirm.sh
+    local script_dir
+    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    
+    tmux display-popup -w 60 -h 10 -E "$script_dir/tmux-confirm.sh \"$title\" \"$message\" \"$command\""
+    return $?
+}
+
+# Display a visual confirmation for last window/pane scenarios
+# Shows confirmation first, then switches to another session if user confirms
+# Usage: tmux_confirm_last_item "window" "session_name" "target" "window_name"
+#        tmux_confirm_last_item "pane" "session_name" "target" ""
+tmux_confirm_last_item() {
+    local item_type="$1"        # "window" or "pane"
+    local current_session="$2"   # session being affected
+    local target="$3"            # full target (e.g., "session:window" or "session:window.pane")
+    local window_name="$4"       # window name (for clearing alerts, optional)
+    
+    local other_session
+    other_session=$(find_other_session "$current_session")
+    
+    # Clear alerts before showing confirmation
+    if [[ -n "$window_name" && "$item_type" == "window" ]]; then
+        clear_window_alerts "$current_session" "$window_name"
+    fi
+    
+    local title="Close Last ${item_type^}"
+    local message command
+    
+    if [[ -n "$other_session" ]]; then
+        # Build command that will switch session then kill
+        message="This is the last ${item_type} in session '${current_session}'"
+        command="tmux switch-client -t \"${other_session}\" \\; kill-${item_type} -t \"${target}\""
+    else
+        # No other session, killing this will kill the entire session
+        message="This will kill session '${current_session}' (last ${item_type})"
+        command="tmux kill-${item_type} -t \"${target}\""
+    fi
+    
+    show_visual_confirm "$title" "$message" "$command"
+    return $?
+}
+
 # Display a centered message box
 # Usage: show_centered_message "Title" "Message line 1" "Message line 2" ...
 show_centered_message() {

@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Create a new tmux session via fzf prompt
 
-SCRIPT_DIR="${BASH_SOURCE%/*}"
+SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 source "$SCRIPT_DIR/_lib/common.sh"
 
 require_tmux
@@ -28,6 +28,9 @@ newname=$(printf '' | fzf \
 if [[ -z "$newname" ]]; then
     exit 0
 fi
+
+# Sanitise session name (convert spaces and invalid chars to dashes)
+newname=$(sanitise_session_name "$newname")
 
 # Validate session name
 if ! validate_session_name "$newname"; then

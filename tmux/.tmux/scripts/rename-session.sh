@@ -25,19 +25,19 @@ newname=$(printf '' | fzf \
     --pointer=' ' \
     --bind 'enter:print-query' \
     --bind 'esc:abort' \
-    2>/dev/null | head -1) || true
+    2>/dev/null | head -1) || exit 130
 
 # Handle empty input (user cancelled)
 if [[ -z "$newname" ]]; then
-    exit 0
+    exit 130
 fi
 
-# Sanitise session name (convert spaces and invalid chars to dashes, then trim trailing dashes)
-newname=$(echo "$newname" | tr -c '[:alnum:]_.-' '-' | sed 's/-*$//')
+# Sanitise session name (convert spaces and invalid chars to dashes)
+newname=$(sanitise_session_name "$newname")
 
 # No change needed
 if [[ "$newname" == "$current_session" ]]; then
-    exit 0
+    exit 130
 fi
 
 # Validate session name
@@ -59,9 +59,9 @@ if [[ -f "$ALERTS_FILE" ]]; then
     grep -vF "${current_session}:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
         mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE" || rm -f "${ALERTS_FILE}.tmp"
 fi
-# Clear @claude_alert options for all windows in the session
+# Clear @agent_alert options for all windows in the session
 for win in $(tmux list-windows -t "$current_session" -F '#W' 2>/dev/null); do
-    tmux set-option -wt "${current_session}:${win}" -u @claude_alert 2>/dev/null || true
+    tmux set-option -wt "${current_session}:${win}" -u @agent_alert 2>/dev/null || true
 done
 
 # Rename the session

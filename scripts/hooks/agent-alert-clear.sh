@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Hook script: Clear agent alert when user interacts with the terminal
 # Used by: PostCommand (user submitted a command)
 

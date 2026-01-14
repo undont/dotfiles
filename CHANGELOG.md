@@ -6,11 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.10] - 2026-01-14
+
+### Added
+- Scripts: `scripts/hooks/wrappers/` - subdirectory for agent-specific alert wrappers
+- Scripts: `scripts/hooks/wrappers/opencode-alert.sh` - OpenCode alert wrapper (placeholder)
+- Tmux: Agent visual identity system (Claude ⚡ yellow, OpenCode 🔮 purple, fallback 🤖 blue)
+- Tmux: `get_agent_display()` helper function for agent icons and colours
+- Tmux: Dynamic wildcard clearing for all `@*_alert` options (agent-agnostic)
+- Tmux: Confirmation dialogs when closing last pane/window in a session
+
+### Changed
+- Scripts: Moved `claude-alert.sh` to `scripts/hooks/wrappers/` subdirectory
+- Scripts: Renamed `agents-alert-clear.sh` → `agent-alert-clear.sh` for consistency
+- Tmux: `agent-alerts.sh` now displays agent-specific icons with colours
+- Tmux: `update-alert-on-rename.sh` fixed to handle 3-field format (session:window:agent)
+- Tmux: Alert library enhanced with multi-agent icon/colour configuration
+- Tests: Updated `test-list-claude.sh` to check for `ALERTS_FILE` instead of `CLAUDE_ALERTS_FILE`
+
+### Removed
+- Scripts: `claude-alert-clear.sh` (broken 2-field regex, replaced by library)
+
 ## [0.1.9] - 2026-01-12
 
 ### Added
 - Scripts: `agent-alert.sh` - generic foundation for multi-agent alert support
-- Scripts: `agents-alert-clear.sh` - unified alert clearing across agents
+- Scripts: `agent-alert-clear.sh` - unified alert clearing across agents
 - Tmux: `move-window.sh` script for window management
 
 ### Changed

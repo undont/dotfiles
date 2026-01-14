@@ -538,7 +538,7 @@ nvim ~/.zsh/.secrets.zsh
 - **Mouse support**: Click to select panes, drag to resize
 - **Vim-style navigation**: hjkl keys for pane movement
 - **Session persistence**: Survives terminal restarts (via tmux-resurrect)
-- **Claude Code alerts**: Visual indicators for AI agent activity
+- **Agent alerts**: Visual indicators for AI agent activity (⚡ Claude, 🔮 OpenCode)
 
 ### Editor (Neovim)
 

@@ -119,6 +119,40 @@ if should_install "core"; then
     create_link "$DOTFILES_DIR/launchers/code" "$HOME/.local/launchers/code"
 fi
 
+# Claude/OpenCode shared configuration (core)
+if should_install "core"; then
+    # Check if claude-config repository exists
+    CLAUDE_CONFIG_DIR="$HOME/claude-config"
+    
+    if [[ -d "$CLAUDE_CONFIG_DIR" ]]; then
+        echo ""
+        echo "Claude configuration:"
+        mkdir -p "$HOME/.claude"
+        create_link "$CLAUDE_CONFIG_DIR/agents" "$HOME/.claude/agents"
+        create_link "$CLAUDE_CONFIG_DIR/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
+        create_link "$CLAUDE_CONFIG_DIR/commands" "$HOME/.claude/commands"
+        create_link "$CLAUDE_CONFIG_DIR/settings.json" "$HOME/.claude/settings.json"
+        create_link "$CLAUDE_CONFIG_DIR/statusline/statusline.sh" "$HOME/.claude/statusline.sh"
+        
+        # Local plans and docs from dotfiles
+        create_link "$DOTFILES_DIR/.claude/plans" "$HOME/.claude/plans"
+        create_link "$DOTFILES_DIR/.claude/docs" "$HOME/.claude/docs"
+        
+        echo ""
+        echo "OpenCode configuration:"
+        mkdir -p "$HOME/.config/opencode"
+        create_link "$DOTFILES_DIR/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
+        create_link "$DOTFILES_DIR/opencode/package.json" "$HOME/.config/opencode/package.json"
+        create_link "$DOTFILES_DIR/opencode/plugin" "$HOME/.config/opencode/plugin"
+        
+        # Share commands between Claude and OpenCode
+        create_link "$CLAUDE_CONFIG_DIR/commands" "$HOME/.config/opencode/command"
+    else
+        warn "claude-config directory not found at $CLAUDE_CONFIG_DIR"
+        warn "Skipping Claude/OpenCode configuration symlinks"
+    fi
+fi
+
 echo ""
 
 # Record step completion

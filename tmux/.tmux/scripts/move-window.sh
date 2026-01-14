@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Move a tmux window to a different session
 # Usage: move-window.sh <session:window_index>
 
@@ -15,7 +15,7 @@ SOURCE_WINDOW="$1"
 SOURCE_SESSION="${SOURCE_WINDOW%%:*}"
 WINDOW_INDEX="${SOURCE_WINDOW##*:}"
 
-# Remove any trailing indicators (⚡, 🤖, etc.) from the window identifier
+# Remove any trailing indicators (⚡, 🔮, etc.) from the window identifier
 SOURCE_SESSION="${SOURCE_SESSION%% *}"
 WINDOW_INDEX="${WINDOW_INDEX%% *}"
 
