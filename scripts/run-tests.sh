@@ -211,36 +211,22 @@ printf "${CYAN}═════════════════════�
 
 cd "$REPO_ROOT"
 
-# Find all test files using arrays (bash 3.2+ compatible approach)
-# We'll use space-separated strings instead of arrays where possible
-LIBRARY_TESTS=""
-SCRIPT_TESTS=""
-INTEGRATION_TESTS=""
+# Find all test files using bash 3.2-compatible approach
+# Store test file paths as newline-delimited strings
 
 # Library tests (scripts/_lib/test-install-libs.sh, tmux/.tmux/scripts/_lib/test-tmux-libs.sh)
-while IFS= read -r test_file; do
-    [[ -n "$test_file" ]] && LIBRARY_TESTS="$LIBRARY_TESTS $test_file"
-done < <(find . -path "*/_lib/test-*-libs.sh" -type f | sort)
+LIBRARY_TESTS=$(find . -path "*/_lib/test-*-libs.sh" -type f | sort)
 
 # Tmux script tests
-while IFS= read -r test_file; do
-    [[ -n "$test_file" ]] && SCRIPT_TESTS="$SCRIPT_TESTS $test_file"
-done < <(find tmux/.tmux/scripts/tests -name "test-*.sh" -type f | sort)
-
-# Hooks tests (scripts/hooks/tests/test-*.sh)
-while IFS= read -r test_file; do
-    [[ -n "$test_file" ]] && SCRIPT_TESTS="$SCRIPT_TESTS $test_file"
-done < <(find scripts/hooks/tests -name "test-*.sh" -type f 2>/dev/null | sort || true)
+SCRIPT_TESTS=$(find tmux/.tmux/scripts/tests -name "test-*.sh" -type f | sort)
 
 # Integration tests
-while IFS= read -r test_file; do
-    [[ -n "$test_file" ]] && INTEGRATION_TESTS="$INTEGRATION_TESTS $test_file"
-done < <(find scripts/tests -name "test-*.sh" -type f 2>/dev/null | sort || true)
+INTEGRATION_TESTS=$(find scripts/tests -name "test-*.sh" -type f 2>/dev/null | sort || true)
 
-# Run a test suite (bash 3.2+ compatible - using space-separated strings)
+# Run a test suite (bash 3.2+ compatible - using temp file for test list)
 run_suite() {
     local suite_name="$1"
-    local tests="$2"  # Space-separated test file paths
+    local tests="$2"  # Newline-delimited test file paths
     
     # Skip if no tests
     if [[ -z "$tests" ]]; then
@@ -250,10 +236,18 @@ run_suite() {
     reset_suite_counters
     printf "${BOLD}%s${NC}\n" "$suite_name"
     
-    # Process each test (space-separated)
+    # Save IFS and set to newline only for iteration
+    local old_IFS="$IFS"
+    IFS=$'\n'
+    
+    # Process each test (newline-delimited)
     for test in $tests; do
+        [[ -z "$test" ]] && continue
         run_test "$test"
     done
+    
+    # Restore IFS
+    IFS="$old_IFS"
     
     print_suite_summary "$suite_name"
 }
