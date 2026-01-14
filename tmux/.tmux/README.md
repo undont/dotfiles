@@ -257,6 +257,7 @@ Location: `~/.local/launchers/tnew`
 | `trestore <name>` | Restore a specific saved session                                                                                                               |
 | `tkill <name>`    | Kill a specific session and remove its backup                                                                                                  |
 | `tattach <name>`  | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
+| `tcleanup`        | Clean up orphaned test servers and session backups. Use `tcleanup --dry-run` to preview what would be removed.                                |
 | `dana`            | Launch/attach to the dana project session                                                                                                      |
 
 ---
@@ -336,6 +337,7 @@ Available session backups:
 │   │   ├── test.sh                       # Test suite for libraries
 │   │   └── ui.sh                         # Terminal UI (dialogs, prompts)
 │   ├── tests/                            # Test suites
+│   │   ├── cleanup-tests.sh              # Clean up orphaned test resources
 │   │   └── test-dotfiles-status.sh       # Tests for dotfiles sync indicator
 │   ├── agent-alert-clear.sh              # Clear agent alerts for window
 │   ├── agent-alerts.sh                   # Status bar: Multi-agent alerts (⚡ 🔮 🤖)

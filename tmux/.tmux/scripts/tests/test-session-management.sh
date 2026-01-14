@@ -11,6 +11,9 @@ LIB_DIR="$SCRIPTS_DIR/_lib"
 # Source test helpers to get isolated tmux server
 source "$SCRIPT_DIR/_test-helpers.sh"
 
+# Trap to ensure cleanup on exit/interrupt
+trap cleanup_test_server EXIT INT TERM
+
 # Colours (using $'...' for proper escape interpretation)
 GREEN=$'\033[0;32m'
 RED=$'\033[0;31m'
