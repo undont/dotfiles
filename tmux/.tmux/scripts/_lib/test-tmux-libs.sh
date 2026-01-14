@@ -7,7 +7,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PASS=0
 FAIL=0
-VERBOSE="${1:-}"
+# shellcheck disable=SC2034
+VERBOSE="${1:-}"  # Reserved for future verbose output
 
 # Colours
 GREEN='\033[0;32m'

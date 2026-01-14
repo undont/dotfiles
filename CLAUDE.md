@@ -38,10 +38,10 @@ scripts/run-tests.sh --no-tmux
 # ────────────────────────────────────
 
 # Installation library tests
-scripts/_lib/test.sh
+scripts/_lib/test-install-libs.sh
 
 # Tmux library tests
-tmux/.tmux/scripts/_lib/test.sh
+tmux/.tmux/scripts/_lib/test-tmux-libs.sh
 
 # Individual tmux script tests
 tmux/.tmux/scripts/tests/test-list-claude.sh
@@ -60,7 +60,7 @@ scripts/tests/test-dotfiles-cli.sh
 ```
 
 **Test Discovery**: The test runner (`scripts/run-tests.sh`) automatically discovers all test files:
-- Library tests: `*/_lib/test.sh`
+- Library tests: `*/_lib/test-*-libs.sh`
 - Script tests: `tmux/.tmux/scripts/tests/test-*.sh`
 - Integration tests: `scripts/tests/test-*.sh`
 
@@ -98,7 +98,7 @@ dotfiles/
 ├── scripts/              # Installation and utilities
 │   ├── dotfiles          # CLI tool (update/status/health)
 │   ├── install/          # Installer modules
-│   ├── _lib/             # Shared shell libraries (common.sh, test.sh, rollback.sh)
+│   ├── _lib/             # Shared shell libraries (common.sh, brewfile.sh, test-install-libs.sh)
 │   ├── hooks/            # Tool hooks (claude-alert.sh, opencode-alert.sh)
 │   └── tests/            # Test suites
 ├── zsh/                  # Zsh configuration
@@ -134,9 +134,13 @@ Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`.
 - Platform detection (is_macos, get_homebrew_prefix)
 - Preset validation (should_install)
 
-**`scripts/_lib/test.sh`**: Test framework
-- Test helpers (pass, fail, skip, section)
-- Assertions (assert_success, assert_failure, assert_equals)
+**`scripts/_lib/test-install-libs.sh`**: Installation library test suite
+- Tests for common.sh, brewfile.sh functionality
+- Includes test framework helpers (pass, fail, skip, section)
+
+**`tmux/.tmux/scripts/_lib/test-tmux-libs.sh`**: Tmux library test suite
+- Tests for tmux common.sh, paths.sh, session.sh, alerts.sh
+- Includes assertion helpers (assert_success, assert_failure, assert_equals)
 
 **`tmux/.tmux/scripts/_lib/`**: Tmux-specific utilities
 - `common.sh`: Error handling, tmux validation
@@ -171,7 +175,7 @@ Based on kickstart.nvim with modular organisation:
 
 Tests use a simple pass/fail pattern:
 ```bash
-source "path/to/_test-helpers.sh"  # or test.sh
+source "path/to/_test-helpers.sh"  # For tmux tests
 section "Test Group Name"
 assert_success "description" command args
 assert_equals "description" "expected" "$actual"

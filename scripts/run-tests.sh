@@ -202,10 +202,10 @@ declare -a LIBRARY_TESTS
 declare -a SCRIPT_TESTS
 declare -a INTEGRATION_TESTS
 
-# Library tests (scripts/_lib/test.sh, tmux/.tmux/scripts/_lib/test.sh)
+# Library tests (scripts/_lib/test-install-libs.sh, tmux/.tmux/scripts/_lib/test-tmux-libs.sh)
 while IFS= read -r -d '' test_file; do
     LIBRARY_TESTS+=("$test_file")
-done < <(find . -path "*/_lib/test.sh" -type f -print0)
+done < <(find . -path "*/_lib/test-*-libs.sh" -type f -print0)
 
 # Tmux script tests
 while IFS= read -r -d '' test_file; do

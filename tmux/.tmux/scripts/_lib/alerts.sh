@@ -2,6 +2,9 @@
 # Agent alert utilities for tmux scripts
 # Source this file after common.sh
 
+# Disable unbound variable check for this file since we use associative array keys
+set +u
+
 # Alerts file location
 readonly ALERTS_FILE="$HOME/.claude/alerts"
 

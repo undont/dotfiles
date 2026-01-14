@@ -78,10 +78,10 @@ else
 fi
 
 # Unit tests
-run_test_suite "Tmux Library Tests" "$DOTFILES_DIR/tmux/.tmux/scripts/_lib/test.sh"
+run_test_suite "Tmux Library Tests" "$DOTFILES_DIR/tmux/.tmux/scripts/_lib/test-tmux-libs.sh"
 
-if [[ -f "$SCRIPT_DIR/../_lib/test.sh" ]]; then
-    run_test_suite "Installation Library Tests" "$SCRIPT_DIR/../_lib/test.sh"
+if [[ -f "$SCRIPT_DIR/../_lib/test-install-libs.sh" ]]; then
+    run_test_suite "Installation Library Tests" "$SCRIPT_DIR/../_lib/test-install-libs.sh"
 fi
 
 run_test_suite "Dotfiles Status Indicator Tests" "$DOTFILES_DIR/tmux/.tmux/scripts/tests/test-dotfiles-status.sh"
