@@ -22,5 +22,6 @@ nvim/.luarc.json
 # Neovim backup files
 nvim/init.lua.backup
 
-# Claude Code
+# AI Code Assistants
 .claude/
+.opencode

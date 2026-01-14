@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Clear agent alerts for the current window
 # Called by after-select-window hook and window/session switchers
 

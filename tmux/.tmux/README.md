@@ -107,6 +107,8 @@ Press `prefix + h` to display the keybinding reference. Close it by pressing `Es
 | Kill window      | `Opt+x`                       |
 | Undo kill        | `Opt+u`                       |
 
+**Note:** Killing the last window in a session will prompt for confirmation.
+
 ### Panes
 
 | Action            | Keybinding          |
@@ -121,6 +123,8 @@ Press `prefix + h` to display the keybinding reference. Close it by pressing `Es
 | Close pane        | `Opt+s`             |
 | Undo close        | `Opt+u`             |
 | Zoom (fullscreen) | `Opt+z`             |
+
+**Note:** Closing the last pane in the last window or the last window in a session will prompt for confirmation.
 | Swap up/down      | `prefix + H/J/K/L`  |
 | Resize left       | `Opt+Shift+h`       |
 | Resize down       | `Opt+Shift+j`       |
@@ -213,7 +217,7 @@ Navigation keys (`j`, `k`, `g`, `G`, `f`, `b`, `d`, `u`) are automatically unbou
 
 **Undo:** When you kill a session or window with `Opt+x`, press `Opt+u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
-**Claude Alerts:** Sessions and windows with pending Claude Code alerts display a ⚡ indicator. Press `prefix + c` to open an fzf picker showing all running Claude Code instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
+**Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for OpenCode). Press `prefix + c` to open an fzf picker showing all running Claude Code instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
 
 ### Plugins (TPM)
 
@@ -325,7 +329,7 @@ Available session backups:
 │   └── last                              # Symlink to latest save
 ├── scripts/
 │   ├── _lib/                             # Shared utility libraries
-│   │   ├── alerts.sh                     # Claude Code alert utilities
+│   │   ├── alerts.sh                     # Agent alert utilities (multi-agent support)
 │   │   ├── common.sh                     # Error handling, validation
 │   │   ├── paths.sh                      # Undo file path definitions
 │   │   ├── session.sh                    # Session management utilities
@@ -333,8 +337,8 @@ Available session backups:
 │   │   └── ui.sh                         # Terminal UI (dialogs, prompts)
 │   ├── tests/                            # Test suites
 │   │   └── test-dotfiles-status.sh       # Tests for dotfiles sync indicator
-│   ├── agent-alerts.sh                   # Status bar: Agent alerts (⚡)
-│   ├── clear-claude-alert.sh             # Clear Claude alerts for window
+│   ├── agent-alert-clear.sh              # Clear agent alerts for window
+│   ├── agent-alerts.sh                   # Status bar: Multi-agent alerts (⚡ 🔮 🤖)
 │   ├── dotfiles-status.sh                # Status bar: sync indicator (↓↑↕)
 │   ├── duplicate-window.sh               # Duplicate window (Opt+Shift+d)
 │   ├── kill-pane.sh                      # Kill pane (Opt+s, saves state)
@@ -451,7 +455,7 @@ Key settings:
 - Auto-rename: shows directory name or running command
 - Auto-save: every 1 minute
 - Status refresh: every 2 seconds
-- Status bar: shows dotfiles sync indicator (↓↑↕ cyan), Claude alerts (⚡ yellow), zoom indicator (cyan `Z`), CPU (⚙), RAM (☰), and battery % with Dracula-themed colour indicators
+- Status bar: shows dotfiles sync indicator (↓↑↕ cyan), agent alerts (⚡ yellow for Claude, 🔮 purple for OpenCode), zoom indicator (cyan `Z`), CPU (⚙), RAM (☰), and battery % with Dracula-themed colour indicators
 - Status bar time: background aligned with powerlevel10k right prompt edge
 - Bell monitoring: windows are highlighted in red when they send a bell (used by Claude Code hooks to signal when attention is needed)
 

@@ -51,6 +51,12 @@ require_tmux() {
     fi
 }
 
+# Sanitise session name (convert spaces and invalid chars to dashes, then trim trailing dashes)
+sanitise_session_name() {
+    local name="$1"
+    echo "$name" | tr -c '[:alnum:]_.-' '-' | sed 's/-*$//'
+}
+
 # Validate session name (alphanumeric, underscore, hyphen, dot)
 validate_session_name() {
     local name="$1"

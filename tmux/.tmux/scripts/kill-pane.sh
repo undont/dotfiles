@@ -8,11 +8,21 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 source "$SCRIPT_DIR/_lib/session.sh"
+source "$SCRIPT_DIR/_lib/ui.sh"
 
 require_tmux
 
+# DEBUG LOGGING
+LOG_FILE="$HOME/kill-pane-debug.log"
+log_debug() {
+    echo "[$(date '+%H:%M:%S')] $1" >> "$LOG_FILE"
+}
+
+log_debug "Starting kill-pane.sh"
+
 # Get current state
 CURRENT_SESSION=$(get_current_session)
+log_debug "Current session: $CURRENT_SESSION"
 CURRENT_WINDOW=$(get_current_window)
 CURRENT_PANE=$(get_current_pane)
 PANE_DIR=$(get_pane_directory)
@@ -41,10 +51,24 @@ chmod 600 "$UNDO_STATE"
 tmux capture-pane -p -S -32768 > "$UNDO_CONTENT" 2>/dev/null || true
 chmod 600 "$UNDO_CONTENT"
 
-# If this is the last pane in the last window, switch session first
+# If this is the last pane in the last window, use the standardised confirm pattern
+IS_LAST_PANE=$(is_last_pane && echo "yes" || echo "no")
+IS_LAST_WINDOW=$(is_last_window && echo "yes" || echo "no")
+log_debug "Last pane? $IS_LAST_PANE. Last window? $IS_LAST_WINDOW"
+
 if is_last_pane && is_last_window; then
-    switch_to_other_session "$CURRENT_SESSION" || true
+    log_debug "Last pane in last window - using tmux_confirm_last_item"
+    PANE_TARGET="${CURRENT_SESSION}:${CURRENT_WINDOW}.${CURRENT_PANE}"
+    if tmux_confirm_last_item "pane" "$CURRENT_SESSION" "$PANE_TARGET" ""; then
+        log_debug "tmux_confirm_last_item confirmed"
+        exit 0
+    else
+        log_debug "tmux_confirm_last_item cancelled"
+        exit 0  # Exit cleanly on cancellation
+    fi
 fi
 
-# Kill the pane
-tmux kill-pane -t "${CURRENT_SESSION}:${CURRENT_WINDOW}.${CURRENT_PANE}"
+# Kill the pane normally
+log_debug "Killing pane normally..."
+tmux kill-pane -t "${CURRENT_SESSION}:${CURRENT_WINDOW}.${CURRENT_PANE}" >> "$LOG_FILE" 2>&1 || true
+log_debug "Kill done."

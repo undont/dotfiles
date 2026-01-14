@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # Update the @last-viewed timestamp for the current window
-# Also clears any claude alert as a safety net
+# Also clears any agent alert as a safety net
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/alerts.sh"

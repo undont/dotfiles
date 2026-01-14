@@ -12,7 +12,7 @@ find_other_session() {
         sort -rn | \
         cut -d' ' -f2- | \
         grep -v "^${exclude_session}$" | \
-        head -n1
+        head -n1 || true
 }
 
 # Switch to another session if available
