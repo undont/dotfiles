@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.11] - 2026-01-14
+
+### Added
+- Tmux: `cleanup-tests.sh` script to clean up orphaned test servers and session backups
+- Tmux: `tcleanup` shell alias for test cleanup script
+- Tmux: trap handlers in test scripts for automatic cleanup on exit/interrupt
+
+### Fixed
+- Tmux: test scripts now properly clean up resources even when interrupted
+
 ## [0.1.10] - 2026-01-14
 
 ### Added

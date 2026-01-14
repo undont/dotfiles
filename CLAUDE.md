@@ -33,6 +33,10 @@ tmux/.tmux/scripts/tests/test-list-claude.sh
 tmux/.tmux/scripts/tests/test-session-management.sh
 tmux/.tmux/scripts/tests/test-kill-undo.sh
 
+# Clean up orphaned test resources (if tests were interrupted)
+tmux/.tmux/scripts/tests/cleanup-tests.sh
+tmux/.tmux/scripts/tests/cleanup-tests.sh --dry-run  # Preview only
+
 # Dotfiles CLI tests
 scripts/tests/test-dotfiles-cli.sh
 
