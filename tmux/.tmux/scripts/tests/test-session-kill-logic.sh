@@ -11,6 +11,9 @@ LIB_DIR="$TEST_SCRIPTS_DIR/_lib"
 # Source test helpers to get isolated tmux server
 source "$SCRIPT_DIR/_test-helpers.sh"
 
+# Trap to ensure cleanup on exit/interrupt
+trap cleanup_test_server EXIT INT TERM
+
 # Mocks
 # ---------------------------------------------------------
 # Create a mock UI library

@@ -224,6 +224,7 @@ alias .ai="cd ~/.ai"
 
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/resurrect-restore.sh --list"
+alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 
 # Functions (instead of aliases) for tab completion support
 trestore() {

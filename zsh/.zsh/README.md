@@ -215,6 +215,7 @@ direnv allow
 | `oc`       | `opencode`                      | Launch OpenCode editor             |
 | `mcp-sync` | `~/.config/sync-mcp-servers.sh` | Sync MCP server configs            |
 | `tls`      | `trestore --list`               | List saved tmux session backups    |
+| `tcleanup` | `~/.tmux/scripts/tests/cleanup-tests.sh` | Clean up orphaned test resources (servers/backups) |
 | `gols`     | `ls ~/go/bin`                   | List installed Go binaries         |
 | `dot`      | `cd ~/dotfiles`                 | Navigate to dotfiles directory     |
 | `claudeconfig` | `cd ~/claude-config`        | Navigate to claude-config directory |
