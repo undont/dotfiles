@@ -201,7 +201,7 @@ export EDITOR="nvim"                   # Default editor for git, etc.
 alias oc="opencode"                    # Launch OpenCode editor
 
 # MCP (Model Context Protocol)
-alias mcp-sync="~/.config/sync-mcp-servers.sh"    # Sync MCP servers across tools
+alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across tools
 
 # Claude Code Plans
 alias plans="cd ~/.claude/plans"
@@ -220,7 +220,7 @@ alias dotp="cd ~/dotfiles/.claude/plans"
 alias dotd="cd ~/dotfiles/.claude/docs/"
 
 # claude-config 
-alias claudeconfig="cd ~/claude-config"
+alias .ai="cd ~/.ai"
 
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/resurrect-restore.sh --list"

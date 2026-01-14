@@ -5,6 +5,16 @@
 # Strict mode - scripts should set this themselves for clarity
 # set -euo pipefail
 
+# Wrapper for tmux command that respects test socket
+# When TMUX_TEST_SOCKET is set, all tmux commands use that socket
+tmux() {
+    if [[ -n "${TMUX_TEST_SOCKET:-}" ]]; then
+        command tmux -L "$TMUX_TEST_SOCKET" "$@"
+    else
+        command tmux "$@"
+    fi
+}
+
 # Colours for output
 readonly RED='\033[0;31m'
 readonly GREEN='\033[0;32m'
@@ -45,7 +55,9 @@ require_tmux() {
         exit 1
     fi
 
-    if [[ -z "${TMUX:-}" ]]; then
+    # Skip the TMUX variable check if we're in test mode
+    # Tests can set TMUX_TEST_MODE=1 to bypass the "inside tmux" requirement
+    if [[ -z "${TMUX:-}" && "${TMUX_TEST_MODE:-0}" != "1" ]]; then
         error "Not running inside tmux"
         exit 1
     fi

@@ -2,21 +2,23 @@
 set -euo pipefail
 
 # Integration tests for session management operations
-# Requires: Running inside tmux session
 # Usage: ./test-session-management.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
 LIB_DIR="$SCRIPTS_DIR/_lib"
 
-PASS=0
-FAIL=0
+# Source test helpers to get isolated tmux server
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 # Colours (using $'...' for proper escape interpretation)
 GREEN=$'\033[0;32m'
 RED=$'\033[0;31m'
 YELLOW=$'\033[0;33m'
 NC=$'\033[0m'
+
+PASS=0
+FAIL=0
 
 pass() {
     PASS=$((PASS + 1))
@@ -39,12 +41,12 @@ section() {
     echo "─────────────────────────────────────────"
 }
 
-# Check if running inside tmux
-if [[ -z "${TMUX:-}" ]]; then
-    echo "Error: Must run inside tmux session"
-    echo "Start tmux and run: $0"
-    exit 1
-fi
+# Setup isolated tmux server for testing
+setup_test_server
+
+# Create a test session to work with
+TEST_SESSION="test-session-$$"
+test_tmux new-session -d -s "$TEST_SESSION" -c /tmp
 
 # Source libraries
 source "$LIB_DIR/common.sh"
@@ -52,19 +54,11 @@ source "$LIB_DIR/session.sh"
 
 section "Session Library Tests"
 
-# Test get_current_session
-current=$(get_current_session)
-if [[ -n "$current" ]]; then
-    pass "get_current_session returns value: $current"
+# Test session_exists with our test session
+if session_exists "$TEST_SESSION"; then
+    pass "session_exists returns true for test session"
 else
-    fail "get_current_session returned empty"
-fi
-
-# Test session_exists
-if session_exists "$current"; then
-    pass "session_exists returns true for current session"
-else
-    fail "session_exists should return true for current session"
+    fail "session_exists should return true for test session"
 fi
 
 if ! session_exists "nonexistent-session-12345"; then
@@ -111,15 +105,12 @@ assert_invalid_name "my\$project"
 
 section "Session Switching Tests"
 
-# Create a temporary test session
-TEST_SESSION="test-session-$$"
-# shellcheck disable=SC2034
-ORIGINAL_SESSION=$(get_current_session)  # Kept for potential future cleanup
+# Create a second test session so find_other_session has something to find
+TEST_SESSION_2="test-session-2-$$"
+test_tmux new-session -d -s "$TEST_SESSION_2" -c /tmp
+pass "Created second test session: $TEST_SESSION_2"
 
-tmux new-session -d -s "$TEST_SESSION" -c /tmp
-pass "Created test session: $TEST_SESSION"
-
-# Test find_other_session
+# Test find_other_session using our first test session
 other=$(find_other_session "$TEST_SESSION")
 if [[ -n "$other" ]]; then
     pass "find_other_session found: $other"
@@ -127,9 +118,15 @@ else
     fail "find_other_session should find another session"
 fi
 
+# Cleanup both test sessions
+test_tmux kill-session -t "$TEST_SESSION_2" 2>/dev/null || true
+
 # Cleanup
-tmux kill-session -t "$TEST_SESSION" 2>/dev/null || true
+test_tmux kill-session -t "$TEST_SESSION" 2>/dev/null || true
 pass "Cleaned up test session"
+
+# Cleanup isolated tmux server
+cleanup_test_server
 
 # ===========================================================================
 # Summary
@@ -137,7 +134,7 @@ pass "Cleaned up test session"
 
 echo ""
 echo "==========================================="
-echo "Test Results: ${GREEN}${PASS} passed${NC}, ${RED}${FAIL} failed${NC}"
+printf "${GREEN}Test Results: %d passed${NC}, ${RED}%d failed${NC}\n" "$PASS" "$FAIL"
 echo "==========================================="
 
 if [[ $FAIL -gt 0 ]]; then
