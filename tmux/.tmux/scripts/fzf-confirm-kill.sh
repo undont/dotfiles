@@ -53,7 +53,6 @@ if [[ "$confirm" == "y" ]]; then
         window)
             # Extract session and window from target
             SESSION="${TARGET%%:*}"
-            WINDOW="${TARGET#*:}"
             WINDOW_NAME=$(tmux display-message -t "$TARGET" -p '#{window_name}')
             
             clear_window_alerts "$SESSION" "$WINDOW_NAME"

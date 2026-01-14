@@ -8,6 +8,9 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 TEST_SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
 LIB_DIR="$TEST_SCRIPTS_DIR/_lib"
 
+# Source test helpers to get isolated tmux server
+source "$SCRIPT_DIR/_test-helpers.sh"
+
 # Mocks
 # ---------------------------------------------------------
 # Create a mock UI library
@@ -32,18 +35,15 @@ fail() {
 
 # Setup
 # ---------------------------------------------------------
-if [[ -z "${TMUX:-}" ]]; then
-    echo "Error: Must run inside tmux session"
-    exit 1
-fi
+# Setup isolated tmux server for testing
+setup_test_server
 
-CURRENT_SESSION=$(tmux display-message -p '#{session_name}')
 TEST_SESSION_1="test_kill_1_$$"
 TEST_SESSION_2="test_kill_2_$$"
 
 # Create two test sessions
-tmux new-session -d -s "$TEST_SESSION_1" -c /tmp
-tmux new-session -d -s "$TEST_SESSION_2" -c /tmp
+test_tmux new-session -d -s "$TEST_SESSION_1" -c /tmp
+test_tmux new-session -d -s "$TEST_SESSION_2" -c /tmp
 
 echo "Created test sessions: $TEST_SESSION_1, $TEST_SESSION_2"
 
@@ -51,9 +51,8 @@ echo "Created test sessions: $TEST_SESSION_1, $TEST_SESSION_2"
 # ---------------------------------------------------------
 echo "Test 1: Kill inactive session ($TEST_SESSION_2)"
 
-# Run kill-session.sh targeting TEST_SESSION_2
-# Use echo "y" to bypass confirmation dialog in the real script
-echo "y" | "$TEST_SCRIPTS_DIR/kill-session.sh" "$TEST_SESSION_2" >/dev/null
+# Run kill-session.sh targeting TEST_SESSION_2 with --no-confirm flag
+"$TEST_SCRIPTS_DIR/kill-session.sh" "$TEST_SESSION_2" --no-confirm >/dev/null
 
 if ! tmux has-session -t "$TEST_SESSION_2" 2>/dev/null; then
     pass "Inactive session killed successfully"
@@ -86,8 +85,8 @@ EOF
 tail -n +11 "$TEST_SCRIPTS_DIR/kill-session.sh" >> "$TEST_SCRIPT_COPY"
 
 # Fix SCRIPT_DIR to point to the original location so imports work
-# We replace line 6 directly (where SCRIPT_DIR is defined)
-sed -i '' '6s|^.*$|SCRIPT_DIR="'"$TEST_SCRIPTS_DIR"'"|' "$TEST_SCRIPT_COPY"
+# We replace line 7 directly (where SCRIPT_DIR is defined)
+sed -i '' '7s|^.*$|SCRIPT_DIR="'"$TEST_SCRIPTS_DIR"'"|' "$TEST_SCRIPT_COPY"
 
 # Make executable
 chmod +x "$TEST_SCRIPT_COPY"
@@ -104,8 +103,11 @@ fi
 
 # Cleanup
 rm -f "$MOCK_UI_LIB" "$TEST_SCRIPT_COPY"
-tmux kill-session -t "$TEST_SESSION_1" 2>/dev/null || true
-tmux kill-session -t "$TEST_SESSION_2" 2>/dev/null || true
+test_tmux kill-session -t "$TEST_SESSION_1" 2>/dev/null || true
+test_tmux kill-session -t "$TEST_SESSION_2" 2>/dev/null || true
+
+# Cleanup isolated tmux server
+cleanup_test_server
 
 echo "-------------------------------------------"
 if [[ $FAIL -eq 0 ]]; then

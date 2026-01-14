@@ -499,10 +499,10 @@ else
     fail "uninstall should use confirmation prompt"
 fi
 
-if [[ "$uninstall_content" == *'../*'* ]] || [[ "$uninstall_content" == *'suspicious path'* ]]; then
-    pass "uninstall has path traversal protection"
+if [[ "$uninstall_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
+    pass "uninstall sources rollback.sh for restore_from_backup"
 else
-    fail "uninstall should have path traversal protection"
+    fail "uninstall should source rollback.sh"
 fi
 
 if [[ "$uninstall_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
@@ -513,10 +513,10 @@ fi
 
 section "Uninstall Script - Brew Package Removal"
 
-if [[ "$uninstall_content" == *'filter_brewfile()'* ]]; then
-    pass "uninstall defines filter_brewfile function"
+if [[ "$uninstall_content" == *'source "$SCRIPT_DIR/../_lib/brewfile.sh"'* ]]; then
+    pass "uninstall sources brewfile.sh for filter_brewfile"
 else
-    fail "uninstall should define filter_brewfile function"
+    fail "uninstall should source brewfile.sh"
 fi
 
 if [[ "$uninstall_content" == *'FILTERED_BREWFILE'* ]]; then
@@ -525,22 +525,11 @@ else
     fail "uninstall should create filtered Brewfile"
 fi
 
-if [[ "$uninstall_content" == *'@preset: minimal'* ]]; then
-    pass "uninstall handles minimal preset in Brewfile"
+# Check that uninstall calls filter_brewfile (from brewfile.sh)
+if [[ "$uninstall_content" == *'filter_brewfile'* ]]; then
+    pass "uninstall calls filter_brewfile function"
 else
-    fail "uninstall should handle minimal preset"
-fi
-
-if [[ "$uninstall_content" == *'@preset: core'* ]]; then
-    pass "uninstall handles core preset in Brewfile"
-else
-    fail "uninstall should handle core preset"
-fi
-
-if [[ "$uninstall_content" == *'@preset: full'* ]]; then
-    pass "uninstall handles full preset in Brewfile"
-else
-    fail "uninstall should handle full preset"
+    fail "uninstall should call filter_brewfile"
 fi
 
 if [[ "$uninstall_content" == *'brew uninstall'* ]]; then

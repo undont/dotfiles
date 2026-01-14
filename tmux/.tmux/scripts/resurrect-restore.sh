@@ -65,7 +65,9 @@ list_sessions() {
         [[ -e "$f" ]] || continue
         session=$(basename "$f" .txt)
         windows=$(grep -c '^window' "$f" 2>/dev/null || echo 0)
+        windows=${windows//[$'\n\r']/}  # Strip newlines
         panes=$(grep -c '^pane' "$f" 2>/dev/null || echo 0)
+        panes=${panes//[$'\n\r']/}  # Strip newlines
         modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$f" 2>/dev/null || stat -c "%y" "$f" 2>/dev/null | cut -d. -f1)
 
         # Check if session currently exists

@@ -33,7 +33,14 @@ switch_to_other_session() {
 
 # Get current session name
 get_current_session() {
-    tmux display-message -p '#{session_name}'
+    # Only return a session name if we're actually inside tmux
+    # Check for TMUX variable which is set when running inside a tmux session
+    if [[ -z "${TMUX:-}" ]]; then
+        # Not inside a tmux session - return empty
+        echo ""
+        return 0
+    fi
+    tmux display-message -p '#{session_name}' 2>/dev/null || echo ""
 }
 
 # Get current window index

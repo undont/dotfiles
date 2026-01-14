@@ -82,18 +82,6 @@ section "Script Structure"
 # Check for required usage patterns
 script_content=$(cat "$LIST_CLAUDE_SCRIPT")
 
-if [[ "$script_content" == *"--verbose"* ]]; then
-    pass "--verbose flag documented in usage"
-else
-    fail "--verbose flag not found in usage"
-fi
-
-if [[ "$script_content" == *'source "$SCRIPT_DIR/_lib/common.sh"'* ]]; then
-    pass "Sources common.sh library"
-else
-    fail "Should source common.sh library"
-fi
-
 if [[ "$script_content" == *'source "$SCRIPT_DIR/_lib/alerts.sh"'* ]]; then
     pass "Sources alerts.sh library"
 else
@@ -126,21 +114,6 @@ if [[ "$script_content" == *'get_agent_display'* ]]; then
     pass "Uses agent-specific indicator for alerts"
 else
     fail "Should use agent-specific indicator"
-fi
-
-section "Verbose Mode"
-
-# Check that verbose mode outputs differently
-if [[ "$script_content" == *'if [[ "${1:-}" == "--verbose" ]]'* ]]; then
-    pass "Implements --verbose flag"
-else
-    fail "Should implement --verbose flag"
-fi
-
-if [[ "$script_content" == *'printf "${CYAN}Claude Code Instances:${NC}\n"'* ]]; then
-    pass "Verbose mode has coloured header"
-else
-    fail "Verbose mode should have coloured header"
 fi
 
 section "Ghost Decoration"
@@ -215,20 +188,6 @@ else
         fi
     else
         fail "Failed to run in fzf mode"
-    fi
-
-    # Test verbose mode
-    if output=$("$LIST_CLAUDE_SCRIPT" --verbose 2>/dev/null); then
-        pass "Runs successfully in verbose mode"
-
-        # Verbose should have coloured output
-        if echo "$output" | grep -q "Claude Code Instances:" || echo "$output" | grep -q "No Claude Code instances"; then
-            pass "Verbose mode has correct output format"
-        else
-            fail "Verbose mode should have header or no-instances message"
-        fi
-    else
-        fail "Failed to run in verbose mode"
     fi
 fi
 

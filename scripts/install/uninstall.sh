@@ -10,6 +10,8 @@ DOTFILES_DIR="$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)"
 export DOTFILES_DIR
 
 source "$SCRIPT_DIR/../_lib/common.sh"
+source "$SCRIPT_DIR/../_lib/brewfile.sh"
+source "$SCRIPT_DIR/../_lib/rollback.sh"
 
 # Parse arguments
 RESTORE_BACKUP=0
@@ -136,27 +138,7 @@ done
 # Step 2: Restore from backup if requested
 if [[ $RESTORE_BACKUP -eq 1 ]] && [[ -n "${LATEST_BACKUP:-}" ]]; then
     echo ""
-    info "Restoring from backup: $LATEST_BACKUP"
-
-    find "$LATEST_BACKUP" -type f | while read -r backup_file; do
-        relative_path="${backup_file#"$LATEST_BACKUP"/}"
-
-        # Skip suspicious paths
-        if [[ "$relative_path" == ../* ]] || [[ "$relative_path" == */../* ]]; then
-            warn "Skipping suspicious path: $relative_path"
-            continue
-        fi
-
-        original_path="$HOME/$relative_path"
-        original_dir=$(dirname "$original_path")
-
-        # Create directory if needed
-        mkdir -p "$original_dir"
-
-        # Restore file
-        cp -p "$backup_file" "$original_path"
-        success "Restored: $original_path"
-    done
+    restore_from_backup "$LATEST_BACKUP"
 fi
 
 # Step 3: Remove additional created files/directories
@@ -196,29 +178,6 @@ if [[ $REMOVE_BREW -eq 1 ]]; then
             PRESET="full"
             echo "No saved preset found, assuming: $PRESET"
         fi
-
-        # Filter Brewfile based on preset (same logic as install-packages.sh)
-        filter_brewfile() {
-            local preset="$1"
-            local brewfile="$2"
-            local include_minimal=true
-            local include_core=false
-            local include_full=false
-
-            case "$preset" in
-                minimal) include_minimal=true ;;
-                core) include_minimal=true; include_core=true ;;
-                full) include_minimal=true; include_core=true; include_full=true ;;
-            esac
-
-            awk -v inc_min="$include_minimal" -v inc_core="$include_core" -v inc_full="$include_full" '
-            BEGIN { include = 1 }
-            /^# @preset: minimal/ { include = (inc_min == "true") ? 1 : 0; next }
-            /^# @preset: core/ { include = (inc_core == "true") ? 1 : 0; next }
-            /^# @preset: full/ { include = (inc_full == "true") ? 1 : 0; next }
-            include { print }
-            ' "$brewfile"
-        }
 
         # Create filtered Brewfile
         FILTERED_BREWFILE=$(mktemp)
