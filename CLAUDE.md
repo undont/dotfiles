@@ -22,6 +22,21 @@ Personal dotfiles for macOS/Linux development environment. Manages configuration
 ### Testing
 
 ```bash
+# Run all tests with dynamic discovery (recommended)
+scripts/run-tests.sh
+
+# Run with verbose output
+scripts/run-tests.sh --verbose
+
+# Run only tmux-dependent tests
+scripts/run-tests.sh --tmux-only
+
+# Run only standalone tests (skip tmux tests)
+scripts/run-tests.sh --no-tmux
+
+# Individual test suites (if needed)
+# ────────────────────────────────────
+
 # Installation library tests
 scripts/_lib/test.sh
 
@@ -43,6 +58,13 @@ scripts/tests/test-dotfiles-cli.sh
 # All tests run by CI
 # See .github/workflows/ci.yml for full list
 ```
+
+**Test Discovery**: The test runner (`scripts/run-tests.sh`) automatically discovers all test files:
+- Library tests: `*/_lib/test.sh`
+- Script tests: `tmux/.tmux/scripts/tests/test-*.sh`
+- Integration tests: `scripts/tests/test-*.sh`
+
+Tests requiring tmux are automatically detected and skipped if tmux is not available.
 
 ### Linting
 
