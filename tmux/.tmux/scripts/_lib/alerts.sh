@@ -2,9 +2,6 @@
 # Agent alert utilities for tmux scripts
 # Source this file after common.sh
 
-# Disable unbound variable check for this file since we use associative array keys
-set +u
-
 # Alerts file location
 readonly ALERTS_FILE="$HOME/.claude/alerts"
 
@@ -12,26 +9,39 @@ readonly ALERTS_FILE="$HOME/.claude/alerts"
 # Future enhancement: Add timestamp field for age-based sorting and auto-expiry
 # Proposed format: session:window:agent:timestamp
 
-# Agent visual identity configuration
-declare -A AGENT_ICONS=(
-    ["claude"]="⚡"
-    ["opencode"]="🔮"
-    ["unknown"]="🤖"
-)
+# Get agent icon (compatible with bash 3.2 - no associative arrays)
+# Usage: get_agent_icon "agent_name"
+# Returns: icon symbol
+get_agent_icon() {
+    local agent="$1"
+    case "$agent" in
+        claude) echo "⚡" ;;
+        opencode) echo "🔮" ;;
+        *) echo "🤖" ;;
+    esac
+}
 
-declare -A AGENT_COLOURS=(
-    ["claude"]="#f1fa8c"      # Yellow
-    ["opencode"]="#bd93f9"    # Dracula purple
-    ["unknown"]="#6272a4"     # Dracula blue
-)
+# Get agent colour (compatible with bash 3.2 - no associative arrays)
+# Usage: get_agent_colour "agent_name"
+# Returns: hex colour code
+get_agent_colour() {
+    local agent="$1"
+    case "$agent" in
+        claude) echo "#f1fa8c" ;;      # Yellow
+        opencode) echo "#bd93f9" ;;    # Dracula purple
+        *) echo "#6272a4" ;;           # Dracula blue
+    esac
+}
 
 # Get agent display icon and colour
 # Usage: get_agent_display "agent_name"
 # Returns: "icon|colour"
 get_agent_display() {
     local agent="$1"
-    local icon="${AGENT_ICONS[$agent]:-${AGENT_ICONS[unknown]}}"
-    local colour="${AGENT_COLOURS[$agent]:-${AGENT_COLOURS[unknown]}}"
+    local icon
+    local colour
+    icon=$(get_agent_icon "$agent")
+    colour=$(get_agent_colour "$agent")
     echo "$icon|$colour"
 }
 
