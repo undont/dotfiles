@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
+source "$(dirname "${BASH_SOURCE[0]}")/brewfile.sh"
+source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # Test suite for installation script libraries
 # Usage: ./test.sh [--verbose]
@@ -9,12 +11,6 @@ PASS=0
 FAIL=0
 # shellcheck disable=SC2034
 VERBOSE="${1:-}"  # Reserved for future verbose output
-
-# Colours (using $'...' for proper escape interpretation)
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
 
 # Test output helpers
 pass() {
@@ -206,29 +202,6 @@ else
 fi
 
 section "Brewfile Filtering"
-
-# Define the filter function for testing
-filter_brewfile() {
-    local preset="$1"
-    local brewfile="$2"
-    local include_minimal=true
-    local include_core=false
-    local include_full=false
-
-    case "$preset" in
-        minimal) include_minimal=true ;;
-        core) include_minimal=true; include_core=true ;;
-        full) include_minimal=true; include_core=true; include_full=true ;;
-    esac
-
-    awk -v inc_min="$include_minimal" -v inc_core="$include_core" -v inc_full="$include_full" '
-    BEGIN { include = 1 }
-    /^# @preset: minimal/ { include = (inc_min == "true") ? 1 : 0; next }
-    /^# @preset: core/ { include = (inc_core == "true") ? 1 : 0; next }
-    /^# @preset: full/ { include = (inc_full == "true") ? 1 : 0; next }
-    include { print }
-    ' "$brewfile"
-}
 
 # Create test Brewfile
 TEST_BREWFILE=$(mktemp)

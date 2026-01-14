@@ -11,6 +11,12 @@ LIB_DIR="$SCRIPTS_DIR/_lib"
 # Source test helpers to get isolated tmux server
 source "$SCRIPT_DIR/_test-helpers.sh"
 
+# Colours for output
+GREEN=$'\033[0;32m'
+RED=$'\033[0;31m'
+YELLOW=$'\033[0;33m'
+NC=$'\033[0m'
+
 PASS=0
 FAIL=0
 
@@ -22,6 +28,11 @@ pass() {
 fail() {
     FAIL=$((FAIL + 1))
     printf "${RED}✗${NC} %s\n" "$1"
+}
+
+section() {
+    echo ""
+    printf "${YELLOW}=== %s ===${NC}\n" "$1"
 }
 
 section "Setup Test Environment"
@@ -101,7 +112,7 @@ pass "Cleaned up tmux server"
 
 echo ""
 echo "==========================================="
-echo "Test Results: ${GREEN}${PASS} passed${NC}, ${RED}${FAIL} failed${NC}"
+printf "${GREEN}Test Results: %d passed${NC}, ${RED}%d failed${NC}\n" "$PASS" "$FAIL"
 echo "==========================================="
 
 [[ $FAIL -eq 0 ]]

@@ -9,6 +9,7 @@
 │  0 / $               line start/end  │  Space sk          keymaps       │
 │  gg / G              file top/bottom │  Space /           buffer search │
 │  Ctrl+d / Ctrl+u     half-page       │  Space Space       open buffers  │
+│  Ctrl+o / Ctrl+i     jump back/fwd   │                                  │
 │                                      │                                  │
 └──────────────────────────────────────┴──────────────────────────────────┘
 

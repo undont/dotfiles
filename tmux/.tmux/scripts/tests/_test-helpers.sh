@@ -16,13 +16,19 @@ section() { echo ""; echo "${YELLOW}=== $1 ===${NC}"; }
 # Usage: setup_test_server
 # Returns: Sets TEST_TMUX_SOCKET and TEST_TMUX_CMD
 setup_test_server() {
-    TEST_TMUX_SOCKET="/tmp/tmux-test-$$"
-    TEST_TMUX_CMD="tmux -L tmux-test-$$"
+    TEST_TMUX_SOCKET="tmux-test-$$"
+    TEST_TMUX_CMD="tmux -L $TEST_TMUX_SOCKET"
     
     # Start a detached server
     $TEST_TMUX_CMD new-session -d -s test-bootstrap 2>/dev/null || true
     
-    export TMUX=""  # Clear TMUX variable so commands use our socket
+    # Export socket name for scripts to use
+    # Scripts will check this variable and add -L flag if set
+    export TMUX_TEST_SOCKET="$TEST_TMUX_SOCKET"
+    
+    # Enable test mode to bypass require_tmux's "inside tmux" check
+    export TMUX_TEST_MODE=1
+    export TMUX=""  # Clear TMUX variable so scripts don't think they're inside tmux
 }
 
 # Cleanup test server
@@ -32,14 +38,19 @@ cleanup_test_server() {
         $TEST_TMUX_CMD kill-server 2>/dev/null || true
     fi
     if [[ -n "${TEST_TMUX_SOCKET:-}" ]]; then
-        rm -f "$TEST_TMUX_SOCKET" 2>/dev/null || true
+        rm -f "/tmp/$TEST_TMUX_SOCKET" 2>/dev/null || true
     fi
+    
+    # Disable test mode and unset test socket
+    unset TMUX_TEST_MODE
+    unset TMUX_TEST_SOCKET
 }
 
 # Wrapper to run tmux commands in test server
 # Usage: test_tmux <tmux-args>
 test_tmux() {
-    $TEST_TMUX_CMD "$@"
+    # Use command to bypass the wrapper function
+    command tmux -L "$TEST_TMUX_SOCKET" "$@"
 }
 
 # Export these for use in test scripts
