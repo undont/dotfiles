@@ -2,7 +2,10 @@
 # Test kill and confirm patterns for windows, panes, and sessions
 set -euo pipefail
 
-SCRIPTS_DIR="/Users/bssmnt/.tmux/scripts"
+# Determine repository root
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+SCRIPTS_DIR="$REPO_ROOT/tmux/.tmux/scripts"
 LIB_DIR="$SCRIPTS_DIR/_lib"
 
 GREEN=$'\033[0;32m'

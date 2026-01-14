@@ -4,7 +4,7 @@ set -euo pipefail
 # Test suite for Brewfile filtering utilities
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../_lib/test.sh"
+source "$SCRIPT_DIR/../_lib/test-install-libs.sh"
 source "$SCRIPT_DIR/../_lib/brewfile.sh"
 
 section "Brewfile Library Tests"

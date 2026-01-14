@@ -35,6 +35,7 @@ jobs:
           EXCLUDES="-e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034"
           shellcheck -x $EXCLUDES tmux/.tmux/scripts/*.sh
           shellcheck -x $EXCLUDES tmux/.tmux/scripts/_lib/*.sh
+          shellcheck -x $EXCLUDES tmux/.tmux/scripts/tests/*.sh
 
       - name: Run ShellCheck on session launchers
         run: |
@@ -45,32 +46,26 @@ jobs:
             fi
           done
 
-  test-libraries:
-    name: Library Tests
+      - name: Run ShellCheck on test scripts
+        run: |
+          EXCLUDES="-e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034"
+          if [[ -d scripts/tests ]]; then
+            shellcheck -x $EXCLUDES scripts/tests/*.sh
+          fi
+
+  test-all:
+    name: All Tests
     runs-on: macos-latest
     steps:
       - uses: actions/checkout@v4
 
-      - name: Run tmux library tests
-        run: |
-          # Tests gracefully skip tmux-dependent tests when not in tmux
-          tmux/.tmux/scripts/_lib/test.sh || true
+      - name: Install tmux
+        run: brew install tmux
 
-      - name: Run tmux script tests
+      - name: Run all tests with dynamic discovery
         run: |
-          # Run standalone script tests (not tmux-dependent)
-          if [[ -f tmux/.tmux/scripts/tests/test-list-claude.sh ]]; then
-            tmux/.tmux/scripts/tests/test-list-claude.sh || true
-          fi
-          if [[ -f tmux/.tmux/scripts/tests/test-dotfiles-status.sh ]]; then
-            tmux/.tmux/scripts/tests/test-dotfiles-status.sh || true
-          fi
-
-      - name: Run installation library tests
-        run: |
-          if [[ -f scripts/_lib/test.sh ]]; then
-            scripts/_lib/test.sh || true
-          fi
+          # Dynamic test discovery - automatically finds and runs all test files
+          ./scripts/run-tests.sh
 
   syntax-check:
     name: Syntax Check
