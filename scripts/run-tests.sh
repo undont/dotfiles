@@ -211,40 +211,47 @@ printf "${CYAN}═════════════════════�
 
 cd "$REPO_ROOT"
 
-# Find all test files
-declare -a LIBRARY_TESTS
-declare -a SCRIPT_TESTS
-declare -a INTEGRATION_TESTS
+# Find all test files using arrays (bash 3.2+ compatible approach)
+# We'll use space-separated strings instead of arrays where possible
+LIBRARY_TESTS=""
+SCRIPT_TESTS=""
+INTEGRATION_TESTS=""
 
 # Library tests (scripts/_lib/test-install-libs.sh, tmux/.tmux/scripts/_lib/test-tmux-libs.sh)
-while IFS= read -r -d '' test_file; do
-    LIBRARY_TESTS+=("$test_file")
-done < <(find . -path "*/_lib/test-*-libs.sh" -type f -print0)
+while IFS= read -r test_file; do
+    [[ -n "$test_file" ]] && LIBRARY_TESTS="$LIBRARY_TESTS $test_file"
+done < <(find . -path "*/_lib/test-*-libs.sh" -type f | sort)
 
 # Tmux script tests
-while IFS= read -r -d '' test_file; do
-    SCRIPT_TESTS+=("$test_file")
-done < <(find tmux/.tmux/scripts/tests -name "test-*.sh" -type f -print0)
+while IFS= read -r test_file; do
+    [[ -n "$test_file" ]] && SCRIPT_TESTS="$SCRIPT_TESTS $test_file"
+done < <(find tmux/.tmux/scripts/tests -name "test-*.sh" -type f | sort)
+
+# Hooks tests (scripts/hooks/tests/test-*.sh)
+while IFS= read -r test_file; do
+    [[ -n "$test_file" ]] && SCRIPT_TESTS="$SCRIPT_TESTS $test_file"
+done < <(find scripts/hooks/tests -name "test-*.sh" -type f 2>/dev/null | sort || true)
 
 # Integration tests
-while IFS= read -r -d '' test_file; do
-    INTEGRATION_TESTS+=("$test_file")
-done < <(find scripts/tests -name "test-*.sh" -type f -print0 2>/dev/null || true)
+while IFS= read -r test_file; do
+    [[ -n "$test_file" ]] && INTEGRATION_TESTS="$INTEGRATION_TESTS $test_file"
+done < <(find scripts/tests -name "test-*.sh" -type f 2>/dev/null | sort || true)
 
-# Run a test suite
+# Run a test suite (bash 3.2+ compatible - using space-separated strings)
 run_suite() {
     local suite_name="$1"
-    shift
-    local tests=("$@")
+    local tests="$2"  # Space-separated test file paths
     
-    if [[ ${#tests[@]} -eq 0 ]]; then
+    # Skip if no tests
+    if [[ -z "$tests" ]]; then
         return
     fi
     
     reset_suite_counters
     printf "${BOLD}%s${NC}\n" "$suite_name"
     
-    for test in "${tests[@]}"; do
+    # Process each test (space-separated)
+    for test in $tests; do
         run_test "$test"
     done
     
@@ -255,9 +262,9 @@ run_suite() {
 # Run tests
 # ──────────────────────────────────────────────────────────────
 
-run_suite "Library Tests" "${LIBRARY_TESTS[@]}"
-run_suite "Script Tests" "${SCRIPT_TESTS[@]}"
-run_suite "Integration Tests" "${INTEGRATION_TESTS[@]}"
+run_suite "Library Tests" "$LIBRARY_TESTS"
+run_suite "Script Tests" "$SCRIPT_TESTS"
+run_suite "Integration Tests" "$INTEGRATION_TESTS"
 
 # ──────────────────────────────────────────────────────────────
 # Overall Summary
