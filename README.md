@@ -39,7 +39,7 @@ dotfiles/
 ├── scripts/          # Installation and utility scripts
 │   ├── dotfiles      # CLI for managing dotfiles
 │   ├── install/      # Installer modules
-│   ├── hooks/        # Tool hooks (e.g. Claude alerts)
+│   ├── hooks/        # Tool hooks (e.g. agent alerts)
 │   ├── tests/        # Test suites
 │   └── _lib/         # Shared shell libraries
 ├── docs/             # Documentation
@@ -217,7 +217,7 @@ The uninstall script uses your saved preset to determine which packages to remov
 - Backtick (`` ` ``) as prefix key
 - Vim-style navigation
 - Session save/restore (tmux-resurrect + continuum)
-- fzf session/window switcher with ⚡ indicators for Claude Code alerts
+- fzf session/window switcher with coloured indicators for agent alerts (⚡ Claude, 🔮 OpenCode)
 - Dracula theme
 
 ### Neovim

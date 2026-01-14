@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Update Claude alerts when a window is renamed
 # Called by after-rename-window hook
 
@@ -21,12 +21,10 @@ fi
 
 # Update alerts file if it exists and contains an alert for this window
 if [[ -f "$ALERTS_FILE" ]] && [[ -n "$OLD_WINDOW" ]]; then
-    OLD_TARGET="${SESSION}:${OLD_WINDOW}"
-    NEW_TARGET="${SESSION}:${NEW_WINDOW}"
-
-    # Replace old window name with new window name in alerts file
-    if grep -Fxq "$OLD_TARGET" "$ALERTS_FILE" 2>/dev/null; then
-        sed "s|^${OLD_TARGET}$|${NEW_TARGET}|" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" && \
+    # Update all entries for this session:window (preserve agent field)
+    # Pattern: session:old_window:agent -> session:new_window:agent
+    if grep -q "^${SESSION}:${OLD_WINDOW}:" "$ALERTS_FILE" 2>/dev/null; then
+        sed "s|^${SESSION}:${OLD_WINDOW}:|${SESSION}:${NEW_WINDOW}:|" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" && \
             mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE"
     fi
 fi
