@@ -17,7 +17,7 @@ newname=$(printf '' | fzf \
     --print-query \
     --query="$CURRENT_NAME" \
     --prompt='Rename window: ' \
-    --height=100% \
+    --height=5 \
     --layout=reverse \
     --border=rounded \
     --border-label=' ⏎ rename · esc cancel ' \
@@ -48,7 +48,7 @@ if [[ -f "$ALERTS_FILE" ]]; then
     grep -vxF "${CURRENT_SESSION}:${CURRENT_NAME}" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
         mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE" || rm -f "${ALERTS_FILE}.tmp"
 fi
-tmux set-option -wt "${CURRENT_SESSION}:${CURRENT_NAME}" -u @claude_alert 2>/dev/null || true
+tmux set-option -wt "${CURRENT_SESSION}:${CURRENT_NAME}" -u @agent_alert 2>/dev/null || true
 
 # Rename the window and disable automatic-rename to preserve the name
 if ! tmux rename-window "$newname" 2>/dev/null; then

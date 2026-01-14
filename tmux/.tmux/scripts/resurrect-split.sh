@@ -39,7 +39,17 @@ if [[ ! -L "${LAST_FILE}" ]] && [[ ! -f "${LAST_FILE}" ]]; then
 fi
 
 if [[ -L "${LAST_FILE}" ]]; then
-    SAVE_FILE=$(readlink -f "${LAST_FILE}")
+    # Use realpath if available, otherwise use readlink (macOS compatible)
+    if command -v realpath >/dev/null 2>&1; then
+        SAVE_FILE=$(realpath "${LAST_FILE}" 2>/dev/null) || exit 0
+    else
+        # macOS readlink doesn't support -f, so manually resolve
+        SAVE_FILE=$(readlink "${LAST_FILE}" 2>/dev/null) || exit 0
+        # If relative path, make it absolute
+        if [[ "${SAVE_FILE}" != /* ]]; then
+            SAVE_FILE="${RESURRECT_DIR}/${SAVE_FILE}"
+        fi
+    fi
 else
     SAVE_FILE="${LAST_FILE}"
 fi

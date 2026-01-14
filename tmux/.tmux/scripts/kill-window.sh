@@ -12,6 +12,7 @@ source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 source "$SCRIPT_DIR/_lib/session.sh"
 source "$SCRIPT_DIR/_lib/alerts.sh"
+source "$SCRIPT_DIR/_lib/ui.sh"
 
 require_tmux
 
@@ -85,12 +86,16 @@ while IFS='|' read -r pane_index pane_title pane_dir pane_active pane_cmd; do
     chmod 600 "$UNDO_CONTENTS_DIR/pane-${pane_index}.txt"
 done < <(tmux list-panes -t "$WINDOW_TARGET" -F '#{pane_index}|#{pane_title}|#{pane_current_path}|#{pane_active}|#{pane_current_command}')
 
-# If killing the last window in our current session, switch to another session first.
+# If killing the last window in our current session, use the standardised confirm pattern.
 # This prevents tmux from auto-exiting since killing the last window would kill the session,
 # leaving the user disconnected. We only need to switch if we're in the target session.
 WINDOW_COUNT=$(get_window_count "$TARGET_SESSION")
 if [[ "$TARGET_SESSION" == "$CURRENT_SESSION" && "$WINDOW_COUNT" -eq 1 ]]; then
-    switch_to_other_session "$TARGET_SESSION" || true
+    if tmux_confirm_last_item "window" "$TARGET_SESSION" "$WINDOW_TARGET" "$WINDOW_NAME"; then
+        exit 0
+    else
+        exit 0  # Exit cleanly on cancellation
+    fi
 fi
 
 # Clear any agent alerts for this window before killing

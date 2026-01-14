@@ -2,6 +2,7 @@
 set -euo pipefail
 
 # Kill a tmux session with confirmation dialog and undo capability
+# Usage: kill-session.sh <session_name> [--no-confirm]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
@@ -13,6 +14,7 @@ source "$SCRIPT_DIR/_lib/alerts.sh"
 require_tmux
 
 SESSION_NAME="${1:-}"
+NO_CONFIRM="${2:-}"
 [[ -z "$SESSION_NAME" ]] && exit 1
 
 # Get the current session (the one the client is attached to)
@@ -20,18 +22,8 @@ CURRENT_SESSION=$(get_current_session)
 
 # Prevent killing the last session
 if is_last_session; then
-    show_centered_message "Cannot kill session" \
-        "" \
-        "This is the only session." \
-        "Create another session first."
-    sleep 2
+    tmux display-message "Cannot kill session: This is the only session. Create another session first."
     exit 1
-fi
-
-# Show confirmation dialog
-if ! show_centered_confirm "Kill session: $SESSION_NAME" \
-    "This will close all windows and panes in this session."; then
-    exit 0
 fi
 
 # Get undo paths
@@ -56,16 +48,48 @@ if [[ -f "$BACKUP_SRC" ]]; then
     chmod 600 "$UNDO_BACKUP"
 fi
 
-# If killing the current session, switch to another first
+# Clear all agent alerts for this session before killing
+clear_session_alerts "$SESSION_NAME"
+
+# If killing the current session, show confirmation then switch and kill
 if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
-    if ! switch_to_other_session "$SESSION_NAME"; then
+    OTHER_SESSION=$(find_other_session "$SESSION_NAME")
+    
+    if [[ -n "$OTHER_SESSION" ]]; then
+        if [[ "$NO_CONFIRM" == "--no-confirm" ]]; then
+            # Direct kill without confirmation
+            tmux switch-client -t "$OTHER_SESSION" \; kill-session -t "$SESSION_NAME"
+        else
+            # Show visual confirmation, then switch and kill if confirmed
+            SWITCH_AND_KILL_CMD="tmux switch-client -t \"${OTHER_SESSION}\" \\; kill-session -t \"${SESSION_NAME}\""
+            TITLE="Kill Session"
+            MESSAGE="Kill session '${SESSION_NAME}' and switch to '${OTHER_SESSION}'?"
+            
+            if show_visual_confirm "$TITLE" "$MESSAGE" "$SWITCH_AND_KILL_CMD"; then
+                exit 0
+            else
+                exit 0  # Exit cleanly on cancellation
+            fi
+        fi
+        exit 0
+    else
         error "Failed to find another session to switch to"
         exit 1
     fi
+else
+    # Killing a different session (not current)
+    if [[ "$NO_CONFIRM" == "--no-confirm" ]]; then
+        tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
+    else
+        # Show visual confirmation for killing inactive session
+        KILL_CMD="tmux kill-session -t \"${SESSION_NAME}\""
+        TITLE="Kill Session"
+        MESSAGE="Kill inactive session '${SESSION_NAME}'?"
+        
+        if show_visual_confirm "$TITLE" "$MESSAGE" "$KILL_CMD"; then
+            exit 0
+        else
+            exit 0  # Exit cleanly on cancellation
+        fi
+    fi
 fi
-
-# Clear all claude alerts for this session before killing
-clear_session_alerts "$SESSION_NAME"
-
-# Kill the session
-tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Agent alert hook script: Set tmux alert when an agent needs attention
 # Usage: agent-alert.sh <agent_name>
 
