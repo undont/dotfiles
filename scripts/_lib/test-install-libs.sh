@@ -28,10 +28,10 @@ skip() {
 }
 
 section() {
-    echo ""
-    echo "─────────────────────────────────────────"
-    echo "$1"
-    echo "─────────────────────────────────────────"
+    printf "\n"
+    printf "${CYAN}%s${NC}\n" "────────────────────────────────────────"
+    printf "${CYAN}%s${NC}\n" "$1"
+    printf "${CYAN}%s${NC}\n" "────────────────────────────────────────"
 }
 
 # Assert that a command succeeds
@@ -74,11 +74,11 @@ assert_equals() {
 
 section "Library Sourcing"
 
-# Source the library
-if source "$SCRIPT_DIR/common.sh" 2>/dev/null; then
-    pass "common.sh sources without error"
+# Note: common.sh is already sourced at the top of this script, so we just verify it exists
+if [[ -f "$SCRIPT_DIR/common.sh" ]]; then
+    pass "common.sh exists"
 else
-    fail "common.sh failed to source"
+    fail "common.sh not found"
     exit 1
 fi
 
