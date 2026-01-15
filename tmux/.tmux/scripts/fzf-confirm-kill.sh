@@ -30,6 +30,7 @@ confirm=$(printf "y\nn" | fzf \
     --bind 'y:accept' \
     --bind 'n:abort' \
     --bind 'enter:accept' \
+    --bind 'space:accept' \
     --bind 'esc:abort' \
     --bind 'q:abort')
 

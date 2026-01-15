@@ -70,9 +70,10 @@ show_centered_message() {
     local box_width=$((max_width + 6))
     local box_height=$((${#lines[@]} + 4))
 
+    # Use LINES/COLUMNS if set (tmux popup), otherwise fall back to tput
     local term_height term_width
-    term_height=$(tput lines)
-    term_width=$(tput cols)
+    term_height=${LINES:-$(tput lines)}
+    term_width=${COLUMNS:-$(tput cols)}
 
     local v_pad=$(( (term_height - box_height) / 2 ))
     [[ $v_pad -lt 0 ]] && v_pad=0
@@ -134,7 +135,7 @@ wait_for_key() {
 
     if [[ "$centred" == "true" ]]; then
         local term_width
-        term_width=$(tput cols)
+        term_width=${COLUMNS:-$(tput cols)}
         local h_pad=$(( (term_width - ${#prompt}) / 2 ))
         [[ $h_pad -lt 0 ]] && h_pad=0
         prompt=$(printf '%*s%s' "$h_pad" '' "$prompt")
@@ -149,9 +150,10 @@ show_notification() {
     local message="$1"
     local duration="${2:-1}"
 
+    # Use LINES/COLUMNS if set (tmux popup), otherwise fall back to tput
     local term_height term_width
-    term_height=$(tput lines)
-    term_width=$(tput cols)
+    term_height=${LINES:-$(tput lines)}
+    term_width=${COLUMNS:-$(tput cols)}
 
     local h_pad=$(( (term_width - ${#message}) / 2 ))
     [[ $h_pad -lt 0 ]] && h_pad=0

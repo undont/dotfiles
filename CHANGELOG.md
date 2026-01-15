@@ -15,15 +15,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Scripts: `run-tests.sh` - dynamic test discovery runner with per-suite summaries
 - CI: ShellCheck now lints test scripts in `tmux/.tmux/scripts/tests/` and `scripts/tests/`
 - CI: Dynamic test discovery automatically finds and runs all test files
+- Ghostty: `opt+up` and `opt+down` keybindings for terminal navigation
 
 ### Changed
 - CI: Replaced manual test execution with dynamic discovery via `run-tests.sh`
 - CI: Renamed "Library Tests" job to "All Tests" to reflect comprehensive coverage
 - Tests: Standardised patterns in test runner (boolean comparisons, counter management, skip handling)
+- Tmux: Simplified fzf session/window switcher keybindings - removed page navigation (`f`/`b`) and half-page (`d`/`u`) keys, now use only `j`/`k` for navigation
+- Tmux: Changed kill/undo keybindings from `alt+x`/`alt+u` to `x`/`u` in fzf switchers for better ergonomics
+- Tmux: Updated border labels and keybinding hints in session and window switchers to reflect simplified navigation
 
 ### Fixed
 - Tmux: test scripts now properly clean up resources even when interrupted
 - CI: Now runs all 12 tests instead of only 4 (discovered 8 previously uncovered tests)
+- OpenCode alerts: Fixed `agent-alert.sh` to work reliably when `$TMUX_PANE` environment variable is not set, improving alert delivery from OpenCode plugin hooks
+- Tmux: Fixed terminal dimension detection in `ui.sh` to use `LINES`/`COLUMNS` environment variables when available (tmux popups), falling back to `tput` for better compatibility
 
 ## [0.1.10] - 2026-01-14
 
