@@ -4,8 +4,29 @@ set -euo pipefail
 # Test suite for Brewfile filtering utilities
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/../_lib/test-install-libs.sh"
 source "$SCRIPT_DIR/../_lib/brewfile.sh"
+source "$SCRIPT_DIR/../_lib/common.sh"
+
+PASS=0
+FAIL=0
+
+# Test output helpers
+pass() {
+    PASS=$((PASS + 1))
+    printf "${GREEN}✓${NC} %s\n" "$1"
+}
+
+fail() {
+    FAIL=$((FAIL + 1))
+    printf "${RED}✗${NC} %s\n" "$1"
+}
+
+section() {
+    printf "\n"
+    printf "${CYAN}%s${NC}\n" "────────────────────────────────────────"
+    printf "${CYAN}%s${NC}\n" "$1"
+    printf "${CYAN}%s${NC}\n" "────────────────────────────────────────"
+}
 
 section "Brewfile Library Tests"
 
