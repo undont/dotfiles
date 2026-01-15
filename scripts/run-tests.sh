@@ -211,42 +211,43 @@ printf "${CYAN}═════════════════════�
 
 cd "$REPO_ROOT"
 
-# Find all test files
-declare -a LIBRARY_TESTS
-declare -a SCRIPT_TESTS
-declare -a INTEGRATION_TESTS
+# Find all test files using bash 3.2-compatible approach
+# Store test file paths as newline-delimited strings
 
 # Library tests (scripts/_lib/test-install-libs.sh, tmux/.tmux/scripts/_lib/test-tmux-libs.sh)
-while IFS= read -r -d '' test_file; do
-    LIBRARY_TESTS+=("$test_file")
-done < <(find . -path "*/_lib/test-*-libs.sh" -type f -print0)
+LIBRARY_TESTS=$(find . -path "*/_lib/test-*-libs.sh" -type f | sort)
 
 # Tmux script tests
-while IFS= read -r -d '' test_file; do
-    SCRIPT_TESTS+=("$test_file")
-done < <(find tmux/.tmux/scripts/tests -name "test-*.sh" -type f -print0)
+SCRIPT_TESTS=$(find tmux/.tmux/scripts/tests -name "test-*.sh" -type f | sort)
 
 # Integration tests
-while IFS= read -r -d '' test_file; do
-    INTEGRATION_TESTS+=("$test_file")
-done < <(find scripts/tests -name "test-*.sh" -type f -print0 2>/dev/null || true)
+INTEGRATION_TESTS=$(find scripts/tests -name "test-*.sh" -type f 2>/dev/null | sort || true)
 
-# Run a test suite
+# Run a test suite (bash 3.2+ compatible - using temp file for test list)
 run_suite() {
     local suite_name="$1"
-    shift
-    local tests=("$@")
+    local tests="$2"  # Newline-delimited test file paths
     
-    if [[ ${#tests[@]} -eq 0 ]]; then
+    # Skip if no tests
+    if [[ -z "$tests" ]]; then
         return
     fi
     
     reset_suite_counters
     printf "${BOLD}%s${NC}\n" "$suite_name"
     
-    for test in "${tests[@]}"; do
+    # Save IFS and set to newline only for iteration
+    local old_IFS="$IFS"
+    IFS=$'\n'
+    
+    # Process each test (newline-delimited)
+    for test in $tests; do
+        [[ -z "$test" ]] && continue
         run_test "$test"
     done
+    
+    # Restore IFS
+    IFS="$old_IFS"
     
     print_suite_summary "$suite_name"
 }
@@ -255,9 +256,9 @@ run_suite() {
 # Run tests
 # ──────────────────────────────────────────────────────────────
 
-run_suite "Library Tests" "${LIBRARY_TESTS[@]}"
-run_suite "Script Tests" "${SCRIPT_TESTS[@]}"
-run_suite "Integration Tests" "${INTEGRATION_TESTS[@]}"
+run_suite "Library Tests" "$LIBRARY_TESTS"
+run_suite "Script Tests" "$SCRIPT_TESTS"
+run_suite "Integration Tests" "$INTEGRATION_TESTS"
 
 # ──────────────────────────────────────────────────────────────
 # Overall Summary
