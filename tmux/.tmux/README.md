@@ -192,16 +192,14 @@ Both `prefix + s` (sessions) and `prefix + f` (windows) use vim-style navigation
 | ------------------- | ------------------------ |
 | Move down/up        | `j` / `k`                |
 | First/last item     | `g` / `G`                |
-| Page down/up        | `f` / `b`                |
-| Half-page down/up   | `d` / `u`                |
 | Select              | `Space` or `Enter`       |
 | Start searching     | `/`                      |
 | Quit                | `q` (nav mode) or `Esc`  |
 | Clear line          | `Ctrl+w` (in search mode)|
 | Delete line         | `Ctrl+k`                 |
 | Toggle all sessions | `a` (windows only)       |
-| Kill session/window | `Opt+x`                  |
-| Undo kill           | `Opt+u`                  |
+| Kill session/window | `x`                      |
+| Undo kill           | `u`                      |
 | New session         | `n` (sessions only)      |
 | Rename session      | `r` (sessions only)      |
 
@@ -213,9 +211,9 @@ Both `prefix + s` (sessions) and `prefix + f` (windows) use vim-style navigation
 
 **Modes:** Switchers start in navigation mode (`:` prompt). Press `/` to search (`>` prompt), `Esc` to return.
 
-Navigation keys (`j`, `k`, `g`, `G`, `f`, `b`, `d`, `u`) are automatically unbound in search mode so you can type them normally, then rebound when you exit search mode.
+Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so you can type them normally, then rebound when you exit search mode.
 
-**Undo:** When you kill a session or window with `Opt+x`, press `Opt+u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
+**Undo:** When you kill a session or window with `x`, press `u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
 **Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for OpenCode). Press `prefix + c` to open an fzf picker showing all running Claude Code instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
 
