@@ -13,10 +13,21 @@ if [[ ! -d "$ALERTS_DIR" ]]; then
 fi
 
 # Get current tmux window identifier
-WIN=$(tmux display-message -t "$TMUX_PANE" -p '#S:#W')
+# Try $TMUX_PANE first, fall back to getting active window from current session
+if [[ -n "$TMUX_PANE" ]]; then
+    WIN=$(tmux display-message -t "$TMUX_PANE" -p '#S:#W' 2>/dev/null)
+fi
+# If we still don't have it, try to get the current session/window
+if [[ -z "$WIN" && -n "$TMUX" ]]; then
+    WIN=$(tmux display-message -p '#S:#W' 2>/dev/null)
+fi
 
-# Set the @agent_alert window option
-tmux set-option -wt "$TMUX_PANE" "@${AGENT}_alert" 1 2>/dev/null
+# Set the @agent_alert window option (use $WIN if available, fall back to $TMUX_PANE)
+if [[ -n "$WIN" ]]; then
+    tmux set-option -wt "$WIN" "@${AGENT}_alert" 1 2>/dev/null
+elif [[ -n "$TMUX_PANE" ]]; then
+    tmux set-option -wt "$TMUX_PANE" "@${AGENT}_alert" 1 2>/dev/null
+fi
 
 # Add window to alerts file with agent type if not already present
 ENTRY="${WIN}:${AGENT}"
