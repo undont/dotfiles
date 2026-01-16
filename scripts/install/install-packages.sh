@@ -25,11 +25,8 @@ if ! command_exists brew; then
 fi
 
 # Create filtered Brewfile
-FILTERED_BREWFILE=$(mktemp)
-trap 'rm -f "$FILTERED_BREWFILE"' EXIT
-
 echo "Filtering Brewfile for preset: $PRESET"
-filter_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile" > "$FILTERED_BREWFILE"
+FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 
 # Install packages from Brewfile
 echo "Installing packages from Brewfile..."

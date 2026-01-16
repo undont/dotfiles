@@ -180,9 +180,7 @@ if [[ $REMOVE_BREW -eq 1 ]]; then
         fi
 
         # Create filtered Brewfile
-        FILTERED_BREWFILE=$(mktemp)
-        trap 'rm -f "$FILTERED_BREWFILE"' EXIT
-        filter_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile" > "$FILTERED_BREWFILE"
+        FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 
         echo ""
         echo "Packages to remove (based on $PRESET preset):"

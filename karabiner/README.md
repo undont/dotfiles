@@ -9,6 +9,9 @@ Keyboard customisation for macOS using [Karabiner Elements](https://karabiner-el
 | Rule | Description |
 |------|-------------|
 | Caps Lock → Escape | Only active in Ghostty terminal |
+| Caps Lock → Escape | Only active in Rider IDE |
+| Caps Lock → Escape | Only active in WebStorm IDE |
+| Caps Lock → Escape | Only active in GoLand IDE |
 
 ### Simple Modifications (All Keyboards)
 
