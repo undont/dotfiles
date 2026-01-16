@@ -13,6 +13,7 @@
 ║  Opt+Shift+d        duplicate tab   ║                                    ║
 ║  Opt+x              kill tab        ║  Opt+s              close pane     ║
 ║                                     ║  Opt+z              zoom pane      ║
+║                                     ║  Opt+Shift+0        equalise sizes ║
 ║                                     ║                                    ║
 ╠═ SCROLL MODE ═══════════════════════╬═ SESSION ══════════════════════════╣
 ║                                     ║                                    ║
@@ -24,18 +25,22 @@
 ║  g / G              top / bottom    ║  ` c                Claude picker  ║
 ║                                     ║  Opt+y              open URL picker║
 ║                                     ║  Opt+u              undo pane/win  ║
+║ 				      ║                                    ║
 ║  / / ?              search ↓ / ↑    ╠═ FZF SWITCHERS ════════════════════╣
 ║  n / N              next / prev     ║                                    ║
-║                                     ║  j/k g/G f/b d/u    navigate       ║
-║  v / V              select / line   ║  o / Space / Enter  select         ║
-║  y / Y              yank / yank ln  ║  /                  start search   ║
-║  q / Esc            exit mode       ║  q / Esc            quit           ║
+║                                     ║  j/k                down/up        ║
+║  v / V              select / line   ║  g/G                first/last     ║
+║  y / Y              yank / yank ln  ║  Space / Enter      select         ║
+║  q / Esc            exit mode       ║  /                  start search   ║
+║                                     ║  q / Esc            quit           ║
 ║                                     ║                                    ║
 ║                                     ║  Ctrl+k             delete line    ║
-║                                     ║  Opt+x              kill sess/win  ║
-║                                     ║  Opt+u              undo kill      ║
+║                                     ║  a                  toggle all     ║
+║                                     ║  m                  move window    ║
+║                                     ║  x                  kill sess/win  ║
+║                                     ║  u                  undo kill      ║
+║                                     ║  n                  new session    ║
 ║                                     ║  r                  rename session ║
-║				      ║                                    ║
 ╚═════════════════════════════════════╩════════════════════════════════════╝
 
                           Press Esc to close this help

@@ -215,7 +215,7 @@ Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so
 
 **Undo:** When you kill a session or window with `x`, press `u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
-**Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for OpenCode). Press `prefix + c` to open an fzf picker showing all running Claude Code instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
+**Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for Gemini and OpenCode). Press `prefix + c` to open an fzf picker showing all running agent instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
 
 ### Plugins (TPM)
 
@@ -328,7 +328,7 @@ Available session backups:
 │   └── last                              # Symlink to latest save
 ├── scripts/
 │   ├── _lib/                             # Shared utility libraries
-│   │   ├── alerts.sh                     # Agent alert utilities (multi-agent support)
+│   │   ├── alerts.sh                     # Agent alert utilities (multi-agent: Claude, Gemini, OpenCode)
 │   │   ├── common.sh                     # Error handling, validation
 │   │   ├── paths.sh                      # Undo file path definitions
 │   │   ├── session.sh                    # Session management utilities
