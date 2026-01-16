@@ -4,11 +4,12 @@ set -euo pipefail
 # Kill a window with undo capability
 # Saves all pane states before killing for later restoration
 #
-# Usage: kill-window.sh [session:window]
+# Usage: kill-window.sh [session:window] [--no-confirm]
 #   If no argument provided, kills the current window
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
+source "$SCRIPT_DIR/_lib/ui.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 source "$SCRIPT_DIR/_lib/session.sh"
 source "$SCRIPT_DIR/_lib/alerts.sh"
@@ -18,6 +19,7 @@ require_tmux
 
 # Parse optional target argument
 WINDOW_TARGET="${1:-}"
+NO_CONFIRM="${2:-}"
 
 if [[ -n "$WINDOW_TARGET" ]]; then
     # Validate and parse session:window format
@@ -47,7 +49,20 @@ fi
 
 CURRENT_SESSION=$(get_current_session)
 
-# Get undo file paths
+# Get window name for confirmation
+WINDOW_NAME=$(tmux display-message -t "$WINDOW_TARGET" -p '#{window_name}')
+
+# Show confirmation dialog (unless --no-confirm is specified)
+if [[ "$NO_CONFIRM" != "--no-confirm" ]]; then
+    TITLE="Kill Window"
+    MESSAGE="Kill window '${WINDOW_NAME}' in session '${TARGET_SESSION}'?"
+
+    if ! show_visual_confirm "$TITLE" "$MESSAGE"; then
+        exit 0  # Exit cleanly on cancellation
+    fi
+fi
+
+# User confirmed - now save undo state
 UNDO_FILE=$(get_window_undo_file)
 UNDO_STATE=$(get_window_undo_state)
 UNDO_CONTENTS_DIR=$(get_window_undo_contents_dir)
@@ -63,7 +78,6 @@ echo "$WINDOW_TARGET" > "$UNDO_FILE"
 chmod 600 "$UNDO_FILE"
 
 # Get window info
-WINDOW_NAME=$(tmux display-message -t "$WINDOW_TARGET" -p '#{window_name}')
 WINDOW_ACTIVE=$(tmux display-message -t "$WINDOW_TARGET" -p '#{window_active}')
 WINDOW_FLAGS=$(tmux display-message -t "$WINDOW_TARGET" -p '#{window_flags}')
 AUTO_RENAME=$(tmux show-window-option -t "$WINDOW_TARGET" -v automatic-rename 2>/dev/null || echo "on")

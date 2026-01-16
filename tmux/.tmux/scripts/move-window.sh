@@ -1,4 +1,4 @@
-#!/usr/bin/env bash
+#!/bin/bash
 # Move a tmux window to a different session
 # Usage: move-window.sh <session:window_index>
 
@@ -15,9 +15,9 @@ SOURCE_WINDOW="$1"
 SOURCE_SESSION="${SOURCE_WINDOW%%:*}"
 WINDOW_INDEX="${SOURCE_WINDOW##*:}"
 
-# Remove any trailing indicators (⚡, 🔮, etc.) from the window identifier
-SOURCE_SESSION="${SOURCE_SESSION%% *}"
-WINDOW_INDEX="${WINDOW_INDEX%% *}"
+# Remove any trailing indicators (⚡, 🤖, etc.) from the window identifier
+SOURCE_SESSION=$(echo "$SOURCE_SESSION" | sed 's/[[:space:]].*$//')
+WINDOW_INDEX=$(echo "$WINDOW_INDEX" | sed 's/[[:space:]].*$//')
 
 # Get the window name for display purposes
 WINDOW_NAME=$(tmux display-message -p -t "${SOURCE_SESSION}:${WINDOW_INDEX}" '#{window_name}' 2>/dev/null)
@@ -30,47 +30,37 @@ fi
 # Get list of sessions excluding the source session
 TARGET_SESSION=$(tmux list-sessions -F '#{session_name}' | \
     grep -v "^${SOURCE_SESSION}$" | \
-    fzf --reverse --cycle \
+    fzf --height=100% --layout=reverse --cycle --disabled \
         --prompt ': ' \
         --border=rounded \
         --border-label=" Move window '${WINDOW_NAME}' from '${SOURCE_SESSION}' to: " \
         --border-label-pos=top \
-        --header='j/k · g/G · / search · n new · q/esc back' \
-        --bind 'j:down,k:up,g:first,G:last,q:abort,esc:abort' \
+        --no-info \
+        --pointer='▌' \
+        --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
         --bind 'enter:accept' \
-        --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-        --bind '/:change-prompt(> )+unbind(j,k,g,G,q,esc,n)' \
-        --bind 'ctrl-c:clear-query+change-prompt(: )+rebind(j,k,g,G,q,esc,n)' \
-        --bind 'n:execute(~/.tmux/scripts/new-session.sh && echo $(tmux display-message -p \"#{session_name}\") > /tmp/tmux-move-target)+accept')
-
-# Check if 'n' was pressed (new session created)
-if [[ -z "$TARGET_SESSION" ]] && [[ -f /tmp/tmux-move-target ]]; then
-    TARGET_SESSION=$(cat /tmp/tmux-move-target)
-    rm -f /tmp/tmux-move-target
-fi
+        --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
+        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space)' \
+        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space)" || echo "abort"')
 
 if [[ -z "$TARGET_SESSION" ]]; then
     exit 0  # User cancelled
 fi
 
-# Move the window to the target session and switch to it
-tmux move-window -s "${SOURCE_SESSION}:${WINDOW_INDEX}" -t "${TARGET_SESSION}:" \; \
-     switch-client -t "${TARGET_SESSION}"
+# Move the window to the target session
+tmux move-window -s "${SOURCE_SESSION}:${WINDOW_INDEX}" -t "${TARGET_SESSION}:"
 
 # Update alert tracking if the window had an alert
+ALERTS_FILE="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/claude-alerts"
 if [[ -f "$ALERTS_FILE" ]]; then
     # Find any alerts for this window and update the session name
     # Alert format: SESSION:WINDOW_NAME:AGENT
     grep "^${SOURCE_SESSION}:${WINDOW_NAME}:" "$ALERTS_FILE" 2>/dev/null | while read -r alert_line; do
         agent=$(echo "$alert_line" | cut -d: -f3)
-        # Remove old alert and add updated alert with new session
-        if grep -qF "${SOURCE_SESSION}:${WINDOW_NAME}:${agent}" "$ALERTS_FILE" 2>/dev/null; then
-            # Create temp file without old alert
-            grep -vF "${SOURCE_SESSION}:${WINDOW_NAME}:${agent}" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp"
-            # Add new alert with updated session
-            echo "${TARGET_SESSION}:${WINDOW_NAME}:${agent}" >> "${ALERTS_FILE}.tmp"
-            mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE"
-        fi
+        # Remove old alert
+        sed -i '' "/^${SOURCE_SESSION}:${WINDOW_NAME}:${agent}$/d" "$ALERTS_FILE"
+        # Add updated alert with new session
+        echo "${TARGET_SESSION}:${WINDOW_NAME}:${agent}" >> "$ALERTS_FILE"
     done
 fi
 

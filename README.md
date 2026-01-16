@@ -227,6 +227,11 @@ The uninstall script uses your saved preset to determine which packages to remov
 - GitHub Copilot (disabled for sensitive files)
 - Treesitter syntax highlighting
 
+### AI Coding Assistants
+- Claude Code (with tmux alert integration)
+- Gemini CLI (with tmux alert integration)
+- OpenCode (with tmux alert integration)
+
 ### Hammerspoon
 - Auto-centre windows for specified apps
 - CLI enabled via IPC
