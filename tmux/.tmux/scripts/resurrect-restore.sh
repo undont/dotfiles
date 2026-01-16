@@ -21,16 +21,13 @@
 
 set -euo pipefail
 
-# Find where resurrect actually saves (check for 'last' symlink or sessions dir)
-if [[ -d "${HOME}/.tmux/resurrect/sessions" ]]; then
-    RESURRECT_DIR="${HOME}/.tmux/resurrect"
-elif [[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/sessions" ]]; then
-    RESURRECT_DIR="${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
-else
-    # Default to ~/.tmux/resurrect (where resurrect saves by default)
-    RESURRECT_DIR="${HOME}/.tmux/resurrect"
-fi
-SESSIONS_DIR="${RESURRECT_DIR}/sessions"
+# Source path utilities
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_lib/paths.sh"
+
+# Get the resurrect directories using shared functions
+RESURRECT_DIR=$(get_resurrect_dir)
+SESSIONS_DIR=$(get_resurrect_sessions_dir)
 
 # Colours for output
 RED='\033[0;31m'

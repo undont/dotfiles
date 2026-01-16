@@ -107,3 +107,42 @@ get_most_recent_undo_type() {
         echo ""
     fi
 }
+
+# ═════════════════════════════════════════════════════════════════
+# Resurrect Path Discovery
+# ═════════════════════════════════════════════════════════════════
+# The functions below discover where tmux-resurrect stores session data.
+# They check both XDG-compliant and legacy locations.
+
+# Get the resurrect data directory
+# Returns the directory where tmux-resurrect stores its data
+#
+# Usage: RESURRECT_DIR=$(get_resurrect_dir)
+# Output: Path to resurrect directory
+get_resurrect_dir() {
+    # Check for existing 'last' symlink (best indicator)
+    if [[ -L "${HOME}/.tmux/resurrect/last" || -f "${HOME}/.tmux/resurrect/last" ]]; then
+        echo "${HOME}/.tmux/resurrect"
+    elif [[ -L "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/last" || -f "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/last" ]]; then
+        echo "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
+    # Fall back to checking for sessions directory
+    elif [[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/sessions" ]]; then
+        echo "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
+    elif [[ -d "${HOME}/.tmux/resurrect/sessions" ]]; then
+        echo "${HOME}/.tmux/resurrect"
+    # Default to legacy location if neither exists
+    else
+        echo "${HOME}/.tmux/resurrect"
+    fi
+}
+
+# Get the resurrect sessions directory
+# Returns the directory where session state files are stored
+#
+# Usage: SESSIONS_DIR=$(get_resurrect_sessions_dir)
+# Output: Path to resurrect sessions directory
+get_resurrect_sessions_dir() {
+    local resurrect_dir
+    resurrect_dir=$(get_resurrect_dir)
+    echo "${resurrect_dir}/sessions"
+}
