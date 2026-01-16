@@ -2,22 +2,6 @@
 # Terminal UI utilities for tmux scripts
 # Source this file after common.sh
 
-# Display a visual confirmation popup
-# Usage: show_visual_confirm "Title" "Message" "command to execute on yes"
-# Returns: 0 if confirmed and executed, 1 if cancelled
-show_visual_confirm() {
-    local title="$1"
-    local message="$2"
-    local command="$3"
-    
-    # Get script directory for tmux-confirm.sh
-    local script_dir
-    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-    
-    tmux display-popup -w 60 -h 10 -E "$script_dir/tmux-confirm.sh \"$title\" \"$message\" \"$command\""
-    return $?
-}
-
 # Display a visual confirmation for last window/pane scenarios
 # Shows confirmation first, then switches to another session if user confirms
 # Usage: tmux_confirm_last_item "window" "session_name" "target" "window_name"
