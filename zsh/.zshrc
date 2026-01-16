@@ -209,7 +209,7 @@ alias commands="cd ~/.claude/commands"
 
 # Dana 
 alias da="cd ~/src/dana"
-alias dap="cd ~/src/dana/.claude/plans/"
+alias dap="cd ~/src/dana/.claude/plans"
 
 # Kill Vite Server
 alias killvite="pkill -f "vite" 2>/dev/null"
@@ -217,13 +217,16 @@ alias killvite="pkill -f "vite" 2>/dev/null"
 # dotfiles 
 alias dot="cd ~/dotfiles"
 alias dotp="cd ~/dotfiles/.claude/plans"
-alias dotd="cd ~/dotfiles/.claude/docs/"
+alias dotd="cd ~/dotfiles/.claude/docs"
 
 # claude-config 
 alias claudeconfig="cd ~/claude-config"
 
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/resurrect-restore.sh --list"
+
+# Cleanup stray Tmux test artefacts 
+alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 
 # Functions (instead of aliases) for tab completion support
 trestore() {

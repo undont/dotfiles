@@ -12,9 +12,9 @@ get_agent_icon() {
     local agent="$1"
     case "$agent" in
         claude) echo "⚡" ;;
-        gemini) echo "🤖" ;;
+        gemini) echo "🧬" ;;
         opencode) echo "🔮" ;;
-        *) echo "🤖" ;;
+        *) echo "🧬" ;;
     esac
 }
 

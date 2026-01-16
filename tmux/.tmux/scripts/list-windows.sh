@@ -1,7 +1,7 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # List tmux windows sorted by last viewed (most recent first)
 # Used by the window switcher (prefix + f)
-# Shows ⚡ indicator for windows with Claude alerts
+# Shows agent-specific indicators for windows with alerts
 #
 # Usage: list-windows.sh [--all]
 #   --all: List windows from all sessions (default: current session only)
@@ -21,20 +21,27 @@ else
     tmux list-windows -F "$FORMAT"
 fi | sort -rn | cut -d' ' -f2- | while read -r line; do
     # Line format: "session:window_index window_name"
-    # Alerts file format: "session:window_name"
+    # Alerts file format: "session:window_name:agent"
     session_idx=$(echo "$line" | cut -d' ' -f1)      # e.g., "dotfiles:1"
     session_name="${session_idx%%:*}"                 # e.g., "dotfiles"
     window_name=$(echo "$line" | cut -d' ' -f2-)      # e.g., "dev"
+    alert_key="${session_name}:${window_name}:"       # e.g., "dotfiles:dev:" (prefix match)
 
-    # Check if this window has an alert
-    alert_line=$(grep "^${session_name}:${window_name}:" "$ALERTS_FILE" 2>/dev/null | head -1)
-    if [[ -n "$alert_line" ]]; then
-        agent=$(echo "$alert_line" | cut -d: -f3)
-        icon="⚡"
-        if [[ "$agent" == "gemini" ]]; then
-            icon="🤖"
+    # Check if this window has alerts and collect unique agents
+    if [[ -f "$ALERTS_FILE" ]]; then
+        agents=$(grep "^${alert_key}" "$ALERTS_FILE" 2>/dev/null | cut -d: -f3 | sort -u)
+        if [[ -n "$agents" ]]; then
+            # Build icon string for all agents in this window
+            icons=""
+            while IFS= read -r agent; do
+                display=$(get_agent_display "$agent")
+                icon="${display%%|*}"
+                icons="${icons}${icon}"
+            done <<< "$agents"
+            echo "$line ${icons}"
+        else
+            echo "$line"
         fi
-        echo "$line $icon"
     else
         echo "$line"
     fi
