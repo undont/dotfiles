@@ -33,7 +33,7 @@ claude_panes=()
 # Iterate through all panes in all sessions, sorted by activity (most recent first)
 while IFS= read -r line; do
     # Parse the pane info: activity session:window_index.pane_index command
-    activity=$(echo "$line" | cut -d' ' -f1)
+    # activity=$(echo "$line" | cut -d' ' -f1)  # Unused: for sorting only
     session=$(echo "$line" | cut -d' ' -f2 | cut -d: -f1)
     window_idx=$(echo "$line" | cut -d: -f2 | cut -d. -f1)
     pane_idx=$(echo "$line" | cut -d. -f2 | cut -d' ' -f1)

@@ -5,6 +5,44 @@
 # Alerts file location
 readonly ALERTS_FILE="$HOME/.claude/alerts"
 
+# Get agent icon (compatible with bash 3.2 - no associative arrays)
+# Usage: get_agent_icon "agent_name"
+# Returns: icon symbol
+get_agent_icon() {
+    local agent="$1"
+    case "$agent" in
+        claude) echo "⚡" ;;
+        gemini) echo "🤖" ;;
+        opencode) echo "🔮" ;;
+        *) echo "🤖" ;;
+    esac
+}
+
+# Get agent colour (compatible with bash 3.2 - no associative arrays)
+# Usage: get_agent_colour "agent_name"
+# Returns: hex colour code
+get_agent_colour() {
+    local agent="$1"
+    case "$agent" in
+        claude) echo "#f1fa8c" ;;      # Yellow
+        gemini) echo "#8be9fd" ;;     # Cyan
+        opencode) echo "#bd93f9" ;;    # Dracula purple
+        *) echo "#6272a4" ;;           # Dracula blue
+    esac
+}
+
+# Get agent display icon and colour
+# Usage: get_agent_display "agent_name"
+# Returns: "icon|colour"
+get_agent_display() {
+    local agent="$1"
+    local icon
+    local colour
+    icon=$(get_agent_icon "$agent")
+    colour=$(get_agent_colour "$agent")
+    echo "$icon|$colour"
+}
+
 # Clear all alerts for a specific window
 # Usage: clear_window_alerts "session" "window" ["window_id"]
 clear_window_alerts() {
@@ -23,7 +61,7 @@ clear_window_alerts() {
         fi
     fi
 
-    # Unset all agent window options
+    # Clear all agent alert options dynamically
     local target
     if [[ -n "$window_id" ]]; then
         target="$window_id"
@@ -31,8 +69,11 @@ clear_window_alerts() {
         target="${session}:${window}"
     fi
 
-    tmux set-option -wt "$target" -u @claude_alert 2>/dev/null || true
-    tmux set-option -wt "$target" -u @gemini_alert 2>/dev/null || true
+    # Clear all agent alert options dynamically
+    tmux show-options -wt "$target" 2>/dev/null | \
+        grep '@.*_alert' | \
+        cut -d' ' -f1 | \
+        xargs -I{} tmux set-option -wt "$target" -u {} 2>/dev/null || true
 }
 
 # Clear all alerts for a session
@@ -53,8 +94,11 @@ clear_session_alerts() {
 
     # Unset agent options for all windows in session
     local win
-    for win in $(tmux list-windows -t "$session" -F '#W' 2>/dev/null); do
-        tmux set-option -wt "${session}:${win}" -u @claude_alert 2>/dev/null || true
-        tmux set-option -wt "${session}:${win}" -u @gemini_alert 2>/dev/null || true
+    for win in $(tmux list-windows -t "$session" -F '#D' 2>/dev/null); do
+        # Clear all agent alert options dynamically
+        tmux show-options -wt "$win" 2>/dev/null | \
+            grep '@.*_alert' | \
+            cut -d' ' -f1 | \
+            xargs -I{} tmux set-option -wt "$win" -u {} 2>/dev/null || true
     done
 }

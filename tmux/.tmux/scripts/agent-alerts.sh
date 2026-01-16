@@ -1,5 +1,8 @@
 #!/bin/bash
-# Display agent alerts for tmux status bar (Claude, Gemini, etc.)
+# Display agent alerts for tmux status bar (Claude, Gemini, OpenCode, etc.)
+
+SCRIPT_DIR="${BASH_SOURCE%/*}"
+source "$SCRIPT_DIR/_lib/alerts.sh"
 
 ALERTS_FILE="$HOME/.claude/alerts"
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
@@ -21,14 +24,10 @@ if [[ -f "$ALERTS_FILE" && -s "$ALERTS_FILE" ]]; then
             ((i++))
             if [[ $i -gt 3 ]]; then break; fi
 
-            # Default icon and color
-            icon="⚡"
-            color="#f1fa8c" # Yellow
-
-            if [[ "$agent" == "gemini" ]]; then
-                icon="🤖"
-                color="#8be9fd" # Dracula Cyan (Blue-ish)
-            fi
+            # Get agent display info using generic function
+            display=$(get_agent_display "$agent")
+            icon="${display%%|*}"
+            color="${display##*|}"
 
             output="${output}#[fg=${color},bold]${icon} ${session}:${window}#[default] "
         done <<< "$filtered_alerts"
