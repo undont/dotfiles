@@ -69,7 +69,28 @@ sanitise_session_name() {
     echo "$name" | tr -c '[:alnum:]_.-' '-' | sed 's/-*$//'
 }
 
-# Validate session name (alphanumeric, underscore, hyphen, dot)
+# ═════════════════════════════════════════════════════════════════
+# Session Validation
+# ═════════════════════════════════════════════════════════════════
+
+# Validate a tmux session name
+# Session names must be alphanumeric with dots, underscores, and hyphens allowed.
+#
+# Usage:
+#   if ! validate_session_name "$name"; then
+#       exit 1
+#   fi
+#
+# Note: This function outputs error messages via error() on failure.
+#       Callers should NOT add additional error messages.
+#
+# Arguments:
+#   $1 - Session name to validate
+#
+# Returns:
+#   0 - Valid session name
+#   1 - Invalid session name (empty or contains invalid characters)
+#
 validate_session_name() {
     local name="$1"
 

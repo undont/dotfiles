@@ -29,6 +29,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - Tmux: test scripts now properly clean up resources even when interrupted
 - CI: Now runs all 12 tests instead of only 4 (discovered 8 previously uncovered tests)
+
+### Added
+- Tmux: Comprehensive resurrect testing suite covering path discovery, split operations, restore operations, and edge cases
+- Scripts: Documentation for SCRIPT_DIR pattern standardization across shell scripts
+- CI: Resurrect tests now run automatically via dynamic test discovery
+
+### Changed
+- Tmux: Migrated undo file storage from `/tmp/tmux-undo-*` to XDG-compliant `${XDG_CACHE_HOME}/tmux/undo/` with automatic migration
+- Tmux: Standardized session validation error handling across `new-session.sh` and `rename-session.sh`
+- Scripts: Updated `new-session.sh` to use production SCRIPT_DIR pattern (`${BASH_SOURCE%/*}`)
+- Tests: Updated test expectations to match XDG-compliant undo paths
 - OpenCode alerts: Fixed `agent-alert.sh` to work reliably when `$TMUX_PANE` environment variable is not set, improving alert delivery from OpenCode plugin hooks
 - Tmux: Fixed terminal dimension detection in `ui.sh` to use `LINES`/`COLUMNS` environment variables when available (tmux popups), falling back to `tput` for better compatibility
 

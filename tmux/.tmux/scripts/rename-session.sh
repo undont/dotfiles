@@ -41,8 +41,8 @@ if [[ "$newname" == "$current_session" ]]; then
 fi
 
 # Validate session name
-if ! validate_session_name "$newname" 2>/dev/null; then
-    show_error "Invalid session name: '$newname'"
+if ! validate_session_name "$newname"; then
+    # validate_session_name already outputs error message via error()
     exit 1
 fi
 
@@ -56,8 +56,11 @@ fi
 # Use grep -F for fixed string matching to prevent regex metacharacter issues
 ALERTS_FILE="$HOME/.claude/alerts"
 if [[ -f "$ALERTS_FILE" ]]; then
-    grep -vF "${current_session}:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
-        mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE" || rm -f "${ALERTS_FILE}.tmp"
+    if grep -vF "${current_session}:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null; then
+        mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE"
+    else
+        rm -f "${ALERTS_FILE}.tmp"
+    fi
 fi
 # Clear @agent_alert options for all windows in the session
 for win in $(tmux list-windows -t "$current_session" -F '#W' 2>/dev/null); do

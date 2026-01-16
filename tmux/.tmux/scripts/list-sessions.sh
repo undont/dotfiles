@@ -4,6 +4,8 @@
 # Shows agent-specific indicators for sessions with alerts
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
+# Note: Production scripts use ${BASH_SOURCE%/*} pattern.
+# Test scripts use $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd).
 source "$SCRIPT_DIR/_lib/alerts.sh"
 
 # Get sessions sorted by activity

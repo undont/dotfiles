@@ -171,6 +171,30 @@ Based on kickstart.nvim with modular organisation:
 - Conditional PATH additions: `[[ -n "$VAR" ]] && export PATH=$PATH:$VAR/bin`
 - All scripts pass ShellCheck with standard exclusions (SC1091, SC2059, SC2015, SC2016, SC2034)
 
+### SCRIPT_DIR Pattern
+
+Use consistent patterns for setting `SCRIPT_DIR` across all shell scripts:
+
+**Production scripts** (launchers, installers, tmux scripts):
+```bash
+SCRIPT_DIR="${BASH_SOURCE%/*}"
+```
+
+**Test scripts** (test-*.sh, test-*-libs.sh):
+```bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+```
+
+**Rationale**:
+- Production scripts: Simpler `${BASH_SOURCE%/*}` is faster and sufficient for scripts invoked from standard paths
+- Test scripts: Full `cd` + `pwd` ensures absolute paths when tests are invoked from different directories
+- Resurrect scripts: Use test pattern for consistency (invoked in various contexts)
+
+**Examples**:
+- ✓ `tmux/.tmux/scripts/list-sessions.sh` - Uses `${BASH_SOURCE%/*}`
+- ✓ `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)`
+- ✗ Don't mix patterns within the same category of scripts
+
 ## Test Patterns
 
 Tests use a simple pass/fail pattern:
