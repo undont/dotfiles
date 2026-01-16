@@ -4,6 +4,8 @@ set -euo pipefail
 # Test suite for Brewfile filtering utilities
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# Note: Test scripts use full cd+pwd for absolute paths.
+# Production scripts use simpler ${BASH_SOURCE%/*} pattern.
 source "$SCRIPT_DIR/../_lib/brewfile.sh"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
