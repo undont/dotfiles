@@ -228,8 +228,8 @@ The uninstall script uses your saved preset to determine which packages to remov
 - Treesitter syntax highlighting
 
 ### AI Coding Assistants
-- Claude Code
-- Gemini CLI
+- Claude Code (with tmux alert integration)
+- Gemini CLI (with tmux alert integration)
 - OpenCode
 
 ### Hammerspoon

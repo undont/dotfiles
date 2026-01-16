@@ -75,6 +75,32 @@ show_centered_confirm() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
+# Visual confirmation dialog using fzf with Yes/No options
+# Usage: show_visual_confirm "Title" "Message"
+# Returns: 0 if confirmed, 1 if cancelled
+show_visual_confirm() {
+    local title="$1"
+    local message="$2"
+
+    local choice
+    choice=$(printf "yes\nno" | fzf \
+        --height=100% --layout=reverse --disabled \
+        --prompt=': ' \
+        --border=rounded \
+        --border-label=" ${title} " \
+        --border-label-pos=top \
+        --header="${message}" \
+        --no-info \
+        --pointer='▌' \
+        --bind 'j:down,k:up,space:accept,enter:accept' \
+        --bind 'change:clear-query' \
+        --bind 'y:pos(1)+accept,n:pos(2)+accept' \
+        --bind 'esc:abort,q:abort' \
+        2>/dev/null) || return 1
+
+    [[ "$choice" == "yes" ]]
+}
+
 # Wait for any key press
 # Usage: wait_for_key "prompt" [true] - pass true as second arg to centre the prompt
 wait_for_key() {

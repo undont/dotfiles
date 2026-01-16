@@ -30,16 +30,18 @@ fi
 # Get list of sessions excluding the source session
 TARGET_SESSION=$(tmux list-sessions -F '#{session_name}' | \
     grep -v "^${SOURCE_SESSION}$" | \
-    fzf --reverse --cycle \
+    fzf --height=100% --layout=reverse --cycle --disabled \
         --prompt ': ' \
         --border=rounded \
         --border-label=" Move window '${WINDOW_NAME}' from '${SOURCE_SESSION}' to: " \
         --border-label-pos=top \
-        --header='j/k · g/G · / search · q/esc abort' \
-        --bind 'j:down,k:up,g:first,G:last,q:abort' \
+        --no-info \
+        --pointer='▌' \
+        --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
         --bind 'enter:accept' \
-        --bind '/:enable-search+change-prompt(> )' \
-        --bind 'esc:abort')
+        --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
+        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space)' \
+        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space)" || echo "abort"')
 
 if [[ -z "$TARGET_SESSION" ]]; then
     exit 0  # User cancelled
