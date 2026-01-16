@@ -525,11 +525,11 @@ else
     fail "uninstall should create filtered Brewfile"
 fi
 
-# Check that uninstall calls filter_brewfile (from brewfile.sh)
-if [[ "$uninstall_content" == *'filter_brewfile'* ]]; then
-    pass "uninstall calls filter_brewfile function"
+# Check that uninstall calls create_filtered_brewfile (from brewfile.sh)
+if [[ "$uninstall_content" == *'create_filtered_brewfile'* ]]; then
+    pass "uninstall calls create_filtered_brewfile helper"
 else
-    fail "uninstall should call filter_brewfile"
+    fail "uninstall should call create_filtered_brewfile"
 fi
 
 if [[ "$uninstall_content" == *'brew uninstall'* ]]; then

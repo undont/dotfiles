@@ -133,11 +133,6 @@ get_window_count() {
     tmux list-windows -t "$session" 2>/dev/null | wc -l | tr -d ' '
 }
 
-# Get the number of panes in current window
-get_pane_count() {
-    tmux display-message -p '#{window_panes}'
-}
-
 # Check if this is the last session
 is_last_session() {
     local count

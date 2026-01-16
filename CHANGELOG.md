@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - CI: ShellCheck now lints test scripts in `tmux/.tmux/scripts/tests/` and `scripts/tests/`
 - CI: Dynamic test discovery automatically finds and runs all test files
 - Ghostty: `opt+up` and `opt+down` keybindings for terminal navigation
+- Karabiner: Caps Lock → Escape mappings for JetBrains IDEs (Rider, WebStorm, GoLand)
 
 ### Changed
 - CI: Replaced manual test execution with dynamic discovery via `run-tests.sh`
