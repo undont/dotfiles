@@ -2,22 +2,6 @@
 # Terminal UI utilities for tmux scripts
 # Source this file after common.sh
 
-# Display a visual confirmation popup
-# Usage: show_visual_confirm "Title" "Message" "command to execute on yes"
-# Returns: 0 if confirmed and executed, 1 if cancelled
-show_visual_confirm() {
-    local title="$1"
-    local message="$2"
-    local command="$3"
-    
-    # Get script directory for tmux-confirm.sh
-    local script_dir
-    script_dir="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-    
-    tmux display-popup -w 60 -h 10 -E "$script_dir/tmux-confirm.sh \"$title\" \"$message\" \"$command\""
-    return $?
-}
-
 # Display a visual confirmation for last window/pane scenarios
 # Shows confirmation first, then switches to another session if user confirms
 # Usage: tmux_confirm_last_item "window" "session_name" "target" "window_name"
@@ -125,6 +109,32 @@ show_centered_confirm() {
     local response
     read -rsn1 response
     [[ "$response" =~ ^[Yy]$ ]]
+}
+
+# Visual confirmation dialog using fzf with Yes/No options
+# Usage: show_visual_confirm "Title" "Message"
+# Returns: 0 if confirmed, 1 if cancelled
+show_visual_confirm() {
+    local title="$1"
+    local message="$2"
+
+    local choice
+    choice=$(printf "yes\nno" | fzf \
+        --height=100% --layout=reverse --disabled \
+        --prompt=': ' \
+        --border=rounded \
+        --border-label=" ${title} " \
+        --border-label-pos=top \
+        --header="${message}" \
+        --no-info \
+        --pointer='▌' \
+        --bind 'j:down,k:up,space:accept,enter:accept' \
+        --bind 'change:clear-query' \
+        --bind 'y:pos(1)+accept,n:pos(2)+accept' \
+        --bind 'esc:abort,q:abort' \
+        2>/dev/null) || return 1
+
+    [[ "$choice" == "yes" ]]
 }
 
 # Wait for any key press
