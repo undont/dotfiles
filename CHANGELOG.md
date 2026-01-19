@@ -17,11 +17,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - CI: Dynamic test discovery automatically finds and runs all test files
 - Ghostty: `opt+up` and `opt+down` keybindings for terminal navigation
 - Karabiner: Caps Lock → Escape mappings for JetBrains IDEs (Rider, WebStorm, GoLand)
+- Tmux: `Opt+=` keybinding to split pane upward (complements `Opt+-` for split down)
 
 ### Changed
 - CI: Replaced manual test execution with dynamic discovery via `run-tests.sh`
 - CI: Renamed "Library Tests" job to "All Tests" to reflect comprehensive coverage
 - Tests: Standardised patterns in test runner (boolean comparisons, counter management, skip handling)
+- Tmux: Reformatted help popup (`prefix+h`) with cleaner layout and adjusted dimensions (74x41)
 - Tmux: Simplified fzf session/window switcher keybindings - removed page navigation (`f`/`b`) and half-page (`d`/`u`) keys, now use only `j`/`k` for navigation
 - Tmux: Changed kill/undo keybindings from `alt+x`/`alt+u` to `x`/`u` in fzf switchers for better ergonomics
 - Tmux: Updated border labels and keybinding hints in session and window switchers to reflect simplified navigation

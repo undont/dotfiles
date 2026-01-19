@@ -1,46 +1,39 @@
-╔══════════════════════════════════════════════════════════════════════════╗
-║                          TMUX KEYBOARD SHORTCUTS                         ║
-║		                                                           ║
-╠═ TABS ══════════════════════════════╦═ PANES ════════════════════════════╣
-║                                     ║                                    ║
-║  Opt+[ / Opt+]      prev / next     ║  Opt+hjkl           navigate       ║
-║  ` 1-5              go to tab       ║  Ctrl+, / Ctrl+.    left / down    ║
-║                                     ║  Opt+Shift+hjkl     resize         ║
-║  Opt+t              new tab         ║                                    ║
-║  Opt+r                              ║  Opt+'              split left     ║
-║                                     ║  Opt+\              split right    ║
-║  Opt+Shift+[ / ]    swap left/right ║  Opt+-              split down     ║
-║  Opt+Shift+d        duplicate tab   ║                                    ║
-║  Opt+x              kill tab        ║  Opt+s              close pane     ║
-║                                     ║  Opt+z              zoom pane      ║
-║                                     ║  Opt+Shift+0        equalise sizes ║
-║                                     ║                                    ║
-╠═ SCROLL MODE ═══════════════════════╬═ SESSION ══════════════════════════╣
-║                                     ║                                    ║
-║  Opt+v / ` v        enter mode      ║  ` s                switch (fzf)   ║
-║                                     ║  ` f                switch win     ║
-║  hjkl               navigate        ║  ` w                save all       ║
-║  f / b              page down/up    ║  ` d                detach         ║
-║  d / u              half-page       ║  ` h                this help      ║
-║  g / G              top / bottom    ║  ` c                Claude picker  ║
-║                                     ║  Opt+y              open URL picker║
-║                                     ║  Opt+u              undo pane/win  ║
-║ 				      ║                                    ║
-║  / / ?              search ↓ / ↑    ╠═ FZF SWITCHERS ════════════════════╣
-║  n / N              next / prev     ║                                    ║
-║                                     ║  j/k                down/up        ║
-║  v / V              select / line   ║  g/G                first/last     ║
-║  y / Y              yank / yank ln  ║  Space / Enter      select         ║
-║  q / Esc            exit mode       ║  /                  start search   ║
-║                                     ║  q / Esc            quit           ║
-║                                     ║                                    ║
-║                                     ║  Ctrl+k             delete line    ║
-║                                     ║  a                  toggle all     ║
-║                                     ║  m                  move window    ║
-║                                     ║  x                  kill sess/win  ║
-║                                     ║  u                  undo kill      ║
-║                                     ║  n                  new session    ║
-║                                     ║  r                  rename session ║
-╚═════════════════════════════════════╩════════════════════════════════════╝
+╔══════════════════════════════════════════════════════════════════════╗
+║                        TMUX KEYBOARD SHORTCUTS                       ║
+║                                                                      ║
+╠═ TABS ════════════════════════╦═ PANES ══════════════════════════════╣
+║                               ║                                      ║
+║  Opt+[ / Opt+]    prev / next ║  Opt+hjkl         navigate           ║
+║  ` 1-5            go to tab   ║  Ctrl+, / Ctrl+.  left / down        ║
+║                               ║  Opt+Shift+hjkl   resize             ║
+║  Opt+t            new tab     ║                                      ║
+║  Opt+r            rename tab  ║  Opt+'            split left         ║
+║                               ║  Opt+\            split right        ║
+║  Opt+Shift+[ / ]  swap left/  ║  Opt+-            split down         ║
+║                   right       ║  Opt+=            split up           ║
+║  Opt+Shift+d      duplicate   ║  Opt+s            close pane         ║
+║  Opt+x            kill tab    ║  Opt+z            zoom pane          ║
+║                               ║  Opt+Shift+0      equalise sizes     ║
+║                               ║                                      ║
+╠═ SCROLL MODE ═════════════════╬═ SESSION ════════════════════════════╣
+║                               ║                                      ║
+║  Opt+v / ` v      enter mode  ║  ` s              switch (fzf)       ║
+║                               ║  ` f              switch win         ║
+║  hjkl             navigate    ║  ` w              save all           ║
+║  f / b            page down/  ║  ` d              detach             ║
+║                   up          ║  ` h              this help          ║
+║  d / u            half-page   ║  ` c              Claude picker      ║
+║  g / G            top/bottom  ║  Opt+y            open URL picker    ║
+║                               ║  Opt+u            undo pane/win      ║
+║  / / ?            search ↓/↑  ║                                      ║
+║  n / N            next / prev ║                                      ║
+║                               ║                                      ║
+║  v / V            select /    ║                                      ║
+║                   line        ║                                      ║
+║  y / Y            yank /      ║                                      ║
+║                   yank ln     ║                                      ║
+║  q / Esc          exit mode   ║                                      ║
+║                               ║                                      ║
+╚═══════════════════════════════╩══════════════════════════════════════╝
 
-                          Press Esc to close this help
+                    Press Esc to close this help
