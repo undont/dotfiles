@@ -37,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - Tmux: test scripts now properly clean up resources even when interrupted
 - CI: Now runs all 12 tests instead of only 4 (discovered 8 previously uncovered tests)
+- Tmux: unbind default `prefix+x` keybinding to prevent accidental pane kills (use `Opt+s` for kill-pane, `Opt+x` for kill-window)
 
 ### Added
 - Tmux: Comprehensive resurrect testing suite covering path discovery, split operations, restore operations, and edge cases
