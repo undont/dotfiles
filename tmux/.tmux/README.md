@@ -337,27 +337,31 @@ Available session backups:
 │   ├── tests/                            # Test suites
 │   │   ├── cleanup-tests.sh              # Clean up orphaned test resources
 │   │   └── test-dotfiles-status.sh       # Tests for dotfiles sync indicator
-│   ├── agent-alert-clear.sh              # Clear agent alerts for window
+│   ├── agent-alerts-clear.sh             # Clear agent alerts for window
 │   ├── agent-alerts.sh                   # Status bar: Multi-agent alerts (⚡ 🔮 🤖)
 │   ├── dotfiles-status.sh                # Status bar: sync indicator (↓↑↕)
-│   ├── duplicate-window.sh               # Duplicate window (Opt+Shift+d)
+│   ├── fzf-confirm.sh                    # FZF confirmation dialog helper
 │   ├── kill-pane.sh                      # Kill pane (Opt+s, saves state)
 │   ├── kill-session.sh                   # Kill session (picker, with confirm)
 │   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
-│   ├── list-sessions.sh                  # Session listing with alert indicators
-│   ├── list-windows.sh                   # Window listing with alert indicators
-│   ├── new-session.sh                    # Create new session dialog
-│   ├── rename-session.sh                 # Rename session dialog
-│   ├── rename-window.sh                  # Rename window dialog
+│   ├── list-claude.sh                    # List Claude Code instances
 │   ├── resurrect-delete.sh               # Delete session backup
 │   ├── resurrect-restore.sh              # Individual session restore
 │   ├── resurrect-split.sh                # Post-save hook (splits backups)
-│   ├── timestamp.sh                      # Window access tracking hook
+│   ├── session-list.sh                   # Session listing with alert indicators
+│   ├── session-new.sh                    # Create new session dialog
+│   ├── session-rename.sh                 # Rename session dialog
 │   ├── undo-dispatch.sh                  # Undo dispatcher (Opt+u)
 │   ├── undo-pane.sh                      # Restore killed pane
 │   ├── undo-session.sh                   # Restore killed session
 │   ├── undo-window.sh                    # Restore killed window
-│   └── url-picker.sh                     # URL picker (Opt+y)
+│   ├── update-alert-on-rename.sh         # Update alerts on window rename
+│   ├── update-timestamp.sh               # Window access tracking hook
+│   ├── url-picker.sh                     # URL picker for tmux
+│   ├── window-duplicate.sh               # Duplicate window (Opt+Shift+d)
+│   ├── window-list.sh                    # Window listing with alert indicators
+│   ├── window-move.sh                    # Move window to another session
+│   └── window-rename.sh                  # Rename window dialog
 └── README.md                             # This file
 
 ~/.local/launchers/

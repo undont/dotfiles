@@ -14,22 +14,16 @@ source "$SCRIPT_DIR/_lib/ui.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 source "$SCRIPT_DIR/_lib/session.sh"
 source "$SCRIPT_DIR/_lib/alerts.sh"
-source "$SCRIPT_DIR/_lib/ui.sh"
 
 require_tmux
 
 # Parse optional flags
 WINDOW_TARGET=""
 NO_CONFIRM=""
-FORCE_KILL=false
 
 for arg in "$@"; do
     case "$arg" in
-        --force)
-            FORCE_KILL=true
-            NO_CONFIRM="--no-confirm"
-            ;;
-        --no-confirm)
+        --force|--no-confirm)
             NO_CONFIRM="--no-confirm"
             ;;
         *)

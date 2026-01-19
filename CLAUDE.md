@@ -152,7 +152,7 @@ Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`.
 
 Custom tmux functionality is implemented via scripts bound to keybindings:
 - **Kill/Undo**: `kill-pane.sh`, `kill-window.sh`, `kill-session.sh` save state; `undo-*.sh` restore
-- **Session management**: `list-sessions.sh`, `list-windows.sh` with fzf integration
+- **Session management**: `session-list.sh`, `window-list.sh` with fzf integration
 - **Resurrect extensions**: `resurrect-split.sh` (post-save hook), `resurrect-restore.sh` (per-session restore)
 - **Agent alerts**: `agent-alerts.sh` shows status bar indicators for AI agents
 
@@ -191,7 +191,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 - Resurrect scripts: Use test pattern for consistency (invoked in various contexts)
 
 **Examples**:
-- ✓ `tmux/.tmux/scripts/list-sessions.sh` - Uses `${BASH_SOURCE%/*}`
+- ✓ `tmux/.tmux/scripts/session-list.sh` - Uses `${BASH_SOURCE%/*}`
 - ✓ `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)`
 - ✗ Don't mix patterns within the same category of scripts
 
