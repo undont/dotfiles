@@ -27,4 +27,4 @@ fi
 clear_window_alerts "$SESSION" "$WINDOW" "$WINDOW_ID"
 
 # Update timestamp for window sorting
-~/.tmux/scripts/timestamp.sh "$WINDOW_ID"
+~/.tmux/scripts/update-timestamp.sh "$WINDOW_ID"

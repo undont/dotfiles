@@ -53,21 +53,21 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
         echo "$SESSION_NAME" > "$UNDO_FILE"
         chmod 600 "$UNDO_FILE"
 
-        # Force a save to ensure we have current state
-        ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
-        ~/.tmux/scripts/resurrect-split.sh >/dev/null 2>&1 || true
+        # Force a save to ensure we have current state (backgrounded for performance)
+        (
+            ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
+            ~/.tmux/scripts/resurrect-split.sh >/dev/null 2>&1 || true
 
-        # Preserve backup before kill triggers cleanup
-        if [[ -f "$BACKUP_SRC" ]]; then
-            cp "$BACKUP_SRC" "$UNDO_BACKUP"
-            chmod 600 "$UNDO_BACKUP"
-        fi
+            # Preserve backup after save completes
+            if [[ -f "$BACKUP_SRC" ]]; then
+                cp "$BACKUP_SRC" "$UNDO_BACKUP"
+                chmod 600 "$UNDO_BACKUP"
+            fi
+        ) &
 
-        # Clear all agent alerts for this session before killing
-        clear_session_alerts "$SESSION_NAME"
-
-        # Switch and kill
+        # Switch and kill (alert cleanup happens in background after kill)
         tmux switch-client -t "$OTHER_SESSION" \; kill-session -t "$SESSION_NAME"
+        clear_session_alerts "$SESSION_NAME" &
         exit 0
     else
         error "Failed to find another session to switch to"
@@ -97,18 +97,18 @@ else
     echo "$SESSION_NAME" > "$UNDO_FILE"
     chmod 600 "$UNDO_FILE"
 
-    # Force a save to ensure we have current state
-    ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
-    ~/.tmux/scripts/resurrect-split.sh >/dev/null 2>&1 || true
+    # Force a save to ensure we have current state (backgrounded for performance)
+    (
+        ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
+        ~/.tmux/scripts/resurrect-split.sh >/dev/null 2>&1 || true
 
-    # Preserve backup before kill triggers cleanup
-    if [[ -f "$BACKUP_SRC" ]]; then
-        cp "$BACKUP_SRC" "$UNDO_BACKUP"
-        chmod 600 "$UNDO_BACKUP"
-    fi
-
-    # Clear all agent alerts for this session before killing
-    clear_session_alerts "$SESSION_NAME"
+        # Preserve backup after save completes
+        if [[ -f "$BACKUP_SRC" ]]; then
+            cp "$BACKUP_SRC" "$UNDO_BACKUP"
+            chmod 600 "$UNDO_BACKUP"
+        fi
+    ) &
 
     tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
+    clear_session_alerts "$SESSION_NAME" &
 fi

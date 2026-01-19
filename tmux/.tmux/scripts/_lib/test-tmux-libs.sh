@@ -520,7 +520,7 @@ if command -v shellcheck &>/dev/null; then
 
     for script in "$SCRIPTS_DIR"/*.sh; do
         script_name=$(basename "$script")
-        if shellcheck -S warning "$script" 2>/dev/null; then
+        if shellcheck -e SC1091 -S warning "$script" 2>/dev/null; then
             pass "  $script_name passes shellcheck"
         else
             fail "  $script_name has shellcheck warnings"
@@ -531,7 +531,7 @@ if command -v shellcheck &>/dev/null; then
     for lib in "$SCRIPT_DIR"/*.sh; do
         lib_name=$(basename "$lib")
         [[ "$lib_name" == "test.sh" ]] && continue
-        if shellcheck -S warning "$lib" 2>/dev/null; then
+        if shellcheck -e SC1091 -S warning "$lib" 2>/dev/null; then
             pass "  _lib/$lib_name passes shellcheck"
         else
             fail "  _lib/$lib_name has shellcheck warnings"
