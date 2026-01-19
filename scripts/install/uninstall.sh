@@ -182,6 +182,10 @@ if [[ $REMOVE_BREW -eq 1 ]]; then
         # Create filtered Brewfile
         FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 
+        # Set up cleanup trap for filtered Brewfile
+        # shellcheck disable=SC2064
+        trap "rm -f '$FILTERED_BREWFILE'" EXIT
+
         echo ""
         echo "Packages to remove (based on $PRESET preset):"
         grep -E '^(brew|cask) "' "$FILTERED_BREWFILE" | head -20

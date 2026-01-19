@@ -28,6 +28,10 @@ fi
 echo "Filtering Brewfile for preset: $PRESET"
 FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 
+# Set up cleanup trap for filtered Brewfile
+# shellcheck disable=SC2064
+trap "rm -f '$FILTERED_BREWFILE'" EXIT
+
 # Install packages from Brewfile
 echo "Installing packages from Brewfile..."
 echo "This may take a while on first run."

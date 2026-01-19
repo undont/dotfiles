@@ -4,8 +4,9 @@ set -euo pipefail
 # Kill a window with undo capability
 # Saves all pane states before killing for later restoration
 #
-# Usage: kill-window.sh [session:window] [--no-confirm]
+# Usage: kill-window.sh [session:window] [--no-confirm|--force]
 #   If no argument provided, kills the current window
+#   --force: Skip last window confirmation (confirmation already happened in tmux keybinding)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
@@ -13,13 +14,23 @@ source "$SCRIPT_DIR/_lib/ui.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 source "$SCRIPT_DIR/_lib/session.sh"
 source "$SCRIPT_DIR/_lib/alerts.sh"
-source "$SCRIPT_DIR/_lib/ui.sh"
 
 require_tmux
 
-# Parse optional target argument
-WINDOW_TARGET="${1:-}"
-NO_CONFIRM="${2:-}"
+# Parse optional flags
+WINDOW_TARGET=""
+NO_CONFIRM=""
+
+for arg in "$@"; do
+    case "$arg" in
+        --force|--no-confirm)
+            NO_CONFIRM="--no-confirm"
+            ;;
+        *)
+            WINDOW_TARGET="$arg"
+            ;;
+    esac
+done
 
 if [[ -n "$WINDOW_TARGET" ]]; then
     # Validate and parse session:window format
@@ -52,10 +63,24 @@ CURRENT_SESSION=$(get_current_session)
 # Get window name for confirmation
 WINDOW_NAME=$(tmux display-message -t "$WINDOW_TARGET" -p '#{window_name}')
 
+# Get window count to check if this is the last window
+WINDOW_COUNT=$(get_window_count "$TARGET_SESSION")
+
 # Show confirmation dialog (unless --no-confirm is specified)
 if [[ "$NO_CONFIRM" != "--no-confirm" ]]; then
     TITLE="Kill Window"
-    MESSAGE="Kill window '${WINDOW_NAME}' in session '${TARGET_SESSION}'?"
+
+    # Build context-aware message
+    if [[ "$TARGET_SESSION" == "$CURRENT_SESSION" && "$WINDOW_COUNT" -eq 1 ]]; then
+        OTHER_SESSION=$(find_other_session "$TARGET_SESSION")
+        if [[ -n "$OTHER_SESSION" ]]; then
+            MESSAGE="Last window '${WINDOW_NAME}' in '${TARGET_SESSION}'\nSwitch to '${OTHER_SESSION}' and kill?"
+        else
+            MESSAGE="Last window '${WINDOW_NAME}' in '${TARGET_SESSION}'\nThis will end the session. Kill?"
+        fi
+    else
+        MESSAGE="Kill window '${WINDOW_NAME}'?"
+    fi
 
     if ! show_visual_confirm "$TITLE" "$MESSAGE"; then
         exit 0  # Exit cleanly on cancellation
@@ -100,20 +125,20 @@ while IFS='|' read -r pane_index pane_title pane_dir pane_active pane_cmd; do
     chmod 600 "$UNDO_CONTENTS_DIR/pane-${pane_index}.txt"
 done < <(tmux list-panes -t "$WINDOW_TARGET" -F '#{pane_index}|#{pane_title}|#{pane_current_path}|#{pane_active}|#{pane_current_command}')
 
-# If killing the last window in our current session, use the standardised confirm pattern.
-# This prevents tmux from auto-exiting since killing the last window would kill the session,
-# leaving the user disconnected. We only need to switch if we're in the target session.
-WINDOW_COUNT=$(get_window_count "$TARGET_SESSION")
+# If killing the last window in current session, switch to another session first
+# This prevents tmux from auto-exiting since killing the last window would kill the session
 if [[ "$TARGET_SESSION" == "$CURRENT_SESSION" && "$WINDOW_COUNT" -eq 1 ]]; then
-    if tmux_confirm_last_item "window" "$TARGET_SESSION" "$WINDOW_TARGET" "$WINDOW_NAME"; then
-        exit 0
+    OTHER_SESSION=$(find_other_session "$TARGET_SESSION")
+    if [[ -n "$OTHER_SESSION" ]]; then
+        tmux switch-client -t "$OTHER_SESSION" \; kill-window -t "$WINDOW_TARGET"
     else
-        exit 0  # Exit cleanly on cancellation
+        # No other session - killing this window will end the session
+        tmux kill-window -t "$WINDOW_TARGET"
     fi
+else
+    # Not the last window, or not in current session - kill normally
+    tmux kill-window -t "$WINDOW_TARGET"
 fi
 
-# Clear any agent alerts for this window before killing
-clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME"
-
-# Kill the window
-tmux kill-window -t "$WINDOW_TARGET"
+# Clear alerts in background
+clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME" &

@@ -90,6 +90,39 @@ else
     fail "Invalid preset should return error"
 fi
 
+section "create_filtered_brewfile Function"
+
+# Test that create_filtered_brewfile creates a file that persists
+# This is a regression test for the EXIT trap bug where the trap fired
+# in the command substitution subshell, deleting the file immediately
+FILTERED=$(create_filtered_brewfile "full" "$TEST_BREWFILE")
+if [[ -f "$FILTERED" ]]; then
+    pass "Temp file persists after command substitution"
+else
+    fail "Temp file should persist after command substitution (regression: EXIT trap bug)"
+fi
+
+# Verify the filtered file contains expected content
+if [[ -f "$FILTERED" ]]; then
+    filtered_content=$(cat "$FILTERED")
+    if [[ "$filtered_content" == *'cask "hammerspoon"'* ]]; then
+        pass "Filtered file contains correct content"
+    else
+        fail "Filtered file should contain full preset content"
+    fi
+
+    # Clean up the temp file
+    rm -f "$FILTERED"
+fi
+
+# Test that create_filtered_brewfile returns error for invalid preset
+if ! FILTERED=$(create_filtered_brewfile "invalid" "$TEST_BREWFILE" 2>/dev/null); then
+    pass "create_filtered_brewfile returns error for invalid preset"
+else
+    fail "create_filtered_brewfile should return error for invalid preset"
+    rm -f "$FILTERED"
+fi
+
 echo ""
 echo "==========================================="
 echo "Test Results: ${GREEN}${PASS} passed${NC}, ${RED}${FAIL} failed${NC}"

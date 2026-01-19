@@ -11,29 +11,27 @@ tmux_confirm_last_item() {
     local current_session="$2"   # session being affected
     local target="$3"            # full target (e.g., "session:window" or "session:window.pane")
     local window_name="$4"       # window name (for clearing alerts, optional)
-    
+
     local other_session
     other_session=$(find_other_session "$current_session")
-    
+
     # Clear alerts before showing confirmation
     if [[ -n "$window_name" && "$item_type" == "window" ]]; then
         clear_window_alerts "$current_session" "$window_name"
     fi
-    
-    local title="Close Last ${item_type^}"
+
     local message command
-    
+
     if [[ -n "$other_session" ]]; then
-        # Build command that will switch session then kill
-        message="This is the last ${item_type} in session '${current_session}'"
-        command="tmux switch-client -t \"${other_session}\" \\; kill-${item_type} -t \"${target}\""
+        message="Last ${item_type} in '${current_session}'. Kill and switch to '${other_session}'?"
+        command="switch-client -t \"${other_session}\" \\; kill-${item_type} -t \"${target}\""
     else
-        # No other session, killing this will kill the entire session
-        message="This will kill session '${current_session}' (last ${item_type})"
-        command="tmux kill-${item_type} -t \"${target}\""
+        message="Kill session '${current_session}' (last ${item_type})?"
+        command="kill-${item_type} -t \"${target}\""
     fi
-    
-    show_visual_confirm "$title" "$message" "$command"
+
+    # Use tmux's built-in confirm-before
+    tmux confirm-before -p "$message (y/n) " "$command"
     return $?
 }
 
@@ -119,19 +117,20 @@ show_visual_confirm() {
     local message="$2"
 
     local choice
+    # Use printf to interpret \n in the message
     choice=$(printf "yes\nno" | fzf \
-        --height=100% --layout=reverse --disabled \
+        --height=100% --layout=reverse --disabled --cycle \
         --prompt=': ' \
         --border=rounded \
         --border-label=" ${title} " \
         --border-label-pos=top \
-        --header="${message}" \
+        --header="$(printf '%b' "$message")" \
         --no-info \
         --pointer='▌' \
         --bind 'j:down,k:up,space:accept,enter:accept' \
-        --bind 'change:clear-query' \
         --bind 'y:pos(1)+accept,n:pos(2)+accept' \
         --bind 'esc:abort,q:abort' \
+        --bind 'change:clear-query' \
         2>/dev/null) || return 1
 
     [[ "$choice" == "yes" ]]

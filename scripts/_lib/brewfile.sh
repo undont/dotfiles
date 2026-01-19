@@ -63,7 +63,7 @@ filter_brewfile() {
 }
 
 # Create a temporary filtered Brewfile
-# Handles mktemp, trap cleanup, and filtering in one call
+# Creates a temp file and filters the Brewfile into it
 #
 # Usage: FILTERED_FILE=$(create_filtered_brewfile "preset" "brewfile_path")
 # Arguments:
@@ -71,17 +71,13 @@ filter_brewfile() {
 #   brewfile    - Path to the Brewfile to filter
 #
 # Output: Path to temporary filtered Brewfile (caller must clean up)
-# Note: Sets up EXIT trap to remove the temp file
+# Note: Caller is responsible for removing the temp file
 create_filtered_brewfile() {
     local preset="$1"
     local brewfile="$2"
     local filtered_file
 
     filtered_file=$(mktemp)
-
-    # Set up cleanup trap (will be added to any existing trap)
-    # shellcheck disable=SC2064
-    trap "rm -f '$filtered_file'" EXIT
 
     # Filter and write to temp file
     if ! filter_brewfile "$preset" "$brewfile" > "$filtered_file"; then
