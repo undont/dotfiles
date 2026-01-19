@@ -120,6 +120,7 @@ Press `prefix + h` to display the keybinding reference. Close it by pressing `Es
 | Split left        | `Opt+'`             |
 | Split right       | `Opt+\`             |
 | Split down        | `Opt+-`             |
+| Split up          | `Opt+=`             |
 | Close pane        | `Opt+s`             |
 | Undo close        | `Opt+u`             |
 | Zoom (fullscreen) | `Opt+z`             |
