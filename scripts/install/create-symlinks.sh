@@ -67,6 +67,25 @@ create_link "$DOTFILES_DIR/zsh/.zprofile" "$HOME/.zprofile"
 create_link "$DOTFILES_DIR/zsh/.p10k.zsh" "$HOME/.p10k.zsh"
 create_link "$DOTFILES_DIR/zsh/.zsh" "$HOME/.zsh"
 
+# Check for local aliases configuration
+echo ""
+print_step "Checking for local aliases configuration"
+
+if [[ ! -f "$HOME/.zsh/.local-aliases.zsh" ]]; then
+  printf "  ${YELLOW}⚠${NC}  No local aliases found. Create from template? [y/N] "
+  read -r response
+
+  if [[ "$response" =~ ^[Yy]$ ]]; then
+    cp "$HOME/.zsh/.local-aliases.zsh.template" "$HOME/.zsh/.local-aliases.zsh"
+    success "Created ~/.zsh/.local-aliases.zsh from template"
+    printf "  ${CYAN}→${NC} Edit with: nvim ~/.zsh/.local-aliases.zsh\n"
+  else
+    info "Skipped. Create later with: cp ~/.zsh/.local-aliases.zsh.template ~/.zsh/.local-aliases.zsh"
+  fi
+else
+  success "Local aliases configuration exists"
+fi
+
 # Tmux (minimal)
 echo ""
 echo "Tmux configuration:"

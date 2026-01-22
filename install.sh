@@ -123,6 +123,7 @@ export DOTFILES_PRESET="$PRESET"
 # Initialise rollback state
 init_rollback_state
 
+print_logo
 print_header "Dotfiles Installation"
 echo "Dotfiles directory: $DOTFILES_DIR"
 echo ""
@@ -288,6 +289,7 @@ record_step "save-preset"
 cleanup_rollback_state
 
 # Done
+print_logo
 print_header "Installation Complete!"
 
 echo "Preset: $PRESET"

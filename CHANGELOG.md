@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.13] - 2026-01-22
+
+### Added
+- ASCII logo displayed at start/end of installation and in CLI tools
+- Local aliases system: Machine-specific project aliases via `.local-aliases.zsh`
+- Template file `.local-aliases.zsh.template` for easy customisation
+- Installer prompt to create local aliases from template
+- Comprehensive local aliases documentation in `zsh/.zsh/README.md`
+
+### Changed
+- Dotfiles CLI: Prettier status/update output with improved formatting
+- All installation scripts now use `printf` for coloured output instead of `echo`
+- Installer checks for local aliases configuration during symlink creation
+- Theme-switch: Shows informational message when not in tmux
+
+### Fixed
+- Tmux: FZF label colour updated for Tokyo Night theme consistency
+
 ## [0.1.12] - 2026-01-22
 
 ### Added
