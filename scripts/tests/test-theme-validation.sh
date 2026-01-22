@@ -273,16 +273,22 @@ section "Theme Consistency Check"
 first_theme=$(find "$THEMES_DIR" -maxdepth 1 -name "*.theme" | head -1)
 first_theme_name=$(basename "$first_theme" .theme)
 
-# Extract variable names from first theme
-mapfile -t first_theme_vars < <(grep -E '^[A-Z_]+=' "$first_theme" | cut -d= -f1 | sort)
+# Extract variable names from first theme (use while read for compatibility)
+first_theme_vars=()
+while IFS= read -r var; do
+    first_theme_vars+=("$var")
+done < <(grep -E '^[A-Z_]+=' "$first_theme" | cut -d= -f1 | sort)
 
 # Compare with other themes
 for theme_file in "$THEMES_DIR"/*.theme; do
     if [[ -f "$theme_file" ]] && [[ "$theme_file" != "$first_theme" ]]; then
         theme_name=$(basename "$theme_file" .theme)
 
-        # Extract variable names
-        mapfile -t current_vars < <(grep -E '^[A-Z_]+=' "$theme_file" | cut -d= -f1 | sort)
+        # Extract variable names (use while read for compatibility)
+        current_vars=()
+        while IFS= read -r var; do
+            current_vars+=("$var")
+        done < <(grep -E '^[A-Z_]+=' "$theme_file" | cut -d= -f1 | sort)
 
         # Compare variable sets
         missing_from_current=()
@@ -317,8 +323,11 @@ section "Template Placeholder Alignment"
 
 # Check that template placeholders match theme variables
 if [[ -f "$TMUX_TEMPLATE" ]]; then
-    # Extract placeholders from template
-    mapfile -t template_placeholders < <(grep -oE '\{\{[A-Z_]+\}\}' "$TMUX_TEMPLATE" | sed 's/[{}]//g' | sort -u)
+    # Extract placeholders from template (use while read for compatibility)
+    template_placeholders=()
+    while IFS= read -r placeholder; do
+        template_placeholders+=("$placeholder")
+    done < <(grep -oE '\{\{[A-Z_]+\}\}' "$TMUX_TEMPLATE" | sed 's/[{}]//g' | sort -u)
 
     # Check each placeholder has a variable in themes
     for placeholder in "${template_placeholders[@]}"; do
@@ -342,8 +351,11 @@ else
 fi
 
 if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
-    # Extract placeholders from template
-    mapfile -t template_placeholders < <(grep -oE '\{\{[A-Z_]+\}\}' "$GHOSTTY_TEMPLATE" | sed 's/[{}]//g' | sort -u)
+    # Extract placeholders from template (use while read for compatibility)
+    template_placeholders=()
+    while IFS= read -r placeholder; do
+        template_placeholders+=("$placeholder")
+    done < <(grep -oE '\{\{[A-Z_]+\}\}' "$GHOSTTY_TEMPLATE" | sed 's/[{}]//g' | sort -u)
 
     # Check each placeholder has a variable in themes
     for placeholder in "${template_placeholders[@]}"; do
