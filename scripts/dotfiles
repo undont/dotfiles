@@ -190,6 +190,26 @@ cmd_sync() {
     info "Run 'dotfiles update' to apply these changes."
 }
 
+# ─────────────────────────────────────────
+# Theme management
+# ─────────────────────────────────────────
+cmd_theme() {
+    local theme_cmd="${1:-list}"
+    shift || true
+
+    case "$theme_cmd" in
+        list)
+            "$DOTFILES_DIR/scripts/theme-switch" list
+            ;;
+        current)
+            "$DOTFILES_DIR/scripts/theme-switch" current
+            ;;
+        *)
+            "$DOTFILES_DIR/scripts/theme-switch" "$theme_cmd"
+            ;;
+    esac
+}
+
 cmd_help() {
     cat << 'EOF'
 Dotfiles CLI - manage your dotfiles installation
@@ -200,6 +220,10 @@ Commands:
   update    Pull latest changes and re-run installer with saved preset
   status    Show sync status, preset, and local changes
   health    Run full health check (symlinks, plugins, secrets)
+  theme     Manage colour themes
+            dotfiles theme list          - List available themes
+            dotfiles theme current       - Show current theme
+            dotfiles theme <name>        - Switch to theme
   edit      Open dotfiles directory in $EDITOR
   cd        Print dotfiles path (use: cd "$(dotfiles cd)")
   sync      Fetch from origin and show what's new (without applying)
@@ -209,6 +233,8 @@ Examples:
   dotfiles status          # Check if updates are available
   dotfiles update          # Pull and re-install
   dotfiles sync            # Preview incoming changes
+  dotfiles theme list      # Show available themes
+  dotfiles theme dracula   # Switch to Dracula theme
   cd "$(dotfiles cd)"      # Navigate to dotfiles directory
 
 Configuration:
@@ -230,6 +256,10 @@ main() {
             ;;
         health)
             cmd_health
+            ;;
+        theme)
+            shift
+            cmd_theme "$@"
             ;;
         edit)
             cmd_edit

@@ -19,9 +19,33 @@ return {
     priority = 1000,
   },
 
+  -- Tokyo Night theme
+  {
+    'folke/tokyonight.nvim',
+    lazy = true,
+    opts = {
+      style = 'night',
+      transparent = false,
+      terminal_colors = true,
+    },
+  },
+
+  -- Nord theme
+  {
+    'shaunsingh/nord.nvim',
+    lazy = true,
+    config = function()
+      vim.g.nord_contrast = true
+      vim.g.nord_borders = true
+      vim.g.nord_disable_background = false
+    end,
+  },
+
   -- Auto dark mode - follows system theme
+  -- (disabled when dotfiles theme is active)
   {
     'f-person/auto-dark-mode.nvim',
+    enabled = vim.fn.filereadable((os.getenv 'XDG_CONFIG_HOME' or vim.fn.expand '~/.config') .. '/dotfiles/current-theme') == 0,
     priority = 999,
     opts = {
       update_interval = 1000,
@@ -80,7 +104,7 @@ return {
       },
       spec = {
         { '<leader>s', group = '[S]earch' },
-        { '<leader>t', group = '[T]oggle' },
+        { '<leader>t', group = '[T]heme/[T]oggle' },
       },
     },
   },

@@ -6,6 +6,43 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.12] - 2026-01-22
+
+### Added
+- Theme system: Coordinated colour schemes across tmux, ghostty, and neovim
+- Themes: Four built-in themes (Dracula, Catppuccin Mocha, Tokyo Night, Nord)
+- `theme-switch` CLI tool for switching themes with live reload
+- Tmux: Theme picker (`prefix + t`) with fzf interface and vim-style navigation
+- Tmux: Template-based configuration (`.tmux.conf.template`) for dynamic theming
+- Ghostty: Template-based configuration (`config.template`) for dynamic theming
+- Neovim: Theme module (`lua/custom/core/theme.lua`) with file watcher for automatic reload
+- Scripts: `colours.sh` library for consistent colour definitions across scripts
+- Scripts: `fzf-theme.sh` for applying theme colours to fzf interfaces
+- Scripts: `ghostty-reload.sh` for live ghostty config reload on theme change
+- Scripts: `fzf-reload.sh` for live fzf theme reload in tmux
+- Tmux: OpenCode instance picker (`prefix + o`) matching Claude picker functionality
+- Tmux: FZF theme integration across all pickers (sessions, windows, Claude, OpenCode, URLs, themes)
+- Tests: Comprehensive theme validation suite (`test-theme-validation.sh`, `test-theme-switch.sh`, `test-fzf-theming.sh`, `test-theme-installation.sh`)
+- Tests: Ghostty reload tests (`test-ghostty-reload.sh`)
+- Tests: Theme picker tests (`test-theme-picker.sh`)
+- `Makefile` with shortcuts for common tasks (test, lint, install, clean)
+- Dotfiles CLI: `theme-switch` integration for centralized theme management
+
+### Changed
+- Tmux: Unbound `prefix + t` (clock) to make room for theme picker
+- Tmux: All fzf popups now source `fzf-theme.sh` for consistent theming
+- Tmux: Window/session rename dialogs now source fzf theme
+- Common library: Refactored colour definitions to use central `colours.sh`
+- Neovim: `auto-dark-mode.nvim` plugin disabled when dotfiles theme is active
+- Neovim: TreeSitter configuration updated for new API
+- UI library: Updated to use `printf` for coloured output (not `echo`)
+
+### Fixed
+- Theme-switch: Function name conflict with tmux `info` command (renamed to `print_info`)
+- Theme-switch: Unbound variable error when called with no arguments
+- Test suite: GREY colour variable conflict (now sourced from colours.sh)
+- Test suite: Theme name expectations made flexible for different active themes
+
 ## [0.1.11] - 2026-01-14
 
 ### Added

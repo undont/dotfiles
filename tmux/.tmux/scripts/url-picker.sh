@@ -7,6 +7,9 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/ui.sh"
 
+# Load current theme colours for fzf
+load_fzf_theme
+
 PANE_ID="${1:-}"
 
 # Capture pane content and extract URLs

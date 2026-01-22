@@ -8,6 +8,9 @@ source "$SCRIPT_DIR/_lib/common.sh"
 
 require_tmux
 
+# Load current theme colours for fzf
+load_fzf_theme
+
 # Prompt for session name
 newname=$(printf '' | fzf \
     --print-query \

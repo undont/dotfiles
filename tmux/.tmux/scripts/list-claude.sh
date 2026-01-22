@@ -49,17 +49,17 @@ while IFS= read -r line; do
     fi
 done < <(tmux list-panes -a -F '#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_current_command}' | sort -rn)
 
-# Display results
-if [[ ${#claude_panes[@]} -eq 0 ]]; then
-    exit 0
-fi
-
 # Add Claude Code ghost at top (Anthropic orange: #d97757 ≈ 173)
 echo ""
 printf "\033[38;5;173m ▐▛███▜▌\033[0m\n"
 printf "\033[38;5;173m▝▜█████▛▘\033[0m\n"
 printf "\033[38;5;173m  ▘▘ ▝▝\033[0m\n"
 echo ""
+
+# Display results (empty list shows just the logo)
+if [[ ${#claude_panes[@]} -eq 0 ]]; then
+    exit 0
+fi
 
 # Simple list below ghost
 for pane_info in "${claude_panes[@]}"; do
