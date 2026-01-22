@@ -220,10 +220,11 @@ else
     fail "list command should show theme display name"
 fi
 
-if [[ "$list_output" == *"(current)"* ]]; then
-    pass "list command marks current theme"
+# Check for current theme marker (may not exist in fresh CI environment)
+if [[ "$list_output" == *"(current)"* ]] || [[ ! -f ~/.config/dotfiles/current-theme ]]; then
+    pass "list command marks current theme (or no theme set)"
 else
-    fail "list command should mark current theme"
+    fail "list command should mark current theme when theme is set"
 fi
 
 section "Current Theme Command"

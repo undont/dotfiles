@@ -169,7 +169,8 @@ for theme_file in "$THEMES_DIR"/*.theme; do
     if [[ -f "$theme_file" ]]; then
         theme_name=$(basename "$theme_file" .theme)
 
-        # Strip ANSI codes to test plain text
+        # Strip ANSI codes to test plain text (use sed as bash can't handle these complex patterns)
+        # shellcheck disable=SC2001
         plain_output=$(echo "$output" | sed 's/\x1b\[[0-9;]*m//g')
 
         if echo "$plain_output" | grep -q "$theme_name"; then
@@ -351,8 +352,10 @@ output1=$("$THEME_PICKER" 2>&1) || true
 sleep 0.1
 output2=$("$THEME_PICKER" 2>&1) || true
 
-# Strip timestamps if any
+# Strip timestamps if any (use sed for performance)
+# shellcheck disable=SC2001
 output1_clean=$(echo "$output1" | sed 's/[0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}//g')
+# shellcheck disable=SC2001
 output2_clean=$(echo "$output2" | sed 's/[0-9]\{2\}:[0-9]\{2\}:[0-9]\{2\}//g')
 
 if [[ "$output1_clean" == "$output2_clean" ]]; then
