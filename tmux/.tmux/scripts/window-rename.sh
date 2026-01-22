@@ -9,6 +9,9 @@ source "$SCRIPT_DIR/_lib/session.sh"
 
 require_tmux
 
+# Load current theme colours for fzf
+load_fzf_theme
+
 CURRENT_SESSION=$(get_current_session)
 CURRENT_NAME=$(get_window_name)
 

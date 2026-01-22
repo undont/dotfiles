@@ -56,6 +56,11 @@ function M.setup()
   -- Git UI
   vim.keymap.set('n', '<leader>g', '<cmd>LazyGit<CR>', { desc = 'Open [G]it UI (LazyGit)' })
 
+  -- Theme reload
+  vim.keymap.set('n', '<leader>tr', function()
+    require('custom.core.theme').reload(true)
+  end, { desc = '[T]heme [R]eload' })
+
   -- Terminal mode escape
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 

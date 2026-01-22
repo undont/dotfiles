@@ -116,6 +116,9 @@ show_visual_confirm() {
     local title="$1"
     local message="$2"
 
+    # Load current theme colours for fzf
+    load_fzf_theme
+
     local choice
     # Use printf to interpret \n in the message
     choice=$(printf "yes\nno" | fzf \
@@ -130,8 +133,7 @@ show_visual_confirm() {
         --bind 'j:down,k:up,space:accept,enter:accept' \
         --bind 'y:pos(1)+accept,n:pos(2)+accept' \
         --bind 'esc:abort,q:abort' \
-        --bind 'change:clear-query' \
-        2>/dev/null) || return 1
+        --bind 'change:clear-query') || return 1
 
     [[ "$choice" == "yes" ]]
 }

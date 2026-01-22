@@ -97,8 +97,14 @@ fi
 if should_install "core"; then
     echo ""
     echo "Ghostty configuration:"
-    mkdir -p "$HOME/.config/ghostty"
-    create_link "$DOTFILES_DIR/ghostty/config" "$HOME/.config/ghostty/config"
+    # macOS uses different config location
+    if [[ "$(uname)" == "Darwin" ]]; then
+        mkdir -p "$HOME/Library/Application Support/com.mitchellh.ghostty"
+        create_link "$DOTFILES_DIR/ghostty/config" "$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+    else
+        mkdir -p "$HOME/.config/ghostty"
+        create_link "$DOTFILES_DIR/ghostty/config" "$HOME/.config/ghostty/config"
+    fi
 fi
 
 # Karabiner (full)
@@ -151,6 +157,31 @@ if should_install "core"; then
         warn "claude-config directory not found at $CLAUDE_CONFIG_DIR"
         warn "Skipping Claude/OpenCode configuration symlinks"
     fi
+fi
+
+# ─────────────────────────────────────────
+# Generate themed configurations
+# ─────────────────────────────────────────
+echo ""
+print_step "Generating themed configurations"
+
+if [[ -x "$DOTFILES_DIR/scripts/theme-switch" ]]; then
+    # Get current theme or default to dracula
+    current_theme="dracula"
+    theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
+
+    if [[ -f "$theme_file" ]]; then
+        current_theme=$(cat "$theme_file")
+    fi
+
+    info "Applying theme: $current_theme"
+    "$DOTFILES_DIR/scripts/theme-switch" "$current_theme" >/dev/null 2>&1 || {
+        warn "Failed to apply theme, using default (dracula)"
+        "$DOTFILES_DIR/scripts/theme-switch" dracula >/dev/null 2>&1
+    }
+    success "Generated themed configurations"
+else
+    warn "theme-switch script not found, skipping theme generation"
 fi
 
 echo ""

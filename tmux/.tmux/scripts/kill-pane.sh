@@ -27,6 +27,9 @@ source "$SCRIPT_DIR/_lib/ui.sh"
 
 require_tmux
 
+# Load current theme colours for fzf
+load_fzf_theme
+
 # DEBUG LOGGING
 LOG_FILE="$HOME/kill-pane-debug.log"
 log_debug() {
