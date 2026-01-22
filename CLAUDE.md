@@ -79,6 +79,17 @@ shellcheck -x tmux/.tmux/scripts/*.sh tmux/.tmux/scripts/_lib/*.sh
 luacheck nvim/lua/ --no-unused-args --no-max-line-length
 ```
 
+### Makefile Shortcuts
+
+```bash
+make              # Show help
+make test         # Run all tests
+make lint         # Run all linters (shell + lua)
+make install      # Full installation
+make check        # Run checks only
+make clean        # Clean orphaned test resources
+```
+
 ### Management
 
 ```bash
@@ -97,23 +108,28 @@ dotfiles health    # Run health check
 dotfiles/
 ├── scripts/              # Installation and utilities
 │   ├── dotfiles          # CLI tool (update/status/health)
+│   ├── theme-switch      # Theme switching utility
 │   ├── install/          # Installer modules
-│   ├── _lib/             # Shared shell libraries (common.sh, brewfile.sh, test-install-libs.sh)
-│   ├── hooks/            # Tool hooks (claude-alert.sh, opencode-alert.sh)
+│   ├── _lib/             # Shared shell libraries (common.sh, brewfile.sh)
+│   ├── hooks/            # Agent alert hooks
+│   │   ├── agent-alert.sh, agent-alert-clear.sh
+│   │   └── wrappers/     # Per-agent wrappers (claude, opencode, gemini)
 │   └── tests/            # Test suites
+├── themes/               # Theme definitions (dracula, catppuccin, tokyo-night, nord)
 ├── zsh/                  # Zsh configuration
 │   ├── .zshrc            # Main config
 │   └── .zsh/             # Additional configs, secrets template
 ├── tmux/                 # Tmux configuration
-│   ├── .tmux.conf        # Main config
-│   └── .tmux/scripts/    # Custom scripts (session management, undo, alerts)
+│   ├── .tmux.conf        # Main config (.tmux.conf.template for theming)
+│   └── .tmux/scripts/    # Custom scripts (session management, undo, alerts, themes)
 ├── nvim/                 # Neovim configuration (kickstart.nvim based)
 │   ├── init.lua          # Entry point
 │   └── lua/custom/       # Modular config (core/, plugins/)
 ├── launchers/            # Session launch scripts (tnew, dana, code)
 ├── hammerspoon/          # macOS window automation
-├── ghostty/              # Terminal emulator config
-└── karabiner/            # Keyboard customisation
+├── ghostty/              # Terminal emulator config (config.template for theming)
+├── karabiner/            # Keyboard customisation
+└── Makefile              # Convenience targets for testing, linting, installation
 ```
 
 ### Install Presets
@@ -144,24 +160,27 @@ Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`.
 
 **`tmux/.tmux/scripts/_lib/`**: Tmux-specific utilities
 - `common.sh`: Error handling, tmux validation
+- `paths.sh`: XDG-compliant undo file paths with legacy fallback
 - `session.sh`: Session management functions
-- `alerts.sh`: Multi-agent alert system (Claude, OpenCode)
+- `alerts.sh`: Multi-agent alert system (Claude, OpenCode, Gemini)
 - `ui.sh`: Terminal dialogs and prompts
 
 ### Tmux Scripts Architecture
 
 Custom tmux functionality is implemented via scripts bound to keybindings:
 - **Kill/Undo**: `kill-pane.sh`, `kill-window.sh`, `kill-session.sh` save state; `undo-*.sh` restore
-- **Session management**: `session-list.sh`, `window-list.sh` with fzf integration
+- **Session management**: `session-list.sh`, `session-new.sh`, `session-rename.sh`, `window-list.sh` with fzf integration
+- **Window operations**: `window-duplicate.sh`, `window-move.sh`, `window-rename.sh`
 - **Resurrect extensions**: `resurrect-split.sh` (post-save hook), `resurrect-restore.sh` (per-session restore)
 - **Agent alerts**: `agent-alerts.sh` shows status bar indicators for AI agents
+- **Theme support**: `theme-picker.sh` for runtime theme switching
 
 ### Neovim Structure
 
 Based on kickstart.nvim with modular organisation:
 - `lua/custom/core/`: options.lua, keymaps.lua, autocmds.lua
 - `lua/custom/plugins/`: ui.lua, lsp.lua, completion.lua, telescope.lua, editor.lua, copilot.lua, git.lua
-- `lua/kickstart/plugins/`: neo-tree.lua, gitsigns.lua, autopairs.lua, debug.lua, lint.lua
+- `lua/kickstart/plugins/`: neo-tree.lua, gitsigns.lua, autopairs.lua, debug.lua, lint.lua, indent_line.lua
 
 ## Shell Script Conventions
 

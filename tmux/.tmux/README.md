@@ -9,6 +9,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | **Prefix**            | `` ` `` (backtick)                |
 | **Start dev session** | `tnew` (from any directory)       |
 | Help popup            | `prefix + h`                      |
+| Theme picker          | `prefix + t`                      |
 | Save sessions         | `prefix + w` (like vim :w)        |
 | List backups          | `prefix + S` or `tls`             |
 | Restore session       | `prefix + R` or `trestore <name>` |
@@ -92,6 +93,10 @@ The prefix key is **`` ` ``** (backtick - double-tap for literal).
 ### Help Popup
 
 Press `prefix + h` to display the keybinding reference. Close it by pressing `Esc`.
+
+### Theme Picker
+
+Press `prefix + t` to switch between colour themes (Dracula, Catppuccin, Tokyo Night, Nord). The picker uses vim-style navigation with `j`/`k` to move up/down and `Enter` to select. Theme changes apply immediately to tmux, ghostty, and neovim.
 
 ### Windows (Tabs)
 
@@ -434,15 +439,16 @@ System clipboard integration for copying text.
 
 ---
 
-## Theme
+## Themes
 
-Uses a Dracula-inspired colour scheme:
+Supports multiple coordinated colour schemes that apply across tmux, ghostty, and neovim:
 
-- **Background:** `#282a36` (dark)
-- **Active elements:** `#bd93f9` (purple)
-- **Inactive elements:** `#6272a4` (grey)
-- **Session name:** `#cc6699` (pink)
-- **Command prompt:** purple background with dark text (matches active tabs)
+- **Dracula** (default): Purple accents, dark background (#282a36)
+- **Catppuccin Mocha**: Warm pastels with mauve accents
+- **Tokyo Night**: Cool blues with storm theme
+- **Nord**: Arctic-inspired blues and greys
+
+Switch themes with `prefix + t` (tmux picker) or `theme-switch <name>` (CLI). The current theme is saved to `~/.config/dotfiles/current-theme` and automatically applied on startup.
 
 ---
 

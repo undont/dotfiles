@@ -1,0 +1,65 @@
+# Ghostty Configuration File
+# Theme: {{THEME_NAME}}
+
+# Fonts
+font-size = 13
+
+# Window
+window-padding-x = 0
+window-padding-y = 0
+window-width = 140
+window-height = 38
+window-position-x = 226
+window-position-y = 115
+background-opacity = 1
+unfocused-split-opacity = 1
+resize-overlay = never
+
+# Cursor
+cursor-style = block
+cursor-style-blink = true
+
+# Shell Integration
+shell-integration = zsh
+shell-integration-features = no-cursor,title
+
+# Mouse
+mouse-hide-while-typing = true
+
+# Bell - allow terminal bells through for tmux monitor-bell
+bell-features = title,attention
+
+# Colors
+background = {{GHOSTTY_BACKGROUND}}
+foreground = {{GHOSTTY_FOREGROUND}}
+cursor-color = {{GHOSTTY_CURSOR_COLOR}}
+cursor-text = {{GHOSTTY_CURSOR_TEXT}}
+selection-background = {{GHOSTTY_SELECTION_BG}}
+selection-foreground = {{GHOSTTY_SELECTION_FG}}
+palette = 0={{GHOSTTY_PALETTE_0}}
+palette = 1={{GHOSTTY_PALETTE_1}}
+palette = 2={{GHOSTTY_PALETTE_2}}
+palette = 3={{GHOSTTY_PALETTE_3}}
+palette = 4={{GHOSTTY_PALETTE_4}}
+palette = 5={{GHOSTTY_PALETTE_5}}
+palette = 6={{GHOSTTY_PALETTE_6}}
+palette = 7={{GHOSTTY_PALETTE_7}}
+palette = 8={{GHOSTTY_PALETTE_8}}
+palette = 9={{GHOSTTY_PALETTE_9}}
+palette = 10={{GHOSTTY_PALETTE_10}}
+palette = 11={{GHOSTTY_PALETTE_11}}
+palette = 12={{GHOSTTY_PALETTE_12}}
+palette = 13={{GHOSTTY_PALETTE_13}}
+palette = 14={{GHOSTTY_PALETTE_14}}
+palette = 15={{GHOSTTY_PALETTE_15}}
+
+# Macos
+macos-icon = glass
+macos-icon-frame = chrome
+macos-option-as-alt = left
+
+keybind = shift+enter=text:\x1b\r
+keybind = opt+c=text:\x1bc
+keybind = opt+up=text:\x1b[A
+keybind = opt+down=text:\x1b[B
+keybind = opt+3=text:#

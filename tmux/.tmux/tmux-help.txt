@@ -22,8 +22,9 @@
 ║  hjkl             navigate    ║  ` w              save all           ║
 ║  f / b            page down/  ║  ` d              detach             ║
 ║                   up          ║  ` h              this help          ║
-║  d / u            half-page   ║  ` c              Claude picker      ║
-║  g / G            top/bottom  ║  Opt+y            open URL picker    ║
+║  d / u            half-page   ║  ` t              theme picker       ║
+║  g / G            top/bottom  ║  ` c              Claude picker      ║
+║                               ║  Opt+y            open URL picker    ║
 ║                               ║  Opt+u            undo pane/win      ║
 ║  / / ?            search ↓/↑  ║                                      ║
 ║  n / N            next / prev ║                                      ║

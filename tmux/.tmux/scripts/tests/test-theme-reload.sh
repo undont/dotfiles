@@ -1,0 +1,378 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Unit tests for tmux theme reload functionality
+# Tests that theme switching properly reloads tmux configuration
+# Requires: tmux to be installed (tests are skipped if not available)
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+# shellcheck disable=SC1091
+source "$SCRIPT_DIR/_test-helpers.sh"
+
+DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+THEME_SWITCH="$DOTFILES_ROOT/scripts/theme-switch"
+THEMES_DIR="$DOTFILES_ROOT/themes"
+TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/.tmux.conf.template"
+TMUX_OUTPUT="$DOTFILES_ROOT/tmux/.tmux.conf"
+
+# Test counters
+PASS_COUNT=0
+FAIL_COUNT=0
+SKIP_COUNT=0
+
+# Override pass/fail to track counts
+pass() {
+    PASS_COUNT=$((PASS_COUNT + 1))
+    echo "${GREEN}✓${NC} $1"
+}
+
+fail() {
+    FAIL_COUNT=$((FAIL_COUNT + 1))
+    echo "${RED}✗${NC} $1"
+}
+
+skip() {
+    SKIP_COUNT=$((SKIP_COUNT + 1))
+    echo "${YELLOW}○${NC} $1 (skipped)"
+}
+
+# ===========================================================================
+# Pre-flight Checks
+# ===========================================================================
+
+section "Pre-flight Checks"
+
+# Check if tmux is available
+if ! command -v tmux &>/dev/null; then
+    skip "tmux is not installed - skipping all reload tests"
+    echo ""
+    echo "==========================================="
+    echo "Test Results: ${GREEN}${PASS_COUNT} passed${NC}, ${RED}${FAIL_COUNT} failed${NC}, ${YELLOW}${SKIP_COUNT} skipped${NC}"
+    echo "==========================================="
+    exit 0
+fi
+
+pass "tmux is installed"
+
+if [[ -f "$THEME_SWITCH" ]]; then
+    pass "theme-switch script exists"
+else
+    fail "theme-switch script not found"
+    exit 1
+fi
+
+if [[ -f "$TMUX_TEMPLATE" ]]; then
+    pass "tmux template exists"
+else
+    skip "tmux template not found - some tests may fail"
+fi
+
+# ===========================================================================
+# Test Server Setup
+# ===========================================================================
+
+section "Test Server Setup"
+
+setup_test_server
+
+if $TEST_TMUX_CMD list-sessions &>/dev/null; then
+    pass "test tmux server started successfully"
+else
+    fail "failed to start test tmux server"
+    cleanup_test_server
+    exit 1
+fi
+
+# Ensure cleanup on exit
+trap cleanup_test_server EXIT
+
+# Create a test session for theme testing
+$TEST_TMUX_CMD new-session -d -s theme-test 2>/dev/null || true
+
+if $TEST_TMUX_CMD has-session -t theme-test 2>/dev/null; then
+    pass "created theme-test session"
+else
+    fail "failed to create theme-test session"
+fi
+
+# ===========================================================================
+# Theme Switch Script Structure
+# ===========================================================================
+
+section "Theme Switch Script Structure"
+
+script_content=$(cat "$THEME_SWITCH")
+
+# Check for tmux reload logic
+if [[ "$script_content" == *"tmux source-file"* ]]; then
+    pass "theme-switch includes tmux reload command"
+else
+    fail "theme-switch should include tmux source-file for reload"
+fi
+
+# Check for tmux availability check
+if [[ "$script_content" == *"command -v tmux"* ]] || [[ "$script_content" == *"which tmux"* ]]; then
+    pass "theme-switch checks if tmux is available"
+else
+    skip "tmux availability check not found"
+fi
+
+# Check for running tmux detection
+if [[ "$script_content" == *'pgrep -x "tmux"'* ]] || [[ "$script_content" == *'tmux list-sessions'* ]]; then
+    pass "theme-switch detects running tmux"
+else
+    skip "running tmux detection not found"
+fi
+
+# ===========================================================================
+# Config Generation Tests
+# ===========================================================================
+
+section "Config Generation Tests"
+
+# Save original config if it exists
+original_config=""
+if [[ -f "$TMUX_OUTPUT" ]]; then
+    original_config=$(cat "$TMUX_OUTPUT")
+fi
+
+# Apply a theme to generate config
+if "$THEME_SWITCH" dracula 2>/dev/null; then
+    pass "theme-switch applied dracula theme"
+else
+    fail "theme-switch should apply dracula theme"
+fi
+
+# Verify config was generated
+if [[ -f "$TMUX_OUTPUT" ]]; then
+    pass "tmux config file was generated"
+
+    # Check that config doesn't contain placeholders
+    if ! grep -q "{{.*}}" "$TMUX_OUTPUT"; then
+        pass "generated config has no unrendered placeholders"
+    else
+        fail "generated config should not contain placeholders"
+    fi
+
+    # Check that config contains themed colours (hex codes from theme)
+    if grep -qE '#[0-9a-fA-F]{6}' "$TMUX_OUTPUT"; then
+        pass "generated config contains theme colours"
+    else
+        fail "generated config should contain theme colours"
+    fi
+else
+    fail "tmux config file should be generated"
+fi
+
+# ===========================================================================
+# Tmux Reload Tests
+# ===========================================================================
+
+section "Tmux Reload Tests"
+
+# Test that config can be loaded by tmux
+if [[ -f "$TMUX_OUTPUT" ]]; then
+    # Try to source the config in the test server
+    if $TEST_TMUX_CMD source-file "$TMUX_OUTPUT" 2>/dev/null; then
+        pass "tmux can source the generated config"
+    else
+        fail "tmux should be able to source the generated config"
+    fi
+else
+    skip "tmux config reload test (no config file)"
+fi
+
+# ===========================================================================
+# Theme Switching Tests
+# ===========================================================================
+
+section "Theme Switching Tests"
+
+# Switch to different theme and verify
+# Save config hash before switching
+config_before=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
+
+if "$THEME_SWITCH" nord 2>/dev/null; then
+    pass "theme-switch applied nord theme"
+
+    # Check config was modified
+    config_after=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
+    if [[ "$config_before" != "$config_after" ]]; then
+        pass "config updated when switching themes"
+    else
+        fail "config should be updated when switching themes"
+    fi
+
+    # Source the new config
+    if $TEST_TMUX_CMD source-file "$TMUX_OUTPUT" 2>/dev/null; then
+        pass "tmux reloaded with nord theme"
+    else
+        fail "tmux should reload with nord theme"
+    fi
+else
+    fail "theme-switch should apply nord theme"
+fi
+
+# Switch back to dracula
+config_nord=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
+
+if "$THEME_SWITCH" dracula 2>/dev/null; then
+    pass "theme-switch switched back to dracula"
+
+    # Config should change again
+    config_dracula=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
+    if [[ "$config_nord" != "$config_dracula" ]]; then
+        pass "config changed when reverting theme"
+    else
+        fail "config should change when reverting theme"
+    fi
+else
+    fail "theme-switch should switch back to dracula"
+fi
+
+# ===========================================================================
+# Multiple Session Tests
+# ===========================================================================
+
+section "Multiple Session Tests"
+
+# Create additional sessions
+$TEST_TMUX_CMD new-session -d -s theme-test-2 2>/dev/null || true
+$TEST_TMUX_CMD new-session -d -s theme-test-3 2>/dev/null || true
+
+session_count=$($TEST_TMUX_CMD list-sessions 2>/dev/null | wc -l | tr -d ' ')
+
+if [[ $session_count -ge 3 ]]; then
+    pass "created multiple test sessions ($session_count total)"
+else
+    fail "should have at least 3 sessions, got $session_count"
+fi
+
+# Apply theme - all sessions should work with new config
+if "$THEME_SWITCH" tokyo-night 2>/dev/null; then
+    pass "applied tokyo-night theme with multiple sessions"
+
+    # Source in test server (affects all sessions)
+    if $TEST_TMUX_CMD source-file "$TMUX_OUTPUT" 2>/dev/null; then
+        pass "config reloaded across multiple sessions"
+    else
+        fail "should reload config across sessions"
+    fi
+else
+    fail "should apply theme with multiple sessions"
+fi
+
+# ===========================================================================
+# Error Recovery Tests
+# ===========================================================================
+
+section "Error Recovery Tests"
+
+# Test with invalid theme (should fail gracefully)
+invalid_output=$("$THEME_SWITCH" nonexistent-theme-12345 2>&1) && exit_code=0 || exit_code=$?
+
+if [[ $exit_code -ne 0 ]]; then
+    pass "theme-switch fails on invalid theme"
+else
+    fail "theme-switch should fail on invalid theme"
+fi
+
+# Config should still be valid after failed theme switch
+if $TEST_TMUX_CMD source-file "$TMUX_OUTPUT" 2>/dev/null; then
+    pass "config remains valid after failed theme switch"
+else
+    fail "config should remain valid after failed theme switch"
+fi
+
+# ===========================================================================
+# Config Syntax Validation
+# ===========================================================================
+
+section "Config Syntax Validation"
+
+# Test that generated config is valid tmux syntax
+# We do this by having tmux parse it
+
+if [[ -f "$TMUX_OUTPUT" ]]; then
+    # tmux source-file succeeding means syntax is valid
+    if $TEST_TMUX_CMD source-file "$TMUX_OUTPUT" 2>&1; then
+        pass "generated config has valid tmux syntax"
+    else
+        fail "generated config should have valid tmux syntax"
+    fi
+
+    # Check for common syntax patterns
+    config_content=$(cat "$TMUX_OUTPUT")
+
+    if [[ "$config_content" == *"set -g"* ]]; then
+        pass "config uses 'set -g' global options"
+    else
+        skip "set -g pattern check"
+    fi
+
+    if [[ "$config_content" == *"set-option"* ]] || [[ "$config_content" == *"set -g"* ]]; then
+        pass "config uses proper tmux option syntax"
+    else
+        fail "config should use proper tmux option syntax"
+    fi
+
+    # Check for colour definitions
+    if echo "$config_content" | grep -qE '#[0-9a-fA-F]{6}'; then
+        pass "config contains hex colour codes"
+    else
+        fail "config should contain hex colour codes"
+    fi
+else
+    skip "config syntax validation (no config file)"
+fi
+
+# ===========================================================================
+# Idempotency Tests
+# ===========================================================================
+
+section "Idempotency Tests"
+
+# Apply same theme twice - config should be identical
+"$THEME_SWITCH" dracula 2>/dev/null || true
+config_first=$(cat "$TMUX_OUTPUT")
+
+"$THEME_SWITCH" dracula 2>/dev/null || true
+config_second=$(cat "$TMUX_OUTPUT")
+
+if [[ "$config_first" == "$config_second" ]]; then
+    pass "theme application is idempotent"
+else
+    fail "applying same theme twice should produce identical config"
+fi
+
+# ===========================================================================
+# Cleanup
+# ===========================================================================
+
+section "Cleanup"
+
+# Kill test sessions
+$TEST_TMUX_CMD kill-session -t theme-test 2>/dev/null || true
+$TEST_TMUX_CMD kill-session -t theme-test-2 2>/dev/null || true
+$TEST_TMUX_CMD kill-session -t theme-test-3 2>/dev/null || true
+
+pass "cleaned up test sessions"
+
+# Restore original config if we had one
+if [[ -n "$original_config" ]]; then
+    echo "$original_config" > "$TMUX_OUTPUT"
+    pass "restored original tmux config"
+fi
+
+# ===========================================================================
+# Summary
+# ===========================================================================
+
+echo ""
+echo "==========================================="
+echo "Test Results: ${GREEN}${PASS_COUNT} passed${NC}, ${RED}${FAIL_COUNT} failed${NC}, ${YELLOW}${SKIP_COUNT} skipped${NC}"
+echo "==========================================="
+
+if [[ $FAIL_COUNT -gt 0 ]]; then
+    exit 1
+fi

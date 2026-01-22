@@ -6,6 +6,9 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/alerts.sh"
 
+# Load current theme colours for fzf
+load_fzf_theme
+
 if [[ -z "$1" ]]; then
     error "No window specified"
     exit 1
@@ -57,8 +60,9 @@ if [[ -f "$ALERTS_FILE" ]]; then
     # Alert format: SESSION:WINDOW_NAME:AGENT
     grep "^${SOURCE_SESSION}:${WINDOW_NAME}:" "$ALERTS_FILE" 2>/dev/null | while read -r alert_line; do
         agent=$(echo "$alert_line" | cut -d: -f3)
-        # Remove old alert
-        sed -i '' "/^${SOURCE_SESSION}:${WINDOW_NAME}:${agent}$/d" "$ALERTS_FILE"
+        # Remove old alert (portable approach)
+        grep -v "^${SOURCE_SESSION}:${WINDOW_NAME}:${agent}$" "$ALERTS_FILE" > "$ALERTS_FILE.tmp" && \
+            mv "$ALERTS_FILE.tmp" "$ALERTS_FILE"
         # Add updated alert with new session
         echo "${TARGET_SESSION}:${WINDOW_NAME}:${agent}" >> "$ALERTS_FILE"
     done

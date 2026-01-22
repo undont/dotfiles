@@ -146,6 +146,11 @@ fi
 # Keybindings: Ctrl+R (history), Ctrl+T (files), Opt+C (cd to directory)
 eval "$(fzf --zsh)"
 
+# Apply theme colours to fzf
+if [[ -f "$HOME/dotfiles/scripts/fzf-theme.sh" ]]; then
+  source "$HOME/dotfiles/scripts/fzf-theme.sh"
+fi
+
 # =============================================================================
 # TERMINAL TITLE HOOKS
 # =============================================================================
@@ -209,7 +214,8 @@ alias commands="cd ~/.claude/commands"
 
 # Dana 
 alias da="cd ~/src/dana"
-alias dap="cd ~/src/dana/.claude/plans/"
+alias dap="cd ~/src/dana/.claude/plans"
+alias daw="cd ~/src/dana-worktrees"
 
 # Kill Vite Server
 alias killvite="pkill -f "vite" 2>/dev/null"
@@ -217,7 +223,7 @@ alias killvite="pkill -f "vite" 2>/dev/null"
 # dotfiles 
 alias dot="cd ~/dotfiles"
 alias dotp="cd ~/dotfiles/.claude/plans"
-alias dotd="cd ~/dotfiles/.claude/docs/"
+alias dotd="cd ~/dotfiles/.claude/docs"
 
 # claude-config 
 alias .ai="cd ~/.ai"

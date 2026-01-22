@@ -2,12 +2,9 @@
 # Common utilities for installation scripts
 # Source this file: source "${BASH_SOURCE%/*}/_lib/common.sh"
 
-# Colours for output (using $'...' for proper escape interpretation)
-readonly RED=$'\033[0;31m'
-readonly GREEN=$'\033[0;32m'
-readonly YELLOW=$'\033[0;33m'
-readonly CYAN=$'\033[0;36m'
-readonly NC=$'\033[0m' # No Colour
+# Source colour definitions
+# shellcheck source=scripts/_lib/colours.sh
+source "${BASH_SOURCE%/*}/colours.sh"
 
 # Print error message to stderr
 error() {

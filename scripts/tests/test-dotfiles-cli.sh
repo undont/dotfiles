@@ -116,6 +116,12 @@ else
     fail "help should mention cd command"
 fi
 
+if [[ "$help_output" == *"theme"* ]]; then
+    pass "help mentions theme command"
+else
+    fail "help should mention theme command"
+fi
+
 # Test --help flag
 help_flag_output=$("$DOTFILES_CLI" --help 2>&1) || true
 if [[ "$help_flag_output" == *"Usage:"* ]]; then
@@ -379,6 +385,95 @@ if [[ "$symlinks_content" == *'should_install "full"'* ]]; then
     pass "create-symlinks uses should_install for full"
 else
     fail "create-symlinks should use should_install for full"
+fi
+
+# ===========================================================================
+# Theme Command Tests
+# ===========================================================================
+
+section "Theme Command - Basic Functionality"
+
+# Test theme list
+theme_list_output=$("$DOTFILES_CLI" theme list 2>&1) || true
+if [[ "$theme_list_output" == *"Available themes"* ]]; then
+    pass "theme list shows available themes header"
+else
+    fail "theme list should show available themes header"
+fi
+
+if [[ "$theme_list_output" == *"dracula"* ]]; then
+    pass "theme list includes dracula theme"
+else
+    fail "theme list should include dracula theme"
+fi
+
+# Test theme current
+theme_current_output=$("$DOTFILES_CLI" theme current 2>&1) || true
+if [[ "$theme_current_output" == *"Current theme"* ]]; then
+    pass "theme current shows current theme"
+else
+    fail "theme current should show current theme"
+fi
+
+# Test theme command in help output
+if [[ "$help_output" == *"dotfiles theme"* ]]; then
+    pass "help documents theme command usage"
+else
+    fail "help should document theme command usage"
+fi
+
+section "Theme Command - Script Structure"
+
+# Check that cmd_theme function is defined
+if [[ "$script_content" == *"cmd_theme()"* ]]; then
+    pass "cmd_theme function defined"
+else
+    fail "cmd_theme function not found"
+fi
+
+# Check that theme command calls theme-switch script
+if [[ "$script_content" == *'theme-switch'* ]]; then
+    pass "theme command uses theme-switch script"
+else
+    fail "theme command should use theme-switch script"
+fi
+
+# Check that theme command is routed in main case statement
+if [[ "$script_content" == *'theme)'* ]]; then
+    pass "theme command is handled in main case statement"
+else
+    fail "theme command should be in main case statement"
+fi
+
+section "Theme Command - Integration"
+
+# Verify theme-switch script exists
+theme_switch_script="$DOTFILES_DIR/scripts/theme-switch"
+if [[ -f "$theme_switch_script" ]]; then
+    pass "theme-switch script exists"
+else
+    fail "theme-switch script should exist"
+fi
+
+if [[ -x "$theme_switch_script" ]]; then
+    pass "theme-switch script is executable"
+else
+    fail "theme-switch script should be executable"
+fi
+
+# Verify themes directory exists
+themes_dir="$DOTFILES_DIR/themes"
+if [[ -d "$themes_dir" ]]; then
+    pass "themes directory exists"
+else
+    fail "themes directory should exist"
+fi
+
+# Verify at least one theme file exists
+if ls "$themes_dir"/*.theme &>/dev/null; then
+    pass "theme files exist in themes directory"
+else
+    fail "at least one theme file should exist"
 fi
 
 # ===========================================================================

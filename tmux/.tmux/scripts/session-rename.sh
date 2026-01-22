@@ -9,6 +9,9 @@ source "$SCRIPT_DIR/_lib/session.sh"
 
 require_tmux
 
+# Load current theme colours for fzf
+load_fzf_theme
+
 current_session="${1:-$(get_current_session)}"
 
 # Prompt for new name with current name as default
@@ -56,11 +59,8 @@ fi
 # Use grep -F for fixed string matching to prevent regex metacharacter issues
 ALERTS_FILE="$HOME/.claude/alerts"
 if [[ -f "$ALERTS_FILE" ]]; then
-    if grep -vF "${current_session}:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null; then
-        mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE"
-    else
-        rm -f "${ALERTS_FILE}.tmp"
-    fi
+    grep -v "^${current_session}:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
+        mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE" || rm -f "${ALERTS_FILE}.tmp"
 fi
 # Clear @agent_alert options for all windows in the session
 for win in $(tmux list-windows -t "$current_session" -F '#W' 2>/dev/null); do
