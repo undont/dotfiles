@@ -45,7 +45,7 @@ return {
   -- (disabled when dotfiles theme is active)
   {
     'f-person/auto-dark-mode.nvim',
-    enabled = vim.fn.filereadable(vim.fn.expand '~/.config/dotfiles/current-theme') == 0,
+    enabled = vim.fn.filereadable((os.getenv 'XDG_CONFIG_HOME' or vim.fn.expand '~/.config') .. '/dotfiles/current-theme') == 0,
     priority = 999,
     opts = {
       update_interval = 1000,

@@ -56,10 +56,10 @@ if session_exists "$newname"; then
 fi
 
 # Clear any existing alerts for the old session name before renaming
-# Use grep -F for fixed string matching to prevent regex metacharacter issues
+# Use awk for safe prefix matching (handles regex metacharacters in session name)
 ALERTS_FILE="$HOME/.claude/alerts"
 if [[ -f "$ALERTS_FILE" ]]; then
-    grep -v "^${current_session}:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
+    awk -v session="$current_session" 'index($0, session ":") != 1' "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
         mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE" || rm -f "${ALERTS_FILE}.tmp"
 fi
 # Clear @agent_alert options for all windows in the session

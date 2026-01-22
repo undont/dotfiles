@@ -163,7 +163,7 @@ fi
 # Generate themed configurations
 # ─────────────────────────────────────────
 echo ""
-print_step "Generating themed configurations"
+info "Generating themed configurations"
 
 if [[ -x "$DOTFILES_DIR/scripts/theme-switch" ]]; then
     # Get current theme or default to dracula

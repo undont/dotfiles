@@ -151,11 +151,11 @@ fi
 
 section "Script Content Validation"
 
-# Test that script checks for lowercase 'ghostty' not 'Ghostty'
-if grep -q "pgrep -x ghostty" "$GHOSTTY_RELOAD"; then
-    pass "script checks for lowercase 'ghostty' process"
+# Test that script checks for ghostty process (case-insensitive to handle both "ghostty" and "Ghostty")
+if grep -qE "pgrep.*-i.*ghostty" "$GHOSTTY_RELOAD"; then
+    pass "script checks for ghostty process (case-insensitive)"
 else
-    fail "script should check for lowercase 'ghostty' process"
+    fail "script should check for ghostty process (case-insensitive)"
 fi
 
 # Test that script checks platform

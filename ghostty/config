@@ -1,5 +1,5 @@
 # Ghostty Configuration File
-# Theme: Tokyo Night
+# Theme: Dracula
 
 # Fonts
 font-size = 13
@@ -30,28 +30,28 @@ mouse-hide-while-typing = true
 bell-features = title,attention
 
 # Colors
-background = #1a1b26
-foreground = #c0caf5
-cursor-color = #c0caf5
-cursor-text = #1a1b26
-selection-background = #33467c
-selection-foreground = #c0caf5
-palette = 0=#15161e
-palette = 1=#f7768e
-palette = 2=#9ece6a
-palette = 3=#e0af68
-palette = 4=#7aa2f7
-palette = 5=#bb9af7
-palette = 6=#7dcfff
-palette = 7=#a9b1d6
-palette = 8=#414868
-palette = 9=#f7768e
-palette = 10=#9ece6a
-palette = 11=#e0af68
-palette = 12=#7aa2f7
-palette = 13=#bb9af7
-palette = 14=#7dcfff
-palette = 15=#c0caf5
+background = #282a36
+foreground = #f8f8f2
+cursor-color = #f8f8f2
+cursor-text = #282a36
+selection-background = #44475a
+selection-foreground = #ffffff
+palette = 0=#21222c
+palette = 1=#ff5555
+palette = 2=#50fa7b
+palette = 3=#f1fa8c
+palette = 4=#bd93f9
+palette = 5=#ff79c6
+palette = 6=#8be9fd
+palette = 7=#f8f8f2
+palette = 8=#6272a4
+palette = 9=#ff6e6e
+palette = 10=#69ff94
+palette = 11=#ffffa5
+palette = 12=#d6acff
+palette = 13=#ff92df
+palette = 14=#a4ffff
+palette = 15=#ffffff
 
 # Macos
 macos-icon = glass

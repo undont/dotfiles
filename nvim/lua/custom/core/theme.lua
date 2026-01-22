@@ -1,7 +1,7 @@
 --[[
   Theme Integration Module
 
-  Reads the current theme from ~/.config/dotfiles/current-theme
+  Reads the current theme from ${XDG_CONFIG_HOME:-~/.config}/dotfiles/current-theme
   and applies the corresponding Neovim colourscheme.
 
   Uses vim.uv file watcher for live reload when theme changes.
@@ -10,7 +10,9 @@
 local M = {}
 
 -- Configuration
-local config_dir = vim.fn.expand '~/.config/dotfiles'
+-- Respect XDG_CONFIG_HOME to match shell tooling
+local xdg_config = os.getenv 'XDG_CONFIG_HOME' or vim.fn.expand '~/.config'
+local config_dir = xdg_config .. '/dotfiles'
 local theme_file = config_dir .. '/current-theme'
 
 -- Map dotfiles theme names to nvim colourschemes

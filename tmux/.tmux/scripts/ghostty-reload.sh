@@ -10,7 +10,8 @@ set -euo pipefail
 # 3. Fallback: activate + keystroke
 
 # Only run on macOS if Ghostty is running
-if [[ "$(uname)" != "Darwin" ]] || ! pgrep -x ghostty >/dev/null 2>&1; then
+# Check for both "ghostty" and "Ghostty" process names (case-insensitive)
+if [[ "$(uname)" != "Darwin" ]] || ! pgrep -ix "ghostty" >/dev/null 2>&1; then
     exit 0
 fi
 

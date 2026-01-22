@@ -193,20 +193,21 @@ fi
 section "Theme Switching Tests"
 
 # Switch to different theme and verify
-# Save config hash before switching
-config_before=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
+# Save config before switching (for comparison)
+config_backup="${TMUX_OUTPUT}.test-backup"
+cp "$TMUX_OUTPUT" "$config_backup" 2>/dev/null || true
 
 theme_output=$("$THEME_SWITCH" nord 2>&1) && theme_result=0 || theme_result=$?
 if [[ $theme_result -eq 0 ]]; then
     pass "theme-switch applied nord theme"
 
-    # Check config was modified
-    config_after=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
-    if [[ "$config_before" != "$config_after" ]]; then
+    # Check config was modified (use cmp for portability - works on macOS and Linux)
+    if ! cmp -s "$config_backup" "$TMUX_OUTPUT" 2>/dev/null; then
         pass "config updated when switching themes"
     else
         fail "config should be updated when switching themes"
     fi
+    rm -f "$config_backup"
 
     # Source the new config (TPM errors are acceptable in CI)
     reload_output=$($TEST_TMUX_CMD source-file "$TMUX_OUTPUT" 2>&1) && reload_result=0 || reload_result=$?
