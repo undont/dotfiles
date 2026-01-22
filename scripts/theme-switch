@@ -1,0 +1,275 @@
+#!/bin/bash
+set -euo pipefail
+
+# ══════════════════════════════════════════════════════════════
+# Theme Switcher for Tmux & Ghostty
+# ══════════════════════════════════════════════════════════════
+# Usage:
+#   theme-switch <theme-name>
+#   theme-switch list
+#   theme-switch current
+#
+# Examples:
+#   theme-switch dracula
+#   theme-switch catppuccin-mocha
+#   theme-switch tokyo-night
+#   theme-switch nord
+
+SCRIPT_DIR="${BASH_SOURCE%/*}"
+DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
+
+# Directories
+THEMES_DIR="$DOTFILES_ROOT/themes"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+CURRENT_THEME_FILE="$CONFIG_DIR/current-theme"
+
+# Templates and output files
+TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/.tmux.conf.template"
+TMUX_OUTPUT="$DOTFILES_ROOT/tmux/.tmux.conf"
+GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
+
+# Ghostty config location (macOS vs Linux)
+if [[ "$(uname)" == "Darwin" ]]; then
+    GHOSTTY_OUTPUT="$HOME/Library/Application Support/com.mitchellh.ghostty/config"
+else
+    GHOSTTY_OUTPUT="$HOME/.config/ghostty/config"
+fi
+
+# Colours for output
+RED='\033[0;31m'
+GREEN='\033[0;32m'
+YELLOW='\033[1;33m'
+CYAN='\033[0;36m'
+NC='\033[0m' # No Colour
+
+# ══════════════════════════════════════════════════════════════
+# Helper Functions
+# ══════════════════════════════════════════════════════════════
+
+error() {
+    printf "${RED}✗${NC} %s\n" "$1" >&2
+}
+
+success() {
+    printf "${GREEN}✓${NC} %s\n" "$1"
+}
+
+print_info() {
+    printf "${CYAN}•${NC} %s\n" "$1"
+}
+
+warn() {
+    printf "${YELLOW}!${NC} %s\n" "$1"
+}
+
+# List available themes
+list_themes() {
+    printf "\n${CYAN}Available themes:${NC}\n\n"
+
+    for theme_file in "$THEMES_DIR"/*.theme; do
+        if [[ -f "$theme_file" ]]; then
+            theme_name=$(basename "$theme_file" .theme)
+            # Source theme to get display name
+            # shellcheck disable=SC1090
+            source "$theme_file"
+
+            # Check if this is the current theme
+            current_marker=""
+            if [[ -f "$CURRENT_THEME_FILE" ]]; then
+                current_theme=$(cat "$CURRENT_THEME_FILE")
+                if [[ "$current_theme" == "$theme_name" ]]; then
+                    current_marker=" ${GREEN}(current)${NC}"
+                fi
+            fi
+
+            printf "  ${CYAN}•${NC} %s - %s%b\n" "$theme_name" "$THEME_NAME" "$current_marker"
+        fi
+    done
+
+    printf "\n"
+}
+
+# Get current theme
+get_current_theme() {
+    if [[ -f "$CURRENT_THEME_FILE" ]]; then
+        cat "$CURRENT_THEME_FILE"
+    else
+        echo "dracula"  # Default
+    fi
+}
+
+# Apply theme by replacing template variables
+apply_theme() {
+    local theme_name="$1"
+    local no_reload="${2:-false}"
+    local quiet="${3:-false}"
+    local theme_file="$THEMES_DIR/$theme_name.theme"
+
+    # Validate theme exists
+    if [[ ! -f "$theme_file" ]]; then
+        error "Theme '$theme_name' not found"
+        print_info "Run 'theme-switch list' to see available themes"
+        return 1
+    fi
+
+    # Source theme variables
+    # shellcheck disable=SC1090
+    source "$theme_file"
+
+    [[ "$quiet" != "true" ]] && print_info "Applying theme: $THEME_NAME"
+
+    # Process tmux template using sed (much faster than bash string replacement)
+    if [[ -f "$TMUX_TEMPLATE" ]]; then
+        sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
+            -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
+            -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
+            -e "s|{{TMUX_STATUS_BG}}|$TMUX_STATUS_BG|g" \
+            -e "s|{{TMUX_STATUS_FG}}|$TMUX_STATUS_FG|g" \
+            -e "s|{{TMUX_STATUS_ACTIVE_BG}}|$TMUX_STATUS_ACTIVE_BG|g" \
+            -e "s|{{TMUX_STATUS_ACTIVE_FG}}|$TMUX_STATUS_ACTIVE_FG|g" \
+            -e "s|{{TMUX_STATUS_INACTIVE_FG}}|$TMUX_STATUS_INACTIVE_FG|g" \
+            -e "s|{{TMUX_STATUS_BELL_FG}}|$TMUX_STATUS_BELL_FG|g" \
+            -e "s|{{TMUX_ACCENT_CYAN}}|$TMUX_ACCENT_CYAN|g" \
+            -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
+            -e "s|{{TMUX_ACCENT_PURPLE}}|$TMUX_ACCENT_PURPLE|g" \
+            -e "s|{{TMUX_FG_SECONDARY}}|$TMUX_FG_SECONDARY|g" \
+            -e "s|{{TMUX_PANE_BORDER_INACTIVE}}|$TMUX_PANE_BORDER_INACTIVE|g" \
+            -e "s|{{TMUX_PANE_BORDER_ACTIVE}}|$TMUX_PANE_BORDER_ACTIVE|g" \
+            -e "s|{{TMUX_MESSAGE_BG}}|$TMUX_MESSAGE_BG|g" \
+            -e "s|{{TMUX_MESSAGE_FG}}|$TMUX_MESSAGE_FG|g" \
+            -e "s|{{TMUX_MESSAGE_COMMAND_BG}}|$TMUX_MESSAGE_COMMAND_BG|g" \
+            -e "s|{{TMUX_MESSAGE_COMMAND_FG}}|$TMUX_MESSAGE_COMMAND_FG|g" \
+            -e "s|{{TMUX_CPU_LOW_BG}}|$TMUX_CPU_LOW_BG|g" \
+            -e "s|{{TMUX_CPU_MEDIUM_BG}}|$TMUX_CPU_MEDIUM_BG|g" \
+            -e "s|{{TMUX_CPU_HIGH_BG}}|$TMUX_CPU_HIGH_BG|g" \
+            -e "s|{{TMUX_RAM_LOW_BG}}|$TMUX_RAM_LOW_BG|g" \
+            -e "s|{{TMUX_RAM_MEDIUM_BG}}|$TMUX_RAM_MEDIUM_BG|g" \
+            -e "s|{{TMUX_RAM_HIGH_BG}}|$TMUX_RAM_HIGH_BG|g" \
+            -e "s|{{TMUX_BATTERY_NORMAL_BG}}|$TMUX_BATTERY_NORMAL_BG|g" \
+            -e "s|{{TMUX_BATTERY_LOW_BG}}|$TMUX_BATTERY_LOW_BG|g" \
+            "$TMUX_TEMPLATE" > "$TMUX_OUTPUT"
+        [[ "$quiet" != "true" ]] && success "Generated tmux configuration"
+    else
+        [[ "$quiet" != "true" ]] && warn "Tmux template not found, skipping"
+    fi
+
+    # Process ghostty template using sed
+    if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
+        # Ensure ghostty config directory exists
+        mkdir -p "$(dirname "$GHOSTTY_OUTPUT")"
+        sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
+            -e "s|{{GHOSTTY_BACKGROUND}}|$GHOSTTY_BACKGROUND|g" \
+            -e "s|{{GHOSTTY_FOREGROUND}}|$GHOSTTY_FOREGROUND|g" \
+            -e "s|{{GHOSTTY_CURSOR_COLOR}}|$GHOSTTY_CURSOR_COLOR|g" \
+            -e "s|{{GHOSTTY_CURSOR_TEXT}}|$GHOSTTY_CURSOR_TEXT|g" \
+            -e "s|{{GHOSTTY_SELECTION_BG}}|$GHOSTTY_SELECTION_BG|g" \
+            -e "s|{{GHOSTTY_SELECTION_FG}}|$GHOSTTY_SELECTION_FG|g" \
+            -e "s|{{GHOSTTY_PALETTE_0}}|$GHOSTTY_PALETTE_0|g" \
+            -e "s|{{GHOSTTY_PALETTE_1}}|$GHOSTTY_PALETTE_1|g" \
+            -e "s|{{GHOSTTY_PALETTE_2}}|$GHOSTTY_PALETTE_2|g" \
+            -e "s|{{GHOSTTY_PALETTE_3}}|$GHOSTTY_PALETTE_3|g" \
+            -e "s|{{GHOSTTY_PALETTE_4}}|$GHOSTTY_PALETTE_4|g" \
+            -e "s|{{GHOSTTY_PALETTE_5}}|$GHOSTTY_PALETTE_5|g" \
+            -e "s|{{GHOSTTY_PALETTE_6}}|$GHOSTTY_PALETTE_6|g" \
+            -e "s|{{GHOSTTY_PALETTE_7}}|$GHOSTTY_PALETTE_7|g" \
+            -e "s|{{GHOSTTY_PALETTE_8}}|$GHOSTTY_PALETTE_8|g" \
+            -e "s|{{GHOSTTY_PALETTE_9}}|$GHOSTTY_PALETTE_9|g" \
+            -e "s|{{GHOSTTY_PALETTE_10}}|$GHOSTTY_PALETTE_10|g" \
+            -e "s|{{GHOSTTY_PALETTE_11}}|$GHOSTTY_PALETTE_11|g" \
+            -e "s|{{GHOSTTY_PALETTE_12}}|$GHOSTTY_PALETTE_12|g" \
+            -e "s|{{GHOSTTY_PALETTE_13}}|$GHOSTTY_PALETTE_13|g" \
+            -e "s|{{GHOSTTY_PALETTE_14}}|$GHOSTTY_PALETTE_14|g" \
+            -e "s|{{GHOSTTY_PALETTE_15}}|$GHOSTTY_PALETTE_15|g" \
+            "$GHOSTTY_TEMPLATE" > "$GHOSTTY_OUTPUT"
+        [[ "$quiet" != "true" ]] && success "Generated ghostty configuration"
+    else
+        [[ "$quiet" != "true" ]] && warn "Ghostty template not found, skipping"
+    fi
+
+    # Save current theme preference
+    mkdir -p "$CONFIG_DIR"
+    echo "$theme_name" > "$CURRENT_THEME_FILE"
+
+    # Reload tmux if running (unless --no-reload was specified)
+    if [[ "$no_reload" != "true" ]]; then
+        if command -v tmux >/dev/null 2>&1 && tmux info &>/dev/null; then
+            if tmux source-file "$TMUX_OUTPUT" 2>/dev/null; then
+                [[ "$quiet" != "true" ]] && success "Reloaded tmux configuration"
+            else
+                [[ "$quiet" != "true" ]] && warn "Failed to reload tmux"
+            fi
+        fi
+
+        # Reload Ghostty config (macOS only)
+        if [[ "$(uname)" == "Darwin" ]] && pgrep -x ghostty >/dev/null 2>&1; then
+            "$DOTFILES_ROOT/tmux/.tmux/scripts/ghostty-reload.sh"
+            [[ "$quiet" != "true" ]] && success "Reloaded ghostty configuration"
+        fi
+
+        # Reload FZF theme colours
+        if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/fzf-reload.sh" ]]; then
+            "$DOTFILES_ROOT/tmux/.tmux/scripts/fzf-reload.sh"
+            [[ "$quiet" != "true" ]] && success "Reloaded FZF theme colours"
+        fi
+    fi
+
+    if [[ "$quiet" != "true" ]]; then
+        printf "\n"
+        success "Theme applied: $THEME_NAME"
+        if [[ "$no_reload" == "true" ]]; then
+            print_info "Run 'tmux source ~/.tmux.conf' to apply tmux changes"
+            print_info "Restart ghostty to see changes"
+        fi
+    fi
+}
+
+# ══════════════════════════════════════════════════════════════
+# Main
+# ══════════════════════════════════════════════════════════════
+
+main() {
+    local command="${1:-}"
+    local no_reload=false
+    local quiet=false
+
+    # Check for flags
+    for arg in "$@"; do
+        case "$arg" in
+            --no-reload) no_reload=true ;;
+            --quiet|-q) quiet=true ;;
+        esac
+    done
+
+    # Collect non-flag arguments
+    args=()
+    for arg in "$@"; do
+        case "$arg" in
+            --no-reload|--quiet|-q) continue ;;
+            *) args+=("$arg") ;;
+        esac
+    done
+    set -- "${args[@]+"${args[@]}"}"
+    command="${1:-}"
+
+    case "$command" in
+        list)
+            list_themes
+            ;;
+        current)
+            current=$(get_current_theme)
+            # shellcheck disable=SC1090
+            source "$THEMES_DIR/$current.theme" 2>/dev/null || THEME_NAME="Unknown"
+            printf "\n${CYAN}Current theme:${NC} %s (%s)\n\n" "$THEME_NAME" "$current"
+            ;;
+        "")
+            error "No theme specified"
+            print_info "Usage: theme-switch <theme-name|list|current> [--no-reload]"
+            exit 1
+            ;;
+        *)
+            apply_theme "$command" "$no_reload" "$quiet"
+            ;;
+    esac
+}
+
+main "$@"

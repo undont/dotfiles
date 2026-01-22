@@ -1,0 +1,245 @@
+#!/usr/bin/env bash
+# Tests for FZF theming functionality
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+
+# shellcheck source=scripts/_lib/common.sh
+source "$SCRIPT_DIR/../_lib/common.sh"
+
+# Test helpers
+TESTS_RUN=0
+TESTS_PASSED=0
+TESTS_FAILED=0
+
+pass() {
+    printf "${GREEN}✓${NC} %s\n" "$1"
+    ((TESTS_PASSED++)) || true
+    ((TESTS_RUN++)) || true
+}
+
+fail() {
+    printf "${RED}✗${NC} %s\n" "$1"
+    [[ -n "${2:-}" ]] && printf "  ${GREY}%s${NC}\n" "$2"
+    ((TESTS_FAILED++)) || true
+    ((TESTS_RUN++)) || true
+}
+
+skip() {
+    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
+}
+
+section() {
+    printf "\n${CYAN}━━━ %s${NC}\n\n" "$1"
+}
+
+# ══════════════════════════════════════════════════════════════
+# Test Suite
+# ══════════════════════════════════════════════════════════════
+
+main() {
+    print_header "FZF Theming Tests"
+
+    section "Theme File Validation"
+
+    # Test: All theme files have FZF colour variables
+    for theme_file in "$DOTFILES_ROOT/themes"/*.theme; do
+        theme_name=$(basename "$theme_file" .theme)
+
+        # Run in subshell to isolate variables between themes
+        if (
+            # Source theme file
+            # shellcheck disable=SC1090
+            source "$theme_file"
+
+            # Check for required FZF variables
+            missing_vars=()
+            [[ -z "${FZF_BG:-}" ]] && missing_vars+=("FZF_BG")
+            [[ -z "${FZF_FG:-}" ]] && missing_vars+=("FZF_FG")
+            [[ -z "${FZF_BORDER:-}" ]] && missing_vars+=("FZF_BORDER")
+            [[ -z "${FZF_PROMPT:-}" ]] && missing_vars+=("FZF_PROMPT")
+            [[ -z "${FZF_POINTER:-}" ]] && missing_vars+=("FZF_POINTER")
+            [[ -z "${FZF_HEADER:-}" ]] && missing_vars+=("FZF_HEADER")
+
+            [[ ${#missing_vars[@]} -eq 0 ]]
+        ); then
+            pass "$theme_name has all required FZF variables"
+        else
+            fail "$theme_name is missing FZF variables"
+        fi
+    done
+
+    section "FZF Theme Script"
+
+    # Test: fzf-theme.sh exists and is executable
+    if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
+        pass "fzf-theme.sh exists"
+    else
+        fail "fzf-theme.sh not found"
+        return 1
+    fi
+
+    # Test: fzf-theme.sh can be sourced
+    if source "$DOTFILES_ROOT/scripts/fzf-theme.sh" 2>/dev/null; then
+        pass "fzf-theme.sh can be sourced"
+    else
+        fail "fzf-theme.sh failed to source"
+        return 1
+    fi
+
+    # Test: FZF_DEFAULT_OPTS is exported
+    if [[ -n "${FZF_DEFAULT_OPTS:-}" ]]; then
+        pass "FZF_DEFAULT_OPTS is exported"
+    else
+        fail "FZF_DEFAULT_OPTS is not set"
+    fi
+
+    # Test: FZF_DEFAULT_OPTS contains colour definitions
+    if echo "$FZF_DEFAULT_OPTS" | grep -q "color="; then
+        pass "FZF_DEFAULT_OPTS contains colour definitions"
+    else
+        fail "FZF_DEFAULT_OPTS missing colour definitions"
+    fi
+
+    # Test: Individual FZF_THEME_* variables are exported
+    local theme_vars=("FZF_THEME_BG" "FZF_THEME_FG" "FZF_THEME_BORDER" "FZF_THEME_PROMPT" "FZF_THEME_POINTER" "FZF_THEME_HEADER")
+    local missing_theme_vars=()
+    for var in "${theme_vars[@]}"; do
+        if [[ -z "${!var:-}" ]]; then
+            missing_theme_vars+=("$var")
+        fi
+    done
+
+    if [[ ${#missing_theme_vars[@]} -eq 0 ]]; then
+        pass "All FZF_THEME_* variables are exported"
+    else
+        fail "Missing FZF_THEME_* variables" "${missing_theme_vars[*]}"
+    fi
+
+    section "Theme Switching"
+
+    # Save current theme
+    local original_theme
+    if [[ -f "$HOME/.config/dotfiles/current-theme" ]]; then
+        original_theme=$(cat "$HOME/.config/dotfiles/current-theme")
+    else
+        original_theme="dracula"
+    fi
+
+    # Test: Switching to each theme loads correct colours
+    for theme_file in "$DOTFILES_ROOT/themes"/*.theme; do
+        theme_name=$(basename "$theme_file" .theme)
+
+        # Switch theme (quietly, no reload)
+        "$DOTFILES_ROOT/scripts/theme-switch" "$theme_name" --no-reload --quiet
+
+        # Re-source fzf-theme.sh
+        # shellcheck disable=SC1091
+        source "$DOTFILES_ROOT/scripts/fzf-theme.sh"
+
+        # Source theme file directly to compare
+        # shellcheck disable=SC1090
+        source "$theme_file"
+
+        # Check if colours match
+        if [[ "$FZF_THEME_BORDER" == "$FZF_BORDER" ]]; then
+            pass "$theme_name colours load correctly"
+        else
+            fail "$theme_name colours mismatch" "Expected: $FZF_BORDER, Got: $FZF_THEME_BORDER"
+        fi
+    done
+
+    # Restore original theme
+    "$DOTFILES_ROOT/scripts/theme-switch" "$original_theme" --no-reload --quiet
+
+    section "Colour Format Validation"
+
+    # Re-source with original theme
+    # shellcheck disable=SC1091
+    source "$DOTFILES_ROOT/scripts/fzf-theme.sh"
+
+    # Test: Colours are in hex format
+    if [[ "$FZF_THEME_BORDER" =~ ^#[0-9a-fA-F]{6}$ ]]; then
+        pass "FZF colours are in valid hex format"
+    else
+        fail "FZF colours are not in hex format" "Got: $FZF_THEME_BORDER"
+    fi
+
+    # Test: FZF_DEFAULT_OPTS uses hex colours
+    if echo "$FZF_DEFAULT_OPTS" | grep -qE '#[0-9a-fA-F]{6}'; then
+        pass "FZF_DEFAULT_OPTS uses hex colours"
+    else
+        fail "FZF_DEFAULT_OPTS does not use hex colours"
+    fi
+
+    section "Integration with .zshrc"
+
+    # Test: .zshrc sources fzf-theme.sh
+    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/zsh/.zshrc"; then
+        pass ".zshrc sources fzf-theme.sh"
+    else
+        fail ".zshrc does not source fzf-theme.sh"
+    fi
+
+    # Test: fzf-theme.sh is sourced after fzf initialization
+    local fzf_line zsh_line
+    fzf_line=$(grep -n "fzf --zsh" "$DOTFILES_ROOT/zsh/.zshrc" | head -1 | cut -d: -f1)
+    zsh_line=$(grep -n "fzf-theme.sh" "$DOTFILES_ROOT/zsh/.zshrc" | head -1 | cut -d: -f1)
+
+    if [[ -n "$fzf_line" && -n "$zsh_line" ]] && [[ "$zsh_line" -gt "$fzf_line" ]]; then
+        pass "fzf-theme.sh sourced after fzf initialization"
+    else
+        fail "fzf-theme.sh not sourced after fzf initialization" "fzf line: $fzf_line, theme line: $zsh_line"
+    fi
+
+    section "Integration with tmux"
+
+    # Test: fzf-reload.sh exists
+    if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/fzf-reload.sh" ]]; then
+        pass "fzf-reload.sh exists"
+    else
+        fail "fzf-reload.sh not found"
+    fi
+
+    # Test: fzf-reload.sh is executable
+    if [[ -x "$DOTFILES_ROOT/tmux/.tmux/scripts/fzf-reload.sh" ]]; then
+        pass "fzf-reload.sh is executable"
+    else
+        fail "fzf-reload.sh is not executable"
+    fi
+
+    # Test: tmux theme picker calls fzf-reload.sh
+    if grep -q "fzf-reload.sh" "$DOTFILES_ROOT/tmux/.tmux.conf.template"; then
+        pass "tmux theme picker calls fzf-reload.sh"
+    else
+        fail "tmux theme picker does not call fzf-reload.sh"
+    fi
+
+    # Test: theme-picker.sh loads fzf theme before displaying
+    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/tmux/.tmux/scripts/theme-picker.sh"; then
+        pass "theme-picker.sh loads FZF theme"
+    else
+        fail "theme-picker.sh does not load FZF theme"
+    fi
+
+    # ══════════════════════════════════════════════════════════════
+    # Summary
+    # ══════════════════════════════════════════════════════════════
+
+    printf "\n"
+    print_header "Test Summary"
+
+    printf "Total tests:  %d\n" "$TESTS_RUN"
+    printf "${GREEN}Passed:       %d${NC}\n" "$TESTS_PASSED"
+
+    if [[ $TESTS_FAILED -gt 0 ]]; then
+        printf "${RED}Failed:       %d${NC}\n" "$TESTS_FAILED"
+        exit 1
+    else
+        printf "\n${GREEN}All tests passed!${NC}\n"
+        exit 0
+    fi
+}
+
+main "$@"

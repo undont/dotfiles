@@ -1,0 +1,109 @@
+#!/bin/bash
+# Catppuccin Mocha theme
+# https://github.com/catppuccin/catppuccin
+
+THEME_NAME="Catppuccin Mocha"
+
+# ══════════════════════════════════════════════════════════════
+# Tmux Colours
+# ══════════════════════════════════════════════════════════════
+
+# Base colours
+TMUX_BG_PRIMARY="#1e1e2e"
+TMUX_FG_PRIMARY="#cdd6f4"
+TMUX_BG_SECONDARY="#313244"
+TMUX_FG_SECONDARY="#6c7086"
+
+# Accent colours
+TMUX_ACCENT_PURPLE="#cba6f7"
+TMUX_ACCENT_PINK="#f5c2e7"
+TMUX_ACCENT_CYAN="#89dceb"
+TMUX_ACCENT_GREEN="#a6e3a1"
+TMUX_ACCENT_YELLOW="#f9e2af"
+TMUX_ACCENT_RED="#f38ba8"
+
+# Status bar
+TMUX_STATUS_BG="$TMUX_BG_PRIMARY"
+TMUX_STATUS_FG="$TMUX_FG_PRIMARY"
+TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PURPLE"
+TMUX_STATUS_ACTIVE_FG="$TMUX_BG_PRIMARY"
+TMUX_STATUS_INACTIVE_FG="$TMUX_FG_SECONDARY"
+TMUX_STATUS_BELL_FG="$TMUX_ACCENT_PINK"
+
+# Pane borders
+TMUX_PANE_BORDER_INACTIVE="$TMUX_BG_SECONDARY"
+TMUX_PANE_BORDER_ACTIVE="$TMUX_ACCENT_PURPLE"
+
+# Message/command bar
+TMUX_MESSAGE_BG="$TMUX_ACCENT_PURPLE"
+TMUX_MESSAGE_FG="$TMUX_BG_PRIMARY"
+TMUX_MESSAGE_COMMAND_BG="$TMUX_FG_SECONDARY"
+TMUX_MESSAGE_COMMAND_FG="$TMUX_FG_PRIMARY"
+
+# Plugin status indicators
+TMUX_CPU_LOW_BG="#264653"
+TMUX_CPU_MEDIUM_BG="#3d3856"
+TMUX_CPU_HIGH_BG="#4d3849"
+TMUX_RAM_LOW_BG="#2a463a"
+TMUX_RAM_MEDIUM_BG="#2d4653"
+TMUX_RAM_HIGH_BG="#44385a"
+TMUX_BATTERY_NORMAL_BG="#2a4640"
+TMUX_BATTERY_LOW_BG="#4d3030"
+
+# ══════════════════════════════════════════════════════════════
+# Ghostty Colours
+# ══════════════════════════════════════════════════════════════
+
+GHOSTTY_BACKGROUND="#1e1e2e"
+GHOSTTY_FOREGROUND="#cdd6f4"
+GHOSTTY_CURSOR_COLOR="#f5e0dc"
+GHOSTTY_CURSOR_TEXT="#1e1e2e"
+GHOSTTY_SELECTION_BG="#313244"
+GHOSTTY_SELECTION_FG="#cdd6f4"
+
+# Terminal palette
+GHOSTTY_PALETTE_0="#45475a"
+GHOSTTY_PALETTE_1="#f38ba8"
+GHOSTTY_PALETTE_2="#a6e3a1"
+GHOSTTY_PALETTE_3="#f9e2af"
+GHOSTTY_PALETTE_4="#89b4fa"
+GHOSTTY_PALETTE_5="#f5c2e7"
+GHOSTTY_PALETTE_6="#94e2d5"
+GHOSTTY_PALETTE_7="#bac2de"
+GHOSTTY_PALETTE_8="#585b70"
+GHOSTTY_PALETTE_9="#f38ba8"
+GHOSTTY_PALETTE_10="#a6e3a1"
+GHOSTTY_PALETTE_11="#f9e2af"
+GHOSTTY_PALETTE_12="#89b4fa"
+GHOSTTY_PALETTE_13="#f5c2e7"
+GHOSTTY_PALETTE_14="#94e2d5"
+GHOSTTY_PALETTE_15="#a6adc8"
+
+# ══════════════════════════════════════════════════════════════
+# Neovim Colours
+# ══════════════════════════════════════════════════════════════
+
+NVIM_COLORSCHEME="catppuccin-mocha"
+
+# ══════════════════════════════════════════════════════════════
+# FZF Colours
+# ══════════════════════════════════════════════════════════════
+
+FZF_BG="$TMUX_BG_PRIMARY"
+FZF_FG="$TMUX_FG_PRIMARY"
+FZF_BG_PLUS="$TMUX_BG_SECONDARY"      # Current line background
+FZF_FG_PLUS="$TMUX_FG_PRIMARY"        # Current line foreground
+FZF_HL="$TMUX_ACCENT_PURPLE"          # Highlighted substrings
+FZF_HL_PLUS="$TMUX_ACCENT_PINK"       # Highlighted substrings (current line)
+FZF_BORDER="$TMUX_ACCENT_PURPLE"      # Border
+FZF_PROMPT="$TMUX_ACCENT_CYAN"        # Prompt
+FZF_POINTER="$TMUX_ACCENT_PINK"       # Pointer
+FZF_MARKER="$TMUX_ACCENT_GREEN"       # Multi-select marker
+FZF_SPINNER="$TMUX_ACCENT_YELLOW"     # Streaming input indicator
+FZF_HEADER="$TMUX_ACCENT_CYAN"        # Header
+FZF_INFO="$TMUX_FG_SECONDARY"         # Info line
+FZF_SEPARATOR="$TMUX_FG_SECONDARY"    # Border separator
+FZF_SCROLLBAR="$TMUX_ACCENT_PURPLE"   # Scrollbar
+FZF_LABEL="$TMUX_FG_PRIMARY"          # Border label
+FZF_PREVIEW_BG="$TMUX_BG_PRIMARY"     # Preview window background
+FZF_PREVIEW_FG="$TMUX_FG_PRIMARY"     # Preview window foreground

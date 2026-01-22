@@ -17,6 +17,9 @@ source "$SCRIPT_DIR/_lib/alerts.sh"
 
 require_tmux
 
+# Load current theme colours for fzf
+load_fzf_theme
+
 # Parse optional flags
 WINDOW_TARGET=""
 NO_CONFIRM=""

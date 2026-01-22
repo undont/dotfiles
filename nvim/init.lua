@@ -43,3 +43,11 @@ require('lazy').setup({
     },
   },
 })
+
+-- Load dotfiles theme integration (after plugins are loaded)
+vim.api.nvim_create_autocmd('User', {
+  pattern = 'VeryLazy',
+  callback = function()
+    require('custom.core.theme').setup()
+  end,
+})

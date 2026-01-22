@@ -13,6 +13,9 @@ source "$SCRIPT_DIR/_lib/alerts.sh"
 
 require_tmux
 
+# Load current theme colours for fzf
+load_fzf_theme
+
 SESSION_NAME="${1:-}"
 NO_CONFIRM="${2:-}"
 [[ -z "$SESSION_NAME" ]] && exit 1
