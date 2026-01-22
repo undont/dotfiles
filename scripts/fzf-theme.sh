@@ -51,25 +51,26 @@ fi
 
 # Export FZF_DEFAULT_OPTS with theme colours
 # Format: --color=element:colour
+# Use ${VAR:-} to avoid unbound variable errors if theme doesn't define all vars
 export FZF_DEFAULT_OPTS="
---color=bg:${FZF_BG}
---color=fg:${FZF_FG}
---color=bg+:${FZF_BG_PLUS}
---color=fg+:${FZF_FG_PLUS}
---color=hl:${FZF_HL}
---color=hl+:${FZF_HL_PLUS}
---color=border:${FZF_BORDER}
---color=prompt:${FZF_PROMPT}
---color=pointer:${FZF_POINTER}
---color=marker:${FZF_MARKER}
---color=spinner:${FZF_SPINNER}
---color=header:${FZF_HEADER}
---color=info:${FZF_INFO}
---color=separator:${FZF_SEPARATOR}
---color=scrollbar:${FZF_SCROLLBAR}
---color=label:${FZF_LABEL}
---color=preview-bg:${FZF_PREVIEW_BG}
---color=preview-fg:${FZF_PREVIEW_FG}
+--color=bg:${FZF_BG:-#1e1e1e}
+--color=fg:${FZF_FG:-#d4d4d4}
+--color=bg+:${FZF_BG_PLUS:-#2e2e2e}
+--color=fg+:${FZF_FG_PLUS:-#ffffff}
+--color=hl:${FZF_HL:-#569cd6}
+--color=hl+:${FZF_HL_PLUS:-#4fc1ff}
+--color=border:${FZF_BORDER:-#3e3e3e}
+--color=prompt:${FZF_PROMPT:-#ce9178}
+--color=pointer:${FZF_POINTER:-#4ec9b0}
+--color=marker:${FZF_MARKER:-#c586c0}
+--color=spinner:${FZF_SPINNER:-#4ec9b0}
+--color=header:${FZF_HEADER:-#569cd6}
+--color=info:${FZF_INFO:-#d4d4d4}
+--color=separator:${FZF_SEPARATOR:-#3e3e3e}
+--color=scrollbar:${FZF_SCROLLBAR:-#569cd6}
+--color=label:${FZF_LABEL:-#ffffff}
+--color=preview-bg:${FZF_PREVIEW_BG:-#1e1e1e}
+--color=preview-fg:${FZF_PREVIEW_FG:-#d4d4d4}
 "
 
 # Also export individual colours for scripts that need direct access

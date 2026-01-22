@@ -137,10 +137,12 @@ if [[ -f "$TMUX_OUTPUT" ]]; then
 fi
 
 # Apply a theme to generate config
-if "$THEME_SWITCH" dracula 2>/dev/null; then
+theme_output=$("$THEME_SWITCH" dracula 2>&1) && theme_result=0 || theme_result=$?
+if [[ $theme_result -eq 0 ]]; then
     pass "theme-switch applied dracula theme"
 else
-    fail "theme-switch should apply dracula theme"
+    fail "theme-switch should apply dracula theme (exit code: $theme_result)"
+    echo "  Error output: $theme_output" | head -3
 fi
 
 # Verify config was generated
@@ -194,7 +196,8 @@ section "Theme Switching Tests"
 # Save config hash before switching
 config_before=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
 
-if "$THEME_SWITCH" nord 2>/dev/null; then
+theme_output=$("$THEME_SWITCH" nord 2>&1) && theme_result=0 || theme_result=$?
+if [[ $theme_result -eq 0 ]]; then
     pass "theme-switch applied nord theme"
 
     # Check config was modified
@@ -213,13 +216,15 @@ if "$THEME_SWITCH" nord 2>/dev/null; then
         fail "tmux should reload with nord theme"
     fi
 else
-    fail "theme-switch should apply nord theme"
+    fail "theme-switch should apply nord theme (exit code: $theme_result)"
+    echo "  Error output: $theme_output" | head -3
 fi
 
 # Switch back to dracula
 config_nord=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
 
-if "$THEME_SWITCH" dracula 2>/dev/null; then
+theme_output=$("$THEME_SWITCH" dracula 2>&1) && theme_result=0 || theme_result=$?
+if [[ $theme_result -eq 0 ]]; then
     pass "theme-switch switched back to dracula"
 
     # Config should change again
@@ -230,7 +235,8 @@ if "$THEME_SWITCH" dracula 2>/dev/null; then
         fail "config should change when reverting theme"
     fi
 else
-    fail "theme-switch should switch back to dracula"
+    fail "theme-switch should switch back to dracula (exit code: $theme_result)"
+    echo "  Error output: $theme_output" | head -3
 fi
 
 # ===========================================================================
@@ -252,7 +258,8 @@ else
 fi
 
 # Apply theme - all sessions should work with new config
-if "$THEME_SWITCH" tokyo-night 2>/dev/null; then
+theme_output=$("$THEME_SWITCH" tokyo-night 2>&1) && theme_result=0 || theme_result=$?
+if [[ $theme_result -eq 0 ]]; then
     pass "applied tokyo-night theme with multiple sessions"
 
     # Source in test server (affects all sessions, TPM errors acceptable)
@@ -263,7 +270,8 @@ if "$THEME_SWITCH" tokyo-night 2>/dev/null; then
         fail "should reload config across sessions"
     fi
 else
-    fail "should apply theme with multiple sessions"
+    fail "should apply theme with multiple sessions (exit code: $theme_result)"
+    echo "  Error output: $theme_output" | head -3
 fi
 
 # ===========================================================================
