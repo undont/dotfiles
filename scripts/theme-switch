@@ -155,6 +155,8 @@ apply_theme() {
 
     # Process ghostty template using sed
     if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
+        # Ensure ghostty config directory exists
+        mkdir -p "$(dirname "$GHOSTTY_OUTPUT")"
         sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
             -e "s|{{GHOSTTY_BACKGROUND}}|$GHOSTTY_BACKGROUND|g" \
             -e "s|{{GHOSTTY_FOREGROUND}}|$GHOSTTY_FOREGROUND|g" \
