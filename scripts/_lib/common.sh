@@ -174,3 +174,29 @@ should_install() {
             ;;
     esac
 }
+
+# Display ASCII logo from logo.txt with gradient
+# Usage: print_logo
+print_logo() {
+    local logo_file="${BASH_SOURCE%/*}/logo.txt"
+
+    if [[ -f "$logo_file" ]]; then
+        # Cyan to Purple gradient using RGB colours
+        local gradient_colours
+        gradient_colours=(
+            $'\033[38;2;139;233;253m'  # Cyan
+            $'\033[38;2;158;206;253m'  # Cyan-Blue
+            $'\033[38;2;177;179;253m'  # Blue-Purple
+            $'\033[38;2;189;147;249m'  # Purple
+            $'\033[38;2;189;147;249m'  # Purple
+        )
+
+        echo ""
+        local i=0
+        while IFS= read -r line || [[ -n "$line" ]]; do
+            printf "${gradient_colours[$i]}%s${NC}\n" "$line"
+            i=$((i + 1))
+        done < "$logo_file"
+        echo ""
+    fi
+}

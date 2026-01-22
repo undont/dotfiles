@@ -68,14 +68,15 @@ cmd_update() {
     remote_branch=$(get_remote_branch)
     local_branch=$(git rev-parse --abbrev-ref HEAD)
 
+    print_logo
     print_header "Dotfiles Update"
 
-    info "Current preset: $preset"
-    info "Branch: $local_branch (tracking ${remote_branch})"
+    printf "${CYAN}Preset:${NC}  %s\n" "$preset"
+    printf "${CYAN}Branch:${NC}  %s (tracking %s)\n" "$local_branch" "$remote_branch"
     echo ""
 
     # Fetch and check status
-    info "Fetching from origin..."
+    printf "  ${CYAN}→${NC} Fetching from origin...\n"
     git fetch origin --quiet
 
     local behind ahead
@@ -83,17 +84,17 @@ cmd_update() {
     ahead=$(git rev-list "$remote_branch"..HEAD --count 2>/dev/null) || ahead=0
 
     if [[ $behind -eq 0 && $ahead -eq 0 ]]; then
-        success "Already up-to-date!"
+        printf "  ${GREEN}✓${NC} Already up-to-date!\n"
         echo ""
         return 0
     fi
 
     if [[ $ahead -gt 0 ]]; then
-        warn "You have $ahead unpushed commit(s)"
+        printf "  ${YELLOW}!${NC} You have %d unpushed commit(s)\n" "$ahead"
     fi
 
     if [[ $behind -gt 0 ]]; then
-        info "Pulling $behind new commit(s)..."
+        printf "  ${CYAN}→${NC} Pulling %d new commit(s)...\n" "$behind"
         echo ""
         git pull --ff-only origin "$local_branch" || {
             error "Pull failed. You may have local changes that conflict."
@@ -103,7 +104,7 @@ cmd_update() {
         echo ""
 
         # Re-run installer with saved preset
-        info "Re-running installer with --$preset preset..."
+        printf "  ${CYAN}→${NC} Re-running installer with --%s preset...\n" "$preset"
         echo ""
         "$DOTFILES_DIR/install.sh" "--$preset" --skip-backup
     fi
@@ -117,12 +118,13 @@ cmd_status() {
     preset=$(get_preset)
     remote_branch=$(get_remote_branch)
 
+    print_logo
     print_header "Dotfiles Status"
 
-    # Git status
-    info "Preset: $preset"
-    info "Directory: $DOTFILES_DIR"
-    info "Branch: $(git rev-parse --abbrev-ref HEAD)"
+    # Git status with prettier formatting
+    printf "${CYAN}Preset:${NC}    %s\n" "$preset"
+    printf "${CYAN}Location:${NC}  %s\n" "$DOTFILES_DIR"
+    printf "${CYAN}Branch:${NC}    %s\n" "$(git rev-parse --abbrev-ref HEAD)"
     echo ""
 
     # Fetch quietly
@@ -132,21 +134,21 @@ cmd_status() {
     ahead=$(git rev-list "$remote_branch"..HEAD --count 2>/dev/null) || ahead=0
 
     if [[ $behind -eq 0 && $ahead -eq 0 ]]; then
-        success "Up-to-date with $remote_branch"
+        printf "  ${GREEN}✓${NC} Up-to-date with %s\n" "$remote_branch"
     else
         if [[ $behind -gt 0 ]]; then
-            warn "$behind commit(s) behind $remote_branch"
+            printf "  ${YELLOW}↓${NC} %d commit(s) behind %s\n" "$behind" "$remote_branch"
         fi
         if [[ $ahead -gt 0 ]]; then
-            warn "$ahead commit(s) ahead of $remote_branch"
+            printf "  ${YELLOW}↑${NC} %d commit(s) ahead of %s\n" "$ahead" "$remote_branch"
         fi
     fi
 
     # Local changes
     if [[ -n $(git status --porcelain 2>/dev/null) ]]; then
         echo ""
-        warn "Uncommitted local changes:"
-        git status --short
+        printf "  ${YELLOW}!${NC} Uncommitted local changes:\n"
+        git status --short | sed 's/^/    /'
     fi
 
     echo ""
@@ -211,6 +213,7 @@ cmd_theme() {
 }
 
 cmd_help() {
+    print_logo
     cat << 'EOF'
 Dotfiles CLI - manage your dotfiles installation
 

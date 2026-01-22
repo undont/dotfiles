@@ -76,9 +76,10 @@ The installer will:
 3. Check prerequisites
 4. Backup existing configuration
 5. Create symlinks
-6. Install plugin managers (TPM)
-7. Create secrets file from template
-8. Run a health check
+6. Prompt to create local aliases from template (optional)
+7. Install plugin managers (TPM)
+8. Create secrets file from template
+9. Run a health check
 
 ### Install Presets
 
