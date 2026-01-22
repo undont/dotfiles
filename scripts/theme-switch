@@ -198,6 +198,9 @@ apply_theme() {
             else
                 [[ "$quiet" != "true" ]] && warn "Failed to reload tmux"
             fi
+        else
+            # Not in tmux - inform user that files are ready
+            [[ "$quiet" != "true" ]] && success "Theme files generated (start tmux to see changes)"
         fi
 
         # Reload Ghostty config (macOS only)

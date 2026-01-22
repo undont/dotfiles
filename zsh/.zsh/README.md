@@ -368,6 +368,164 @@ export SONAR_ORG="..."
 
 ---
 
+## Local Aliases Configuration
+
+### Overview
+
+Project-specific aliases (like `da` for Dana, `dot` for dotfiles) can be customised per machine using the `.local-aliases.zsh` file. This allows the same dotfiles configuration to work across different users and development environments.
+
+### Setup
+
+1. **Copy the template:**
+   ```bash
+   cp ~/.zsh/.local-aliases.zsh.template ~/.zsh/.local-aliases.zsh
+   ```
+
+2. **Edit your local aliases:**
+   ```bash
+   nvim ~/.zsh/.local-aliases.zsh
+   ```
+
+3. **Define your project paths:**
+   ```bash
+   # Example configuration
+   export DANA_ROOT="$HOME/src/dana"
+   alias da="cd $DANA_ROOT"
+   alias dap="cd $DANA_ROOT/.claude/plans"
+   ```
+
+4. **Reload your shell:**
+   ```bash
+   source ~/.zshrc
+   ```
+
+### Pattern: Environment Variables + Aliases
+
+The recommended pattern uses environment variables for project roots, then defines aliases based on those variables:
+
+```bash
+# Define the root path
+export PROJECT_ROOT="$HOME/projects/my-app"
+
+# Create aliases using the variable
+alias myapp="cd $PROJECT_ROOT"
+alias myapp-plans="cd $PROJECT_ROOT/.claude/plans"
+alias myapp-test="cd $PROJECT_ROOT && npm test"
+```
+
+**Benefits:**
+- ✅ Portable across machines (each user sets their own paths)
+- ✅ Environment variables can be used in scripts
+- ✅ Easy to update paths (change variable, all aliases update)
+- ✅ Self-documenting (variable names describe what they point to)
+
+### Default Aliases
+
+The `.zshrc` includes some default aliases that you can override:
+
+| Alias | Default Path | Purpose |
+|-------|--------------|---------|
+| `da` | `~/src/dana` | Dana project root |
+| `dap` | `~/src/dana/.claude/plans` | Dana plans directory |
+| `daw` | `~/src/dana-worktrees` | Dana worktrees |
+| `dot` | `~/dotfiles` | Dotfiles repository |
+| `dotp` | `~/dotfiles/.claude/plans` | Dotfiles plans |
+| `dotd` | `~/dotfiles/.claude/docs` | Dotfiles documentation |
+| `.ai` | `~/.ai` | AI configuration |
+| `plans` | `~/.claude/plans` | Claude Code plans |
+| `commands` | `~/.claude/commands` | Claude Code commands |
+
+To override these, define them in your `.local-aliases.zsh` file.
+
+### Tab Completion for Custom Aliases
+
+If your custom alias needs tab completion (like project-specific tmux session names), use a function instead of an alias:
+
+```bash
+# In .local-aliases.zsh
+myapp() {
+  cd "$MYAPP_ROOT/$1"
+}
+
+# Add completion function
+_myapp() {
+  local -a subdirs
+  subdirs=(${(f)"$(ls -d $MYAPP_ROOT/*/ 2>/dev/null | xargs -n1 basename)"})
+  _describe 'myapp directories' subdirs
+}
+compdef _myapp myapp
+```
+
+### Common Patterns
+
+#### Multi-Project Workspace
+
+```bash
+export DEV_ROOT="$HOME/dev"
+alias dev="cd $DEV_ROOT"
+alias api="cd $DEV_ROOT/api"
+alias web="cd $DEV_ROOT/web"
+alias mobile="cd $DEV_ROOT/mobile"
+```
+
+#### Project with Launcher Function
+
+```bash
+export MYAPP_ROOT="$HOME/projects/myapp"
+alias myapp="cd $MYAPP_ROOT"
+
+# Launcher that sets up environment
+myapp-dev() {
+  cd "$MYAPP_ROOT" || return 1
+  fnm use  # Use correct Node version
+  npm run dev
+}
+```
+
+#### Conditional Aliases (work vs personal)
+
+```bash
+# Only create work aliases on work machine
+if [[ -d "$HOME/work" ]]; then
+  export WORK_ROOT="$HOME/work"
+  alias work="cd $WORK_ROOT"
+  alias jira="cd $WORK_ROOT/jira-client"
+fi
+```
+
+### File Status
+
+- ✅ **`.local-aliases.zsh`** - Not version controlled, user-specific
+- ✅ **`.local-aliases.zsh.template`** - Version controlled template
+- ✅ **Automatically loaded** in `.zshrc` after default aliases
+
+### Troubleshooting
+
+**Aliases not working after setup:**
+```bash
+# Reload shell configuration
+source ~/.zshrc
+
+# Or open a new terminal tab
+```
+
+**Check if file is being loaded:**
+```bash
+# Add this to top of .local-aliases.zsh for debugging
+echo "Loading local aliases..."
+
+# Check if file exists
+ls -la ~/.zsh/.local-aliases.zsh
+```
+
+**Verify environment variables:**
+```bash
+# Print all custom project variables
+env | grep -E "(ROOT|_PROJECT)"
+```
+
+---
+
 ## Terminal Title Hooks
 
 The shell automatically updates terminal/tab titles:
