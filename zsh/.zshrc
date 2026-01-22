@@ -228,6 +228,15 @@ alias dotd="cd ~/dotfiles/.claude/docs"
 # claude-config 
 alias .ai="cd ~/.ai"
 
+# =============================================================================
+# LOCAL ALIASES (machine-specific)
+# =============================================================================
+# Project-specific aliases and paths loaded from separate file
+# See ~/.zsh/.local-aliases.zsh.template for setup instructions
+if [[ -f "$HOME/.zsh/.local-aliases.zsh" ]]; then
+  source "$HOME/.zsh/.local-aliases.zsh"
+fi
+
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/resurrect-restore.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"

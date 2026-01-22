@@ -1,5 +1,6 @@
 # Secrets - NEVER commit
 zsh/.zsh/.secrets.zsh
+zsh/.zsh/.local-aliases.zsh
 
 # Tmux runtime data (managed by plugins)
 tmux/.tmux/plugins/

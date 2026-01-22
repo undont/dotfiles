@@ -64,6 +64,7 @@ EOF
     esac
 done
 
+print_logo
 print_header "Dotfiles Uninstall"
 
 # Define all symlinks that install.sh creates
@@ -219,6 +220,7 @@ if [[ -f "$PRESET_CONFIG_FILE" ]]; then
 fi
 
 echo ""
+print_logo
 print_header "Uninstall Complete"
 
 echo "Dotfiles symlinks have been removed."

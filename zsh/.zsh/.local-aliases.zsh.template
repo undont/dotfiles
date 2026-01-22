@@ -1,0 +1,74 @@
+# =============================================================================
+# LOCAL ALIASES CONFIGURATION
+# =============================================================================
+# This file contains machine-specific project aliases and paths.
+# Copy this template to .local-aliases.zsh and customise for your machine.
+#
+# Setup:
+#   cp ~/.zsh/.local-aliases.zsh.template ~/.zsh/.local-aliases.zsh
+#
+# The .local-aliases.zsh file is not version controlled (in .gitignore).
+#
+# =============================================================================
+
+# =============================================================================
+# PROJECT ROOT DIRECTORIES
+# =============================================================================
+# Define base directories where your projects live
+# Uncomment and customise these paths for your machine
+
+# Development projects root (alternative approach)
+# export DEV_ROOT="$HOME/src"
+# export PROJECTS_ROOT="$HOME/projects"
+
+# =============================================================================
+# PROJECT-SPECIFIC ALIASES
+# =============================================================================
+# Define aliases for your frequently accessed projects
+# Pattern: Use 2-3 letter shortcuts that make sense to you
+
+# Example: Dana project
+# export DANA_ROOT="$HOME/src/dana"
+# alias da="cd \$DANA_ROOT"
+# alias dap="cd \$DANA_ROOT/.claude/plans"
+# alias daw="cd \$DANA_ROOT-worktrees"
+
+# Example: Personal dotfiles
+# export DOTFILES_ROOT="$HOME/dotfiles"
+# alias dot="cd \$DOTFILES_ROOT"
+# alias dotp="cd \$DOTFILES_ROOT/.claude/plans"
+# alias dotd="cd \$DOTFILES_ROOT/.claude/docs"
+
+# Example: Work projects
+# export WORK_ROOT="$HOME/work"
+# alias work="cd \$WORK_ROOT"
+# alias api="cd \$WORK_ROOT/api"
+# alias web="cd \$WORK_ROOT/web"
+
+# =============================================================================
+# CLAUDE/AI CONFIGURATION ALIASES
+# =============================================================================
+# These are generally consistent across machines, but you can override them
+
+# Claude Code configuration
+# alias plans="cd ~/.claude/plans"
+# alias commands="cd ~/.claude/commands"
+# alias .ai="cd ~/.ai"
+
+# =============================================================================
+# CUSTOM PROJECT LAUNCHERS
+# =============================================================================
+# Add custom functions or launchers for your projects
+# Example:
+# dana-dev() {
+#   cd "$DANA_ROOT" && fnm use && npm run dev
+# }
+
+# =============================================================================
+# ADDITIONAL TOOL ALIASES
+# =============================================================================
+# Add any other machine-specific aliases here
+
+# Example: Kill development servers
+# alias killvite="pkill -f \"vite\" 2>/dev/null"
+# alias killnext="pkill -f \"next\" 2>/dev/null"
