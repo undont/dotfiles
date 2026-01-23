@@ -69,7 +69,7 @@ create_link "$DOTFILES_DIR/zsh/.zsh" "$HOME/.zsh"
 
 # Check for local aliases configuration
 echo ""
-print_step "Checking for local aliases configuration"
+info "Checking for local aliases configuration"
 
 if [[ ! -f "$HOME/.zsh/.local-aliases.zsh" ]]; then
   printf "  ${YELLOW}⚠${NC}  No local aliases found. Create from template? [y/N] "
