@@ -253,7 +253,7 @@ bind -T copy-mode-vi Escape send-keys -X cancel       # Esc = quit scroll mode
 # Help
 # ─────────────────────────────────────────
 # Display keybinding reference popup (press Esc to close)
-bind h display-popup -w 74 -h 41 "cat ~/.tmux/tmux-help.txt; read -sk1"    # prefix + h
+bind h display-popup -w 74 -h 44 "cat ~/.tmux/tmux-help.txt; read -sk1"    # prefix + h
 
 # ─────────────────────────────────────────
 # Theme picker (prefix + t)
