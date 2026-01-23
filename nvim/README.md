@@ -260,6 +260,10 @@ Restart Neovim and lazy.nvim will automatically install the new plugin.
 2. Check status: `:Copilot status`
 3. Ensure Node.js is installed: `node --version`
 
+### Copilot Suggestions Hard to See
+
+If Copilot suggestions blend in too much with your code, run `:CopilotHighlightFix` to apply custom highlighting. The suggestions will appear in italic with a subdued colour matching your theme's comment style.
+
 ### LazyGit Not Opening
 
 1. Ensure lazygit is installed: `lazygit --version`

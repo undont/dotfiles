@@ -86,7 +86,6 @@ brew "mongosh"
 brew "libsql/sqld/sqld"
 
 # Containers & Infrastructure
-cask "docker"
 brew "act"                    # GitHub Actions locally
 
 # Misc Dev Tools
