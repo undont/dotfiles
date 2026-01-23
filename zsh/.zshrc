@@ -4,11 +4,12 @@
 # See ~/.zsh/README.md for full documentation and setup guide.
 #
 # File structure:
-#   ~/.zshrc            - Main config (this file), loaded for interactive shells
-#   ~/.zprofile         - Login shell config (PATH additions from installers)
-#   ~/.p10k.zsh         - Powerlevel10k theme configuration
-#   ~/.zsh/.secrets.zsh - API keys and credentials (not version controlled)
-#   ~/.zsh/README.md    - Documentation
+#   ~/.zshrc                  - Main config (this file), loaded for interactive shells
+#   ~/.zprofile               - Login shell config (PATH additions from installers)
+#   ~/.p10k.zsh               - Powerlevel10k theme configuration
+#   ~/.zsh/.secrets.zsh       - API keys and credentials (not version controlled)
+#   ~/.zsh/.local-aliases.zsh - Machine-specific project aliases (not version controlled)
+#   ~/.zsh/README.md          - Documentation
 
 # =============================================================================
 # POWERLEVEL10K PROMPT
@@ -207,26 +208,6 @@ alias oc="opencode"                    # Launch OpenCode editor
 
 # MCP (Model Context Protocol)
 alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across tools
-
-# Claude Code Plans
-alias plans="cd ~/.claude/plans"
-alias commands="cd ~/.claude/commands"
-
-# Dana 
-alias da="cd ~/src/dana"
-alias dap="cd ~/src/dana/.claude/plans"
-alias daw="cd ~/src/dana-worktrees"
-
-# Kill Vite Server
-alias killvite="pkill -f "vite" 2>/dev/null"
-
-# dotfiles 
-alias dot="cd ~/dotfiles"
-alias dotp="cd ~/dotfiles/.claude/plans"
-alias dotd="cd ~/dotfiles/.claude/docs"
-
-# claude-config 
-alias .ai="cd ~/.ai"
 
 # =============================================================================
 # LOCAL ALIASES (machine-specific)
