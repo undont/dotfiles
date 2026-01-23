@@ -14,15 +14,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Template file `.local-aliases.zsh.template` for easy customisation
 - Installer prompt to create local aliases from template
 - Comprehensive local aliases documentation in `zsh/.zsh/README.md`
+- Neovim: Custom Copilot suggestion highlighting (italic, subdued colour matching Comment highlight)
+- Neovim: `:CopilotHighlightFix` command to manually fix Copilot highlighting if needed
 
 ### Changed
 - Dotfiles CLI: Prettier status/update output with improved formatting
 - All installation scripts now use `printf` for coloured output instead of `echo`
 - Installer checks for local aliases configuration during symlink creation
 - Theme-switch: Shows informational message when not in tmux
+- Tmux: Updated theme colours from Tokyo Night to Catppuccin Mocha for improved visual consistency
+- Neovim: Copilot suggestions now use distinct italic styling to differentiate from regular code
 
 ### Fixed
-- Tmux: FZF label colour updated for Tokyo Night theme consistency
+- Tmux: FZF label colour updated for Catppuccin theme consistency
+- Neovim: Copilot suggestions now properly styled across all colourschemes with fallback grey colour
+
+### Removed
+- Brewfile: Removed Docker cask (now managed separately)
 
 ## [0.1.12] - 2026-01-22
 
