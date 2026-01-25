@@ -290,17 +290,19 @@ for theme_file in "$THEMES_DIR"/*.theme; do
             current_vars+=("$var")
         done < <(grep -E '^[A-Z_]+=' "$theme_file" | cut -d= -f1 | sort)
 
-        # Compare variable sets
+        # Compare variable sets (use here-strings to avoid broken pipe with grep -q)
         missing_from_current=()
+        current_vars_str=$(printf '%s\n' "${current_vars[@]}")
         for var in "${first_theme_vars[@]}"; do
-            if ! printf '%s\n' "${current_vars[@]}" | grep -qx "$var"; then
+            if ! grep -qx "$var" <<< "$current_vars_str"; then
                 missing_from_current+=("$var")
             fi
         done
 
         extra_in_current=()
+        first_theme_vars_str=$(printf '%s\n' "${first_theme_vars[@]}")
         for var in "${current_vars[@]}"; do
-            if ! printf '%s\n' "${first_theme_vars[@]}" | grep -qx "$var"; then
+            if ! grep -qx "$var" <<< "$first_theme_vars_str"; then
                 extra_in_current+=("$var")
             fi
         done
