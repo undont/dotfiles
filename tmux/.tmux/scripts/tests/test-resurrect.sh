@@ -23,8 +23,17 @@ LIB_DIR="$SCRIPTS_DIR/_lib"
 # Source test helpers (provides colours, pass/fail/skip/section, counters)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
+# Final cleanup function for trap (cleans up both server and env)
+final_cleanup() {
+    # Kill any remaining test tmux server first
+    cleanup_test_server 2>/dev/null || true
+
+    # Then clean up test environment
+    cleanup_test_env
+}
+
 # Trap to ensure cleanup on exit/interrupt
-trap cleanup_test_env EXIT INT TERM
+trap final_cleanup EXIT INT TERM
 
 # ══════════════════════════════════════════════════════════════
 # Test Environment Setup/Cleanup
@@ -40,11 +49,11 @@ setup_test_env() {
     # Create temporary test directories
     TEST_HOME=$(mktemp -d)
     TEST_XDG_DATA_HOME="$TEST_HOME/.local/share"
-    
+
     # Export for subshells
     export HOME="$TEST_HOME"
     export XDG_DATA_HOME="$TEST_XDG_DATA_HOME"
-    
+
     # Create basic directory structure
     mkdir -p "$TEST_HOME/.tmux/resurrect"
     mkdir -p "$TEST_XDG_DATA_HOME/tmux/resurrect"
@@ -58,11 +67,14 @@ cleanup_test_env() {
     else
         unset XDG_DATA_HOME
     fi
-    
-    # Remove test directories
+
+    # Remove test directories (suppress errors for idempotent cleanup)
     if [[ -n "$TEST_HOME" && -d "$TEST_HOME" ]]; then
-        rm -rf "$TEST_HOME"
+        rm -rf "$TEST_HOME" 2>/dev/null || true
     fi
+
+    # Clear TEST_HOME to prevent double-cleanup attempts
+    TEST_HOME=""
 }
 
 # ══════════════════════════════════════════════════════════════
