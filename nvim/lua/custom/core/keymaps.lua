@@ -75,6 +75,34 @@ function M.setup()
   vim.keymap.set('i', '<D-BS>', '<C-u>', { desc = 'Delete to beginning of line (Cmd+Backspace)' })
   vim.keymap.set('i', '<M-Left>', '<C-o>b', { desc = 'Move word left (Opt+Left)' })
   vim.keymap.set('i', '<M-Right>', '<C-o>w', { desc = 'Move word right (Opt+Right)' })
+
+  -- LuaSnip: Insert Claude comment template
+  vim.keymap.set('n', '<leader>cc', function()
+    local ls = require 'luasnip'
+    local snippets = ls.get_snippets 'all'
+    for _, snip in ipairs(snippets) do
+      if snip.trigger == 'claudecomment' then
+        vim.cmd 'normal! o'
+        ls.snip_expand(snip)
+        return
+      end
+    end
+  end, { desc = 'Insert [C]laude [C]omment template' })
+
+  -- LuaSnip navigation keymaps
+  vim.keymap.set({ 'i', 's' }, '<C-k>', function()
+    local ls = require 'luasnip'
+    if ls.expand_or_jumpable() then
+      ls.expand_or_jump()
+    end
+  end, { desc = 'LuaSnip: Expand or jump to next placeholder' })
+
+  vim.keymap.set({ 'i', 's' }, '<C-j>', function()
+    local ls = require 'luasnip'
+    if ls.jumpable(-1) then
+      ls.jump(-1)
+    end
+  end, { desc = 'LuaSnip: Jump to previous placeholder' })
 end
 
 return M
