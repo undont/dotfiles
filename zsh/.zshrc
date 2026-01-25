@@ -247,7 +247,7 @@ _trestore_complete() {
     '-h[Show usage]'
   )
 
-  _arguments -s $options
+  _arguments -s "${options[@]}"
 
   case "$state" in
     sessions)

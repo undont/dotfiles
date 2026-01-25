@@ -68,11 +68,12 @@ fi
 # ─────────────────────────────────────────
 # Split into per-session files
 # ─────────────────────────────────────────
-declare -A CURRENT_SESSIONS    # Track sessions saved this run
+# Track sessions saved this run (Bash 3.2 compatible - no associative arrays)
+CURRENT_SESSIONS_LIST=""
 
 for session in ${SESSIONS}; do
     SESSION_FILE="${SESSIONS_DIR}/${session}.txt"
-    CURRENT_SESSIONS["${session}"]=1
+    CURRENT_SESSIONS_LIST="$CURRENT_SESSIONS_LIST $session "
 
     # Extract all lines belonging to this session (pane, window, grouped_session)
     awk -F'\t' -v sess="${session}" '
@@ -89,7 +90,8 @@ done
 for existing_file in "${SESSIONS_DIR}"/*.txt; do
     [[ -e "${existing_file}" ]] || continue
     session_name=$(basename "${existing_file}" .txt)
-    if [[ -z "${CURRENT_SESSIONS[${session_name}]:-}" ]]; then
+    # Check if session is in current sessions list (Bash 3.2 compatible)
+    if [[ " $CURRENT_SESSIONS_LIST " != *" $session_name "* ]]; then
         rm -f "${existing_file}"
     fi
 done

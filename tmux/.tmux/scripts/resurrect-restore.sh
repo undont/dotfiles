@@ -224,8 +224,15 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
         *)
-            echo -e "${RED}Error: Unknown argument: $1${NC}" >&2
-            usage
+            # Backward compatibility: treat a lone non-flag positional argument
+            # as a session name (equivalent to: --session <name>)
+            if [[ "$1" != -* ]] && [[ -z "$SESSION_NAME" ]]; then
+                SESSION_NAME="$1"
+                shift
+            else
+                echo -e "${RED}Error: Unknown argument: $1${NC}" >&2
+                usage
+            fi
             ;;
     esac
 done
@@ -282,11 +289,27 @@ d=$'\t'
 # Get base-index setting (windows may start at 0 or 1)
 BASE_INDEX=$(tmux show -gv base-index 2>/dev/null || echo 0)
 
-# Track state during restoration
+# Track state during restoration (Bash 3.2 compatible - no associative arrays)
 SESSION_CREATED=false
-declare -A WINDOWS_CREATED      # Track which windows have been created
-declare -A WINDOW_PANE_COUNT    # Count panes per window
-declare -A PANES_CREATED        # Track which (window.pane) combinations have been created
+WINDOWS_CREATED_LIST=""         # Space-delimited list of created window numbers
+PANES_CREATED_LIST=""           # Space-delimited list of created pane keys (window.pane)
+
+# Helper functions for tracking (Bash 3.2 compatible)
+window_exists() {
+    [[ " $WINDOWS_CREATED_LIST " == *" $1 "* ]]
+}
+
+mark_window_created() {
+    WINDOWS_CREATED_LIST="$WINDOWS_CREATED_LIST $1 "
+}
+
+pane_exists() {
+    [[ " $PANES_CREATED_LIST " == *" $1 "* ]]
+}
+
+mark_pane_created() {
+    PANES_CREATED_LIST="$PANES_CREATED_LIST $1 "
+}
 
 # Setup cleanup trap - if restoration fails partway, remove partial session
 cleanup_on_error() {
@@ -308,10 +331,10 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
 
     # Skip duplicate pane entries (resurrect files sometimes have duplicates)
     pane_key="${window_number}.${pane_index}"
-    if [[ -n "${PANES_CREATED[${pane_key}]:-}" ]]; then
+    if pane_exists "$pane_key"; then
         continue
     fi
-    PANES_CREATED["${pane_key}"]=1
+    mark_pane_created "$pane_key"
 
     # Remove leading colon from dir if present
     dir="${dir#:}"
@@ -345,14 +368,13 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
             tmux move-window -s "${SESSION_NAME}:${FIRST_WIN}" -t "${SESSION_NAME}:${window_number}" 2>/dev/null || true
         fi
 
-        WINDOWS_CREATED["${window_number}"]=1
-        WINDOW_PANE_COUNT["${window_number}"]=1
+        mark_window_created "${window_number}"
         SESSION_CREATED=true
         continue
     fi
 
     # Check if window exists
-    if [[ -z "${WINDOWS_CREATED[${window_number}]:-}" ]]; then
+    if ! window_exists "${window_number}"; then
         # Create new window
         if pane_contents_enabled && pane_contents_file_exists "$SESSION_NAME" "$window_number" "$pane_index"; then
             create_cmd="$(pane_creation_command "$SESSION_NAME" "$window_number" "$pane_index")"
@@ -360,8 +382,7 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
         else
             tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}"
         fi
-        WINDOWS_CREATED["${window_number}"]=1
-        WINDOW_PANE_COUNT["${window_number}"]=1
+        mark_window_created "${window_number}"
     else
         # Add pane to existing window (split)
         if pane_contents_enabled && pane_contents_file_exists "$SESSION_NAME" "$window_number" "$pane_index"; then
@@ -370,7 +391,6 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
         else
             tmux split-window -t "${SESSION_NAME}:${window_number}" -c "${dir}"
         fi
-        WINDOW_PANE_COUNT["${window_number}"]=$((WINDOW_PANE_COUNT["${window_number}"] + 1))
     fi
 
 done < "${SESSION_FILE}"

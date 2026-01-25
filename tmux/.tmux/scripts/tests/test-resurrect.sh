@@ -466,7 +466,8 @@ test_command_restoration() {
         pass "Session restored with command restoration configured"
         
         # Check if command is running
-        local cmd=$($TEST_TMUX_CMD display-message -p -t "test-commands:0.0" "#{pane_current_command}" 2>/dev/null || echo "")
+        local cmd
+        cmd=$($TEST_TMUX_CMD display-message -p -t "test-commands:0.0" "#{pane_current_command}" 2>/dev/null || echo "")
         if [[ -n "$cmd" ]]; then
             pass "Command restoration attempted (pane running: $cmd)"
         else
@@ -569,7 +570,8 @@ test_mixed_restoration() {
     
     # Check if session was restored with all panes
     if $TEST_TMUX_CMD has-session -t "test-mixed" 2>/dev/null; then
-        local pane_count=$($TEST_TMUX_CMD list-panes -t "test-mixed" 2>/dev/null | wc -l)
+        local pane_count
+        pane_count=$($TEST_TMUX_CMD list-panes -t "test-mixed" 2>/dev/null | wc -l)
         pane_count="${pane_count//[$'\n\r ']/}"  # Strip whitespace
         if [[ "$pane_count" -eq 3 ]]; then
             pass "Mixed state restoration preserves all panes"
@@ -761,7 +763,8 @@ test_non_consecutive_windows() {
     sleep 0.5
 
     # Verify windows were created with correct numbers
-    local win_list=$($TEST_TMUX_CMD list-windows -t "test-gaps" -F "#{window_index}" 2>/dev/null | tr '\n' ' ')
+    local win_list
+    win_list=$($TEST_TMUX_CMD list-windows -t "test-gaps" -F "#{window_index}" 2>/dev/null | tr '\n' ' ')
     if [[ "$win_list" =~ "0" ]] && [[ "$win_list" =~ "5" ]] && [[ "$win_list" =~ "9" ]]; then
         pass "Created test session with non-consecutive windows"
     else
@@ -780,7 +783,8 @@ test_non_consecutive_windows() {
 
     # Verify gaps are preserved
     if $TEST_TMUX_CMD has-session -t "test-gaps" 2>/dev/null; then
-        local restored_wins=$($TEST_TMUX_CMD list-windows -t "test-gaps" -F "#{window_index}" 2>/dev/null | tr '\n' ' ')
+        local restored_wins
+        restored_wins=$($TEST_TMUX_CMD list-windows -t "test-gaps" -F "#{window_index}" 2>/dev/null | tr '\n' ' ')
         if [[ "$restored_wins" =~ "0" ]] && [[ "$restored_wins" =~ "5" ]] && [[ "$restored_wins" =~ "9" ]]; then
             pass "Window number gaps preserved after restoration"
         else
@@ -788,9 +792,10 @@ test_non_consecutive_windows() {
         fi
 
         # Verify window names
-        local win0_name=$($TEST_TMUX_CMD display-message -t "test-gaps:0" -p "#{window_name}" 2>/dev/null)
-        local win5_name=$($TEST_TMUX_CMD display-message -t "test-gaps:5" -p "#{window_name}" 2>/dev/null)
-        local win9_name=$($TEST_TMUX_CMD display-message -t "test-gaps:9" -p "#{window_name}" 2>/dev/null)
+        local win0_name win5_name win9_name
+        win0_name=$($TEST_TMUX_CMD display-message -t "test-gaps:0" -p "#{window_name}" 2>/dev/null)
+        win5_name=$($TEST_TMUX_CMD display-message -t "test-gaps:5" -p "#{window_name}" 2>/dev/null)
+        win9_name=$($TEST_TMUX_CMD display-message -t "test-gaps:9" -p "#{window_name}" 2>/dev/null)
 
         if [[ "$win0_name" == "win0" ]] && [[ "$win5_name" == "win5" ]] && [[ "$win9_name" == "win9" ]]; then
             pass "Window names preserved with non-consecutive numbers"
@@ -823,7 +828,8 @@ test_non_consecutive_windows() {
     bash "$SCRIPTS_DIR/resurrect-restore.sh" --session "test-gaps-base1"
 
     if $TEST_TMUX_CMD has-session -t "test-gaps-base1" 2>/dev/null; then
-        local restored_wins=$($TEST_TMUX_CMD list-windows -t "test-gaps-base1" -F "#{window_index}" 2>/dev/null | tr '\n' ' ')
+        local restored_wins
+        restored_wins=$($TEST_TMUX_CMD list-windows -t "test-gaps-base1" -F "#{window_index}" 2>/dev/null | tr '\n' ' ')
         if [[ "$restored_wins" =~ "1" ]] && [[ "$restored_wins" =~ "3" ]] && [[ "$restored_wins" =~ "7" ]]; then
             pass "Window gaps preserved with base-index 1"
         else
@@ -880,7 +886,8 @@ test_pane_readiness() {
         sleep 0.3
 
         # Check if command was restored (may or may not work depending on timing)
-        local cmd=$($TEST_TMUX_CMD display-message -p -t "test-wait-pane:0.0" "#{pane_current_command}" 2>/dev/null || echo "")
+        local cmd
+        cmd=$($TEST_TMUX_CMD display-message -p -t "test-wait-pane:0.0" "#{pane_current_command}" 2>/dev/null || echo "")
         if [[ -n "$cmd" ]]; then
             pass "Command restoration worked with pane readiness check (running: $cmd)"
         else
@@ -913,7 +920,8 @@ test_pane_readiness() {
 
     # Verify all panes were restored
     if $TEST_TMUX_CMD has-session -t "test-multi-panes" 2>/dev/null; then
-        local pane_count=$($TEST_TMUX_CMD list-panes -t "test-multi-panes" 2>/dev/null | wc -l)
+        local pane_count
+        pane_count=$($TEST_TMUX_CMD list-panes -t "test-multi-panes" 2>/dev/null | wc -l)
         pane_count="${pane_count//[$'\n\r ']}"
         if [[ "$pane_count" -eq 4 ]]; then
             pass "All panes restored correctly with readiness polling"
