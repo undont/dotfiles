@@ -32,8 +32,8 @@ Copy the following to your home directory:
 ~/.tmux.conf                    # Main configuration
 ~/.tmux/
 ├── scripts/
-│   ├── resurrect-restore.sh
-│   └── resurrect-split.sh
+│   ├── restore-resurrect.sh
+│   └── split-resurrect.sh
 ~/.local/launchers/
 ├── tnew                        # Dev session launcher
 └── dana                        # Project-specific launcher (optional)
@@ -55,8 +55,8 @@ Add to your `~/.zshrc`:
 
 ```bash
 # tmux session management
-alias tls="~/.tmux/scripts/resurrect-restore.sh --list"
-alias trestore="~/.tmux/scripts/resurrect-restore.sh"
+alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
+alias trestore="~/.tmux/scripts/restore-resurrect.sh"
 alias tkill="tmux kill-server; rm -rf ~/.tmux/resurrect/*"
 
 # Smart attach: connects to running session, or restores from backup
@@ -65,7 +65,7 @@ tattach() {
   local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
   if [[ -f "$backup" ]]; then
     echo "Restoring '$1' from backup..."
-    if ~/.tmux/scripts/resurrect-restore.sh --session "$1" && tmux a -t "$1"; then
+    if ~/.tmux/scripts/restore-resurrect.sh --session "$1" && tmux a -t "$1"; then
       return 0
     fi
     echo "Backup stale, removing: $1"
@@ -276,7 +276,7 @@ This setup extends tmux-resurrect with custom per-session backup and restore.
 
 1. Press `prefix + w` to save all sessions
 2. tmux-resurrect saves everything to a single timestamped file
-3. The post-save hook (`resurrect-split.sh`) automatically splits this into individual per-session files
+3. The post-save hook (`split-resurrect.sh`) automatically splits this into individual per-session files
 4. Each session gets its own backup file in `sessions/` directory
 
 **Auto-cleanup:** When you kill a session (e.g., with `Opt+x` in the session switcher), a save is automatically triggered to update the backup files. The killed session is removed from `tls` listings.
@@ -366,32 +366,32 @@ Available session backups:
 │   │   └── ui.sh                         # Terminal UI (dialogs, prompts)
 │   ├── tests/                            # Test suites
 │   │   ├── cleanup-tests.sh              # Clean up orphaned test resources
-│   │   └── test-dotfiles-status.sh       # Tests for dotfiles sync indicator
-│   ├── agent-alerts-clear.sh             # Clear agent alerts for window
-│   ├── agent-alerts.sh                   # Status bar: Multi-agent alerts (⚡ 🔮 🤖)
-│   ├── dotfiles-status.sh                # Status bar: sync indicator (↓↑↕)
-│   ├── fzf-confirm.sh                    # FZF confirmation dialog helper
+│   │   └── test-show-dotfiles-status.sh  # Tests for dotfiles sync indicator
+│   ├── clear-agent-alerts.sh             # Clear agent alerts for window
+│   ├── show-agent-alerts.sh              # Status bar: Multi-agent alerts (⚡ 🔮 🤖)
+│   ├── show-dotfiles-status.sh           # Status bar: sync indicator (↓↑↕)
+│   ├── confirm-fzf.sh                    # FZF confirmation dialog helper
 │   ├── kill-pane.sh                      # Kill pane (Opt+s, saves state)
 │   ├── kill-session.sh                   # Kill session (picker, with confirm)
 │   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
 │   ├── list-claude.sh                    # List Claude Code instances
-│   ├── resurrect-delete.sh               # Delete session backup
-│   ├── resurrect-restore.sh              # Individual session restore
-│   ├── resurrect-split.sh                # Post-save hook (splits backups)
-│   ├── session-list.sh                   # Session listing with alert indicators
-│   ├── session-new.sh                    # Create new session dialog
-│   ├── session-rename.sh                 # Rename session dialog
+│   ├── delete-resurrect.sh               # Delete session backup
+│   ├── restore-resurrect.sh              # Individual session restore
+│   ├── split-resurrect.sh                # Post-save hook (splits backups)
+│   ├── list-sessions.sh                  # Session listing with alert indicators
+│   ├── new-session.sh                    # Create new session dialog
+│   ├── rename-session.sh                 # Rename session dialog
 │   ├── undo-dispatch.sh                  # Undo dispatcher (Opt+u)
 │   ├── undo-pane.sh                      # Restore killed pane
 │   ├── undo-session.sh                   # Restore killed session
 │   ├── undo-window.sh                    # Restore killed window
-│   ├── update-alert-on-rename.sh         # Update alerts on window rename
+│   ├── update-rename-alert.sh            # Update alerts on window rename
 │   ├── update-timestamp.sh               # Window access tracking hook
-│   ├── url-picker.sh                     # URL picker for tmux
-│   ├── window-duplicate.sh               # Duplicate window (Opt+Shift+d)
-│   ├── window-list.sh                    # Window listing with alert indicators
-│   ├── window-move.sh                    # Move window to another session
-│   └── window-rename.sh                  # Rename window dialog
+│   ├── pick-url.sh                       # URL picker for tmux
+│   ├── duplicate-window.sh               # Duplicate window (Opt+Shift+d)
+│   ├── list-windows.sh                   # Window listing with alert indicators
+│   ├── move-window.sh                    # Move window to another session
+│   └── rename-window.sh                  # Rename window dialog
 └── README.md                             # This file
 
 ~/.local/launchers/

@@ -5,7 +5,7 @@ set -euo pipefail
 # Tests the fzf-compatible theme picker output
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-THEME_PICKER="$SCRIPT_DIR/../theme-picker.sh"
+THEME_PICKER="$SCRIPT_DIR/../pick-theme.sh"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 THEMES_DIR="$DOTFILES_ROOT/themes"
 
@@ -49,16 +49,16 @@ section() {
 section "Script Exists and Is Executable"
 
 if [[ -f "$THEME_PICKER" ]]; then
-    pass "theme-picker.sh exists"
+    pass "pick-theme.sh exists"
 else
-    fail "theme-picker.sh not found"
+    fail "pick-theme.sh not found"
     exit 1
 fi
 
 if [[ -x "$THEME_PICKER" ]]; then
-    pass "theme-picker.sh is executable"
+    pass "pick-theme.sh is executable"
 else
-    fail "theme-picker.sh is not executable"
+    fail "pick-theme.sh is not executable"
 fi
 
 section "ShellCheck Validation"
@@ -66,9 +66,9 @@ section "ShellCheck Validation"
 if command -v shellcheck &>/dev/null; then
     # SC2155 is for declare/assign pattern which is common and harmless here
     if shellcheck -x -S warning -e SC1091 -e SC2155 "$THEME_PICKER" 2>/dev/null; then
-        pass "theme-picker.sh passes shellcheck"
+        pass "pick-theme.sh passes shellcheck"
     else
-        fail "theme-picker.sh has shellcheck warnings"
+        fail "pick-theme.sh has shellcheck warnings"
     fi
 else
     skip "shellcheck not installed"
@@ -297,35 +297,35 @@ if ! $theme_picker_bound; then
     skip "theme-picker tmux binding check (not configured yet)"
 fi
 
-# Check that tmux binding includes ghostty-reload.sh
+# Check that tmux binding includes reload-ghostty.sh
 if [[ -f "$tmux_config" ]]; then
-    if grep -q "ghostty-reload.sh" "$tmux_config"; then
-        pass "tmux binding includes ghostty-reload.sh"
+    if grep -q "reload-ghostty.sh" "$tmux_config"; then
+        pass "tmux binding includes reload-ghostty.sh"
     else
-        fail "tmux binding should call ghostty-reload.sh"
+        fail "tmux binding should call reload-ghostty.sh"
     fi
 fi
 
 if [[ -f "$tmux_template" ]]; then
-    if grep -q "ghostty-reload.sh" "$tmux_template"; then
-        pass "tmux template includes ghostty-reload.sh"
+    if grep -q "reload-ghostty.sh" "$tmux_template"; then
+        pass "tmux template includes reload-ghostty.sh"
     else
-        fail "tmux template should call ghostty-reload.sh"
+        fail "tmux template should call reload-ghostty.sh"
     fi
 fi
 
-# Verify ghostty-reload.sh exists and is executable
-GHOSTTY_RELOAD="$SCRIPT_DIR/../ghostty-reload.sh"
+# Verify reload-ghostty.sh exists and is executable
+GHOSTTY_RELOAD="$SCRIPT_DIR/../reload-ghostty.sh"
 if [[ -f "$GHOSTTY_RELOAD" ]]; then
-    pass "ghostty-reload.sh exists in tmux scripts"
+    pass "reload-ghostty.sh exists in tmux scripts"
 else
-    fail "ghostty-reload.sh should exist in tmux scripts directory"
+    fail "reload-ghostty.sh should exist in tmux scripts directory"
 fi
 
 if [[ -x "$GHOSTTY_RELOAD" ]]; then
-    pass "ghostty-reload.sh is executable"
+    pass "reload-ghostty.sh is executable"
 else
-    fail "ghostty-reload.sh should be executable"
+    fail "reload-ghostty.sh should be executable"
 fi
 
 section "Error Handling"
