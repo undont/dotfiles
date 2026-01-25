@@ -332,8 +332,8 @@ if [[ -f "$TMUX_OUTPUT" ]]; then
         fail "config should use proper tmux option syntax"
     fi
 
-    # Check for colour definitions
-    if echo "$config_content" | grep -qE '#[0-9a-fA-F]{6}'; then
+    # Check for colour definitions (use here-string to avoid broken pipe with grep -q)
+    if grep -qE '#[0-9a-fA-F]{6}' <<< "$config_content"; then
         pass "config contains hex colour codes"
     else
         fail "config should contain hex colour codes"
