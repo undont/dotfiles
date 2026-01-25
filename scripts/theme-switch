@@ -25,7 +25,7 @@ CURRENT_THEME_FILE="$CONFIG_DIR/current-theme"
 
 # Templates and output files
 TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/.tmux.conf.template"
-TMUX_OUTPUT="$DOTFILES_ROOT/tmux/.tmux.conf"
+TMUX_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 
 # Ghostty config location (macOS vs Linux)
@@ -107,8 +107,8 @@ apply_theme() {
 
     # Validate theme exists
     if [[ ! -f "$theme_file" ]]; then
-        error "Theme '$theme_name' not found"
-        print_info "Run 'theme-switch list' to see available themes"
+        [[ "$quiet" != "true" ]] && error "Theme '$theme_name' not found"
+        [[ "$quiet" != "true" ]] && print_info "Run 'theme-switch list' to see available themes"
         return 1
     fi
 
@@ -120,6 +120,8 @@ apply_theme() {
 
     # Process tmux template using sed (much faster than bash string replacement)
     if [[ -f "$TMUX_TEMPLATE" ]]; then
+        # Ensure XDG config directory exists
+        mkdir -p "$(dirname "$TMUX_OUTPUT")"
         sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
             -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
             -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
@@ -193,8 +195,11 @@ apply_theme() {
     # Reload tmux if running (unless --no-reload was specified)
     if [[ "$no_reload" != "true" ]]; then
         if command -v tmux >/dev/null 2>&1 && tmux info &>/dev/null; then
+            # Try XDG location first, fallback to ~/.tmux.conf
             if tmux source-file "$TMUX_OUTPUT" 2>/dev/null; then
                 [[ "$quiet" != "true" ]] && success "Reloaded tmux configuration"
+            elif [[ -f "$HOME/.tmux.conf" ]] && tmux source-file "$HOME/.tmux.conf" 2>/dev/null; then
+                [[ "$quiet" != "true" ]] && success "Reloaded tmux configuration (legacy path)"
             else
                 [[ "$quiet" != "true" ]] && warn "Failed to reload tmux"
             fi
@@ -204,7 +209,7 @@ apply_theme() {
         fi
 
         # Reload Ghostty config (macOS only)
-        if [[ "$(uname)" == "Darwin" ]] && pgrep -x ghostty >/dev/null 2>&1; then
+        if [[ "$(uname)" == "Darwin" ]] && pgrep -ix "ghostty" >/dev/null 2>&1; then
             "$DOTFILES_ROOT/tmux/.tmux/scripts/ghostty-reload.sh"
             [[ "$quiet" != "true" ]] && success "Reloaded ghostty configuration"
         fi
@@ -220,7 +225,7 @@ apply_theme() {
         printf "\n"
         success "Theme applied: $THEME_NAME"
         if [[ "$no_reload" == "true" ]]; then
-            print_info "Run 'tmux source ~/.tmux.conf' to apply tmux changes"
+            print_info "Run 'tmux source ~/.config/tmux/tmux.conf' to apply tmux changes"
             print_info "Restart ghostty to see changes"
         fi
     fi

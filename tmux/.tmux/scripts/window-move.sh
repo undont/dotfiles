@@ -15,6 +15,13 @@ if [[ -z "$1" ]]; then
 fi
 
 SOURCE_WINDOW="$1"
+
+# Validate input contains colon separator (session:window format)
+if [[ ! "$SOURCE_WINDOW" =~ : ]]; then
+    error "Invalid format: expected 'session:window_index' (e.g., 'main:1')"
+    exit 1
+fi
+
 SOURCE_SESSION="${SOURCE_WINDOW%%:*}"
 WINDOW_INDEX="${SOURCE_WINDOW##*:}"
 
@@ -54,21 +61,29 @@ fi
 tmux move-window -s "${SOURCE_SESSION}:${WINDOW_INDEX}" -t "${TARGET_SESSION}:"
 
 # Update alert tracking if the window had an alert
-ALERTS_FILE="${TMUX_TMPDIR:-/tmp}/tmux-$(id -u)/claude-alerts"
+# Find agents that have alerts for this window and update the session name
 if [[ -f "$ALERTS_FILE" ]]; then
-    # Find any alerts for this window and update the session name
-    # Alert format: SESSION:WINDOW_NAME:AGENT
-    # Use awk for safe string matching (handles regex metacharacters)
-    awk -v src="$SOURCE_SESSION" -v win="$WINDOW_NAME" \
-        'index($0, src ":" win ":") == 1' "$ALERTS_FILE" 2>/dev/null | while read -r alert_line; do
-        agent=$(echo "$alert_line" | cut -d: -f3)
-        # Remove old alert using awk for exact match
-        awk -v pattern="${SOURCE_SESSION}:${WINDOW_NAME}:${agent}" \
-            '$0 != pattern' "$ALERTS_FILE" > "$ALERTS_FILE.tmp" && \
-            mv "$ALERTS_FILE.tmp" "$ALERTS_FILE"
-        # Add updated alert with new session
-        echo "${TARGET_SESSION}:${WINDOW_NAME}:${agent}" >> "$ALERTS_FILE"
-    done
+    # Get list of agents with alerts for this window
+    agents=()
+    while IFS=: read -r sess win agent; do
+        if [[ "$sess" == "$SOURCE_SESSION" && "$win" == "$WINDOW_NAME" ]]; then
+            agents+=("$agent")
+        fi
+    done < "$ALERTS_FILE"
+
+    # If we found any alerts, update them to the new session
+    if [[ ${#agents[@]} -gt 0 ]]; then
+        # Clear old alerts from source session (file only)
+        # Note: Intentionally NOT passing WINDOW_ID - the tmux window options
+        # move with the window and should stay set. We only need to update
+        # the alerts file to reflect the new session name.
+        clear_window_alerts "$SOURCE_SESSION" "$WINDOW_NAME"
+
+        # Re-add alerts with new session name (file only, options already set on window)
+        for agent in "${agents[@]}"; do
+            echo "${TARGET_SESSION}:${WINDOW_NAME}:${agent}" >> "$ALERTS_FILE"
+        done
+    fi
 fi
 
 success "Moved window '${WINDOW_NAME}' from '${SOURCE_SESSION}' to '${TARGET_SESSION}'"

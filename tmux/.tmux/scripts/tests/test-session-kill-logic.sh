@@ -18,7 +18,8 @@ trap cleanup_test_server EXIT INT TERM
 # ---------------------------------------------------------
 # Create a mock UI library
 MOCK_UI_LIB="/tmp/mock_ui_lib_$$.sh"
-echo 'show_centered_confirm() { return 0; }' > "$MOCK_UI_LIB"
+echo 'show_visual_confirm() { return 0; }' > "$MOCK_UI_LIB"
+echo 'show_centered_confirm() { return 0; }' >> "$MOCK_UI_LIB"
 echo 'show_centered_message() { :; }' >> "$MOCK_UI_LIB"
 
 # Helpers

@@ -6,6 +6,7 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/session.sh"
+source "$SCRIPT_DIR/_lib/alerts.sh"
 
 require_tmux
 
@@ -56,16 +57,7 @@ if session_exists "$newname"; then
 fi
 
 # Clear any existing alerts for the old session name before renaming
-# Use awk for safe prefix matching (handles regex metacharacters in session name)
-ALERTS_FILE="$HOME/.claude/alerts"
-if [[ -f "$ALERTS_FILE" ]]; then
-    awk -v session="$current_session" 'index($0, session ":") != 1' "$ALERTS_FILE" > "${ALERTS_FILE}.tmp" 2>/dev/null && \
-        mv "${ALERTS_FILE}.tmp" "$ALERTS_FILE" || rm -f "${ALERTS_FILE}.tmp"
-fi
-# Clear @agent_alert options for all windows in the session
-for win in $(tmux list-windows -t "$current_session" -F '#W' 2>/dev/null); do
-    tmux set-option -wt "${current_session}:${win}" -u @agent_alert 2>/dev/null || true
-done
+clear_session_alerts "$current_session"
 
 # Rename the session
 if ! tmux rename-session -t "$current_session" "$newname" 2>/dev/null; then

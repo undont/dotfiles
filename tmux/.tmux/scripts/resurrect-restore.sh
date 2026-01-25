@@ -6,46 +6,155 @@
 # Restores a single tmux session from its individual backup file.
 #
 # This script works with per-session backup files created by
-# resurrect-split-sessions.sh (the post-save hook). Unlike the
-# built-in resurrect restore which restores ALL sessions at once,
-# this allows restoring individual sessions independently.
+# resurrect-split.sh (the post-save hook). Unlike the built-in
+# resurrect restore which restores ALL sessions at once, this
+# allows restoring individual sessions independently.
+#
+# Features:
+#   - Restores session structure (windows, panes, layouts)
+#   - Restores working directories for each pane
+#   - Restores scrollback history (if @resurrect-capture-pane-contents enabled)
+#   - Restores running commands (if @resurrect-processes configured)
 #
 # Usage:
-#   resurrect-restore.sh <session-name>           # Restore session
-#   resurrect-restore.sh <session-name> --replace # Kill existing first
-#   resurrect-restore.sh <session-name> --delete  # Delete backup
+#   resurrect-restore.sh                          # Restore ALL sessions
+#   resurrect-restore.sh --session <name>         # Restore specific session
+#   resurrect-restore.sh --session <name> --replace  # Kill existing first
+#   resurrect-restore.sh --delete <name>          # Delete backup
 #   resurrect-restore.sh --list                   # List backups
 #
 # Session files are stored in: ~/.tmux/resurrect/sessions/
+#
+# Configuration Options (in .tmux.conf):
+#   set -g @resurrect-capture-pane-contents 'on'  # Enable scrollback restore
+#   set -g @resurrect-processes 'ssh vim htop'    # Commands to restore
+#   set -g @resurrect-processes ':all:'           # Restore all commands
 # ══════════════════════════════════════════════════════════════
 
 set -euo pipefail
 
-# Source path utilities
+# Source common utilities (provides tmux wrapper and colours)
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 
 # Get the resurrect directories using shared functions
 RESURRECT_DIR=$(get_resurrect_dir)
 SESSIONS_DIR=$(get_resurrect_sessions_dir)
 
-# Colours for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No colour
+# ─────────────────────────────────────────────────────────────
+# Pane Contents Restoration Helpers
+# ─────────────────────────────────────────────────────────────
+
+# Check if pane contents restoration is enabled
+pane_contents_enabled() {
+    local option
+    option="$(tmux show-option -gqv @resurrect-capture-pane-contents)"
+    [[ "$option" == "on" ]]
+}
+
+# Get path to pane contents file for a specific pane
+pane_contents_file() {
+    local session_name="$1"
+    local window_number="$2"
+    local pane_index="$3"
+    local pane_id="${session_name}:${window_number}.${pane_index}"
+
+    # Pane contents are stored in resurrect/pane_contents/ directory
+    echo "${RESURRECT_DIR}/pane_contents/${pane_id}"
+}
+
+# Check if pane contents file exists for restoration
+pane_contents_file_exists() {
+    local session_name="$1"
+    local window_number="$2"
+    local pane_index="$3"
+    local file
+    file="$(pane_contents_file "$session_name" "$window_number" "$pane_index")"
+    [[ -f "$file" ]]
+}
+
+# Get the default shell command from tmux config
+get_default_command() {
+    local default_shell
+    default_shell="$(tmux show-option -gqv default-shell)"
+    local opt=""
+    if [[ "$(basename "$default_shell")" == "bash" ]]; then
+        opt="-l "
+    fi
+    local default_command
+    default_command="$(tmux show-option -gqv default-command)"
+    if [[ -n "$default_command" ]]; then
+        echo "$default_command"
+    else
+        echo "${opt}${default_shell}"
+    fi
+}
+
+# Build pane creation command with contents restoration
+pane_creation_command() {
+    local session_name="$1"
+    local window_number="$2"
+    local pane_index="$3"
+    local contents_file
+    contents_file="$(pane_contents_file "$session_name" "$window_number" "$pane_index")"
+
+    # Escape single quotes in the path to prevent injection
+    local escaped_file="${contents_file//\'/\'\\\'\'}"
+
+    # Command that cats the saved contents then execs the default shell
+    # This displays the scrollback history before starting the shell
+    echo "cat '${escaped_file}'; exec $(get_default_command)"
+}
 
 usage() {
-    echo -e "${CYAN}Usage:${NC} $0 <session-name> [--replace|--delete]"
+    echo -e "${CYAN}Usage:${NC} $0 [options]"
     echo ""
     echo "Options:"
-    echo "  --replace    Kill existing session with same name before restoring"
-    echo "  --delete     Delete the saved session backup"
-    echo "  --list       List available sessions"
+    echo "  (no args)              Restore ALL saved sessions"
+    echo "  --session <name>       Restore a specific session"
+    echo "  --replace              Kill existing session before restoring (use with --session)"
+    echo "  --delete <name>        Delete a saved session backup"
+    echo "  --list                 List available sessions"
     echo ""
     list_sessions
     exit 1
+}
+
+# Restore all saved sessions
+restore_all_sessions() {
+    if [[ ! -d "${SESSIONS_DIR}" ]] || [[ -z "$(ls -A "${SESSIONS_DIR}" 2>/dev/null)" ]]; then
+        echo -e "${YELLOW}No session backups found.${NC}"
+        return 1
+    fi
+
+    local restored=0
+    local skipped=0
+    local failed=0
+
+    for f in "${SESSIONS_DIR}"/*.txt; do
+        [[ -e "$f" ]] || continue
+        local session
+        session=$(basename "$f" .txt)
+
+        # Skip if session already running
+        if tmux has-session -t "${session}" 2>/dev/null; then
+            echo -e "${YELLOW}Skipping${NC} ${session} (already running)"
+            ((skipped++))
+            continue
+        fi
+
+        echo -e "${CYAN}Restoring${NC} ${session}..."
+        if "$0" --session "$session" 2>/dev/null; then
+            ((restored++))
+        else
+            echo -e "${RED}Failed${NC} to restore ${session}"
+            ((failed++))
+        fi
+    done
+
+    echo ""
+    echo -e "${GREEN}Restored:${NC} ${restored}  ${YELLOW}Skipped:${NC} ${skipped}  ${RED}Failed:${NC} ${failed}"
 }
 
 list_sessions() {
@@ -81,19 +190,33 @@ list_sessions() {
 # Parse arguments
 REPLACE=false
 DELETE=false
+RESTORE_ALL=false
 SESSION_NAME=""
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
+        --session|-s)
+            if [[ -z "${2:-}" ]]; then
+                echo -e "${RED}Error: --session requires a session name${NC}" >&2
+                usage
+            fi
+            SESSION_NAME="$2"
+            shift 2
+            ;;
         --replace)
             REPLACE=true
             shift
             ;;
-        --delete)
+        --delete|-d)
+            if [[ -z "${2:-}" ]]; then
+                echo -e "${RED}Error: --delete requires a session name${NC}" >&2
+                usage
+            fi
             DELETE=true
-            shift
+            SESSION_NAME="$2"
+            shift 2
             ;;
-        --list)
+        --list|-l)
             list_sessions
             exit 0
             ;;
@@ -101,19 +224,22 @@ while [[ $# -gt 0 ]]; do
             usage
             ;;
         *)
-            if [[ -z "${SESSION_NAME}" ]]; then
-                SESSION_NAME="$1"
-            else
-                echo -e "${RED}Error: Unexpected argument: $1${NC}" >&2
-                usage
-            fi
-            shift
+            echo -e "${RED}Error: Unknown argument: $1${NC}" >&2
+            usage
             ;;
     esac
 done
 
-if [[ -z "${SESSION_NAME}" ]]; then
-    usage
+# No session specified = restore all
+if [[ -z "${SESSION_NAME}" ]] && [[ "${DELETE}" == "false" ]]; then
+    restore_all_sessions
+    exit $?
+fi
+
+# Validate session name to prevent path traversal attacks
+if [[ "$SESSION_NAME" =~ \.\. ]] || [[ "$SESSION_NAME" =~ / ]]; then
+    echo -e "${RED}Error: Invalid session name (contains path traversal characters): ${SESSION_NAME}${NC}" >&2
+    exit 1
 fi
 
 SESSION_FILE="${SESSIONS_DIR}/${SESSION_NAME}.txt"
@@ -160,6 +286,16 @@ BASE_INDEX=$(tmux show -gv base-index 2>/dev/null || echo 0)
 SESSION_CREATED=false
 declare -A WINDOWS_CREATED      # Track which windows have been created
 declare -A WINDOW_PANE_COUNT    # Count panes per window
+declare -A PANES_CREATED        # Track which (window.pane) combinations have been created
+
+# Setup cleanup trap - if restoration fails partway, remove partial session
+cleanup_on_error() {
+    if [[ "$SESSION_CREATED" == "true" ]]; then
+        echo -e "${YELLOW}Error during restoration - cleaning up partial session${NC}" >&2
+        tmux kill-session -t "${SESSION_NAME}" 2>/dev/null || true
+    fi
+}
+trap cleanup_on_error ERR
 
 # ─────────────────────────────────────────
 # Pass 1: Create session and panes
@@ -167,11 +303,21 @@ declare -A WINDOW_PANE_COUNT    # Count panes per window
 while IFS="${d}" read -r line_type sess_name window_number window_active window_flags pane_index pane_title dir pane_active pane_command pane_full_command rest; do
     [[ "${line_type}" == "pane" ]] || continue
 
+    # Validate critical fields
+    [[ -z "$window_number" || -z "$pane_index" ]] && continue
+
+    # Skip duplicate pane entries (resurrect files sometimes have duplicates)
+    pane_key="${window_number}.${pane_index}"
+    if [[ -n "${PANES_CREATED[${pane_key}]:-}" ]]; then
+        continue
+    fi
+    PANES_CREATED["${pane_key}"]=1
+
     # Remove leading colon from dir if present
     dir="${dir#:}"
     # Expand tilde and handle escaped spaces
     dir="${dir/#\~/$HOME}"
-    dir=$(echo -e "${dir}" | sed 's/\\ / /g')
+    dir="${dir//\\ / }"  # Pure bash - safer than echo -e
 
     # Ensure directory exists, fallback to home
     if [[ ! -d "${dir}" ]]; then
@@ -180,10 +326,18 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
 
     if [[ "${SESSION_CREATED}" == "false" ]]; then
         # Create the session with first window
-        tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" 2>/dev/null || {
-            # If we're inside tmux, need to handle differently
-            TMUX="" tmux new-session -d -s "${SESSION_NAME}" -c "${dir}"
-        }
+        if pane_contents_enabled && pane_contents_file_exists "$SESSION_NAME" "$window_number" "$pane_index"; then
+            # Create session with pane contents restoration
+            create_cmd="$(pane_creation_command "$SESSION_NAME" "$window_number" "$pane_index")"
+            tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" "$create_cmd" 2>/dev/null || {
+                TMUX="" tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" "$create_cmd"
+            }
+        else
+            # Create session normally
+            tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" 2>/dev/null || {
+                TMUX="" tmux new-session -d -s "${SESSION_NAME}" -c "${dir}"
+            }
+        fi
 
         # Handle base-index - rename first window if needed
         FIRST_WIN="${BASE_INDEX}"
@@ -200,12 +354,22 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
     # Check if window exists
     if [[ -z "${WINDOWS_CREATED[${window_number}]:-}" ]]; then
         # Create new window
-        tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}"
+        if pane_contents_enabled && pane_contents_file_exists "$SESSION_NAME" "$window_number" "$pane_index"; then
+            create_cmd="$(pane_creation_command "$SESSION_NAME" "$window_number" "$pane_index")"
+            tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}" "$create_cmd"
+        else
+            tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}"
+        fi
         WINDOWS_CREATED["${window_number}"]=1
         WINDOW_PANE_COUNT["${window_number}"]=1
     else
         # Add pane to existing window (split)
-        tmux split-window -t "${SESSION_NAME}:${window_number}" -c "${dir}"
+        if pane_contents_enabled && pane_contents_file_exists "$SESSION_NAME" "$window_number" "$pane_index"; then
+            create_cmd="$(pane_creation_command "$SESSION_NAME" "$window_number" "$pane_index")"
+            tmux split-window -t "${SESSION_NAME}:${window_number}" -c "${dir}" "$create_cmd"
+        else
+            tmux split-window -t "${SESSION_NAME}:${window_number}" -c "${dir}"
+        fi
         WINDOW_PANE_COUNT["${window_number}"]=$((WINDOW_PANE_COUNT["${window_number}"] + 1))
     fi
 
@@ -216,6 +380,9 @@ done < "${SESSION_FILE}"
 # ─────────────────────────────────────────
 while IFS="${d}" read -r line_type sess_name window_number window_name window_active window_flags window_layout automatic_rename rest; do
     [[ "${line_type}" == "window" ]] || continue
+
+    # Validate critical fields
+    [[ -z "$window_number" || -z "$window_layout" ]] && continue
 
     # Remove leading colon from window_name
     window_name="${window_name#:}"
@@ -242,6 +409,9 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
     [[ "${line_type}" == "pane" ]] || continue
     [[ "${pane_active}" == "1" ]] || continue
 
+    # Validate critical fields
+    [[ -z "$window_number" || -z "$pane_index" ]] && continue
+
     tmux select-pane -t "${SESSION_NAME}:${window_number}.${pane_index}" 2>/dev/null || true
 done < "${SESSION_FILE}"
 
@@ -250,5 +420,135 @@ ACTIVE_WINDOW=$(awk -F'\t' '/^window/ && $4 == 1 { print $3; exit }' "${SESSION_
 if [[ -n "${ACTIVE_WINDOW}" ]]; then
     tmux select-window -t "${SESSION_NAME}:${ACTIVE_WINDOW}" 2>/dev/null || true
 fi
+
+# ─────────────────────────────────────────
+# Pass 4: Restore running commands/processes
+# ─────────────────────────────────────────
+
+# Check if process restoration is enabled
+restore_processes_enabled() {
+    local restore_processes
+    restore_processes="$(tmux show-option -gqv @resurrect-processes)"
+    if [[ -z "$restore_processes" || "$restore_processes" == "false" ]]; then
+        return 1
+    else
+        return 0
+    fi
+}
+
+# Get list of processes configured for restoration
+get_restore_processes_list() {
+    local user_processes
+    user_processes="$(tmux show-option -gqv @resurrect-processes)"
+    local default_processes="vi vim nvim emacs man less more tail top htop irssi weechat mutt ssh"
+
+    if [[ -z "$user_processes" ]]; then
+        echo "$default_processes"
+    elif [[ "$user_processes" == ":all:" ]]; then
+        echo ":all:"
+    else
+        echo "$default_processes $user_processes"
+    fi
+}
+
+# Check if a command should be restored
+should_restore_command() {
+    local command="$1"
+    local process_list
+    process_list="$(get_restore_processes_list)"
+
+    # Empty command - don't restore
+    [[ -z "$command" || "$command" == ":" ]] && return 1
+
+    # Restore all processes
+    [[ "$process_list" == ":all:" ]] && return 0
+
+    # Extract base command (first word) - pure bash
+    local base_cmd="${command%% *}"
+
+    # Check if command is in the restore list
+    for proc in $process_list; do
+        # Handle tilde prefix for fuzzy matching
+        if [[ "$proc" =~ ^~ ]]; then
+            local match="${proc#\~}"
+            [[ "$command" =~ $match ]] && return 0
+        else
+            # Exact match on base command
+            [[ "$base_cmd" == "$proc" ]] && return 0
+        fi
+    done
+
+    return 1
+}
+
+# Wait for pane to be ready (responsive to tmux commands)
+wait_for_pane() {
+    local session_name="$1"
+    local window_number="$2"
+    local pane_index="$3"
+    local max_attempts=20
+    local attempt=0
+
+    while [[ $attempt -lt $max_attempts ]]; do
+        if tmux display-message -t "${session_name}:${window_number}.${pane_index}" -p "" 2>/dev/null; then
+            return 0
+        fi
+        sleep 0.05
+        ((attempt++))
+    done
+    return 1
+}
+
+# Restore command in a pane
+restore_pane_command() {
+    local session_name="$1"
+    local window_number="$2"
+    local pane_index="$3"
+    local command="$4"
+    local full_command="$5"
+
+    # Use full_command if available, otherwise command
+    local cmd_to_run="${full_command:-$command}"
+
+    # Remove leading colon if present
+    cmd_to_run="${cmd_to_run#:}"
+
+    if should_restore_command "$cmd_to_run"; then
+        # Validate command doesn't contain dangerous shell metacharacters
+        # Allow: alphanumeric, spaces, dashes, underscores, dots, slashes, colons, equals, quotes
+        if [[ "$cmd_to_run" =~ [\;\|\&\<\>\$\`\\] ]]; then
+            echo -e "${YELLOW}Warning: Skipping command with suspicious characters: ${cmd_to_run}${NC}" >&2
+            return 0
+        fi
+
+        # Wait for pane to be ready before sending command
+        if wait_for_pane "$session_name" "$window_number" "$pane_index"; then
+            # Send the command to the pane
+            tmux send-keys -t "${session_name}:${window_number}.${pane_index}" "$cmd_to_run" C-m
+        else
+            echo -e "${YELLOW}Warning: Pane ${session_name}:${window_number}.${pane_index} not ready, skipping command restoration${NC}" >&2
+        fi
+    fi
+}
+
+# Restore commands if enabled
+if restore_processes_enabled; then
+    while IFS="${d}" read -r line_type sess_name window_number window_active window_flags pane_index pane_title dir pane_active pane_command pane_full_command rest; do
+        [[ "${line_type}" == "pane" ]] || continue
+
+        # Validate critical fields
+        [[ -z "$window_number" || -z "$pane_index" ]] && continue
+
+        # Remove leading colon from commands
+        pane_command="${pane_command#:}"
+        pane_full_command="${pane_full_command#:}"
+
+        # Restore the command in this pane
+        restore_pane_command "$SESSION_NAME" "$window_number" "$pane_index" "$pane_command" "$pane_full_command"
+    done < "${SESSION_FILE}"
+fi
+
+# Disable cleanup trap on successful completion
+trap - ERR
 
 echo -e "${GREEN}Restored session: ${SESSION_NAME}${NC}"

@@ -4,20 +4,21 @@
 
 # Display a visual confirmation for last window/pane scenarios
 # Shows confirmation first, then switches to another session if user confirms
-# Usage: tmux_confirm_last_item "window" "session_name" "target" "window_name"
-#        tmux_confirm_last_item "pane" "session_name" "target" ""
+# Usage: tmux_confirm_last_item "window" "session_name" "target" "window_name" ["window_id"]
+#        tmux_confirm_last_item "pane" "session_name" "target" "" ""
 tmux_confirm_last_item() {
     local item_type="$1"        # "window" or "pane"
     local current_session="$2"   # session being affected
     local target="$3"            # full target (e.g., "session:window" or "session:window.pane")
     local window_name="$4"       # window name (for clearing alerts, optional)
+    local window_id="${5:-}"     # window id (for clearing alerts, optional)
 
     local other_session
     other_session=$(find_other_session "$current_session")
 
     # Clear alerts before showing confirmation
     if [[ -n "$window_name" && "$item_type" == "window" ]]; then
-        clear_window_alerts "$current_session" "$window_name"
+        clear_window_alerts "$current_session" "$window_name" "$window_id"
     fi
 
     local message command
