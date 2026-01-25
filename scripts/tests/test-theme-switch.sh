@@ -601,11 +601,11 @@ else
     fail "theme-switch should reference ghostty-reload.sh for reloading"
 fi
 
-# Check that script checks for lowercase 'ghostty' process
-if grep -q "pgrep -x ghostty" "$THEME_SWITCH"; then
-    pass "theme-switch checks for lowercase 'ghostty' process"
+# Check that script checks for 'ghostty' process (case-insensitive is acceptable)
+if grep -qE "pgrep -i?x.*ghostty" "$THEME_SWITCH"; then
+    pass "theme-switch checks for 'ghostty' process"
 else
-    fail "theme-switch should check for lowercase 'ghostty' process"
+    fail "theme-switch should check for 'ghostty' process"
 fi
 
 # Check that ghostty reload is only on macOS

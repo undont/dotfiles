@@ -120,7 +120,7 @@ dotfiles/
 │   ├── .zshrc            # Main config
 │   └── .zsh/             # Additional configs, secrets template
 ├── tmux/                 # Tmux configuration
-│   ├── .tmux.conf        # Main config (.tmux.conf.template for theming)
+│   ├── .tmux.conf.template  # Theme template (processed by theme-switch)
 │   └── .tmux/scripts/    # Custom scripts (session management, undo, alerts, themes)
 ├── nvim/                 # Neovim configuration (kickstart.nvim based)
 │   ├── init.lua          # Entry point
@@ -164,6 +164,32 @@ Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`.
 - `session.sh`: Session management functions
 - `alerts.sh`: Multi-agent alert system (Claude, OpenCode, Gemini)
 - `ui.sh`: Terminal dialogs and prompts
+
+### Theme System
+
+Theme configuration follows XDG Base Directory standard to avoid git conflicts:
+
+**Configuration Flow:**
+1. `themes/*.theme` - Theme definitions (in repo)
+2. `tmux/.tmux.conf.template` - Tmux template with `{{PLACEHOLDERS}}` (in repo)
+3. `ghostty/config.template` - Ghostty template with `{{PLACEHOLDERS}}` (in repo)
+4. `~/.config/tmux/tmux.conf` - Generated config (XDG location, gitignored)
+5. `~/.tmux.conf` - Compatibility symlink → `~/.config/tmux/tmux.conf`
+
+**Switching Themes:**
+```bash
+theme-switch catppuccin-mocha    # Apply theme
+theme-switch list                # Show available themes
+theme-switch current             # Show current theme
+```
+
+**Benefits:**
+- User theme changes don't create git conflicts
+- Templates stay clean in repository
+- Follows XDG standard (~/.config)
+- Backwards compatible via ~/.tmux.conf symlink
+
+**Migration:** Existing users should run `scripts/migrate-tmux-config.sh` once to move from the old setup to XDG.
 
 ### Tmux Scripts Architecture
 

@@ -6,6 +6,34 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.14] - 2026-01-25
+
+### Added
+- Resurrect restore: Pane contents restoration (scrollback history)
+- Resurrect restore: Command/process restoration for configured processes
+- Resurrect restore: Restore-all functionality for batch session restoration
+- Resurrect restore: Field validation and duplicate detection for malformed backups
+- Resurrect restore: Pane readiness polling to prevent race conditions
+- Theme system: XDG-compliant tmux config location (`~/.config/tmux/tmux.conf`)
+- Theme system: Template processing to prevent git conflicts from theme switching
+- Theme system: Migration script (`scripts/migrate-tmux-config.sh`) for existing users
+- Tests: Comprehensive resurrect restore test suite (14 test functions)
+- Tests: Fuzzy process matching tests for tilde prefix patterns
+- Zsh: Tab completion for `trestore` CLI options
+
+### Changed
+- Tmux config: Now uses XDG location with backwards-compatible symlink
+- Test helpers: Consolidated into `_test-helpers.sh` (removed duplication)
+- Create-symlinks: TTY check for non-interactive environments (CI)
+
+### Fixed
+- Security: Path traversal validation for session names in resurrect-restore
+- Security: Command sanitisation before `tmux send-keys` (prevents injection)
+- Security: Quote escaping in pane creation commands
+- Theme-switch: Quiet mode now suppresses error messages
+- Window-move: Input format validation for session:window argument
+- Test: Theme-switch ghostty process check (case-insensitive)
+
 ## [0.1.13] - 2026-01-22
 
 ### Added

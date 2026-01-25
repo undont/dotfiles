@@ -13,7 +13,8 @@ DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
 THEME_SWITCH="$DOTFILES_ROOT/scripts/theme-switch"
 THEMES_DIR="$DOTFILES_ROOT/themes"
 TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/.tmux.conf.template"
-TMUX_OUTPUT="$DOTFILES_ROOT/tmux/.tmux.conf"
+# Use XDG path where theme-switch actually writes the config
+TMUX_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 
 # Test counters
 PASS_COUNT=0
