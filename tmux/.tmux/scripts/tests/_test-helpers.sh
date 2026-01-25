@@ -6,11 +6,31 @@
 GREEN=$'\033[0;32m'
 RED=$'\033[0;31m'
 YELLOW=$'\033[0;33m'
+CYAN=$'\033[0;36m'
 NC=$'\033[0m'
 
-pass() { echo "${GREEN}✓${NC} $1"; }
-fail() { echo "${RED}✗${NC} $1"; }
-section() { echo ""; echo "${YELLOW}=== $1 ===${NC}"; }
+# Test counters (can be used by test scripts)
+PASS=0
+FAIL=0
+
+pass() {
+    PASS=$((PASS + 1))
+    printf "${GREEN}✓${NC} %s\n" "$1"
+}
+
+fail() {
+    FAIL=$((FAIL + 1))
+    printf "${RED}✗${NC} %s\n" "$1"
+}
+
+skip() {
+    printf "${CYAN}⊘${NC} %s (skipped)\n" "$1"
+}
+
+section() {
+    echo ""
+    printf "${YELLOW}=== %s ===${NC}\n" "$1"
+}
 
 # Create isolated tmux server for testing
 # Usage: setup_test_server
@@ -59,4 +79,5 @@ export -f cleanup_test_server
 export -f test_tmux
 export -f pass
 export -f fail
+export -f skip
 export -f section

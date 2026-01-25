@@ -1,6 +1,12 @@
 # ══════════════════════════════════════════════════════════════
-# TMUX CONFIGURATION
+# TMUX CONFIGURATION TEMPLATE (Theme: {{THEME_NAME}})
 # ══════════════════════════════════════════════════════════════
+# This template is processed by theme-switch and written to:
+#   ~/.config/tmux/tmux.conf (XDG standard location)
+#
+# A compatibility symlink exists at ~/.tmux.conf for backwards compatibility.
+# Change themes with: theme-switch <theme-name>
+#
 # See ~/.tmux/README.md for full documentation and setup guide.
 #
 # Quick reference:
@@ -351,6 +357,17 @@ set -g @plugin 'tmux-plugins/tmux-yank'        # System clipboard integration
 # ─────────────────────────────────────────
 # Capture pane contents (terminal output) when saving
 set -g @resurrect-capture-pane-contents 'on'
+
+# Restore specific programs (space-separated list)
+# Default: vi vim nvim emacs man less more tail top htop irssi weechat mutt ssh
+# Add more as needed:
+set -g @resurrect-processes 'ssh psql mysql sqlite3 claude opencode gemini "~rails server" "~npm start"'
+
+# Alternative: Restore ALL running programs (use with caution)
+# set -g @resurrect-processes ':all:'
+
+# Note: Use tilde prefix (~) for fuzzy matching of commands with arguments
+# Example: "~rails server" matches "/usr/bin/ruby /usr/local/bin/rails server"
 
 # Auto-restore on tmux start
 set -g @continuum-restore 'on'

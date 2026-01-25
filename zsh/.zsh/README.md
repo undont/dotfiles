@@ -237,7 +237,7 @@ Tab completion is available for all dotfiles commands.
 | -------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tattach <name>` | `tattach myproject`        | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tkill <name>` | `tkill myproject`            | Kills the specified tmux session and removes its backup file from `~/.tmux/resurrect/sessions/`. |
-| `trestore`     | `trestore <name> [options]`  | Restore a tmux session from backup. Options: `--replace` (kill existing first), `--delete` (delete backup). |
+| `trestore`     | `trestore [options]`         | Restore tmux sessions. No args = restore ALL; `--session <name>` = specific session; `--delete <name>` = delete backup. |
 | `brewup`       | `brewup`                     | Runs `brew update && brew upgrade`. |
 
 ### Tab Completion
