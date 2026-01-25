@@ -195,32 +195,32 @@ main() {
 
     section "Integration with tmux"
 
-    # Test: fzf-reload.sh exists
-    if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/fzf-reload.sh" ]]; then
-        pass "fzf-reload.sh exists"
+    # Test: reload-fzf.sh exists
+    if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-fzf.sh" ]]; then
+        pass "reload-fzf.sh exists"
     else
-        fail "fzf-reload.sh not found"
+        fail "reload-fzf.sh not found"
     fi
 
-    # Test: fzf-reload.sh is executable
-    if [[ -x "$DOTFILES_ROOT/tmux/.tmux/scripts/fzf-reload.sh" ]]; then
-        pass "fzf-reload.sh is executable"
+    # Test: reload-fzf.sh is executable
+    if [[ -x "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-fzf.sh" ]]; then
+        pass "reload-fzf.sh is executable"
     else
-        fail "fzf-reload.sh is not executable"
+        fail "reload-fzf.sh is not executable"
     fi
 
-    # Test: tmux theme picker calls fzf-reload.sh
-    if grep -q "fzf-reload.sh" "$DOTFILES_ROOT/tmux/.tmux.conf.template"; then
-        pass "tmux theme picker calls fzf-reload.sh"
+    # Test: tmux theme picker calls reload-fzf.sh
+    if grep -q "reload-fzf.sh" "$DOTFILES_ROOT/tmux/.tmux.conf.template"; then
+        pass "tmux theme picker calls reload-fzf.sh"
     else
-        fail "tmux theme picker does not call fzf-reload.sh"
+        fail "tmux theme picker does not call reload-fzf.sh"
     fi
 
-    # Test: theme-picker.sh loads fzf theme before displaying
-    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/tmux/.tmux/scripts/theme-picker.sh"; then
-        pass "theme-picker.sh loads FZF theme"
+    # Test: pick-theme.sh loads fzf theme before displaying
+    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/tmux/.tmux/scripts/pick-theme.sh"; then
+        pass "pick-theme.sh loads FZF theme"
     else
-        fail "theme-picker.sh does not load FZF theme"
+        fail "pick-theme.sh does not load FZF theme"
     fi
 
     # ══════════════════════════════════════════════════════════════

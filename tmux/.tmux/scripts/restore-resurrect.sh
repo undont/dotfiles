@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC2034  # Unused vars are positional placeholders for parsing
 # ══════════════════════════════════════════════════════════════
-# resurrect-restore.sh
+# restore-resurrect.sh
 # ══════════════════════════════════════════════════════════════
 # Restores a single tmux session from its individual backup file.
 #
 # This script works with per-session backup files created by
-# resurrect-split.sh (the post-save hook). Unlike the built-in
+# split-resurrect.sh (the post-save hook). Unlike the built-in
 # resurrect restore which restores ALL sessions at once, this
 # allows restoring individual sessions independently.
 #
@@ -17,11 +17,11 @@
 #   - Restores running commands (if @resurrect-processes configured)
 #
 # Usage:
-#   resurrect-restore.sh                          # Restore ALL sessions
-#   resurrect-restore.sh --session <name>         # Restore specific session
-#   resurrect-restore.sh --session <name> --replace  # Kill existing first
-#   resurrect-restore.sh --delete <name>          # Delete backup
-#   resurrect-restore.sh --list                   # List backups
+#   restore-resurrect.sh                          # Restore ALL sessions
+#   restore-resurrect.sh --session <name>         # Restore specific session
+#   restore-resurrect.sh --session <name> --replace  # Kill existing first
+#   restore-resurrect.sh --delete <name>          # Delete backup
+#   restore-resurrect.sh --list                   # List backups
 #
 # Session files are stored in: ~/.tmux/resurrect/sessions/
 #
@@ -192,6 +192,7 @@ REPLACE=false
 DELETE=false
 RESTORE_ALL=false
 SESSION_NAME=""
+NO_SWITCH=false
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -205,6 +206,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --replace)
             REPLACE=true
+            shift
+            ;;
+        --no-switch)
+            NO_SWITCH=true
             shift
             ;;
         --delete|-d)
@@ -270,8 +275,10 @@ if tmux has-session -t "${SESSION_NAME}" 2>/dev/null; then
         echo -e "${YELLOW}Killing existing session: ${SESSION_NAME}${NC}"
         tmux kill-session -t "${SESSION_NAME}"
     else
-        echo -e "${YELLOW}Session '${SESSION_NAME}' already running - switching to it${NC}"
-        tmux switch-client -t "${SESSION_NAME}" 2>/dev/null || tmux attach-session -t "${SESSION_NAME}"
+        echo -e "${YELLOW}Session '${SESSION_NAME}' already running${NC}"
+        if [[ "$NO_SWITCH" == false ]]; then
+            tmux switch-client -t "${SESSION_NAME}" 2>/dev/null || tmux attach-session -t "${SESSION_NAME}"
+        fi
         exit 0
     fi
 fi
@@ -572,3 +579,8 @@ fi
 trap - ERR
 
 echo -e "${GREEN}Restored session: ${SESSION_NAME}${NC}"
+
+# Switch to the restored session (unless --no-switch)
+if [[ "$NO_SWITCH" == false ]]; then
+    tmux switch-client -t "${SESSION_NAME}" 2>/dev/null || tmux attach-session -t "${SESSION_NAME}" 2>/dev/null || true
+fi

@@ -84,7 +84,7 @@ if [[ -f "$SCRIPT_DIR/../_lib/test-install-libs.sh" ]]; then
     run_test_suite "Installation Library Tests" "$SCRIPT_DIR/../_lib/test-install-libs.sh"
 fi
 
-run_test_suite "Dotfiles Status Indicator Tests" "$DOTFILES_DIR/tmux/.tmux/scripts/tests/test-dotfiles-status.sh"
+run_test_suite "Dotfiles Status Indicator Tests" "$DOTFILES_DIR/tmux/.tmux/scripts/tests/test-show-dotfiles-status.sh"
 run_test_suite "Dotfiles CLI Tests" "$DOTFILES_DIR/scripts/tests/test-dotfiles-cli.sh"
 
 # Integration tests (require tmux)

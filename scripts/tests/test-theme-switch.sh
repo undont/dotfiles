@@ -594,25 +594,26 @@ done
 
 section "Ghostty Reload Integration"
 
-# Check that theme-switch script references ghostty-reload.sh
-if grep -q "ghostty-reload.sh" "$THEME_SWITCH"; then
-    pass "theme-switch references ghostty-reload.sh"
+# Check that theme-switch script references reload-ghostty.sh
+if grep -q "reload-ghostty.sh" "$THEME_SWITCH"; then
+    pass "theme-switch references reload-ghostty.sh"
 else
-    fail "theme-switch should reference ghostty-reload.sh for reloading"
+    fail "theme-switch should reference reload-ghostty.sh for reloading"
 fi
 
-# Check that script checks for 'ghostty' process (case-insensitive is acceptable)
-if grep -qE "pgrep -i?x.*ghostty" "$THEME_SWITCH"; then
-    pass "theme-switch checks for 'ghostty' process"
+# Check that script calls reload-ghostty.sh (which handles detection internally)
+if grep -q 'reload-ghostty.sh' "$THEME_SWITCH"; then
+    pass "theme-switch calls reload-ghostty.sh"
 else
-    fail "theme-switch should check for 'ghostty' process"
+    fail "theme-switch should call reload-ghostty.sh"
 fi
 
-# Check that ghostty reload is only on macOS
-if grep -q 'uname.*Darwin.*ghostty' "$THEME_SWITCH"; then
-    pass "theme-switch only reloads ghostty on macOS"
+# Check that reload-ghostty.sh handles platform detection internally
+GHOSTTY_RELOAD_SCRIPT="$DOTFILES_ROOT/tmux/.tmux/scripts/reload-ghostty.sh"
+if grep -q 'ghostty' "$GHOSTTY_RELOAD_SCRIPT"; then
+    pass "reload-ghostty.sh handles ghostty process detection"
 else
-    fail "theme-switch should only reload ghostty on macOS"
+    fail "reload-ghostty.sh should handle ghostty process detection"
 fi
 
 # Check that ghostty reload respects --no-reload flag
@@ -622,18 +623,18 @@ else
     fail "theme-switch should respect --no-reload flag"
 fi
 
-# Verify ghostty-reload.sh script exists
-GHOSTTY_RELOAD="$DOTFILES_ROOT/tmux/.tmux/scripts/ghostty-reload.sh"
+# Verify reload-ghostty.sh script exists
+GHOSTTY_RELOAD="$DOTFILES_ROOT/tmux/.tmux/scripts/reload-ghostty.sh"
 if [[ -f "$GHOSTTY_RELOAD" ]]; then
-    pass "ghostty-reload.sh script exists"
+    pass "reload-ghostty.sh script exists"
 else
-    fail "ghostty-reload.sh script should exist"
+    fail "reload-ghostty.sh script should exist"
 fi
 
 if [[ -x "$GHOSTTY_RELOAD" ]]; then
-    pass "ghostty-reload.sh is executable"
+    pass "reload-ghostty.sh is executable"
 else
-    fail "ghostty-reload.sh should be executable"
+    fail "reload-ghostty.sh should be executable"
 fi
 
 # ===========================================================================

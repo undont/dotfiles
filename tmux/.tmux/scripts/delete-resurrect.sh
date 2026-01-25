@@ -12,18 +12,15 @@
 
 set -euo pipefail
 
-# Source path utilities
+# Source utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/paths.sh"
 
 # Get the resurrect directories using shared functions
 SESSIONS_DIR=$(get_resurrect_sessions_dir)
 
-# Colours for output
-GREEN='\033[0;32m'
-YELLOW='\033[0;33m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No colour
+# Colours already provided by common.sh
 
 usage() {
     echo -e "${CYAN}Usage:${NC} $0 <session-name>"

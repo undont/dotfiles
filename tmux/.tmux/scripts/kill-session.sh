@@ -56,21 +56,21 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
         echo "$SESSION_NAME" > "$UNDO_FILE"
         chmod 600 "$UNDO_FILE"
 
-        # Force a save to ensure we have current state (backgrounded for performance)
-        (
-            ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
-            ~/.tmux/scripts/resurrect-split.sh >/dev/null 2>&1 || true
+        # Copy existing backup immediately (fast) - uses last auto-save state
+        if [[ -f "$BACKUP_SRC" ]]; then
+            cp "$BACKUP_SRC" "$UNDO_BACKUP"
+            chmod 600 "$UNDO_BACKUP"
+        fi
 
-            # Preserve backup after save completes
-            if [[ -f "$BACKUP_SRC" ]]; then
-                cp "$BACKUP_SRC" "$UNDO_BACKUP"
-                chmod 600 "$UNDO_BACKUP"
-            fi
-        ) &
-
-        # Switch and kill (alert cleanup happens in background after kill)
+        # Switch and kill first (fast)
         tmux switch-client -t "$OTHER_SESSION" \; kill-session -t "$SESSION_NAME"
-        clear_session_alerts "$SESSION_NAME" &
+
+        # Background: clear alerts and update saves for remaining sessions
+        (
+            clear_session_alerts "$SESSION_NAME"
+            ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
+            ~/.tmux/scripts/split-resurrect.sh >/dev/null 2>&1 || true
+        ) &
         exit 0
     else
         error "Failed to find another session to switch to"
@@ -100,18 +100,19 @@ else
     echo "$SESSION_NAME" > "$UNDO_FILE"
     chmod 600 "$UNDO_FILE"
 
-    # Force a save to ensure we have current state (backgrounded for performance)
-    (
-        ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
-        ~/.tmux/scripts/resurrect-split.sh >/dev/null 2>&1 || true
+    # Copy existing backup immediately (fast) - uses last auto-save state
+    if [[ -f "$BACKUP_SRC" ]]; then
+        cp "$BACKUP_SRC" "$UNDO_BACKUP"
+        chmod 600 "$UNDO_BACKUP"
+    fi
 
-        # Preserve backup after save completes
-        if [[ -f "$BACKUP_SRC" ]]; then
-            cp "$BACKUP_SRC" "$UNDO_BACKUP"
-            chmod 600 "$UNDO_BACKUP"
-        fi
-    ) &
-
+    # Kill first (fast)
     tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
-    clear_session_alerts "$SESSION_NAME" &
+
+    # Background: clear alerts and update saves for remaining sessions
+    (
+        clear_session_alerts "$SESSION_NAME"
+        ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
+        ~/.tmux/scripts/split-resurrect.sh >/dev/null 2>&1 || true
+    ) &
 fi

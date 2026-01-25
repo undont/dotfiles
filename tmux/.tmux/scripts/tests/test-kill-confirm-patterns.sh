@@ -76,10 +76,10 @@ for script in kill-window.sh kill-pane.sh kill-session.sh; do
 done
 
 # Test helper scripts exist
-if [[ -f "$SCRIPTS_DIR/fzf-confirm.sh" ]] && [[ -x "$SCRIPTS_DIR/fzf-confirm.sh" ]]; then
-    pass "fzf-confirm.sh helper exists and is executable"
+if [[ -f "$SCRIPTS_DIR/confirm-fzf.sh" ]] && [[ -x "$SCRIPTS_DIR/confirm-fzf.sh" ]]; then
+    pass "confirm-fzf.sh helper exists and is executable"
 else
-    fail "fzf-confirm.sh helper missing or not executable"
+    fail "confirm-fzf.sh helper missing or not executable"
 fi
 
 # Test uses standardized visual confirmation
@@ -107,7 +107,7 @@ done
 # Test agent terminology
 echo ""
 echo "${YELLOW}=== Agent-agnostic terminology ===${NC}"
-for file in kill-session.sh session-rename.sh window-rename.sh update-timestamp.sh; do
+for file in kill-session.sh rename-session.sh rename-window.sh update-timestamp.sh; do
     if grep -i "claude.*alert" "$SCRIPTS_DIR/$file" | grep -qv "ALERTS_FILE\|^#"; then
         fail "$file has claude-specific alert references"
     else

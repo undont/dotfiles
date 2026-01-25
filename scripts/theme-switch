@@ -208,15 +208,15 @@ apply_theme() {
             [[ "$quiet" != "true" ]] && success "Theme files generated (start tmux to see changes)"
         fi
 
-        # Reload Ghostty config (macOS only)
-        if [[ "$(uname)" == "Darwin" ]] && pgrep -ix "ghostty" >/dev/null 2>&1; then
-            "$DOTFILES_ROOT/tmux/.tmux/scripts/ghostty-reload.sh"
+        # Reload Ghostty config (script handles detection internally)
+        if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-ghostty.sh" ]]; then
+            "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-ghostty.sh"
             [[ "$quiet" != "true" ]] && success "Reloaded ghostty configuration"
         fi
 
         # Reload FZF theme colours
-        if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/fzf-reload.sh" ]]; then
-            "$DOTFILES_ROOT/tmux/.tmux/scripts/fzf-reload.sh"
+        if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-fzf.sh" ]]; then
+            "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-fzf.sh"
             [[ "$quiet" != "true" ]] && success "Reloaded FZF theme colours"
         fi
     fi

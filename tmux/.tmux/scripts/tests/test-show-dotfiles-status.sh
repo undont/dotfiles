@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unit tests for dotfiles-status.sh
+# Unit tests for show-dotfiles-status.sh
 # Tests the git sync status indicator logic
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_STATUS_SCRIPT="$SCRIPT_DIR/../dotfiles-status.sh"
+DOTFILES_STATUS_SCRIPT="$SCRIPT_DIR/../show-dotfiles-status.sh"
 
 # Test counters
 PASS=0
@@ -45,25 +45,25 @@ section() {
 section "Script Exists and Is Executable"
 
 if [[ -f "$DOTFILES_STATUS_SCRIPT" ]]; then
-    pass "dotfiles-status.sh exists"
+    pass "show-dotfiles-status.sh exists"
 else
-    fail "dotfiles-status.sh not found at $DOTFILES_STATUS_SCRIPT"
+    fail "show-dotfiles-status.sh not found at $DOTFILES_STATUS_SCRIPT"
     exit 1
 fi
 
 if [[ -x "$DOTFILES_STATUS_SCRIPT" ]]; then
-    pass "dotfiles-status.sh is executable"
+    pass "show-dotfiles-status.sh is executable"
 else
-    fail "dotfiles-status.sh is not executable"
+    fail "show-dotfiles-status.sh is not executable"
 fi
 
 section "ShellCheck Validation"
 
 if command -v shellcheck &>/dev/null; then
     if shellcheck -x -S warning "$DOTFILES_STATUS_SCRIPT" 2>/dev/null; then
-        pass "dotfiles-status.sh passes shellcheck"
+        pass "show-dotfiles-status.sh passes shellcheck"
     else
-        fail "dotfiles-status.sh has shellcheck warnings"
+        fail "show-dotfiles-status.sh has shellcheck warnings"
     fi
 else
     skip "shellcheck not installed"
