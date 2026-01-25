@@ -112,7 +112,10 @@ fi
 
 section "Error Handling"
 
-if [[ "$create_symlinks_content" == *">/dev/null 2>&1"* ]] || [[ "$create_symlinks_content" == *"2>/dev/null"* ]]; then
+# Check if output is suppressed via redirects or --quiet flag
+if [[ "$create_symlinks_content" == *">/dev/null 2>&1"* ]] || \
+   [[ "$create_symlinks_content" == *"2>/dev/null"* ]] || \
+   [[ "$create_symlinks_content" == *"--quiet"* ]]; then
     pass "create-symlinks suppresses theme-switch output"
 else
     fail "create-symlinks should suppress theme-switch output"

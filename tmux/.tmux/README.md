@@ -12,7 +12,8 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | Theme picker          | `prefix + t`                      |
 | Save sessions         | `prefix + w` (like vim :w)        |
 | List backups          | `prefix + S` or `tls`             |
-| Restore session       | `prefix + R` or `trestore <name>` |
+| Restore all sessions  | `trestore`                        |
+| Restore one session   | `trestore -s <name>`              |
 | List Claude instances | `prefix + c`                      |
 
 ## Setup Guide (New Machine)
@@ -64,7 +65,7 @@ tattach() {
   local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
   if [[ -f "$backup" ]]; then
     echo "Restoring '$1' from backup..."
-    if ~/.tmux/scripts/resurrect-restore.sh "$1" && tmux a -t "$1"; then
+    if ~/.tmux/scripts/resurrect-restore.sh --session "$1" && tmux a -t "$1"; then
       return 0
     fi
     echo "Backup stale, removing: $1"
@@ -258,7 +259,8 @@ Location: `~/.local/launchers/tnew`
 | Alias             | Description                                                                                                                                    |
 | ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `tls`             | List saved session backups with window/pane counts                                                                                             |
-| `trestore <name>` | Restore a specific saved session                                                                                                               |
+| `trestore`        | Restore ALL saved sessions (skips already running)                                                                                             |
+| `trestore -s <n>` | Restore a specific saved session                                                                                                               |
 | `tkill <name>`    | Kill a specific session and remove its backup                                                                                                  |
 | `tattach <name>`  | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tcleanup`        | Clean up orphaned test servers and session backups. Use `tcleanup --dry-run` to preview what would be removed.                                |
@@ -286,11 +288,33 @@ This setup extends tmux-resurrect with custom per-session backup and restore.
 - Press `prefix + Ctrl+r`
 - Restores everything from the last combined save
 
+**Restore all sessions (custom):**
+
+- Run `trestore` from the shell (skips already running sessions)
+- Shows summary: restored/skipped/failed counts
+
 **Restore a single session (custom):**
 
 - Press `prefix + R` and enter the session name, OR
-- Run `trestore <session-name>` from the shell
+- Run `trestore --session <name>` from the shell
 - Only that specific session is restored
+
+### What Gets Restored
+
+The custom restore script (`trestore`) restores:
+
+- **Session structure:** Windows, panes, and layouts
+- **Working directories:** Each pane's `pwd`
+- **Scrollback history:** Terminal contents (if `@resurrect-capture-pane-contents` is enabled)
+- **Running commands:** Processes like vim, ssh, htop (if `@resurrect-processes` is configured)
+
+Configuration options (in `.tmux.conf`):
+
+```bash
+set -g @resurrect-capture-pane-contents 'on'    # Enable scrollback restore
+set -g @resurrect-processes 'ssh vim htop'      # Commands to restore
+set -g @resurrect-processes ':all:'             # Restore all commands
+```
 
 ### Storage Location
 

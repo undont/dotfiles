@@ -63,8 +63,9 @@ fi
 
 CURRENT_SESSION=$(get_current_session)
 
-# Get window name for confirmation
+# Get window name and ID for confirmation and alert cleanup
 WINDOW_NAME=$(tmux display-message -t "$WINDOW_TARGET" -p '#{window_name}')
+WINDOW_ID=$(tmux display-message -t "$WINDOW_TARGET" -p '#{window_id}')
 
 # Get window count to check if this is the last window
 WINDOW_COUNT=$(get_window_count "$TARGET_SESSION")
@@ -143,5 +144,5 @@ else
     tmux kill-window -t "$WINDOW_TARGET"
 fi
 
-# Clear alerts in background
-clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME" &
+# Clear alerts in background (window is already killed, so only file cleanup matters)
+clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME" "$WINDOW_ID" &

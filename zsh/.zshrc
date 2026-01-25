@@ -233,11 +233,28 @@ tkill() {
 
 
 # Tab completion for tmux commands
-_tmux_sessions_backup() {
-  # Complete with saved session backups (for trestore)
-  local -a sessions
-  sessions=(${(f)"$(ls ~/.tmux/resurrect/sessions/*.txt 2>/dev/null | xargs -n1 basename -s .txt)"})
-  _describe 'tmux session backups' sessions
+_trestore_complete() {
+  local -a options sessions
+  options=(
+    '--session[Restore a specific session]:session:->sessions'
+    '-s[Restore a specific session]:session:->sessions'
+    '--delete[Delete a session backup]:session:->sessions'
+    '-d[Delete a session backup]:session:->sessions'
+    '--list[List available sessions]'
+    '-l[List available sessions]'
+    '--replace[Kill existing session before restoring]'
+    '--help[Show usage]'
+    '-h[Show usage]'
+  )
+
+  _arguments -s "${options[@]}"
+
+  case "$state" in
+    sessions)
+      sessions=(${(f)"$(ls ~/.tmux/resurrect/sessions/*.txt 2>/dev/null | xargs -n1 basename -s .txt)"})
+      _describe 'session backups' sessions
+      ;;
+  esac
 }
 
 _tmux_sessions_running() {
@@ -248,7 +265,7 @@ _tmux_sessions_running() {
 }
 
 # Register completion functions
-compdef _tmux_sessions_backup trestore
+compdef _trestore_complete trestore
 compdef _tmux_sessions_running tkill
 compdef _tmux_sessions_running tattach
 
@@ -261,7 +278,7 @@ tattach() {
   local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
   if [[ -f "$backup" ]]; then
     echo "Restoring '$1' from backup..."
-    if ~/.tmux/scripts/resurrect-restore.sh "$1" && tmux a -t "$1"; then
+    if ~/.tmux/scripts/resurrect-restore.sh --session "$1" && tmux a -t "$1"; then
       return 0
     fi
     # Restore failed - backup is stale
