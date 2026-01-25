@@ -219,16 +219,16 @@ if [[ -f "$HOME/.zsh/.local-aliases.zsh" ]]; then
 fi
 
 # Tmux session management (see ~/.tmux/README.md)
-alias tls="~/.tmux/scripts/resurrect-restore.sh --list"
+alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 
 # Functions (instead of aliases) for tab completion support
 trestore() {
-  ~/.tmux/scripts/resurrect-restore.sh "$@"
+  ~/.tmux/scripts/restore-resurrect.sh "$@"
 }
 
 tkill() {
-  ~/.tmux/scripts/resurrect-delete.sh "$@"
+  ~/.tmux/scripts/delete-resurrect.sh "$@"
 }
 
 
@@ -278,7 +278,7 @@ tattach() {
   local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
   if [[ -f "$backup" ]]; then
     echo "Restoring '$1' from backup..."
-    if ~/.tmux/scripts/resurrect-restore.sh --session "$1" && tmux a -t "$1"; then
+    if ~/.tmux/scripts/restore-resurrect.sh --session "$1" && tmux a -t "$1"; then
       return 0
     fi
     # Restore failed - backup is stale

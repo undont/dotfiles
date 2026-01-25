@@ -83,7 +83,7 @@ is_known_failure() {
     local test_file="$1"
     local test_basename
     test_basename=$(basename "$test_file")
-    [[ "$test_basename" == "test-kill-undo.sh" || "$test_basename" == "test-dotfiles-status.sh" ]]
+    [[ "$test_basename" == "test-kill-undo.sh" || "$test_basename" == "test-show-dotfiles-status.sh" ]]
 }
 
 # Reset suite counters

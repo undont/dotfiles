@@ -45,6 +45,53 @@ get_agent_display() {
     echo "$icon|$colour"
 }
 
+# Set an alert for the current window
+# Usage: set_window_alert "agent_name" [ring_bell]
+# Sets tmux window option and adds to alerts file
+set_window_alert() {
+    local agent="${1:-claude}"
+    local ring_bell="${2:-true}"
+
+    # Ensure alerts directory exists
+    local alerts_dir
+    alerts_dir="$(dirname "$ALERTS_FILE")"
+    if [[ ! -d "$alerts_dir" ]]; then
+        mkdir -p "$alerts_dir"
+        chmod 700 "$alerts_dir"
+    fi
+
+    # Get current tmux window identifier
+    local win=""
+    if [[ -n "${TMUX_PANE:-}" ]]; then
+        win=$(tmux display-message -t "$TMUX_PANE" -p '#S:#W' 2>/dev/null)
+    fi
+    if [[ -z "$win" && -n "${TMUX:-}" ]]; then
+        win=$(tmux display-message -p '#S:#W' 2>/dev/null)
+    fi
+
+    # Set the @agent_alert window option
+    if [[ -n "$win" ]]; then
+        tmux set-option -wt "$win" "@${agent}_alert" 1 2>/dev/null
+    elif [[ -n "${TMUX_PANE:-}" ]]; then
+        tmux set-option -wt "$TMUX_PANE" "@${agent}_alert" 1 2>/dev/null
+    fi
+
+    # Add window to alerts file with agent type if not already present
+    if [[ -n "$win" ]]; then
+        local entry="${win}:${agent}"
+        grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
+    fi
+
+    # Ring the terminal bell (only if requested and /dev/tty is available)
+    if [[ "$ring_bell" == "true" ]]; then
+        {
+            if [[ -w /dev/tty ]]; then
+                printf '\a' > /dev/tty
+            fi
+        } 2>/dev/null || true
+    fi
+}
+
 # Clear all alerts for a specific window
 # Usage: clear_window_alerts "session" "window" ["window_id"]
 clear_window_alerts() {
