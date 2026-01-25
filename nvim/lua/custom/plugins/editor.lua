@@ -47,4 +47,27 @@ return {
 
   -- Detect tabstop and shiftwidth automatically
   { 'NMAC427/guess-indent.nvim' },
+
+  -- Cheatsheet for keybindings and commands
+  {
+    'sudormrfbin/cheatsheet.nvim',
+    dependencies = {
+      'nvim-telescope/telescope.nvim',
+      'nvim-lua/popup.nvim',
+      'nvim-lua/plenary.nvim',
+    },
+    config = function()
+      require('cheatsheet').setup {
+        -- Use telescope for display (recommended)
+        bundled_cheatsheets = {
+          enabled = { 'default', 'netrw', 'regex' }, -- Only standard vim commands
+        },
+        bundled_plugin_cheatsheets = false, -- Disable plugin cheatsheets (reduces noise)
+        include_only_installed_plugins = true,
+      }
+
+      -- Add keymap to open cheatsheet
+      vim.keymap.set('n', '<leader>?', '<cmd>Cheatsheet<CR>', { desc = 'Open cheatsheet' })
+    end,
+  },
 }
