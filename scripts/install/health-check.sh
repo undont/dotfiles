@@ -125,14 +125,15 @@ echo "Symlinks:"
 echo "---------"
 
 # Zsh (minimal)
-check_symlink "$HOME/.zshrc" "$DOTFILES_DIR/zsh/.zshrc" ".zshrc"
-check_symlink "$HOME/.zprofile" "$DOTFILES_DIR/zsh/.zprofile" ".zprofile"
-check_symlink "$HOME/.p10k.zsh" "$DOTFILES_DIR/zsh/.p10k.zsh" ".p10k.zsh"
-check_symlink "$HOME/.zsh" "$DOTFILES_DIR/zsh/.zsh" ".zsh"
+check_symlink "$HOME/.zshrc" "$DOTFILES_DIR/zsh/zshrc" ".zshrc"
+check_symlink "$HOME/.zprofile" "$DOTFILES_DIR/zsh/zprofile" ".zprofile"
+check_symlink "$HOME/.p10k.zsh" "$DOTFILES_DIR/zsh/p10k.zsh" ".p10k.zsh"
 
 # Tmux (minimal)
-check_symlink "$HOME/.tmux.conf" "$DOTFILES_DIR/tmux/.tmux.conf" ".tmux.conf"
-check_symlink "$HOME/.tmux" "$DOTFILES_DIR/tmux/.tmux" ".tmux"
+# Note: .tmux.conf is generated to XDG location and symlinked
+XDG_TMUX_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
+check_symlink "$HOME/.tmux.conf" "$XDG_TMUX_CONF" ".tmux.conf"
+check_symlink "$HOME/.tmux" "$DOTFILES_DIR/tmux" ".tmux"
 
 # Neovim (core)
 if should_install "core"; then
@@ -145,8 +146,12 @@ if should_install "full"; then
 fi
 
 # Ghostty (core)
+# Config is generated to XDG, macOS symlinks Application Support to XDG
 if should_install "core"; then
-    check_symlink "$HOME/.config/ghostty/config" "$DOTFILES_DIR/ghostty/config" "ghostty config"
+    check_file "$HOME/.config/ghostty/config" "ghostty config (XDG)"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        check_symlink "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$HOME/.config/ghostty/config" "ghostty config (macOS symlink)"
+    fi
 fi
 
 # Karabiner (full)
@@ -165,7 +170,8 @@ fi
 echo ""
 echo "Secrets:"
 echo "--------"
-check_file "$HOME/.zsh/.secrets.zsh" "Secrets file"
+ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+check_file "$ZSH_CONFIG_DIR/secrets.zsh" "Secrets file"
 
 # Session Launchers (core)
 if should_install "core"; then

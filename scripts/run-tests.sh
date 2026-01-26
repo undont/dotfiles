@@ -214,11 +214,11 @@ cd "$REPO_ROOT"
 # Find all test files using bash 3.2-compatible approach
 # Store test file paths as newline-delimited strings
 
-# Library tests (scripts/_lib/test-install-libs.sh, tmux/.tmux/scripts/_lib/test-tmux-libs.sh)
+# Library tests (scripts/_lib/test-install-libs.sh, tmux/scripts/_lib/test-tmux-libs.sh)
 LIBRARY_TESTS=$(find . -path "*/_lib/test-*-libs.sh" -type f | sort)
 
 # Tmux script tests
-SCRIPT_TESTS=$(find tmux/.tmux/scripts/tests -name "test-*.sh" -type f | sort)
+SCRIPT_TESTS=$(find tmux/scripts/tests -name "test-*.sh" -type f | sort)
 
 # Integration tests
 INTEGRATION_TESTS=$(find scripts/tests -name "test-*.sh" -type f 2>/dev/null | sort || true)

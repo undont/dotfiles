@@ -62,7 +62,7 @@ Then configure your terminal to use "MesloLGS NF" or another Nerd Font.
 
 ### 5. Create Secrets File
 
-Create `~/.zsh/.secrets.zsh` with your API keys:
+Create `~/.config/zsh/secrets.zsh` with your API keys:
 
 ```bash
 # GitHub
@@ -106,26 +106,26 @@ source ~/.zshrc
 
 ```
 ~/
-├── .zshrc              # Main config (interactive shell)
-├── .zprofile           # Login shell config (PATH from installers)
-├── .p10k.zsh           # Powerlevel10k theme configuration
-├── .tmux-help.txt      # Tmux keybinding reference (for Opt+g popup)
-├── .zsh/
-│   ├── .secrets.zsh    # API keys and credentials (not versioned)
-│   └── README.md       # This file
+├── .zshrc              # Main config (symlink to ~/dotfiles/zsh/zshrc)
+├── .zprofile           # Login shell config (symlink to ~/dotfiles/zsh/zprofile)
+├── .p10k.zsh           # Powerlevel10k theme (symlink to ~/dotfiles/zsh/p10k.zsh)
 └── .config/
-    ├── mcp-servers.json        # MCP server definitions (source of truth)
-    └── sync-mcp-servers.sh     # Sync script for MCP configs
+    ├── zsh/
+    │   ├── secrets.zsh       # API keys and credentials (not versioned)
+    │   └── local-aliases.zsh # Machine-specific aliases (not versioned)
+    ├── mcp-servers.json      # MCP server definitions (source of truth)
+    └── sync-mcp-servers.sh   # Sync script for MCP configs
 ```
 
 ### File Purposes
 
-| File                | Purpose                                                  |
-| ------------------- | -------------------------------------------------------- |
-| `.zshrc`            | Interactive shell config: prompt, aliases, plugins, PATH |
-| `.zprofile`         | Login shell only: PATH additions from installers         |
-| `.p10k.zsh`         | Prompt appearance, git status format, colours            |
-| `.zsh/.secrets.zsh` | API keys (sourced by .zshrc, not version controlled)     |
+| File                          | Purpose                                                  |
+| ----------------------------- | -------------------------------------------------------- |
+| `.zshrc`                      | Interactive shell config: prompt, aliases, plugins, PATH |
+| `.zprofile`                   | Login shell only: PATH additions from installers         |
+| `.p10k.zsh`                   | Prompt appearance, git status format, colours            |
+| `.config/zsh/secrets.zsh`     | API keys (sourced by .zshrc, not version controlled)     |
+| `.config/zsh/local-aliases.zsh` | Machine-specific project aliases (not versioned)       |
 
 ### Zsh Load Order
 
@@ -336,7 +336,7 @@ The script handles format differences between tools:
 
 ## Secrets Structure
 
-The `~/.zsh/.secrets.zsh` file contains API keys and is **not version controlled**.
+The `~/.config/zsh/secrets.zsh` file contains API keys and is **not version controlled**.
 
 ### Categories
 
@@ -378,12 +378,12 @@ Project-specific aliases (like `da` for Dana, `dot` for dotfiles) can be customi
 
 1. **Copy the template:**
    ```bash
-   cp ~/.zsh/.local-aliases.zsh.template ~/.zsh/.local-aliases.zsh
+   cp ~/.config/zsh/local-aliases.zsh.template ~/.config/zsh/local-aliases.zsh
    ```
 
 2. **Edit your local aliases:**
    ```bash
-   nvim ~/.zsh/.local-aliases.zsh
+   nvim ~/.config/zsh/local-aliases.zsh
    ```
 
 3. **Define your project paths:**
@@ -515,7 +515,7 @@ source ~/.zshrc
 echo "Loading local aliases..."
 
 # Check if file exists
-ls -la ~/.zsh/.local-aliases.zsh
+ls -la ~/.config/zsh/local-aliases.zsh
 ```
 
 **Verify environment variables:**

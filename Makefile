@@ -39,10 +39,10 @@ test-no-tmux: ## Run tests that don't require tmux
 
 test-libs: ## Run library tests only
 	@./scripts/_lib/test-install-libs.sh
-	@./tmux/.tmux/scripts/_lib/test-tmux-libs.sh
+	@./tmux/scripts/_lib/test-tmux-libs.sh
 
 test-scripts: ## Run tmux script tests only
-	@for t in tmux/.tmux/scripts/tests/test-*.sh; do \
+	@for t in tmux/scripts/tests/test-*.sh; do \
 		"$$t" || exit 1; \
 	done
 
@@ -60,7 +60,7 @@ lint: lint-shell lint-lua ## Run all linters
 lint-shell: ## Run ShellCheck on shell scripts
 	@printf '\033[1;36mRunning ShellCheck...\033[0m\n'
 	@shellcheck -x install.sh scripts/install/*.sh scripts/_lib/*.sh
-	@shellcheck -x tmux/.tmux/scripts/*.sh tmux/.tmux/scripts/_lib/*.sh
+	@shellcheck -x tmux/scripts/*.sh tmux/scripts/_lib/*.sh
 	@shellcheck -x scripts/dotfiles scripts/run-tests.sh
 	@shellcheck -x launchers/*
 	@printf '\033[0;32m✓ ShellCheck passed\033[0m\n'
@@ -94,7 +94,7 @@ check: ## Run installation checks only
 # ──────────────────────────────────────────────────────────────
 
 clean: ## Clean up orphaned test resources
-	@./tmux/.tmux/scripts/tests/cleanup-tests.sh
+	@./tmux/scripts/tests/cleanup-tests.sh
 
 clean-dry: ## Preview test cleanup (dry run)
-	@./tmux/.tmux/scripts/tests/cleanup-tests.sh --dry-run
+	@./tmux/scripts/tests/cleanup-tests.sh --dry-run

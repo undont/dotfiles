@@ -61,7 +61,7 @@ if command -v shellcheck &>/dev/null; then
     done
 
     # Check tmux scripts
-    for script in "$DOTFILES_DIR/tmux/.tmux/scripts"/*.sh; do
+    for script in "$DOTFILES_DIR/tmux/scripts"/*.sh; do
         if ! shellcheck -x -S warning -e SC1091 "$script" 2>/dev/null; then
             echo "${RED}✗ ShellCheck failed: $script${NC}"
             SHELLCHECK_FAILED=1
@@ -78,20 +78,20 @@ else
 fi
 
 # Unit tests
-run_test_suite "Tmux Library Tests" "$DOTFILES_DIR/tmux/.tmux/scripts/_lib/test-tmux-libs.sh"
+run_test_suite "Tmux Library Tests" "$DOTFILES_DIR/tmux/scripts/_lib/test-tmux-libs.sh"
 
 if [[ -f "$SCRIPT_DIR/../_lib/test-install-libs.sh" ]]; then
     run_test_suite "Installation Library Tests" "$SCRIPT_DIR/../_lib/test-install-libs.sh"
 fi
 
-run_test_suite "Dotfiles Status Indicator Tests" "$DOTFILES_DIR/tmux/.tmux/scripts/tests/test-show-dotfiles-status.sh"
+run_test_suite "Dotfiles Status Indicator Tests" "$DOTFILES_DIR/tmux/scripts/tests/test-show-dotfiles-status.sh"
 run_test_suite "Dotfiles CLI Tests" "$DOTFILES_DIR/scripts/tests/test-dotfiles-cli.sh"
 
 # Integration tests (require tmux)
 if [[ "$RUN_INTEGRATION" == "--integration" ]]; then
     if [[ -n "${TMUX:-}" ]]; then
-        run_test_suite "Kill/Undo Integration" "$DOTFILES_DIR/tmux/.tmux/scripts/tests/test-kill-undo.sh"
-        run_test_suite "Session Management Integration" "$DOTFILES_DIR/tmux/.tmux/scripts/tests/test-session-management.sh"
+        run_test_suite "Kill/Undo Integration" "$DOTFILES_DIR/tmux/scripts/tests/test-kill-undo.sh"
+        run_test_suite "Session Management Integration" "$DOTFILES_DIR/tmux/scripts/tests/test-session-management.sh"
     else
         echo ""
         echo "${YELLOW}○ Integration tests skipped (not in tmux)${NC}"

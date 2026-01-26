@@ -18,7 +18,7 @@ if [[ -f "$ALERTS_FILE" && -s "$ALERTS_FILE" ]]; then
         # Build associative array: session -> agents (aggregate across all windows)
         declare -A session_agents
 
-        while IFS=: read -r session window agent; do
+        while IFS=: read -r session _window agent; do
             # Skip empty lines or malformed entries
             if [[ -z "$session" || -z "$agent" ]]; then
                 continue

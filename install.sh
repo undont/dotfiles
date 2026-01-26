@@ -250,19 +250,22 @@ fi
 # Step 7: Create secrets file if needed
 echo ""
 print_step 7 "Setting up secrets..."
-if [[ ! -f "$HOME/.zsh/.secrets.zsh" ]]; then
-    if [[ -f "$DOTFILES_DIR/zsh/.zsh/.secrets.zsh.template" ]]; then
-        cp "$DOTFILES_DIR/zsh/.zsh/.secrets.zsh.template" "$HOME/.zsh/.secrets.zsh"
-        chmod 600 "$HOME/.zsh/.secrets.zsh"
+SECRETS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+mkdir -p "$SECRETS_DIR"
+
+if [[ ! -f "$SECRETS_DIR/secrets.zsh" ]]; then
+    if [[ -f "$DOTFILES_DIR/zsh/secrets.zsh.template" ]]; then
+        cp "$DOTFILES_DIR/zsh/secrets.zsh.template" "$SECRETS_DIR/secrets.zsh"
+        chmod 600 "$SECRETS_DIR/secrets.zsh"
         warn "Created secrets file from template."
-        echo "Edit ~/.zsh/.secrets.zsh to add your API keys and tokens."
+        echo "Edit $SECRETS_DIR/secrets.zsh to add your API keys and tokens."
     else
         # Create secrets file with restrictive permissions from the start
         (
             umask 077
-            touch "$HOME/.zsh/.secrets.zsh"
+            touch "$SECRETS_DIR/secrets.zsh"
         )
-        chmod 600 "$HOME/.zsh/.secrets.zsh"  # Belt and suspenders
+        chmod 600 "$SECRETS_DIR/secrets.zsh"  # Belt and suspenders
         warn "Created empty secrets file."
     fi
 else
@@ -306,7 +309,7 @@ if [[ "$PRESET" == "core" || "$PRESET" == "full" ]]; then
     echo "  $STEP. Install Node.js: fnm install --lts && fnm default lts-latest"
     ((STEP++))
 fi
-echo "  $STEP. Edit ~/.zsh/.secrets.zsh to add your API keys"
+echo "  $STEP. Edit ~/.config/zsh/secrets.zsh to add your API keys"
 echo ""
 if [[ $SKIP_BACKUP -eq 0 ]] && [[ -d "${BACKUP_DIR:-}" ]]; then
     echo "Backup location: $BACKUP_DIR"

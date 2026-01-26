@@ -8,7 +8,7 @@
 # Determine dotfiles root from this library file's location
 # Use readlink -f to resolve symlinks (or realpath if available)
 _LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-DOTFILES_ROOT="$(cd "$_LIB_DIR/../../../.." && pwd)"
+DOTFILES_ROOT="$(cd "$_LIB_DIR/../../.." && pwd)"
 
 # Source colour definitions
 # shellcheck source=scripts/_lib/colours.sh

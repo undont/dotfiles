@@ -62,6 +62,9 @@ function M.setup()
   -- Confirm before closing unsaved buffers
   vim.o.confirm = true
 
+  -- Auto-reload files changed outside nvim
+  vim.o.autoread = true
+
   -- Cursor style (block in all modes, blinking in insert)
   vim.opt.guicursor = 'n-v-c:block,i-ci-ve:block-blinkwait700-blinkon400-blinkoff250'
 end

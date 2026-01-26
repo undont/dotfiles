@@ -2,12 +2,12 @@
 # LOCAL ALIASES CONFIGURATION
 # =============================================================================
 # This file contains machine-specific project aliases and paths.
-# Copy this template to .local-aliases.zsh and customise for your machine.
+# Copy this template to your XDG config location and customise.
 #
 # Setup:
-#   cp ~/.zsh/.local-aliases.zsh.template ~/.zsh/.local-aliases.zsh
+#   cp ~/dotfiles/zsh/local-aliases.zsh.template ~/.config/zsh/local-aliases.zsh
 #
-# The .local-aliases.zsh file is not version controlled (in .gitignore).
+# The local-aliases.zsh file is not version controlled.
 #
 # =============================================================================
 
