@@ -144,5 +144,6 @@ else
     tmux kill-window -t "$WINDOW_TARGET"
 fi
 
-# Clear alerts in background (window is already killed, so only file cleanup matters)
-clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME" "$WINDOW_ID" &
+# Clear alerts (window is already killed, so only file cleanup matters)
+# Run synchronously to avoid race conditions with concurrent kills
+clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME" "$WINDOW_ID"
