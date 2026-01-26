@@ -6,9 +6,6 @@ zsh/.zsh/.local-aliases.zsh
 tmux/.tmux/plugins/
 tmux/.tmux/resurrect/
 
-# Tmux generated config (user-specific theme)
-tmux/.tmux.conf
-
 # System files
 .DS_Store
 *.swp

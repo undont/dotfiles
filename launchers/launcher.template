@@ -1,0 +1,124 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# =============================================================================
+# PROJECT LAUNCHER TEMPLATE
+# =============================================================================
+# Copy this file and customise for your project:
+#   cp launcher.template myproject
+#   chmod +x myproject
+#
+# Add your project root to ~/.zsh/.local-aliases.zsh:
+#   export MYPROJECT_ROOT="$HOME/src/myproject"
+# =============================================================================
+
+# Source local aliases for project paths
+LOCAL_ALIASES="${ZDOTDIR:-$HOME/.zsh}/.local-aliases.zsh"
+# shellcheck source=/dev/null
+[[ -f "$LOCAL_ALIASES" ]] && source "$LOCAL_ALIASES"
+
+# =============================================================================
+# CONFIGURATION - Customise these for your project
+# =============================================================================
+
+SESSION="myproject"                              # tmux session name
+PROJECT_DIR="${MYPROJECT_ROOT:-$HOME/src/myproject}"  # from local aliases or fallback
+
+# Help flag handling
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    cat << EOF
+$SESSION - Project tmux session launcher
+
+USAGE:
+    $SESSION
+
+DESCRIPTION:
+    Creates or attaches to the '$SESSION' tmux session with a pre-configured
+    multi-window layout.
+
+WINDOWS:
+    1. dev     Development (split: Claude left, terminal right)
+    2. edit    Neovim editor
+    3. shell   General terminal
+
+OPTIONS:
+    -h, --help   Show this help message
+
+NOTES:
+    • Reads ${SESSION^^}_ROOT from ~/.zsh/.local-aliases.zsh
+    • Falls back to $PROJECT_DIR if not defined
+    • If session exists, attaches instead of creating
+EOF
+    exit 0
+fi
+
+# =============================================================================
+# VALIDATION
+# =============================================================================
+
+if [[ ! -d "$PROJECT_DIR" ]]; then
+    echo "Error: Project directory not found: $PROJECT_DIR" >&2
+    echo "Define ${SESSION^^}_ROOT in ~/.zsh/.local-aliases.zsh or create the directory." >&2
+    exit 1
+fi
+
+# =============================================================================
+# SESSION MANAGEMENT
+# =============================================================================
+
+# Check if session already exists
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "$SESSION"
+    else
+        tmux attach-session -t "$SESSION"
+    fi
+    exit 0
+fi
+
+# =============================================================================
+# WINDOW LAYOUT - Customise this section for your workflow
+# =============================================================================
+
+# Window 1: dev (split panes - Claude left, terminal right)
+tmux new-session -d -s "$SESSION" -n dev -c "$PROJECT_DIR"
+tmux split-window -t "$SESSION:dev" -h -c "$PROJECT_DIR"
+tmux send-keys -t "$SESSION:dev.1" 'claude' Enter
+
+# Window 2: edit (neovim)
+tmux new-window -t "$SESSION" -n edit -c "$PROJECT_DIR"
+tmux send-keys -t "$SESSION:edit" 'nvim' Enter
+
+# Window 3: shell (general terminal)
+tmux new-window -t "$SESSION" -n shell -c "$PROJECT_DIR"
+
+# =============================================================================
+# EXAMPLES OF OTHER WINDOW CONFIGURATIONS
+# =============================================================================
+#
+# # Subdirectory window:
+# tmux new-window -t "$SESSION" -n backend -c "$PROJECT_DIR/backend"
+#
+# # Split pane running commands:
+# tmux new-window -t "$SESSION" -n servers -c "$PROJECT_DIR"
+# tmux split-window -h -t "$SESSION:servers" -c "$PROJECT_DIR"
+# tmux send-keys -t "$SESSION:servers.1" 'npm run dev' Enter
+# tmux send-keys -t "$SESSION:servers.2" 'npm run watch' Enter
+#
+# # Window at home directory:
+# tmux new-window -t "$SESSION" -n misc -c ~
+
+# =============================================================================
+# ATTACH TO SESSION
+# =============================================================================
+
+# Select first window
+tmux select-window -t "$SESSION:1"
+tmux select-pane -t "$SESSION:1.1"
+
+# Attach to session
+if [[ -n "${TMUX:-}" ]]; then
+    tmux switch-client -t "$SESSION"
+else
+    tmux attach-session -t "$SESSION"
+fi

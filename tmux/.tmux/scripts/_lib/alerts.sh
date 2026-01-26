@@ -77,7 +77,8 @@ set_window_alert() {
     fi
 
     # Add window to alerts file with agent type if not already present
-    if [[ -n "$win" ]]; then
+    # Validate win is in format "session:window" (both non-empty, valid chars)
+    if [[ "$win" =~ ^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$ ]]; then
         local entry="${win}:${agent}"
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi

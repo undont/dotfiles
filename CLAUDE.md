@@ -195,11 +195,11 @@ theme-switch current             # Show current theme
 
 Custom tmux functionality is implemented via scripts bound to keybindings:
 - **Kill/Undo**: `kill-pane.sh`, `kill-window.sh`, `kill-session.sh` save state; `undo-*.sh` restore
-- **Session management**: `session-list.sh`, `session-new.sh`, `session-rename.sh`, `window-list.sh` with fzf integration
-- **Window operations**: `window-duplicate.sh`, `window-move.sh`, `window-rename.sh`
-- **Resurrect extensions**: `resurrect-split.sh` (post-save hook), `resurrect-restore.sh` (per-session restore)
+- **Session management**: `list-sessions.sh`, `new-session.sh`, `rename-session.sh`, `list-windows.sh` with fzf integration
+- **Window operations**: `duplicate-window.sh`, `move-window.sh`, `rename-window.sh`
+- **Resurrect extensions**: `split-resurrect.sh` (post-save hook), `restore-resurrect.sh` (per-session restore)
 - **Agent alerts**: `agent-alerts.sh` shows status bar indicators for AI agents
-- **Theme support**: `theme-picker.sh` for runtime theme switching
+- **Theme support**: `pick-theme.sh` for runtime theme switching
 
 ### Neovim Structure
 
@@ -236,7 +236,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 - Resurrect scripts: Use test pattern for consistency (invoked in various contexts)
 
 **Examples**:
-- ✓ `tmux/.tmux/scripts/session-list.sh` - Uses `${BASH_SOURCE%/*}`
+- ✓ `tmux/.tmux/scripts/list-sessions.sh` - Uses `${BASH_SOURCE%/*}`
 - ✓ `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)`
 - ✗ Don't mix patterns within the same category of scripts
 
