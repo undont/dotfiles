@@ -13,11 +13,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Dana launcher: Now reads `DANA_ROOT` from local aliases (falls back to `~/src/dana`)
 - Neovim: Custom cheatsheet.txt for `Space ?` with actual keybindings
 - Neovim: Auto-save on text change with auto-reload for external changes
+- Neovim: `Space cc` and `Space cu` keymaps for Claude comment snippets
 - btop: System monitor configuration (htop replacement)
 
 ### Changed
 - Agent alerts: Aggregates alerts per session instead of per window for cleaner status bar display
 - Neovim: Cheatsheet plugin now reads from custom cheatsheet.txt instead of bundled defaults
+- Neovim: Improved formatting for `claudecomment` snippet (proper newlines)
 - **Directory structure**: Simplified by removing nested dotfile prefixes
   - `zsh/.zshrc` → `zsh/zshrc`, `zsh/.zprofile` → `zsh/zprofile`, etc.
   - `zsh/.zsh/` directory removed (templates now in `zsh/`)

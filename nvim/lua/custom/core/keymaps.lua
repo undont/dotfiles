@@ -89,6 +89,19 @@ function M.setup()
     end
   end, { desc = 'Insert [C]laude [C]omment template' })
 
+  -- LuaSnip: Insert Claude user/exchange snippet
+  vim.keymap.set('n', '<leader>cu', function()
+    local ls = require 'luasnip'
+    local snippets = ls.get_snippets 'all'
+    for _, snip in ipairs(snippets) do
+      if snip.trigger == 'cu' then
+        vim.cmd 'normal! o'
+        ls.snip_expand(snip)
+        return
+      end
+    end
+  end, { desc = 'Insert [C]laude [U]ser/exchange snippet' })
+
   -- LuaSnip navigation keymaps
   vim.keymap.set({ 'i', 's' }, '<C-k>', function()
     local ls = require 'luasnip'
