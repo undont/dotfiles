@@ -3,6 +3,11 @@ set -euo pipefail
 
 # Dana project launcher - creates a multi-window tmux session
 
+# Source local aliases for project paths (DANA_ROOT, etc.)
+LOCAL_ALIASES="${ZDOTDIR:-$HOME/.zsh}/.local-aliases.zsh"
+# shellcheck source=/dev/null
+[[ -f "$LOCAL_ALIASES" ]] && source "$LOCAL_ALIASES"
+
 # Help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat << 'EOF'
@@ -13,7 +18,7 @@ USAGE:
 
 DESCRIPTION:
     Creates or attaches to the 'dana' tmux session with a pre-configured
-    multi-window layout for the Dana project located at ~/src/dana.
+    multi-window layout for the Dana project (uses DANA_ROOT from local aliases).
 
 WINDOWS:
     1. backend           Backend development (~/src/dana/backend)
@@ -33,7 +38,7 @@ EXAMPLES:
     dana
 
 NOTES:
-    • Requires ~/src/dana directory to exist
+    • Reads DANA_ROOT from ~/.zsh/.local-aliases.zsh (falls back to ~/src/dana)
     • If session 'dana' exists, attaches instead of creating
     • Development servers auto-start in window 4 (tools)
     • Works both inside and outside of tmux
@@ -47,7 +52,7 @@ EOF
 fi
 
 SESSION="dana"
-PROJECT_DIR="$HOME/src/dana"
+PROJECT_DIR="${DANA_ROOT:-$HOME/src/dana}"
 
 # Validate project directory exists
 if [[ ! -d "$PROJECT_DIR" ]]; then
