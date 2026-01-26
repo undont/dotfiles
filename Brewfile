@@ -101,6 +101,7 @@ brew "golang-migrate"
 
 brew "ffmpeg"
 brew "imagemagick"
+brew "btop"                   # System monitor (htop replacement)
 brew "fastfetch"              # neofetch replacement (faster, maintained)
 brew "teamookla/speedtest/speedtest"
 brew "glow"                   # Markdown renderer

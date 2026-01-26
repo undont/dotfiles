@@ -1,15 +1,14 @@
 # =============================================================================
 # ZSH CONFIGURATION
 # =============================================================================
-# See ~/.zsh/README.md for full documentation and setup guide.
+# See ~/dotfiles/zsh/README.md for full documentation and setup guide.
 #
 # File structure:
-#   ~/.zshrc                  - Main config (this file), loaded for interactive shells
-#   ~/.zprofile               - Login shell config (PATH additions from installers)
-#   ~/.p10k.zsh               - Powerlevel10k theme configuration
-#   ~/.zsh/.secrets.zsh       - API keys and credentials (not version controlled)
-#   ~/.zsh/.local-aliases.zsh - Machine-specific project aliases (not version controlled)
-#   ~/.zsh/README.md          - Documentation
+#   ~/.zshrc                           - Main config (this file), loaded for interactive shells
+#   ~/.zprofile                        - Login shell config (PATH additions from installers)
+#   ~/.p10k.zsh                        - Powerlevel10k theme configuration
+#   ~/.config/zsh/secrets.zsh          - API keys and credentials (not version controlled)
+#   ~/.config/zsh/local-aliases.zsh    - Machine-specific project aliases (not version controlled)
 
 # =============================================================================
 # POWERLEVEL10K PROMPT
@@ -177,9 +176,10 @@ preexec() {
 # SECRETS & CREDENTIALS
 # =============================================================================
 # API keys and tokens loaded from separate file (not version controlled)
-# See ~/.zsh/README.md for structure of .secrets.zsh
-if [[ -f "$HOME/.zsh/.secrets.zsh" ]]; then
-  source "$HOME/.zsh/.secrets.zsh"
+# See ~/dotfiles/zsh/README.md for structure of secrets.zsh
+ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
+  source "$ZSH_CONFIG_DIR/secrets.zsh"
 fi
 
 # Android SDK platform tools (adb, fastboot)
@@ -213,9 +213,9 @@ alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across 
 # LOCAL ALIASES (machine-specific)
 # =============================================================================
 # Project-specific aliases and paths loaded from separate file
-# See ~/.zsh/.local-aliases.zsh.template for setup instructions
-if [[ -f "$HOME/.zsh/.local-aliases.zsh" ]]; then
-  source "$HOME/.zsh/.local-aliases.zsh"
+# See ~/dotfiles/zsh/local-aliases.zsh.template for setup instructions
+if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
+  source "$ZSH_CONFIG_DIR/local-aliases.zsh"
 fi
 
 # Tmux session management (see ~/.tmux/README.md)

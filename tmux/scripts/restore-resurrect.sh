@@ -140,16 +140,16 @@ restore_all_sessions() {
         # Skip if session already running
         if tmux has-session -t "${session}" 2>/dev/null; then
             echo -e "${YELLOW}Skipping${NC} ${session} (already running)"
-            ((skipped++))
+            ((++skipped))
             continue
         fi
 
         echo -e "${CYAN}Restoring${NC} ${session}..."
-        if "$0" --session "$session" 2>/dev/null; then
-            ((restored++))
+        if "$0" --session "$session" --no-switch; then
+            ((++restored))
         else
             echo -e "${RED}Failed${NC} to restore ${session}"
-            ((failed++))
+            ((++failed))
         fi
     done
 

@@ -383,7 +383,7 @@ skip "Preset helper integration tests (validated by sub-script awareness tests)"
 
 section "Zshrc Shell Profiler"
 
-ZSHRC_FILE="$DOTFILES_DIR/zsh/.zshrc"
+ZSHRC_FILE="$DOTFILES_DIR/zsh/zshrc"
 if [[ -f "$ZSHRC_FILE" ]]; then
     zshrc_content=$(cat "$ZSHRC_FILE")
 

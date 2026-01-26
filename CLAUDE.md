@@ -41,16 +41,16 @@ scripts/run-tests.sh --no-tmux
 scripts/_lib/test-install-libs.sh
 
 # Tmux library tests
-tmux/.tmux/scripts/_lib/test-tmux-libs.sh
+tmux/scripts/_lib/test-tmux-libs.sh
 
 # Individual tmux script tests
-tmux/.tmux/scripts/tests/test-list-claude.sh
-tmux/.tmux/scripts/tests/test-session-management.sh
-tmux/.tmux/scripts/tests/test-kill-undo.sh
+tmux/scripts/tests/test-list-claude.sh
+tmux/scripts/tests/test-session-management.sh
+tmux/scripts/tests/test-kill-undo.sh
 
 # Clean up orphaned test resources (if tests were interrupted)
-tmux/.tmux/scripts/tests/cleanup-tests.sh
-tmux/.tmux/scripts/tests/cleanup-tests.sh --dry-run  # Preview only
+tmux/scripts/tests/cleanup-tests.sh
+tmux/scripts/tests/cleanup-tests.sh --dry-run  # Preview only
 
 # Dotfiles CLI tests
 scripts/tests/test-dotfiles-cli.sh
@@ -61,7 +61,7 @@ scripts/tests/test-dotfiles-cli.sh
 
 **Test Discovery**: The test runner (`scripts/run-tests.sh`) automatically discovers all test files:
 - Library tests: `*/_lib/test-*-libs.sh`
-- Script tests: `tmux/.tmux/scripts/tests/test-*.sh`
+- Script tests: `tmux/scripts/tests/test-*.sh`
 - Integration tests: `scripts/tests/test-*.sh`
 
 Tests requiring tmux are automatically detected and skipped if tmux is not available.
@@ -73,7 +73,7 @@ Tests requiring tmux are automatically detected and skipped if tmux is not avail
 shellcheck -x install.sh scripts/install/*.sh scripts/_lib/*.sh
 
 # ShellCheck on tmux scripts
-shellcheck -x tmux/.tmux/scripts/*.sh tmux/.tmux/scripts/_lib/*.sh
+shellcheck -x tmux/scripts/*.sh tmux/scripts/_lib/*.sh
 
 # Lua check on Neovim config
 luacheck nvim/lua/ --no-unused-args --no-max-line-length
@@ -117,11 +117,13 @@ dotfiles/
 │   └── tests/            # Test suites
 ├── themes/               # Theme definitions (dracula, catppuccin, tokyo-night, nord)
 ├── zsh/                  # Zsh configuration
-│   ├── .zshrc            # Main config
-│   └── .zsh/             # Additional configs, secrets template
-├── tmux/                 # Tmux configuration
-│   ├── .tmux.conf.template  # Theme template (processed by theme-switch)
-│   └── .tmux/scripts/    # Custom scripts (session management, undo, alerts, themes)
+│   ├── zshrc             # Main config (symlinked to ~/.zshrc)
+│   ├── zprofile          # Login shell config
+│   ├── p10k.zsh          # Powerlevel10k theme config
+│   └── *.template        # Templates for user config (secrets, local-aliases)
+├── tmux/                 # Tmux configuration (symlinked to ~/.tmux)
+│   ├── tmux.conf.template  # Theme template (processed by theme-switch)
+│   └── scripts/          # Custom scripts (session management, undo, alerts, themes)
 ├── nvim/                 # Neovim configuration (kickstart.nvim based)
 │   ├── init.lua          # Entry point
 │   └── lua/custom/       # Modular config (core/, plugins/)
@@ -154,11 +156,11 @@ Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`.
 - Tests for common.sh, brewfile.sh functionality
 - Includes test framework helpers (pass, fail, skip, section)
 
-**`tmux/.tmux/scripts/_lib/test-tmux-libs.sh`**: Tmux library test suite
+**`tmux/scripts/_lib/test-tmux-libs.sh`**: Tmux library test suite
 - Tests for tmux common.sh, paths.sh, session.sh, alerts.sh
 - Includes assertion helpers (assert_success, assert_failure, assert_equals)
 
-**`tmux/.tmux/scripts/_lib/`**: Tmux-specific utilities
+**`tmux/scripts/_lib/`**: Tmux-specific utilities
 - `common.sh`: Error handling, tmux validation
 - `paths.sh`: XDG-compliant undo file paths with legacy fallback
 - `session.sh`: Session management functions
@@ -171,10 +173,12 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts:
 
 **Configuration Flow:**
 1. `themes/*.theme` - Theme definitions (in repo)
-2. `tmux/.tmux.conf.template` - Tmux template with `{{PLACEHOLDERS}}` (in repo)
+2. `tmux/tmux.conf.template` - Tmux template with `{{PLACEHOLDERS}}` (in repo)
 3. `ghostty/config.template` - Ghostty template with `{{PLACEHOLDERS}}` (in repo)
-4. `~/.config/tmux/tmux.conf` - Generated config (XDG location, gitignored)
+4. `~/.config/tmux/tmux.conf` - Generated config (XDG location)
 5. `~/.tmux.conf` - Compatibility symlink → `~/.config/tmux/tmux.conf`
+6. `~/.config/ghostty/config` - Generated ghostty config (XDG location)
+7. On macOS: `~/Library/Application Support/com.mitchellh.ghostty/config` → symlink to XDG
 
 **Switching Themes:**
 ```bash
@@ -236,7 +240,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 - Resurrect scripts: Use test pattern for consistency (invoked in various contexts)
 
 **Examples**:
-- ✓ `tmux/.tmux/scripts/list-sessions.sh` - Uses `${BASH_SOURCE%/*}`
+- ✓ `tmux/scripts/list-sessions.sh` - Uses `${BASH_SOURCE%/*}`
 - ✓ `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)`
 - ✗ Don't mix patterns within the same category of scripts
 

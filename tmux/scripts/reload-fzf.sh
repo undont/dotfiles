@@ -7,8 +7,8 @@ set -euo pipefail
 # Reloads FZF theme colours by sourcing fzf-theme.sh and updating
 # tmux environment variables so all panes/windows get the new colours
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
+DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
 # Source fzf-theme.sh to load current theme colours
 if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then

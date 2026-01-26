@@ -6,7 +6,7 @@ set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 THEME_PICKER="$SCRIPT_DIR/../pick-theme.sh"
-DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 THEMES_DIR="$DOTFILES_ROOT/themes"
 
 # Test counters
@@ -274,8 +274,8 @@ fi
 section "Integration with tmux"
 
 # Check if theme-picker is bound in tmux config
-tmux_config="$DOTFILES_ROOT/tmux/.tmux.conf"
-tmux_template="$DOTFILES_ROOT/tmux/.tmux.conf.template"
+tmux_config="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
+tmux_template="$DOTFILES_ROOT/tmux/tmux.conf.template"
 
 theme_picker_bound=false
 

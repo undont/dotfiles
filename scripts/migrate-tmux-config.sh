@@ -44,10 +44,10 @@ main() {
     print_header "Tmux Configuration Migration"
 
     info "This script will:"
-    echo "  1. Remove old symlink from ~/.tmux.conf -> dotfiles/tmux/.tmux.conf"
+    echo "  1. Remove old symlink from ~/.tmux.conf -> dotfiles/tmux/tmux.conf"
     echo "  2. Generate themed config in XDG location (~/.config/tmux/tmux.conf)"
     echo "  3. Create compatibility symlink ~/.tmux.conf -> ~/.config/tmux/tmux.conf"
-    echo "  4. Keep tmux/.tmux.conf.template as source template in repo"
+    echo "  4. Keep tmux/tmux.conf.template as source template in repo"
     echo ""
 
     # Check if user is on old setup

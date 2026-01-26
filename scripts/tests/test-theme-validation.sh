@@ -7,7 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 THEMES_DIR="$DOTFILES_ROOT/themes"
-TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/.tmux.conf.template"
+TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/tmux.conf.template"
 GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 
 # Test counters
