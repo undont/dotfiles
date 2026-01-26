@@ -41,6 +41,9 @@ This may take a few minutes. Press `Space` to see lazy.nvim status.
 ```
 nvim/
 ├── init.lua                           # Entry point - loads core config and plugins
+├── cheatsheet.txt                     # Custom cheatsheet for Space ? (searchable)
+├── snippets/                          # Custom LuaSnip snippets
+│   └── all.lua                        # Snippets available in all filetypes
 └── lua/
     ├── custom/                        # Custom configuration
     │   ├── core/
@@ -79,6 +82,7 @@ nvim/
 | [mason.nvim](https://github.com/williamboman/mason.nvim) | LSP/DAP/linter installer |
 | [nvim-lspconfig](https://github.com/neovim/nvim-lspconfig) | LSP client configurations |
 | [blink.cmp](https://github.com/saghen/blink.cmp) | Fast completion engine |
+| [LuaSnip](https://github.com/L3MON4D3/LuaSnip) | Snippet engine with custom snippets |
 | [nvim-treesitter](https://github.com/nvim-treesitter/nvim-treesitter) | Syntax highlighting and parsing |
 | [conform.nvim](https://github.com/stevearc/conform.nvim) | Code formatting |
 
@@ -93,6 +97,7 @@ nvim/
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
 | [neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File explorer sidebar |
 | [which-key.nvim](https://github.com/folke/which-key.nvim) | Keybinding popup hints |
+| [cheatsheet.nvim](https://github.com/sudormrfbin/cheatsheet.nvim) | Searchable keybinding/command cheatsheet |
 | [todo-comments.nvim](https://github.com/folke/todo-comments.nvim) | Highlight TODO/FIXME comments |
 
 ### Editing & Navigation
@@ -131,6 +136,7 @@ Press **`Space h`** in normal mode to open the keybinding help popup.
 | Mode | Keybinding | Action |
 |------|------------|--------|
 | Normal | `Space h` | Show keybinding help popup |
+| Normal | `Space ?` | Open searchable cheatsheet |
 | Normal | `Space Space` | Find existing buffers |
 | Normal | `Space sf` | Search files (Telescope) |
 | Normal | `Space sg` | Search by grep (Telescope) |
