@@ -390,6 +390,197 @@ else
 fi
 
 # ─────────────────────────────────────────
+# Test alerts.sh
+# ─────────────────────────────────────────
+section "Testing alerts.sh"
+source "$SCRIPT_DIR/alerts.sh"
+
+# These require tmux, so only test if inside tmux
+if [[ -n "${TMUX:-}" ]]; then
+    echo "  (running inside tmux - full tests)"
+
+    # Backup existing alerts file
+    ALERTS_FILE_BACKUP=""
+    if [[ -f "$HOME/.claude/alerts" ]]; then
+        ALERTS_FILE_BACKUP="$HOME/.claude/alerts.backup.$$"
+        cp "$HOME/.claude/alerts" "$ALERTS_FILE_BACKUP"
+    fi
+    # Clear alerts file for testing
+    : > "$HOME/.claude/alerts"
+
+    # Get current tmux context
+    CURRENT_SESSION=$(tmux display-message -p '#S')
+    CURRENT_WINDOW=$(tmux display-message -p '#W')
+    CURRENT_WINDOW_ID=$(tmux display-message -p '#{window_id}')
+
+    # Test set_window_alert
+    echo ""
+    echo "  set_window_alert:"
+    set_window_alert "claude" "false" 2>/dev/null
+    if [[ -f "$ALERTS_FILE" ]] && grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude$" "$ALERTS_FILE"; then
+        pass "    creates alert file entry"
+    else
+        fail "    should create alert file entry"
+    fi
+
+    OPTION_VALUE=$(tmux show-options -wt "$CURRENT_WINDOW_ID" @claude_alert 2>/dev/null | cut -d' ' -f2)
+    if [[ "$OPTION_VALUE" == "1" ]]; then
+        pass "    sets tmux window option"
+    else
+        fail "    should set @claude_alert option to 1"
+    fi
+
+    # Test clear_window_alerts
+    echo ""
+    echo "  clear_window_alerts:"
+    clear_window_alerts "$CURRENT_SESSION" "$CURRENT_WINDOW" "$CURRENT_WINDOW_ID"
+
+    if ! grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:" "$ALERTS_FILE" 2>/dev/null; then
+        pass "    removes alert from file"
+    else
+        fail "    should remove alert from file"
+    fi
+
+    OPTION_AFTER_CLEAR=$(tmux show-options -wt "$CURRENT_WINDOW_ID" @claude_alert 2>/dev/null || echo "")
+    if [[ -z "$OPTION_AFTER_CLEAR" ]]; then
+        pass "    unsets tmux window option"
+    else
+        fail "    should unset @claude_alert option"
+    fi
+
+    # Test concurrent clearing (locking mechanism)
+    echo ""
+    echo "  clear_window_alerts locking:"
+
+    # Create test alerts
+    echo "${CURRENT_SESSION}:${CURRENT_WINDOW}:claude" > "$ALERTS_FILE"
+    echo "${CURRENT_SESSION}:test-window-1:claude" >> "$ALERTS_FILE"
+    echo "${CURRENT_SESSION}:test-window-2:claude" >> "$ALERTS_FILE"
+
+    # Simulate concurrent clears (file operations only, no tmux ops since windows don't exist)
+    (
+        LOCK_DIR="${ALERTS_FILE}.lock"
+        for _ in {1..10}; do
+            if mkdir "$LOCK_DIR" 2>/dev/null; then
+                grep -v "^${CURRENT_SESSION}:test-window-1:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp.$$" 2>/dev/null || true
+                mv "${ALERTS_FILE}.tmp.$$" "$ALERTS_FILE" 2>/dev/null || rm -f "${ALERTS_FILE}.tmp.$$"
+                rmdir "$LOCK_DIR" 2>/dev/null || true
+                break
+            fi
+            sleep 0.01
+        done
+    ) &
+    PID1=$!
+
+    (
+        LOCK_DIR="${ALERTS_FILE}.lock"
+        for _ in {1..10}; do
+            if mkdir "$LOCK_DIR" 2>/dev/null; then
+                grep -v "^${CURRENT_SESSION}:test-window-2:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp.$$" 2>/dev/null || true
+                mv "${ALERTS_FILE}.tmp.$$" "$ALERTS_FILE" 2>/dev/null || rm -f "${ALERTS_FILE}.tmp.$$"
+                rmdir "$LOCK_DIR" 2>/dev/null || true
+                break
+            fi
+            sleep 0.01
+        done
+    ) &
+    PID2=$!
+
+    wait $PID1 $PID2
+
+    # Check that file is in consistent state (only current window alert should remain)
+    REMAINING=$(wc -l < "$ALERTS_FILE" 2>/dev/null | tr -d ' ' || echo "0")
+    if [[ "$REMAINING" == "1" ]]; then
+        pass "    handles concurrent clears without corruption"
+    else
+        fail "    concurrent clears may have caused corruption (expected: 1, got: $REMAINING)"
+    fi
+
+    # Test cleanup_stale_alerts
+    echo ""
+    echo "  cleanup_stale_alerts:"
+
+    # Create alerts with mix of valid and invalid sessions/windows
+    echo "${CURRENT_SESSION}:${CURRENT_WINDOW}:claude" > "$ALERTS_FILE"
+    echo "nonexistent-session:window:claude" >> "$ALERTS_FILE"
+    echo "${CURRENT_SESSION}:nonexistent-window:claude" >> "$ALERTS_FILE"
+
+    BEFORE_COUNT=$(wc -l < "$ALERTS_FILE")
+    cleanup_stale_alerts
+    AFTER_COUNT=$(wc -l < "$ALERTS_FILE" 2>/dev/null || echo "0")
+
+    if [[ "$AFTER_COUNT" -lt "$BEFORE_COUNT" ]]; then
+        pass "    removes stale alerts ($BEFORE_COUNT -> $AFTER_COUNT)"
+    else
+        fail "    should remove stale alerts"
+    fi
+
+    if grep -q "nonexistent" "$ALERTS_FILE" 2>/dev/null; then
+        fail "    should remove nonexistent session/window alerts"
+    else
+        pass "    removes nonexistent session/window alerts"
+    fi
+
+    if grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude$" "$ALERTS_FILE"; then
+        pass "    preserves valid alerts"
+    else
+        fail "    should preserve valid alerts"
+    fi
+
+    # Restore backup alerts file
+    if [[ -n "$ALERTS_FILE_BACKUP" ]]; then
+        mv "$ALERTS_FILE_BACKUP" "$HOME/.claude/alerts"
+    else
+        # No backup existed, clear the test alerts
+        : > "$HOME/.claude/alerts"
+    fi
+    # Clean up any lock files
+    rm -f "$HOME/.claude/alerts.lock" "$HOME/.claude/alerts.tmp."*
+
+    # Clean up any test window options
+    tmux set-option -wt "$CURRENT_WINDOW_ID" -u @claude_alert 2>/dev/null || true
+
+else
+    echo "  (not in tmux - skipping tmux-dependent tests)"
+    skip "  set_window_alert"
+    skip "  clear_window_alerts"
+    skip "  clear_window_alerts locking"
+    skip "  cleanup_stale_alerts"
+fi
+
+# Test agent display functions (don't require tmux)
+echo ""
+echo "  agent display functions:"
+
+CLAUDE_ICON=$(get_agent_icon "claude")
+if [[ "$CLAUDE_ICON" == "⚡" ]]; then
+    pass "  get_agent_icon returns correct icon for claude"
+else
+    fail "  get_agent_icon should return ⚡ for claude, got: $CLAUDE_ICON"
+fi
+
+OPENCODE_ICON=$(get_agent_icon "opencode")
+if [[ "$OPENCODE_ICON" == "🔮" ]]; then
+    pass "  get_agent_icon returns correct icon for opencode"
+else
+    fail "  get_agent_icon should return 🔮 for opencode, got: $OPENCODE_ICON"
+fi
+
+CLAUDE_COLOUR=$(get_agent_colour "claude")
+if [[ "$CLAUDE_COLOUR" == "#f1fa8c" ]]; then
+    pass "  get_agent_colour returns correct colour for claude"
+else
+    fail "  get_agent_colour should return #f1fa8c for claude, got: $CLAUDE_COLOUR"
+fi
+
+DISPLAY=$(get_agent_display "claude")
+if [[ "$DISPLAY" == "⚡|#f1fa8c" ]]; then
+    pass "  get_agent_display returns icon|colour format"
+else
+    fail "  get_agent_display should return 'icon|colour', got: $DISPLAY"
+fi
+
+# ─────────────────────────────────────────
 # Test state file parsing (undo-pane.sh logic)
 # ─────────────────────────────────────────
 section "Testing state file parsing"
