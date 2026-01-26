@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.15] - 2026-01-26
+
+### Added
+- Launchers: Template file (`launcher.template`) for creating new project launchers
+- Dana launcher: Now reads `DANA_ROOT` from local aliases (falls back to `~/src/dana`)
+- Neovim: Custom cheatsheet.txt for `Space ?` with actual keybindings
+
+### Changed
+- Agent alerts: Aggregates alerts per session instead of per window for cleaner status bar display
+- Neovim: Cheatsheet plugin now reads from custom cheatsheet.txt instead of bundled defaults
+
+### Fixed
+- Agent alerts: Stricter validation for alert entries to prevent malformed data
+
+### Documentation
+- Neovim README: Added snippets directory, LuaSnip, and cheatsheet plugin
+
 ## [0.1.14] - 2026-01-25
 
 ### Added

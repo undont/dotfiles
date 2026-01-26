@@ -58,12 +58,9 @@ return {
     },
     config = function()
       require('cheatsheet').setup {
-        -- Use telescope for display (recommended)
-        bundled_cheatsheets = {
-          enabled = { 'default', 'netrw', 'regex' }, -- Only standard vim commands
-        },
-        bundled_plugin_cheatsheets = false, -- Disable plugin cheatsheets (reduces noise)
-        include_only_installed_plugins = true,
+        bundled_cheatsheets = false, -- Disable bundled cheatsheets
+        bundled_plugin_cheatsheets = false, -- Disable plugin cheatsheets
+        -- Uses custom cheatsheet.txt in nvim config root
       }
 
       -- Add keymap to open cheatsheet

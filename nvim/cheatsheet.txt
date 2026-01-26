@@ -1,0 +1,56 @@
+## navigation @navigation
+Move cursor | hjkl
+Word forward/back | w / b
+Line start/end | 0 / $
+File top/bottom | gg / G
+Half-page down/up | Ctrl+d / Ctrl+u
+Jump back/forward | Ctrl+o / Ctrl+i
+
+## search @search
+Find files | Space sf
+Live grep | Space sg
+Search keymaps | Space sk
+Buffer search | Space /
+Open buffers | Space Space
+Open cheatsheet | Space ?
+
+## editing @editing
+Insert at/after cursor | i / a
+New line below/above | o / O
+Delete/yank line | dd / yy
+Paste after/before | p / P
+Undo / redo | u / Ctrl+r
+Repeat last action | .
+
+## lsp @lsp
+Go to definition | grd
+Go to references | grr
+Rename symbol | grn
+Code action | gra
+Hover documentation | K
+
+## text-objects @text-objects
+Inner/around word | iw / aw
+Inside quotes/parens/braces | i" / i( / i{
+Surround add (word with ") | saiw"
+Surround delete | sd'
+Surround replace | sr("
+
+## tools @tools
+Toggle file tree | Space e
+Open LazyGit | Space g
+Format file | Space f
+Diagnostics list | Space q
+Help popup | Space h
+
+## windows @windows
+Move to window | Ctrl+hjkl
+Split vertical | :vs
+Split horizontal | :sp
+
+## completion @completion
+Trigger completion | Ctrl+Space
+Accept Copilot suggestion | Tab
+Expand snippet | Tab (in snippet)
+Next snippet placeholder | Tab
+Previous snippet placeholder | Shift+Tab
