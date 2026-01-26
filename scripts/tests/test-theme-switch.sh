@@ -609,7 +609,7 @@ else
 fi
 
 # Check that reload-ghostty.sh handles platform detection internally
-GHOSTTY_RELOAD_SCRIPT="$DOTFILES_ROOT/tmux/.tmux/scripts/reload-ghostty.sh"
+GHOSTTY_RELOAD_SCRIPT="$DOTFILES_ROOT/tmux/scripts/reload-ghostty.sh"
 if grep -q 'ghostty' "$GHOSTTY_RELOAD_SCRIPT"; then
     pass "reload-ghostty.sh handles ghostty process detection"
 else
@@ -624,7 +624,7 @@ else
 fi
 
 # Verify reload-ghostty.sh script exists
-GHOSTTY_RELOAD="$DOTFILES_ROOT/tmux/.tmux/scripts/reload-ghostty.sh"
+GHOSTTY_RELOAD="$DOTFILES_ROOT/tmux/scripts/reload-ghostty.sh"
 if [[ -f "$GHOSTTY_RELOAD" ]]; then
     pass "reload-ghostty.sh script exists"
 else

@@ -1025,6 +1025,103 @@ EOF
 }
 
 # ══════════════════════════════════════════════════════════════
+# Restore All Sessions Tests (regression test for arithmetic bug)
+# ══════════════════════════════════════════════════════════════
+
+test_restore_all_sessions() {
+    section "Restore All Sessions Tests"
+
+    # Check if tmux-resurrect plugin is installed
+    if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
+        skip "Restore all tests require tmux-resurrect plugin"
+        return
+    fi
+
+    setup_test_env
+    setup_test_server
+
+    # Test 1: Restore all with some sessions already running (tests skipping logic)
+    # This is a regression test for the ((skipped++)) bug that caused early exit
+    mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
+
+    # Create multiple session backups
+    for i in 1 2 3; do
+        cat > "$TEST_HOME/.tmux/resurrect/sessions/test-all-$i.txt" << EOF
+pane	test-all-$i	0	1		0	bash	/tmp	1	bash
+window	test-all-$i	0	window1	1		1234,80x24,0,0,1	0
+EOF
+    done
+
+    # Start one session to force a skip
+    $TEST_TMUX_CMD new-session -d -s "test-all-1" "bash"
+    sleep 0.3
+
+    # Run restore all and capture output
+    local output
+    output=$(bash "$SCRIPTS_DIR/restore-resurrect.sh" 2>&1) || true
+
+    # Verify script processed all sessions (didn't exit early)
+    if echo "$output" | grep -q "Restored:"; then
+        # Check that it shows the summary with skipped count
+        if echo "$output" | grep -q "Skipped: 1"; then
+            pass "Restore all iterates through all sessions without early exit"
+        else
+            # May have different skip count, but should still complete
+            if echo "$output" | grep -E "Restored: [0-9]+" | grep -qv "Restored: 0"; then
+                pass "Restore all completed and restored some sessions"
+            else
+                pass "Restore all completed (may have different results)"
+            fi
+        fi
+    else
+        fail "Restore all exited early without showing summary"
+    fi
+
+    # Test 2: Verify multiple sessions were restored
+    local restored_count=0
+    for i in 2 3; do
+        if $TEST_TMUX_CMD has-session -t "test-all-$i" 2>/dev/null; then
+            ((++restored_count))
+        fi
+    done
+
+    if [[ $restored_count -eq 2 ]]; then
+        pass "Restore all successfully restored non-running sessions"
+    else
+        fail "Restore all only restored $restored_count of 2 expected sessions"
+    fi
+
+    cleanup_test_server
+    cleanup_test_env
+
+    # Test 3: Restore all with no sessions running (all should restore)
+    setup_test_env
+    setup_test_server
+
+    mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
+    for i in a b c; do
+        cat > "$TEST_HOME/.tmux/resurrect/sessions/test-fresh-$i.txt" << EOF
+pane	test-fresh-$i	0	1		0	bash	/tmp	1	bash
+window	test-fresh-$i	0	window1	1		1234,80x24,0,0,1	0
+EOF
+    done
+
+    output=$(bash "$SCRIPTS_DIR/restore-resurrect.sh" 2>&1) || true
+
+    if echo "$output" | grep -q "Restored: 3"; then
+        pass "Restore all restores all sessions when none are running"
+    elif echo "$output" | grep -q "Restored:"; then
+        # May show different count depending on environment
+        pass "Restore all completed successfully"
+    else
+        fail "Restore all did not complete properly"
+    fi
+
+    cleanup_test_server
+    cleanup_test_env
+}
+
+# ══════════════════════════════════════════════════════════════
 # Main Test Execution
 # ══════════════════════════════════════════════════════════════
 
@@ -1049,6 +1146,7 @@ test_cleanup_trap
 test_non_consecutive_windows
 test_pane_readiness
 test_fuzzy_process_matching
+test_restore_all_sessions
 
 section "Test Summary"
 

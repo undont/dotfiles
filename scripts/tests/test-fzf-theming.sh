@@ -176,7 +176,7 @@ main() {
     section "Integration with .zshrc"
 
     # Test: .zshrc sources fzf-theme.sh
-    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/zsh/.zshrc"; then
+    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/zsh/zshrc"; then
         pass ".zshrc sources fzf-theme.sh"
     else
         fail ".zshrc does not source fzf-theme.sh"
@@ -184,8 +184,8 @@ main() {
 
     # Test: fzf-theme.sh is sourced after fzf initialization
     local fzf_line zsh_line
-    fzf_line=$(grep -n "fzf --zsh" "$DOTFILES_ROOT/zsh/.zshrc" | head -1 | cut -d: -f1)
-    zsh_line=$(grep -n "fzf-theme.sh" "$DOTFILES_ROOT/zsh/.zshrc" | head -1 | cut -d: -f1)
+    fzf_line=$(grep -n "fzf --zsh" "$DOTFILES_ROOT/zsh/zshrc" | head -1 | cut -d: -f1)
+    zsh_line=$(grep -n "fzf-theme.sh" "$DOTFILES_ROOT/zsh/zshrc" | head -1 | cut -d: -f1)
 
     if [[ -n "$fzf_line" && -n "$zsh_line" ]] && [[ "$zsh_line" -gt "$fzf_line" ]]; then
         pass "fzf-theme.sh sourced after fzf initialization"
@@ -196,28 +196,28 @@ main() {
     section "Integration with tmux"
 
     # Test: reload-fzf.sh exists
-    if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-fzf.sh" ]]; then
+    if [[ -f "$DOTFILES_ROOT/tmux/scripts/reload-fzf.sh" ]]; then
         pass "reload-fzf.sh exists"
     else
         fail "reload-fzf.sh not found"
     fi
 
     # Test: reload-fzf.sh is executable
-    if [[ -x "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-fzf.sh" ]]; then
+    if [[ -x "$DOTFILES_ROOT/tmux/scripts/reload-fzf.sh" ]]; then
         pass "reload-fzf.sh is executable"
     else
         fail "reload-fzf.sh is not executable"
     fi
 
     # Test: tmux theme picker calls reload-fzf.sh
-    if grep -q "reload-fzf.sh" "$DOTFILES_ROOT/tmux/.tmux.conf.template"; then
+    if grep -q "reload-fzf.sh" "$DOTFILES_ROOT/tmux/tmux.conf.template"; then
         pass "tmux theme picker calls reload-fzf.sh"
     else
         fail "tmux theme picker does not call reload-fzf.sh"
     fi
 
     # Test: pick-theme.sh loads fzf theme before displaying
-    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/tmux/.tmux/scripts/pick-theme.sh"; then
+    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/tmux/scripts/pick-theme.sh"; then
         pass "pick-theme.sh loads FZF theme"
     else
         fail "pick-theme.sh does not load FZF theme"

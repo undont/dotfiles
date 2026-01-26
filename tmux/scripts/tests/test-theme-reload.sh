@@ -9,10 +9,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC1091
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../../.." && pwd)"
+DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 THEME_SWITCH="$DOTFILES_ROOT/scripts/theme-switch"
 THEMES_DIR="$DOTFILES_ROOT/themes"
-TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/.tmux.conf.template"
+TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/tmux.conf.template"
 # Use XDG path where theme-switch actually writes the config
 TMUX_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 

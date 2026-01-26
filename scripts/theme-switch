@@ -24,16 +24,12 @@ CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 CURRENT_THEME_FILE="$CONFIG_DIR/current-theme"
 
 # Templates and output files
-TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/.tmux.conf.template"
+TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/tmux.conf.template"
 TMUX_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 
-# Ghostty config location (macOS vs Linux)
-if [[ "$(uname)" == "Darwin" ]]; then
-    GHOSTTY_OUTPUT="$HOME/Library/Application Support/com.mitchellh.ghostty/config"
-else
-    GHOSTTY_OUTPUT="$HOME/.config/ghostty/config"
-fi
+# Ghostty config location (XDG only - macOS symlinks to this)
+GHOSTTY_OUTPUT="$HOME/.config/ghostty/config"
 
 # Colours for output
 RED='\033[0;31m'
@@ -209,14 +205,14 @@ apply_theme() {
         fi
 
         # Reload Ghostty config (script handles detection internally)
-        if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-ghostty.sh" ]]; then
-            "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-ghostty.sh"
+        if [[ -f "$DOTFILES_ROOT/tmux/scripts/reload-ghostty.sh" ]]; then
+            "$DOTFILES_ROOT/tmux/scripts/reload-ghostty.sh"
             [[ "$quiet" != "true" ]] && success "Reloaded ghostty configuration"
         fi
 
         # Reload FZF theme colours
-        if [[ -f "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-fzf.sh" ]]; then
-            "$DOTFILES_ROOT/tmux/.tmux/scripts/reload-fzf.sh"
+        if [[ -f "$DOTFILES_ROOT/tmux/scripts/reload-fzf.sh" ]]; then
+            "$DOTFILES_ROOT/tmux/scripts/reload-fzf.sh"
             [[ "$quiet" != "true" ]] && success "Reloaded FZF theme colours"
         fi
     fi

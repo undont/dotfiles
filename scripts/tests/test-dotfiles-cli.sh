@@ -653,13 +653,13 @@ else
     fail "uninstall should handle preset config file"
 fi
 
-if [[ "$uninstall_content" == *'.secrets.zsh'* ]]; then
+if [[ "$uninstall_content" == *'secrets.zsh'* ]]; then
     pass "uninstall handles secrets file"
 else
     fail "uninstall should handle secrets file"
 fi
 
-if [[ "$uninstall_content" == *'-s "$HOME/.zsh/.secrets.zsh"'* ]]; then
+if [[ "$uninstall_content" == *'-s "$ZSH_CONFIG_DIR/secrets.zsh"'* ]]; then
     pass "uninstall checks if secrets file has content"
 else
     fail "uninstall should check secrets file content"

@@ -136,7 +136,7 @@ fi
 
 section "Template Files Existence"
 
-tmux_template="$DOTFILES_ROOT/tmux/.tmux.conf.template"
+tmux_template="$DOTFILES_ROOT/tmux/tmux.conf.template"
 ghostty_template="$DOTFILES_ROOT/ghostty/config.template"
 
 if [[ -f "$tmux_template" ]]; then
@@ -208,7 +208,7 @@ fi
 section "Generated Config Files Should Not Contain Placeholders"
 
 # Check the actual generated files (if they exist)
-tmux_output="$DOTFILES_ROOT/tmux/.tmux.conf"
+tmux_output="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 ghostty_output_macos="$HOME/Library/Application Support/com.mitchellh.ghostty/config"
 ghostty_output_linux="$HOME/.config/ghostty/config"
 

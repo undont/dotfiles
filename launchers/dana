@@ -4,7 +4,7 @@ set -euo pipefail
 # Dana project launcher - creates a multi-window tmux session
 
 # Source local aliases for project paths (DANA_ROOT, etc.)
-LOCAL_ALIASES="${ZDOTDIR:-$HOME/.zsh}/.local-aliases.zsh"
+LOCAL_ALIASES="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/local-aliases.zsh"
 # shellcheck source=/dev/null
 [[ -f "$LOCAL_ALIASES" ]] && source "$LOCAL_ALIASES"
 
@@ -38,7 +38,7 @@ EXAMPLES:
     dana
 
 NOTES:
-    • Reads DANA_ROOT from ~/.zsh/.local-aliases.zsh (falls back to ~/src/dana)
+    • Reads DANA_ROOT from ~/.config/zsh/local-aliases.zsh (falls back to ~/src/dana)
     • If session 'dana' exists, attaches instead of creating
     • Development servers auto-start in window 4 (tools)
     • Works both inside and outside of tmux

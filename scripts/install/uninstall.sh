@@ -73,18 +73,21 @@ SYMLINKS=(
     "$HOME/.zshrc"
     "$HOME/.zprofile"
     "$HOME/.p10k.zsh"
-    "$HOME/.zsh"
     "$HOME/.tmux.conf"
     "$HOME/.tmux"
     "$HOME/.local/bin/dotfiles"
     "$HOME/.config/nvim"
-    "$HOME/.config/ghostty/config"
     "$HOME/.config/karabiner/karabiner.json"
     "$HOME/.hammerspoon"
     "$HOME/.local/launchers/tnew"
     "$HOME/.local/launchers/dana"
     "$HOME/.local/launchers/code"
 )
+
+# Add macOS-specific ghostty symlink
+if [[ "$(uname)" == "Darwin" ]]; then
+    SYMLINKS+=("$HOME/Library/Application Support/com.mitchellh.ghostty/config")
+fi
 
 echo "This will remove the following symlinks:"
 for link in "${SYMLINKS[@]}"; do
@@ -155,12 +158,13 @@ if [[ -d "$HOME/.tmux/plugins/tpm" ]]; then
 fi
 
 # Remove secrets file if empty
-if [[ -f "$HOME/.zsh/.secrets.zsh" ]]; then
-    if [[ ! -s "$HOME/.zsh/.secrets.zsh" ]]; then
-        rm -f "$HOME/.zsh/.secrets.zsh"
+ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
+    if [[ ! -s "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
+        rm -f "$ZSH_CONFIG_DIR/secrets.zsh"
         success "Removed empty secrets file"
     else
-        warn "Kept ~/.zsh/.secrets.zsh (contains data)"
+        warn "Kept $ZSH_CONFIG_DIR/secrets.zsh (contains data)"
     fi
 fi
 

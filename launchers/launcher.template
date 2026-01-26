@@ -8,12 +8,12 @@ set -euo pipefail
 #   cp launcher.template myproject
 #   chmod +x myproject
 #
-# Add your project root to ~/.zsh/.local-aliases.zsh:
+# Add your project root to ~/.config/zsh/local-aliases.zsh:
 #   export MYPROJECT_ROOT="$HOME/src/myproject"
 # =============================================================================
 
 # Source local aliases for project paths
-LOCAL_ALIASES="${ZDOTDIR:-$HOME/.zsh}/.local-aliases.zsh"
+LOCAL_ALIASES="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/local-aliases.zsh"
 # shellcheck source=/dev/null
 [[ -f "$LOCAL_ALIASES" ]] && source "$LOCAL_ALIASES"
 
@@ -45,7 +45,7 @@ OPTIONS:
     -h, --help   Show this help message
 
 NOTES:
-    • Reads ${SESSION^^}_ROOT from ~/.zsh/.local-aliases.zsh
+    • Reads ${SESSION^^}_ROOT from ~/.config/zsh/local-aliases.zsh
     • Falls back to $PROJECT_DIR if not defined
     • If session exists, attaches instead of creating
 EOF
@@ -58,7 +58,7 @@ fi
 
 if [[ ! -d "$PROJECT_DIR" ]]; then
     echo "Error: Project directory not found: $PROJECT_DIR" >&2
-    echo "Define ${SESSION^^}_ROOT in ~/.zsh/.local-aliases.zsh or create the directory." >&2
+    echo "Define ${SESSION^^}_ROOT in ~/.config/zsh/local-aliases.zsh or create the directory." >&2
     exit 1
 fi
 

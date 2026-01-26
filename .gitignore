@@ -1,10 +1,14 @@
-# Secrets - NEVER commit
-zsh/.zsh/.secrets.zsh
-zsh/.zsh/.local-aliases.zsh
+# Secrets - NEVER commit (user files now in ~/.config/zsh/)
+# These patterns kept for safety in case files are accidentally created here
+zsh/secrets.zsh
+zsh/local-aliases.zsh
 
 # Tmux runtime data (managed by plugins)
-tmux/.tmux/plugins/
-tmux/.tmux/resurrect/
+tmux/plugins/
+tmux/resurrect/
+
+# Generated ghostty config (template is tracked, generated config is not)
+ghostty/config
 
 # System files
 .DS_Store
@@ -24,5 +28,6 @@ nvim/.luarc.json
 nvim/init.lua.backup
 
 # AI Code Assistants
-.claude/
+.claude/*
+!.claude/commands/
 .opencode
