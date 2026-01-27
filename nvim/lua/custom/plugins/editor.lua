@@ -7,6 +7,13 @@ return {
     lazy = false, -- treesitter doesn't support lazy loading
     build = ':TSUpdate',
     config = function()
+      -- Setup parser alias for C# before treesitter initialization
+      -- Maps 'csharp' filetype to 'c_sharp' treesitter parser
+      local parsers_ok, parsers = pcall(require, 'nvim-treesitter.parsers')
+      if parsers_ok and parsers.filetype_to_parsername then
+        parsers.filetype_to_parsername.csharp = 'c_sharp'
+      end
+
       -- Install parsers (new API doesn't use .configs module)
       local ok, ts = pcall(require, 'nvim-treesitter')
       if ok and ts.setup then

@@ -21,6 +21,16 @@ local theme_map = {
   ['catppuccin-mocha'] = 'catppuccin-mocha',
   ['tokyo-night'] = 'tokyonight-night',
   ['nord'] = 'nord',
+  ['gruvbox-dark'] = 'gruvbox',
+  ['solarized-dark'] = 'solarized-osaka',
+  ['one-dark'] = 'onedark',
+  ['monokai'] = 'monokai-pro',
+  ['ayu-dark'] = 'ayu-dark',
+  ['everforest'] = 'everforest',
+  ['kanagawa'] = 'kanagawa',
+  ['rose-pine'] = 'rose-pine',
+  ['nightfox'] = 'nightfox',
+  ['synthwave'] = 'synthwave',
 }
 
 -- Default fallback
@@ -52,6 +62,16 @@ local function apply_colourscheme(scheme)
   local lazy_schemes = {
     ['tokyonight-night'] = 'tokyonight.nvim',
     ['nord'] = 'nord.nvim',
+    ['gruvbox'] = 'gruvbox.nvim',
+    ['solarized-osaka'] = 'solarized-osaka.nvim',
+    ['onedark'] = 'onedark.nvim',
+    ['monokai-pro'] = 'monokai-pro.nvim',
+    ['ayu-dark'] = 'neovim-ayu',
+    ['everforest'] = 'everforest-nvim',
+    ['kanagawa'] = 'kanagawa.nvim',
+    ['rose-pine'] = 'rose-pine',
+    ['nightfox'] = 'nightfox.nvim',
+    -- synthwave is a custom colorscheme in colors/ directory, no plugin needed
   }
 
   local plugin_name = lazy_schemes[scheme]

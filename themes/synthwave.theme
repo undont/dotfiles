@@ -1,74 +1,74 @@
 #!/bin/bash
-# Dracula theme - current default
-# https://draculatheme.com/
+# Synthwave/Simulation theme
+# Cyberpunk vaporwave aesthetic inspired by Simulation album artwork
 
-THEME_NAME="Dracula"
-THEME_ACTIVE_ACCENT="purple"
+THEME_NAME="Synthwave"
+THEME_ACTIVE_ACCENT="cyan"
 
 # ══════════════════════════════════════════════════════════════
 # Base Colours
 # ══════════════════════════════════════════════════════════════
 
-TMUX_BG_PRIMARY="#282a36"
-TMUX_FG_PRIMARY="#f8f8f2"
-TMUX_BG_SECONDARY="#44475a"
-TMUX_FG_SECONDARY="#6272a4"
+TMUX_BG_PRIMARY="#1a1226"       # Deep dark purple
+TMUX_FG_PRIMARY="#e4dfed"       # Soft white/lavender
+TMUX_BG_SECONDARY="#2a1f3d"     # Medium purple
+TMUX_FG_SECONDARY="#9d8ec7"     # Muted lavender
 
 # ══════════════════════════════════════════════════════════════
 # Accent Colours
 # ══════════════════════════════════════════════════════════════
 
-TMUX_ACCENT_PURPLE="#bd93f9"
-TMUX_ACCENT_PINK="#ff79c6"
-TMUX_ACCENT_CYAN="#8be9fd"
-TMUX_ACCENT_GREEN="#50fa7b"
-TMUX_ACCENT_YELLOW="#f1fa8c"
-TMUX_ACCENT_RED="#ff5555"
+TMUX_ACCENT_PURPLE="#b794f6"    # Electric purple
+TMUX_ACCENT_PINK="#ff2e97"      # Hot pink/magenta
+TMUX_ACCENT_CYAN="#00d9ff"      # Vibrant cyan
+TMUX_ACCENT_GREEN="#39ff14"     # Neon green
+TMUX_ACCENT_YELLOW="#ffd700"    # Gold
+TMUX_ACCENT_RED="#ff003c"       # Neon red
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Status Indicators
 # ══════════════════════════════════════════════════════════════
 
-TMUX_CPU_LOW_BG="#264d5a"
-TMUX_CPU_MEDIUM_BG="#3d3b5c"
-TMUX_CPU_HIGH_BG="#503b50"
-TMUX_RAM_LOW_BG="#2a4a3a"
-TMUX_RAM_MEDIUM_BG="#2d4a50"
-TMUX_RAM_HIGH_BG="#443a5a"
-TMUX_BATTERY_NORMAL_BG="#2a4a40"
-TMUX_BATTERY_LOW_BG="#503030"
+TMUX_CPU_LOW_BG="#1a3f52"       # Dark cyan tint
+TMUX_CPU_MEDIUM_BG="#2a2550"    # Purple tint
+TMUX_CPU_HIGH_BG="#4d1f45"      # Magenta tint
+TMUX_RAM_LOW_BG="#1f3f2a"       # Dark green tint
+TMUX_RAM_MEDIUM_BG="#1f2f4d"    # Dark blue tint
+TMUX_RAM_HIGH_BG="#3d1f4d"      # Dark purple tint
+TMUX_BATTERY_NORMAL_BG="#1f3f3f" # Cyan-green tint
+TMUX_BATTERY_LOW_BG="#4d1f1f"   # Dark red
 
 # ══════════════════════════════════════════════════════════════
 # Ghostty Colours
 # ══════════════════════════════════════════════════════════════
 
-GHOSTTY_BACKGROUND="#282a36"
-GHOSTTY_FOREGROUND="#f8f8f2"
-GHOSTTY_CURSOR_COLOR="#f8f8f2"
-GHOSTTY_CURSOR_TEXT="#282a36"
-GHOSTTY_SELECTION_BG="#44475a"
+GHOSTTY_BACKGROUND="#1a1226"
+GHOSTTY_FOREGROUND="#e4dfed"
+GHOSTTY_CURSOR_COLOR="#00d9ff"   # Cyan cursor
+GHOSTTY_CURSOR_TEXT="#1a1226"
+GHOSTTY_SELECTION_BG="#3d2861"   # Purple selection
 GHOSTTY_SELECTION_FG="#ffffff"
 
-# Terminal palette
-GHOSTTY_PALETTE_0="#21222c"
-GHOSTTY_PALETTE_1="#ff5555"
-GHOSTTY_PALETTE_2="#50fa7b"
-GHOSTTY_PALETTE_3="#f1fa8c"
-GHOSTTY_PALETTE_4="#bd93f9"
-GHOSTTY_PALETTE_5="#ff79c6"
-GHOSTTY_PALETTE_6="#8be9fd"
-GHOSTTY_PALETTE_7="#f8f8f2"
-GHOSTTY_PALETTE_8="#6272a4"
-GHOSTTY_PALETTE_9="#ff6e6e"
-GHOSTTY_PALETTE_10="#69ff94"
-GHOSTTY_PALETTE_11="#ffffa5"
-GHOSTTY_PALETTE_12="#d6acff"
-GHOSTTY_PALETTE_13="#ff92df"
-GHOSTTY_PALETTE_14="#a4ffff"
-GHOSTTY_PALETTE_15="#ffffff"
+# Terminal palette (0-15)
+GHOSTTY_PALETTE_0="#120d1e"      # Black (darker than bg)
+GHOSTTY_PALETTE_1="#ff003c"      # Red
+GHOSTTY_PALETTE_2="#39ff14"      # Green
+GHOSTTY_PALETTE_3="#ffd700"      # Yellow
+GHOSTTY_PALETTE_4="#00d9ff"      # Blue (cyan)
+GHOSTTY_PALETTE_5="#ff2e97"      # Magenta (hot pink)
+GHOSTTY_PALETTE_6="#00ffcc"      # Cyan (turquoise)
+GHOSTTY_PALETTE_7="#e4dfed"      # White
+GHOSTTY_PALETTE_8="#6b5a82"      # Bright black (muted purple)
+GHOSTTY_PALETTE_9="#ff4d6a"      # Bright red
+GHOSTTY_PALETTE_10="#6bff59"     # Bright green
+GHOSTTY_PALETTE_11="#ffe45c"     # Bright yellow
+GHOSTTY_PALETTE_12="#5cefff"     # Bright blue (bright cyan)
+GHOSTTY_PALETTE_13="#ff5ac8"     # Bright magenta
+GHOSTTY_PALETTE_14="#5cffea"     # Bright cyan
+GHOSTTY_PALETTE_15="#ffffff"     # Bright white
 
 # ══════════════════════════════════════════════════════════════
 # Neovim Colours
 # ══════════════════════════════════════════════════════════════
 
-NVIM_COLORSCHEME="dracula"
+NVIM_COLORSCHEME="synthwave"
