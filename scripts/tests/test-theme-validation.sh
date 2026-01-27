@@ -449,6 +449,9 @@ for theme_file in "$THEMES_DIR"/*.theme; do
             set -euo pipefail
             # shellcheck disable=SC1090
             source "$theme_file"
+            # shellcheck disable=SC1091
+            source "$THEMES_DIR/theme-defaults.sh"
+            apply_theme_defaults
 
             # Verify critical variables are set and non-empty
             [[ -n "${THEME_NAME:-}" ]] || exit 1
