@@ -3,7 +3,7 @@
 # https://github.com/joshdick/onedark.vim
 
 THEME_NAME="One Dark"
-THEME_ACTIVE_ACCENT="purple"
+THEME_ACTIVE_ACCENT="red"
 
 # ══════════════════════════════════════════════════════════════
 # Base Colours
@@ -23,7 +23,7 @@ TMUX_ACCENT_PINK="#e06c75"
 TMUX_ACCENT_CYAN="#56b6c2"
 TMUX_ACCENT_GREEN="#98c379"
 TMUX_ACCENT_YELLOW="#e5c07b"
-TMUX_ACCENT_RED="#e06c75"
+TMUX_ACCENT_RED="#be5046"
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Status Indicators

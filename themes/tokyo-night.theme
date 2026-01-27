@@ -3,7 +3,7 @@
 # https://github.com/enkia/tokyo-night-vscode-theme
 
 THEME_NAME="Tokyo Night"
-THEME_ACTIVE_ACCENT="purple"
+THEME_ACTIVE_ACCENT="cyan"
 
 # ══════════════════════════════════════════════════════════════
 # Base Colours

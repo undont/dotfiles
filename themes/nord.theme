@@ -19,7 +19,7 @@ TMUX_FG_SECONDARY="#4c566a"
 # ══════════════════════════════════════════════════════════════
 
 TMUX_ACCENT_PURPLE="#b48ead"
-TMUX_ACCENT_PINK="#bf616a"
+TMUX_ACCENT_PINK="#d08770"
 TMUX_ACCENT_CYAN="#88c0d0"
 TMUX_ACCENT_GREEN="#a3be8c"
 TMUX_ACCENT_YELLOW="#ebcb8b"

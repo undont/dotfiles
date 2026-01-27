@@ -3,16 +3,16 @@
 # https://ethanschoonover.com/solarized/
 
 THEME_NAME="Solarized Dark"
-THEME_ACTIVE_ACCENT="cyan"
+THEME_ACTIVE_ACCENT="yellow"
 
 # ══════════════════════════════════════════════════════════════
 # Base Colours
 # ══════════════════════════════════════════════════════════════
 
 TMUX_BG_PRIMARY="#002b36"
-TMUX_FG_PRIMARY="#839496"
+TMUX_FG_PRIMARY="#93a1a1"
 TMUX_BG_SECONDARY="#073642"
-TMUX_FG_SECONDARY="#586e75"
+TMUX_FG_SECONDARY="#657b83"
 
 # ══════════════════════════════════════════════════════════════
 # Accent Colours
@@ -43,8 +43,8 @@ TMUX_BATTERY_LOW_BG="#3a2020"
 # ══════════════════════════════════════════════════════════════
 
 GHOSTTY_BACKGROUND="#002b36"
-GHOSTTY_FOREGROUND="#839496"
-GHOSTTY_CURSOR_COLOR="#839496"
+GHOSTTY_FOREGROUND="#93a1a1"
+GHOSTTY_CURSOR_COLOR="#93a1a1"
 GHOSTTY_CURSOR_TEXT="#002b36"
 GHOSTTY_SELECTION_BG="#073642"
 GHOSTTY_SELECTION_FG="#93a1a1"
@@ -58,17 +58,17 @@ GHOSTTY_PALETTE_4="#268bd2"
 GHOSTTY_PALETTE_5="#d33682"
 GHOSTTY_PALETTE_6="#2aa198"
 GHOSTTY_PALETTE_7="#eee8d5"
-GHOSTTY_PALETTE_8="#002b36"
-GHOSTTY_PALETTE_9="#cb4b16"
-GHOSTTY_PALETTE_10="#586e75"
-GHOSTTY_PALETTE_11="#657b83"
-GHOSTTY_PALETTE_12="#839496"
+GHOSTTY_PALETTE_8="#657b83"
+GHOSTTY_PALETTE_9="#dc322f"
+GHOSTTY_PALETTE_10="#859900"
+GHOSTTY_PALETTE_11="#b58900"
+GHOSTTY_PALETTE_12="#268bd2"
 GHOSTTY_PALETTE_13="#6c71c4"
-GHOSTTY_PALETTE_14="#93a1a1"
+GHOSTTY_PALETTE_14="#2aa198"
 GHOSTTY_PALETTE_15="#fdf6e3"
 
 # ══════════════════════════════════════════════════════════════
 # Neovim Colours
 # ══════════════════════════════════════════════════════════════
 
-NVIM_COLORSCHEME="solarized-osaka"
+NVIM_COLORSCHEME="solarized-dark"

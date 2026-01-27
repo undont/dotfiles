@@ -3,7 +3,7 @@
 # https://github.com/ayu-theme/ayu-vim
 
 THEME_NAME="Ayu Dark"
-THEME_ACTIVE_ACCENT="cyan"
+THEME_ACTIVE_ACCENT="yellow"
 
 # ══════════════════════════════════════════════════════════════
 # Base Colours
@@ -23,7 +23,7 @@ TMUX_ACCENT_PINK="#f07178"
 TMUX_ACCENT_CYAN="#39bae6"
 TMUX_ACCENT_GREEN="#c2d94c"
 TMUX_ACCENT_YELLOW="#ffb454"
-TMUX_ACCENT_RED="#f07178"
+TMUX_ACCENT_RED="#ff3333"
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Status Indicators

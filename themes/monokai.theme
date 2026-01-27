@@ -3,7 +3,7 @@
 # https://monokai.pro/
 
 THEME_NAME="Monokai"
-THEME_ACTIVE_ACCENT="purple"
+THEME_ACTIVE_ACCENT="green"
 
 # ══════════════════════════════════════════════════════════════
 # Base Colours
@@ -23,7 +23,7 @@ TMUX_ACCENT_PINK="#f92672"
 TMUX_ACCENT_CYAN="#66d9ef"
 TMUX_ACCENT_GREEN="#a6e22e"
 TMUX_ACCENT_YELLOW="#e6db74"
-TMUX_ACCENT_RED="#f92672"
+TMUX_ACCENT_RED="#ff5555"
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Status Indicators
@@ -71,4 +71,4 @@ GHOSTTY_PALETTE_15="#f9f8f5"
 # Neovim Colours
 # ══════════════════════════════════════════════════════════════
 
-NVIM_COLORSCHEME="monokai-pro"
+NVIM_COLORSCHEME="monokai"

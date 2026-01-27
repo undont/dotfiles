@@ -23,8 +23,17 @@ apply_theme_defaults() {
         purple)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PURPLE"
             ;;
+        pink)
+            TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PINK"
+            ;;
         green)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_GREEN"
+            ;;
+        yellow)
+            TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_YELLOW"
+            ;;
+        red)
+            TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_RED"
             ;;
         *)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PURPLE"
@@ -54,13 +63,13 @@ apply_theme_defaults() {
     FZF_BG_PLUS="$TMUX_BG_SECONDARY"      # Current line background
     FZF_FG_PLUS="$TMUX_FG_PRIMARY"        # Current line foreground
     FZF_HL="$TMUX_STATUS_ACTIVE_BG"       # Highlighted substrings (uses active accent)
-    FZF_HL_PLUS="$TMUX_ACCENT_PINK"       # Highlighted substrings (current line)
+    FZF_HL_PLUS="$TMUX_STATUS_ACTIVE_BG"  # Highlighted substrings (current line - uses active accent)
     FZF_BORDER="$TMUX_STATUS_ACTIVE_BG"   # Border (uses active accent)
-    FZF_PROMPT="$TMUX_ACCENT_CYAN"        # Prompt
-    FZF_POINTER="$TMUX_ACCENT_PINK"       # Pointer
+    FZF_PROMPT="$TMUX_STATUS_ACTIVE_BG"   # Prompt (uses active accent)
+    FZF_POINTER="$TMUX_STATUS_ACTIVE_BG"  # Pointer (uses active accent)
     FZF_MARKER="$TMUX_ACCENT_GREEN"       # Multi-select marker
     FZF_SPINNER="$TMUX_ACCENT_YELLOW"     # Streaming input indicator
-    FZF_HEADER="$TMUX_ACCENT_CYAN"        # Header
+    FZF_HEADER="$TMUX_STATUS_ACTIVE_BG"   # Header (uses active accent)
     FZF_INFO="$TMUX_FG_SECONDARY"         # Info line
     FZF_SEPARATOR="$TMUX_FG_SECONDARY"    # Border separator
     FZF_SCROLLBAR="$TMUX_STATUS_ACTIVE_BG" # Scrollbar (uses active accent)

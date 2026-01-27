@@ -340,6 +340,10 @@ apply_theme() {
 
     source "\$theme_file"
 
+    # Apply theme defaults to generate derived variables
+    source "\$THEMES_DIR/theme-defaults.sh"
+    apply_theme_defaults
+
     if [[ -f "\$TMUX_TEMPLATE" ]]; then
         local tmux_content=\$(cat "\$TMUX_TEMPLATE")
 
@@ -558,7 +562,7 @@ fi
 
 section "Real Theme Files Validation"
 
-# Verify all real theme files are valid and define required variables
+# Verify all real theme files are valid and generate required variables after applying defaults
 for theme_file in "$THEMES_DIR"/*.theme; do
     if [[ -f "$theme_file" ]]; then
         theme_name=$(basename "$theme_file" .theme)
@@ -569,10 +573,16 @@ for theme_file in "$THEMES_DIR"/*.theme; do
             # shellcheck disable=SC1090
             source "$theme_file"
 
-            # Check critical variables are defined
+            # Apply theme defaults to generate derived variables
+            # shellcheck disable=SC1091
+            source "$THEMES_DIR/theme-defaults.sh"
+            apply_theme_defaults
+
+            # Check critical base variables are defined
             [[ -n "${THEME_NAME:-}" ]] || exit 1
-            [[ -n "${TMUX_STATUS_BG:-}" ]] || exit 1
             [[ -n "${GHOSTTY_BACKGROUND:-}" ]] || exit 1
+            # Check generated variables exist after apply_theme_defaults
+            [[ -n "${TMUX_STATUS_BG:-}" ]] || exit 1
         ) && pass "$theme_name theme file is valid" || fail "$theme_name theme file is missing required variables"
     fi
 done

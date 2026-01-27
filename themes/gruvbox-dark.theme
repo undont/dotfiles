@@ -18,8 +18,8 @@ TMUX_FG_SECONDARY="#928374"
 # Accent Colours
 # ══════════════════════════════════════════════════════════════
 
-TMUX_ACCENT_PURPLE="#d3869b"
-TMUX_ACCENT_PINK="#fb4934"
+TMUX_ACCENT_PURPLE="#b16286"
+TMUX_ACCENT_PINK="#d3869b"
 TMUX_ACCENT_CYAN="#8ec07c"
 TMUX_ACCENT_GREEN="#b8bb26"
 TMUX_ACCENT_YELLOW="#fabd2f"
