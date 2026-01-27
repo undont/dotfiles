@@ -322,7 +322,7 @@ bind f display-popup -w 95% -h 95% -E "\
 
 set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
-set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/show-dotfiles-status.sh)#[fg={{TMUX_ACCENT_PINK}},bold]#S '
+set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/show-dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
 set -g status-right '#(~/.tmux/scripts/show-agent-alerts.sh)#{?window_zoomed_flag,#[fg={{TMUX_ACCENT_CYAN}}]Z ,}#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ☰ #{ram_percentage} #[bg={{TMUX_FG_SECONDARY}},fg={{TMUX_STATUS_FG}}] %a %h-%d %H:%M '
 set -g status-left-length 30
 set -g status-right-length 150
