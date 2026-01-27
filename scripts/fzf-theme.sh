@@ -49,6 +49,11 @@ else
     FZF_MARKER="#c586c0"
 fi
 
+# Apply theme defaults (derives FZF colours from base theme)
+# shellcheck disable=SC1091
+source "$THEMES_DIR/theme-defaults.sh"
+apply_theme_defaults
+
 # Export FZF_DEFAULT_OPTS with theme colours
 # Format: --color=element:colour
 # Use ${VAR:-} to avoid unbound variable errors if theme doesn't define all vars

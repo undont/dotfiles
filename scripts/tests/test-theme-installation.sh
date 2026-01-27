@@ -262,13 +262,13 @@ fi
 
 section "Theme Files Complete Variable Set"
 
-# Test that all theme files define consistent variables
+# Test that all theme files define base variables (not generated ones)
+# Generated variables (TMUX_STATUS_BG, TMUX_PANE_BORDER_ACTIVE, etc.) are created by apply_theme_defaults()
 themes_dir="$DOTFILES_ROOT/themes"
-required_vars=(
+base_required_vars=(
     "THEME_NAME"
-    "TMUX_STATUS_BG"
-    "TMUX_STATUS_FG"
-    "TMUX_PANE_BORDER_ACTIVE"
+    "TMUX_BG_PRIMARY"
+    "TMUX_FG_PRIMARY"
     "GHOSTTY_BACKGROUND"
     "GHOSTTY_FOREGROUND"
 )
@@ -277,9 +277,9 @@ for theme_file in "$themes_dir"/*.theme; do
     if [[ -f "$theme_file" ]]; then
         theme_name=$(basename "$theme_file" .theme)
 
-        # Check that all required variables are defined
+        # Check that all base variables are defined in the theme file
         all_defined=true
-        for var in "${required_vars[@]}"; do
+        for var in "${base_required_vars[@]}"; do
             if ! grep -q "^$var=" "$theme_file"; then
                 all_defined=false
                 break
@@ -287,7 +287,19 @@ for theme_file in "$themes_dir"/*.theme; do
         done
 
         if $all_defined; then
-            pass "$theme_name defines all required variables"
+            # Also verify that apply_theme_defaults generates derived variables
+            (
+                # shellcheck disable=SC1090
+                source "$theme_file"
+                # shellcheck disable=SC1091
+                source "$themes_dir/theme-defaults.sh"
+                apply_theme_defaults
+
+                # Check generated variables exist
+                [[ -n "${TMUX_STATUS_BG:-}" ]] && \
+                [[ -n "${TMUX_STATUS_FG:-}" ]] && \
+                [[ -n "${TMUX_PANE_BORDER_ACTIVE:-}" ]]
+            ) && pass "$theme_name defines all required variables" || fail "$theme_name should define all required variables"
         else
             fail "$theme_name should define all required variables"
         fi

@@ -21,6 +21,16 @@ local theme_map = {
   ['catppuccin-mocha'] = 'catppuccin-mocha',
   ['tokyo-night'] = 'tokyonight-night',
   ['nord'] = 'nord',
+  ['gruvbox-dark'] = 'gruvbox',
+  ['solarized-dark'] = 'solarized-dark',
+  ['one-dark'] = 'onedark',
+  ['monokai'] = 'monokai',
+  ['ayu-dark'] = 'ayu-dark',
+  ['everforest'] = 'everforest',
+  ['kanagawa'] = 'kanagawa',
+  ['rose-pine'] = 'rose-pine',
+  ['nightfox'] = 'nightfox',
+  ['synthwave'] = 'synthwave',
 }
 
 -- Default fallback
@@ -52,6 +62,15 @@ local function apply_colourscheme(scheme)
   local lazy_schemes = {
     ['tokyonight-night'] = 'tokyonight.nvim',
     ['nord'] = 'nord.nvim',
+    ['gruvbox'] = 'gruvbox.nvim',
+    ['onedark'] = 'onedark.nvim',
+    ['ayu-dark'] = 'neovim-ayu',
+    ['everforest'] = 'everforest-nvim',
+    ['kanagawa'] = 'kanagawa.nvim',
+    ['rose-pine'] = 'rose-pine',
+    ['nightfox'] = 'nightfox.nvim',
+    -- Custom colorschemes in colors/ directory (no plugins needed):
+    -- monokai, solarized-dark, synthwave
   }
 
   local plugin_name = lazy_schemes[scheme]

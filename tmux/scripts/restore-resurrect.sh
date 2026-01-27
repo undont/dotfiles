@@ -145,7 +145,10 @@ restore_all_sessions() {
         fi
 
         echo -e "${CYAN}Restoring${NC} ${session}..."
-        if "$0" --session "$session" --no-switch; then
+        "$0" --session "$session" --no-switch
+
+        # Verify restoration by checking if session now exists
+        if tmux has-session -t "${session}" 2>/dev/null; then
             ((++restored))
         else
             echo -e "${RED}Failed${NC} to restore ${session}"
@@ -360,12 +363,12 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
             # Create session with pane contents restoration
             create_cmd="$(pane_creation_command "$SESSION_NAME" "$window_number" "$pane_index")"
             tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" "$create_cmd" 2>/dev/null || {
-                TMUX="" tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" "$create_cmd"
+                TMUX="" tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" "$create_cmd" 2>/dev/null
             }
         else
             # Create session normally
             tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" 2>/dev/null || {
-                TMUX="" tmux new-session -d -s "${SESSION_NAME}" -c "${dir}"
+                TMUX="" tmux new-session -d -s "${SESSION_NAME}" -c "${dir}" 2>/dev/null
             }
         fi
 
@@ -385,18 +388,18 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
         # Create new window
         if pane_contents_enabled && pane_contents_file_exists "$SESSION_NAME" "$window_number" "$pane_index"; then
             create_cmd="$(pane_creation_command "$SESSION_NAME" "$window_number" "$pane_index")"
-            tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}" "$create_cmd"
+            tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}" "$create_cmd" 2>/dev/null || true
         else
-            tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}"
+            tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}" 2>/dev/null || true
         fi
         mark_window_created "${window_number}"
     else
         # Add pane to existing window (split)
         if pane_contents_enabled && pane_contents_file_exists "$SESSION_NAME" "$window_number" "$pane_index"; then
             create_cmd="$(pane_creation_command "$SESSION_NAME" "$window_number" "$pane_index")"
-            tmux split-window -t "${SESSION_NAME}:${window_number}" -c "${dir}" "$create_cmd"
+            tmux split-window -t "${SESSION_NAME}:${window_number}" -c "${dir}" "$create_cmd" 2>/dev/null || true
         else
-            tmux split-window -t "${SESSION_NAME}:${window_number}" -c "${dir}"
+            tmux split-window -t "${SESSION_NAME}:${window_number}" -c "${dir}" 2>/dev/null || true
         fi
     fi
 
@@ -577,6 +580,12 @@ fi
 
 # Disable cleanup trap on successful completion
 trap - ERR
+
+# Verify session was actually created
+if ! tmux has-session -t "${SESSION_NAME}" 2>/dev/null; then
+    echo -e "${RED}Error: Session restoration failed - session does not exist${NC}" >&2
+    exit 1
+fi
 
 echo -e "${GREEN}Restored session: ${SESSION_NAME}${NC}"
 
