@@ -13,30 +13,36 @@ apply_theme_defaults() {
     TMUX_STATUS_BG="$TMUX_BG_PRIMARY"
     TMUX_STATUS_FG="$TMUX_FG_PRIMARY"
     TMUX_STATUS_INACTIVE_FG="$TMUX_FG_SECONDARY"
-    TMUX_STATUS_BELL_FG="$TMUX_ACCENT_PINK"
     
-    # Active window uses the theme's chosen accent
+    # Active window and bell/alert colours use the theme's chosen accent
     case "$active_accent" in
         cyan)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_CYAN"
+            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_CYAN"
             ;;
         purple)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PURPLE"
+            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_PURPLE"
             ;;
         pink)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PINK"
+            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_PINK"
             ;;
         green)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_GREEN"
+            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_GREEN"
             ;;
         yellow)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_YELLOW"
+            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_YELLOW"
             ;;
         red)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_RED"
+            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_RED"
             ;;
         *)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PURPLE"
+            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_PURPLE"
             ;;
     esac
     TMUX_STATUS_ACTIVE_FG="$TMUX_BG_PRIMARY"
