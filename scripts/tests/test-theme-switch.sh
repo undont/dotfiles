@@ -341,7 +341,7 @@ apply_theme() {
     source "\$theme_file"
 
     # Apply theme defaults to generate derived variables
-    source "\$THEMES_DIR/theme-defaults.sh"
+    source "$DOTFILES_ROOT/themes/theme-defaults.sh"
     apply_theme_defaults
 
     if [[ -f "\$TMUX_TEMPLATE" ]]; then
