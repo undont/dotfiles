@@ -331,13 +331,21 @@ if [[ -f "$TMUX_TEMPLATE" ]]; then
         template_placeholders+=("$placeholder")
     done < <(grep -oE '\{\{[A-Z_]+\}\}' "$TMUX_TEMPLATE" | sed 's/[{}]//g' | sort -u)
 
-    # Check each placeholder has a variable in themes
+    # Check each placeholder has a variable in themes (after applying defaults)
     for placeholder in "${template_placeholders[@]}"; do
         found_in_all=true
         for theme_file in "$THEMES_DIR"/*.theme; do
             if [[ -f "$theme_file" ]]; then
-                if ! grep -q "^$placeholder=" "$theme_file"; then
-                    theme_name=$(basename "$theme_file" .theme)
+                theme_name=$(basename "$theme_file" .theme)
+                # Check if variable is defined after sourcing theme and applying defaults
+                if ! (
+                    # shellcheck disable=SC1090
+                    source "$theme_file" 2>/dev/null
+                    # shellcheck disable=SC1091
+                    source "$THEMES_DIR/theme-defaults.sh" 2>/dev/null
+                    apply_theme_defaults 2>/dev/null
+                    eval "[[ -n \"\${${placeholder}:-}\" ]]"
+                ); then
                     fail "tmux template uses {{$placeholder}} but $theme_name doesn't define it"
                     found_in_all=false
                 fi
@@ -359,7 +367,7 @@ if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
         template_placeholders+=("$placeholder")
     done < <(grep -oE '\{\{[A-Z_]+\}\}' "$GHOSTTY_TEMPLATE" | sed 's/[{}]//g' | sort -u)
 
-    # Check each placeholder has a variable in themes
+    # Check each placeholder has a variable in themes (directly defined, not generated)
     for placeholder in "${template_placeholders[@]}"; do
         found_in_all=true
         for theme_file in "$THEMES_DIR"/*.theme; do
