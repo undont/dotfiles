@@ -38,10 +38,14 @@ dotfiles/
 │   └── karabiner.json
 ├── scripts/          # Installation and utility scripts
 │   ├── dotfiles      # CLI for managing dotfiles
+│   ├── theme-switch  # Theme switching utility
 │   ├── install/      # Installer modules
 │   ├── hooks/        # Tool hooks (e.g. agent alerts)
 │   ├── tests/        # Test suites
 │   └── _lib/         # Shared shell libraries
+├── themes/           # Theme definitions (dracula, catppuccin, tokyo-night, etc.)
+│   ├── README.md     # Theme system documentation
+│   └── *.theme       # Individual theme files
 ├── docs/             # Documentation
 │   ├── INSTALLATION-GUIDE.md
 │   └── TROUBLESHOOTING.md

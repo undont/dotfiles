@@ -266,7 +266,7 @@ bind h display-popup -w 74 -h 44 "cat ~/.tmux/tmux-help.txt; read -sk1"    # pre
 # Navigation: j/k (up/down), g/G (first/last)
 # Press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
-bind t display-popup -w 70 -h 16 -E "\
+bind t display-popup -w 70 -h 24 -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/pick-theme.sh | \
   fzf --ansi --reverse --disabled --cycle \

@@ -46,11 +46,8 @@ if [[ "$newname" == "$CURRENT_NAME" ]]; then
     exit 0
 fi
 
-# Clear any existing alert for the old window name before renaming
-WINDOW_ID=$(tmux display-message -p '#D')
-clear_window_alerts "$CURRENT_SESSION" "$CURRENT_NAME" "$WINDOW_ID"
-
 # Rename the window and disable automatic-rename to preserve the name
+# Note: Alert updates are handled by the after-rename-window hook
 if ! tmux rename-window "$newname" 2>/dev/null; then
     show_error "Failed to rename window to '$newname'"
     exit 1

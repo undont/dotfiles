@@ -1,74 +1,74 @@
 #!/bin/bash
-# Tokyo Night theme
-# https://github.com/enkia/tokyo-night-vscode-theme
+# Nightfox theme
+# https://github.com/EdenEast/nightfox.nvim
 
-THEME_NAME="Tokyo Night"
+THEME_NAME="Nightfox"
 THEME_ACTIVE_ACCENT="cyan"
 
 # ══════════════════════════════════════════════════════════════
 # Base Colours
 # ══════════════════════════════════════════════════════════════
 
-TMUX_BG_PRIMARY="#1a1b26"
-TMUX_FG_PRIMARY="#c0caf5"
-TMUX_BG_SECONDARY="#24283b"
-TMUX_FG_SECONDARY="#565f89"
+TMUX_BG_PRIMARY="#192330"
+TMUX_FG_PRIMARY="#cdcecf"
+TMUX_BG_SECONDARY="#212e3f"
+TMUX_FG_SECONDARY="#71839b"
 
 # ══════════════════════════════════════════════════════════════
 # Accent Colours
 # ══════════════════════════════════════════════════════════════
 
-TMUX_ACCENT_PURPLE="#bb9af7"
-TMUX_ACCENT_PINK="#ff007c"
-TMUX_ACCENT_CYAN="#7dcfff"
-TMUX_ACCENT_GREEN="#9ece6a"
-TMUX_ACCENT_YELLOW="#e0af68"
-TMUX_ACCENT_RED="#f7768e"
+TMUX_ACCENT_PURPLE="#c792ea"
+TMUX_ACCENT_PINK="#d67ad2"
+TMUX_ACCENT_CYAN="#81b29a"
+TMUX_ACCENT_GREEN="#a3be8c"
+TMUX_ACCENT_YELLOW="#dbc074"
+TMUX_ACCENT_RED="#c94f6d"
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Status Indicators
 # ══════════════════════════════════════════════════════════════
 
-TMUX_CPU_LOW_BG="#1f4d5a"
-TMUX_CPU_MEDIUM_BG="#2d2b5c"
-TMUX_CPU_HIGH_BG="#4d2b50"
-TMUX_RAM_LOW_BG="#1f4a3a"
-TMUX_RAM_MEDIUM_BG="#1f4d50"
-TMUX_RAM_HIGH_BG="#372b5a"
-TMUX_BATTERY_NORMAL_BG="#1f4a40"
-TMUX_BATTERY_LOW_BG="#4d2030"
+TMUX_CPU_LOW_BG="#2a3a45"
+TMUX_CPU_MEDIUM_BG="#2d2a3a"
+TMUX_CPU_HIGH_BG="#3a2a30"
+TMUX_RAM_LOW_BG="#2a3a35"
+TMUX_RAM_MEDIUM_BG="#2a3a40"
+TMUX_RAM_HIGH_BG="#2d2a3a"
+TMUX_BATTERY_NORMAL_BG="#2a3a38"
+TMUX_BATTERY_LOW_BG="#3a2a2a"
 
 # ══════════════════════════════════════════════════════════════
 # Ghostty Colours
 # ══════════════════════════════════════════════════════════════
 
-GHOSTTY_BACKGROUND="#1a1b26"
-GHOSTTY_FOREGROUND="#c0caf5"
-GHOSTTY_CURSOR_COLOR="#c0caf5"
-GHOSTTY_CURSOR_TEXT="#1a1b26"
-GHOSTTY_SELECTION_BG="#33467c"
-GHOSTTY_SELECTION_FG="#c0caf5"
+GHOSTTY_BACKGROUND="#192330"
+GHOSTTY_FOREGROUND="#cdcecf"
+GHOSTTY_CURSOR_COLOR="#cdcecf"
+GHOSTTY_CURSOR_TEXT="#192330"
+GHOSTTY_SELECTION_BG="#2b3b51"
+GHOSTTY_SELECTION_FG="#cdcecf"
 
 # Terminal palette
-GHOSTTY_PALETTE_0="#15161e"
-GHOSTTY_PALETTE_1="#f7768e"
-GHOSTTY_PALETTE_2="#9ece6a"
-GHOSTTY_PALETTE_3="#e0af68"
-GHOSTTY_PALETTE_4="#7aa2f7"
-GHOSTTY_PALETTE_5="#bb9af7"
-GHOSTTY_PALETTE_6="#7dcfff"
-GHOSTTY_PALETTE_7="#a9b1d6"
-GHOSTTY_PALETTE_8="#414868"
-GHOSTTY_PALETTE_9="#f7768e"
-GHOSTTY_PALETTE_10="#9ece6a"
-GHOSTTY_PALETTE_11="#e0af68"
-GHOSTTY_PALETTE_12="#7aa2f7"
-GHOSTTY_PALETTE_13="#bb9af7"
-GHOSTTY_PALETTE_14="#7dcfff"
-GHOSTTY_PALETTE_15="#c0caf5"
+GHOSTTY_PALETTE_0="#393b44"
+GHOSTTY_PALETTE_1="#c94f6d"
+GHOSTTY_PALETTE_2="#81b29a"
+GHOSTTY_PALETTE_3="#dbc074"
+GHOSTTY_PALETTE_4="#719cd6"
+GHOSTTY_PALETTE_5="#9d79d6"
+GHOSTTY_PALETTE_6="#63cdcf"
+GHOSTTY_PALETTE_7="#dfdfe0"
+GHOSTTY_PALETTE_8="#575860"
+GHOSTTY_PALETTE_9="#d16983"
+GHOSTTY_PALETTE_10="#8ebaa4"
+GHOSTTY_PALETTE_11="#e0c989"
+GHOSTTY_PALETTE_12="#86abdc"
+GHOSTTY_PALETTE_13="#baa1e2"
+GHOSTTY_PALETTE_14="#7ad4d6"
+GHOSTTY_PALETTE_15="#e4e4e5"
 
 # ══════════════════════════════════════════════════════════════
 # Neovim Colours
 # ══════════════════════════════════════════════════════════════
 
-NVIM_COLORSCHEME="tokyonight-night"
+NVIM_COLORSCHEME="nightfox"

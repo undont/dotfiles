@@ -41,6 +41,99 @@ return {
     end,
   },
 
+  -- Gruvbox theme
+  {
+    'ellisonleao/gruvbox.nvim',
+    lazy = true,
+    opts = {
+      contrast = 'hard',
+      transparent_mode = false,
+    },
+  },
+
+  -- Solarized Osaka theme (modern solarized)
+  {
+    'craftzdog/solarized-osaka.nvim',
+    lazy = true,
+    opts = {
+      transparent = false,
+    },
+  },
+
+  -- One Dark theme
+  {
+    'navarasu/onedark.nvim',
+    lazy = true,
+    opts = {
+      style = 'dark',
+    },
+  },
+
+  -- Monokai Pro theme
+  {
+    'loctvl842/monokai-pro.nvim',
+    lazy = true,
+    opts = {
+      filter = 'pro', -- classic | octagon | pro | machine | ristretto | spectrum
+    },
+  },
+
+  -- Ayu theme
+  {
+    'Shatur/neovim-ayu',
+    lazy = true,
+    config = function()
+      require('ayu').setup {
+        mirage = false,
+        terminal = true,
+      }
+    end,
+  },
+
+  -- Everforest theme
+  {
+    'neanias/everforest-nvim',
+    lazy = true,
+    opts = {
+      background = 'hard',
+      transparent_background_level = 0,
+    },
+  },
+
+  -- Kanagawa theme
+  {
+    'rebelot/kanagawa.nvim',
+    lazy = true,
+    opts = {
+      theme = 'wave',
+      background = {
+        dark = 'wave',
+      },
+    },
+  },
+
+  -- Rose Pine theme
+  {
+    'rose-pine/neovim',
+    name = 'rose-pine',
+    lazy = true,
+    opts = {
+      variant = 'main',
+      disable_background = false,
+    },
+  },
+
+  -- Nightfox theme
+  {
+    'EdenEast/nightfox.nvim',
+    lazy = true,
+    opts = {
+      options = {
+        transparent = false,
+      },
+    },
+  },
+
   -- Auto dark mode - follows system theme
   -- (disabled when dotfiles theme is active)
   {

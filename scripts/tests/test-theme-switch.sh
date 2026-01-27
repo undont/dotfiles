@@ -79,44 +79,67 @@ palette=0={{GHOSTTY_PALETTE_0}}
 palette=1={{GHOSTTY_PALETTE_1}}
 EOF
 
-    # Create test theme
+    # Create test theme (using new base variable format)
     cat > "$TEST_THEMES_DIR/test-theme.theme" <<'EOF'
 THEME_NAME="Test Theme"
-TMUX_STATUS_BG="#ff0000"
-TMUX_STATUS_FG="#00ff00"
-TMUX_STATUS_ACTIVE_BG="#0000ff"
-TMUX_STATUS_ACTIVE_FG="#ffffff"
-TMUX_PANE_BORDER_INACTIVE="#cccccc"
-TMUX_PANE_BORDER_ACTIVE="#ff00ff"
-TMUX_MESSAGE_BG="#123456"
-TMUX_MESSAGE_FG="#654321"
+THEME_ACTIVE_ACCENT="purple"
+TMUX_BG_PRIMARY="#ff0000"
+TMUX_FG_PRIMARY="#00ff00"
+TMUX_BG_SECONDARY="#cccccc"
+TMUX_FG_SECONDARY="#666666"
+TMUX_ACCENT_PURPLE="#ff00ff"
+TMUX_ACCENT_PINK="#ffaaff"
+TMUX_ACCENT_CYAN="#00ffff"
+TMUX_ACCENT_GREEN="#00ff00"
+TMUX_ACCENT_YELLOW="#ffff00"
+TMUX_ACCENT_RED="#ff5555"
+TMUX_CPU_LOW_BG="#001100"
+TMUX_CPU_MEDIUM_BG="#111100"
+TMUX_CPU_HIGH_BG="#110000"
+TMUX_RAM_LOW_BG="#001100"
+TMUX_RAM_MEDIUM_BG="#111100"
+TMUX_RAM_HIGH_BG="#110000"
+TMUX_BATTERY_NORMAL_BG="#001100"
+TMUX_BATTERY_LOW_BG="#110000"
 GHOSTTY_BACKGROUND="#000000"
 GHOSTTY_FOREGROUND="#ffffff"
 GHOSTTY_CURSOR_COLOR="#ff0000"
+GHOSTTY_CURSOR_TEXT="#000000"
 GHOSTTY_SELECTION_BG="#00ff00"
+GHOSTTY_SELECTION_FG="#ffffff"
 GHOSTTY_PALETTE_0="#111111"
 GHOSTTY_PALETTE_1="#ff5555"
+GHOSTTY_PALETTE_2="#55ff55"
+GHOSTTY_PALETTE_3="#ffff55"
+GHOSTTY_PALETTE_4="#5555ff"
+GHOSTTY_PALETTE_5="#ff55ff"
+GHOSTTY_PALETTE_6="#55ffff"
+GHOSTTY_PALETTE_7="#ffffff"
+GHOSTTY_PALETTE_8="#888888"
+GHOSTTY_PALETTE_9="#ff8888"
+GHOSTTY_PALETTE_10="#88ff88"
+GHOSTTY_PALETTE_11="#ffff88"
+GHOSTTY_PALETTE_12="#8888ff"
+GHOSTTY_PALETTE_13="#ff88ff"
+GHOSTTY_PALETTE_14="#88ffff"
+GHOSTTY_PALETTE_15="#ffffff"
+NVIM_COLORSCHEME="test-theme"
 EOF
 
-    # Create minimal theme for testing
+    # Create minimal theme for testing (using new base variable format)
     cat > "$TEST_THEMES_DIR/minimal.theme" <<'EOF'
 THEME_NAME="Minimal Theme"
-TMUX_STATUS_BG="#000000"
-TMUX_STATUS_FG="#ffffff"
-TMUX_STATUS_ACTIVE_BG="#ffffff"
-TMUX_STATUS_ACTIVE_FG="#000000"
-TMUX_STATUS_INACTIVE_FG="#666666"
-TMUX_STATUS_BELL_FG="#ff0000"
+THEME_ACTIVE_ACCENT="cyan"
+TMUX_BG_PRIMARY="#000000"
+TMUX_FG_PRIMARY="#ffffff"
+TMUX_BG_SECONDARY="#333333"
+TMUX_FG_SECONDARY="#999999"
 TMUX_ACCENT_CYAN="#00ffff"
 TMUX_ACCENT_PINK="#ff00ff"
 TMUX_ACCENT_PURPLE="#ff00ff"
-TMUX_FG_SECONDARY="#999999"
-TMUX_PANE_BORDER_INACTIVE="#444444"
-TMUX_PANE_BORDER_ACTIVE="#ffffff"
-TMUX_MESSAGE_BG="#ffffff"
-TMUX_MESSAGE_FG="#000000"
-TMUX_MESSAGE_COMMAND_BG="#000000"
-TMUX_MESSAGE_COMMAND_FG="#ffffff"
+TMUX_ACCENT_GREEN="#00ff00"
+TMUX_ACCENT_YELLOW="#ffff00"
+TMUX_ACCENT_RED="#ff0000"
 TMUX_CPU_LOW_BG="#00ff00"
 TMUX_CPU_MEDIUM_BG="#ffff00"
 TMUX_CPU_HIGH_BG="#ff0000"
@@ -340,6 +363,10 @@ apply_theme() {
 
     source "\$theme_file"
 
+    # Apply theme defaults to generate derived variables
+    source "$DOTFILES_ROOT/themes/theme-defaults.sh"
+    apply_theme_defaults
+
     if [[ -f "\$TMUX_TEMPLATE" ]]; then
         local tmux_content=\$(cat "\$TMUX_TEMPLATE")
 
@@ -558,7 +585,7 @@ fi
 
 section "Real Theme Files Validation"
 
-# Verify all real theme files are valid and define required variables
+# Verify all real theme files are valid and generate required variables after applying defaults
 for theme_file in "$THEMES_DIR"/*.theme; do
     if [[ -f "$theme_file" ]]; then
         theme_name=$(basename "$theme_file" .theme)
@@ -569,10 +596,16 @@ for theme_file in "$THEMES_DIR"/*.theme; do
             # shellcheck disable=SC1090
             source "$theme_file"
 
-            # Check critical variables are defined
+            # Apply theme defaults to generate derived variables
+            # shellcheck disable=SC1091
+            source "$THEMES_DIR/theme-defaults.sh"
+            apply_theme_defaults
+
+            # Check critical base variables are defined
             [[ -n "${THEME_NAME:-}" ]] || exit 1
-            [[ -n "${TMUX_STATUS_BG:-}" ]] || exit 1
             [[ -n "${GHOSTTY_BACKGROUND:-}" ]] || exit 1
+            # Check generated variables exist after apply_theme_defaults
+            [[ -n "${TMUX_STATUS_BG:-}" ]] || exit 1
         ) && pass "$theme_name theme file is valid" || fail "$theme_name theme file is missing required variables"
     fi
 done

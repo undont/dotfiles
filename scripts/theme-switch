@@ -112,6 +112,11 @@ apply_theme() {
     # shellcheck disable=SC1090
     source "$theme_file"
 
+    # Apply theme defaults (derives status bar, pane borders, FZF from base colours)
+    # shellcheck disable=SC1091
+    source "$THEMES_DIR/theme-defaults.sh"
+    apply_theme_defaults
+
     [[ "$quiet" != "true" ]] && print_info "Applying theme: $THEME_NAME"
 
     # Process tmux template using sed (much faster than bash string replacement)
