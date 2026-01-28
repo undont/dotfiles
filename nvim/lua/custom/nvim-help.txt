@@ -6,10 +6,10 @@
 │                                      │                                  │
 │  hjkl                 move cursor    │  Space sf          find files    │
 │  w / b               word fwd/back   │  Space sg          live grep     │
-│  0 / $               line start/end  │  Space sk          keymaps       │
-│  gg / G              file top/bottom │  Space /           buffer search │
-│  Ctrl+d / Ctrl+u     half-page       │  Space Space       open buffers  │
-│  Ctrl+o / Ctrl+i     jump back/fwd   │                                  │
+│  0 / $               line start/end  │  Space ?           cheatsheet    │
+│  gg / G              file top/bottom │  Space sl          go to line    │
+│  Ctrl+d / Ctrl+u     half-page       │  Space /           buffer search │
+│  Ctrl+o / Ctrl+i     jump back/fwd   │  Space Space       open buffers  │
 │                                      │                                  │
 └──────────────────────────────────────┴──────────────────────────────────┘
 

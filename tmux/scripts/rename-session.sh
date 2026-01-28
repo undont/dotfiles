@@ -64,3 +64,6 @@ if ! tmux rename-session -t "$current_session" "$newname" 2>/dev/null; then
     show_error "Failed to rename '$current_session' to '$newname'"
     exit 1
 fi
+
+# Output the new session name so the calling script can switch to it
+echo "$newname"

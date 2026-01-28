@@ -2,8 +2,10 @@
 # Agent alert utilities for tmux scripts
 # Source this file after common.sh
 
-# Alerts file location
-readonly ALERTS_FILE="$HOME/.claude/alerts"
+# Alerts file location (only set if not already defined)
+if [[ -z "${ALERTS_FILE:-}" ]]; then
+    readonly ALERTS_FILE="$HOME/.claude/alerts"
+fi
 
 # Alert file format: session:window:agent
 # Future enhancement: Add timestamp field for age-based sorting and auto-expiry
@@ -143,7 +145,7 @@ clear_window_alerts() {
     # Clear all agent alert options dynamically
     # Use a more robust approach that handles empty input correctly
     local alert_options
-    alert_options=$(tmux show-options -wt "$target" 2>/dev/null | grep '@.*_alert' | cut -d' ' -f1)
+    alert_options=$(tmux show-options -wt "$target" 2>/dev/null | grep '@.*_alert' | cut -d' ' -f1 || true)
 
     if [[ -n "$alert_options" ]]; then
         while IFS= read -r option; do
@@ -256,7 +258,7 @@ clear_session_alerts() {
     for win in $(tmux list-windows -t "$session" -F '#D' 2>/dev/null); do
         # Clear all agent alert options dynamically with robust handling
         local alert_options
-        alert_options=$(tmux show-options -wt "$win" 2>/dev/null | grep '@.*_alert' | cut -d' ' -f1)
+        alert_options=$(tmux show-options -wt "$win" 2>/dev/null | grep '@.*_alert' | cut -d' ' -f1 || true)
 
         if [[ -n "$alert_options" ]]; then
             while IFS= read -r option; do

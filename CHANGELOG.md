@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.16] - 2026-01-28
+
+### Added
+- Neovim: `Space sl` keymap for "go to line" functionality
+- Tests: Session renaming test suite (`test-rename-session.sh`)
+- Tests: Assertion helpers in test framework (assert_equals, assert_success, assert_failure)
+- README: btop configuration directory documented in Contents section
+
+### Changed
+- Neovim: Replaced eslint_d linter with ESLint LSP server for improved integration
+- Neovim: Updated cheatsheet keybinding from `Space sk` to `Space ?` in help text
+- Tmux: Session rename script now outputs new session name for better script integration
+
+### Fixed
+- Scripts: Colours library now guards against multiple sourcing to prevent readonly variable errors
+- Tmux: Alert library improved with safer grep operations and ALERTS_FILE guard
+
 ## [0.1.15] - 2026-01-26
 
 ### Added
