@@ -15,6 +15,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | Restore all sessions  | `trestore`                        |
 | Restore one session   | `trestore -s <name>`              |
 | List Claude instances | `prefix + c`                      |
+| List nvim instances   | `prefix + n`                      |
 
 ## Setup Guide (New Machine)
 
@@ -224,6 +225,8 @@ Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so
 
 **Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for Gemini and OpenCode). Press `prefix + c` to open an fzf picker showing all running agent instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
 
+**Nvim Picker:** Press `prefix + n` to list all running nvim instances with their working directories. Select an instance with `Space`/`Enter` to jump to it, or press `c` to connect it to another pane (copies `export NVIM_SOCKET='...' && claude` to clipboard and switches to the target pane). This enables the nvim buffer sync hook - files edited by Claude Code are automatically added to the paired nvim's buffer list.
+
 ### Plugins (TPM)
 
 | Action          | Keybinding       |
@@ -375,6 +378,8 @@ Available session backups:
 │   ├── kill-session.sh                   # Kill session (picker, with confirm)
 │   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
 │   ├── list-claude.sh                    # List Claude Code instances
+│   ├── list-nvim.sh                      # List nvim instances for buffer sync
+│   ├── connect-nvim.sh                   # Connect nvim to Claude pane
 │   ├── delete-resurrect.sh               # Delete session backup
 │   ├── restore-resurrect.sh              # Individual session restore
 │   ├── split-resurrect.sh                # Post-save hook (splits backups)

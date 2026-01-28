@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-01-28
+
+### Added
+- Tmux: Nvim instance picker (`prefix + n`) with buffer sync integration
+- Tmux: `list-nvim.sh` - Lists all running nvim instances with working directories
+- Tmux: `connect-nvim.sh` - Connects nvim to a Claude pane for buffer sync
+- Hooks: `nvim-buffer-sync.sh` - Claude Code hook that adds edited files to paired nvim's buffer list
+- Neovim: Auto-cleanup of unnamed empty buffers on BufEnter
+- Tests: `test-nvim-sync.sh` - E2E tests for nvim buffer sync flow
+
+### Fixed
+- Tests: `test-session-management.sh` now uses colours from test helpers (fixes readonly variable error)
+- Tests: `test-tmux-libs.sh` shellcheck exclusions now match CI configuration
+
 ## [0.1.16] - 2026-01-28
 
 ### Added

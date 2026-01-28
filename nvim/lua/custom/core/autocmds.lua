@@ -35,6 +35,31 @@ function M.setup()
       end
     end,
   })
+
+  -- Clean up unnamed empty buffers when opening a file
+  -- Removes the default [No Name] buffer that nvim creates at startup
+  local cleanup_group = vim.api.nvim_create_augroup('cleanup-empty-buffers', { clear = true })
+  vim.api.nvim_create_autocmd('BufEnter', {
+    desc = 'Delete unnamed empty buffers',
+    group = cleanup_group,
+    callback = function()
+      -- Get all buffers
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        -- Check if buffer is: unnamed, empty, not modified, not the current buffer, and a normal buffer
+        if
+          vim.api.nvim_buf_is_valid(buf)
+          and vim.fn.bufname(buf) == ''
+          and vim.api.nvim_buf_line_count(buf) == 1
+          and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ''
+          and not vim.bo[buf].modified
+          and buf ~= vim.api.nvim_get_current_buf()
+          and vim.bo[buf].buftype == ''
+        then
+          vim.api.nvim_buf_delete(buf, { force = true })
+        end
+      end
+    end,
+  })
 end
 
 return M

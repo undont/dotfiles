@@ -708,10 +708,13 @@ done
 if command -v shellcheck &>/dev/null; then
     section "ShellCheck analysis"
     SHELLCHECK_FAIL=0
+    # Use same exclusions as CI (see .github/workflows/ci.yml)
+    SHELLCHECK_EXCLUDES="-e SC1091 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
 
     for script in "$SCRIPTS_DIR"/*.sh; do
         script_name=$(basename "$script")
-        if shellcheck -e SC1091 -S warning "$script" 2>/dev/null; then
+        # shellcheck disable=SC2086
+        if shellcheck $SHELLCHECK_EXCLUDES -S warning "$script" 2>/dev/null; then
             pass "  $script_name passes shellcheck"
         else
             fail "  $script_name has shellcheck warnings"
@@ -722,7 +725,8 @@ if command -v shellcheck &>/dev/null; then
     for lib in "$SCRIPT_DIR"/*.sh; do
         lib_name=$(basename "$lib")
         [[ "$lib_name" == "test.sh" ]] && continue
-        if shellcheck -e SC1091 -S warning "$lib" 2>/dev/null; then
+        # shellcheck disable=SC2086
+        if shellcheck $SHELLCHECK_EXCLUDES -S warning "$lib" 2>/dev/null; then
             pass "  _lib/$lib_name passes shellcheck"
         else
             fail "  _lib/$lib_name has shellcheck warnings"
