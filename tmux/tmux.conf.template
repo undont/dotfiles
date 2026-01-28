@@ -525,3 +525,6 @@ set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/update-timesta
 # Plugin Manager Initialisation (must be at bottom)
 # ══════════════════════════════════════════════════════════════
 run '~/.tmux/plugins/tpm/tpm'
+
+# Override tmux-yank's Y binding with our custom one (must be after plugin load)
+bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "pbcopy"
