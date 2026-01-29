@@ -78,16 +78,21 @@ nvim --server "$NVIM_SOCKET" --remote-expr \
     2>/dev/null || exit 1
 
 # Wait for user decision (timeout after 5 minutes)
-timeout=300
+timeout=3000  # 300 seconds = 3000 * 0.1s
 elapsed=0
 while [[ $elapsed -lt $timeout ]]; do
     response=$(cat "$response_file" 2>/dev/null || echo "pending")
 
     if [[ "$response" == "approved" ]]; then
         rm -f "$response_file"
+        # Clear Claude alert on approval (if script exists)
+        [[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
+            ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
         exit 0  # Grant permission
     elif [[ "$response" == "denied" ]]; then
         rm -f "$response_file"
+        # Clear Claude alert on denial
+        ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
         exit 1  # Deny permission
     fi
 
@@ -97,4 +102,6 @@ done
 
 # Timeout - deny by default
 rm -f "$response_file"
+# Clear Claude alert on timeout
+~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
 exit 1
