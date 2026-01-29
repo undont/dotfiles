@@ -85,32 +85,36 @@ while [[ $elapsed -lt $timeout ]]; do
     response=$(cat "$response_file" 2>/dev/null || echo "pending")
 
     if [[ "$response" == "approved" ]]; then
-        rm -f "$response_file"
-        # Clear Claude alert on approval (if script exists)
-        [[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
-            ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
-
-        # Output JSON to allow the tool
+        # Output JSON to allow the tool (MUST be first, nothing else to stdout!)
         jq -n '{
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: "allow"
             }
         }'
+
+        # Cleanup (after JSON output)
+        rm -f "$response_file" 2>&1 >/dev/null
+        # Clear Claude alert on approval (if script exists)
+        [[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
+            ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh &>/dev/null || true
+
         exit 0
     elif [[ "$response" == "denied" ]]; then
-        rm -f "$response_file"
-        # Clear Claude alert on denial (if script exists)
-        [[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
-            ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
-
-        # Output JSON to deny the tool
+        # Output JSON to deny the tool (MUST be first, nothing else to stdout!)
         jq -n '{
             hookSpecificOutput: {
                 hookEventName: "PreToolUse",
                 permissionDecision: "deny"
             }
         }'
+
+        # Cleanup (after JSON output)
+        rm -f "$response_file" &>/dev/null
+        # Clear Claude alert on denial (if script exists)
+        [[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
+            ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh &>/dev/null || true
+
         exit 0
     fi
 
@@ -119,16 +123,18 @@ while [[ $elapsed -lt $timeout ]]; do
 done
 
 # Timeout - deny by default
-rm -f "$response_file"
-# Clear Claude alert on timeout (if script exists)
-[[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
-    ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
-
-# Output JSON to deny on timeout
+# Output JSON to deny on timeout (MUST be first, nothing else to stdout!)
 jq -n '{
     hookSpecificOutput: {
         hookEventName: "PreToolUse",
         permissionDecision: "deny"
     }
 }'
+
+# Cleanup (after JSON output)
+rm -f "$response_file" &>/dev/null
+# Clear Claude alert on timeout (if script exists)
+[[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
+    ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh &>/dev/null || true
+
 exit 0
