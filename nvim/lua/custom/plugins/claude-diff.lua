@@ -2,9 +2,10 @@
 return {
   {
     'bssmnt/nvim-claude-code-plugin',
-    -- Local development path
-    dir = '/Users/bssmnt/playground/nvim-claude-code-plugin',
+    -- Local development path (dynamic)
+    dir = vim.fn.expand('~/playground/nvim-claude-code-plugin'),
     -- When published, use: name = 'bssmnt/nvim-claude-code-plugin'
+    enabled = false,  -- DISABLED for now
     lazy = false,  -- Load immediately (needs to listen for RPC)
     config = function()
       require('claude-diff').setup({
