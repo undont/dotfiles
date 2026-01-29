@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Permission request hook for Edit/Write operations
-# Shows diff preview in Neovim and waits for user approval
+# PreToolUse hook for Edit/Write operations
+# Shows diff preview in Neovim and blocks until user approves/denies
+# Exit 0 = allow tool to run, Exit 1 = block tool
 set -euo pipefail
 
 # Exit silently if NVIM_SOCKET not configured
@@ -88,12 +89,29 @@ while [[ $elapsed -lt $timeout ]]; do
         # Clear Claude alert on approval (if script exists)
         [[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
             ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
-        exit 0  # Grant permission
+
+        # Output JSON to allow the tool
+        jq -n '{
+            hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                permissionDecision: "allow"
+            }
+        }'
+        exit 0
     elif [[ "$response" == "denied" ]]; then
         rm -f "$response_file"
-        # Clear Claude alert on denial
-        ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
-        exit 1  # Deny permission
+        # Clear Claude alert on denial (if script exists)
+        [[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
+            ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
+
+        # Output JSON to deny the tool
+        jq -n '{
+            hookSpecificOutput: {
+                hookEventName: "PreToolUse",
+                permissionDecision: "deny"
+            }
+        }'
+        exit 0
     fi
 
     sleep 0.1
@@ -102,6 +120,15 @@ done
 
 # Timeout - deny by default
 rm -f "$response_file"
-# Clear Claude alert on timeout
-~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
-exit 1
+# Clear Claude alert on timeout (if script exists)
+[[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
+    ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh 2>/dev/null || true
+
+# Output JSON to deny on timeout
+jq -n '{
+    hookSpecificOutput: {
+        hookEventName: "PreToolUse",
+        permissionDecision: "deny"
+    }
+}'
+exit 0
