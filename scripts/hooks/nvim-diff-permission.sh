@@ -85,11 +85,13 @@ while [[ $elapsed -lt $timeout ]]; do
     response=$(cat "$response_file" 2>/dev/null || echo "pending")
 
     if [[ "$response" == "approved" ]]; then
-        # Output JSON to allow the tool (MUST be first, nothing else to stdout!)
+        # Output JSON to grant permission (MUST be first, nothing else to stdout!)
         jq -n '{
             hookSpecificOutput: {
-                hookEventName: "PreToolUse",
-                permissionDecision: "allow"
+                hookEventName: "PermissionRequest",
+                decision: {
+                    behavior: "allow"
+                }
             }
         }'
 
@@ -101,11 +103,14 @@ while [[ $elapsed -lt $timeout ]]; do
 
         exit 0
     elif [[ "$response" == "denied" ]]; then
-        # Output JSON to deny the tool (MUST be first, nothing else to stdout!)
+        # Output JSON to deny permission (MUST be first, nothing else to stdout!)
         jq -n '{
             hookSpecificOutput: {
-                hookEventName: "PreToolUse",
-                permissionDecision: "deny"
+                hookEventName: "PermissionRequest",
+                decision: {
+                    behavior: "deny",
+                    message: "Edit denied in Neovim"
+                }
             }
         }'
 
@@ -126,8 +131,11 @@ done
 # Output JSON to deny on timeout (MUST be first, nothing else to stdout!)
 jq -n '{
     hookSpecificOutput: {
-        hookEventName: "PreToolUse",
-        permissionDecision: "deny"
+        hookEventName: "PermissionRequest",
+        decision: {
+            behavior: "deny",
+            message: "Timeout - no response from user"
+        }
     }
 }'
 
