@@ -4,9 +4,11 @@
 # Exit 0 = allow tool to run, Exit 1 = block tool
 set -euo pipefail
 
-# Exit silently if NVIM_SOCKET not configured
-[[ -z "${NVIM_SOCKET:-}" ]] && exit 0
-[[ ! -S "$NVIM_SOCKET" ]] && exit 0
+# Exit with allow if NVIM_SOCKET not configured (no preview available)
+if [[ -z "${NVIM_SOCKET:-}" ]] || [[ ! -S "$NVIM_SOCKET" ]]; then
+    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow"}}'
+    exit 0
+fi
 
 # Read hook data from stdin
 hook_data=$(cat)
@@ -17,10 +19,15 @@ file_path=$(echo "$hook_data" | jq -r '.tool_input.file_path // .tool_input.file
 
 # Only handle Edit/Write tools
 if [[ "$tool_name" != "Edit" && "$tool_name" != "Write" ]]; then
-    exit 0  # Allow other tools
+    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow"}}'
+    exit 0
 fi
 
-[[ -z "$file_path" ]] && exit 0
+# No file path - allow
+if [[ -z "$file_path" ]]; then
+    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow"}}'
+    exit 0
+fi
 
 # Make path absolute
 if [[ ! "$file_path" = /* ]]; then
@@ -30,6 +37,7 @@ fi
 # Check if file exists and is git-tracked
 if [[ ! -f "$file_path" ]] || ! git ls-files --error-unmatch "$file_path" &>/dev/null; then
     # New file or non-git file - allow without preview
+    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow"}}'
     exit 0
 fi
 
