@@ -25,13 +25,18 @@ if git ls-files --error-unmatch "$file_path" &>/dev/null; then
     # Get diff against HEAD
     diff_content=$(git diff HEAD -- "$file_path" 2>/dev/null || echo "")
 
-    # Escape single quotes for Lua string
-    escaped_diff=$(echo "$diff_content" | sed "s/'/\\\\'/g")
-    escaped_path=$(echo "$file_path" | sed "s/'/\\\\'/g")
+    # Create JSON payload with file path and diff
+    json_payload=$(jq -n \
+        --arg path "$file_path" \
+        --arg diff "$diff_content" \
+        '{path: $path, diff: $diff}')
 
-    # Send to Neovim plugin via RPC
+    # Escape for shell
+    escaped_json=$(printf '%s' "$json_payload" | sed "s/'/'\\\\''/g")
+
+    # Send to Neovim plugin via RPC using JSON
     nvim --server "$NVIM_SOCKET" --remote-expr \
-        "luaeval('require(\"claude-diff\").notify_edit(\"$escaped_path\", [[[$escaped_diff]]])')" \
+        "luaeval('require(\"claude-diff\").notify_edit_json(vim.fn.json_decode([[$escaped_json]]))')" \
         2>/dev/null || true
 else
     # Non-git file: just add to buffer list
