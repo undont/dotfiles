@@ -4,9 +4,9 @@
 # Exit 0 = allow tool to run, Exit 1 = block tool
 set -euo pipefail
 
-# Exit with allow if NVIM_SOCKET not configured (no preview available)
+# Defer to Claude Code dialog if NVIM_SOCKET not configured
 if [[ -z "${NVIM_SOCKET:-}" ]] || [[ ! -S "$NVIM_SOCKET" ]]; then
-    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow"}}'
+    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "ask"}}'
     exit 0
 fi
 
@@ -36,8 +36,8 @@ fi
 
 # Check if file exists and is git-tracked
 if [[ ! -f "$file_path" ]] || ! git ls-files --error-unmatch "$file_path" &>/dev/null; then
-    # New file or non-git file - allow without preview
-    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "allow"}}'
+    # New file or non-git file - defer to Claude Code dialog (no diff preview)
+    jq -n '{hookSpecificOutput: {hookEventName: "PreToolUse", permissionDecision: "ask"}}'
     exit 0
 fi
 
