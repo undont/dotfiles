@@ -163,12 +163,18 @@ pass "Git checkpoint workflow works correctly"
 print_step "Testing hook script error handling..."
 
 # Test checkpoint script without NVIM_SOCKET
-output=$("$HOOKS_DIR/nvim-diff-checkpoint.sh" 2>&1 || true)
-[[ $? -eq 0 ]] || fail "Checkpoint script should exit cleanly without NVIM_SOCKET"
+if "$HOOKS_DIR/nvim-diff-checkpoint.sh" >/dev/null 2>&1; then
+    : # success
+else
+    fail "Checkpoint script should exit cleanly without NVIM_SOCKET"
+fi
 
 # Test sync script without NVIM_SOCKET
-output=$(echo '{"tool_input":{"file_path":"test.txt"}}' | "$HOOKS_DIR/nvim-diff-sync.sh" 2>&1 || true)
-[[ $? -eq 0 ]] || fail "Sync script should exit cleanly without NVIM_SOCKET"
+if echo '{"tool_input":{"file_path":"test.txt"}}' | "$HOOKS_DIR/nvim-diff-sync.sh" >/dev/null 2>&1; then
+    : # success
+else
+    fail "Sync script should exit cleanly without NVIM_SOCKET"
+fi
 
 pass "Hook scripts handle missing NVIM_SOCKET gracefully"
 
