@@ -26,6 +26,8 @@ dotfiles/
 │   └── lua/custom/   # Modular config
 │       ├── core/     # Options, keymaps, autocmds
 │       └── plugins/  # Plugin configurations
+├── btop/             # System monitor configuration
+│   └── btop.conf
 ├── launchers/        # Session launch scripts
 │   ├── tnew          # Tmux dev session launcher
 │   ├── dana          # Dana project launcher
