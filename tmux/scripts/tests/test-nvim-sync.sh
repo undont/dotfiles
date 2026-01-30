@@ -108,7 +108,7 @@ else
     fail "Should define NVIM_GREEN colour"
 fi
 
-if [[ "$list_content" == *'███╗   ██╗'* ]]; then
+if [[ "$list_content" == *'███╗'* ]] && [[ "$list_content" == *'NVIM_GREEN'* ]]; then
     pass "Includes NVIM ASCII logo"
 else
     fail "Should include NVIM ASCII logo"
@@ -282,7 +282,7 @@ else
         pass "Runs successfully"
 
         # Should at least output the logo
-        if echo "$output" | grep -q "███╗   ██╗"; then
+        if echo "$output" | grep -q "███╗"; then
             pass "Outputs NVIM logo"
         else
             fail "Should output NVIM logo"

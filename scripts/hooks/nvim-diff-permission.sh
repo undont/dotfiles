@@ -102,7 +102,7 @@ while [[ $elapsed -lt $timeout ]]; do
         }'
 
         # Cleanup (after JSON output)
-        rm -f "$response_file" 2>&1 >/dev/null
+        rm -f "$response_file" >/dev/null 2>&1
         # Clear Claude alert on approval (if script exists)
         [[ -x ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh ]] && \
             ~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh &>/dev/null || true

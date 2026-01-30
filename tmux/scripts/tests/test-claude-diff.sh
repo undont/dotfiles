@@ -58,22 +58,31 @@ assert_executable() {
 
 section "Claude Diff Plugin Integration Tests"
 
+# Derive repo root from script location
+REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
+HOOKS_DIR="$REPO_ROOT/scripts/hooks"
+
 # Test 1: Hook scripts exist and are executable
 print_step "Checking hook scripts..."
-assert_file_exists "$HOME/dotfiles/scripts/hooks/nvim-diff-checkpoint.sh"
-assert_file_exists "$HOME/dotfiles/scripts/hooks/nvim-diff-sync.sh"
-assert_executable "$HOME/dotfiles/scripts/hooks/nvim-diff-checkpoint.sh"
-assert_executable "$HOME/dotfiles/scripts/hooks/nvim-diff-sync.sh"
+assert_file_exists "$HOOKS_DIR/nvim-diff-checkpoint.sh"
+assert_file_exists "$HOOKS_DIR/nvim-diff-sync.sh"
+assert_executable "$HOOKS_DIR/nvim-diff-checkpoint.sh"
+assert_executable "$HOOKS_DIR/nvim-diff-sync.sh"
 pass "Hook scripts exist and are executable"
 
-# Test 2: Plugin files exist
+# Test 2: Plugin files exist (skip in CI - external repo)
 print_step "Checking plugin files..."
-assert_file_exists "$HOME/dotfiles/nvim/lua/custom/plugins/claude-diff.lua"
-assert_file_exists "$HOME/playground/nvim-claude-code-plugin/lua/claude-diff/init.lua"
-assert_file_exists "$HOME/playground/nvim-claude-code-plugin/lua/claude-diff/config.lua"
-assert_file_exists "$HOME/playground/nvim-claude-code-plugin/lua/claude-diff/git.lua"
-assert_file_exists "$HOME/playground/nvim-claude-code-plugin/lua/claude-diff/ui.lua"
-pass "Plugin files exist"
+assert_file_exists "$REPO_ROOT/nvim/lua/custom/plugins/claude-diff.lua"
+# Skip external plugin checks in CI (they're in a different repo)
+if [[ -d "$HOME/playground/nvim-claude-code-plugin" ]]; then
+    assert_file_exists "$HOME/playground/nvim-claude-code-plugin/lua/claude-diff/init.lua"
+    assert_file_exists "$HOME/playground/nvim-claude-code-plugin/lua/claude-diff/config.lua"
+    assert_file_exists "$HOME/playground/nvim-claude-code-plugin/lua/claude-diff/git.lua"
+    assert_file_exists "$HOME/playground/nvim-claude-code-plugin/lua/claude-diff/ui.lua"
+    pass "Plugin files exist"
+else
+    skip "External plugin repo not found (expected in CI)"
+fi
 
 # Test 3: Git checkpoint workflow in temporary directory
 print_step "Testing git checkpoint workflow..."
@@ -154,11 +163,11 @@ pass "Git checkpoint workflow works correctly"
 print_step "Testing hook script error handling..."
 
 # Test checkpoint script without NVIM_SOCKET
-output=$("$HOME/dotfiles/scripts/hooks/nvim-diff-checkpoint.sh" 2>&1 || true)
+output=$("$HOOKS_DIR/nvim-diff-checkpoint.sh" 2>&1 || true)
 [[ $? -eq 0 ]] || fail "Checkpoint script should exit cleanly without NVIM_SOCKET"
 
 # Test sync script without NVIM_SOCKET
-output=$(echo '{"tool_input":{"file_path":"test.txt"}}' | "$HOME/dotfiles/scripts/hooks/nvim-diff-sync.sh" 2>&1 || true)
+output=$(echo '{"tool_input":{"file_path":"test.txt"}}' | "$HOOKS_DIR/nvim-diff-sync.sh" 2>&1 || true)
 [[ $? -eq 0 ]] || fail "Sync script should exit cleanly without NVIM_SOCKET"
 
 pass "Hook scripts handle missing NVIM_SOCKET gracefully"

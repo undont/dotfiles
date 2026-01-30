@@ -20,13 +20,14 @@ jobs:
         run: |
           # Exclude info-level warnings that are intentional:
           # SC1091: Can't follow external source files (expected in CI)
+          # SC2001: Use ${//} instead of sed (sed needed for regex escaping)
           # SC2009: Consider using pgrep (ps|grep pattern is intentional for cross-platform)
           # SC2059: Printf format string variables (intentional for colours)
           # SC2015: A && B || C pattern (intentional, not if-then-else)
           # SC2016: Single quotes preventing expansion (intentional for fzf bindings)
           # SC2034: Unused variables (may be used by sourced scripts)
           # SC2329: Function never invoked (used indirectly in tests)
-          EXCLUDES="-e SC1091 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
+          EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
           shellcheck -x $EXCLUDES install.sh
           shellcheck -x $EXCLUDES scripts/install/*.sh
           shellcheck -x $EXCLUDES scripts/_lib/*.sh
@@ -34,14 +35,14 @@ jobs:
 
       - name: Run ShellCheck on tmux scripts
         run: |
-          EXCLUDES="-e SC1091 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
+          EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
           shellcheck -x $EXCLUDES tmux/scripts/*.sh
           shellcheck -x $EXCLUDES tmux/scripts/_lib/*.sh
           shellcheck -x $EXCLUDES tmux/scripts/tests/*.sh
 
       - name: Run ShellCheck on session launchers
         run: |
-          EXCLUDES="-e SC1091 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
+          EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
           for f in launchers/*; do
             if file "$f" | grep -q "shell script"; then
               shellcheck -x $EXCLUDES "$f"
@@ -50,7 +51,7 @@ jobs:
 
       - name: Run ShellCheck on test scripts
         run: |
-          EXCLUDES="-e SC1091 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
+          EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
           if [[ -d scripts/tests ]]; then
             shellcheck -x $EXCLUDES scripts/tests/*.sh
           fi
