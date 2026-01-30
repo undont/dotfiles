@@ -217,7 +217,7 @@ bind n display-popup -w 95% -h 95% -E "\
       --color=label:{{TMUX_FG_PRIMARY}} \
       --delimiter=\$'\\t' \
       --with-nth=1 \
-      --header-lines=8 \
+      --header-lines=7 \
       --prompt ': ' \
       --border=rounded \
       --border-label=' j/k · g/G · spc/⏎ sel · c connect · / srch · q/esc ' \
