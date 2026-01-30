@@ -40,6 +40,15 @@ return {
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = '[S]earch Recent Files ("." for repeat)' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = '[ ] Find existing buffers' })
 
+      -- Go to line number
+      vim.keymap.set('n', '<leader>sl', function()
+        vim.ui.input({ prompt = 'Go to line: ' }, function(input)
+          if input then
+            vim.cmd('normal! ' .. input .. 'G')
+          end
+        end)
+      end, { desc = '[S]earch [L]ine (go to line number)' })
+
       -- Fuzzy search in current buffer
       vim.keymap.set('n', '<leader>/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {

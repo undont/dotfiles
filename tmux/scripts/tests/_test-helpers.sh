@@ -2,12 +2,13 @@
 # Test helpers for tmux scripts
 # Provides isolated tmux server for testing
 
-# Colours for test output
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-CYAN=$'\033[0;36m'
-NC=$'\033[0m'
+# Determine dotfiles root and source colours
+_TEST_HELPERS_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+DOTFILES_ROOT="$(cd "$_TEST_HELPERS_DIR/../../.." && pwd)"
+
+# Source colour definitions
+# shellcheck source=scripts/_lib/colours.sh
+source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
 
 # Test counters (can be used by test scripts)
 PASS=0
@@ -30,6 +31,47 @@ skip() {
 section() {
     echo ""
     printf "${YELLOW}=== %s ===${NC}\n" "$1"
+}
+
+# Assertion helpers
+assert_equals() {
+    local desc="$1"
+    local expected="$2"
+    local actual="$3"
+
+    if [[ "$expected" == "$actual" ]]; then
+        pass "$desc"
+        return 0
+    else
+        fail "$desc (expected '$expected', got '$actual')"
+        return 1
+    fi
+}
+
+assert_success() {
+    local desc="$1"
+    shift
+
+    if "$@" 2>/dev/null; then
+        pass "$desc"
+        return 0
+    else
+        fail "$desc (command failed)"
+        return 1
+    fi
+}
+
+assert_failure() {
+    local desc="$1"
+    shift
+
+    if "$@" 2>/dev/null; then
+        fail "$desc (command succeeded but should have failed)"
+        return 1
+    else
+        pass "$desc"
+        return 0
+    fi
 }
 
 # Create isolated tmux server for testing

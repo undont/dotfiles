@@ -164,6 +164,7 @@ return {
         bashls = {},
         clangd = {},
         cssls = {},
+        eslint = {},
         gopls = {},
         html = {},
         jsonls = {},
@@ -208,6 +209,7 @@ return {
           'bashls',
           'clangd',
           'cssls',
+          'eslint',
           'gopls',
           'html',
           'jsonls',
@@ -222,7 +224,6 @@ return {
           'prettier',
           'stylua',
           -- Linters
-          'eslint_d',
           'golangci-lint',
         },
       }

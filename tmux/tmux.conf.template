@@ -204,6 +204,37 @@ bind -n M-L resize-pane -R 5           # Opt+Shift+l = grow right
 bind -n M-y display-popup -w 80% -h 60% -E "source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/pick-url.sh #{pane_id}"
 
 # ─────────────────────────────────────────
+# Nvim instance switcher (prefix + n)
+# Navigation: j/k (up/down), g/G (first/last)
+# Press / to start searching, Esc to return to navigation mode
+# Press c to connect nvim to current pane (for buffer sync)
+# ─────────────────────────────────────────
+unbind n
+bind n display-popup -w 95% -h 95% -E "\
+  source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
+  ~/.tmux/scripts/list-nvim.sh | \
+  fzf --ansi --reverse --disabled --cycle \
+      --color=label:{{TMUX_FG_PRIMARY}} \
+      --delimiter=\$'\\t' \
+      --with-nth=1 \
+      --header-lines=7 \
+      --prompt ': ' \
+      --border=rounded \
+      --border-label=' j/k · g/G · spc/⏎ sel · c connect · / srch · q/esc ' \
+      --border-label-pos=bottom \
+      --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
+      --preview-window=right:70% \
+      --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
+      --bind 'enter:accept' \
+      --bind 'c:execute(~/.tmux/scripts/connect-nvim.sh {})+abort' \
+      --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,c)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,c)\" || echo \"abort\"' \
+      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' | \
+  cut -d' ' -f1 | \
+  xargs -r tmux switch-client -t"
+
+# ─────────────────────────────────────────
 # Scroll mode (copy-mode)
 # ─────────────────────────────────────────
 # Enter scroll mode
@@ -484,7 +515,7 @@ set-hook -g session-closed 'run-shell -b "~/.tmux/plugins/tmux-resurrect/scripts
 # ─────────────────────────────────────────
 # Update @last-viewed timestamp when switching windows for fuzzy finder sorting
 # Also clear any claude alert on the window (backup to UserPromptSubmit hook)
-set-hook -g after-select-window 'run-shell "~/.tmux/scripts/clear-agent-alerts.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
+set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/clear-agent-alerts.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 
 # Update alerts when window is renamed to prevent stale alerts
 set-hook -g after-rename-window 'run-shell "~/.tmux/scripts/update-rename-alert.sh \"#{session_name}\" \"#{window_name_old}\" \"#{window_name}\""'
@@ -494,3 +525,6 @@ set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/update-timesta
 # Plugin Manager Initialisation (must be at bottom)
 # ══════════════════════════════════════════════════════════════
 run '~/.tmux/plugins/tpm/tpm'
+
+# Override tmux-yank's Y binding with our custom one (must be after plugin load)
+bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "pbcopy"

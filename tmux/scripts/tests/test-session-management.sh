@@ -14,35 +14,8 @@ source "$SCRIPT_DIR/_test-helpers.sh"
 # Trap to ensure cleanup on exit/interrupt
 trap cleanup_test_server EXIT INT TERM
 
-# Colours (using $'...' for proper escape interpretation)
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
-
-PASS=0
-FAIL=0
-
-pass() {
-    PASS=$((PASS + 1))
-    printf "${GREEN}✓${NC} %s\n" "$1"
-}
-
-fail() {
-    FAIL=$((FAIL + 1))
-    printf "${RED}✗${NC} %s\n" "$1"
-}
-
-skip() {
-    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
-}
-
-section() {
-    echo ""
-    echo "─────────────────────────────────────────"
-    echo "$1"
-    echo "─────────────────────────────────────────"
-}
+# Note: Colours (GREEN, RED, etc.) and test helpers (pass, fail, skip, section)
+# are already provided by _test-helpers.sh
 
 # Setup isolated tmux server for testing
 setup_test_server

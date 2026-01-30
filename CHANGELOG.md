@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.1.17] - 2026-01-28
+
+### Added
+- Tmux: Nvim instance picker (`prefix + n`) with buffer sync integration
+- Tmux: `list-nvim.sh` - Lists all running nvim instances with working directories
+- Tmux: `connect-nvim.sh` - Connects nvim to a Claude pane for buffer sync
+- Hooks: `nvim-buffer-sync.sh` - Claude Code hook that adds edited files to paired nvim's buffer list
+- Neovim: Auto-cleanup of unnamed empty buffers on BufEnter
+- Tests: `test-nvim-sync.sh` - E2E tests for nvim buffer sync flow
+
+### Fixed
+- Tests: `test-session-management.sh` now uses colours from test helpers (fixes readonly variable error)
+- Tests: `test-tmux-libs.sh` shellcheck exclusions now match CI configuration
+
+## [0.1.16] - 2026-01-28
+
+### Added
+- Neovim: `Space sl` keymap for "go to line" functionality
+- Tests: Session renaming test suite (`test-rename-session.sh`)
+- Tests: Assertion helpers in test framework (assert_equals, assert_success, assert_failure)
+- README: btop configuration directory documented in Contents section
+
+### Changed
+- Neovim: Replaced eslint_d linter with ESLint LSP server for improved integration
+- Neovim: Updated cheatsheet keybinding from `Space sk` to `Space ?` in help text
+- Tmux: Session rename script now outputs new session name for better script integration
+
+### Fixed
+- Scripts: Colours library now guards against multiple sourcing to prevent readonly variable errors
+- Tmux: Alert library improved with safer grep operations and ALERTS_FILE guard
+
 ## [0.1.15] - 2026-01-26
 
 ### Added
