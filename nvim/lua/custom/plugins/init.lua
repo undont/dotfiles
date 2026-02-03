@@ -9,4 +9,5 @@ return {
   { import = 'custom.plugins.completion' },
   { import = 'custom.plugins.git' },
   { import = 'custom.plugins.copilot' },
+  { import = 'custom.plugins.pr-review' },
 }

@@ -7,12 +7,20 @@ Half-page down/up | Ctrl+d / Ctrl+u
 Jump back/forward | Ctrl+o / Ctrl+i
 
 ## search @search
-Find files | Space sf
-Live grep | Space sg
-Search keymaps | Space sk
-Buffer search | Space /
-Open buffers | Space Space
-Open cheatsheet | Space ?
+Find files | <leader>sf
+Live grep | <leader>sg
+Search keymaps | <leader>sk
+Search help | <leader>sh
+Buffer search | <leader>/
+Open buffers | <leader><leader>
+Search diagnostics | <leader>sd
+Search resume | <leader>sr
+Search recent files | <leader>s.
+Search in open files | <leader>s/
+Search Neovim config | <leader>sn
+Go to line number | <leader>sl
+Select Telescope picker | <leader>ss
+Open cheatsheet | <leader>?
 
 ## editing @editing
 Insert at/after cursor | i / a
@@ -24,10 +32,17 @@ Repeat last action | .
 
 ## lsp @lsp
 Go to definition | grd
+Go to declaration | grD
 Go to references | grr
+Go to implementation | gri
+Go to type definition | grt
 Rename symbol | grn
 Code action | gra
+Document symbols | gO
+Workspace symbols | gW
 Hover documentation | K
+Toggle inlay hints | <leader>th
+Format buffer | <leader>f
 
 ## text-objects @text-objects
 Inner/around word | iw / aw
@@ -37,11 +52,12 @@ Surround delete | sd'
 Surround replace | sr("
 
 ## tools @tools
-Toggle file tree | Space e
-Open LazyGit | Space g
-Format file | Space f
-Diagnostics list | Space q
-Help popup | Space h
+Toggle file tree | <leader>e
+NeoTree reveal | \
+Open LazyGit | <leader>g
+Format file | <leader>f
+Diagnostics list | <leader>q
+Help popup | <leader>h
 
 ## windows @windows
 Move to window | Ctrl+hjkl
@@ -50,11 +66,61 @@ Split horizontal | :sp
 
 ## completion @completion
 Trigger completion | Ctrl+Space
+Hide completion | Ctrl+e
+Accept completion | Enter
 Accept Copilot suggestion | Tab
 Expand snippet | Tab (in snippet)
 Next snippet placeholder | Tab
 Previous snippet placeholder | Shift+Tab
+Scroll docs up/down | Ctrl+b / Ctrl+f
 
 ## snippets @snippets
-Claude comment template | Space cc
-Claude user/exchange | Space cu
+Claude comment template | <leader>cc
+Claude user/exchange | <leader>cu
+
+## git @git
+Next/prev git change | ]c / [c
+Stage hunk | <leader>hs
+Reset hunk | <leader>hr
+Stage buffer | <leader>hS
+Undo stage hunk | <leader>hu
+Reset buffer | <leader>hR
+Preview hunk | <leader>hp
+Blame line | <leader>hb
+Diff against index | <leader>hd
+Diff against last commit | <leader>hD
+Toggle blame line | <leader>tb
+Toggle show deleted | <leader>tD
+
+## diff @diff
+Diffview open (vs index) | <leader>do
+Diffview close | <leader>dc
+Diffview file history | <leader>dh
+Diffview PR review | <leader>dp
+Difi toggle overlay | <leader>df
+
+## pr-review @pr-review
+List PRs | <leader>pl
+Search PRs | <leader>ps
+Open PR by number | <leader>po
+Start review | <leader>pr
+PR comments | <leader>pc
+
+## debug @debug
+Start/Continue | F5
+Step into | F1
+Step over | F2
+Step out | F3
+Toggle breakpoint | <leader>b
+Conditional breakpoint | <leader>B
+Toggle debug UI | F7
+
+## markdown @markdown
+Toggle todo | <leader>mt
+Fold section | <leader>mf
+Unfold section | <leader>mu
+Renumber list | <leader>mn
+Next/prev heading | ]] / [[
+
+## theme @theme
+Theme reload | <leader>tr
