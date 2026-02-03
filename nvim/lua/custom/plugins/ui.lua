@@ -159,9 +159,9 @@ return {
   -- Which-key for keybinding hints
   {
     'folke/which-key.nvim',
-    event = 'VimEnter',
+    lazy = false, -- Load immediately to ensure leader preview works reliably
     opts = {
-      delay = 0,
+      delay = 0, -- Show immediately for snappy feel
       icons = {
         mappings = vim.g.have_nerd_font,
         keys = vim.g.have_nerd_font and {} or {
@@ -197,7 +197,7 @@ return {
       },
       spec = {
         { '<leader>s', group = '[S]earch' },
-        { '<leader>t', group = '[T]heme/[T]oggle' },
+	{ '<leader>t', group = '[T]est' },
         { '<leader>d', group = '[D]iff' },
         { '<leader>p', group = '[P]R Review' },
       },

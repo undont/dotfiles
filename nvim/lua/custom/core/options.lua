@@ -40,7 +40,8 @@ function M.setup()
   -- UI
   vim.o.signcolumn = 'yes'
   vim.o.updatetime = 250
-  vim.o.timeoutlen = 300
+  vim.o.timeoutlen = 200
+  vim.o.ttimeoutlen = 10 -- Fast key code sequences (responsive escape key)
 
   -- Window splitting
   vim.o.splitright = true
