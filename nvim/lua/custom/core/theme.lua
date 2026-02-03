@@ -31,6 +31,7 @@ local theme_map = {
   ['rose-pine'] = 'rose-pine',
   ['nightfox'] = 'nightfox',
   ['synthwave'] = 'synthwave',
+  ['maple'] = 'maple',
 }
 
 -- Default fallback
