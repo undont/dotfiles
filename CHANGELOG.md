@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.0] - 2026-02-03
+
+### Added
+- Neovim: PR review workflow — diffview.nvim (side-by-side diffs), octo.nvim (GitHub PRs), difi.nvim (inline overlay)
+- Neovim: Markdown editing with mkdnflow.nvim (list continuation, todo toggles, table formatting)
+- Neovim: `<leader>d` keybinding group for diff operations, `<leader>p` for PR review
+- Neovim: Comprehensive cheatsheet covering all keybindings (git, diff, PR, debug, markdown, theme)
+- Brewfile: difi CLI (oug-t/difi tap) for inline diff TUI
+
+### Changed
+- Neovim: Cheatsheet now uses `<leader>` notation consistently instead of mixed `Space`/`<leader>`
+
 ## [0.1.17] - 2026-01-28
 
 ### Added

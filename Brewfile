@@ -9,6 +9,7 @@
 # Taps
 tap "libsql/sqld"
 tap "oven-sh/bun"
+tap "oug-t/difi"
 tap "teamookla/speedtest"
 
 # =============================================================================
@@ -39,6 +40,7 @@ cask "claude-code"
 # Git & GitHub
 brew "gh"
 brew "lazygit"
+brew "oug-t/difi/difi"           # Inline diff TUI
 
 # Search & Navigation
 brew "ripgrep"                # >= 13.0
