@@ -2,38 +2,36 @@
 ║                          NVIM KEYBOARD SHORTCUTS                         ║
 ╚══════════════════════════════════════════════════════════════════════════╝
 
-┌─ NAVIGATION ─────────────────────────┬─ SEARCH (Leader = Space) ────────┐
-│                                      │                                  │
-│  hjkl                 move cursor    │  Space sf          find files    │
-│  w / b               word fwd/back   │  Space sg          live grep     │
-│  0 / $               line start/end  │  Space ?           cheatsheet    │
-│  gg / G              file top/bottom │  Space sl          go to line    │
-│  Ctrl+d / Ctrl+u     half-page       │  Space /           buffer search │
-│  Ctrl+o / Ctrl+i     jump back/fwd   │  Space Space       open buffers  │
-│                                      │                                  │
-└──────────────────────────────────────┴──────────────────────────────────┘
+┌─ NAVIGATION ─────────────────────────┬─ SEARCH (<leader> = Space) ────────┐
+│                                      │                                    │
+│  hjkl                 move cursor    │  <leader>sf        find files      │
+│  w / b               word fwd/back   │  <leader>sg        live grep       │
+│  0 / $               line start/end  │  <leader>/         buffer search   │
+│  gg / G              file top/bottom │  <leader><leader>  open buffers    │
+│  Ctrl+d / Ctrl+u     half-page       │  <leader>?         full cheatsheet │
+│  Ctrl+o / Ctrl+i     jump back/fwd   │                                    │
+│                                      │                                    │
+└──────────────────────────────────────┴────────────────────────────────────┘
 
-┌─ EDITING ────────────────────────────┬─ LSP ────────────────────────────┐
-│                                      │                                  │
-│  i / a               insert at/after │  grd                go to def    │
-│  o / O               new line below  │  grr                references   │
-│  dd / yy             delete/yank     │  grn                rename       │
-│  p / P               paste after/bef │  gra                code action  │
-│  u / Ctrl+r          undo / redo     │  K                  hover docs   │
-│  .                   repeat last     │                                  │
-│                                      │                                  │
-└──────────────────────────────────────┴──────────────────────────────────┘
+┌─ EDITING ────────────────────────────┬─ LSP ──────────────────────────────┐
+│                                      │                                    │
+│  i / a               insert at/after │  grd                go to def      │
+│  o / O               new line below  │  grr                references     │
+│  dd / yy             delete/yank     │  grn                rename         │
+│  p / P               paste after/bef │  gra                code action    │
+│  u / Ctrl+r          undo / redo     │  K                  hover docs     │
+│  .                   repeat last     │  <leader>f          format buffer  │
+│                                      │                                    │
+└──────────────────────────────────────┴────────────────────────────────────┘
 
-┌─ TEXT OBJECTS / SURROUND ────────────┬─ TOOLS ──────────────────────────┐
-│                                      │                                  │
-│  iw / aw             inner/around    │  Space e           file tree     │
-│  i" / i( / i{        inside quotes   │  Space g           git (lazygit) │
-│                                      │  Space f           format file   │
-│  saiw"               surround add    │  Space q           diagnostics   │
-│  sd'                 surround del    │                                  │
-│  sr("                surround rep    │  Ctrl+hjkl         move windows  │
-│                                      │  :vs / :sp         split v/h     │
-│                                      │                                  │
-└──────────────────────────────────────┴──────────────────────────────────┘
+┌─ TOOLS ──────────────────────────────┬─ DIFF / PR ────────────────────────┐
+│                                      │                                    │
+│  <leader>e           file tree       │  <leader>do         diff open      │
+│  <leader>g           git (lazygit)   │  <leader>dc         diff close     │
+│  <leader>q           diagnostics     │  <leader>dp         PR diff review │
+│  <leader>h           this help       │  <leader>pl         list PRs       │
+│  Ctrl+hjkl           move windows    │  <leader>pr         start review   │
+│                                      │                                    │
+└──────────────────────────────────────┴────────────────────────────────────┘
 
                           Press q or Esc to close this help

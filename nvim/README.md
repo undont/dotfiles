@@ -9,6 +9,7 @@ Customised Neovim setup based on [kickstart.nvim](https://github.com/nvim-lua/ki
 - **Completion** - Fast completion with blink.cmp and snippets
 - **AI Assistance** - GitHub Copilot integration
 - **Git Integration** - LazyGit for git operations, gitsigns for inline decorations
+- **PR Review** - Octo.nvim for GitHub PRs, diffview for side-by-side diffs, difi for inline overlays
 - **Fuzzy Finding** - Telescope for files, buffers, grep, and more
 - **File Explorer** - Neo-tree sidebar navigation
 - **UI Enhancements** - Auto dark/light mode (Dracula/Catppuccin), statusline, indent guides
@@ -58,7 +59,9 @@ nvim/
     │   │   ├── telescope.lua          # Fuzzy finder configuration
     │   │   ├── editor.lua             # Treesitter, guess-indent
     │   │   ├── copilot.lua            # GitHub Copilot integration
-    │   │   └── git.lua                # Git plugins (gitsigns, LazyGit)
+    │   │   ├── git.lua                # Git plugins (gitsigns, LazyGit)
+    │   │   ├── pr-review.lua          # PR review (diffview, octo, difi)
+    │   │   └── markdown-ui.lua        # Markdown editing (mkdnflow)
     │   ├── lazy-bootstrap.lua         # Lazy.nvim auto-installer
     │   └── nvim-help.txt              # Help popup content
     └── kickstart/                     # Kickstart-provided plugins
@@ -116,6 +119,20 @@ nvim/
 |--------|---------|
 | [gitsigns.nvim](https://github.com/lewis6991/gitsigns.nvim) | Git decorations and hunks |
 | [lazygit.nvim](https://github.com/kdheepak/lazygit.nvim) | LazyGit integration |
+
+### PR Review & Diff
+
+| Plugin | Purpose |
+|--------|---------|
+| [diffview.nvim](https://github.com/sindrets/diffview.nvim) | Side-by-side diff tab, file history, merge conflicts |
+| [octo.nvim](https://github.com/pwntester/octo.nvim) | GitHub PR review from Neovim (list, comment, approve) |
+| [difi.nvim](https://github.com/oug-t/difi.nvim) | Inline diff overlay |
+
+### Markdown
+
+| Plugin | Purpose |
+|--------|---------|
+| [mkdnflow.nvim](https://github.com/jakewvincent/mkdnflow.nvim) | List continuation, todo toggles, table formatting |
 
 ### AI & Development
 

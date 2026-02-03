@@ -198,6 +198,8 @@ return {
       spec = {
         { '<leader>s', group = '[S]earch' },
         { '<leader>t', group = '[T]heme/[T]oggle' },
+        { '<leader>d', group = '[D]iff' },
+        { '<leader>p', group = '[P]R Review' },
       },
     },
   },
