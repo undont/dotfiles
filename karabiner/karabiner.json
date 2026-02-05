@@ -74,18 +74,37 @@
                                 "type": "basic"
                             }
                         ]
+                    },
+                    {
+                        "description": "Right Option to Control (Ghostty and IDEs only)",
+                        "manipulators": [
+                            {
+                                "conditions": [
+                                    {
+                                        "bundle_identifiers": [
+                                            "^com\\.mitchellh\\.ghostty$",
+                                            "^com\\.jetbrains\\.rider$",
+                                            "^com\\.jetbrains\\.WebStorm$",
+                                            "^com\\.jetbrains\\.goland$"
+                                        ],
+                                        "type": "frontmost_application_if"
+                                    }
+                                ],
+                                "from": {
+                                    "key_code": "right_option",
+                                    "modifiers": { "optional": ["any"] }
+                                },
+                                "to": [{ "key_code": "left_control" }],
+                                "type": "basic"
+                            }
+                        ]
                     }
                 ]
             },
             "devices": [
                 {
                     "identifiers": { "is_keyboard": true },
-                    "simple_modifications": [
-                        {
-                            "from": { "key_code": "right_option" },
-                            "to": [{ "key_code": "left_control" }]
-                        }
-                    ]
+                    "simple_modifications": []
                 },
                 {
                     "identifiers": {

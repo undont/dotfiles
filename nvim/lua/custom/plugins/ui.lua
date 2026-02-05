@@ -197,9 +197,11 @@ return {
       },
       spec = {
         { '<leader>s', group = '[S]earch' },
-	{ '<leader>t', group = '[T]est' },
+        { '<leader>t', group = '[T]est' },
         { '<leader>d', group = '[D]iff' },
         { '<leader>p', group = '[P]R Review' },
+        { '<leader>v', group = '[V]cs' },
+        { '<leader>w', group = '[W]indow resize' },
       },
     },
   },
@@ -229,6 +231,23 @@ return {
       ---@diagnostic disable-next-line: duplicate-set-field
       statusline.section_location = function()
         return '%2l:%-2v'
+      end
+
+      -- Truncate branch name to ticket ID (e.g. "feature/DANA-123-some-desc" -> "DANA-123")
+      ---@diagnostic disable-next-line: duplicate-set-field
+      statusline.section_git = function(args)
+        if statusline.is_truncated(args.trunc_width) then
+          return ''
+        end
+        local head = vim.b.gitsigns_head or ''
+        if head == '' then
+          return ''
+        end
+        -- Extract ticket ID pattern (e.g. DANA-123, JIRA-456)
+        local ticket = head:match '[A-Z]+-[0-9]+'
+        local branch = ticket or head
+        local icon = vim.g.have_nerd_font and ' ' or 'Git:'
+        return icon .. branch
       end
     end,
   },

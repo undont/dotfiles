@@ -63,6 +63,12 @@ if command_exists fzf; then
     fi
 fi
 
+# gh extensions
+if command_exists gh; then
+    echo "Installing gh extensions..."
+    gh extension install dlvhdr/gh-dash 2>/dev/null || true
+fi
+
 # fnm shell setup reminder
 if command_exists fnm; then
     echo ""

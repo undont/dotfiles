@@ -9,7 +9,7 @@ function M.setup()
   vim.g.maplocalleader = ' '
 
   -- Nerd Font availability
-  vim.g.have_nerd_font = false
+  vim.g.have_nerd_font = true
 
   -- Line numbers
   vim.o.number = true
