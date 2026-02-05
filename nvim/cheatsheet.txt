@@ -104,6 +104,10 @@ List PRs | <leader>pl
 Search PRs | <leader>ps
 Open PR by number | <leader>po
 Start review | <leader>pr
+Resume review | <leader>pe
+Submit review | <leader>pm
+Approve PR | <leader>pp
+Add comment | <leader>pa
 PR comments | <leader>pc
 
 ## debug @debug
