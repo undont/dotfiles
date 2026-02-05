@@ -1,26 +1,55 @@
 -- Adds git related signs to the gutter, as well as utilities for managing changes
--- NOTE: gitsigns is already included in init.lua but contains only the base
--- config. This will add also the recommended keymaps.
 
 return {
   {
     'lewis6991/gitsigns.nvim',
+    init = function()
+      -- Set gitsigns highlight colours and re-apply after colorscheme changes
+      local function set_gitsigns_highlights()
+        -- Sign column text colours
+        vim.api.nvim_set_hl(0, 'GitSignsAdd', { fg = '#a6e3a1', bold = true })
+        vim.api.nvim_set_hl(0, 'GitSignsChange', { fg = '#f9e2af', bold = true })
+        vim.api.nvim_set_hl(0, 'GitSignsDelete', { fg = '#f38ba8', bold = true })
+        vim.api.nvim_set_hl(0, 'GitSignsTopdelete', { fg = '#f38ba8', bold = true })
+        vim.api.nvim_set_hl(0, 'GitSignsChangedelete', { fg = '#fab387', bold = true })
+        -- Line number background colours (used in fugitive review mode)
+        vim.api.nvim_set_hl(0, 'GitSignsAddNr', { fg = '#a6e3a1', bg = '#1a2e1a' })
+        vim.api.nvim_set_hl(0, 'GitSignsChangeNr', { fg = '#f9e2af', bg = '#2e2a1a' })
+        vim.api.nvim_set_hl(0, 'GitSignsDeleteNr', {})
+        -- Full line background colours (used in fugitive review mode)
+        vim.api.nvim_set_hl(0, 'GitSignsAddLn', { bg = '#1a2e1a' })
+        vim.api.nvim_set_hl(0, 'GitSignsChangeLn', { bg = '#2e2a1a' })
+        vim.api.nvim_set_hl(0, 'GitSignsDeleteLn', {})
+      end
+
+      set_gitsigns_highlights()
+      vim.api.nvim_create_autocmd('ColorScheme', { callback = set_gitsigns_highlights })
+    end,
     opts = {
+      signs = {
+        add = { text = '+' },
+        change = { text = '~' },
+        delete = { text = '_' },
+        topdelete = { text = '‾' },
+        changedelete = { text = '~' },
+      },
+      numhl = false,
+      linehl = false,
       on_attach = function(bufnr)
         local gitsigns = require 'gitsigns'
 
-        local function map(mode, l, r, opts)
-          opts = opts or {}
-          opts.buffer = bufnr
-          vim.keymap.set(mode, l, r, opts)
+        local function map(mode, l, r, mopts)
+          mopts = mopts or {}
+          mopts.buffer = bufnr
+          vim.keymap.set(mode, l, r, mopts)
         end
 
-        -- Navigation
+        -- Navigation: hunks
         map('n', ']c', function()
           if vim.wo.diff then
             vim.cmd.normal { ']c', bang = true }
           else
-            gitsigns.nav_hunk 'next'
+            gitsigns.nav_hunk('next', { wrap = false })
           end
         end, { desc = 'Jump to next git [c]hange' })
 
@@ -28,7 +57,7 @@ return {
           if vim.wo.diff then
             vim.cmd.normal { '[c', bang = true }
           else
-            gitsigns.nav_hunk 'prev'
+            gitsigns.nav_hunk('prev', { wrap = false })
           end
         end, { desc = 'Jump to previous git [c]hange' })
 
@@ -44,7 +73,7 @@ return {
         map('n', '<leader>hs', gitsigns.stage_hunk, { desc = 'git [s]tage hunk' })
         map('n', '<leader>hr', gitsigns.reset_hunk, { desc = 'git [r]eset hunk' })
         map('n', '<leader>hS', gitsigns.stage_buffer, { desc = 'git [S]tage buffer' })
-        map('n', '<leader>hu', gitsigns.stage_hunk, { desc = 'git [u]ndo stage hunk' })
+        map('n', '<leader>hu', gitsigns.undo_stage_hunk, { desc = 'git [u]ndo stage hunk' })
         map('n', '<leader>hR', gitsigns.reset_buffer, { desc = 'git [R]eset buffer' })
         map('n', '<leader>hp', gitsigns.preview_hunk, { desc = 'git [p]review hunk' })
         map('n', '<leader>hb', gitsigns.blame_line, { desc = 'git [b]lame line' })

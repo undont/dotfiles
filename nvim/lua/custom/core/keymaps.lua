@@ -70,6 +70,12 @@ function M.setup()
   vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
   vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+  -- Window resize
+  vim.keymap.set('n', '<leader>wh', '<cmd>vertical resize -5<CR>', { desc = '[W]indow resize left' })
+  vim.keymap.set('n', '<leader>wl', '<cmd>vertical resize +5<CR>', { desc = '[W]indow resize right' })
+  vim.keymap.set('n', '<leader>wj', '<cmd>resize -5<CR>', { desc = '[W]indow resize down' })
+  vim.keymap.set('n', '<leader>wk', '<cmd>resize +5<CR>', { desc = '[W]indow resize up' })
+
   -- macOS-style editing in insert mode
   vim.keymap.set('i', '<M-BS>', '<C-w>', { desc = 'Delete word backward (Opt+Backspace)' })
   vim.keymap.set('i', '<D-BS>', '<C-u>', { desc = 'Delete to beginning of line (Cmd+Backspace)' })

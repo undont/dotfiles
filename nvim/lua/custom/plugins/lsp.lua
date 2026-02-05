@@ -167,21 +167,12 @@ return {
         eslint = {},
         gopls = {},
         html = {},
-        jsonls = {},
         lua_ls = {
           settings = {
             Lua = {
               completion = { callSnippet = 'Replace' },
             },
           },
-        },
-        omnisharp = {
-          cmd = { vim.fn.stdpath 'data' .. '/mason/packages/omnisharp/OmniSharp' },
-          enable_roslyn_analyzers = true,
-          analyze_open_documents_only = false,
-          root_dir = function(fname)
-            return require('lspconfig.util').root_pattern('*.slnx', '*.sln')(fname) or vim.loop.cwd()
-          end,
         },
         pyright = {},
         ts_ls = {},
@@ -194,6 +185,10 @@ return {
         automatic_installation = false,
         handlers = {
           function(server_name)
+            -- Skip omnisharp (using easy-dotnet's Roslyn LSP instead)
+            if server_name == 'omnisharp' then
+              return
+            end
             local server = servers[server_name] or {}
             server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
             require('lspconfig')[server_name].setup(server)
@@ -212,9 +207,7 @@ return {
           'eslint',
           'gopls',
           'html',
-          'jsonls',
           'lua_ls',
-          'omnisharp',
           'pyright',
           'ts_ls',
           'yamlls',

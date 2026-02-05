@@ -36,6 +36,14 @@ function M.setup()
     end,
   })
 
+  -- Disable swap file for Octo buffers (not needed and causes warnings)
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = 'octo',
+    callback = function()
+      vim.bo.swapfile = false
+    end,
+  })
+
   -- Clean up unnamed empty buffers when opening a file
   -- Removes the default [No Name] buffer that nvim creates at startup
   local cleanup_group = vim.api.nvim_create_augroup('cleanup-empty-buffers', { clear = true })

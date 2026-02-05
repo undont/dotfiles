@@ -32,6 +32,14 @@
 │  <leader>h           this help       │  <leader>pl         list PRs       │
 │  Ctrl+hjkl           move windows    │  <leader>pr         start review   │
 │                                      │                                    │
+├─ VCS (FUGITIVE) ─────────────────────┼─ WINDOW RESIZE ────────────────────┤
+│                                      │                                    │
+│  <leader>vs          git status      │  <leader>wh         resize left    │
+│  <leader>vb          git blame       │  <leader>wl         resize right   │
+│  <leader>vd          diff split      │  <leader>wj         resize down    │
+│  l (in status)       open file       │  <leader>wk         resize up      │
+│  h (in file)         back to status  │                                    │
+│                                      │                                    │
 └──────────────────────────────────────┴────────────────────────────────────┘
 
                           Press q or Esc to close this help

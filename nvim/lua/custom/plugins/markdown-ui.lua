@@ -16,8 +16,10 @@ return {
           enable = true,
         },
         to_do = {
-          enable = true,
-          statuses = { ' ', 'x' },
+          statuses = {
+            { name = 'not_started', symbol = ' ' },
+            { name = 'complete', symbol = 'x' },
+          },
         },
         tables = {
           enable = true,
