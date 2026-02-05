@@ -47,6 +47,6 @@ if session_exists "$newname"; then
     tmux switch-client -t "$newname"
 else
     # Create new session at home directory and switch to it
-    tmux new-session -d -s "$newname" -c ~
+    tmux new-session -d -s "$newname" -n "zsh" -c ~
     tmux switch-client -t "$newname"
 fi

@@ -167,7 +167,6 @@ return {
         eslint = {},
         gopls = {},
         html = {},
-        jsonls = {},
         lua_ls = {
           settings = {
             Lua = {
@@ -208,7 +207,6 @@ return {
           'eslint',
           'gopls',
           'html',
-          'jsonls',
           'lua_ls',
           'pyright',
           'ts_ls',

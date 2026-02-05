@@ -18,6 +18,18 @@ return {
     },
     config = function()
       require('telescope').setup {
+        defaults = {
+          -- Show parent/file.extension in preview title instead of truncated paths
+          dynamic_preview_title = true,
+          path_display = function(_, path)
+            local tail = require('telescope.utils').path_tail(path)
+            local parent = vim.fn.fnamemodify(path, ':h:t')
+            if parent == '.' then
+              return tail
+            end
+            return parent .. '/' .. tail
+          end,
+        },
         extensions = {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown(),
