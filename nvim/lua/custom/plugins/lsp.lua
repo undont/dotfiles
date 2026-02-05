@@ -42,6 +42,7 @@ return {
           map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
           map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
           map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
+          map('<leader>lr', '<cmd>LspRestart<CR>', '[L]SP [R]estart')
 
           -- Helper for checking client support
           ---@param client vim.lsp.Client

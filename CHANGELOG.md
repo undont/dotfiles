@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.12] - 2026-02-05
+
+### Changed
+- Installer: Claude Code now installed natively via `claude.ai/install.sh` instead of Homebrew cask — automatically uninstalls brew version if present
+- Neovim: Added `<leader>lr` keybinding for LSP restart
+
 ## [0.2.11] - 2026-02-05
 
 ### Added
