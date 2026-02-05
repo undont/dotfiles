@@ -17,18 +17,24 @@ return {
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
+      -- Helper to format path as parent/parent/filename (2 dirs up)
+      local function short_path(path)
+        local tail = require('telescope.utils').path_tail(path)
+        local parent = vim.fn.fnamemodify(path, ':h:t')
+        local grandparent = vim.fn.fnamemodify(path, ':h:h:t')
+        if grandparent == '.' or grandparent == '' then
+          if parent == '.' or parent == '' then
+            return tail
+          end
+          return parent .. '/' .. tail
+        end
+        return grandparent .. '/' .. parent .. '/' .. tail
+      end
+
       require('telescope').setup {
         defaults = {
-          -- Show parent/file.extension in preview title instead of truncated paths
-          dynamic_preview_title = true,
-          path_display = function(_, path)
-            local tail = require('telescope.utils').path_tail(path)
-            local parent = vim.fn.fnamemodify(path, ':h:t')
-            if parent == '.' then
-              return tail
-            end
-            return parent .. '/' .. tail
-          end,
+          -- Results show full relative path (default behaviour)
+          path_display = { 'truncate' },
         },
         extensions = {
           ['ui-select'] = {
@@ -36,6 +42,43 @@ return {
           },
         },
       }
+
+      -- Override previewer to show short path in title
+      local previewers = require 'telescope.previewers'
+      local from_entry = require 'telescope.from_entry'
+      local conf = require('telescope.config').values
+
+      local original_file_previewer = conf.file_previewer
+      conf.file_previewer = function(opts)
+        opts = opts or {}
+        local previewer = original_file_previewer(opts)
+        local original_title = previewer.title
+        previewer.title = function(self, entry)
+          if entry and entry.path then
+            return short_path(entry.path)
+          elseif entry and entry.filename then
+            return short_path(entry.filename)
+          end
+          return original_title and original_title(self, entry) or 'Preview'
+        end
+        return previewer
+      end
+
+      local original_grep_previewer = conf.grep_previewer
+      conf.grep_previewer = function(opts)
+        opts = opts or {}
+        local previewer = original_grep_previewer(opts)
+        local original_title = previewer.title
+        previewer.title = function(self, entry)
+          if entry and entry.path then
+            return short_path(entry.path)
+          elseif entry and entry.filename then
+            return short_path(entry.filename)
+          end
+          return original_title and original_title(self, entry) or 'Preview'
+        end
+        return previewer
+      end
 
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
