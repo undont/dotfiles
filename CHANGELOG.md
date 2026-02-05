@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.1] - 2026-02-05
+
+### Added
+- Neovim: Fugitive integration with custom status workflow — `<leader>vs` (status), `<leader>vb` (blame), `<leader>vd` (diff split)
+- Neovim: Fugitive review mode with gitsigns line/number highlighting for changed files
+- Neovim: .NET development via easy-dotnet.nvim with Roslyn LSP (replaces OmniSharp)
+- Neovim: Neotest test runner with .NET adapter and `.slnx` support
+- Neovim: Window resize keybindings (`<leader>wh/wl/wj/wk`)
+- Neovim: `<leader>v` (VCS) and `<leader>w` (Window resize) which-key groups
+- Neovim: Maple colourscheme — custom autumn-inspired theme with full treesitter/telescope/neo-tree support
+- Themes: Maple theme definition for tmux, ghostty, and neovim
+- Neovim: Telescope path display shows `parent/file.ext` instead of truncated paths
+- Neovim: Statusline branch name truncated to ticket ID (e.g. `DANA-123`)
+- Neovim: Octo `]f`/`[f` navigation auto-marks files as viewed
+- Karabiner: Right Option → Control scoped to Ghostty and JetBrains IDEs only
+- Installer: `gh-dash` extension installed automatically
+- Zsh: `.dotnet/tools` added to PATH for .NET global tools
+
+### Changed
+- Neovim: Nerd Font enabled by default (`have_nerd_font = true`)
+- Neovim: Gitsigns hunk navigation no longer wraps around buffer
+- Neovim: Gitsigns `<leader>hu` now correctly calls `undo_stage_hunk` instead of `stage_hunk`
+- Neovim: Gitsigns highlight colours explicitly set (resilient to colourscheme changes)
+- Neovim: Which-key loads immediately instead of on VimEnter for reliable leader preview
+- Neovim: Removed jsonls LSP server
+- Neovim: Diffview patched to guard against invalid window IDs (upstream bug workaround)
+- Neovim: Octo patched to pass buffer context to mappings (upstream bug workaround)
+- Karabiner: Right Option → Control changed from global simple modification to app-scoped complex rule
+- Tmux: New sessions now name first window "zsh" instead of default
+- Neovim: Disabled swap files for Octo buffers
+
+### Removed
+- Neovim: difi.nvim (replaced by fugitive review mode)
+- Neovim: OmniSharp LSP (replaced by Roslyn via easy-dotnet.nvim)
+
 ## [0.2.0] - 2026-02-03
 
 ### Added

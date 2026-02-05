@@ -12,12 +12,7 @@ Keyboard customisation for macOS using [Karabiner Elements](https://karabiner-el
 | Caps Lock → Escape | Only active in Rider IDE |
 | Caps Lock → Escape | Only active in WebStorm IDE |
 | Caps Lock → Escape | Only active in GoLand IDE |
-
-### Simple Modifications (All Keyboards)
-
-| From | To |
-|------|-----|
-| Right Option | Left Control |
+| Right Option → Control | Only active in Ghostty and JetBrains IDEs |
 
 ### Apple Keyboard Specific (USB)
 
