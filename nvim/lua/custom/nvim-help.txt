@@ -20,7 +20,8 @@
 │  dd / yy             delete/yank     │  grn                rename         │
 │  p / P               paste after/bef │  gra                code action    │
 │  u / Ctrl+r          undo / redo     │  K                  hover docs     │
-│  .                   repeat last     │  <leader>f          format buffer  │
+│  .                   repeat last     │  <leader>lr         restart LSP    │
+│  <leader>f          format buffer  │
 │                                      │                                    │
 └──────────────────────────────────────┴────────────────────────────────────┘
 
