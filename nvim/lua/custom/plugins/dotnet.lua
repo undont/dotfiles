@@ -20,6 +20,32 @@ return {
       test_runner = {
         enable_buffer_test_execution = true,
       },
+      -- Custom terminal: open on right side with 40 column width (same as fugitive)
+      terminal = function(path, action, args)
+        args = args or ''
+        local commands = {
+          run = function()
+            return string.format('dotnet run --project %s %s', path, args)
+          end,
+          test = function()
+            return string.format('dotnet test %s %s', path, args)
+          end,
+          restore = function()
+            return string.format('dotnet restore %s %s', path, args)
+          end,
+          build = function()
+            return string.format('dotnet build %s %s', path, args)
+          end,
+          watch = function()
+            return string.format('dotnet watch --project %s %s', path, args)
+          end,
+        }
+        local command = commands[action]()
+        -- Open vertical split on the right with 40 columns (same width as fugitive)
+        vim.cmd 'botright vsplit'
+        vim.cmd 'vertical resize 40'
+        vim.cmd('term ' .. command)
+      end,
     }
 
     -- Project commands only (tests handled by neotest)
