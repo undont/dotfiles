@@ -93,6 +93,10 @@ return {
         desc = '[P]R [O]pen by number',
       },
       { '<leader>pr', '<cmd>Octo review start<CR>', desc = '[P]R [R]eview start' },
+      { '<leader>pe', '<cmd>Octo review resume<CR>', desc = '[P]R review r[E]sume' },
+      { '<leader>pm', '<cmd>Octo review submit<CR>', desc = '[P]R review sub[M]it' },
+      { '<leader>pp', '<cmd>Octo pr approve<CR>', desc = '[P]R a[P]prove' },
+      { '<leader>pa', '<cmd>Octo comment add<CR>', desc = '[P]R comment [A]dd', mode = { 'n', 'v' } },
       { '<leader>pc', '<cmd>Octo pr comments<CR>', desc = '[P]R [C]omments' },
     },
     config = function()

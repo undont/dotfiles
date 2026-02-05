@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.11] - 2026-02-05
+
+### Added
+- Neovim: Octo PR review keybindings — `<leader>pe` (resume), `<leader>pm` (submit), `<leader>pp` (approve), `<leader>pa` (add comment)
+
+### Fixed
+- Neovim: Neo-tree crash on deleted files in git status — runtime patch via `debug.setupvalue` handles missing parent directories gracefully
+- Neovim: Markdown list renumbering now uses `undojoin` so renumbering and the preceding edit are a single undo step
+
 ## [0.2.1] - 2026-02-05
 
 ### Added
