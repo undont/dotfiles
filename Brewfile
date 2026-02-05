@@ -35,7 +35,6 @@ cask "visual-studio-code"
 
 # AI Coding Assistants
 brew "opencode"
-cask "claude-code"
 
 # Git & GitHub
 brew "gh"

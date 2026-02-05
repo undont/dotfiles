@@ -112,7 +112,7 @@ if should_install "core"; then
     echo ""
     echo "Required - AI & Dev Tools:"
     echo "--------------------------"
-    check "claude" "claude" "brew install --cask claude-code"
+    check "claude" "claude" "curl -fsSL https://claude.ai/install.sh | bash"
     check "dotnet" "dotnet" "brew install --cask dotnet-sdk"
     check "act" "act" "brew install act"
     check "cmake" "cmake" "brew install cmake"

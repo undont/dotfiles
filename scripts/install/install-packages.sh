@@ -54,6 +54,22 @@ echo ""
 info "Running post-installation setup..."
 echo ""
 
+# Claude Code - native install (replaces brew cask)
+if should_install "core"; then
+    # Uninstall brew cask version if present to avoid conflicts
+    if brew list --cask claude-code &>/dev/null; then
+        echo "Removing Homebrew Claude Code cask (switching to native install)..."
+        brew uninstall --cask claude-code || warn "Failed to uninstall brew claude-code cask"
+    fi
+
+    if ! command_exists claude; then
+        echo "Installing Claude Code (native)..."
+        curl -fsSL https://claude.ai/install.sh | bash
+    else
+        echo "Claude Code already installed: $(claude --version 2>/dev/null || echo 'unknown version')"
+    fi
+fi
+
 # fzf keybindings and completion
 if command_exists fzf; then
     FZF_INSTALL="$(brew --prefix)/opt/fzf/install"
