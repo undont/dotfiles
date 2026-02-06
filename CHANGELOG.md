@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.14] - 2026-02-06
+
+### Changed
+- Neovim: LSP go-to-definition, references, implementations, and type-definition now deduplicate results and display via Telescope
+- Neovim: `<leader>q` diagnostic quickfix now filters to warnings and errors (skips hints/info)
+- Neovim: Telescope path display changed to filename-first for easier scanning
+- Tmux: list-claude, list-nvim, and list-opencode scripts refactored for performance — batch process detection, pre-fetched window names, and parameter expansion replace per-pane subshells
+- Installer: Unmigrated `local-aliases.zsh` content is now automatically appended into `~/.zshrc` during symlink creation
+
+### Added
+- Tmux: `is_pane_running()` helper in common.sh for checking active foreground processes in a pane (excludes suspended)
+
+### Fixed
+- Neovim: Filtered out Roslyn IDE0079 false-positive diagnostic ("Remove unnecessary suppression")
+
 ## [0.2.13] - 2026-02-06
 
 ### Changed

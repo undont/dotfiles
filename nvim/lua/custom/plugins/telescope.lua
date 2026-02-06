@@ -34,7 +34,7 @@ return {
       require('telescope').setup {
         defaults = {
           -- Results show full relative path (default behaviour)
-          path_display = { 'truncate' },
+          path_display = { 'filename_first' },
         },
         extensions = {
           ['ui-select'] = {
@@ -44,8 +44,6 @@ return {
       }
 
       -- Override previewer to show short path in title
-      local previewers = require 'telescope.previewers'
-      local from_entry = require 'telescope.from_entry'
       local conf = require('telescope.config').values
 
       local original_file_previewer = conf.file_previewer

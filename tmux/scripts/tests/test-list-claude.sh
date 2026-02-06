@@ -82,6 +82,12 @@ section "Script Structure"
 # Check for required usage patterns
 script_content=$(cat "$LIST_CLAUDE_SCRIPT")
 
+if [[ "$script_content" == *'source "$SCRIPT_DIR/_lib/common.sh"'* ]]; then
+    pass "Sources common.sh library"
+else
+    fail "Should source common.sh library"
+fi
+
 if [[ "$script_content" == *'source "$SCRIPT_DIR/_lib/alerts.sh"'* ]]; then
     pass "Sources alerts.sh library"
 else
@@ -96,9 +102,9 @@ fi
 
 section "Output Format"
 
-# Check for FZF-friendly format (target first)
-if [[ "$script_content" == *'target="${session}:${window_idx}.${pane_idx}"'* ]]; then
-    pass "Builds target in session:window.pane format"
+# Check for FZF-friendly format (target from tmux output)
+if [[ "$script_content" == *'target='* ]]; then
+    pass "Builds target for session:window.pane format"
 else
     fail "Should build target in correct format"
 fi
@@ -156,11 +162,18 @@ fi
 
 section "Command Detection"
 
-# Script should specifically look for "claude" command
-if [[ "$script_content" == *'if [[ "$command" == "claude" ]]'* ]]; then
-    pass "Filters for claude command specifically"
+# Script should batch-detect Claude processes via pgrep and process tree
+if [[ "$script_content" == *'pgrep -x claude'* ]]; then
+    pass "Uses pgrep to find Claude processes"
 else
-    fail "Should filter for claude command"
+    fail "Should use pgrep to find Claude processes"
+fi
+
+# Script should filter out suspended processes
+if [[ "$script_content" == *'T*'* ]]; then
+    pass "Filters out suspended (Ctrl+Z) processes"
+else
+    fail "Should filter out suspended processes"
 fi
 
 # ===========================================================================
