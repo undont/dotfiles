@@ -12,6 +12,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Installer: Claude Code now installed natively via `claude.ai/install.sh` instead of Homebrew cask — automatically uninstalls brew version if present
 - Neovim: Added `<leader>lr` keybinding for LSP restart
 
+### Fixed
+- Neovim: mkdnflow to-do config uses correct `marker` field (renamed from `symbol` in upstream API)
+- Tmux: list-nvim script no longer exits early when grep/ps/lsof return no matches (`|| true` guards)
+
 ## [0.2.11] - 2026-02-05
 
 ### Added
