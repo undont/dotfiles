@@ -45,7 +45,9 @@ function M.setup()
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
   -- Diagnostics
-  vim.keymap.set('n', '<leader>q', vim.diagnostic.setloclist, { desc = 'Open diagnostic [Q]uickfix list' })
+  vim.keymap.set('n', '<leader>q', function()
+    vim.diagnostic.setqflist { severity = { min = vim.diagnostic.severity.WARN } }
+  end, { desc = 'Open diagnostic [Q]uickfix list (errors + warnings)' })
 
   -- File explorer
   vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'Toggle file [E]xplorer' })

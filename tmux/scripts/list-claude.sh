@@ -5,6 +5,7 @@
 set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
+source "$SCRIPT_DIR/_lib/common.sh"
 source "$SCRIPT_DIR/_lib/alerts.sh"
 
 # Check if tmux is available
@@ -17,37 +18,59 @@ if ! tmux list-sessions &>/dev/null; then
     exit 0
 fi
 
+# Build set of pane PIDs that have an active (non-suspended) claude child process.
+# Done once upfront to avoid forking pgrep+ps per pane in the loop.
+declare -A active_claude_ppids
+while IFS= read -r cpid; do
+    state=$(ps -o state= -p "$cpid" 2>/dev/null) || continue
+    [[ "$state" == T* ]] && continue
+    ppid=$(ps -o ppid= -p "$cpid" 2>/dev/null) || continue
+    active_claude_ppids[${ppid// /}]=1
+done < <(pgrep -x claude 2>/dev/null)
+
+# Pre-fetch window names: "session:window_index window_name"
+declare -A window_names
+while IFS= read -r wline; do
+    key="${wline%% *}"
+    name="${wline#* }"
+    window_names["$key"]="$name"
+done < <(tmux list-windows -a -F '#{session_name}:#{window_index} #{window_name}')
+
+# Pre-load alerts file content (if it exists)
+alerts_content=""
+if [[ -f "$ALERTS_FILE" ]]; then
+    alerts_content=$(<"$ALERTS_FILE")
+fi
+
 # Store results
 claude_panes=()
 
 # Iterate through all panes in all sessions, sorted by last viewed (most recent first)
 while IFS= read -r line; do
-    # Parse the pane info: last_viewed session:window_index.pane_index command
-    # last_viewed=$(echo "$line" | cut -d' ' -f1)  # Unused: for sorting only
-    session=$(echo "$line" | cut -d' ' -f2 | cut -d: -f1)
-    window_idx=$(echo "$line" | cut -d: -f2 | cut -d. -f1)
-    pane_idx=$(echo "$line" | cut -d. -f2 | cut -d' ' -f1)
-    command=$(echo "$line" | cut -d' ' -f3-)
+    # Parse: "last_viewed session:window_index.pane_index pane_pid"
+    rest="${line#* }"          # strip last_viewed
+    target="${rest%% *}"       # session:window_index.pane_index
+    pane_pid="${rest##* }"     # pane_pid
 
-    # Check if the command is claude
-    if [[ "$command" == "claude" ]]; then
-        # Get window name for better display
-        window_name=$(tmux list-windows -t "$session" -F '#{window_index} #{window_name}' | grep "^$window_idx " | cut -d' ' -f2-)
+    # Check if this pane has an active claude child
+    [[ -n "${active_claude_ppids[$pane_pid]:-}" ]] || continue
 
-        # Build target (session:window.pane)
-        target="${session}:${window_idx}.${pane_idx}"
+    # Extract session and window_idx for lookups
+    session="${target%%:*}"
+    win_pane="${target#*:}"
+    window_idx="${win_pane%%.*}"
 
-        # Check if this window has an alert for claude
-        # New format: session:window:agent
-        if [[ -f "$ALERTS_FILE" ]] && grep -q "^${session}:${window_name}:claude$" "$ALERTS_FILE" 2>/dev/null; then
-            display=$(get_agent_display "claude")
-            icon="${display%%|*}"
-            claude_panes+=("${target} ${window_name} ${icon}")
-        else
-            claude_panes+=("${target} ${window_name}")
-        fi
+    window_name="${window_names["${session}:${window_idx}"]:-}"
+
+    # Check if this window has an alert for claude
+    if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${session}:${window_name}:claude$" 2>/dev/null; then
+        display=$(get_agent_display "claude")
+        icon="${display%%|*}"
+        claude_panes+=("${target} ${window_name} ${icon}")
+    else
+        claude_panes+=("${target} ${window_name}")
     fi
-done < <(tmux list-panes -a -F '#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_current_command}' | sort -rn)
+done < <(tmux list-panes -a -F '#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
 
 # Add Claude Code ghost at top (Anthropic orange: #d97757 ≈ 173)
 echo ""

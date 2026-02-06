@@ -113,6 +113,33 @@ elif [[ -f "$HOME/.zshrc" ]]; then
   # Regular file exists — check if it already sources dotfiles.zsh
   if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
     success "Personal ~/.zshrc exists (sources dotfiles framework)"
+
+    # Check for unmigrated local-aliases.zsh
+    ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+    if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" && -s "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
+      if ! grep -q "local-aliases" "$HOME/.zshrc" 2>/dev/null; then
+        info "Found unmigrated local-aliases.zsh"
+        if [[ -t 0 ]]; then
+          printf "  ${YELLOW}⚠${NC}  Append local-aliases.zsh content into ~/.zshrc? [Y/n] "
+          read -r response
+        else
+          response="y"
+        fi
+
+        if [[ ! "$response" =~ ^[Nn]$ ]]; then
+          {
+            printf "\n# =============================================================================\n"
+            printf "# MIGRATED FROM local-aliases.zsh\n"
+            printf "# =============================================================================\n"
+            cat "$ZSH_CONFIG_DIR/local-aliases.zsh"
+          } >> "$HOME/.zshrc"
+
+          mv "$ZSH_CONFIG_DIR/local-aliases.zsh" "$ZSH_CONFIG_DIR/local-aliases.zsh.bak"
+          success "Migrated local-aliases.zsh content into ~/.zshrc"
+          info "Backup saved: $ZSH_CONFIG_DIR/local-aliases.zsh.bak"
+        fi
+      fi
+    fi
   else
     warn "$HOME/.zshrc exists but doesn't source dotfiles.zsh"
     info "Add this line to source the framework: source ~/dotfiles/zsh/dotfiles.zsh"

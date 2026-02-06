@@ -23,6 +23,36 @@ return {
       'saghen/blink.cmp',
     },
     config = function()
+      -- Deduplicate LSP results and display with Telescope
+      local function lsp_dedup(method)
+        return function()
+          vim.lsp.buf[method] {
+            on_list = function(options)
+              local seen = {}
+              local items = {}
+              for _, item in ipairs(options.items) do
+                local key = item.filename .. ':' .. item.lnum .. ':' .. item.col
+                if not seen[key] then
+                  seen[key] = true
+                  table.insert(items, item)
+                end
+              end
+              if #items == 0 then
+                vim.notify('No results found', vim.log.levels.INFO)
+                return
+              end
+              options.items = items
+              vim.fn.setqflist({}, ' ', options)
+              if #items == 1 then
+                vim.cmd.cfirst()
+              else
+                require('telescope.builtin').quickfix()
+              end
+            end,
+          }
+        end
+      end
+
       -- LSP attach autocmd
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
@@ -35,13 +65,13 @@ return {
           -- LSP keymaps
           map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
           map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
-          map('grr', require('telescope.builtin').lsp_references, '[G]oto [R]eferences')
-          map('gri', require('telescope.builtin').lsp_implementations, '[G]oto [I]mplementation')
-          map('grd', require('telescope.builtin').lsp_definitions, '[G]oto [D]efinition')
+          map('grr', lsp_dedup 'references', '[G]oto [R]eferences')
+          map('gri', lsp_dedup 'implementation', '[G]oto [I]mplementation')
+          map('grd', lsp_dedup 'definition', '[G]oto [D]efinition')
           map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
           map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
           map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
-          map('grt', require('telescope.builtin').lsp_type_definitions, '[G]oto [T]ype Definition')
+          map('grt', lsp_dedup 'type_definition', '[G]oto [T]ype Definition')
           map('<leader>lr', '<cmd>LspRestart<CR>', '[L]SP [R]estart')
 
           -- Helper for checking client support
@@ -120,6 +150,16 @@ return {
           end,
         },
       }
+
+      -- Filter out IDE0079 (Remove unnecessary suppression) - known Roslyn false positive
+      vim.lsp.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx, config)
+        if result and result.diagnostics then
+          result.diagnostics = vim.tbl_filter(function(d)
+            return d.code ~= 'IDE0079'
+          end, result.diagnostics)
+        end
+        vim.lsp.diagnostic.on_publish_diagnostics(err, result, ctx, config)
+      end
 
       -- Configure LSP hover to use bordered windows with proper syntax highlighting
       vim.lsp.handlers['textDocument/hover'] = vim.lsp.with(vim.lsp.handlers.hover, {
