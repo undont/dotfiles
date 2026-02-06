@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.13] - 2026-02-06
+
+### Changed
+- Zsh: Inverted config architecture — `~/.zshrc` is now your personal file (not a symlink), sourcing `dotfiles.zsh` as a framework
+- Zsh: Removed `local-aliases.zsh` system — personal config goes directly in `~/.zshrc`
+- Installer: Migrates existing symlink users automatically, preserving `local-aliases.zsh` content
+
+### Added
+- `zsh/dotfiles.zsh` — shared framework extracted from the old `zshrc`
+- `zsh/zshrc.template` — template for creating user's personal `~/.zshrc`
+- `zsh/zshrc` — backwards-compat wrapper for unmigrated symlink users
+
+### Fixed
+- Installer: `DOTFILES_DIR` resolution now always produces absolute paths, preventing broken relative symlinks
+
 ## [0.2.12] - 2026-02-05
 
 ### Changed

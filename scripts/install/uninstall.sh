@@ -69,8 +69,8 @@ print_header "Dotfiles Uninstall"
 
 # Define all symlinks that install.sh creates
 # Must match create-symlinks.sh exactly
+# Note: ~/.zshrc is handled separately (may be personal file, not symlink)
 SYMLINKS=(
-    "$HOME/.zshrc"
     "$HOME/.zprofile"
     "$HOME/.p10k.zsh"
     "$HOME/.tmux.conf"
@@ -90,6 +90,14 @@ if [[ "$(uname)" == "Darwin" ]]; then
 fi
 
 echo "This will remove the following symlinks:"
+
+# Show ~/.zshrc status
+if [[ -L "$HOME/.zshrc" ]]; then
+    echo "  - $HOME/.zshrc -> $(readlink "$HOME/.zshrc")"
+elif [[ -f "$HOME/.zshrc" ]]; then
+    echo "  - $HOME/.zshrc (personal file — will be preserved)"
+fi
+
 for link in "${SYMLINKS[@]}"; do
     if [[ -L "$link" ]]; then
         echo "  - $link -> $(readlink "$link")"
@@ -128,6 +136,16 @@ fi
 
 echo ""
 
+# Handle ~/.zshrc — may be a symlink (old) or personal file (new)
+if [[ -L "$HOME/.zshrc" ]]; then
+    rm -f "$HOME/.zshrc"
+    success "Removed: $HOME/.zshrc (symlink)"
+elif [[ -f "$HOME/.zshrc" ]]; then
+    if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
+        warn "Kept ~/.zshrc (personal file — remove manually if desired)"
+    fi
+fi
+
 # Step 1: Remove symlinks
 info "Removing symlinks..."
 for link in "${SYMLINKS[@]}"; do
@@ -165,6 +183,22 @@ if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
         success "Removed empty secrets file"
     else
         warn "Kept $ZSH_CONFIG_DIR/secrets.zsh (contains data)"
+    fi
+fi
+
+# Remove local-aliases backup if it exists
+if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh.bak" ]]; then
+    rm -f "$ZSH_CONFIG_DIR/local-aliases.zsh.bak"
+    success "Removed local-aliases.zsh.bak"
+fi
+
+# Remove local-aliases.zsh if still present and empty
+if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
+    if [[ ! -s "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
+        rm -f "$ZSH_CONFIG_DIR/local-aliases.zsh"
+        success "Removed empty local-aliases.zsh"
+    else
+        warn "Kept $ZSH_CONFIG_DIR/local-aliases.zsh (contains data)"
     fi
 fi
 

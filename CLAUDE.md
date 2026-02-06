@@ -160,10 +160,12 @@ dotfiles/
 │   └── tests/            # Test suites
 ├── themes/               # Theme definitions (dracula, catppuccin, tokyo-night, nord)
 ├── zsh/                  # Zsh configuration
-│   ├── zshrc             # Main config (symlinked to ~/.zshrc)
+│   ├── dotfiles.zsh      # Shared framework (sourced by ~/.zshrc)
+│   ├── zshrc             # Backwards-compat wrapper (legacy symlinks)
+│   ├── zshrc.template    # Template for user's ~/.zshrc
 │   ├── zprofile          # Login shell config
 │   ├── p10k.zsh          # Powerlevel10k theme config
-│   └── *.template        # Templates for user config (secrets, local-aliases)
+│   └── *.template        # Templates for user config (secrets)
 ├── tmux/                 # Tmux configuration (symlinked to ~/.tmux)
 │   ├── tmux.conf.template  # Theme template (processed by theme-switch)
 │   └── scripts/          # Custom scripts (session management, undo, alerts, themes)
