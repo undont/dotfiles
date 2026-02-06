@@ -1,0 +1,341 @@
+# =============================================================================
+# DOTFILES ZSH FRAMEWORK
+# =============================================================================
+# Shared shell configuration sourced by ~/.zshrc.
+# Do NOT symlink this file directly — source it from your personal ~/.zshrc:
+#
+#   source ~/dotfiles/zsh/dotfiles.zsh
+#
+# File structure:
+#   ~/.zshrc                           - Your personal config (sources this file)
+#   ~/.zprofile                        - Login shell config (PATH additions from installers)
+#   ~/.p10k.zsh                        - Powerlevel10k theme configuration
+#   ~/.config/zsh/secrets.zsh          - API keys and credentials (not version controlled)
+
+# =============================================================================
+# STARTUP PROFILING (optional)
+# =============================================================================
+# Enable with: ZPROF=1 zsh -i -c exit
+# Or use: zsh-profile-detailed
+[[ -n "$ZPROF" ]] && zmodload zsh/zprof
+
+# =============================================================================
+# PLATFORM DETECTION
+# =============================================================================
+# Detect platform for conditional configuration (must be before Homebrew-installed tools)
+case "$(uname)" in
+  Darwin)
+    export IS_MACOS=1
+    if [[ "$(uname -m)" == "arm64" ]]; then
+      export IS_APPLE_SILICON=1
+      export HOMEBREW_PREFIX="/opt/homebrew"
+    else
+      export IS_APPLE_SILICON=0
+      export HOMEBREW_PREFIX="/usr/local"
+    fi
+    ;;
+  Linux)
+    export IS_MACOS=0
+    export IS_APPLE_SILICON=0
+    export HOMEBREW_PREFIX="/home/linuxbrew/.linuxbrew"
+    ;;
+esac
+
+# Load theme and config (installed via: brew install powerlevel10k)
+if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
+  source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
+fi
+[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+
+# =============================================================================
+# PATH CONFIGURATION
+# =============================================================================
+# Note: Additional PATH entries may exist in ~/.zprofile (added by installers)
+
+# Homebrew (detected location)
+export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
+
+# Go workspace (GOPATH is where go install puts binaries)
+export GOPATH=$HOME/go
+export PATH=$PATH:$GOPATH/bin
+
+# Java (OpenJDK via Homebrew)
+export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
+
+# Python pipx (isolated CLI tool installation)
+export PATH="$PATH:$HOME/.local/bin"
+
+# Launchers (tmux session launchers, VS Code launcher, etc.)
+export PATH="$PATH:$HOME/.local/launchers"
+
+# User scripts directory (custom shell scripts)
+export PATH="$HOME/bin:$PATH"
+
+# Neovim Mason LSP/tools (lua-language-server, gopls, pyright, etc.)
+export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
+
+# .NET global tools (EasyDotnet, etc.)
+export PATH="$PATH:$HOME/.dotnet/tools"
+
+# ARM embedded development (for microcontroller/firmware work)
+export INCLUDE="$HOMEBREW_PREFIX/arm-none-eabi/include"
+# export LIB="$HOMEBREW_PREFIX/arm-none-eabi/lib"
+
+# =============================================================================
+# GOOGLE CLOUD SDK - LAZY LOADED
+# =============================================================================
+# Lazy load gcloud CLI tools and shell completion (~260ms savings)
+# Only loads when you actually use gcloud/gsutil/bq
+_load_gcloud() {
+  unset -f gcloud gsutil bq
+  local gcloud_dir="$HOME/google-cloud-sdk"
+  if [[ -f "$gcloud_dir/path.zsh.inc" ]]; then
+    source "$gcloud_dir/path.zsh.inc"
+  fi
+  if [[ -f "$gcloud_dir/completion.zsh.inc" ]]; then
+    source "$gcloud_dir/completion.zsh.inc"
+  fi
+}
+gcloud() { _load_gcloud && gcloud "$@"; }
+gsutil() { _load_gcloud && gsutil "$@"; }
+bq() { _load_gcloud && bq "$@"; }
+
+# =============================================================================
+# NODE.JS (FNM)
+# =============================================================================
+# fnm (Fast Node Manager) - Rust-based, ~5ms init vs NVM's 300-500ms
+# Usage: fnm install 22, fnm use 20, fnm default 22
+# Reads .nvmrc and .node-version files automatically with --use-on-cd
+eval "$(fnm env --use-on-cd)"
+
+# =============================================================================
+# DOCKER & COMPLETIONS
+# =============================================================================
+# Docker CLI completions (docker, docker-compose commands)
+fpath=("$HOME/.docker/completions" $fpath)
+
+# Cached compinit - only regenerate completion dump once per day (~50-100ms savings)
+autoload -Uz compinit
+if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+  compinit
+else
+  compinit -C
+fi
+
+# =============================================================================
+# DIRENV
+# =============================================================================
+# Automatically load/unload environment variables when entering directories
+# with .envrc files. Great for per-project env vars.
+eval "$(direnv hook zsh)"
+
+# =============================================================================
+# ZSH PLUGINS
+# =============================================================================
+# zsh-autosuggestions: suggests commands as you type based on history
+# Accept suggestion: Right arrow or End key
+if [[ -f "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
+  source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+fi
+
+# fzf: fuzzy finder for files, history, and more
+# Keybindings: Ctrl+R (history), Ctrl+T (files), Opt+C (cd to directory)
+eval "$(fzf --zsh)"
+
+# Apply theme colours to fzf
+if [[ -f "$HOME/dotfiles/scripts/fzf-theme.sh" ]]; then
+  source "$HOME/dotfiles/scripts/fzf-theme.sh"
+fi
+
+# =============================================================================
+# TERMINAL TITLE HOOKS
+# =============================================================================
+# Dynamic terminal/tab titles that show context
+# precmd: runs before each prompt (shows directory + git branch)
+# preexec: runs before each command (shows running command)
+precmd() {
+  local branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+  if [[ -n "$branch" ]]; then
+    print -Pn "\e]0;%1~ ($branch)\a"
+  else
+    print -Pn "\e]0;%1~\a"
+  fi
+}
+
+preexec() {
+  # Extract first word safely using parameter expansion
+  local cmd="${1%% *}"
+  print -Pn "\e]0;${cmd}\a"
+}
+
+# =============================================================================
+# SECRETS & CREDENTIALS
+# =============================================================================
+# API keys and tokens loaded from separate file (not version controlled)
+# See ~/dotfiles/zsh/README.md for structure of secrets.zsh
+ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
+  source "$ZSH_CONFIG_DIR/secrets.zsh"
+fi
+
+# Android SDK platform tools (adb, fastboot)
+[[ -n "$ANDROID_HOME" ]] && export PATH=$PATH:$ANDROID_HOME/platform-tools
+
+# =============================================================================
+# .NET
+# =============================================================================
+# Disable Microsoft telemetry for .NET CLI
+export DOTNET_CLI_TELEMETRY_OPTOUT='true'
+
+# =============================================================================
+# SONARCLOUD
+# =============================================================================
+# SonarScanner CLI for code quality analysis
+export SONAR_HOST_URL="https://sonarcloud.io"
+
+export PATH="$HOME/bin:$PATH"
+
+# =============================================================================
+# ALIASES & FUNCTIONS
+# =============================================================================
+# Editor
+export EDITOR="nvim"                   # Default editor for git, etc.
+alias oc="opencode"                    # Launch OpenCode editor
+
+# MCP (Model Context Protocol)
+alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across tools
+
+# Tmux session management (see ~/.tmux/README.md)
+alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
+alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
+
+# Functions (instead of aliases) for tab completion support
+trestore() {
+  ~/.tmux/scripts/restore-resurrect.sh "$@"
+}
+
+tkill() {
+  ~/.tmux/scripts/delete-resurrect.sh "$@"
+}
+
+
+# Tab completion for tmux commands
+_trestore_complete() {
+  local -a options sessions
+  options=(
+    '--session[Restore a specific session]:session:->sessions'
+    '-s[Restore a specific session]:session:->sessions'
+    '--delete[Delete a session backup]:session:->sessions'
+    '-d[Delete a session backup]:session:->sessions'
+    '--list[List available sessions]'
+    '-l[List available sessions]'
+    '--replace[Kill existing session before restoring]'
+    '--help[Show usage]'
+    '-h[Show usage]'
+  )
+
+  _arguments -s "${options[@]}"
+
+  case "$state" in
+    sessions)
+      sessions=(${(f)"$(ls ~/.tmux/resurrect/sessions/*.txt 2>/dev/null | xargs -n1 basename -s .txt)"})
+      _describe 'session backups' sessions
+      ;;
+  esac
+}
+
+_tmux_sessions_running() {
+  # Complete with running tmux sessions (for tkill and tattach)
+  local -a sessions
+  sessions=(${(f)"$(tmux list-sessions -F '#{session_name}' 2>/dev/null)"})
+  _describe 'running tmux sessions' sessions
+}
+
+# Register completion functions
+compdef _trestore_complete trestore
+compdef _tmux_sessions_running tkill
+compdef _tmux_sessions_running tattach
+
+# Attach to tmux session, restoring from backup if needed
+tattach() {
+  # Try to attach to running session
+  if tmux a -t "$1" 2>/dev/null; then return 0; fi
+
+  # Not running - try to restore from backup
+  local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
+  if [[ -f "$backup" ]]; then
+    echo "Restoring '$1' from backup..."
+    if ~/.tmux/scripts/restore-resurrect.sh --session "$1" && tmux a -t "$1"; then
+      return 0
+    fi
+    # Restore failed - backup is stale
+    echo "Backup stale, removing: $1"
+    rm -f "$backup"
+    return 1
+  fi
+  echo "No session or backup found: $1"
+  return 1
+}
+
+# Development tools
+alias gols="ls ~/go/bin"               # List installed Go binaries
+
+# Homebrew update
+alias brewup="brew update && brew upgrade"
+
+# =============================================================================
+# ZSH LINE EDITOR (ZLE) KEYBINDINGS
+# =============================================================================
+# Disable vi-mode completely - use emacs keybindings (default)
+bindkey -e                             # Force emacs mode (Ctrl+A, Ctrl+E, etc.)
+
+# Prevent accidental vi-mode activation from Option+key combinations
+# Option+key sends ESC followed by another character. Setting KEYTIMEOUT to 1
+# (10ms) means ESC alone won't trigger vi-mode, but ESC sequences from Option+key
+# will be processed correctly, and tools like fzf can still use ESC to exit.
+export KEYTIMEOUT=1                    # Wait 10ms for more chars after ESC
+
+# Ensure common word deletion shortcuts work correctly
+bindkey '^[^?' backward-kill-word      # Option+Backspace: delete word backwards
+bindkey '^W' backward-kill-word        # Ctrl+W: delete word backwards
+
+# =============================================================================
+# DOTFILES CLI
+# =============================================================================
+# Tab completion for dotfiles command
+_dotfiles() {
+  local -a commands
+  commands=(
+    'update:Pull latest changes and re-run installer'
+    'status:Show sync status and quick health summary'
+    'health:Run full health check'
+    'edit:Open dotfiles directory in $EDITOR'
+    'cd:Print dotfiles path'
+    'sync:Fetch from origin and show what'\''s changed'
+    'help:Show help message'
+  )
+  _describe 'dotfiles command' commands
+}
+compdef _dotfiles dotfiles
+
+# =============================================================================
+# SHELL STARTUP PROFILING
+# =============================================================================
+# Quick benchmark: runs zsh 5 times and shows startup time
+zsh-profile() {
+  echo "Running 5 iterations..."
+  for i in {1..5}; do
+    time zsh -i -c exit
+  done
+}
+
+# Detailed profiling: shows what's taking time during startup
+zsh-profile-detailed() {
+  ZPROF=1 zsh -i -c exit
+}
+
+# =============================================================================
+# ZPROF OUTPUT (end of startup)
+# =============================================================================
+# Print profiling results if ZPROF is set
+[[ -n "$ZPROF" ]] && zprof

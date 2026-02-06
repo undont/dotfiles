@@ -6,7 +6,7 @@ set -euo pipefail
 # Usage: ./scripts/rollback.sh [--force]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-DOTFILES_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+DOTFILES_DIR="$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)"
 export DOTFILES_DIR
 
 source "$SCRIPT_DIR/../_lib/common.sh"
