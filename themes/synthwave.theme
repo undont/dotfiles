@@ -46,7 +46,7 @@ GHOSTTY_BACKGROUND="#1a1226"
 GHOSTTY_FOREGROUND="#e4dfed"
 GHOSTTY_CURSOR_COLOR="#00d9ff"   # Cyan cursor
 GHOSTTY_CURSOR_TEXT="#1a1226"
-GHOSTTY_SELECTION_BG="#3d2861"   # Purple selection
+GHOSTTY_SELECTION_BG="#2a1f3d"   # Purple selection
 GHOSTTY_SELECTION_FG="#ffffff"
 
 # Terminal palette (0-15)

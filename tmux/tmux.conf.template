@@ -370,6 +370,20 @@ set -g pane-active-border-style 'fg={{TMUX_PANE_BORDER_ACTIVE}}'
 set -g message-style 'bg={{TMUX_MESSAGE_BG}} fg={{TMUX_MESSAGE_FG}} bold'
 set -g message-command-style 'bg={{TMUX_MESSAGE_COMMAND_BG}} fg={{TMUX_MESSAGE_COMMAND_FG}}'
 
+# Copy mode (scroll mode) styling
+set -g mode-style 'bg={{TMUX_ACCENT_CYAN}} fg={{TMUX_BG_PRIMARY}} bold'
+
+# Search match highlighting in copy mode (tmux 3.2+)
+# All matches highlighted in yellow, current match in bright cyan
+set -g copy-mode-match-style 'bg={{TMUX_ACCENT_YELLOW}} fg={{TMUX_BG_PRIMARY}}'
+set -g copy-mode-current-match-style 'bg={{TMUX_ACCENT_CYAN}} fg={{TMUX_BG_PRIMARY}} bold'
+
+# Show search counter in mode indicator (e.g., "[3/12]" when searching)
+set -g copy-mode-mark-style 'bg={{TMUX_ACCENT_PINK}} fg={{TMUX_BG_PRIMARY}} bold'
+
+# Clock colour for copy mode
+set -g clock-mode-colour "{{TMUX_ACCENT_CYAN}}"
+
 # ══════════════════════════════════════════════════════════════
 # Plugins (managed by TPM)
 # ══════════════════════════════════════════════════════════════
