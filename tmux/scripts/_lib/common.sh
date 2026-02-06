@@ -185,3 +185,28 @@ is_last_pane() {
     count=$(get_pane_count)
     [[ "$count" -eq 1 ]]
 }
+
+# Check if a pane is running a specific command by inspecting child processes
+# Many CLI tools (Claude Code, OpenCode) run as child processes of the pane
+# shell, so pane_current_command shows the runtime (e.g. Node.js version)
+# rather than the tool name. This checks the process tree directly.
+# Excludes suspended (Ctrl+Z) processes — only matches active foreground ones.
+#
+# Usage:
+#   is_pane_running <pane_pid> <command_name> [-f]
+#     -f  match against full command line (default: exact process name)
+#
+# Examples:
+#   is_pane_running "$pane_pid" "claude"            # exact match
+#   is_pane_running "$pane_pid" "opencode" -f       # command line match
+is_pane_running() {
+    local pane_pid="$1"
+    local command_name="$2"
+    local match_flag="-x"
+    [[ "${3:-}" == "-f" ]] && match_flag="-f"
+
+    local pid
+    pid=$(pgrep -P "$pane_pid" "$match_flag" "$command_name" 2>/dev/null) || return 1
+    # Filter out stopped/suspended processes (state 'T')
+    [[ "$(ps -o state= -p "$pid" 2>/dev/null)" != T* ]]
+}
