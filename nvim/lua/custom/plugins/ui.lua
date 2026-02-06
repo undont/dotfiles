@@ -94,10 +94,12 @@ return {
   {
     'neanias/everforest-nvim',
     lazy = true,
-    opts = {
-      background = 'hard',
-      transparent_background_level = 0,
-    },
+    config = function()
+      require('everforest').setup {
+        background = 'hard',
+        transparent_background_level = 0,
+      }
+    end,
   },
 
   -- Kanagawa theme
