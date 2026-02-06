@@ -17,8 +17,8 @@ return {
         },
         to_do = {
           statuses = {
-            { name = 'not_started', symbol = ' ' },
-            { name = 'complete', symbol = 'x' },
+            { name = 'not_started', marker = ' ' },
+            { name = 'complete', marker = 'x' },
           },
         },
         tables = {

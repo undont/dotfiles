@@ -41,7 +41,7 @@ while IFS= read -r line; do
     # Check if the command is nvim
     if [[ "$command" == "nvim" ]]; then
         # Get window name for better display
-        window_name=$(tmux list-windows -t "$session" -F '#{window_index} #{window_name}' | grep "^$window_idx " | cut -d' ' -f2-)
+        window_name=$(tmux list-windows -t "$session" -F '#{window_index} #{window_name}' | grep "^$window_idx " | cut -d' ' -f2- || true)
 
         # Build target (session:window.pane)
         target="${session}:${window_idx}.${pane_idx}"
@@ -61,7 +61,7 @@ while IFS= read -r line; do
                         socket="${socket_map[$nvim_pid]}"
                         break 2
                     fi
-                    check_pid=$(ps -o ppid= -p "$check_pid" 2>/dev/null | tr -d ' ')
+                    check_pid=$(ps -o ppid= -p "$check_pid" 2>/dev/null | tr -d ' ' || true)
                     [[ -z "$check_pid" || "$check_pid" == "1" ]] && break
                 done
             done
@@ -74,7 +74,7 @@ while IFS= read -r line; do
             if [[ -d "/proc/$nvim_pid/cwd" ]]; then
                 cwd=$(readlink "/proc/$nvim_pid/cwd" 2>/dev/null)
             else
-                cwd=$(lsof -a -p "$nvim_pid" -d cwd -Fn 2>/dev/null | grep '^n/' | cut -c2-)
+                cwd=$(lsof -a -p "$nvim_pid" -d cwd -Fn 2>/dev/null | grep '^n/' | cut -c2- || true)
             fi
         fi
 
