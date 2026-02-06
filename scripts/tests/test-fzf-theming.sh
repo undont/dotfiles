@@ -183,19 +183,19 @@ main() {
         fail "FZF_DEFAULT_OPTS does not use hex colours"
     fi
 
-    section "Integration with .zshrc"
+    section "Integration with dotfiles.zsh"
 
-    # Test: .zshrc sources fzf-theme.sh
-    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/zsh/zshrc"; then
-        pass ".zshrc sources fzf-theme.sh"
+    # Test: dotfiles.zsh sources fzf-theme.sh
+    if grep -q "fzf-theme.sh" "$DOTFILES_ROOT/zsh/dotfiles.zsh"; then
+        pass "dotfiles.zsh sources fzf-theme.sh"
     else
-        fail ".zshrc does not source fzf-theme.sh"
+        fail "dotfiles.zsh does not source fzf-theme.sh"
     fi
 
     # Test: fzf-theme.sh is sourced after fzf initialization
     local fzf_line zsh_line
-    fzf_line=$(grep -n "fzf --zsh" "$DOTFILES_ROOT/zsh/zshrc" | head -1 | cut -d: -f1)
-    zsh_line=$(grep -n "fzf-theme.sh" "$DOTFILES_ROOT/zsh/zshrc" | head -1 | cut -d: -f1)
+    fzf_line=$(grep -n "fzf --zsh" "$DOTFILES_ROOT/zsh/dotfiles.zsh" | head -1 | cut -d: -f1)
+    zsh_line=$(grep -n "fzf-theme.sh" "$DOTFILES_ROOT/zsh/dotfiles.zsh" | head -1 | cut -d: -f1)
 
     if [[ -n "$fzf_line" && -n "$zsh_line" ]] && [[ "$zsh_line" -gt "$fzf_line" ]]; then
         pass "fzf-theme.sh sourced after fzf initialization"

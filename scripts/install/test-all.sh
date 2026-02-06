@@ -5,7 +5,7 @@ set -euo pipefail
 # Usage: ./scripts/test-all.sh [--integration]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+DOTFILES_DIR="$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)"
 
 RUN_INTEGRATION="${1:-}"
 TOTAL_FAIL=0
