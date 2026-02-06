@@ -49,15 +49,19 @@ brew install --cask font-meslo-lg-nerd-font
 
 Then configure your terminal to use "MesloLGS NF" or another Nerd Font.
 
-### 4. Copy Configuration Files
+### 4. Install Dotfiles
 
+Run the installer which creates `~/.zshrc` from the template and symlinks shared config:
+
+```bash
+./install.sh
 ```
-~/.zshrc              # Main shell configuration
-~/.zprofile           # Login shell config (PATH additions)
-~/.p10k.zsh           # Powerlevel10k theme settings
-~/.zsh/
-├── .secrets.zsh      # API keys (create from template below)
-└── README.md         # This documentation
+
+This creates:
+```
+~/.zshrc              # Your personal config (from template, sources the framework)
+~/.zprofile           # Login shell config (symlink)
+~/.p10k.zsh           # Powerlevel10k theme settings (symlink)
 ```
 
 ### 5. Create Secrets File
@@ -106,26 +110,32 @@ source ~/.zshrc
 
 ```
 ~/
-├── .zshrc              # Main config (symlink to ~/dotfiles/zsh/zshrc)
+├── .zshrc              # Your personal config (sources the dotfiles framework)
 ├── .zprofile           # Login shell config (symlink to ~/dotfiles/zsh/zprofile)
 ├── .p10k.zsh           # Powerlevel10k theme (symlink to ~/dotfiles/zsh/p10k.zsh)
 └── .config/
-    ├── zsh/
-    │   ├── secrets.zsh       # API keys and credentials (not versioned)
-    │   └── local-aliases.zsh # Machine-specific aliases (not versioned)
-    ├── mcp-servers.json      # MCP server definitions (source of truth)
-    └── sync-mcp-servers.sh   # Sync script for MCP configs
+    └── zsh/
+        └── secrets.zsh       # API keys and credentials (not versioned)
+
+~/dotfiles/zsh/
+├── dotfiles.zsh        # Shared framework (sourced by ~/.zshrc)
+├── zshrc               # Backwards-compat wrapper (for legacy symlinks)
+├── zshrc.template      # Template for creating ~/.zshrc
+├── zprofile            # Login shell config
+├── p10k.zsh            # Powerlevel10k theme settings
+├── secrets.zsh.template  # Template for secrets file
+└── README.md           # This documentation
 ```
 
 ### File Purposes
 
-| File                          | Purpose                                                  |
-| ----------------------------- | -------------------------------------------------------- |
-| `.zshrc`                      | Interactive shell config: prompt, aliases, plugins, PATH |
-| `.zprofile`                   | Login shell only: PATH additions from installers         |
-| `.p10k.zsh`                   | Prompt appearance, git status format, colours            |
-| `.config/zsh/secrets.zsh`     | API keys (sourced by .zshrc, not version controlled)     |
-| `.config/zsh/local-aliases.zsh` | Machine-specific project aliases (not versioned)       |
+| File                          | Purpose                                                     |
+| ----------------------------- | ----------------------------------------------------------- |
+| `~/.zshrc`                    | Your personal config: sources framework + your customisations |
+| `~/dotfiles/zsh/dotfiles.zsh` | Shared framework: PATH, plugins, tools, keybindings         |
+| `~/.zprofile`                 | Login shell only: PATH additions from installers            |
+| `~/.p10k.zsh`                 | Prompt appearance, git status format, colours               |
+| `~/.config/zsh/secrets.zsh`   | API keys (sourced by framework, not version controlled)     |
 
 ### Zsh Load Order
 
@@ -140,20 +150,26 @@ source ~/.zshrc
 
 ## Configuration Sections
 
-The `.zshrc` is organised into these sections:
+The framework (`dotfiles.zsh`) is organised into these sections:
 
-1. **Powerlevel10k Prompt** - Theme and instant prompt
-2. **PATH Configuration** - Homebrew, Go, Java, Python, etc.
-3. **Google Cloud SDK** - gcloud CLI and completions (lazy loaded)
-4. **Node.js (fnm)** - Fast Node Manager (~5ms init)
-5. **Docker & Completions** - CLI completions with cached compinit
-6. **Direnv** - Per-directory environment variables
-7. **ZSH Plugins** - autosuggestions, fzf
-8. **Terminal Title Hooks** - Dynamic tab titles
-9. **Secrets & Credentials** - Load .secrets.zsh
-10. **.NET / SonarCloud / Bun** - Various tool configs
-11. **Aliases & Functions** - Custom shortcuts
-12. **ZLE Keybindings** - Line editor mode and key mappings
+1. **Platform Detection** - macOS/Linux, Homebrew location
+2. **Powerlevel10k Theme** - Theme loading and p10k config
+3. **PATH Configuration** - Homebrew, Go, Java, Python, etc.
+4. **Google Cloud SDK** - gcloud CLI and completions (lazy loaded)
+5. **Node.js (fnm)** - Fast Node Manager (~5ms init)
+6. **Docker & Completions** - CLI completions with cached compinit
+7. **Direnv** - Per-directory environment variables
+8. **ZSH Plugins** - autosuggestions, fzf
+9. **Terminal Title Hooks** - Dynamic tab titles
+10. **Secrets & Credentials** - Load secrets.zsh
+11. **.NET / SonarCloud** - Various tool configs
+12. **Aliases & Functions** - Custom shortcuts
+13. **ZLE Keybindings** - Line editor mode and key mappings
+
+Your personal `~/.zshrc` adds:
+- **P10k Instant Prompt** - Must be at the very top of the file
+- **Framework Source** - Sources `dotfiles.zsh`
+- **Personal Config** - Your aliases, overrides, and customisations
 
 ---
 
@@ -368,95 +384,33 @@ export SONAR_ORG="..."
 
 ---
 
-## Local Aliases Configuration
+## Personal Configuration
 
-### Overview
+Your `~/.zshrc` is your own file — add anything you want after the framework source line. This replaces the old `local-aliases.zsh` approach.
 
-Project-specific aliases (like `da` for Dana, `dot` for dotfiles) can be customised per machine using the `.local-aliases.zsh` file. This allows the same dotfiles configuration to work across different users and development environments.
+### Adding Personal Config
 
-### Setup
-
-1. **Copy the template:**
-   ```bash
-   cp ~/.config/zsh/local-aliases.zsh.template ~/.config/zsh/local-aliases.zsh
-   ```
-
-2. **Edit your local aliases:**
-   ```bash
-   nvim ~/.config/zsh/local-aliases.zsh
-   ```
-
-3. **Define your project paths:**
-   ```bash
-   # Example configuration
-   export DANA_ROOT="$HOME/src/dana"
-   alias da="cd $DANA_ROOT"
-   alias dap="cd $DANA_ROOT/.claude/plans"
-   ```
-
-4. **Reload your shell:**
-   ```bash
-   source ~/.zshrc
-   ```
-
-### Pattern: Environment Variables + Aliases
-
-The recommended pattern uses environment variables for project roots, then defines aliases based on those variables:
+Edit `~/.zshrc` and add config below the framework source line:
 
 ```bash
-# Define the root path
-export PROJECT_ROOT="$HOME/projects/my-app"
-
-# Create aliases using the variable
-alias myapp="cd $PROJECT_ROOT"
-alias myapp-plans="cd $PROJECT_ROOT/.claude/plans"
-alias myapp-test="cd $PROJECT_ROOT && npm test"
-```
-
-**Benefits:**
-- ✅ Portable across machines (each user sets their own paths)
-- ✅ Environment variables can be used in scripts
-- ✅ Easy to update paths (change variable, all aliases update)
-- ✅ Self-documenting (variable names describe what they point to)
-
-### Default Aliases
-
-The `.zshrc` includes some default aliases that you can override:
-
-| Alias | Default Path | Purpose |
-|-------|--------------|---------|
-| `da` | `~/src/dana` | Dana project root |
-| `dap` | `~/src/dana/.claude/plans` | Dana plans directory |
-| `daw` | `~/src/dana-worktrees` | Dana worktrees |
-| `dot` | `~/dotfiles` | Dotfiles repository |
-| `dotp` | `~/dotfiles/.claude/plans` | Dotfiles plans |
-| `dotd` | `~/dotfiles/.claude/docs` | Dotfiles documentation |
-| `.ai` | `~/.ai` | AI configuration |
-| `plans` | `~/.claude/plans` | Claude Code plans |
-| `commands` | `~/.claude/commands` | Claude Code commands |
-
-To override these, define them in your `.local-aliases.zsh` file.
-
-### Tab Completion for Custom Aliases
-
-If your custom alias needs tab completion (like project-specific tmux session names), use a function instead of an alias:
-
-```bash
-# In .local-aliases.zsh
-myapp() {
-  cd "$MYAPP_ROOT/$1"
-}
-
-# Add completion function
-_myapp() {
-  local -a subdirs
-  subdirs=(${(f)"$(ls -d $MYAPP_ROOT/*/ 2>/dev/null | xargs -n1 basename)"})
-  _describe 'myapp directories' subdirs
-}
-compdef _myapp myapp
+# =============================================================================
+# YOUR PERSONAL CONFIGURATION
+# =============================================================================
+export EDITOR="code"                    # Override default editor
+alias myproject="cd ~/src/myapp"        # Project shortcuts
+alias da="cd ~/src/dana"                # Quick navigation
+export PATH="$HOME/scripts:$PATH"       # Extra PATH entries
 ```
 
 ### Common Patterns
+
+#### Project Shortcuts
+
+```bash
+export DANA_ROOT="$HOME/src/dana"
+alias da="cd $DANA_ROOT"
+alias dap="cd $DANA_ROOT/.claude/plans"
+```
 
 #### Multi-Project Workspace
 
@@ -465,64 +419,20 @@ export DEV_ROOT="$HOME/dev"
 alias dev="cd $DEV_ROOT"
 alias api="cd $DEV_ROOT/api"
 alias web="cd $DEV_ROOT/web"
-alias mobile="cd $DEV_ROOT/mobile"
-```
-
-#### Project with Launcher Function
-
-```bash
-export MYAPP_ROOT="$HOME/projects/myapp"
-alias myapp="cd $MYAPP_ROOT"
-
-# Launcher that sets up environment
-myapp-dev() {
-  cd "$MYAPP_ROOT" || return 1
-  fnm use  # Use correct Node version
-  npm run dev
-}
 ```
 
 #### Conditional Aliases (work vs personal)
 
 ```bash
-# Only create work aliases on work machine
 if [[ -d "$HOME/work" ]]; then
   export WORK_ROOT="$HOME/work"
   alias work="cd $WORK_ROOT"
-  alias jira="cd $WORK_ROOT/jira-client"
 fi
 ```
 
-### File Status
+### Migration from local-aliases.zsh
 
-- ✅ **`.local-aliases.zsh`** - Not version controlled, user-specific
-- ✅ **`.local-aliases.zsh.template`** - Version controlled template
-- ✅ **Automatically loaded** in `.zshrc` after default aliases
-
-### Troubleshooting
-
-**Aliases not working after setup:**
-```bash
-# Reload shell configuration
-source ~/.zshrc
-
-# Or open a new terminal tab
-```
-
-**Check if file is being loaded:**
-```bash
-# Add this to top of .local-aliases.zsh for debugging
-echo "Loading local aliases..."
-
-# Check if file exists
-ls -la ~/.config/zsh/local-aliases.zsh
-```
-
-**Verify environment variables:**
-```bash
-# Print all custom project variables
-env | grep -E "(ROOT|_PROJECT)"
-```
+If you previously used `~/.config/zsh/local-aliases.zsh`, the installer automatically migrates its content into your `~/.zshrc` during upgrade. A backup is saved as `local-aliases.zsh.bak`.
 
 ---
 
@@ -666,7 +576,7 @@ fi
 
 ### Powerlevel10k Instant Prompt
 
-The prompt appears immediately by caching the previous prompt state. This is handled automatically by p10k and configured at the top of `.zshrc`.
+The prompt appears immediately by caching the previous prompt state. This is configured at the top of your `~/.zshrc` (before the framework source line). It must remain at the very top — do not add any `echo` or output commands above it.
 
 ### Profiling Startup Time
 

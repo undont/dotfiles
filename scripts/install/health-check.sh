@@ -125,7 +125,25 @@ echo "Symlinks:"
 echo "---------"
 
 # Zsh (minimal)
-check_symlink "$HOME/.zshrc" "$DOTFILES_DIR/zsh/zshrc" ".zshrc"
+# ~/.zshrc may be a personal file (new) or symlink (legacy)
+printf "Checking %-30s" ".zshrc..."
+if [[ -L "$HOME/.zshrc" ]]; then
+    printf "${YELLOW}SYMLINK (legacy)${NC}\n"
+    echo "  Run 'dotfiles update' to migrate to personal ~/.zshrc"
+    ISSUES=1
+elif [[ -f "$HOME/.zshrc" ]]; then
+    if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
+        printf "${GREEN}OK${NC}\n"
+    else
+        printf "${YELLOW}WARN${NC}\n"
+        echo "  ~/.zshrc exists but doesn't source dotfiles.zsh"
+        ISSUES=1
+    fi
+else
+    printf "${RED}MISSING${NC}\n"
+    echo "  Run: cp ~/dotfiles/zsh/zshrc.template ~/.zshrc"
+    ISSUES=1
+fi
 check_symlink "$HOME/.zprofile" "$DOTFILES_DIR/zsh/zprofile" ".zprofile"
 check_symlink "$HOME/.p10k.zsh" "$DOTFILES_DIR/zsh/p10k.zsh" ".p10k.zsh"
 

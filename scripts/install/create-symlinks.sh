@@ -6,7 +6,7 @@ set -euo pipefail
 # Requires DOTFILES_DIR to be set
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-DOTFILES_DIR="${DOTFILES_DIR:-$(dirname "$(dirname "$SCRIPT_DIR")")}"
+DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)}"
 export DOTFILES_DIR
 
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -62,38 +62,75 @@ echo ""
 
 # Zsh (minimal)
 echo "Zsh configuration:"
-create_link "$DOTFILES_DIR/zsh/zshrc" "$HOME/.zshrc"
+
+# Check if ~/.zshrc needs migration from symlink to personal file
+if [[ -L "$HOME/.zshrc" ]]; then
+  # Currently a symlink (old setup) — offer migration
+  symlink_target="$(readlink "$HOME/.zshrc")"
+
+  if [[ "$symlink_target" == *"dotfiles/zsh/zshrc"* ]]; then
+    info "Found ~/.zshrc symlinked to dotfiles (old setup)"
+    if [[ -t 0 ]]; then
+      printf "  ${YELLOW}⚠${NC}  Migrate to personal ~/.zshrc? Your config will be preserved. [Y/n] "
+      read -r response
+    else
+      response="y"
+    fi
+
+    if [[ ! "$response" =~ ^[Nn]$ ]]; then
+      # Remove symlink
+      rm "$HOME/.zshrc"
+
+      # Create personal .zshrc from template
+      cp "$DOTFILES_DIR/zsh/zshrc.template" "$HOME/.zshrc"
+
+      # Migrate local-aliases.zsh content into the new .zshrc
+      ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
+      if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" && -s "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
+        {
+          printf "\n# =============================================================================\n"
+          printf "# MIGRATED FROM local-aliases.zsh\n"
+          printf "# =============================================================================\n"
+          cat "$ZSH_CONFIG_DIR/local-aliases.zsh"
+        } >> "$HOME/.zshrc"
+
+        # Keep a backup, remove original
+        mv "$ZSH_CONFIG_DIR/local-aliases.zsh" "$ZSH_CONFIG_DIR/local-aliases.zsh.bak"
+        success "Migrated local-aliases.zsh content into ~/.zshrc"
+        info "Backup saved: $ZSH_CONFIG_DIR/local-aliases.zsh.bak"
+      fi
+
+      success "Created personal ~/.zshrc (sources dotfiles framework)"
+      printf "  ${CYAN}→${NC} Edit with: nvim ~/.zshrc\n"
+    else
+      info "Keeping symlink (still supported via backwards-compat wrapper)"
+    fi
+  else
+    # Symlink points somewhere else — leave it alone
+    warn "$HOME/.zshrc is a symlink to $symlink_target (not dotfiles). Skipping."
+  fi
+elif [[ -f "$HOME/.zshrc" ]]; then
+  # Regular file exists — check if it already sources dotfiles.zsh
+  if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
+    success "Personal ~/.zshrc exists (sources dotfiles framework)"
+  else
+    warn "$HOME/.zshrc exists but doesn't source dotfiles.zsh"
+    info "Add this line to source the framework: source ~/dotfiles/zsh/dotfiles.zsh"
+  fi
+else
+  # No .zshrc at all — create from template
+  cp "$DOTFILES_DIR/zsh/zshrc.template" "$HOME/.zshrc"
+  success "Created ~/.zshrc from template"
+  printf "  ${CYAN}→${NC} Edit with: nvim ~/.zshrc\n"
+fi
+
+# These are still symlinked (shared config, not personal)
 create_link "$DOTFILES_DIR/zsh/zprofile" "$HOME/.zprofile"
 create_link "$DOTFILES_DIR/zsh/p10k.zsh" "$HOME/.p10k.zsh"
 
 # User config files go to XDG location
 ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 mkdir -p "$ZSH_CONFIG_DIR"
-
-# Check for local aliases configuration
-echo ""
-info "Checking for local aliases configuration"
-
-if [[ ! -f "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
-  # Check if running interactively (TTY available)
-  if [[ -t 0 ]]; then
-    printf "  ${YELLOW}⚠${NC}  No local aliases found. Create from template? [y/N] "
-    read -r response
-  else
-    # Non-interactive (CI/scripts) - default to no
-    response="n"
-  fi
-
-  if [[ "$response" =~ ^[Yy]$ ]]; then
-    cp "$DOTFILES_DIR/zsh/local-aliases.zsh.template" "$ZSH_CONFIG_DIR/local-aliases.zsh"
-    success "Created $ZSH_CONFIG_DIR/local-aliases.zsh from template"
-    printf "  ${CYAN}→${NC} Edit with: nvim $ZSH_CONFIG_DIR/local-aliases.zsh\n"
-  else
-    info "Skipped. Create later with: cp $DOTFILES_DIR/zsh/local-aliases.zsh.template $ZSH_CONFIG_DIR/local-aliases.zsh"
-  fi
-else
-  success "Local aliases configuration exists"
-fi
 
 # Tmux (minimal)
 echo ""

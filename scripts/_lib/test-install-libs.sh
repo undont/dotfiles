@@ -381,67 +381,67 @@ skip "Preset helper integration tests (validated by sub-script awareness tests)"
 # Zshrc Quick Wins Tests
 # ===========================================================================
 
-section "Zshrc Shell Profiler"
+section "Zsh Framework Shell Profiler"
 
-ZSHRC_FILE="$DOTFILES_DIR/zsh/zshrc"
-if [[ -f "$ZSHRC_FILE" ]]; then
-    zshrc_content=$(cat "$ZSHRC_FILE")
+FRAMEWORK_FILE="$DOTFILES_DIR/zsh/dotfiles.zsh"
+if [[ -f "$FRAMEWORK_FILE" ]]; then
+    framework_content=$(cat "$FRAMEWORK_FILE")
 
     # Check for zprof module loading
-    if [[ "$zshrc_content" == *'zmodload zsh/zprof'* ]]; then
-        pass ".zshrc has zprof module loading"
+    if [[ "$framework_content" == *'zmodload zsh/zprof'* ]]; then
+        pass "dotfiles.zsh has zprof module loading"
     else
-        fail ".zshrc missing zprof module loading"
+        fail "dotfiles.zsh missing zprof module loading"
     fi
 
     # Check for ZPROF conditional
-    if [[ "$zshrc_content" == *'[[ -n "$ZPROF" ]]'* ]]; then
-        pass ".zshrc has ZPROF conditional"
+    if [[ "$framework_content" == *'[[ -n "$ZPROF" ]]'* ]]; then
+        pass "dotfiles.zsh has ZPROF conditional"
     else
-        fail ".zshrc missing ZPROF conditional"
+        fail "dotfiles.zsh missing ZPROF conditional"
     fi
 
     # Check for zsh-profile function
-    if [[ "$zshrc_content" == *'zsh-profile()'* ]]; then
-        pass ".zshrc has zsh-profile function"
+    if [[ "$framework_content" == *'zsh-profile()'* ]]; then
+        pass "dotfiles.zsh has zsh-profile function"
     else
-        fail ".zshrc missing zsh-profile function"
+        fail "dotfiles.zsh missing zsh-profile function"
     fi
 
     # Check for zsh-profile-detailed function
-    if [[ "$zshrc_content" == *'zsh-profile-detailed()'* ]]; then
-        pass ".zshrc has zsh-profile-detailed function"
+    if [[ "$framework_content" == *'zsh-profile-detailed()'* ]]; then
+        pass "dotfiles.zsh has zsh-profile-detailed function"
     else
-        fail ".zshrc missing zsh-profile-detailed function"
+        fail "dotfiles.zsh missing zsh-profile-detailed function"
     fi
 else
-    fail ".zshrc not found at $ZSHRC_FILE"
+    fail "dotfiles.zsh not found at $FRAMEWORK_FILE"
 fi
 
-section "Zshrc Dotfiles CLI Completion"
+section "Zsh Framework Dotfiles CLI Completion"
 
-if [[ -f "$ZSHRC_FILE" ]]; then
+if [[ -f "$FRAMEWORK_FILE" ]]; then
     # Check for _dotfiles completion function
-    if [[ "$zshrc_content" == *'_dotfiles()'* ]]; then
-        pass ".zshrc has _dotfiles completion function"
+    if [[ "$framework_content" == *'_dotfiles()'* ]]; then
+        pass "dotfiles.zsh has _dotfiles completion function"
     else
-        fail ".zshrc missing _dotfiles completion function"
+        fail "dotfiles.zsh missing _dotfiles completion function"
     fi
 
     # Check for compdef registration
-    if [[ "$zshrc_content" == *'compdef _dotfiles dotfiles'* ]]; then
-        pass ".zshrc registers dotfiles completion"
+    if [[ "$framework_content" == *'compdef _dotfiles dotfiles'* ]]; then
+        pass "dotfiles.zsh registers dotfiles completion"
     else
-        fail ".zshrc missing dotfiles completion registration"
+        fail "dotfiles.zsh missing dotfiles completion registration"
     fi
 
     # Check completion includes expected commands
-    if [[ "$zshrc_content" == *"'update:"* ]] && \
-       [[ "$zshrc_content" == *"'status:"* ]] && \
-       [[ "$zshrc_content" == *"'health:"* ]]; then
-        pass ".zshrc completion includes expected commands"
+    if [[ "$framework_content" == *"'update:"* ]] && \
+       [[ "$framework_content" == *"'status:"* ]] && \
+       [[ "$framework_content" == *"'health:"* ]]; then
+        pass "dotfiles.zsh completion includes expected commands"
     else
-        fail ".zshrc completion missing expected commands"
+        fail "dotfiles.zsh completion missing expected commands"
     fi
 fi
 
