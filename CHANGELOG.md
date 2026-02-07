@@ -18,6 +18,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Neovim: `q` and `<leader>vc` keybindings to close fugitive status and cleanly exit review mode
+- Zsh: `git-prune` alias to delete local branches removed from remote
 - Tmux: `is_pane_running()` helper in common.sh for checking active foreground processes in a pane (excludes suspended)
 
 ### Fixed

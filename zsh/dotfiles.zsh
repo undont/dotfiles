@@ -279,6 +279,7 @@ tattach() {
 
 # Development tools
 alias gols="ls ~/go/bin"               # List installed Go binaries
+alias git-prune="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -d"  # Prune local branches removed from remote
 
 # Homebrew update
 alias brewup="brew update && brew upgrade"
