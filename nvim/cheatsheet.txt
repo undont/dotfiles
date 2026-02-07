@@ -11,6 +11,7 @@ Find files | <leader>sf
 Live grep | <leader>sg
 Search keymaps | <leader>sk
 Search help | <leader>sh
+Search current word | <leader>sw
 Buffer search | <leader>/
 Open buffers | <leader><leader>
 Search diagnostics | <leader>sd
@@ -43,6 +44,7 @@ Workspace symbols | gW
 Hover documentation | K
 Toggle inlay hints | <leader>th
 Format buffer | <leader>f
+LSP restart | <leader>lr
 
 ## text-objects @text-objects
 Inner/around word | iw / aw
@@ -63,6 +65,10 @@ Help popup | <leader>h
 Move to window | Ctrl+hjkl
 Split vertical | :vs
 Split horizontal | :sp
+Resize left | <leader>wh
+Resize right | <leader>wl
+Resize down | <leader>wj
+Resize up | <leader>wk
 
 ## completion @completion
 Trigger completion | Ctrl+Space
@@ -77,6 +83,8 @@ Scroll docs up/down | Ctrl+b / Ctrl+f
 ## snippets @snippets
 Claude comment template | <leader>cc
 Claude user/exchange | <leader>cu
+Expand/jump next placeholder | Ctrl+k
+Jump prev placeholder | Ctrl+j
 
 ## git @git
 Next/prev git change | ]c / [c
@@ -97,7 +105,6 @@ Diffview open (vs index) | <leader>do
 Diffview close | <leader>dc
 Diffview file history | <leader>dh
 Diffview PR review | <leader>dp
-Difi toggle overlay | <leader>df
 
 ## pr-review @pr-review
 List PRs | <leader>pl
@@ -109,6 +116,9 @@ Submit review | <leader>pm
 Approve PR | <leader>pp
 Add comment | <leader>pa
 PR comments | <leader>pc
+Toggle unified/split diff | <localleader>u
+Next/prev changed line | ]c / [c
+Next/prev changed file | ]f / [f
 
 ## debug @debug
 Start/Continue | F5
@@ -125,6 +135,35 @@ Fold section | <leader>mf
 Unfold section | <leader>mu
 Renumber list | <leader>mn
 Next/prev heading | ]] / [[
+
+## vcs @vcs
+VCS status (Fugitive) | <leader>vs
+VCS close | <leader>vc
+VCS blame | <leader>vb
+VCS diff split | <leader>vd
+Next/prev changed file | ]f / [f
+
+## test @test
+Run nearest test | <leader>tt
+Run file tests | <leader>tf
+Run all tests | <leader>ta
+Run last test | <leader>tl
+Toggle summary | <leader>ts
+Show output | <leader>to
+Toggle output panel | <leader>tO
+Stop test | <leader>tS
+Toggle watch | <leader>tw
+Debug nearest test | <leader>td
+Next/prev failed test | ]t / [t
+
+## dotnet @dotnet
+Run project | <leader>nr
+Build project | <leader>nb
+Clean project | <leader>nc
+Manage secrets | <leader>ns
+Watch project | <leader>nw
+New item | <leader>nn
+Outdated packages | <leader>no
 
 ## theme @theme
 Theme reload | <leader>tr

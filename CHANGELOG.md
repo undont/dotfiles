@@ -9,13 +9,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.14] - 2026-02-06
 
 ### Changed
+- Neovim: Fugitive review mode now shows deleted/old lines inline via gitsigns `show_deleted`
 - Neovim: LSP go-to-definition, references, implementations, and type-definition now deduplicate results and display via Telescope
 - Neovim: `<leader>q` diagnostic quickfix now filters to warnings and errors (skips hints/info)
 - Neovim: Telescope path display changed to filename-first for easier scanning
+- Neovim: Octo `]f` (next file) now marks the current file as viewed; `[f` (prev file) does not
+- Neovim: Octo unified mode is the default when starting a review (toggle with `<localleader>u`)
 - Tmux: list-claude, list-nvim, and list-opencode scripts refactored for performance — batch process detection, pre-fetched window names, and parameter expansion replace per-pane subshells
 - Installer: Unmigrated `local-aliases.zsh` content is now automatically appended into `~/.zshrc` during symlink creation
 
 ### Added
+- Neovim: Octo unified review mode — single-pane PR diffs with gitsigns-style added/deleted line highlights and inline deleted lines as virtual text
+- Neovim: `]c`/`[c` navigation between individual changed lines in Octo unified review mode
+- Neovim: `<localleader>u` toggle between unified and side-by-side diff in Octo reviews
+- Neovim: `GitSignsDeleteVirtLn` highlight group for inline deleted lines
+- Neovim: Cheatsheet entries for VCS (Fugitive), test runner, .NET, snippets, window resize, and PR review navigation
+- Neovim: `q` and `<leader>vc` keybindings to close fugitive status and cleanly exit review mode
+- Tmux: Click session name in status bar to open session switcher popup
+- Zsh: `git-prune` alias to delete local branches removed from remote
 - Tmux: `is_pane_running()` helper in common.sh for checking active foreground processes in a pane (excludes suspended)
 
 ### Fixed
