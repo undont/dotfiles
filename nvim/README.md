@@ -64,7 +64,8 @@ nvim/
     │   │   ├── pr-review.lua          # PR review (diffview, octo)
     │   │   ├── dotnet.lua             # .NET development (easy-dotnet)
     │   │   ├── test.lua               # Test runner (neotest)
-    │   │   └── markdown-ui.lua        # Markdown editing (mkdnflow)
+    │   │   ├── markdown-ui.lua        # Markdown editing (mkdnflow)
+    │   │   └── claude-diff.lua        # Claude Code diff visualisation
     │   ├── lazy-bootstrap.lua         # Lazy.nvim auto-installer
     │   └── nvim-help.txt              # Help popup content
     └── kickstart/                     # Kickstart-provided plugins
@@ -206,7 +207,7 @@ The following formatters and linters are automatically installed:
 - csharpier (C#)
 
 **Linters:**
-- eslint_d (JavaScript/TypeScript)
+- ESLint via LSP (JavaScript/TypeScript)
 - golangci-lint (Go)
 
 ### Installing Additional LSP Servers
