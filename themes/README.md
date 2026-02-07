@@ -20,7 +20,7 @@ Create a new `.theme` file with the following structure:
 # <URL to theme project>
 
 THEME_NAME="<Display Name>"
-THEME_ACTIVE_ACCENT="purple"  # or "cyan" or "green"
+THEME_ACTIVE_ACCENT="purple"  # or "cyan", "green", "pink", "yellow", "red"
 
 # ══════════════════════════════════════════════════════════════
 # Base Colours
@@ -93,7 +93,7 @@ NVIM_COLORSCHEME="dracula"
 
 **Notes:**
 - `THEME_NAME`: Display name shown in `theme-switch list`
-- `THEME_ACTIVE_ACCENT`: Which accent colour to use for active windows/borders (`purple`, `cyan`, or `green`)
+- `THEME_ACTIVE_ACCENT`: Which accent colour to use for active windows/borders (`purple`, `cyan`, `green`, `pink`, `yellow`, or `red`)
 - Base colours and accents are **required** - they're used by `theme-defaults.sh` to generate status bar, pane borders, and FZF colours automatically
 - `NVIM_COLORSCHEME`: Must match the exact colorscheme name used in Neovim
 

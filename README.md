@@ -14,17 +14,20 @@ Personal configuration files for zsh, tmux, neovim, hammerspoon, ghostty, and ka
 ```
 dotfiles/
 ├── zsh/              # Zsh shell configuration
-│   ├── .zshrc
-│   ├── .zprofile
-│   ├── .p10k.zsh     # Powerlevel10k theme
-│   └── .zsh/         # Additional zsh configs
+│   ├── dotfiles.zsh  # Shared framework (sourced by ~/.zshrc)
+│   ├── zshrc         # Backwards-compat wrapper for legacy symlinks
+│   ├── zshrc.template # Template for user's personal ~/.zshrc
+│   ├── zprofile      # Login shell config
+│   └── p10k.zsh      # Powerlevel10k theme
 ├── tmux/             # Tmux terminal multiplexer
-│   ├── .tmux.conf
-│   └── .tmux/        # Scripts and help files
+│   ├── tmux.conf.template # Config template (processed by theme-switch)
+│   ├── scripts/      # Custom scripts (session management, undo, alerts)
+│   ├── plugins/      # TPM-managed plugins
+│   └── tmux-help.txt # Keybinding help popup content
 ├── nvim/             # Neovim configuration
 │   ├── init.lua      # Entry point
 │   └── lua/custom/   # Modular config
-│       ├── core/     # Options, keymaps, autocmds
+│       ├── core/     # Options, keymaps, autocmds, theme
 │       └── plugins/  # Plugin configurations
 ├── btop/             # System monitor configuration
 │   └── btop.conf
@@ -35,7 +38,7 @@ dotfiles/
 ├── hammerspoon/      # macOS automation
 │   └── init.lua
 ├── ghostty/          # Terminal emulator
-│   └── config
+│   └── config.template # Config template (processed by theme-switch)
 ├── karabiner/        # Keyboard customisation
 │   └── karabiner.json
 ├── scripts/          # Installation and utility scripts
@@ -45,7 +48,7 @@ dotfiles/
 │   ├── hooks/        # Tool hooks (e.g. agent alerts)
 │   ├── tests/        # Test suites
 │   └── _lib/         # Shared shell libraries
-├── themes/           # Theme definitions (dracula, catppuccin, tokyo-night, etc.)
+├── themes/           # Theme definitions (15 themes: dracula, catppuccin, maple, etc.)
 │   ├── README.md     # Theme system documentation
 │   └── *.theme       # Individual theme files
 ├── docs/             # Documentation
@@ -133,8 +136,8 @@ If you prefer manual setup, see the symlink commands below:
 <summary>Click to expand manual symlink commands</summary>
 
 ```bash
-# Zsh
-ln -sf ~/dotfiles/zsh/zshrc ~/.zshrc
+# Zsh (template creates ~/.zshrc which sources dotfiles.zsh)
+cp ~/dotfiles/zsh/zshrc.template ~/.zshrc  # Only if ~/.zshrc doesn't exist
 ln -sf ~/dotfiles/zsh/zprofile ~/.zprofile
 ln -sf ~/dotfiles/zsh/p10k.zsh ~/.p10k.zsh
 
@@ -216,6 +219,7 @@ The uninstall script uses your saved preset to determine which packages to remov
 
 ### Zsh
 - Powerlevel10k prompt with instant prompt
+- Framework architecture — `~/.zshrc` is your personal file, sourcing `dotfiles.zsh` as a shared framework
 - fzf integration for fuzzy finding
 - Lazy-loaded completions for performance
 - Custom aliases and functions
@@ -225,14 +229,19 @@ The uninstall script uses your saved preset to determine which packages to remov
 - Vim-style navigation
 - Session save/restore (tmux-resurrect + continuum)
 - fzf session/window switcher with coloured indicators for agent alerts (⚡ Claude, 🔮 OpenCode)
-- Dracula theme
+- 15 coordinated themes via `theme-switch` (Maple, Dracula, Catppuccin, Tokyo Night, Nord, and more)
 
 ### Neovim
 - lazy.nvim plugin manager
-- LSP support (TypeScript, Go, Python, Lua, C#)
-- Telescope fuzzy finder
+- LSP support (TypeScript, Go, Python, Lua, C#/.NET via Roslyn, ESLint)
+- Telescope fuzzy finder with filename-first path display
+- Git integration — Fugitive (status, blame, diff), LazyGit, gitsigns
+- PR review — Octo.nvim (GitHub PRs), diffview (side-by-side diffs)
+- .NET development — easy-dotnet.nvim with Roslyn LSP and Neotest runner
+- Markdown editing — mkdnflow.nvim (list continuation, todo toggles, table formatting)
 - GitHub Copilot (disabled for sensitive files)
 - Treesitter syntax highlighting
+- Maple custom colourscheme (theme system integration)
 
 ### AI Coding Assistants
 - Claude Code (with tmux alert integration)
@@ -244,13 +253,13 @@ The uninstall script uses your saved preset to determine which packages to remov
 - CLI enabled via IPC
 
 ### Ghostty
-- Dracula colour scheme
+- Colour scheme follows active theme (via `theme-switch`)
 - Zsh shell integration
 - macOS optimised (glass icon, left Option as Alt)
 
 ### Karabiner Elements
-- Caps Lock to Escape (Ghostty only)
-- Right Option to Left Control
+- Caps Lock to Escape (Ghostty and JetBrains IDEs)
+- Right Option to Left Control (Ghostty and JetBrains IDEs)
 - UK keyboard layout fixes for Apple keyboards
 
 ### Dana Project Launcher
