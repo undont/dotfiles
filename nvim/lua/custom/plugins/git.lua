@@ -56,9 +56,10 @@ local function enable_review_mode(status_char)
   -- Compare against HEAD so both staged and unstaged changes show as hunks
   gs.change_base 'HEAD'
 
-  -- Enable per-buffer: numhl, linehl
+  -- Enable per-buffer: numhl, linehl, deleted lines
   gs.toggle_numhl(true)
   gs.toggle_linehl(true)
+  gs.toggle_deleted(true)
 
   -- For new/untracked files, gitsigns won't show diffs — highlight all lines green
   if status_char and (status_char == '?' or status_char == 'A') then
@@ -74,9 +75,24 @@ local function disable_review_mode()
   end
   gs.toggle_numhl(false)
   gs.toggle_linehl(false)
+  gs.toggle_deleted(false)
   -- Reset base back to index (default)
   gs.reset_base()
   clear_new_file_highlights(vim.api.nvim_get_current_buf())
+end
+
+-- Close fugitive and clean up review mode in the edit pane
+local function close_fugitive()
+  local fugitive_win = get_fugitive_win()
+  if not fugitive_win then
+    return false
+  end
+  local edit_win = get_edit_win()
+  if edit_win then
+    vim.api.nvim_win_call(edit_win, disable_review_mode)
+  end
+  vim.api.nvim_win_close(fugitive_win, false)
+  return true
 end
 
 -- Open a file from fugitive status in the edit pane (reuse or create)
@@ -176,6 +192,11 @@ return {
     cmd = { 'Git', 'G', 'Gvdiffsplit', 'Gvsplit', 'Gdiffsplit', 'Gread', 'Gwrite', 'GBrowse' },
     keys = {
       { '<leader>vs', '<cmd>Git<CR>', desc = '[V]cs [S]tatus' },
+      {
+        '<leader>vc',
+        close_fugitive,
+        desc = '[V]cs [C]lose fugitive',
+      },
       { '<leader>vb', '<cmd>Git blame<CR>', desc = '[V]cs [B]lame' },
       { '<leader>vd', '<cmd>Gvdiffsplit<CR>', desc = '[V]cs [D]iff split' },
     },
@@ -195,6 +216,10 @@ return {
           -- Jump cursor to the first file entry
           vim.fn.cursor(1, 1)
           vim.fn.search('^[MADRCU?! ]\\s', 'W')
+
+          -- q / <leader>vc: close fugitive status
+          vim.keymap.set('n', 'q', close_fugitive, vim.tbl_extend('force', opts, { desc = 'Close fugitive status' }))
+          vim.keymap.set('n', '<leader>vc', close_fugitive, vim.tbl_extend('force', opts, { desc = '[V]cs [C]lose fugitive' }))
 
           -- ]c / [c: navigate between changed entries (no wrap)
           vim.keymap.set('n', ']c', function()

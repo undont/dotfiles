@@ -182,7 +182,7 @@ Restores the last closed pane or window (whichever was killed most recently). Re
 | Action                   | Keybinding                     |
 | ------------------------ | ------------------------------ |
 | Switch window (fzf)      | `prefix + f`                   |
-| Switch session (fzf)     | `prefix + s`                   |
+| Switch session (fzf)     | `prefix + s` or click session name |
 | Save all sessions        | `prefix + w` or `prefix + Ctrl+s` |
 | Restore all sessions     | `prefix + Ctrl+r`              |
 | List saved backups       | `prefix + S`                   |

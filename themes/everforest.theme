@@ -9,9 +9,9 @@ THEME_ACTIVE_ACCENT="green"
 # Base Colours
 # ══════════════════════════════════════════════════════════════
 
-TMUX_BG_PRIMARY="#2b3339"
+TMUX_BG_PRIMARY="#272e33"
 TMUX_FG_PRIMARY="#d3c6aa"
-TMUX_BG_SECONDARY="#3d484d"
+TMUX_BG_SECONDARY="#2e383c"
 TMUX_FG_SECONDARY="#859289"
 
 # ══════════════════════════════════════════════════════════════
@@ -42,11 +42,11 @@ TMUX_BATTERY_LOW_BG="#4a3030"
 # Ghostty Colours
 # ══════════════════════════════════════════════════════════════
 
-GHOSTTY_BACKGROUND="#2b3339"
+GHOSTTY_BACKGROUND="#272e33"
 GHOSTTY_FOREGROUND="#d3c6aa"
 GHOSTTY_CURSOR_COLOR="#d3c6aa"
-GHOSTTY_CURSOR_TEXT="#2b3339"
-GHOSTTY_SELECTION_BG="#543a48"
+GHOSTTY_CURSOR_TEXT="#272e33"
+GHOSTTY_SELECTION_BG="#2e383c"
 GHOSTTY_SELECTION_FG="#d3c6aa"
 
 # Terminal palette
