@@ -130,7 +130,7 @@ nvim/
 | Plugin | Purpose |
 |--------|---------|
 | [diffview.nvim](https://github.com/sindrets/diffview.nvim) | Side-by-side diff tab, file history, merge conflicts |
-| [octo.nvim](https://github.com/pwntester/octo.nvim) | GitHub PR review from Neovim (list, comment, approve) |
+| [octo.nvim](https://github.com/pwntester/octo.nvim) | GitHub PR review with unified diff mode (gitsigns-style highlights, inline deletes) |
 
 ### .NET Development
 

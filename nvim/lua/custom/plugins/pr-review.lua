@@ -1,5 +1,196 @@
 -- PR review plugins: diffview, octo
 
+-- Unified review mode: toggle Octo's side-by-side diff into a single-pane
+-- view with gitsigns-style line/number highlights and inline deleted lines.
+-- Parses the PR patch data directly so it works on virtual buffers without
+-- needing use_local_fs or a checked-out branch.
+local unified = {
+  active = true, -- unified mode is the default
+  orig_show_diff = nil, -- set once during Octo config
+}
+
+local ns_unified = vim.api.nvim_create_namespace 'octo_unified_hl'
+
+-- Parse a file's patch and apply add/delete highlights to the right buffer
+local function apply_patch_highlights(file, right_bufnr)
+  if not right_bufnr or not vim.api.nvim_buf_is_valid(right_bufnr) then
+    return
+  end
+  vim.api.nvim_buf_clear_namespace(right_bufnr, ns_unified, 0, -1)
+
+  -- New/added files: highlight every line green
+  if file.status == 'A' or file.status == 'added' then
+    local count = vim.api.nvim_buf_line_count(right_bufnr)
+    for i = 0, count - 1 do
+      pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, i, 0, {
+        line_hl_group = 'GitSignsAddLn',
+        number_hl_group = 'GitSignsAddNr',
+      })
+    end
+    return
+  end
+
+  if not file.patch then
+    return
+  end
+
+  -- Parse each hunk from the patch
+  local hunk_strings = vim.split(file.patch:gsub('^@@', ''), '\n@@')
+  for _, hunk in ipairs(hunk_strings) do
+    local lines = vim.split(hunk, '\n')
+    local header = lines[1]
+    local _, _, right_start = string.find(header, '%+(%d+)')
+    if not right_start then
+      goto continue
+    end
+    right_start = tonumber(right_start)
+
+    local right_line = right_start
+    local pending_deletes = {}
+    for j = 2, #lines do
+      local prefix = lines[j]:sub(1, 1)
+      if prefix == '+' then
+        -- Added line
+        pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, right_line - 1, 0, {
+          line_hl_group = 'GitSignsAddLn',
+          number_hl_group = 'GitSignsAddNr',
+        })
+        right_line = right_line + 1
+      elseif prefix == '-' then
+        -- Deleted line: collect and show as virtual text
+        table.insert(pending_deletes, { lines[j]:sub(2), 'GitSignsDeleteVirtLn' })
+      else
+        -- Context or end-of-hunk: flush any pending deletes, advance right_line
+        if #pending_deletes > 0 then
+          local anchor = math.max(right_line - 1, 0)
+          pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, anchor, 0, {
+            virt_lines = pending_deletes,
+            virt_lines_above = true,
+          })
+          pending_deletes = {}
+        end
+        if prefix == ' ' then
+          right_line = right_line + 1
+        end
+      end
+    end
+    -- Flush remaining deletes at end of hunk
+    if #pending_deletes > 0 then
+      local anchor = math.max(right_line - 2, 0)
+      pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, anchor, 0, {
+        virt_lines = pending_deletes,
+      })
+    end
+    ::continue::
+  end
+end
+
+local function clear_patch_highlights(right_bufnr)
+  if right_bufnr and vim.api.nvim_buf_is_valid(right_bufnr) then
+    vim.api.nvim_buf_clear_namespace(right_bufnr, ns_unified, 0, -1)
+  end
+end
+
+-- Navigate to next/prev changed line using the extmarks already placed
+local function navigate_change(direction)
+  local bufnr = vim.api.nvim_get_current_buf()
+  local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1 -- 0-indexed
+
+  if direction == 'next' then
+    local marks = vim.api.nvim_buf_get_extmarks(bufnr, ns_unified, { cursor_line + 1, 0 }, -1, { limit = 1 })
+    if #marks > 0 then
+      vim.api.nvim_win_set_cursor(0, { marks[1][2] + 1, 0 })
+    end
+  else
+    local marks = vim.api.nvim_buf_get_extmarks(bufnr, ns_unified, { cursor_line - 1, 0 }, 0, { limit = 1 })
+    if #marks > 0 then
+      vim.api.nvim_win_set_cursor(0, { marks[1][2] + 1, 0 })
+    end
+  end
+end
+
+-- Set up ]c/[c navigation on a review diff buffer
+local function set_hunk_nav_keymaps(bufnr)
+  vim.keymap.set('n', ']c', function()
+    navigate_change 'next'
+  end, { buffer = bufnr, silent = true, desc = 'Next changed line' })
+  vim.keymap.set('n', '[c', function()
+    navigate_change 'prev'
+  end, { buffer = bufnr, silent = true, desc = 'Previous changed line' })
+end
+
+local function clear_hunk_nav_keymaps(bufnr)
+  if bufnr and vim.api.nvim_buf_is_valid(bufnr) then
+    pcall(vim.keymap.del, 'n', ']c', { buffer = bufnr })
+    pcall(vim.keymap.del, 'n', '[c', { buffer = bufnr })
+  end
+end
+
+-- Apply unified mode to the current layout state
+local function apply_unified_to_layout(layout)
+  local file = layout:get_current_file()
+  -- Shrink left window to 1 column so it stays valid but invisible
+  if vim.api.nvim_win_is_valid(layout.left_winid) then
+    vim.api.nvim_win_set_width(layout.left_winid, 1)
+    vim.api.nvim_win_call(layout.left_winid, function()
+      vim.cmd 'diffoff'
+      vim.wo.scrollbind = false
+      vim.wo.cursorbind = false
+    end)
+  end
+
+  -- Right window: disable diff, apply patch highlights and hunk nav
+  if vim.api.nvim_win_is_valid(layout.right_winid) then
+    vim.api.nvim_set_current_win(layout.right_winid)
+    vim.cmd 'diffoff'
+    vim.wo.scrollbind = false
+    vim.wo.cursorbind = false
+    if file then
+      apply_patch_highlights(file, file.right_bufid)
+      set_hunk_nav_keymaps(file.right_bufid)
+    end
+  end
+end
+
+-- Toggle between Octo's side-by-side diff and unified view
+local function toggle_unified_review()
+  local reviews_ok, reviews = pcall(require, 'octo.reviews')
+  if not reviews_ok then
+    return
+  end
+
+  local review = reviews.get_current_review()
+  if not review or not review.layout then
+    vim.notify('No active Octo review', vim.log.levels.WARN)
+    return
+  end
+
+  local layout = review.layout
+
+  -- Flip the mode
+  unified.active = not unified.active
+
+  if unified.active then
+    apply_unified_to_layout(layout)
+  else
+    -- Switch to side-by-side: clear highlights and keymaps, restore left, re-enable diff
+    local file = layout:get_current_file()
+    if file then
+      clear_patch_highlights(file.right_bufid)
+      clear_hunk_nav_keymaps(file.right_bufid)
+    end
+
+    if vim.api.nvim_win_is_valid(layout.left_winid) then
+      vim.api.nvim_win_set_width(layout.left_winid, math.floor(vim.o.columns / 2))
+    end
+
+    -- Re-enable vim diff via the original show_diff
+    if file and unified.orig_show_diff then
+      unified.orig_show_diff(file)
+    end
+  end
+end
+
 return {
   -- Diffview: side-by-side diffs and file history
   {
@@ -112,6 +303,7 @@ return {
           review_diff = {
             select_next_entry = { lhs = ']f', desc = 'move to next changed file' },
             select_prev_entry = { lhs = '[f', desc = 'move to previous changed file' },
+            toggle_unified = { lhs = '<localleader>u', desc = 'toggle unified diff view' },
           },
           file_panel = {
             select_next_entry = { lhs = ']f', desc = 'move to next changed file' },
@@ -124,8 +316,36 @@ return {
         },
       }
 
-      -- Patch mappings to pass buffer context (upstream bug: opts is nil)
+      -- Patch FileEntry.show_diff once so unified mode works on every file switch
+      local FileEntry = require('octo.reviews.file-entry').FileEntry
+      unified.orig_show_diff = FileEntry.show_diff
+      FileEntry.show_diff = function(self)
+        if not unified.active then
+          return unified.orig_show_diff(self)
+        end
+        -- Disable vim diff on both buffers
+        for _, bufid in ipairs { self.left_bufid, self.right_bufid } do
+          if bufid then
+            vim.api.nvim_buf_call(bufid, function()
+              pcall(vim.cmd, 'diffoff')
+            end)
+          end
+        end
+        -- Apply unified layout after a tick (buffers need to settle)
+        vim.defer_fn(function()
+          local reviews = require 'octo.reviews'
+          local review = reviews.get_current_review()
+          if review and review.layout then
+            apply_unified_to_layout(review.layout)
+          end
+        end, 50)
+      end
+
+      -- Register unified review toggle on the Octo mappings module
       local mappings = require 'octo.mappings'
+      mappings.toggle_unified = toggle_unified_review
+
+      -- Patch mappings to pass buffer context (upstream bug: opts is nil)
       local context = require 'octo.context'
       mappings.list_commits = context.within_octo_buffer(function(buffer)
         require('octo.picker').commits { repo = buffer.repo, number = buffer.number }
@@ -134,9 +354,10 @@ return {
         require('octo.picker').changed_files { repo = buffer.repo, number = buffer.number }
       end)
 
-      -- Mark current file as viewed before navigating to next/prev
+      -- Mark current file as viewed when navigating forward, not backward
       local reviews = require 'octo.reviews'
-      local function mark_viewed_and_navigate(select_fn)
+
+      mappings.select_next_entry = function()
         local layout = reviews.get_current_layout()
         if not layout then
           return
@@ -145,19 +366,22 @@ return {
         if file and file.viewed_state ~= 'VIEWED' then
           file:toggle_viewed()
         end
-        select_fn(layout)
-      end
-
-      mappings.select_next_entry = function()
-        mark_viewed_and_navigate(function(layout)
-          layout:select_next_file()
-        end)
+        layout:select_next_file()
       end
       mappings.select_prev_entry = function()
-        mark_viewed_and_navigate(function(layout)
-          layout:select_prev_file()
-        end)
+        local layout = reviews.get_current_layout()
+        if not layout then
+          return
+        end
+        layout:select_prev_file()
       end
+
+      -- Reset unified mode to default when review tab closes
+      vim.api.nvim_create_autocmd('TabClosed', {
+        callback = function()
+          unified.active = true
+        end,
+      })
     end,
   },
 }
