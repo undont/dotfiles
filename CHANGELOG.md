@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.14] - 2026-02-06
 
 ### Changed
+- Neovim: Fugitive review mode now shows deleted/old lines inline via gitsigns `show_deleted`
 - Neovim: LSP go-to-definition, references, implementations, and type-definition now deduplicate results and display via Telescope
 - Neovim: `<leader>q` diagnostic quickfix now filters to warnings and errors (skips hints/info)
 - Neovim: Telescope path display changed to filename-first for easier scanning
@@ -16,6 +17,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Installer: Unmigrated `local-aliases.zsh` content is now automatically appended into `~/.zshrc` during symlink creation
 
 ### Added
+- Neovim: `q` and `<leader>vc` keybindings to close fugitive status and cleanly exit review mode
 - Tmux: `is_pane_running()` helper in common.sh for checking active foreground processes in a pane (excludes suspended)
 
 ### Fixed
