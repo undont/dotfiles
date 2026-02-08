@@ -147,16 +147,18 @@ bind c display-popup -w 95% -h 95% -E "\
       --header-lines=5 \
       --prompt ': ' \
       --border=rounded \
-      --border-label=' j/k · g/G · spc/⏎ sel · / srch · q/esc ' \
+      --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
       --preview-window=right:70% \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space)\" || echo \"abort\"' \
-      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' | \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,x)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
+      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+      --bind 'n:become(~/.tmux/scripts/new-instance.sh claude)' \
+      --bind 'x:execute(~/.tmux/scripts/kill-instance.sh \$(echo {} | cut -d\" \" -f1) claude)+reload-sync(~/.tmux/scripts/list-claude.sh)' | \
   cut -d' ' -f1 | \
   xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/clear-agent-alerts.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
 
@@ -173,16 +175,18 @@ bind o display-popup -w 95% -h 95% -E "\
       --header-lines=5 \
       --prompt ': ' \
       --border=rounded \
-      --border-label=' j/k · g/G · spc/⏎ sel · / srch · q/esc ' \
+      --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
       --preview-window=right:70% \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space)\" || echo \"abort\"' \
-      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' | \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,x)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
+      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+      --bind 'n:become(~/.tmux/scripts/new-instance.sh opencode)' \
+      --bind 'x:execute(~/.tmux/scripts/kill-instance.sh \$(echo {} | cut -d\" \" -f1) opencode)+reload-sync(~/.tmux/scripts/list-opencode.sh)' | \
   cut -d' ' -f1 | \
   xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/clear-agent-alerts.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
 
@@ -245,16 +249,18 @@ bind n display-popup -w 95% -h 95% -E "\
       --header-lines=7 \
       --prompt ': ' \
       --border=rounded \
-      --border-label=' j/k · g/G · spc/⏎ sel · c connect · / srch · q/esc ' \
+      --border-label=' j/k · g/G · spc/⏎ sel · c connect · n new · x kill · / srch · q/esc ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
       --preview-window=right:70% \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'c:execute(~/.tmux/scripts/connect-nvim.sh {})+abort' \
+      --bind 'n:become(~/.tmux/scripts/new-instance.sh nvim)' \
+      --bind 'x:execute(~/.tmux/scripts/kill-instance.sh \$(echo {} | cut -d\" \" -f1) nvim)+reload-sync(~/.tmux/scripts/list-nvim.sh)' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,c)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,c)\" || echo \"abort\"' \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,c,n,x)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,c,n,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' | \
   cut -d' ' -f1 | \
   xargs -r tmux switch-client -t"
@@ -278,8 +284,6 @@ bind -T copy-mode-vi l send-keys -X cursor-right
 # Page navigation
 bind -T copy-mode-vi C-f send-keys -X page-down       # Ctrl+f = page down
 bind -T copy-mode-vi C-b send-keys -X page-up         # Ctrl+b = page up
-bind -T copy-mode-vi f send-keys -X page-down         # f = page down
-bind -T copy-mode-vi b send-keys -X page-up           # b = page up
 
 # Half-page navigation
 bind -T copy-mode-vi C-d send-keys -X halfpage-down   # Ctrl+d = half page down

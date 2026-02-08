@@ -144,6 +144,15 @@ nvim/
 |--------|---------|
 | [mkdnflow.nvim](https://github.com/jakewvincent/mkdnflow.nvim) | List continuation, todo toggles, table formatting |
 
+### Testing
+
+| Plugin | Purpose |
+|--------|---------|
+| [neotest](https://github.com/nvim-neotest/neotest) | Test runner framework with summary panel and diagnostics |
+| [neotest-dotnet](https://github.com/Issafalcon/neotest-dotnet) | .NET adapter (xUnit, NUnit, MSTest) with `.slnx` support |
+| [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (gotestsum runner, pinned to v1.15.1) |
+| [neotest-vitest](https://github.com/marilari88/neotest-vitest) | Vitest/Bun adapter (`bun run test`) |
+
 ### AI & Development
 
 | Plugin | Purpose |

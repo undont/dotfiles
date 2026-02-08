@@ -10,6 +10,8 @@ return {
     'nvim-treesitter/nvim-treesitter',
     -- Adapters
     'Issafalcon/neotest-dotnet', -- .NET (xUnit, NUnit, MSTest)
+    { 'fredrikaverpil/neotest-golang', tag = 'v1.15.1' }, -- Go (v2+ needs statement_list, not yet in nvim-treesitter's parser)
+    'marilari88/neotest-vitest', -- Vitest/Bun test runner
   },
   keys = {
     {
@@ -117,6 +119,13 @@ return {
     require('neotest').setup {
       adapters = {
         dotnet_adapter,
+        require 'neotest-golang' {
+          runner = 'gotestsum',
+          go_test_args = { '-v', '-count=1' },
+        },
+        require 'neotest-vitest' {
+          vitestCommand = 'bun run test',
+        },
       },
       summary = {
         animated = true,

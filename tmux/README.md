@@ -15,6 +15,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | Restore all sessions  | `trestore`                        |
 | Restore one session   | `trestore -s <name>`              |
 | List Claude instances | `prefix + c`                      |
+| List OpenCode instances | `prefix + o`                    |
 | List nvim instances   | `prefix + n`                      |
 
 ## Setup Guide (New Machine)
@@ -161,7 +162,7 @@ Restores the last closed pane or window (whichever was killed most recently). Re
 | ----------------- | --------------------- |
 | Enter scroll mode | `Opt+v` or `prefix+v` |
 | Navigate          | `h` / `j` / `k` / `l` |
-| Page down/up      | `f` / `b`             |
+| Page down/up      | `Ctrl+f` / `Ctrl+b`    |
 | Half-page down/up | `d` / `u` (cursor moves to screen edge) |
 | Top of history    | `g`                   |
 | Bottom of history | `G`                   |
@@ -224,6 +225,10 @@ Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so
 **Undo:** When you kill a session or window with `x`, press `u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
 **Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for Gemini and OpenCode). Press `prefix + c` to open an fzf picker showing all running agent instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
+
+**Instance Management:** The Claude (`prefix + c`), OpenCode (`prefix + o`), and nvim (`prefix + n`) pickers support inline instance management:
+- Press `n` to create a new instance (opens a new window in the current session and launches the process)
+- Press `x` to kill the selected instance (sends SIGTERM with graceful shutdown, confirms before killing)
 
 **Nvim Picker:** Press `prefix + n` to list all running nvim instances with their working directories. Select an instance with `Space`/`Enter` to jump to it, or press `c` to connect it to another pane (copies `export NVIM_SOCKET='...' && claude` to clipboard and switches to the target pane). This enables the nvim buffer sync hook - files edited by Claude Code are automatically added to the paired nvim's buffer list.
 
@@ -374,6 +379,7 @@ Available session backups:
 │   ├── show-agent-alerts.sh              # Status bar: Multi-agent alerts (⚡ 🔮 🤖)
 │   ├── show-dotfiles-status.sh           # Status bar: sync indicator (↓↑↕)
 │   ├── confirm-fzf.sh                    # FZF confirmation dialog helper
+│   ├── kill-instance.sh                   # Kill process in pane (from picker, with confirm)
 │   ├── kill-pane.sh                      # Kill pane (Opt+s, saves state)
 │   ├── kill-session.sh                   # Kill session (picker, with confirm)
 │   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
@@ -396,6 +402,7 @@ Available session backups:
 │   ├── duplicate-window.sh               # Duplicate window (Opt+Shift+d)
 │   ├── list-windows.sh                   # Window listing with alert indicators
 │   ├── move-window.sh                    # Move window to another session
+│   ├── new-instance.sh                   # Create new process window (from picker)
 │   └── rename-window.sh                  # Rename window dialog
 └── README.md                             # This file
 
