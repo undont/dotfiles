@@ -20,7 +20,13 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - `is_linux()` helper in common.sh for platform detection
 
-## [0.2.14] - 2026-02-06
+## [0.2.14] - 2026-02-08
+
+### Added
+- Tmux: `new-instance.sh` - create new process window from picker (`n` key in Claude/OpenCode/nvim pickers)
+- Tmux: `kill-instance.sh` - kill process in pane from picker with confirmation (`x` key in Claude/OpenCode/nvim pickers)
+- Neovim: neotest-golang adapter (gotestsum runner, pinned to v1.15.1 for treesitter compatibility)
+- Neovim: neotest-vitest adapter for Bun/TypeScript tests (`bun run test`)
 
 ### Changed
 - Neovim: Fugitive review mode now shows deleted/old lines inline via gitsigns `show_deleted`
@@ -30,6 +36,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Neovim: Octo `]f` (next file) now marks the current file as viewed; `[f` (prev file) does not
 - Neovim: Octo unified mode is the default when starting a review (toggle with `<localleader>u`)
 - Tmux: list-claude, list-nvim, and list-opencode scripts refactored for performance — batch process detection, pre-fetched window names, and parameter expansion replace per-pane subshells
+- Tmux: Claude, OpenCode, and nvim pickers now support `n` (new instance) and `x` (kill instance) inline actions
+- Tmux: Removed `f`/`b` copy mode bindings for page navigation (use `Ctrl+f`/`Ctrl+b` instead)
 - Installer: Unmigrated `local-aliases.zsh` content is now automatically appended into `~/.zshrc` during symlink creation
 
 ### Added
