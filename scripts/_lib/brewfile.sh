@@ -38,7 +38,10 @@ filter_brewfile() {
             ;;
     esac
 
-    awk -v inc_min="$include_minimal" -v inc_core="$include_core" -v inc_full="$include_full" '
+    local is_darwin="true"
+    [[ "$(uname)" != "Darwin" ]] && is_darwin="false"
+
+    awk -v inc_min="$include_minimal" -v inc_core="$include_core" -v inc_full="$include_full" -v darwin="$is_darwin" '
     BEGIN {
         include = 1  # Include header lines before any preset marker
     }
@@ -56,6 +59,9 @@ filter_brewfile() {
         include = (inc_full == "true") ? 1 : 0
         next
     }
+
+    # Skip cask lines on Linux (casks are macOS-only)
+    darwin != "true" && /^cask / { next }
 
     # Print lines if we should include this section
     include { print }

@@ -24,18 +24,30 @@ else
     warn "Homebrew not found. Installing..."
     echo ""
 
-    # Check for Command Line Tools
-    if ! xcode-select -p &>/dev/null; then
-        warn "Installing Command Line Tools..."
-        echo "A dialog may appear - please click 'Install' and wait for completion."
-        xcode-select --install
+    # Install platform-specific build prerequisites
+    if is_macos; then
+        # Check for Command Line Tools
+        if ! xcode-select -p &>/dev/null; then
+            warn "Installing Command Line Tools..."
+            echo "A dialog may appear - please click 'Install' and wait for completion."
+            xcode-select --install
 
-        # Wait for installation with timeout
-        echo ""
-        echo "Waiting for Command Line Tools installation..."
-        if ! read_with_timeout "Press Enter once the installation is complete: " _ 600; then
-            error "Timed out waiting for Command Line Tools"
-            exit 1
+            # Wait for installation with timeout
+            echo ""
+            echo "Waiting for Command Line Tools installation..."
+            if ! read_with_timeout "Press Enter once the installation is complete: " _ 600; then
+                error "Timed out waiting for Command Line Tools"
+                exit 1
+            fi
+        fi
+    elif is_linux; then
+        info "Installing Linux build prerequisites..."
+        if command_exists apt-get; then
+            sudo apt-get update
+            sudo apt-get install -y build-essential procps curl file git
+        elif command_exists yum; then
+            sudo yum groupinstall -y 'Development Tools'
+            sudo yum install -y procps-ng curl file git
         fi
     fi
 

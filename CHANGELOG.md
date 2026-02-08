@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.15] - 2026-02-08
+
+### Fixed
+- Installer: `get_homebrew_prefix()` now returns correct Linux Homebrew path (`/home/linuxbrew/.linuxbrew`) instead of assuming macOS
+- Installer: `xcode-select` no longer called on Linux — installs build prerequisites via apt/yum instead
+- Installer: `brew bundle` no longer fails on Linux due to cask entries — cask lines filtered out on non-macOS
+- Installer: Claude Code install no longer aborts entire installation on failure
+- Installer: `brew list --cask` guarded behind `is_macos` (casks don't exist on Linux)
+- Installer: Prerequisites checker now shows platform-appropriate install hints (apt on Linux, brew on macOS)
+- Installer: macOS-only tools (swift-format, Karabiner, Hammerspoon, Ghostty app check) skipped on Linux
+
+### Added
+- `is_linux()` helper in common.sh for platform detection
+
 ## [0.2.14] - 2026-02-06
 
 ### Changed
