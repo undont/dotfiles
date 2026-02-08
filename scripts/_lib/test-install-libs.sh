@@ -139,12 +139,23 @@ else
     assert_failure "is_macos returns false on non-macOS" is_macos
 fi
 
+# is_linux (platform-dependent)
+if [[ "$(uname)" == "Linux" ]]; then
+    assert_success "is_linux returns true on Linux" is_linux
+else
+    assert_failure "is_linux returns false on non-Linux" is_linux
+fi
+
 # get_homebrew_prefix
 prefix=$(get_homebrew_prefix)
-if [[ "$(uname -m)" == "arm64" ]]; then
-    assert_equals "get_homebrew_prefix on Apple Silicon" "/opt/homebrew" "$prefix"
+if [[ "$(uname)" == "Darwin" ]]; then
+    if [[ "$(uname -m)" == "arm64" ]]; then
+        assert_equals "get_homebrew_prefix on Apple Silicon" "/opt/homebrew" "$prefix"
+    else
+        assert_equals "get_homebrew_prefix on Intel Mac" "/usr/local" "$prefix"
+    fi
 else
-    assert_equals "get_homebrew_prefix on Intel/Linux" "/usr/local" "$prefix"
+    assert_equals "get_homebrew_prefix on Linux" "/home/linuxbrew/.linuxbrew" "$prefix"
 fi
 
 section "Check Command Function"

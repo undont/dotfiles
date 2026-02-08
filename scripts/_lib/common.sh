@@ -101,17 +101,26 @@ is_macos() {
     [[ "$(uname)" == "Darwin" ]]
 }
 
+# Check if running on Linux
+is_linux() {
+    [[ "$(uname)" == "Linux" ]]
+}
+
 # Check if running on Apple Silicon
 is_apple_silicon() {
     [[ "$(uname -m)" == "arm64" ]]
 }
 
-# Get Homebrew prefix based on architecture
+# Get Homebrew prefix based on platform and architecture
 get_homebrew_prefix() {
-    if is_apple_silicon; then
-        echo "/opt/homebrew"
+    if is_macos; then
+        if is_apple_silicon; then
+            echo "/opt/homebrew"
+        else
+            echo "/usr/local"
+        fi
     else
-        echo "/usr/local"
+        echo "/home/linuxbrew/.linuxbrew"
     fi
 }
 

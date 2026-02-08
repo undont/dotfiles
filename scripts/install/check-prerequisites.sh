@@ -74,14 +74,29 @@ print_section "Dotfiles Prerequisites Check"
 echo "Preset: $PRESET"
 echo ""
 
+# Platform-aware install hints
+if is_macos; then
+    GIT_HINT="xcode-select --install"
+    ZSH_HINT="brew install zsh"
+    TMUX_HINT="brew install tmux"
+    FZF_HINT="brew install fzf"
+    DIRENV_HINT="brew install direnv"
+else
+    GIT_HINT="sudo apt install git"
+    ZSH_HINT="sudo apt install zsh"
+    TMUX_HINT="sudo apt install tmux"
+    FZF_HINT="brew install fzf"
+    DIRENV_HINT="brew install direnv"
+fi
+
 # Minimal preset tools
 echo "Required - Shell & Terminal:"
 echo "----------------------------"
-check "git" "git" "xcode-select --install"
-check "zsh" "zsh" "brew install zsh"
-check "tmux" "tmux" "brew install tmux"
-check "fzf" "fzf" "brew install fzf"
-check "direnv" "direnv" "brew install direnv"
+check "git" "git" "$GIT_HINT"
+check "zsh" "zsh" "$ZSH_HINT"
+check "tmux" "tmux" "$TMUX_HINT"
+check "fzf" "fzf" "$FZF_HINT"
+check "direnv" "direnv" "$DIRENV_HINT"
 
 # Core preset tools
 if should_install "core"; then
@@ -89,7 +104,7 @@ if should_install "core"; then
     echo "Required - Editor & Dev Tools:"
     echo "------------------------------"
     check "neovim" "nvim" "brew install neovim"
-    # ghostty is checked via app existence (cask installs to /Applications)
+    # ghostty is checked via app existence on macOS (cask installs to /Applications)
     if is_macos; then
         printf "Checking %-20s" "ghostty..."
         if [[ -d "/Applications/Ghostty.app" ]]; then
@@ -113,11 +128,18 @@ if should_install "core"; then
     echo "Required - AI & Dev Tools:"
     echo "--------------------------"
     check "claude" "claude" "curl -fsSL https://claude.ai/install.sh | bash"
-    check "dotnet" "dotnet" "brew install --cask dotnet-sdk"
+    if is_macos; then
+        check "dotnet" "dotnet" "brew install --cask dotnet-sdk"
+    else
+        check "dotnet" "dotnet" "brew install dotnet-sdk"
+    fi
     check "act" "act" "brew install act"
     check "cmake" "cmake" "brew install cmake"
     check "staticcheck" "staticcheck" "brew install staticcheck"
-    check "swift-format" "swift-format" "brew install swift-format"
+    # swift-format is macOS-only (Apple Swift toolchain)
+    if is_macos; then
+        check "swift-format" "swift-format" "brew install swift-format"
+    fi
     check "golang-migrate" "migrate" "brew install golang-migrate"
 
     echo ""
@@ -136,7 +158,7 @@ if should_install "core"; then
 fi
 
 # Full preset tools (macOS-specific)
-if should_install "full"; then
+if should_install "full" && is_macos; then
     echo ""
     echo "Required - macOS Apps:"
     echo "----------------------"
@@ -156,8 +178,12 @@ echo "Optional tools:"
 echo "---------------"
 check_optional "fnm" "fnm" "brew install fnm"
 check_optional "python" "python3" "brew install python"
-check_optional "gcloud" "gcloud" "brew install --cask gcloud-cli"
-if should_install "full"; then
+if is_macos; then
+    check_optional "gcloud" "gcloud" "brew install --cask gcloud-cli"
+else
+    check_optional "gcloud" "gcloud" "brew install google-cloud-sdk"
+fi
+if should_install "full" && is_macos; then
     check_optional "hammerspoon" "hs" "brew install --cask hammerspoon"
 fi
 if should_install "core"; then
