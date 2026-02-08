@@ -54,6 +54,25 @@ echo ""
 info "Running post-installation setup..."
 echo ""
 
+# Linux alternatives for macOS cask-only packages
+if should_install "core" && is_linux; then
+    echo "Installing Linux alternatives for cask packages..."
+
+    # .NET SDK (cask "dotnet-sdk" on macOS)
+    if ! command_exists dotnet; then
+        echo "Installing .NET SDK..."
+        brew install dotnet-sdk 2>/dev/null || warn ".NET SDK install failed — install manually from https://dotnet.microsoft.com"
+    fi
+
+    # Google Cloud SDK (cask "gcloud-cli" on macOS)
+    if ! command_exists gcloud; then
+        echo "Installing Google Cloud SDK..."
+        brew install google-cloud-sdk 2>/dev/null || warn "gcloud install failed — install manually from https://cloud.google.com/sdk"
+    fi
+
+    echo ""
+fi
+
 # Claude Code - native install (replaces brew cask)
 if should_install "core"; then
     # Uninstall brew cask version if present to avoid conflicts (macOS only)
@@ -64,8 +83,8 @@ if should_install "core"; then
 
     if ! command_exists claude; then
         echo "Installing Claude Code (native)..."
-        if ! curl -fsSL https://claude.ai/install.sh | sh; then
-            warn "Claude Code install failed. You can retry manually: curl -fsSL https://claude.ai/install.sh | sh"
+        if ! curl -fsSL https://claude.ai/install.sh | bash; then
+            warn "Claude Code install failed. You can retry manually: curl -fsSL https://claude.ai/install.sh | bash"
         fi
     else
         echo "Claude Code already installed: $(claude --version 2>/dev/null || echo 'unknown version')"
