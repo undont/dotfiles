@@ -8,13 +8,15 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
 HOOKS_DIR="$SCRIPT_DIR/../../../scripts/hooks"
+TMPDIR="${TMPDIR:-/tmp}"
+TMPDIR="${TMPDIR%/}/"
 
 # Source test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # Scripts under test
-LIST_NVIM="$SCRIPTS_DIR/agents/nvim.sh"
-CONNECT_NVIM="$SCRIPTS_DIR/agents/connect-nvim.sh"
+LIST_NVIM="$SCRIPTS_DIR/instances/nvim.sh"
+CONNECT_NVIM="$SCRIPTS_DIR/instances/connect-nvim.sh"
 BUFFER_SYNC="$HOOKS_DIR/nvim-buffer-sync.sh"
 
 # Trap to ensure cleanup on exit/interrupt

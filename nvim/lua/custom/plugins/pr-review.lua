@@ -11,6 +11,26 @@ local unified = {
 
 local ns_unified = vim.api.nvim_create_namespace 'octo_unified_hl'
 
+-- Own highlight groups for the unified review — immune to gitsigns overrides
+local function tint_bg(colour, amount)
+  local normal_bg = vim.api.nvim_get_hl(0, { name = 'Normal', link = false }).bg or 0x1e1e2e
+  local r1, g1, b1 = bit.rshift(normal_bg, 16), bit.band(bit.rshift(normal_bg, 8), 0xff), bit.band(normal_bg, 0xff)
+  local r2, g2, b2 = bit.rshift(colour, 16), bit.band(bit.rshift(colour, 8), 0xff), bit.band(colour, 0xff)
+  return bit.bor(bit.lshift(math.floor(r1 + (r2 - r1) * amount), 16), bit.lshift(math.floor(g1 + (g2 - g1) * amount), 8), math.floor(b1 + (b2 - b1) * amount))
+end
+
+local function set_review_highlights()
+  local add_bg = tint_bg(0x00ff00, 0.04)
+  local del_bg = tint_bg(0xff0000, 0.06)
+  local comment_fg = vim.api.nvim_get_hl(0, { name = 'Comment', link = false }).fg
+  vim.api.nvim_set_hl(0, 'OctoReviewAddLn', { bg = add_bg })
+  vim.api.nvim_set_hl(0, 'OctoReviewAddNr', { fg = '#a6e3a1', bg = add_bg })
+  vim.api.nvim_set_hl(0, 'OctoReviewDeleteVirtLn', { fg = comment_fg, bg = del_bg, strikethrough = true })
+end
+
+set_review_highlights()
+vim.api.nvim_create_autocmd('ColorScheme', { callback = set_review_highlights })
+
 -- Parse a file's patch and apply add/delete highlights to the right buffer
 local function apply_patch_highlights(file, right_bufnr)
   if not right_bufnr or not vim.api.nvim_buf_is_valid(right_bufnr) then
@@ -47,20 +67,32 @@ local function apply_patch_highlights(file, right_bufnr)
 
     local right_line = right_start
     local pending_deletes = {}
+    local in_modification = false
     for j = 2, #lines do
       local prefix = lines[j]:sub(1, 1)
       if prefix == '+' then
-        -- Added line
+        -- Flush pending deletes above this line so they appear before the add
+        if #pending_deletes > 0 then
+          in_modification = true
+          local anchor = math.max(right_line - 1, 0)
+          pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, anchor, 0, {
+            virt_lines = pending_deletes,
+            virt_lines_above = true,
+          })
+          pending_deletes = {}
+        end
+        -- Added line with JetBrains-style gutter bar
         pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, right_line - 1, 0, {
-          line_hl_group = 'GitSignsAddLn',
-          number_hl_group = 'GitSignsAddNr',
+          line_hl_group = 'OctoReviewAddLn',
+          sign_text = '▎',
+          sign_hl_group = in_modification and 'GitSignsChange' or 'GitSignsAdd',
         })
         right_line = right_line + 1
       elseif prefix == '-' then
         -- Deleted line: collect and show as virtual text
-        table.insert(pending_deletes, { lines[j]:sub(2), 'GitSignsDeleteVirtLn' })
+        table.insert(pending_deletes, { { lines[j]:sub(2), 'OctoReviewDeleteVirtLn' } })
       else
-        -- Context or end-of-hunk: flush any pending deletes, advance right_line
+        -- Context or end-of-hunk: flush any pending deletes, reset modification state
         if #pending_deletes > 0 then
           local anchor = math.max(right_line - 1, 0)
           pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, anchor, 0, {
@@ -69,6 +101,7 @@ local function apply_patch_highlights(file, right_bufnr)
           })
           pending_deletes = {}
         end
+        in_modification = false
         if prefix == ' ' then
           right_line = right_line + 1
         end
@@ -91,20 +124,48 @@ local function clear_patch_highlights(right_bufnr)
   end
 end
 
--- Navigate to next/prev changed line using the extmarks already placed
+-- Navigate to next/prev hunk (contiguous group of changed lines)
 local function navigate_change(direction)
   local bufnr = vim.api.nvim_get_current_buf()
   local cursor_line = vim.api.nvim_win_get_cursor(0)[1] - 1 -- 0-indexed
 
+  -- Collect all changed lines from extmarks
+  local all_marks = vim.api.nvim_buf_get_extmarks(bufnr, ns_unified, 0, -1, {})
+  if #all_marks == 0 then
+    return
+  end
+
+  local line_set = {}
+  for _, mark in ipairs(all_marks) do
+    line_set[mark[2]] = true
+  end
+  local lines = {}
+  for line, _ in pairs(line_set) do
+    table.insert(lines, line)
+  end
+  table.sort(lines)
+
+  -- Group into hunks: collect the first line of each contiguous range
+  local hunk_starts = { lines[1] }
+  for i = 2, #lines do
+    if lines[i] > lines[i - 1] + 1 then
+      table.insert(hunk_starts, lines[i])
+    end
+  end
+
   if direction == 'next' then
-    local marks = vim.api.nvim_buf_get_extmarks(bufnr, ns_unified, { cursor_line + 1, 0 }, -1, { limit = 1 })
-    if #marks > 0 then
-      vim.api.nvim_win_set_cursor(0, { marks[1][2] + 1, 0 })
+    for _, start in ipairs(hunk_starts) do
+      if start > cursor_line then
+        vim.api.nvim_win_set_cursor(0, { start + 1, 0 })
+        return
+      end
     end
   else
-    local marks = vim.api.nvim_buf_get_extmarks(bufnr, ns_unified, { cursor_line - 1, 0 }, 0, { limit = 1 })
-    if #marks > 0 then
-      vim.api.nvim_win_set_cursor(0, { marks[1][2] + 1, 0 })
+    for i = #hunk_starts, 1, -1 do
+      if hunk_starts[i] < cursor_line then
+        vim.api.nvim_win_set_cursor(0, { hunk_starts[i] + 1, 0 })
+        return
+      end
     end
   end
 end

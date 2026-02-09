@@ -31,6 +31,14 @@ if [[ -z "$name" ]]; then
     exit 0
 fi
 
+# Record launcher usage for MRU ordering
+mkdir -p "$(dirname "$LAUNCHER_HISTORY")"
+printf '%s\n' "$name" >> "$LAUNCHER_HISTORY"
+# Trim to last 100 entries
+if [[ $(wc -l < "$LAUNCHER_HISTORY") -gt 100 ]]; then
+    tail -100 "$LAUNCHER_HISTORY" > "$LAUNCHER_HISTORY.tmp" && mv "$LAUNCHER_HISTORY.tmp" "$LAUNCHER_HISTORY"
+fi
+
 # ─────────────────────────────────────────
 # Find the launcher file
 # ─────────────────────────────────────────
