@@ -5,14 +5,15 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # New Launcher Wizard
 # ══════════════════════════════════════════════════════════════
-# Step-based wizard for creating session launchers.
+# Step-based wizard for creating/editing session launchers.
 # Supports ctrl+z to go back a step.
 #
-# Usage: new-launcher [name]
+# Usage: new-launcher.sh [name]
+#        new-launcher.sh --edit SOURCE [name]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-# shellcheck source=scripts/_lib/colours.sh
-source "$SCRIPT_DIR/_lib/colours.sh"
+# shellcheck source=scripts/_lib/common.sh
+source "$SCRIPT_DIR/_lib/common.sh"
 
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 
@@ -20,6 +21,118 @@ USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 # Security note: this redirects to the controlling terminal, bypassing any pipe isolation.
 # Safe here because this script is only invoked interactively from the launcher picker.
 exec < /dev/tty > /dev/tty
+
+# ─────────────────────────────────────────
+# Argument parsing
+# ─────────────────────────────────────────
+edit_source=""
+name=""
+
+if [[ "${1:-}" == "--edit" ]]; then
+    edit_source="${2:-}"
+    shift 2
+fi
+
+name="${1:-}"
+
+# ─────────────────────────────────────────
+# Helpers for edit mode
+# ─────────────────────────────────────────
+resolve_edit_source() {
+    local source="$1"
+    source=$(basename "$source")
+    if [[ "$source" == "." ]] || [[ "$source" == ".." ]] || [[ "$source" == *"/"* ]]; then
+        printf '%s' ""
+        return 1
+    fi
+    if [[ -x "$USER_LAUNCHERS/$source" ]]; then
+        printf '%s' "$USER_LAUNCHERS/$source"
+        return 0
+    fi
+    if [[ -x "$SCRIPT_DIR/../launchers/$source" ]]; then
+        printf '%s' "$SCRIPT_DIR/../launchers/$source"
+        return 0
+    fi
+    printf '%s' ""
+    return 1
+}
+
+index_for_window() {
+    local target="$1"
+    local i
+    for ((i = 0; i < ${#win_names[@]}; i++)); do
+        if [[ "${win_names[$i]}" == "$target" ]]; then
+            printf '%s' "$i"
+            return 0
+        fi
+    done
+    return 1
+}
+
+load_existing_launcher() {
+    local file="$1"
+
+    description=$(grep -m1 '# @description:' "$file" 2>/dev/null | sed 's/.*# @description: *//' || true)
+    if grep -q '# @instance: *prompt' "$file" 2>/dev/null; then
+        instance_mode="y"
+    else
+        instance_mode="n"
+    fi
+    project_dir=$(grep -m1 '^PROJECT_DIR=' "$file" 2>/dev/null | sed 's/^PROJECT_DIR=//' | tr -d '"' || true)
+    # Extract fallback from ${VAR:-default} pattern
+    if [[ "$project_dir" =~ :-(.+)\}$ ]]; then
+        project_dir="${BASH_REMATCH[1]}"
+    fi
+    project_dir="${project_dir/#\$HOME/\~}"
+
+    win_names=()
+    win_cmds=()
+    win_splits=()
+    win_split_cmds=()
+
+    local current_win=""
+    while IFS= read -r line; do
+        if [[ "$line" =~ ^tmux\ new-session.*-n\ \"?([^\"]+)\"? ]]; then
+            current_win="${BASH_REMATCH[1]}"
+            win_names+=("$current_win")
+            win_cmds+=("")
+            win_splits+=("no")
+            win_split_cmds+=("")
+        elif [[ "$line" =~ ^tmux\ new-window.*-n\ \"?([^\"]+)\"? ]]; then
+            current_win="${BASH_REMATCH[1]}"
+            win_names+=("$current_win")
+            win_cmds+=("")
+            win_splits+=("no")
+            win_split_cmds+=("")
+        elif [[ "$line" =~ ^tmux\ split-window.*-t\ \"?\$SESSION:([^\"\ ]+)\"? ]]; then
+            local split_win="${BASH_REMATCH[1]}"
+            if idx=$(index_for_window "$split_win"); then
+                win_splits[idx]="yes"
+            fi
+        elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"?\$SESSION:([^\"\ ]+)\.([12])\"?\ \'(.*)\'\ Enter ]]; then
+            local cmd_win="${BASH_REMATCH[1]}"
+            local pane="${BASH_REMATCH[2]}"
+            local cmd="${BASH_REMATCH[3]}"
+            if idx=$(index_for_window "$cmd_win"); then
+                if [[ "$pane" == "1" ]]; then
+                    win_cmds[idx]="$cmd"
+                else
+                    win_split_cmds[idx]="$cmd"
+                fi
+            fi
+        elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"?\$SESSION:([^\"\ ]+)\"?\ \'(.*)\'\ Enter ]]; then
+            local cmd_win="${BASH_REMATCH[1]}"
+            local cmd="${BASH_REMATCH[2]}"
+            if idx=$(index_for_window "$cmd_win"); then
+                win_cmds[idx]="$cmd"
+            fi
+        fi
+    done < "$file"
+
+    if [[ ${#win_names[@]} -gt 0 ]]; then
+        num_windows="${#win_names[@]}"
+    fi
+}
 
 # ─────────────────────────────────────────
 # Additional colour definitions
@@ -45,7 +158,12 @@ draw_header() {
     local step="$1"
     local total="$2"
     local width=62
-    local title="New Launcher"
+    local title
+    if [[ -n "$edit_source" ]]; then
+        title="Edit Launcher"
+    else
+        title="New Launcher"
+    fi
     local indicator="step $step of $total"
     local label_plain="$title  ·  $indicator"
     local label="$title  ${DIM}·  $indicator${NC}"
@@ -123,12 +241,12 @@ ask() {
     local rl_nc=$'\001'"${NC}"$'\002'
     local prompt
     if [[ -n "$default" ]]; then
-        prompt="  ${rl_cyan}${label}${rl_nc} [${default}]: "
+        prompt="  ${rl_cyan}${label}${rl_nc}: "
+        read -er -i "$default" -p "$prompt" _result || true
     else
         prompt="  ${rl_cyan}${label}${rl_nc}: "
+        read -er -p "$prompt" _result || true
     fi
-
-    read -er -p "$prompt" _result || true
 
     # Detect literal ctrl+z in input (tmux popup doesn't send SIGTSTP)
     if [[ "$_result" == *"$BACK_MARKER"* ]]; then
@@ -177,7 +295,6 @@ ask_yn() {
 # ─────────────────────────────────────────
 # State variables
 # ─────────────────────────────────────────
-name="${1:-}"
 description=""
 instance_mode=""
 project_dir=""
@@ -192,18 +309,31 @@ default_names=("dev" "edit" "shell")
 total_steps=4
 step=1
 
+# Handle edit mode: resolve source and load existing values
+if [[ -n "$edit_source" ]]; then
+    edit_source=$(basename "$edit_source")
+    edit_file=$(resolve_edit_source "$edit_source")
+    if [[ -z "$edit_file" ]]; then
+        clear
+        printf "\n"
+        printf "  ${RED}Launcher '%s' not found${NC}\n\n" "$edit_source"
+        exit 1
+    fi
+    load_existing_launcher "$edit_file"
+    if [[ -z "$name" ]]; then
+        name="$edit_source"
+    fi
+    # Recalculate total steps with pre-loaded window count
+    if [[ -n "$num_windows" ]]; then
+        total_steps=$((4 + num_windows))
+    fi
+fi
+
 # If name was provided, start at step 1 (description)
 # but validate/sanitise it first
 if [[ -n "$name" ]]; then
-    # Sanitise: lowercase, strip invalid chars, strip leading dots/dashes, truncate to 64 chars
-    name=$(printf '%s' "$name" | tr -c '[:alnum:]_.-' '_' | tr '[:upper:]' '[:lower:]')
-    name="${name#"${name%%[[:alnum:]_]*}"}"  # strip leading dots/dashes
-    name="${name:0:64}"
-    # Block shell reserved words that would shadow commands
-    case "$name" in
-        test|cd|ls|rm|cp|mv|cat|echo|printf|export|source|exec|eval|exit) name="${name}_launcher" ;;
-    esac
-    if [[ -f "$USER_LAUNCHERS/$name" ]]; then
+    name=$(sanitise_launcher_name "$name")
+    if [[ -z "$edit_source" && -f "$USER_LAUNCHERS/$name" ]]; then
         clear
         printf "\n"
         printf "  ${RED}Launcher '%s' already exists${NC}\n\n" "$name"
@@ -247,7 +377,10 @@ while true; do
                 description="$local_desc"
                 step=2
             else
-                # ctrl+z on step 1 — go back to name prompt
+                # ctrl+b on step 1 — go back to name prompt
+                if [[ -n "$edit_source" ]]; then
+                    exec "$SCRIPT_DIR/../tmux/scripts/new-launcher-prompt.sh" --edit "$edit_source"
+                fi
                 exec "$SCRIPT_DIR/../tmux/scripts/new-launcher-prompt.sh"
             fi
             ;;
@@ -304,19 +437,21 @@ while true; do
 
             local_num=""
             if ask "Number of windows" "${num_windows:-3}" local_num; then
-                num_windows="$local_num"
                 # Validate it's a number between 1 and 20
-                if ! [[ "$num_windows" =~ ^[0-9]+$ ]] || [[ "$num_windows" -lt 1 ]]; then
-                    num_windows=3
-                elif [[ "$num_windows" -gt 20 ]]; then
-                    num_windows=20
+                if ! [[ "$local_num" =~ ^[0-9]+$ ]] || [[ "$local_num" -lt 1 ]]; then
+                    local_num=3
+                elif [[ "$local_num" -gt 20 ]]; then
+                    local_num=20
                 fi
+                # Only reset window arrays if count changed
+                if [[ "$local_num" != "$num_windows" ]]; then
+                    win_names=()
+                    win_cmds=()
+                    win_splits=()
+                    win_split_cmds=()
+                fi
+                num_windows="$local_num"
                 total_steps=$((4 + num_windows))
-                # Reset window arrays if count changed
-                win_names=()
-                win_cmds=()
-                win_splits=()
-                win_split_cmds=()
                 step=5
             else
                 step=3
@@ -406,10 +541,20 @@ while true; do
 done
 
 # ─────────────────────────────────────────
-# Generate launcher file
+# Generate launcher file (edit-aware)
 # ─────────────────────────────────────────
 
 mkdir -p "$USER_LAUNCHERS"
+
+target_name="$name"
+target_path="$USER_LAUNCHERS/$target_name"
+
+# If editing a user launcher and the name changed, remove the old file
+if [[ -n "$edit_source" ]]; then
+    if [[ -f "$USER_LAUNCHERS/$edit_source" && "$edit_source" != "$target_name" ]]; then
+        rm -f "$USER_LAUNCHERS/$edit_source"
+    fi
+fi
 
 session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
 
@@ -508,14 +653,18 @@ else
     tmux attach-session -t "$SESSION"
 fi
 FOOTER
-} > "$USER_LAUNCHERS/$name"
+} > "$target_path"
 
-chmod +x "$USER_LAUNCHERS/$name"
+chmod +x "$target_path"
 
 # Show success
 clear
 printf "\n\n"
-printf "  ${GREEN}Launcher created${NC}\n\n"
-printf "  ${DIM}%s/%s${NC}\n" "$USER_LAUNCHERS" "$name"
+if [[ -n "$edit_source" ]]; then
+    printf "  ${GREEN}Launcher updated${NC}\n\n"
+else
+    printf "  ${GREEN}Launcher created${NC}\n\n"
+fi
+printf "  ${DIM}%s/%s${NC}\n" "$USER_LAUNCHERS" "$target_name"
 printf "  ${DIM}It will appear in the launcher picker (prefix + p)${NC}\n"
 sleep 2

@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.17] - 2026-02-09
+
+### Added
+- Tmux: Edit launcher from picker (`e` key) — opens wizard pre-filled with existing values
+- Shared library: `sanitise_launcher_name()` function in `common.sh` for reusable name validation
+
+### Changed
+- Launcher wizard: `--edit SOURCE` flag for editing existing launchers (rename, re-describe, modify windows)
+- Launcher wizard: `ask()` now uses readline `-i` for editable default values instead of `[default]` hints
+- Launcher name sanitisation extracted from `new-launcher.sh` into shared `sanitise_launcher_name()` function
+- `new-launcher.sh` now sources `common.sh` instead of `colours.sh`
+- `tnew` launcher: Minor description and help text cleanup
+
 ## [0.2.16] - 2026-02-09
 
 ### Added

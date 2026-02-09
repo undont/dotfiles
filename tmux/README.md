@@ -112,6 +112,7 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Select              | `Space` or `Enter`       |
 | Start searching     | `/`                      |
 | New launcher        | `n` (opens wizard)       |
+| Edit launcher       | `e` (opens wizard with current values) |
 | Delete launcher     | `x` (user launchers only)|
 | Quit                | `q` or `Esc`             |
 

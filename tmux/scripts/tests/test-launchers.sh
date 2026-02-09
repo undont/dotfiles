@@ -415,36 +415,47 @@ section "new-launcher.sh: Name Validation"
 
 nl_content=$(cat "$NEW_LAUNCHER")
 
+# sanitise_launcher_name lives in scripts/_lib/common.sh (shared library)
+COMMON_LIB="$DOTFILES_ROOT/scripts/_lib/common.sh"
+common_lib_content=$(cat "$COMMON_LIB")
+
+# new-launcher.sh should call sanitise_launcher_name (from common.sh)
+if [[ "$nl_content" == *"sanitise_launcher_name"* ]]; then
+    pass "calls sanitise_launcher_name from shared library"
+else
+    fail "should call sanitise_launcher_name from shared library"
+fi
+
 # Should sanitise special characters
-if [[ "$nl_content" == *"tr -c '[:alnum:]_.-' '_'"* ]]; then
+if [[ "$common_lib_content" == *"tr -c '[:alnum:]_.-' '_'"* ]]; then
     pass "sanitises special characters in launcher names"
 else
     fail "should sanitise special characters in launcher names"
 fi
 
 # Should lowercase names
-if [[ "$nl_content" == *"tr '[:upper:]' '[:lower:]'"* ]]; then
+if [[ "$common_lib_content" == *"tr '[:upper:]' '[:lower:]'"* ]]; then
     pass "lowercases launcher names"
 else
     fail "should lowercase launcher names"
 fi
 
 # Should strip leading dots/dashes
-if [[ "$nl_content" == *'strip leading dots/dashes'* ]] || [[ "$nl_content" == *'%%[[:alnum:]_]'* ]]; then
+if [[ "$common_lib_content" == *'strip leading dots/dashes'* ]] || [[ "$common_lib_content" == *'%%[[:alnum:]_]'* ]]; then
     pass "strips leading dots/dashes from names"
 else
     fail "should strip leading dots/dashes from names"
 fi
 
 # Should enforce length limit
-if [[ "$nl_content" == *':0:64'* ]] || [[ "$nl_content" == *'{name:0:64}'* ]]; then
+if [[ "$common_lib_content" == *':0:64'* ]] || [[ "$common_lib_content" == *'{name:0:64}'* ]]; then
     pass "enforces 64-character name length limit"
 else
     fail "should enforce 64-character name length limit"
 fi
 
 # Should block shell reserved words
-if [[ "$nl_content" == *"test|cd|ls"* ]]; then
+if [[ "$common_lib_content" == *"test|cd|ls"* ]]; then
     pass "blocks shell reserved words as launcher names"
 else
     fail "should block shell reserved words (test, cd, ls, etc.)"

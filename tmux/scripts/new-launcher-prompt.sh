@@ -7,6 +7,10 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # Prompts for a launcher name, then hands off to new-launcher.sh
 # Called via fzf become() from the launcher picker (prefix + p)
+#
+# Usage:
+#   new-launcher-prompt.sh              # Create mode
+#   new-launcher-prompt.sh --edit NAME  # Edit mode (pre-fills name)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
@@ -17,15 +21,32 @@ source "$SCRIPT_DIR/_lib/common.sh"
 load_fzf_theme
 require_fzf
 
+edit_source=""
+
+if [[ "${1:-}" == "--edit" ]]; then
+    edit_source="${2:-}"
+    shift 2
+fi
+
+default_query=""
+prompt_label="New launcher: "
+border_label=' ⏎ create · esc cancel '
+
+if [[ -n "$edit_source" ]]; then
+    default_query="$edit_source"
+    prompt_label="Edit launcher: "
+    border_label=' ⏎ edit · esc cancel '
+fi
+
 # Prompt for launcher name using fzf --print-query
 name=$(printf '' | fzf \
     --print-query \
-    --query='' \
-    --prompt='New launcher: ' \
+    --query="$default_query" \
+    --prompt="$prompt_label" \
     --height=100% \
     --layout=reverse \
     --border=rounded \
-    --border-label=' ⏎ create · esc cancel ' \
+    --border-label="$border_label" \
     --border-label-pos=bottom \
     --no-info \
     --pointer=' ' \
@@ -35,6 +56,10 @@ name=$(printf '' | fzf \
 
 if [[ -z "$name" ]]; then
     exit 0
+fi
+
+if [[ -n "$edit_source" ]]; then
+    exec "$DOTFILES_ROOT/scripts/new-launcher.sh" --edit "$edit_source" "$name"
 fi
 
 # Hand off to the full scaffolding script
