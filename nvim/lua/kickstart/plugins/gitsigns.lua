@@ -3,8 +3,10 @@
 return {
   {
     'lewis6991/gitsigns.nvim',
-    init = function()
-      -- Set gitsigns highlight colours and re-apply after colorscheme changes
+    config = function(_, opts)
+      require('gitsigns').setup(opts)
+
+      -- Override gitsigns default highlights after setup
       local function set_gitsigns_highlights()
         -- Sign column text colours
         vim.api.nvim_set_hl(0, 'GitSignsAdd', { fg = '#a6e3a1', bold = true })
@@ -20,8 +22,6 @@ return {
         vim.api.nvim_set_hl(0, 'GitSignsAddLn', { bg = '#1a2e1a' })
         vim.api.nvim_set_hl(0, 'GitSignsChangeLn', { bg = '#2e2a1a' })
         vim.api.nvim_set_hl(0, 'GitSignsDeleteLn', {})
-        -- Virtual text for inline deleted lines (used in Octo unified review mode)
-        vim.api.nvim_set_hl(0, 'GitSignsDeleteVirtLn', { fg = '#6c7086' })
       end
 
       set_gitsigns_highlights()

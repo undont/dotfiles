@@ -19,11 +19,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tmux: URL picker keybinding changed from `Opt+y` to `prefix + y`
 - Tmux: Launcher picker now supports half-page scroll (`Ctrl+d` / `Ctrl+u`)
 - Tmux: Launcher picker uses "system launcher" terminology instead of "repo launcher"
+- Tmux: Launcher picker (`prefix + p`) now sorts by most recently used (MRU) — last used launcher appears at top
 - Tmux: `tmux.conf.template` updated with all new script paths
 - Ghostty: Add `Cmd+Left` / `Cmd+Right` keybindings for Home/End
 - Neovim: Add macOS-style navigation keybindings (`Opt+arrows`, `Opt+f/b`, `Home/End`) in normal, visual, and insert modes
 - Neovim: PR review plugin flushes pending deletes before add lines for correct diff ordering
-- Neovim: `GitSignsDeleteVirtLn` highlight uses subdued grey instead of red background
+- Neovim: PR review plugin now uses custom highlight groups immune to gitsigns overrides
+- Neovim: PR review plugin navigation (`]c`/`[c`) now jumps by hunks instead of individual lines
+- Neovim: PR review plugin adds JetBrains-style gutter bars for modified sections
+- Neovim: Gitsigns no longer defines `GitSignsDeleteVirtLn` (moved to PR review plugin as `OctoReviewDeleteVirtLn`)
 - CI: ShellCheck glob updated for new subdirectory layout
 - Zsh: `trestore` and `tkill` functions updated for new script paths
 - CLAUDE.md: Updated directory structure and tmux scripts architecture documentation
@@ -36,6 +40,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - Tests: Update Claude/nvim picker test paths for instances/ layout
 - Tests: Normalise TMPDIR handling in nvim sync test to avoid invalid socket paths
+- Tmux: Launcher picker rewritten for Bash 3.2 compatibility (macOS default bash, no associative arrays)
+- Tmux: Launcher picker uses explicit cleanup instead of EXIT trap to avoid scope issues in pipes
 
 ## [0.2.16] - 2026-02-09
 
