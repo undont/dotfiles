@@ -19,11 +19,7 @@ load_fzf_theme
 # List launchers in fzf-compatible format
 list_launchers_for_fzf() {
     # Header (consumed by fzf --header-lines)
-    printf "\n"
-    printf "  ${GREEN}Session Launchers${NC}\n"
-    printf "  ${GREY}Select a launcher to create or switch to a session${NC}\n"
-    printf "\n"
-    printf "\n"
+    print_dotfiles_logo
 
     # Collect launchers: user dir overrides repo by filename
     local seen_names=""

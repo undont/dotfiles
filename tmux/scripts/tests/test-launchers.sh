@@ -107,11 +107,11 @@ section "list-launchers.sh: Output Format"
 
 output=$("$LIST_LAUNCHERS" 2>&1) || true
 
-# Should have header text
-if [[ "$output" == *"Session Launchers"* ]]; then
-    pass "output includes 'Session Launchers' header"
+# Should have dotfiles logo in header
+if [[ "$output" == *"dotfiles"* ]]; then
+    pass "output includes dotfiles logo header"
 else
-    fail "output should include 'Session Launchers' header"
+    fail "output should include dotfiles logo header"
 fi
 
 # Should list repo launchers (tnew has @description)

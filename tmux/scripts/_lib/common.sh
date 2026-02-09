@@ -14,6 +14,39 @@ DOTFILES_ROOT="$(cd "$_LIB_DIR/../../.." && pwd)"
 # shellcheck source=scripts/_lib/colours.sh
 source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
 
+# Print the dotfiles ASCII art logo with theme-aware gradient
+# Uses TMUX_ACCENT_CYAN → TMUX_ACCENT_PURPLE from the active theme
+# Call load_fzf_theme before this to ensure theme colours are available
+# Usage: print_dotfiles_logo
+# shellcheck disable=SC1003
+print_dotfiles_logo() {
+    local from="${TMUX_ACCENT_CYAN:-#8be9fd}"
+    local to="${TMUX_ACCENT_PURPLE:-#bd93f9}"
+
+    # Convert hex to RGB components
+    local r1=$((16#${from:1:2})) g1=$((16#${from:3:2})) b1=$((16#${from:5:2}))
+    local r2=$((16#${to:1:2})) g2=$((16#${to:3:2})) b2=$((16#${to:5:2}))
+
+    # Logo lines (matching scripts/_lib/logo.txt)
+    local lines=(
+        '     _       _    __ _ _'
+        '  __| | ___ | |_ / _(_) | ___  ___'
+        ' / _` |/ _ \| __| |_| | |/ _ \/ __|'
+        '| (_| | (_) | |_|  _| | |  __/\__ \'
+        ' \__,_|\___/ \__|_| |_|_|\___||___/'
+    )
+
+    printf "\n"
+    local i
+    for i in 0 1 2 3 4; do
+        local r=$(( r1 + (r2 - r1) * i / 4 ))
+        local g=$(( g1 + (g2 - g1) * i / 4 ))
+        local b=$(( b1 + (b2 - b1) * i / 4 ))
+        printf "\033[38;2;%d;%d;%dm%s${NC}\n" "$r" "$g" "$b" "${lines[$i]}"
+    done
+    printf "\n"
+}
+
 # Launcher path constants
 DOTFILES_LAUNCHERS="$DOTFILES_ROOT/launchers"
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"

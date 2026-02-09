@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Tmux: Session launcher picker (`prefix + p`) — create, run, and delete session launchers
 - Tmux: Launcher wizard (`new-launcher.sh`) — step-based interactive scaffolding for new launchers
+- Tmux: Theme-aware dotfiles logo in session, window, and launcher pickers
 - Tmux: `require_fzf()` helper in common.sh for fzf dependency checks
 - Tmux: Launcher path constants (`USER_LAUNCHERS`, `DOTFILES_LAUNCHERS`) in shared library
 - Neovim: Markdown display improvements (wrap, conceallevel, visual line nav)

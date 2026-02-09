@@ -113,6 +113,25 @@ tmux new-window -t "$SESSION" -n shell -c "$PROJECT_DIR"
 # tmux new-window -t "$SESSION" -n misc -c ~
 
 # =============================================================================
+# EXAMPLES OF INSTANCE CUSTOMISATION
+# =============================================================================
+#
+# # Git worktree matching (with @instance: prompt)
+# # When the user types a ticket number (e.g. 1234), match it to a worktree
+# # directory like ~/src/myproject-worktrees/PROJ-1234-Some-Description/
+# #
+# # WORKTREES_DIR="${MYPROJECT_WORKTREES:-$HOME/src/myproject-worktrees}"
+# # if [[ "$SESSION" =~ ^myproject-(.+)$ ]]; then
+# #     suffix="${BASH_REMATCH[1]}"
+# #     worktree_match=$(find "$WORKTREES_DIR" -maxdepth 1 -type d -name "PROJ-${suffix}-*" 2>/dev/null | head -1)
+# #     if [[ -n "$worktree_match" ]]; then
+# #         PROJECT_DIR="$worktree_match"
+# #     fi
+# # fi
+# #
+# # Place this between the SESSION/PROJECT_DIR lines and the validation block.
+
+# =============================================================================
 # ATTACH TO SESSION
 # =============================================================================
 
