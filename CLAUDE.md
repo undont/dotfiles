@@ -168,7 +168,7 @@ dotfiles/
 │   └── *.template        # Templates for user config (secrets)
 ├── tmux/                 # Tmux configuration (symlinked to ~/.tmux)
 │   ├── tmux.conf.template  # Theme template (processed by theme-switch)
-│   └── scripts/          # Custom scripts organised by function (sessions/, windows/, agents/, etc.)
+│   └── scripts/          # Custom scripts organised by function (sessions/, windows/, instances/, etc.)
 ├── nvim/                 # Neovim configuration (kickstart.nvim based)
 │   ├── init.lua          # Entry point
 │   └── lua/custom/       # Modular config (core/, plugins/)
@@ -247,7 +247,7 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - **windows/**: `list.sh`, `rename.sh`, `kill.sh`, `undo.sh`, `duplicate.sh`, `move.sh` - Window operations
 - **panes/**: `kill.sh`, `undo.sh` - Pane management
 - **launchers/**: `list.sh`, `picker.sh`, `run.sh`, `prompt.sh`, `delete.sh` - Session launcher system
-- **agents/**: `claude.sh`, `opencode.sh`, `nvim.sh`, `new.sh`, `kill.sh`, `connect-nvim.sh` - AI agent instance management
+- **instances/**: `claude.sh`, `opencode.sh`, `nvim.sh`, `new.sh`, `kill.sh`, `connect-nvim.sh` - Process instance management (list, create, kill)
 - **alerts/**: `show.sh`, `clear.sh`, `update-rename.sh`, `update-timestamp.sh` - Agent alert system for status bar
 - **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions
 - **themes/**: `pick.sh`, `reload-fzf.sh`, `reload-ghostty.sh` - Runtime theme switching
