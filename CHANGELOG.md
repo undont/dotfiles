@@ -33,6 +33,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `new-launcher.sh` now sources `common.sh` instead of `colours.sh`
 - `tnew` launcher: Minor description and help text cleanup
 
+### Fixed
+- Tests: Update Claude/nvim picker test paths for instances/ layout
+- Tests: Normalise TMPDIR handling in nvim sync test to avoid invalid socket paths
+
 ## [0.2.16] - 2026-02-09
 
 ### Added
