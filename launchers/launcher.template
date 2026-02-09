@@ -8,20 +8,24 @@ set -euo pipefail
 #   cp launcher.template myproject
 #   chmod +x myproject
 #
-# Add your project root to ~/.config/zsh/local-aliases.zsh:
+# Add your project root to ~/.zshrc:
 #   export MYPROJECT_ROOT="$HOME/src/myproject"
 # =============================================================================
-
-# Source local aliases for project paths
-LOCAL_ALIASES="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/local-aliases.zsh"
-# shellcheck source=/dev/null
-[[ -f "$LOCAL_ALIASES" ]] && source "$LOCAL_ALIASES"
 
 # =============================================================================
 # CONFIGURATION - Customise these for your project
 # =============================================================================
+# @description: My project - brief description of windows/layout
+#
+# The @description tag is required for the launcher picker (prefix + p).
+# It appears as a one-line summary next to the launcher name in the picker.
+# Launchers without this tag are hidden from the picker.
+#
+# Optional: @instance tag controls how new instances are created (press n):
+#   # @instance: prompt    - asks for a name (e.g. ticket number → myproject-1234)
+#   # @instance: auto      - auto-increments (myproject-2, myproject-3) [default]
 
-SESSION="myproject"                              # tmux session name
+SESSION="${SESSION_NAME:-myproject}"              # tmux session name (SESSION_NAME allows multi-instance)
 PROJECT_DIR="${MYPROJECT_ROOT:-$HOME/src/myproject}"  # from local aliases or fallback
 
 # Help flag handling
@@ -45,7 +49,7 @@ OPTIONS:
     -h, --help   Show this help message
 
 NOTES:
-    • Reads ${SESSION^^}_ROOT from ~/.config/zsh/local-aliases.zsh
+    • Reads ${SESSION^^}_ROOT from ~/.zshrc exports
     • Falls back to $PROJECT_DIR if not defined
     • If session exists, attaches instead of creating
 EOF
@@ -58,7 +62,7 @@ fi
 
 if [[ ! -d "$PROJECT_DIR" ]]; then
     echo "Error: Project directory not found: $PROJECT_DIR" >&2
-    echo "Define ${SESSION^^}_ROOT in ~/.config/zsh/local-aliases.zsh or create the directory." >&2
+    echo "Define ${SESSION^^}_ROOT in ~/.zshrc or create the directory." >&2
     exit 1
 fi
 
@@ -107,6 +111,25 @@ tmux new-window -t "$SESSION" -n shell -c "$PROJECT_DIR"
 #
 # # Window at home directory:
 # tmux new-window -t "$SESSION" -n misc -c ~
+
+# =============================================================================
+# EXAMPLES OF INSTANCE CUSTOMISATION
+# =============================================================================
+#
+# # Git worktree matching (with @instance: prompt)
+# # When the user types a ticket number (e.g. 1234), match it to a worktree
+# # directory like ~/src/myproject-worktrees/PROJ-1234-Some-Description/
+# #
+# # WORKTREES_DIR="${MYPROJECT_WORKTREES:-$HOME/src/myproject-worktrees}"
+# # if [[ "$SESSION" =~ ^myproject-(.+)$ ]]; then
+# #     suffix="${BASH_REMATCH[1]}"
+# #     worktree_match=$(find "$WORKTREES_DIR" -maxdepth 1 -type d -name "PROJ-${suffix}-*" 2>/dev/null | head -1)
+# #     if [[ -n "$worktree_match" ]]; then
+# #         PROJECT_DIR="$worktree_match"
+# #     fi
+# # fi
+# #
+# # Place this between the SESSION/PROJECT_DIR lines and the validation block.
 
 # =============================================================================
 # ATTACH TO SESSION

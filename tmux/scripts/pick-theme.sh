@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # shellcheck disable=SC2155,SC2059
 set -euo pipefail
 
@@ -8,32 +8,13 @@ set -euo pipefail
 # Interactive theme selector using fzf
 # Called from tmux keybinding: prefix + t
 
-# Find dotfiles root by looking for themes directory
-# Start from script location and walk up until we find it
-find_dotfiles_root() {
-    local dir="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-    while [[ "$dir" != "/" ]]; do
-        if [[ -d "$dir/themes" ]]; then
-            echo "$dir"
-            return 0
-        fi
-        dir="$(dirname "$dir")"
-    done
-    # Fallback to standard location
-    echo "$HOME/dotfiles"
-}
+SCRIPT_DIR="${BASH_SOURCE%/*}"
 
-DOTFILES_ROOT="$(find_dotfiles_root)"
-
-# Source colour definitions
-# shellcheck source=scripts/_lib/colours.sh
-source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
+# shellcheck source=tmux/scripts/_lib/common.sh
+source "$SCRIPT_DIR/_lib/common.sh"
 
 # Load current theme colours for fzf
-if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
-    # shellcheck disable=SC1091
-    source "$DOTFILES_ROOT/scripts/fzf-theme.sh" 2>/dev/null || true
-fi
+load_fzf_theme
 THEMES_DIR="$DOTFILES_ROOT/themes"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 CURRENT_THEME_FILE="$CONFIG_DIR/current-theme"
@@ -83,9 +64,32 @@ list_themes_for_fzf() {
     done
 }
 
+# Get 1-based position of current theme in the list
+get_current_position() {
+    local current_theme
+    current_theme=$(get_current_theme)
+    local pos=1
+    for theme_file in "$THEMES_DIR"/*.theme; do
+        if [[ -f "$theme_file" ]]; then
+            local theme_id
+            theme_id=$(basename "$theme_file" .theme)
+            if [[ "$theme_id" == "$current_theme" ]]; then
+                echo "$pos"
+                return
+            fi
+            ((pos++))
+        fi
+    done
+    echo "1"
+}
+
 # Main
 main() {
-    list_themes_for_fzf
+    if [[ "${1:-}" == "--pos" ]]; then
+        get_current_position
+    else
+        list_themes_for_fzf
+    fi
 }
 
 main "$@"

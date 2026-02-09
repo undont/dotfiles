@@ -307,8 +307,6 @@ Karabiner:
 
 Session Launchers:
   ~/.local/launchers/tnew  -> ~/dotfiles/launchers/tnew
-  ~/.local/launchers/dana  -> ~/dotfiles/launchers/dana
-  ~/.local/launchers/code  -> ~/dotfiles/launchers/code
 
 Dotfiles CLI:
   ~/.local/bin/dotfiles    -> ~/dotfiles/scripts/dotfiles

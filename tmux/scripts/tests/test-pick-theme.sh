@@ -222,8 +222,8 @@ fi
 
 section "Colour Codes"
 
-# Should use ANSI colour codes for visual appeal
-if [[ "$script_content" == *"CYAN="* ]] || [[ "$script_content" == *"colours.sh"* ]] || [[ "$script_content" == *"033"* ]]; then
+# Should use ANSI colour codes for visual appeal (via common.sh which sources colours.sh)
+if [[ "$script_content" == *"CYAN="* ]] || [[ "$script_content" == *"colours.sh"* ]] || [[ "$script_content" == *"common.sh"* ]] || [[ "$script_content" == *"033"* ]]; then
     pass "script defines or sources colour variables"
 else
     fail "script should define or source colour variables"
@@ -344,6 +344,49 @@ else
 fi
 
 export THEMES_DIR="$THEMES_DIR_BACKUP"
+
+section "--pos Flag (Current Theme Position)"
+
+# Test --pos returns a number
+pos_output=$("$THEME_PICKER" --pos 2>&1) || true
+
+if [[ "$pos_output" =~ ^[0-9]+$ ]]; then
+    pass "--pos returns a numeric position"
+else
+    fail "--pos should return a numeric position, got: $pos_output"
+fi
+
+# Position should be >= 1
+if [[ -n "$pos_output" ]] && [[ "$pos_output" -ge 1 ]]; then
+    pass "--pos position is >= 1 (1-based index)"
+else
+    fail "--pos position should be >= 1"
+fi
+
+# Count available themes
+theme_count=0
+for tf in "$THEMES_DIR"/*.theme; do
+    [[ -f "$tf" ]] && theme_count=$((theme_count + 1))
+done
+
+# Position should not exceed theme count
+if [[ -n "$pos_output" ]] && [[ "$pos_output" -le "$theme_count" ]]; then
+    pass "--pos position ($pos_output) is within theme count ($theme_count)"
+else
+    fail "--pos position ($pos_output) should be <= theme count ($theme_count)"
+fi
+
+# Test with a known theme set via XDG
+mkdir -p "$TEST_CONFIG_DIR"
+echo "nord" > "$TEST_CURRENT_THEME"
+pos_nord=$(XDG_CONFIG_HOME="$TEST_XDG_BASE" "$THEME_PICKER" --pos 2>&1) || true
+
+# Should be different from default if nord isn't the first theme
+if [[ "$pos_nord" =~ ^[0-9]+$ ]]; then
+    pass "--pos works with saved theme preference"
+else
+    fail "--pos should work with saved theme preference"
+fi
 
 section "Output Stability"
 

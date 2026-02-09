@@ -18,14 +18,20 @@ if ! tmux list-sessions &>/dev/null; then
     exit 0
 fi
 
-# Build set of pane PIDs that have an active (non-suspended) claude child process.
-# Done once upfront to avoid forking pgrep+ps per pane in the loop.
+# Build set of PIDs that are ancestors of an active (non-suspended) claude process.
+# Walks up the process tree so wrapper scripts (e.g., ralph → claude) are detected.
 declare -A active_claude_ppids
 while IFS= read -r cpid; do
     state=$(ps -o state= -p "$cpid" 2>/dev/null) || continue
     [[ "$state" == T* ]] && continue
-    ppid=$(ps -o ppid= -p "$cpid" 2>/dev/null) || continue
-    active_claude_ppids[${ppid// /}]=1
+    pid="$cpid"
+    while true; do
+        ppid=$(ps -o ppid= -p "$pid" 2>/dev/null) || break
+        ppid="${ppid// /}"
+        [[ "$ppid" == "0" || "$ppid" == "1" || -z "$ppid" ]] && break
+        active_claude_ppids[$ppid]=1
+        pid="$ppid"
+    done
 done < <(pgrep -x claude 2>/dev/null)
 
 # Pre-fetch window names: "session:window_index window_name"

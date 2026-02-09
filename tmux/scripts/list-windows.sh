@@ -7,7 +7,13 @@
 #   --all: List windows from all sessions (default: current session only)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
+# shellcheck source=tmux/scripts/_lib/common.sh
+source "$SCRIPT_DIR/_lib/common.sh"
+# shellcheck source=tmux/scripts/_lib/alerts.sh
 source "$SCRIPT_DIR/_lib/alerts.sh"
+
+load_fzf_theme
+print_dotfiles_logo
 
 # Get windows sorted by last-viewed, then add alert indicator
 if [[ "$1" == "--all" ]]; then
