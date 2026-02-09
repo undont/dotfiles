@@ -392,12 +392,12 @@ Available session backups:
 │   ├── tests/                            # Test suites
 │   │   ├── cleanup-tests.sh              # Clean up orphaned test resources
 │   │   └── test-show-dotfiles-status.sh  # Tests for dotfiles sync indicator
-│   ├── agents/                           # AI agent instance management
+│   ├── instances/                        # Process instance management (list, create, kill)
 │   │   ├── claude.sh                     # List Claude Code instances
 │   │   ├── opencode.sh                   # List OpenCode instances
 │   │   ├── nvim.sh                       # List nvim instances for buffer sync
-│   │   ├── new.sh                        # Create new agent window
-│   │   ├── kill.sh                       # Kill agent instance (with confirm)
+│   │   ├── new.sh                        # Create new process window
+│   │   ├── kill.sh                       # Kill process instance (with confirm)
 │   │   └── connect-nvim.sh               # Connect nvim to Claude pane
 │   ├── alerts/                           # Agent alert system
 │   │   ├── show.sh                       # Status bar: Multi-agent alerts (⚡ 🔮 🤖)

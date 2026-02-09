@@ -5,7 +5,7 @@ set -euo pipefail
 # Tests the Claude Code instance listing and formatting logic
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIST_CLAUDE_SCRIPT="$SCRIPT_DIR/../agents/claude.sh"
+LIST_CLAUDE_SCRIPT="$SCRIPT_DIR/../instances/claude.sh"
 
 # Test counters
 PASS=0

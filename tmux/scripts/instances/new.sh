@@ -31,10 +31,11 @@ esac
 SESSION=$(tmux display-message -p '#{session_name}')
 DIR=$(tmux display-message -p '#{pane_current_path}')
 
-# Create new window and launch process
-tmux new-window -t "$SESSION" -n "$PROCESS" -c "$DIR"
-tmux set-window-option -t "$SESSION:$PROCESS" automatic-rename off
-tmux send-keys -t "$SESSION:$PROCESS" "$PROCESS" Enter
+# Create new window and capture its exact target (avoids name collision
+# when multiple windows share the same name, e.g. several "nvim" windows)
+TARGET=$(tmux new-window -P -F '#{session_name}:#{window_index}' -t "$SESSION" -n "$PROCESS" -c "$DIR")
+tmux set-window-option -t "$TARGET" automatic-rename off
+tmux send-keys -t "$TARGET" "$PROCESS" Enter
 
 # Switch client to the new window
-tmux switch-client -t "$SESSION:$PROCESS"
+tmux switch-client -t "$TARGET"
