@@ -50,9 +50,9 @@ main() {
             ACTION:edit:*)
                 local edit_name="${action#ACTION:edit:}"
                 edit_name=$(basename "$edit_name")
-                # Only user launchers can be edited — repo launchers are read-only
+                # Only user launchers can be edited — system launchers are read-only
                 if [[ ! -f "$USER_LAUNCHERS/$edit_name" ]]; then
-                    show_error "Cannot edit repo launcher '$edit_name'"
+                    show_error "Cannot edit system launcher '$edit_name'"
                     continue
                 fi
                 "$SCRIPT_DIR/prompt.sh" --edit "$edit_name" && break

@@ -21,7 +21,7 @@ return {
         vim.api.nvim_set_hl(0, 'GitSignsChangeLn', { bg = '#2e2a1a' })
         vim.api.nvim_set_hl(0, 'GitSignsDeleteLn', {})
         -- Virtual text for inline deleted lines (used in Octo unified review mode)
-        vim.api.nvim_set_hl(0, 'GitSignsDeleteVirtLn', { fg = '#f38ba8', bg = '#2e1a1a' })
+        vim.api.nvim_set_hl(0, 'GitSignsDeleteVirtLn', { fg = '#6c7086' })
       end
 
       set_gitsigns_highlights()

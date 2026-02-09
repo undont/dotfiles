@@ -13,12 +13,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Shared library: `sanitise_launcher_name()` function in `common.sh` for reusable name validation
 
 ### Changed
-- Tmux: Reorganise all scripts into functional subdirectories (`sessions/`, `windows/`, `panes/`, `agents/`, `alerts/`, `launchers/`, `resurrect/`, `themes/`, `utils/`)
+- Tmux: Rename `agents/` directory to `instances/` for clearer naming (process instance management)
+- Tmux: Reorganise all scripts into functional subdirectories (`sessions/`, `windows/`, `panes/`, `instances/`, `alerts/`, `launchers/`, `resurrect/`, `themes/`, `utils/`)
+- Tmux: `new.sh` uses `new-window -P` to capture exact window target, avoiding name collisions with duplicate window names
 - Tmux: URL picker keybinding changed from `Opt+y` to `prefix + y`
 - Tmux: Launcher picker now supports half-page scroll (`Ctrl+d` / `Ctrl+u`)
+- Tmux: Launcher picker uses "system launcher" terminology instead of "repo launcher"
 - Tmux: `tmux.conf.template` updated with all new script paths
 - Ghostty: Add `Cmd+Left` / `Cmd+Right` keybindings for Home/End
 - Neovim: Add macOS-style navigation keybindings (`Opt+arrows`, `Opt+f/b`, `Home/End`) in normal, visual, and insert modes
+- Neovim: PR review plugin flushes pending deletes before add lines for correct diff ordering
+- Neovim: `GitSignsDeleteVirtLn` highlight uses subdued grey instead of red background
 - CI: ShellCheck glob updated for new subdirectory layout
 - Zsh: `trestore` and `tkill` functions updated for new script paths
 - CLAUDE.md: Updated directory structure and tmux scripts architecture documentation

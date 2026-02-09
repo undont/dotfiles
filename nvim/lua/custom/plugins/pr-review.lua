@@ -50,6 +50,15 @@ local function apply_patch_highlights(file, right_bufnr)
     for j = 2, #lines do
       local prefix = lines[j]:sub(1, 1)
       if prefix == '+' then
+        -- Flush pending deletes above this line so they appear before the add
+        if #pending_deletes > 0 then
+          local anchor = math.max(right_line - 1, 0)
+          pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, anchor, 0, {
+            virt_lines = pending_deletes,
+            virt_lines_above = true,
+          })
+          pending_deletes = {}
+        end
         -- Added line
         pcall(vim.api.nvim_buf_set_extmark, right_bufnr, ns_unified, right_line - 1, 0, {
           line_hl_group = 'GitSignsAddLn',
