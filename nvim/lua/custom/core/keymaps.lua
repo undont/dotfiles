@@ -46,8 +46,8 @@ function M.setup()
 
   -- Diagnostics
   vim.keymap.set('n', '<leader>q', function()
-    vim.diagnostic.setqflist { severity = { min = vim.diagnostic.severity.WARN } }
-  end, { desc = 'Open diagnostic [Q]uickfix list (errors + warnings)' })
+    require('custom.core.quickfix').pick()
+  end, { desc = '[Q]uickfix picker (diagnostics / build)' })
 
   -- File explorer
   vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'Toggle file [E]xplorer' })

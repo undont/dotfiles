@@ -29,7 +29,7 @@
 │                                      │                                    │
 │  <leader>e           file tree       │  <leader>do         diff open      │
 │  <leader>g           git (lazygit)   │  <leader>dc         diff close     │
-│  <leader>q           diagnostics     │  <leader>dp         PR diff review │
+│  <leader>q           quickfix picker │  <leader>dp         PR diff review │
 │  <leader>h           this help       │  <leader>pl         list PRs       │
 │  Ctrl+hjkl           move windows    │  <leader>pr         start review   │
 │                                      │                                    │
