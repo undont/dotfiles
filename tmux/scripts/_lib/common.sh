@@ -14,6 +14,10 @@ DOTFILES_ROOT="$(cd "$_LIB_DIR/../../.." && pwd)"
 # shellcheck source=scripts/_lib/colours.sh
 source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
 
+# Launcher path constants
+DOTFILES_LAUNCHERS="$DOTFILES_ROOT/launchers"
+USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
+
 # Wrapper for tmux command that respects test socket
 # When TMUX_TEST_SOCKET is set, all tmux commands use that socket
 tmux() {
@@ -57,6 +61,14 @@ success() {
 # Use this for errors in popup/fzf contexts instead of error()
 show_error() {
     tmux display-message "Error: $1"
+}
+
+# Check if fzf is available
+require_fzf() {
+    if ! command -v fzf &>/dev/null; then
+        error "fzf is not installed (required for this picker)"
+        exit 1
+    fi
 }
 
 # Check if tmux is running

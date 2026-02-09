@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
+# @description: Dev session - Claude + Neovim (uses current directory)
 # Dev session launcher - creates a 3-window layout for development
 
 # Help flag handling
@@ -42,7 +43,7 @@ NOTES:
     • Claude Code is launched via the 'claude' CLI command
 
 SEE ALSO:
-    dana           Project-specific launcher for Dana project
+    new-launcher   Create a new project launcher
     tattach        Smart attach to session (restores from backup if needed)
     trestore       Restore tmux sessions from backup
 EOF

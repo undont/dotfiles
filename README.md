@@ -31,10 +31,8 @@ dotfiles/
 │       └── plugins/  # Plugin configurations
 ├── btop/             # System monitor configuration
 │   └── btop.conf
-├── launchers/        # Session launch scripts
-│   ├── tnew          # Tmux dev session launcher
-│   ├── dana          # Dana project launcher
-│   └── code          # VS Code dynamic launcher
+├── launchers/        # Session launch scripts (picker: prefix + p)
+│   └── tnew          # Tmux dev session launcher
 ├── hammerspoon/      # macOS automation
 │   └── init.lua
 ├── ghostty/          # Terminal emulator
@@ -151,8 +149,6 @@ ln -sf ~/dotfiles/nvim ~/.config/nvim
 # Session launchers
 mkdir -p ~/.local/launchers
 ln -sf ~/dotfiles/launchers/tnew ~/.local/launchers/tnew
-ln -sf ~/dotfiles/launchers/dana ~/.local/launchers/dana
-ln -sf ~/dotfiles/launchers/code ~/.local/launchers/code
 
 # Dotfiles CLI
 mkdir -p ~/.local/bin
@@ -229,6 +225,7 @@ The uninstall script uses your saved preset to determine which packages to remov
 - Vim-style navigation
 - Session save/restore (tmux-resurrect + continuum)
 - fzf session/window switcher with coloured indicators for agent alerts (⚡ Claude, 🔮 OpenCode)
+- Launcher picker (`prefix + p`) — create, run, and manage session launchers
 - 15 coordinated themes via `theme-switch` (Maple, Dracula, Catppuccin, Tokyo Night, Nord, and more)
 
 ### Neovim
@@ -262,17 +259,12 @@ The uninstall script uses your saved preset to determine which packages to remov
 - Right Option to Left Control (Ghostty and JetBrains IDEs)
 - UK keyboard layout fixes for Apple keyboards
 
-### Dana Project Launcher
-The `dana` script creates a tmux session with pre-configured windows:
+### Session Launchers
+Press `prefix + p` to open the launcher picker. Launchers are shell scripts that create pre-configured tmux sessions with custom window layouts.
 
-| Window | Name | Directory | Purpose |
-|--------|------|-----------|---------|
-| 1 | backend | ~/src/dana/backend | Backend development |
-| 2 | web | ~/src/dana/web | Web frontend |
-| 3 | mobile | ~/src/dana/mobile | Mobile app |
-| 4 | tools | split panes | Left: `npx expo`, Right: `bun dev` |
-| 5 | commit-and-push | ~/src/dana | Git operations |
-| 6 | zsh | ~ | General shell |
+- **Built-in**: `tnew` (dev session with Claude + Neovim)
+- **User-created**: Stored in `~/.config/dotfiles/launchers/` (override repo launchers by name)
+- **Wizard**: Press `n` in the picker to scaffold a new launcher interactively
 
 ## Keybinding Quick Reference
 
@@ -281,6 +273,7 @@ The `dana` script creates a tmux session with pre-configured windows:
 |--------|------------|
 | Prefix | `` ` `` |
 | Help | `` ` h `` |
+| Launcher picker | `` ` p `` |
 | Save session | `` ` w `` |
 | Session switcher | `` ` s `` |
 | Window switcher | `` ` f `` |

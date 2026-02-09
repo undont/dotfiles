@@ -176,6 +176,49 @@ else
     fail "Should filter out suspended processes"
 fi
 
+section "Process Tree Ancestor Walking"
+
+# Script should build a set of ancestor PIDs by walking up the process tree
+if [[ "$script_content" == *'active_claude_ppids'* ]]; then
+    pass "Uses active_claude_ppids associative array"
+else
+    fail "Should use active_claude_ppids for ancestor tracking"
+fi
+
+# Should walk up via ppid loop
+if [[ "$script_content" == *'ppid=$(ps -o ppid='* ]]; then
+    pass "Walks process tree via ps -o ppid="
+else
+    fail "Should walk process tree via ps -o ppid="
+fi
+
+# Should terminate walk at PID 0 or 1 (init)
+if [[ "$script_content" == *'"0"'* ]] && [[ "$script_content" == *'"1"'* ]]; then
+    pass "Terminates ancestor walk at PID 0 or 1"
+else
+    fail "Should terminate ancestor walk at PID 0 or 1"
+fi
+
+# Should match pane PIDs against the ancestor set (not just direct children)
+if [[ "$script_content" == *'active_claude_ppids[$pane_pid]'* ]]; then
+    pass "Matches pane PIDs against ancestor set"
+else
+    fail "Should match pane PIDs against ancestor set (not just direct children)"
+fi
+
+# Should handle wrapper scripts (e.g. ralph → claude)
+# The ancestor walk means any wrapper that eventually spawns claude will be detected
+if [[ "$script_content" == *'wrapper'* ]] || [[ "$script_content" == *'Walks up'* ]] || [[ "$script_content" == *'ancestor'* ]]; then
+    pass "Documents wrapper script support via ancestor walking"
+else
+    # The implementation handles it even without explicit docs
+    if [[ "$script_content" == *'while true'* ]] && [[ "$script_content" == *'ppid='* ]]; then
+        pass "Ancestor walk loop enables wrapper script detection"
+    else
+        fail "Should support wrapper scripts via ancestor walking"
+    fi
+fi
+
 # ===========================================================================
 # Integration test (only if tmux is running)
 # ===========================================================================

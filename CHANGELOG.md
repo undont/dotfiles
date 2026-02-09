@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.16] - 2026-02-09
+
+### Added
+- Tmux: Session launcher picker (`prefix + p`) — create, run, and delete session launchers
+- Tmux: Launcher wizard (`new-launcher.sh`) — step-based interactive scaffolding for new launchers
+- Tmux: `require_fzf()` helper in common.sh for fzf dependency checks
+- Tmux: Launcher path constants (`USER_LAUNCHERS`, `DOTFILES_LAUNCHERS`) in shared library
+- Neovim: Markdown display improvements (wrap, conceallevel, visual line nav)
+- Zsh: Ghostty TERMINFO fix for local and SSH sessions
+- Tests: `test-launchers.sh` — 50 tests covering launcher management scripts
+- Tests: `--pos` flag tests for theme picker
+- Tests: Process tree ancestor-walking tests for Claude detection
+
+### Fixed
+- Security: Sanitise user input in fzf `become()` commands to prevent command injection
+- Security: Escape single quotes in generated `send-keys` commands
+- Security: Path traversal protection in `delete-launcher.sh` via basename guard
+- DRY: Extracted `find_dotfiles_root()` from 3 scripts into shared `common.sh`
+- Shebang: `list-launchers.sh` changed from `#!/bin/bash` to `#!/usr/bin/env bash`
+
+### Changed
+- Launcher name validation: length cap (64), strip leading dots/dashes, block reserved words
+- Window count capped at 20 in launcher wizard
+- `pick-theme.sh` and `list-launchers.sh` refactored to source `common.sh`
+
+### Removed
+- `launchers/dana` — use the launcher wizard (`prefix + p` → `n`) to create project launchers
+- `launchers/code` — VS Code's `code` command is available via shell integration
+
 ## [0.2.15] - 2026-02-08
 
 ### Fixed

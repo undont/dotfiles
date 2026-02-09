@@ -44,10 +44,26 @@ return {
         },
       }
 
-      -- Renumber ordered lists automatically after deleting lines
+      -- Markdown display: wrap text, conceal syntax, softwrap navigation
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'markdown',
         callback = function(ev)
+          local o = vim.bo[ev.buf]
+          o.textwidth = 0
+
+          local wo = vim.wo[vim.api.nvim_get_current_win()]
+          wo.wrap = true
+          wo.linebreak = true
+          wo.conceallevel = 2
+          wo.list = false -- listchars conflict with linebreak
+
+          -- j/k move by visual line in markdown buffers
+          local map = vim.keymap.set
+          local bopts = { buffer = ev.buf, silent = true }
+          map('n', 'j', 'gj', bopts)
+          map('n', 'k', 'gk', bopts)
+
+          -- Renumber ordered lists automatically after deleting lines
           vim.api.nvim_create_autocmd('TextChanged', {
             buffer = ev.buf,
             callback = function()

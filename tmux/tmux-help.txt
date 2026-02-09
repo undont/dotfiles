@@ -23,10 +23,10 @@
 ║  f / b            page down/  ║  ` d              detach             ║
 ║                   up          ║  ` h              this help          ║
 ║  d / u            half-page   ║  ` t              theme picker       ║
-║  g / G            top/bottom  ║  ` c              Claude picker      ║
+║  g / G            top/bottom  ║  ` p              launchers          ║
+║                               ║  ` c              Claude picker      ║
 ║                               ║  Opt+y            open URL picker    ║
-║                               ║  Opt+u            undo pane/win      ║
-║  / / ?            search ↓/↑  ║                                      ║
+║  / / ?            search ↓/↑  ║  Opt+u            undo pane/win      ║
 ║  n / N            next / prev ║                                      ║
 ║                               ║                                      ║
 ║  v / V            select /    ║                                      ║

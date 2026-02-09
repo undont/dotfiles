@@ -35,7 +35,7 @@ Quick reference for error messages and where to find solutions:
 | `command not found: fnm` | fnm not installed | [fnm Not Working](#fnm--nodejs-not-working) |
 | `command not found: node` | Node.js not installed via fnm | [fnm Not Working](#fnm--nodejs-not-working) |
 | `already exists and is not a symlink` | Existing config files | [Installation Failed](#installation-failed-mid-way) |
-| `Directory not found: ~/src/dana` | Dana project path wrong | Check `launchers/dana` PROJECT_DIR variable |
+| `Directory not found: ...` | Launcher project path wrong | Check PROJECT_DIR in the launcher script |
 | `tmux: command not found` | tmux not installed | Run `brew install tmux` |
 | `no matches found` (fzf) | No results for search | Expand search query |
 | `ANDROID_HOME: unbound variable` | ANDROID_HOME not set | See [ANDROID_HOME Issues](#android_home-issues) |

@@ -222,8 +222,6 @@ if should_install "core"; then
     echo "Launchers:"
     mkdir -p "$HOME/.local/launchers"
     create_link "$DOTFILES_DIR/launchers/tnew" "$HOME/.local/launchers/tnew"
-    create_link "$DOTFILES_DIR/launchers/dana" "$HOME/.local/launchers/dana"
-    create_link "$DOTFILES_DIR/launchers/code" "$HOME/.local/launchers/code"
 fi
 
 # Claude/OpenCode shared configuration (core)

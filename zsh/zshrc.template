@@ -42,3 +42,12 @@ fi
 #   export PATH="$HOME/scripts:$PATH" # Add personal scripts to PATH
 #   alias myproject="cd ~/src/myapp"  # Project shortcuts
 #   bindkey -v                         # Switch to vi mode (framework sets emacs)
+#
+# Project directories for launcher picker (prefix+p → tnew).
+# Colon-separated roots — the picker lists subdirectories of each:
+#   export DEV_ROOT="$HOME/src"
+#   export PROJECTS_ROOT="$HOME/playground"
+#   export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT"
+#
+# Project roots for named launchers (e.g. dana):
+#   export DANA_ROOT="$HOME/src/dana"

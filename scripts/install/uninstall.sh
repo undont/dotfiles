@@ -80,8 +80,6 @@ SYMLINKS=(
     "$HOME/.config/karabiner/karabiner.json"
     "$HOME/.hammerspoon"
     "$HOME/.local/launchers/tnew"
-    "$HOME/.local/launchers/dana"
-    "$HOME/.local/launchers/code"
 )
 
 # Add macOS-specific ghostty symlink

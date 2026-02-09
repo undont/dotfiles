@@ -108,6 +108,9 @@ unbind x
 # Unbind default clock (use prefix+t for theme picker instead)
 unbind t
 
+# Unbind default paste (use prefix+p for launcher picker instead)
+unbind p
+
 # ─────────────────────────────────────────
 # Window (tab) navigation
 # ─────────────────────────────────────────
@@ -328,8 +331,10 @@ bind h display-popup -w 74 -h 44 "cat ~/.tmux/tmux-help.txt; read -sk1"    # pre
 # ─────────────────────────────────────────
 bind t display-popup -w 70 -h 24 -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
+  THEME_POS=\$(~/.tmux/scripts/pick-theme.sh --pos); \
   ~/.tmux/scripts/pick-theme.sh | \
   fzf --ansi --reverse --disabled --cycle \
+      --bind \"load:pos(\$THEME_POS)\" \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --header-lines=5 \
       --padding=0,0,1,0 \
@@ -345,6 +350,33 @@ bind t display-popup -w 70 -h 24 -E "\
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' | \
   awk '{print \$1}' | \
   xargs -r -I {} sh -c '\$HOME/dotfiles/scripts/theme-switch {} --no-reload --quiet && tmux source-file \$HOME/.tmux.conf && ~/.tmux/scripts/reload-ghostty.sh && ~/.tmux/scripts/reload-fzf.sh && tmux display-message \"Theme: {}\"'"
+
+# ─────────────────────────────────────────
+# Launcher picker (prefix + p)
+# Navigation: j/k (up/down), g/G (first/last)
+# Press / to start searching, Esc to return to navigation mode
+# Press n to create a new launcher
+# ─────────────────────────────────────────
+bind p display-popup -w 60% -h 60% -E "\
+  source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
+  ~/.tmux/scripts/list-launchers.sh | \
+  fzf --ansi --reverse --disabled --cycle \
+      --color=label:{{TMUX_FG_PRIMARY}} \
+      --header-lines=5 \
+      --padding=0,0,1,0 \
+      --prompt ': ' \
+      --border=rounded \
+      --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x del · q/esc ' \
+      --border-label-pos=bottom \
+      --bind 'j:down,k:up,g:first,G:last,q:abort' \
+      --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,n,x)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,n,x)\" || echo \"abort\"' \
+      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+      --bind 'n:become(~/.tmux/scripts/new-launcher-prompt.sh)' \
+      --bind 'x:execute(~/.tmux/scripts/delete-launcher.sh {1})+reload-sync(~/.tmux/scripts/list-launchers.sh)' \
+      --bind 'enter:become(~/.tmux/scripts/run-launcher.sh {1})' \
+      --bind 'space:become(~/.tmux/scripts/run-launcher.sh {1})'"
 
 # ─────────────────────────────────────────
 # Window switcher with vim-style navigation (prefix + f)
