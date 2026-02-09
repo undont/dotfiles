@@ -5,7 +5,7 @@ set -euo pipefail
 # Tests the Claude Code instance listing and formatting logic
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-LIST_CLAUDE_SCRIPT="$SCRIPT_DIR/../list-claude.sh"
+LIST_CLAUDE_SCRIPT="$SCRIPT_DIR/../agents/claude.sh"
 
 # Test counters
 PASS=0
@@ -82,13 +82,13 @@ section "Script Structure"
 # Check for required usage patterns
 script_content=$(cat "$LIST_CLAUDE_SCRIPT")
 
-if [[ "$script_content" == *'source "$SCRIPT_DIR/_lib/common.sh"'* ]]; then
+if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
     pass "Sources common.sh library"
 else
     fail "Should source common.sh library"
 fi
 
-if [[ "$script_content" == *'source "$SCRIPT_DIR/_lib/alerts.sh"'* ]]; then
+if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/alerts.sh"'* ]]; then
     pass "Sources alerts.sh library"
 else
     fail "Should source alerts.sh library"

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# @description: Dev session - Claude + Neovim (uses current directory)
+# @description: Dev session - Claude + Neovim
 # Dev session launcher - creates a 3-window layout for development
 
 # Help flag handling
@@ -20,14 +20,14 @@ DESCRIPTION:
     The session name is derived from the directory basename.
 
 ARGUMENTS:
-    DIRECTORY    Directory to create session in (default: current directory)
+    DIRECTORY    Directory to create session in 
                  Can be absolute or relative path
 
 OPTIONS:
     -h, --help   Show this help message
 
 EXAMPLES:
-    # Create session for current directory
+    # Create session (specify directory) 
     tnew
 
     # Create session for specific project

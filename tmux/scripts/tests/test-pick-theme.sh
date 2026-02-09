@@ -5,7 +5,7 @@ set -euo pipefail
 # Tests the fzf-compatible theme picker output
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-THEME_PICKER="$SCRIPT_DIR/../pick-theme.sh"
+THEME_PICKER="$SCRIPT_DIR/../themes/pick.sh"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 THEMES_DIR="$DOTFILES_ROOT/themes"
 
@@ -315,7 +315,7 @@ if [[ -f "$tmux_template" ]]; then
 fi
 
 # Verify reload-ghostty.sh exists and is executable
-GHOSTTY_RELOAD="$SCRIPT_DIR/../reload-ghostty.sh"
+GHOSTTY_RELOAD="$SCRIPT_DIR/../themes/reload-ghostty.sh"
 if [[ -f "$GHOSTTY_RELOAD" ]]; then
     pass "reload-ghostty.sh exists in tmux scripts"
 else

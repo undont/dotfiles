@@ -20,8 +20,16 @@ FAILED=0
 
 section "Script existence and executability"
 
+# Map logical names to actual subdirectory paths
+declare -A KILL_SCRIPTS=(
+    ["kill-pane.sh"]="panes/kill.sh"
+    ["kill-window.sh"]="windows/kill.sh"
+    ["kill-session.sh"]="sessions/kill.sh"
+)
+
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
-    if [[ -f "$SCRIPTS_DIR/$script" && -x "$SCRIPTS_DIR/$script" ]]; then
+    script_path="${KILL_SCRIPTS[$script]}"
+    if [[ -f "$SCRIPTS_DIR/$script_path" && -x "$SCRIPTS_DIR/$script_path" ]]; then
         pass "$script exists and is executable"
         ((PASSED++))
     else
@@ -33,7 +41,8 @@ done
 section "Required library dependencies"
 
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
-    if grep -q "source.*_lib/common.sh" "$SCRIPTS_DIR/$script"; then
+    script_path="${KILL_SCRIPTS[$script]}"
+    if grep -q "source.*_lib/common.sh" "$SCRIPTS_DIR/$script_path"; then
         pass "$script sources common.sh"
         ((PASSED++))
     else
@@ -41,7 +50,7 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
         ((FAILED++))
     fi
 
-    if grep -q "source.*_lib/ui.sh" "$SCRIPTS_DIR/$script"; then
+    if grep -q "source.*_lib/ui.sh" "$SCRIPTS_DIR/$script_path"; then
         pass "$script sources ui.sh"
         ((PASSED++))
     else
@@ -49,7 +58,7 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
         ((FAILED++))
     fi
 
-    if grep -q "source.*_lib/session.sh" "$SCRIPTS_DIR/$script"; then
+    if grep -q "source.*_lib/session.sh" "$SCRIPTS_DIR/$script_path"; then
         pass "$script sources session.sh"
         ((PASSED++))
     else
@@ -61,7 +70,8 @@ done
 section "Visual confirmation usage"
 
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
-    if grep -q "show_visual_confirm" "$SCRIPTS_DIR/$script"; then
+    script_path="${KILL_SCRIPTS[$script]}"
+    if grep -q "show_visual_confirm" "$SCRIPTS_DIR/$script_path"; then
         pass "$script uses show_visual_confirm"
         ((PASSED++))
     else
@@ -73,7 +83,7 @@ done
 section "Context-aware messages"
 
 # kill-pane.sh should have context-aware messages for last pane
-if grep -q "Last pane in" "$SCRIPTS_DIR/kill-pane.sh"; then
+if grep -q "Last pane in" "$SCRIPTS_DIR/panes/kill.sh"; then
     pass "kill-pane.sh has context-aware message for last pane"
     ((PASSED++))
 else
@@ -81,7 +91,7 @@ else
     ((FAILED++))
 fi
 
-if grep -q "Switch to.*and kill" "$SCRIPTS_DIR/kill-pane.sh"; then
+if grep -q "Switch to.*and kill" "$SCRIPTS_DIR/panes/kill.sh"; then
     pass "kill-pane.sh mentions session switching"
     ((PASSED++))
 else
@@ -90,7 +100,7 @@ else
 fi
 
 # kill-window.sh should have context-aware messages for last window
-if grep -q "Last window" "$SCRIPTS_DIR/kill-window.sh"; then
+if grep -q "Last window" "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh has context-aware message for last window"
     ((PASSED++))
 else
@@ -98,7 +108,7 @@ else
     ((FAILED++))
 fi
 
-if grep -q "Switch to.*and kill" "$SCRIPTS_DIR/kill-window.sh"; then
+if grep -q "Switch to.*and kill" "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh mentions session switching"
     ((PASSED++))
 else
@@ -107,7 +117,7 @@ else
 fi
 
 # kill-session.sh should ask about switching to another session
-if grep -q "Kill session.*and switch to" "$SCRIPTS_DIR/kill-session.sh"; then
+if grep -q "Kill session.*and switch to" "$SCRIPTS_DIR/sessions/kill.sh"; then
     pass "kill-session.sh has context-aware message for session switching"
     ((PASSED++))
 else
@@ -118,7 +128,8 @@ fi
 section "Session switching logic"
 
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
-    if grep -q "find_other_session" "$SCRIPTS_DIR/$script"; then
+    script_path="${KILL_SCRIPTS[$script]}"
+    if grep -q "find_other_session" "$SCRIPTS_DIR/$script_path"; then
         pass "$script uses find_other_session"
         ((PASSED++))
     else
@@ -126,7 +137,7 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
         ((FAILED++))
     fi
 
-    if grep -q "switch-client" "$SCRIPTS_DIR/$script"; then
+    if grep -q "switch-client" "$SCRIPTS_DIR/$script_path"; then
         pass "$script switches client before kill"
         ((PASSED++))
     else
@@ -139,7 +150,8 @@ section "Flag support"
 
 # kill-pane.sh and kill-window.sh should support --force flag
 for script in kill-pane.sh kill-window.sh; do
-    if grep -q "\-\-force" "$SCRIPTS_DIR/$script"; then
+    script_path="${KILL_SCRIPTS[$script]}"
+    if grep -q "\-\-force" "$SCRIPTS_DIR/$script_path"; then
         pass "$script supports --force flag"
         ((PASSED++))
     else
@@ -150,7 +162,8 @@ done
 
 # kill-window.sh and kill-session.sh should support --no-confirm flag
 for script in kill-window.sh kill-session.sh; do
-    if grep -q "\-\-no-confirm" "$SCRIPTS_DIR/$script"; then
+    script_path="${KILL_SCRIPTS[$script]}"
+    if grep -q "\-\-no-confirm" "$SCRIPTS_DIR/$script_path"; then
         pass "$script supports --no-confirm flag"
         ((PASSED++))
     else
@@ -162,7 +175,7 @@ done
 section "Confirmation can be skipped"
 
 # Verify scripts skip confirmation when flags are set
-if grep -q "if ! \$FORCE_KILL" "$SCRIPTS_DIR/kill-pane.sh"; then
+if grep -q "if ! \$FORCE_KILL" "$SCRIPTS_DIR/panes/kill.sh"; then
     pass "kill-pane.sh skips confirmation with --force"
     ((PASSED++))
 else
@@ -170,7 +183,7 @@ else
     ((FAILED++))
 fi
 
-if grep -q 'if \[\[ "\$NO_CONFIRM" != "--no-confirm" \]\]' "$SCRIPTS_DIR/kill-window.sh"; then
+if grep -q 'if \[\[ "\$NO_CONFIRM" != "--no-confirm" \]\]' "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh skips confirmation with --no-confirm"
     ((PASSED++))
 else
@@ -178,7 +191,7 @@ else
     ((FAILED++))
 fi
 
-if grep -q 'if \[\[ "\$NO_CONFIRM" != "--no-confirm" \]\]' "$SCRIPTS_DIR/kill-session.sh"; then
+if grep -q 'if \[\[ "\$NO_CONFIRM" != "--no-confirm" \]\]' "$SCRIPTS_DIR/sessions/kill.sh"; then
     pass "kill-session.sh skips confirmation with --no-confirm"
     ((PASSED++))
 else
@@ -189,8 +202,9 @@ fi
 section "Exit codes and cancellation handling"
 
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
+    script_path="${KILL_SCRIPTS[$script]}"
     # Check if script exits cleanly when user cancels (looks for exit 0 after show_visual_confirm check)
-    if grep -A2 "show_visual_confirm" "$SCRIPTS_DIR/$script" | grep -q "exit 0"; then
+    if grep -A2 "show_visual_confirm" "$SCRIPTS_DIR/$script_path" | grep -q "exit 0"; then
         pass "$script exits cleanly on cancellation"
         ((PASSED++))
     else
@@ -202,7 +216,7 @@ done
 section "Alert cleanup integration"
 
 # kill-window.sh and kill-session.sh should clear alerts
-if grep -q "clear_window_alerts" "$SCRIPTS_DIR/kill-window.sh"; then
+if grep -q "clear_window_alerts" "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh clears window alerts"
     ((PASSED++))
 else
@@ -210,7 +224,7 @@ else
     ((FAILED++))
 fi
 
-if grep -q "clear_session_alerts" "$SCRIPTS_DIR/kill-session.sh"; then
+if grep -q "clear_session_alerts" "$SCRIPTS_DIR/sessions/kill.sh"; then
     pass "kill-session.sh clears session alerts"
     ((PASSED++))
 else
@@ -222,7 +236,8 @@ section "Undo state preservation"
 
 # All kill scripts should save undo state
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
-    if grep -q "UNDO_FILE\|undo state" "$SCRIPTS_DIR/$script"; then
+    script_path="${KILL_SCRIPTS[$script]}"
+    if grep -q "UNDO_FILE\|undo state" "$SCRIPTS_DIR/$script_path"; then
         pass "$script saves undo state"
         ((PASSED++))
     else

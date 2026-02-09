@@ -5,7 +5,7 @@ set -euo pipefail
 # Tests the git sync status indicator logic
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_STATUS_SCRIPT="$SCRIPT_DIR/../show-dotfiles-status.sh"
+DOTFILES_STATUS_SCRIPT="$SCRIPT_DIR/../utils/dotfiles-status.sh"
 
 # Test counters
 PASS=0

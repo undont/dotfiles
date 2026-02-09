@@ -56,7 +56,7 @@ echo "Created test sessions: $TEST_SESSION_1, $TEST_SESSION_2"
 echo "Test 1: Kill inactive session ($TEST_SESSION_2)"
 
 # Run kill-session.sh targeting TEST_SESSION_2 with --no-confirm flag
-"$TEST_SCRIPTS_DIR/kill-session.sh" "$TEST_SESSION_2" --no-confirm >/dev/null
+"$TEST_SCRIPTS_DIR/sessions/kill.sh" "$TEST_SESSION_2" --no-confirm >/dev/null
 
 if ! tmux has-session -t "$TEST_SESSION_2" 2>/dev/null; then
     pass "Inactive session killed successfully"
@@ -77,7 +77,7 @@ TEST_SCRIPT_COPY="/tmp/kill-session-test-copy.sh"
 # 3. Inject mock get_current_session after that
 
 # Read lines 1-10
-head -n 10 "$TEST_SCRIPTS_DIR/kill-session.sh" > "$TEST_SCRIPT_COPY"
+head -n 10 "$TEST_SCRIPTS_DIR/sessions/kill.sh" > "$TEST_SCRIPT_COPY"
 
 # Inject mocks
 cat <<EOF >> "$TEST_SCRIPT_COPY"
@@ -86,11 +86,11 @@ get_current_session() { echo "$TEST_SESSION_1"; }
 EOF
 
 # Read the rest of the file (from line 11)
-tail -n +11 "$TEST_SCRIPTS_DIR/kill-session.sh" >> "$TEST_SCRIPT_COPY"
+tail -n +11 "$TEST_SCRIPTS_DIR/sessions/kill.sh" >> "$TEST_SCRIPT_COPY"
 
 # Fix SCRIPT_DIR to point to the original location so imports work
 # We replace line 7 directly (where SCRIPT_DIR is defined)
-sed -i '' '7s|^.*$|SCRIPT_DIR="'"$TEST_SCRIPTS_DIR"'"|' "$TEST_SCRIPT_COPY"
+sed -i '' '7s|^.*$|SCRIPT_DIR="'"$TEST_SCRIPTS_DIR/sessions"'"|' "$TEST_SCRIPT_COPY"
 
 # Make executable
 chmod +x "$TEST_SCRIPT_COPY"

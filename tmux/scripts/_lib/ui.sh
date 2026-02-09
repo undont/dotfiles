@@ -2,6 +2,15 @@
 # Terminal UI utilities for tmux scripts
 # Source this file after common.sh
 
+# Convert hex colour (#rrggbb) to truecolour ANSI foreground escape
+# Returns empty string if input is empty (caller should use fallback)
+_hex_fg() {
+    local hex="${1:-}"
+    [[ -z "$hex" ]] && return
+    printf '\033[38;2;%d;%d;%dm' \
+        "$((16#${hex:1:2}))" "$((16#${hex:3:2}))" "$((16#${hex:5:2}))"
+}
+
 # Display a visual confirmation for last window/pane scenarios
 # Shows confirmation first, then switches to another session if user confirms
 # Usage: tmux_confirm_last_item "window" "session_name" "target" "window_name" ["window_id"]
@@ -74,9 +83,16 @@ show_centered_message() {
         printf '\n'
     done
 
+    # Theme-aware colours (fall back to 256-colour defaults)
+    local title_col sep_col
+    title_col=$(_hex_fg "${TMUX_STATUS_ACTIVE_BG:-}") || true
+    sep_col=$(_hex_fg "${TMUX_FG_SECONDARY:-}") || true
+    [[ -z "$title_col" ]] && title_col=$'\033[38;5;141m'
+    [[ -z "$sep_col" ]] && sep_col=$'\033[38;5;60m'
+
     # Title
-    printf '%s\033[38;5;141m%s\033[0m\n' "$pad" "$title"
-    printf '%s\033[38;5;60m%s\033[0m\n' "$pad" "$(printf '%.0s─' $(seq 1 ${#title}))"
+    printf '%s%s%s\033[0m\n' "$pad" "$title_col" "$title"
+    printf '%s%s%s\033[0m\n' "$pad" "$sep_col" "$(printf '%.0s─' $(seq 1 ${#title}))"
     printf '\n'
 
     # Message lines
@@ -177,7 +193,11 @@ show_notification() {
         printf '\n'
     done
 
-    printf '%*s\033[32m%s\033[0m\n' "$h_pad" '' "$message"
+    local notify_col
+    notify_col=$(_hex_fg "${TMUX_ACCENT_GREEN:-}") || true
+    [[ -z "$notify_col" ]] && notify_col=$'\033[32m'
+
+    printf '%*s%s%s\033[0m\n' "$h_pad" '' "$notify_col" "$message"
 
     sleep "$duration"
 }

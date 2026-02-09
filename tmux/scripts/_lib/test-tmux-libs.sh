@@ -683,6 +683,7 @@ section "Syntax checking scripts"
 SCRIPTS_DIR="$SCRIPT_DIR/.."
 
 for script in "$SCRIPTS_DIR"/*.sh; do
+    [[ -f "$script" ]] || continue
     script_name=$(basename "$script")
     if bash -n "$script" 2>/dev/null; then
         pass "  $script_name syntax OK"
@@ -712,6 +713,7 @@ if command -v shellcheck &>/dev/null; then
     SHELLCHECK_EXCLUDES="-e SC1091 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
 
     for script in "$SCRIPTS_DIR"/*.sh; do
+        [[ -f "$script" ]] || continue
         script_name=$(basename "$script")
         # shellcheck disable=SC2086
         if shellcheck $SHELLCHECK_EXCLUDES -S warning "$script" 2>/dev/null; then

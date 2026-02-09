@@ -67,7 +67,7 @@ fi
 # Test kill scripts exist
 echo ""
 echo "${YELLOW}=== Kill script files ===${NC}"
-for script in kill-window.sh kill-pane.sh kill-session.sh; do
+for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     if [[ -f "$SCRIPTS_DIR/$script" ]] && [[ -x "$SCRIPTS_DIR/$script" ]]; then
         pass "$script exists and is executable"
     else
@@ -76,16 +76,16 @@ for script in kill-window.sh kill-pane.sh kill-session.sh; do
 done
 
 # Test helper scripts exist
-if [[ -f "$SCRIPTS_DIR/confirm-fzf.sh" ]] && [[ -x "$SCRIPTS_DIR/confirm-fzf.sh" ]]; then
-    pass "confirm-fzf.sh helper exists and is executable"
+if [[ -f "$SCRIPTS_DIR/utils/confirm.sh" ]] && [[ -x "$SCRIPTS_DIR/utils/confirm.sh" ]]; then
+    pass "utils/confirm.sh helper exists and is executable"
 else
-    fail "confirm-fzf.sh helper missing or not executable"
+    fail "utils/confirm.sh helper missing or not executable"
 fi
 
 # Test uses standardized visual confirmation
 echo ""
 echo "${YELLOW}=== Using standardized visual confirmation ===${NC}"
-for script in kill-window.sh kill-pane.sh kill-session.sh; do
+for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     if grep -q "show_visual_confirm\|tmux_confirm_last_item" "$SCRIPTS_DIR/$script"; then
         pass "$script uses standardized confirmation"
     else
@@ -96,7 +96,7 @@ done
 # Test no old confirmation pattern
 echo ""
 echo "${YELLOW}=== No deprecated confirmation patterns ===${NC}"
-for script in kill-window.sh kill-pane.sh; do
+for script in windows/kill.sh panes/kill.sh; do
     if ! grep -q "show_centered_confirm" "$SCRIPTS_DIR/$script"; then
         pass "$script doesn't use show_centered_confirm"
     else
@@ -107,7 +107,7 @@ done
 # Test agent terminology
 echo ""
 echo "${YELLOW}=== Agent-agnostic terminology ===${NC}"
-for file in kill-session.sh rename-session.sh rename-window.sh update-timestamp.sh; do
+for file in sessions/kill.sh rename-session.sh rename-window.sh update-timestamp.sh; do
     if grep -i "claude.*alert" "$SCRIPTS_DIR/$file" | grep -qv "ALERTS_FILE\|^#"; then
         fail "$file has claude-specific alert references"
     else

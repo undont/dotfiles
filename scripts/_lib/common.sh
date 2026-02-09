@@ -149,6 +149,22 @@ confirm() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
+# Sanitise a launcher name for use as a filename
+# - Lowercase, replace invalid chars with underscore, strip leading dots/dashes
+# - Truncate to 64 characters
+# - Suffix reserved words to avoid shadowing shell builtins
+# Usage: sanitised=$(sanitise_launcher_name "My Launcher!")
+sanitise_launcher_name() {
+    local raw="$1"
+    raw=$(printf '%s' "$raw" | tr -c '[:alnum:]_.-' '_' | tr '[:upper:]' '[:lower:]')
+    raw="${raw#"${raw%%[[:alnum:]_]*}"}"
+    raw="${raw:0:64}"
+    case "$raw" in
+        test|cd|ls|rm|cp|mv|cat|echo|printf|export|source|exec|eval|exit) raw="${raw}_launcher" ;;
+    esac
+    printf '%s' "$raw"
+}
+
 # Get the script directory (for relative sourcing)
 get_script_dir() {
     cd "$(dirname "${BASH_SOURCE[1]}")" && pwd

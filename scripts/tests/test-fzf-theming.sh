@@ -206,14 +206,14 @@ main() {
     section "Integration with tmux"
 
     # Test: reload-fzf.sh exists
-    if [[ -f "$DOTFILES_ROOT/tmux/scripts/reload-fzf.sh" ]]; then
+    if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh" ]]; then
         pass "reload-fzf.sh exists"
     else
         fail "reload-fzf.sh not found"
     fi
 
     # Test: reload-fzf.sh is executable
-    if [[ -x "$DOTFILES_ROOT/tmux/scripts/reload-fzf.sh" ]]; then
+    if [[ -x "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh" ]]; then
         pass "reload-fzf.sh is executable"
     else
         fail "reload-fzf.sh is not executable"
@@ -227,7 +227,7 @@ main() {
     fi
 
     # Test: pick-theme.sh loads fzf theme before displaying (directly or via common.sh)
-    if grep -q "fzf-theme.sh\|load_fzf_theme" "$DOTFILES_ROOT/tmux/scripts/pick-theme.sh"; then
+    if grep -q "fzf-theme.sh\|load_fzf_theme" "$DOTFILES_ROOT/tmux/scripts/themes/pick.sh"; then
         pass "pick-theme.sh loads FZF theme"
     else
         fail "pick-theme.sh does not load FZF theme"
