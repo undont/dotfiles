@@ -234,11 +234,11 @@ alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 
 # Functions (instead of aliases) for tab completion support
 trestore() {
-  ~/.tmux/scripts/restore-resurrect.sh "$@"
+  ~/.tmux/scripts/resurrect/restore.sh "$@"
 }
 
 tkill() {
-  ~/.tmux/scripts/delete-resurrect.sh "$@"
+  ~/.tmux/scripts/resurrect/delete.sh "$@"
 }
 
 

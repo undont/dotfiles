@@ -73,7 +73,7 @@ Tests requiring tmux are automatically detected and skipped if tmux is not avail
 shellcheck -x install.sh scripts/install/*.sh scripts/_lib/*.sh
 
 # ShellCheck on tmux scripts
-shellcheck -x tmux/scripts/*.sh tmux/scripts/_lib/*.sh
+shellcheck -x tmux/scripts/*/*.sh tmux/scripts/_lib/*.sh
 
 # Lua check on Neovim config
 luacheck nvim/lua/ --no-unused-args --no-max-line-length
@@ -168,7 +168,7 @@ dotfiles/
 │   └── *.template        # Templates for user config (secrets)
 ├── tmux/                 # Tmux configuration (symlinked to ~/.tmux)
 │   ├── tmux.conf.template  # Theme template (processed by theme-switch)
-│   └── scripts/          # Custom scripts (session management, undo, alerts, themes)
+│   └── scripts/          # Custom scripts organised by function (sessions/, windows/, agents/, etc.)
 ├── nvim/                 # Neovim configuration (kickstart.nvim based)
 │   ├── init.lua          # Entry point
 │   └── lua/custom/       # Modular config (core/, plugins/)
@@ -242,13 +242,18 @@ theme-switch current             # Show current theme
 
 ### Tmux Scripts Architecture
 
-Custom tmux functionality is implemented via scripts bound to keybindings:
-- **Kill/Undo**: `kill-pane.sh`, `kill-window.sh`, `kill-session.sh` save state; `undo-*.sh` restore
-- **Session management**: `list-sessions.sh`, `new-session.sh`, `rename-session.sh`, `list-windows.sh` with fzf integration
-- **Window operations**: `duplicate-window.sh`, `move-window.sh`, `rename-window.sh`
-- **Resurrect extensions**: `split-resurrect.sh` (post-save hook), `restore-resurrect.sh` (per-session restore)
-- **Agent alerts**: `agent-alerts.sh` shows status bar indicators for AI agents
-- **Theme support**: `pick-theme.sh` for runtime theme switching
+Scripts are organised into functional subdirectories under `tmux/scripts/`:
+- **sessions/**: `list.sh`, `new.sh`, `rename.sh`, `kill.sh`, `undo.sh` - Session management with fzf integration
+- **windows/**: `list.sh`, `rename.sh`, `kill.sh`, `undo.sh`, `duplicate.sh`, `move.sh` - Window operations
+- **panes/**: `kill.sh`, `undo.sh` - Pane management
+- **launchers/**: `list.sh`, `picker.sh`, `run.sh`, `prompt.sh`, `delete.sh` - Session launcher system
+- **agents/**: `claude.sh`, `opencode.sh`, `nvim.sh`, `new.sh`, `kill.sh`, `connect-nvim.sh` - AI agent instance management
+- **alerts/**: `show.sh`, `clear.sh`, `update-rename.sh`, `update-timestamp.sh` - Agent alert system for status bar
+- **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions
+- **themes/**: `pick.sh`, `reload-fzf.sh`, `reload-ghostty.sh` - Runtime theme switching
+- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `confirm.sh`, `dotfiles-status.sh` - Shared utilities
+- **_lib/**: `common.sh`, `paths.sh`, `session.sh`, `alerts.sh`, `ui.sh` - Shared libraries
+- **tests/**: `test-*.sh` - Test suites
 
 ### Neovim Structure
 
@@ -285,7 +290,7 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 - Resurrect scripts: Use test pattern for consistency (invoked in various contexts)
 
 **Examples**:
-- ✓ `tmux/scripts/list-sessions.sh` - Uses `${BASH_SOURCE%/*}`
+- ✓ `tmux/scripts/sessions/list.sh` - Uses `${BASH_SOURCE%/*}`
 - ✓ `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)`
 - ✗ Don't mix patterns within the same category of scripts
 

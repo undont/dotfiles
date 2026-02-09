@@ -35,7 +35,7 @@ Copy the following to your home directory:
 ~/.tmux.conf                    # Main configuration
 ~/.tmux/
 ├── scripts/
-│   ├── restore-resurrect.sh
+│   ├── resurrect/restore.sh
 │   └── split-resurrect.sh
 ~/.local/launchers/
 └── tnew                        # Dev session launcher
@@ -57,8 +57,8 @@ Add to your `~/.zshrc`:
 
 ```bash
 # tmux session management
-alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
-alias trestore="~/.tmux/scripts/restore-resurrect.sh"
+alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
+alias trestore="~/.tmux/scripts/resurrect/restore.sh"
 alias tkill="tmux kill-server; rm -rf ~/.tmux/resurrect/*"
 
 # Smart attach: connects to running session, or restores from backup
@@ -67,7 +67,7 @@ tattach() {
   local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
   if [[ -f "$backup" ]]; then
     echo "Restoring '$1' from backup..."
-    if ~/.tmux/scripts/restore-resurrect.sh --session "$1" && tmux a -t "$1"; then
+    if ~/.tmux/scripts/resurrect/restore.sh --session "$1" && tmux a -t "$1"; then
       return 0
     fi
     echo "Backup stale, removing: $1"
@@ -108,6 +108,7 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Action              | Key                      |
 | ------------------- | ------------------------ |
 | Move down/up        | `j` / `k`                |
+| Half-page down/up   | `Ctrl+d` / `Ctrl+u`     |
 | First/last item     | `g` / `G`                |
 | Select              | `Space` or `Enter`       |
 | Start searching     | `/`                      |
@@ -159,9 +160,9 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 
 ### URL Picker
 
-| Action    | Keybinding |
-| --------- | ---------- |
-| Open URLs | `Opt+y`    |
+| Action    | Keybinding   |
+| --------- | ------------ |
+| Open URLs | `prefix + y` |
 
 Opens a fzf popup with all URLs from the current pane's scrollback. Uses the same vim-style navigation as other switchers (j/k, g/G, f/b, d/u). Press `o`, `Space`, or `Enter` to open, `y` to yank to clipboard.
 
@@ -391,39 +392,53 @@ Available session backups:
 │   ├── tests/                            # Test suites
 │   │   ├── cleanup-tests.sh              # Clean up orphaned test resources
 │   │   └── test-show-dotfiles-status.sh  # Tests for dotfiles sync indicator
-│   ├── clear-agent-alerts.sh             # Clear agent alerts for window
-│   ├── show-agent-alerts.sh              # Status bar: Multi-agent alerts (⚡ 🔮 🤖)
-│   ├── show-dotfiles-status.sh           # Status bar: sync indicator (↓↑↕)
-│   ├── confirm-fzf.sh                    # FZF confirmation dialog helper
-│   ├── kill-instance.sh                   # Kill process in pane (from picker, with confirm)
-│   ├── kill-pane.sh                      # Kill pane (Opt+s, saves state)
-│   ├── kill-session.sh                   # Kill session (picker, with confirm)
-│   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
-│   ├── list-claude.sh                    # List Claude Code instances
-│   ├── list-launchers.sh                 # List session launchers (for picker)
-│   ├── list-nvim.sh                      # List nvim instances for buffer sync
-│   ├── connect-nvim.sh                   # Connect nvim to Claude pane
-│   ├── delete-launcher.sh               # Delete user launcher (with confirm)
-│   ├── delete-resurrect.sh               # Delete session backup
-│   ├── restore-resurrect.sh              # Individual session restore
-│   ├── split-resurrect.sh                # Post-save hook (splits backups)
-│   ├── list-sessions.sh                  # Session listing with alert indicators
-│   ├── new-session.sh                    # Create new session dialog
-│   ├── rename-session.sh                 # Rename session dialog
-│   ├── undo-dispatch.sh                  # Undo dispatcher (Opt+u)
-│   ├── undo-pane.sh                      # Restore killed pane
-│   ├── undo-session.sh                   # Restore killed session
-│   ├── undo-window.sh                    # Restore killed window
-│   ├── update-rename-alert.sh            # Update alerts on window rename
-│   ├── update-timestamp.sh               # Window access tracking hook
-│   ├── pick-url.sh                       # URL picker for tmux
-│   ├── duplicate-window.sh               # Duplicate window (Opt+Shift+d)
-│   ├── list-windows.sh                   # Window listing with alert indicators
-│   ├── move-window.sh                    # Move window to another session
-│   ├── new-instance.sh                   # Create new process window (from picker)
-│   ├── new-launcher-prompt.sh            # Prompt for launcher name (from picker)
-│   ├── run-launcher.sh                   # Run selected launcher (instance/dir picker)
-│   └── rename-window.sh                  # Rename window dialog
+│   ├── agents/                           # AI agent instance management
+│   │   ├── claude.sh                     # List Claude Code instances
+│   │   ├── opencode.sh                   # List OpenCode instances
+│   │   ├── nvim.sh                       # List nvim instances for buffer sync
+│   │   ├── new.sh                        # Create new agent window
+│   │   ├── kill.sh                       # Kill agent instance (with confirm)
+│   │   └── connect-nvim.sh               # Connect nvim to Claude pane
+│   ├── alerts/                           # Agent alert system
+│   │   ├── show.sh                       # Status bar: Multi-agent alerts (⚡ 🔮 🤖)
+│   │   ├── clear.sh                      # Clear agent alerts for window
+│   │   ├── update-rename.sh              # Update alerts on window rename
+│   │   └── update-timestamp.sh           # Window access tracking hook
+│   ├── launchers/                        # Session launcher system
+│   │   ├── list.sh                       # List session launchers (for picker)
+│   │   ├── picker.sh                     # Launcher picker loop (prefix + p)
+│   │   ├── run.sh                        # Run selected launcher (instance/dir picker)
+│   │   ├── prompt.sh                     # Prompt for launcher name (from picker)
+│   │   └── delete.sh                     # Delete user launcher (with confirm)
+│   ├── sessions/                         # Session management
+│   │   ├── list.sh                       # Session listing with alert indicators
+│   │   ├── new.sh                        # Create new session dialog
+│   │   ├── rename.sh                     # Rename session dialog
+│   │   ├── kill.sh                       # Kill session (picker, with confirm)
+│   │   └── undo.sh                       # Restore killed session
+│   ├── windows/                          # Window operations
+│   │   ├── list.sh                       # Window listing with alert indicators
+│   │   ├── rename.sh                     # Rename window dialog
+│   │   ├── kill.sh                       # Kill window (Opt+x, saves state)
+│   │   ├── undo.sh                       # Restore killed window
+│   │   ├── duplicate.sh                  # Duplicate window (Opt+Shift+d)
+│   │   └── move.sh                       # Move window to another session
+│   ├── panes/                            # Pane management
+│   │   ├── kill.sh                       # Kill pane (Opt+s, saves state)
+│   │   └── undo.sh                       # Restore killed pane
+│   ├── resurrect/                        # Per-session tmux-resurrect extensions
+│   │   ├── split.sh                      # Post-save hook (splits backups)
+│   │   ├── restore.sh                    # Individual session restore
+│   │   └── delete.sh                     # Delete session backup
+│   ├── themes/                           # Runtime theme switching
+│   │   ├── pick.sh                       # Theme picker (prefix + t)
+│   │   ├── reload-fzf.sh                 # Reload fzf theme colours
+│   │   └── reload-ghostty.sh             # Reload Ghostty terminal theme
+│   └── utils/                            # Shared utilities
+│       ├── undo-dispatch.sh              # Undo dispatcher (Opt+u)
+│       ├── pick-url.sh                   # URL picker (prefix + y)
+│       ├── confirm.sh                    # FZF confirmation dialog helper
+│       └── dotfiles-status.sh            # Status bar: sync indicator (↓↑↕)
 └── README.md                             # This file
 
 ~/.local/launchers/

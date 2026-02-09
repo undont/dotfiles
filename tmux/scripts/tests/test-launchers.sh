@@ -2,16 +2,16 @@
 set -euo pipefail
 
 # Unit tests for launcher management scripts:
-#   - list-launchers.sh (output format, launcher discovery, dedup)
-#   - run-launcher.sh (get_base_session_name, is_fixed_session, metadata)
-#   - delete-launcher.sh (repo protection, path traversal guard)
+#   - launchers/list.sh (output format, launcher discovery, dedup)
+#   - launchers/run.sh (get_base_session_name, is_fixed_session, metadata)
+#   - launchers/delete.sh (repo protection, path traversal guard)
 #   - new-launcher.sh (name validation)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-LIST_LAUNCHERS="$SCRIPT_DIR/../list-launchers.sh"
-RUN_LAUNCHER="$SCRIPT_DIR/../run-launcher.sh"
-DELETE_LAUNCHER="$SCRIPT_DIR/../delete-launcher.sh"
+LIST_LAUNCHERS="$SCRIPT_DIR/../launchers/list.sh"
+RUN_LAUNCHER="$SCRIPT_DIR/../launchers/run.sh"
+DELETE_LAUNCHER="$SCRIPT_DIR/../launchers/delete.sh"
 NEW_LAUNCHER="$DOTFILES_ROOT/scripts/new-launcher.sh"
 
 # Test counters
@@ -48,25 +48,25 @@ section() {
 }
 
 # ===========================================================================
-# list-launchers.sh tests
+# launchers/list.sh tests
 # ===========================================================================
 
-section "list-launchers.sh: Script Exists and Is Executable"
+section "launchers/list.sh: Script Exists and Is Executable"
 
 if [[ -f "$LIST_LAUNCHERS" ]]; then
-    pass "list-launchers.sh exists"
+    pass "launchers/list.sh exists"
 else
-    fail "list-launchers.sh not found at $LIST_LAUNCHERS"
+    fail "launchers/list.sh not found at $LIST_LAUNCHERS"
     exit 1
 fi
 
 if [[ -x "$LIST_LAUNCHERS" ]]; then
-    pass "list-launchers.sh is executable"
+    pass "launchers/list.sh is executable"
 else
-    fail "list-launchers.sh is not executable"
+    fail "launchers/list.sh is not executable"
 fi
 
-section "list-launchers.sh: Shebang"
+section "launchers/list.sh: Shebang"
 
 shebang=$(head -1 "$LIST_LAUNCHERS")
 if [[ "$shebang" == "#!/usr/bin/env bash" ]]; then
@@ -75,23 +75,23 @@ else
     fail "should use #!/usr/bin/env bash, got: $shebang"
 fi
 
-section "list-launchers.sh: ShellCheck Validation"
+section "launchers/list.sh: ShellCheck Validation"
 
 if command -v shellcheck &>/dev/null; then
     if shellcheck -x -e SC1091 -e SC2059 -e SC2155 -e SC2015 -e SC2016 -e SC2034 "$LIST_LAUNCHERS" 2>/dev/null; then
-        pass "list-launchers.sh passes shellcheck"
+        pass "launchers/list.sh passes shellcheck"
     else
-        fail "list-launchers.sh has shellcheck warnings"
+        fail "launchers/list.sh has shellcheck warnings"
     fi
 else
     skip "shellcheck not installed"
 fi
 
-section "list-launchers.sh: Sources common.sh (no find_dotfiles_root duplication)"
+section "launchers/list.sh: Sources common.sh (no find_dotfiles_root duplication)"
 
 list_content=$(cat "$LIST_LAUNCHERS")
 
-if [[ "$list_content" == *'source "$SCRIPT_DIR/_lib/common.sh"'* ]]; then
+if [[ "$list_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
     pass "sources common.sh library"
 else
     fail "should source common.sh library"
@@ -103,7 +103,7 @@ else
     pass "no find_dotfiles_root duplication"
 fi
 
-section "list-launchers.sh: Output Format"
+section "launchers/list.sh: Output Format"
 
 output=$("$LIST_LAUNCHERS" 2>&1) || true
 
@@ -142,7 +142,7 @@ else
     fail "launcher.template should be excluded from listing"
 fi
 
-section "list-launchers.sh: Launcher Dedup (user overrides repo)"
+section "launchers/list.sh: Launcher Dedup (user overrides repo)"
 
 # Create temporary user launcher dir with a duplicate name
 TEST_XDG=$(mktemp -d)
@@ -176,38 +176,38 @@ fi
 rm -rf "$TEST_XDG"
 
 # ===========================================================================
-# run-launcher.sh tests (pure function logic)
+# launchers/run.sh tests (pure function logic)
 # ===========================================================================
 
-section "run-launcher.sh: Script Exists and Is Executable"
+section "launchers/run.sh: Script Exists and Is Executable"
 
 if [[ -f "$RUN_LAUNCHER" ]]; then
-    pass "run-launcher.sh exists"
+    pass "launchers/run.sh exists"
 else
-    fail "run-launcher.sh not found"
+    fail "launchers/run.sh not found"
 fi
 
 if [[ -x "$RUN_LAUNCHER" ]]; then
-    pass "run-launcher.sh is executable"
+    pass "launchers/run.sh is executable"
 else
-    fail "run-launcher.sh is not executable"
+    fail "launchers/run.sh is not executable"
 fi
 
-section "run-launcher.sh: ShellCheck Validation"
+section "launchers/run.sh: ShellCheck Validation"
 
 if command -v shellcheck &>/dev/null; then
     if shellcheck -x -e SC1091 -e SC2059 -e SC2155 -e SC2015 -e SC2016 -e SC2034 "$RUN_LAUNCHER" 2>/dev/null; then
-        pass "run-launcher.sh passes shellcheck"
+        pass "launchers/run.sh passes shellcheck"
     else
-        fail "run-launcher.sh has shellcheck warnings"
+        fail "launchers/run.sh has shellcheck warnings"
     fi
 else
     skip "shellcheck not installed"
 fi
 
-section "run-launcher.sh: get_base_session_name() Regex Parsing"
+section "launchers/run.sh: get_base_session_name() Regex Parsing"
 
-# Source run-launcher.sh functions by extracting and testing them
+# Source launchers/run.sh functions by extracting and testing them
 # We can't source the whole file (it has side effects), so test via grep/pattern
 run_content=$(cat "$RUN_LAUNCHER")
 
@@ -250,7 +250,7 @@ test_base_session '${SESSION_NAME:-dana}' "dana" '${SESSION_NAME:-dana} extracts
 # Complex default with dashes
 test_base_session '${SESSION_NAME:-my-app}' "my-app" '${SESSION_NAME:-my-app} preserves dashes'
 
-section "run-launcher.sh: is_fixed_session() Detection"
+section "launchers/run.sh: is_fixed_session() Detection"
 
 # is_fixed_session returns true when session_value is non-empty
 if [[ "$run_content" == *"is_fixed_session()"* ]]; then
@@ -273,7 +273,7 @@ else
     fail "launcher.template should have a SESSION= line"
 fi
 
-section "run-launcher.sh: Metadata Extraction"
+section "launchers/run.sh: Metadata Extraction"
 
 # Verify @description extraction pattern
 if [[ "$run_content" == *'# @description:'* ]]; then
@@ -289,7 +289,7 @@ else
     fail "should extract @instance metadata"
 fi
 
-section "run-launcher.sh: Input Sanitisation"
+section "launchers/run.sh: Input Sanitisation"
 
 # Check that fzf become() commands sanitise user input
 if [[ "$run_content" == *"tr -c '[:alnum:]_.-' '_'"* ]]; then
@@ -304,7 +304,7 @@ else
     fail "should sanitise directory path with realpath in become() command"
 fi
 
-section "run-launcher.sh: DOTFILES_ROOT Validation"
+section "launchers/run.sh: DOTFILES_ROOT Validation"
 
 if [[ "$run_content" == *'DOTFILES_ROOT'*'invalid'* ]] || [[ "$run_content" == *'-z "${DOTFILES_ROOT'* ]]; then
     pass "validates DOTFILES_ROOT after sourcing common.sh"
@@ -312,7 +312,7 @@ else
     fail "should validate DOTFILES_ROOT is set and valid"
 fi
 
-section "run-launcher.sh: fzf Dependency Check"
+section "launchers/run.sh: fzf Dependency Check"
 
 if [[ "$run_content" == *"require_fzf"* ]]; then
     pass "checks for fzf availability"
@@ -321,36 +321,36 @@ else
 fi
 
 # ===========================================================================
-# delete-launcher.sh tests
+# launchers/delete.sh tests
 # ===========================================================================
 
-section "delete-launcher.sh: Script Exists and Is Executable"
+section "launchers/delete.sh: Script Exists and Is Executable"
 
 if [[ -f "$DELETE_LAUNCHER" ]]; then
-    pass "delete-launcher.sh exists"
+    pass "launchers/delete.sh exists"
 else
-    fail "delete-launcher.sh not found"
+    fail "launchers/delete.sh not found"
 fi
 
 if [[ -x "$DELETE_LAUNCHER" ]]; then
-    pass "delete-launcher.sh is executable"
+    pass "launchers/delete.sh is executable"
 else
-    fail "delete-launcher.sh is not executable"
+    fail "launchers/delete.sh is not executable"
 fi
 
-section "delete-launcher.sh: ShellCheck Validation"
+section "launchers/delete.sh: ShellCheck Validation"
 
 if command -v shellcheck &>/dev/null; then
     if shellcheck -x -e SC1091 -e SC2059 -e SC2155 -e SC2015 -e SC2016 -e SC2034 "$DELETE_LAUNCHER" 2>/dev/null; then
-        pass "delete-launcher.sh passes shellcheck"
+        pass "launchers/delete.sh passes shellcheck"
     else
-        fail "delete-launcher.sh has shellcheck warnings"
+        fail "launchers/delete.sh has shellcheck warnings"
     fi
 else
     skip "shellcheck not installed"
 fi
 
-section "delete-launcher.sh: Path Traversal Protection"
+section "launchers/delete.sh: Path Traversal Protection"
 
 del_content=$(cat "$DELETE_LAUNCHER")
 
@@ -367,7 +367,7 @@ else
     fail "should reject . and .. as launcher names"
 fi
 
-section "delete-launcher.sh: Repo Launcher Protection"
+section "launchers/delete.sh: Repo Launcher Protection"
 
 if [[ "$del_content" == *"Cannot delete repo launcher"* ]]; then
     pass "protects repo launchers from deletion"

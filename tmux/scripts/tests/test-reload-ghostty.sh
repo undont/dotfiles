@@ -3,7 +3,7 @@
 # Tests the ghostty-reload.sh helper script
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-GHOSTTY_RELOAD="$SCRIPT_DIR/../reload-ghostty.sh"
+GHOSTTY_RELOAD="$SCRIPT_DIR/../themes/reload-ghostty.sh"
 
 # Source test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"

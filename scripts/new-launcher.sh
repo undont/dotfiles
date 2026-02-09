@@ -353,7 +353,7 @@ if [[ -n "$name" ]]; then
         while true; do
             read -rsn1 _err_key
             case "$_err_key" in
-                r|' '|'') exec "$SCRIPT_DIR/../tmux/scripts/new-launcher-prompt.sh" ;;
+                r|' '|'') exec "$SCRIPT_DIR/../tmux/scripts/launchers/prompt.sh" ;;
                 q|$'\x1b') exit 0 ;;
             esac
         done
@@ -379,9 +379,9 @@ while true; do
             else
                 # ctrl+b on step 1 — go back to name prompt
                 if [[ -n "$edit_source" ]]; then
-                    exec "$SCRIPT_DIR/../tmux/scripts/new-launcher-prompt.sh" --edit "$edit_source"
+                    exec "$SCRIPT_DIR/../tmux/scripts/launchers/prompt.sh" --edit "$edit_source"
                 fi
-                exec "$SCRIPT_DIR/../tmux/scripts/new-launcher-prompt.sh"
+                exec "$SCRIPT_DIR/../tmux/scripts/launchers/prompt.sh"
             fi
             ;;
 

@@ -13,8 +13,8 @@ HOOKS_DIR="$SCRIPT_DIR/../../../scripts/hooks"
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # Scripts under test
-LIST_NVIM="$SCRIPTS_DIR/list-nvim.sh"
-CONNECT_NVIM="$SCRIPTS_DIR/connect-nvim.sh"
+LIST_NVIM="$SCRIPTS_DIR/agents/nvim.sh"
+CONNECT_NVIM="$SCRIPTS_DIR/agents/connect-nvim.sh"
 BUFFER_SYNC="$HOOKS_DIR/nvim-buffer-sync.sh"
 
 # Trap to ensure cleanup on exit/interrupt
@@ -84,7 +84,7 @@ section "list-nvim.sh Structure"
 
 list_content=$(cat "$LIST_NVIM")
 
-if [[ "$list_content" == *'source "$SCRIPT_DIR/_lib/common.sh"'* ]]; then
+if [[ "$list_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
     pass "Sources common.sh library"
 else
     fail "Should source common.sh library"
@@ -128,7 +128,7 @@ section "connect-nvim.sh Structure"
 
 connect_content=$(cat "$CONNECT_NVIM")
 
-if [[ "$connect_content" == *'source "$SCRIPT_DIR/_lib/common.sh"'* ]]; then
+if [[ "$connect_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
     pass "Sources common.sh library"
 else
     fail "Should source common.sh library"

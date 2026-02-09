@@ -25,7 +25,7 @@
 ║  d / u            half-page   ║  ` t              theme picker       ║
 ║  g / G            top/bottom  ║  ` p              launchers          ║
 ║                               ║  ` c              Claude picker      ║
-║                               ║  Opt+y            open URL picker    ║
+║                               ║  ` y              open URL picker    ║
 ║  / / ?            search ↓/↑  ║  Opt+u            undo pane/win      ║
 ║  n / N            next / prev ║                                      ║
 ║                               ║                                      ║
