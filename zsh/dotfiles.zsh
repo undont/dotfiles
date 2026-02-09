@@ -41,6 +41,16 @@ case "$(uname)" in
     ;;
 esac
 
+# =============================================================================
+# TERMINFO FALLBACK
+# =============================================================================
+# Ghostty sets TERM=xterm-ghostty, but remote machines (e.g. SSH targets)
+# may not have the terminfo entry installed, causing garbled terminal output.
+# Fall back to xterm-256color when the terminfo is missing.
+if [[ "$TERM" == "xterm-ghostty" ]] && ! infocmp xterm-ghostty &>/dev/null; then
+  export TERM=xterm-256color
+fi
+
 # Load theme and config (installed via: brew install powerlevel10k)
 if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
   source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
@@ -194,6 +204,19 @@ export DOTNET_CLI_TELEMETRY_OPTOUT='true'
 export SONAR_HOST_URL="https://sonarcloud.io"
 
 export PATH="$HOME/bin:$PATH"
+
+# =============================================================================
+# SSH WRAPPER
+# =============================================================================
+# Ghostty sets TERM=xterm-ghostty which most remote hosts don't recognise.
+# Override TERM for SSH connections so the remote PTY gets xterm-256color.
+ssh() {
+  if [[ "$TERM" == "xterm-ghostty" ]]; then
+    TERM=xterm-256color command ssh "$@"
+  else
+    command ssh "$@"
+  fi
+}
 
 # =============================================================================
 # ALIASES & FUNCTIONS

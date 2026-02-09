@@ -9,6 +9,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | **Prefix**            | `` ` `` (backtick)                |
 | **Start dev session** | `tnew` (from any directory)       |
 | Help popup            | `prefix + h`                      |
+| Launcher picker       | `prefix + p`                      |
 | Theme picker          | `prefix + t`                      |
 | Save sessions         | `prefix + w` (like vim :w)        |
 | List backups          | `prefix + S` or `tls`             |
@@ -37,8 +38,7 @@ Copy the following to your home directory:
 │   ├── restore-resurrect.sh
 │   └── split-resurrect.sh
 ~/.local/launchers/
-├── tnew                        # Dev session launcher
-└── dana                        # Project-specific launcher (optional)
+└── tnew                        # Dev session launcher
 ```
 
 ### 3. Install TPM (Tmux Plugin Manager)
@@ -100,6 +100,22 @@ Press `prefix + h` to display the keybinding reference. Close it by pressing `Es
 ### Theme Picker
 
 Press `prefix + t` to switch between colour themes (Dracula, Catppuccin, Tokyo Night, Nord). The picker uses vim-style navigation with `j`/`k` to move up/down and `Enter` to select. Theme changes apply immediately to tmux, ghostty, and neovim.
+
+### Launcher Picker
+
+Press `prefix + p` to open the session launcher picker. Lists available launchers from the repo (`launchers/`) and user directory (`~/.config/dotfiles/launchers/`), with user launchers taking priority by name.
+
+| Action              | Key                      |
+| ------------------- | ------------------------ |
+| Move down/up        | `j` / `k`                |
+| First/last item     | `g` / `G`                |
+| Select              | `Space` or `Enter`       |
+| Start searching     | `/`                      |
+| New launcher        | `n` (opens wizard)       |
+| Delete launcher     | `x` (user launchers only)|
+| Quit                | `q` or `Esc`             |
+
+**Fixed-session launchers** (with `SESSION=`) show an instance picker when selected — attach to running instances or create new ones. **Parameterised launchers** (like `tnew`) show a directory picker.
 
 ### Windows (Tabs)
 
@@ -272,7 +288,6 @@ Location: `~/.local/launchers/tnew`
 | `tkill <name>`    | Kill a specific session and remove its backup                                                                                                  |
 | `tattach <name>`  | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tcleanup`        | Clean up orphaned test servers and session backups. Use `tcleanup --dry-run` to preview what would be removed.                                |
-| `dana`            | Launch/attach to the dana project session                                                                                                      |
 
 ---
 
@@ -384,8 +399,10 @@ Available session backups:
 │   ├── kill-session.sh                   # Kill session (picker, with confirm)
 │   ├── kill-window.sh                    # Kill window (Opt+x, saves state)
 │   ├── list-claude.sh                    # List Claude Code instances
+│   ├── list-launchers.sh                 # List session launchers (for picker)
 │   ├── list-nvim.sh                      # List nvim instances for buffer sync
 │   ├── connect-nvim.sh                   # Connect nvim to Claude pane
+│   ├── delete-launcher.sh               # Delete user launcher (with confirm)
 │   ├── delete-resurrect.sh               # Delete session backup
 │   ├── restore-resurrect.sh              # Individual session restore
 │   ├── split-resurrect.sh                # Post-save hook (splits backups)
@@ -403,13 +420,13 @@ Available session backups:
 │   ├── list-windows.sh                   # Window listing with alert indicators
 │   ├── move-window.sh                    # Move window to another session
 │   ├── new-instance.sh                   # Create new process window (from picker)
+│   ├── new-launcher-prompt.sh            # Prompt for launcher name (from picker)
+│   ├── run-launcher.sh                   # Run selected launcher (instance/dir picker)
 │   └── rename-window.sh                  # Rename window dialog
 └── README.md                             # This file
 
 ~/.local/launchers/
-├── tnew                                  # Dev session launcher
-├── dana                                  # Dana project launcher
-└── code                                  # VS Code dynamic launcher
+└── tnew                                  # Dev session launcher
 ```
 
 ---

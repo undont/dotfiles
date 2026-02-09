@@ -31,3 +31,6 @@ nvim/init.lua.backup
 .claude/*
 !.claude/commands/
 .opencode
+
+# Local markdown files
+scratch/*

@@ -361,17 +361,6 @@ else
     fail "create-symlinks should link tnew launcher"
 fi
 
-if [[ "$symlinks_content" == *'launchers/dana'* ]]; then
-    pass "create-symlinks links dana launcher"
-else
-    fail "create-symlinks should link dana launcher"
-fi
-
-if [[ "$symlinks_content" == *'launchers/code'* ]]; then
-    pass "create-symlinks links code launcher"
-else
-    fail "create-symlinks should link code launcher"
-fi
 
 section "Create Symlinks - Preset Hierarchy"
 

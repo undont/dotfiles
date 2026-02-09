@@ -6,7 +6,13 @@
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # Note: Production scripts use ${BASH_SOURCE%/*} pattern.
 # Test scripts use $(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd).
+# shellcheck source=tmux/scripts/_lib/common.sh
+source "$SCRIPT_DIR/_lib/common.sh"
+# shellcheck source=tmux/scripts/_lib/alerts.sh
 source "$SCRIPT_DIR/_lib/alerts.sh"
+
+load_fzf_theme
+print_dotfiles_logo
 
 # Get sessions sorted by activity
 while read -r session; do
