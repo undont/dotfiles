@@ -69,7 +69,7 @@ fi
 
 # Kill the second window (index 2) using kill-window.sh with explicit target
 WINDOW_TO_KILL="${TEST_SESSION}:2"
-"$SCRIPTS_DIR/kill-window.sh" "$WINDOW_TO_KILL" 2>/dev/null || true
+"$SCRIPTS_DIR/windows/kill.sh" "$WINDOW_TO_KILL" 2>/dev/null || true
 sleep 0.5
 
 WINDOW_COUNT_AFTER=$(test_tmux list-windows -t "$TEST_SESSION" | wc -l | tr -d ' ')
@@ -88,7 +88,7 @@ else
 fi
 
 # Undo the window kill
-"$SCRIPTS_DIR/undo-window.sh" 2>/dev/null || true
+"$SCRIPTS_DIR/windows/undo.sh" 2>/dev/null || true
 sleep 0.5
 
 WINDOW_COUNT_RESTORED=$(test_tmux list-windows -t "$TEST_SESSION" | wc -l | tr -d ' ')

@@ -41,8 +41,8 @@ bind -n WheelDownPane if -F '#{alternate_on}' 'send-keys -M' 'send-keys -M'
 # Click session name in status bar to open session switcher
 bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/clear-agent-alerts.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
-  ~/.tmux/scripts/list-sessions.sh | \
+  ~/.tmux/scripts/alerts/clear.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
+  ~/.tmux/scripts/sessions/list.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --header-lines=7 \
       --color=label:{{TMUX_FG_PRIMARY}} \
@@ -58,10 +58,10 @@ bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
       --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,r,x)' \
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,r,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-      --bind 'x:execute(~/.tmux/scripts/kill-session.sh \$(echo {} | cut -d\" \" -f1))+reload-sync(~/.tmux/scripts/list-sessions.sh)' \
-      --bind 'u:execute(~/.tmux/scripts/undo-session.sh --quick)+reload-sync(~/.tmux/scripts/list-sessions.sh)' \
-      --bind 'n:become(~/.tmux/scripts/new-session.sh)' \
-      --bind 'r:become(~/.tmux/scripts/rename-session.sh \$(echo {} | cut -d\" \" -f1))' | \
+      --bind 'x:execute(~/.tmux/scripts/sessions/kill.sh \$(echo {} | cut -d\" \" -f1))+reload-sync(~/.tmux/scripts/sessions/list.sh)' \
+      --bind 'u:execute(~/.tmux/scripts/sessions/undo.sh --quick)+reload-sync(~/.tmux/scripts/sessions/list.sh)' \
+      --bind 'n:become(~/.tmux/scripts/sessions/new.sh)' \
+      --bind 'r:become(~/.tmux/scripts/sessions/rename.sh \$(echo {} | cut -d\" \" -f1))' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
 # Indexing: start windows and panes at 1 (matches keyboard layout)
@@ -131,12 +131,12 @@ bind 5 select-window -t 5
 bind -n M-t new-window -c "#{pane_current_path}"    # Opt+t
 
 # Window operations (right-click menu alternatives)
-bind -n M-r display-popup -w 55 -h 7 -E "source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/rename-window.sh"    # Opt+r = rename window
+bind -n M-r display-popup -w 55 -h 7 -E "source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"    # Opt+r = rename window
 bind -n "M-{" swap-window -t -1 \; select-window -t -1                  # Opt+Shift+[ = swap left
 bind -n "M-}" swap-window -t +1 \; select-window -t +1                  # Opt+Shift+] = swap right
-bind -n M-x display-popup -E -w 60 -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/kill-window.sh #{session_name}:#{window_index}"           # Opt+x = kill window (saves state for undo)
-bind -n M-u run-shell '~/.tmux/scripts/undo-dispatch.sh'                  # Opt+u = undo last closed pane/window
-bind -n M-D run-shell '~/.tmux/scripts/duplicate-window.sh'               # Opt+Shift+d = duplicate window
+bind -n M-x display-popup -E -w 60 -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"           # Opt+x = kill window (saves state for undo)
+bind -n M-u run-shell '~/.tmux/scripts/utils/undo-dispatch.sh'                  # Opt+u = undo last closed pane/window
+bind -n M-D run-shell '~/.tmux/scripts/windows/duplicate.sh'               # Opt+Shift+d = duplicate window
 
 # ─────────────────────────────────────────
 # Claude instance switcher (prefix + c)
@@ -145,7 +145,7 @@ bind -n M-D run-shell '~/.tmux/scripts/duplicate-window.sh'               # Opt+
 # ─────────────────────────────────────────
 bind c display-popup -w 95% -h 95% -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/list-claude.sh | \
+  ~/.tmux/scripts/agents/claude.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --header-lines=5 \
@@ -161,10 +161,10 @@ bind c display-popup -w 95% -h 95% -E "\
       --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,x)' \
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-      --bind 'n:become(~/.tmux/scripts/new-instance.sh claude)' \
-      --bind 'x:execute(~/.tmux/scripts/kill-instance.sh \$(echo {} | cut -d\" \" -f1) claude)+reload-sync(~/.tmux/scripts/list-claude.sh)' | \
+      --bind 'n:become(~/.tmux/scripts/agents/new.sh claude)' \
+      --bind 'x:execute(~/.tmux/scripts/agents/kill.sh \$(echo {} | cut -d\" \" -f1) claude)+reload-sync(~/.tmux/scripts/agents/claude.sh)' | \
   cut -d' ' -f1 | \
-  xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/clear-agent-alerts.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
+  xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/alerts/clear.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
 
 # ─────────────────────────────────────────
 # OpenCode instance switcher (prefix + o)
@@ -173,7 +173,7 @@ bind c display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 bind o display-popup -w 95% -h 95% -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/list-opencode.sh | \
+  ~/.tmux/scripts/agents/opencode.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --header-lines=5 \
@@ -189,10 +189,10 @@ bind o display-popup -w 95% -h 95% -E "\
       --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,x)' \
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-      --bind 'n:become(~/.tmux/scripts/new-instance.sh opencode)' \
-      --bind 'x:execute(~/.tmux/scripts/kill-instance.sh \$(echo {} | cut -d\" \" -f1) opencode)+reload-sync(~/.tmux/scripts/list-opencode.sh)' | \
+      --bind 'n:become(~/.tmux/scripts/agents/new.sh opencode)' \
+      --bind 'x:execute(~/.tmux/scripts/agents/kill.sh \$(echo {} | cut -d\" \" -f1) opencode)+reload-sync(~/.tmux/scripts/agents/opencode.sh)' | \
   cut -d' ' -f1 | \
-  xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/clear-agent-alerts.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
+  xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/alerts/clear.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
 
 # ─────────────────────────────────────────
 # Pane navigation and management
@@ -214,7 +214,7 @@ bind -n M-- split-window -v -c "#{pane_current_path}"     # Opt+- = split down
 bind -n M-= split-window -v -b -c "#{pane_current_path}"  # Opt+= = split up
 
 # Pane operations
-bind -n M-s display-popup -E -w 60 -h 10 "~/.tmux/scripts/kill-pane.sh #{session_name}:#{window_index}.#{pane_index}"    # Opt+s = close pane (saves state for undo)
+bind -n M-s display-popup -E -w 60 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"    # Opt+s = close pane (saves state for undo)
 bind -n M-z resize-pane -Z           # Opt+z = toggle zoom (fullscreen)
 bind -n "M-)" select-layout -E       # Opt+Shift+0 = equalise pane sizes
 
@@ -233,8 +233,9 @@ bind -n M-L resize-pane -R 5           # Opt+Shift+l = grow right
 # ─────────────────────────────────────────
 # URL picker
 # ─────────────────────────────────────────
-# Opt+y = find all URLs in scrollback and open selected one
-bind -n M-y display-popup -w 80% -h 60% -E "source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/pick-url.sh #{pane_id}"
+# prefix+y = find all URLs in scrollback and open selected one
+unbind y
+bind y display-popup -w 80% -h 60% -E "source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
 
 # ─────────────────────────────────────────
 # Nvim instance switcher (prefix + n)
@@ -245,7 +246,7 @@ bind -n M-y display-popup -w 80% -h 60% -E "source \$HOME/dotfiles/scripts/fzf-t
 unbind n
 bind n display-popup -w 95% -h 95% -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/list-nvim.sh | \
+  ~/.tmux/scripts/agents/nvim.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --delimiter=\$'\\t' \
@@ -259,9 +260,9 @@ bind n display-popup -w 95% -h 95% -E "\
       --preview-window=right:70% \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
-      --bind 'c:execute(~/.tmux/scripts/connect-nvim.sh {})+abort' \
-      --bind 'n:become(~/.tmux/scripts/new-instance.sh nvim)' \
-      --bind 'x:execute(~/.tmux/scripts/kill-instance.sh \$(echo {} | cut -d\" \" -f1) nvim)+reload-sync(~/.tmux/scripts/list-nvim.sh)' \
+      --bind 'c:execute(~/.tmux/scripts/agents/connect-nvim.sh {})+abort' \
+      --bind 'n:become(~/.tmux/scripts/agents/new.sh nvim)' \
+      --bind 'x:execute(~/.tmux/scripts/agents/kill.sh \$(echo {} | cut -d\" \" -f1) nvim)+reload-sync(~/.tmux/scripts/agents/nvim.sh)' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
       --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,c,n,x)' \
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,c,n,x)\" || echo \"abort\"' \
@@ -332,8 +333,8 @@ bind h display-popup -w 74 -h 44 "cat ~/.tmux/tmux-help.txt; read -sk1"    # pre
 # ─────────────────────────────────────────
 bind t display-popup -w 70 -h 24 -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  THEME_POS=\$(~/.tmux/scripts/pick-theme.sh --pos); \
-  ~/.tmux/scripts/pick-theme.sh | \
+  THEME_POS=\$(~/.tmux/scripts/themes/pick.sh --pos); \
+  ~/.tmux/scripts/themes/pick.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --bind \"load:pos(\$THEME_POS)\" \
       --color=label:{{TMUX_FG_PRIMARY}} \
@@ -350,7 +351,7 @@ bind t display-popup -w 70 -h 24 -E "\
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' | \
   awk '{print \$1}' | \
-  xargs -r -I {} sh -c '\$HOME/dotfiles/scripts/theme-switch {} --no-reload --quiet && tmux source-file \$HOME/.tmux.conf && ~/.tmux/scripts/reload-ghostty.sh && ~/.tmux/scripts/reload-fzf.sh && tmux display-message \"Theme: {}\"'"
+  xargs -r -I {} sh -c '\$HOME/dotfiles/scripts/theme-switch {} --no-reload --quiet && tmux source-file \$HOME/.tmux.conf && ~/.tmux/scripts/themes/reload-ghostty.sh && ~/.tmux/scripts/themes/reload-fzf.sh && tmux display-message \"Theme: {}\"'"
 
 # ─────────────────────────────────────────
 # Launcher picker (prefix + p)
@@ -358,26 +359,7 @@ bind t display-popup -w 70 -h 24 -E "\
 # Press / to start searching, Esc to return to navigation mode
 # Press n to create a new launcher
 # ─────────────────────────────────────────
-bind p display-popup -w 60% -h 60% -E "\
-  source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/list-launchers.sh | \
-  fzf --ansi --reverse --disabled --cycle \
-      --color=label:{{TMUX_FG_PRIMARY}} \
-      --header-lines=7 \
-      --padding=0,0,1,0 \
-      --prompt ': ' \
-      --border=rounded \
-      --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x del · q/esc ' \
-      --border-label-pos=bottom \
-      --bind 'j:down,k:up,g:first,G:last,q:abort' \
-      --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,n,x)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,n,x)\" || echo \"abort\"' \
-      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-      --bind 'n:become(~/.tmux/scripts/new-launcher-prompt.sh)' \
-      --bind 'x:execute(~/.tmux/scripts/delete-launcher.sh {1})+reload-sync(~/.tmux/scripts/list-launchers.sh)' \
-      --bind 'enter:become(~/.tmux/scripts/run-launcher.sh {1})' \
-      --bind 'space:become(~/.tmux/scripts/run-launcher.sh {1})'"
+bind p display-popup -w 60% -h 60% -E "~/.tmux/scripts/launchers/picker.sh"
 
 # ─────────────────────────────────────────
 # Window switcher with vim-style navigation (prefix + f)
@@ -387,8 +369,8 @@ bind p display-popup -w 60% -h 60% -E "\
 # ─────────────────────────────────────────
 bind f display-popup -w 95% -h 95% -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/clear-agent-alerts.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
-  ~/.tmux/scripts/list-windows.sh | \
+  ~/.tmux/scripts/alerts/clear.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
+  ~/.tmux/scripts/windows/list.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --header-lines=7 \
       --color=label:{{TMUX_FG_PRIMARY}} \
@@ -404,10 +386,10 @@ bind f display-popup -w 95% -h 95% -E "\
       --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,a,m,x)' \
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,a,m,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-      --bind 'a:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"change-prompt(* )+reload(~/.tmux/scripts/list-windows.sh --all)\" || echo \"change-prompt(: )+reload(~/.tmux/scripts/list-windows.sh)\"' \
-      --bind 'm:execute(~/.tmux/scripts/move-window.sh \$(echo {} | cut -d\" \" -f1))+transform:[[ \$FZF_PROMPT == \"* \" ]] && echo \"reload(~/.tmux/scripts/list-windows.sh --all)\" || echo \"reload(~/.tmux/scripts/list-windows.sh)\"' \
-      --bind 'x:execute(~/.tmux/scripts/kill-window.sh \$(echo {} | cut -d\" \" -f1))+transform:[[ \$FZF_PROMPT == \"* \" ]] && echo \"reload(~/.tmux/scripts/list-windows.sh --all)\" || echo \"reload(~/.tmux/scripts/list-windows.sh)\"' \
-      --bind 'u:execute(~/.tmux/scripts/undo-window.sh)+transform:[[ \$FZF_PROMPT == \"* \" ]] && echo \"reload(~/.tmux/scripts/list-windows.sh --all)\" || echo \"reload(~/.tmux/scripts/list-windows.sh)\"' | \
+      --bind 'a:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"change-prompt(* )+reload(~/.tmux/scripts/windows/list.sh --all)\" || echo \"change-prompt(: )+reload(~/.tmux/scripts/windows/list.sh)\"' \
+      --bind 'm:execute(~/.tmux/scripts/windows/move.sh \$(echo {} | cut -d\" \" -f1))+transform:[[ \$FZF_PROMPT == \"* \" ]] && echo \"reload(~/.tmux/scripts/windows/list.sh --all)\" || echo \"reload(~/.tmux/scripts/windows/list.sh)\"' \
+      --bind 'x:execute(~/.tmux/scripts/windows/kill.sh \$(echo {} | cut -d\" \" -f1))+transform:[[ \$FZF_PROMPT == \"* \" ]] && echo \"reload(~/.tmux/scripts/windows/list.sh --all)\" || echo \"reload(~/.tmux/scripts/windows/list.sh)\"' \
+      --bind 'u:execute(~/.tmux/scripts/windows/undo.sh)+transform:[[ \$FZF_PROMPT == \"* \" ]] && echo \"reload(~/.tmux/scripts/windows/list.sh --all)\" || echo \"reload(~/.tmux/scripts/windows/list.sh)\"' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
 # ══════════════════════════════════════════════════════════════
@@ -416,8 +398,8 @@ bind f display-popup -w 95% -h 95% -E "\
 
 set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
-set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/show-dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
-set -g status-right '#(~/.tmux/scripts/show-agent-alerts.sh)#{?window_zoomed_flag,#[fg={{TMUX_ACCENT_CYAN}}]Z ,}#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ☰ #{ram_percentage} #[bg={{TMUX_FG_SECONDARY}},fg={{TMUX_STATUS_FG}}] %a %h-%d %H:%M '
+set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
+set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_ACCENT_CYAN}}]Z ,}#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ☰ #{ram_percentage} #[bg={{TMUX_FG_SECONDARY}},fg={{TMUX_STATUS_FG}}] %a %h-%d %H:%M '
 set -g status-left-length 30
 set -g status-right-length 150
 
@@ -534,7 +516,7 @@ set -g @batt_color_charge_primary_tier1 '{{TMUX_BATTERY_LOW_BG}}'
 
 # Post-save hook: split combined save file into per-session files
 # This enables restoring individual sessions independently
-set -g @resurrect-hook-post-save-all '~/.tmux/scripts/split-resurrect.sh'
+set -g @resurrect-hook-post-save-all '~/.tmux/scripts/resurrect/split.sh'
 
 # ─────────────────────────────────────────
 # Session management keybindings
@@ -553,8 +535,8 @@ bind w run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh
 # Ctrl+x kills session, Ctrl+u undoes the last kill
 bind s display-popup -w 95% -h 95% -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/clear-agent-alerts.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
-  ~/.tmux/scripts/list-sessions.sh | \
+  ~/.tmux/scripts/alerts/clear.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
+  ~/.tmux/scripts/sessions/list.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --header-lines=7 \
       --color=label:{{TMUX_FG_PRIMARY}} \
@@ -570,13 +552,13 @@ bind s display-popup -w 95% -h 95% -E "\
       --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,r,x)' \
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,r,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-      --bind 'x:execute(~/.tmux/scripts/kill-session.sh \$(echo {} | cut -d\" \" -f1))+reload-sync(~/.tmux/scripts/list-sessions.sh)' \
-      --bind 'u:execute(~/.tmux/scripts/undo-session.sh --quick)+reload-sync(~/.tmux/scripts/list-sessions.sh)' \
-      --bind 'n:become(~/.tmux/scripts/new-session.sh)' \
-      --bind 'r:become(~/.tmux/scripts/rename-session.sh \$(echo {} | cut -d\" \" -f1))' | \
+      --bind 'x:execute(~/.tmux/scripts/sessions/kill.sh \$(echo {} | cut -d\" \" -f1))+reload-sync(~/.tmux/scripts/sessions/list.sh)' \
+      --bind 'u:execute(~/.tmux/scripts/sessions/undo.sh --quick)+reload-sync(~/.tmux/scripts/sessions/list.sh)' \
+      --bind 'n:become(~/.tmux/scripts/sessions/new.sh)' \
+      --bind 'r:become(~/.tmux/scripts/sessions/rename.sh \$(echo {} | cut -d\" \" -f1))' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
-bind S display-popup -E -w 60 -h 20 "~/.tmux/scripts/restore-resurrect.sh --list; echo ''; read -n1 -p 'Press any key...'"
-bind R command-prompt -p "Restore session:" "run-shell '~/.tmux/scripts/restore-resurrect.sh %%'"
+bind S display-popup -E -w 60 -h 20 "~/.tmux/scripts/resurrect/restore.sh --list; echo ''; read -n1 -p 'Press any key...'"
+bind R command-prompt -p "Restore session:" "run-shell '~/.tmux/scripts/resurrect/restore.sh %%'"
 # prefix + S = list saved session backups (popup)
 # prefix + R = restore specific session (prompts for name)
 
@@ -586,23 +568,24 @@ bind R command-prompt -p "Restore session:" "run-shell '~/.tmux/scripts/restore-
 # When a session is killed, trigger a save to update backups
 # This removes the killed session from tls listings
 # Note: kill-session.sh already handles saves, but this catches edge cases
-set-hook -g session-closed 'run-shell -b "~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 && ~/.tmux/scripts/split-resurrect.sh >/dev/null 2>&1"'
+set-hook -g session-closed 'run-shell -b "~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 && ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1"'
 
 # ─────────────────────────────────────────
 # Window access tracking
 # ─────────────────────────────────────────
 # Update @last-viewed timestamp when switching windows for fuzzy finder sorting
 # Also clear any claude alert on the window (backup to UserPromptSubmit hook)
-set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/clear-agent-alerts.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
+set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 
 # Update alerts when window is renamed to prevent stale alerts
-set-hook -g after-rename-window 'run-shell "~/.tmux/scripts/update-rename-alert.sh \"#{session_name}\" \"#{window_name_old}\" \"#{window_name}\""'
-set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/update-timestamp.sh #{window_id}"'
+set-hook -g after-rename-window 'run-shell "~/.tmux/scripts/alerts/update-rename.sh \"#{session_name}\" \"#{window_name_old}\" \"#{window_name}\""'
+set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}"'
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Manager Initialisation (must be at bottom)
 # ══════════════════════════════════════════════════════════════
 run '~/.tmux/plugins/tpm/tpm'
 
-# Override tmux-yank's Y binding with our custom one (must be after plugin load)
+# Override tmux-yank bindings (must be after plugin load)
 bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "pbcopy"
+bind y display-popup -w 80% -h 60% -E "source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"

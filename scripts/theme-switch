@@ -211,14 +211,14 @@ apply_theme() {
         fi
 
         # Reload Ghostty config (script handles detection internally)
-        if [[ -f "$DOTFILES_ROOT/tmux/scripts/reload-ghostty.sh" ]]; then
-            "$DOTFILES_ROOT/tmux/scripts/reload-ghostty.sh"
+        if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh" ]]; then
+            "$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh"
             [[ "$quiet" != "true" ]] && success "Reloaded ghostty configuration"
         fi
 
         # Reload FZF theme colours
-        if [[ -f "$DOTFILES_ROOT/tmux/scripts/reload-fzf.sh" ]]; then
-            "$DOTFILES_ROOT/tmux/scripts/reload-fzf.sh"
+        if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh" ]]; then
+            "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh"
             [[ "$quiet" != "true" ]] && success "Reloaded FZF theme colours"
         fi
     fi

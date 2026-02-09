@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.17] - 2026-02-09
+
+### Added
+- Tmux: Edit launcher from picker (`e` key) — opens wizard pre-filled with existing values
+- Shared library: `sanitise_launcher_name()` function in `common.sh` for reusable name validation
+
+### Changed
+- Tmux: Reorganise all scripts into functional subdirectories (`sessions/`, `windows/`, `panes/`, `agents/`, `alerts/`, `launchers/`, `resurrect/`, `themes/`, `utils/`)
+- Tmux: URL picker keybinding changed from `Opt+y` to `prefix + y`
+- Tmux: Launcher picker now supports half-page scroll (`Ctrl+d` / `Ctrl+u`)
+- Tmux: `tmux.conf.template` updated with all new script paths
+- Ghostty: Add `Cmd+Left` / `Cmd+Right` keybindings for Home/End
+- Neovim: Add macOS-style navigation keybindings (`Opt+arrows`, `Opt+f/b`, `Home/End`) in normal, visual, and insert modes
+- CI: ShellCheck glob updated for new subdirectory layout
+- Zsh: `trestore` and `tkill` functions updated for new script paths
+- CLAUDE.md: Updated directory structure and tmux scripts architecture documentation
+- Launcher wizard: `--edit SOURCE` flag for editing existing launchers (rename, re-describe, modify windows)
+- Launcher wizard: `ask()` now uses readline `-i` for editable default values instead of `[default]` hints
+- Launcher name sanitisation extracted from `new-launcher.sh` into shared `sanitise_launcher_name()` function
+- `new-launcher.sh` now sources `common.sh` instead of `colours.sh`
+- `tnew` launcher: Minor description and help text cleanup
+
 ## [0.2.16] - 2026-02-09
 
 ### Added
