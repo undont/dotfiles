@@ -107,8 +107,8 @@ section "list-launchers.sh: Output Format"
 
 output=$("$LIST_LAUNCHERS" 2>&1) || true
 
-# Should have dotfiles logo in header
-if [[ "$output" == *"dotfiles"* ]]; then
+# Should have dotfiles ASCII art logo in header
+if [[ "$output" == *'__| | ___ | |_'* ]]; then
     pass "output includes dotfiles logo header"
 else
     fail "output should include dotfiles logo header"
