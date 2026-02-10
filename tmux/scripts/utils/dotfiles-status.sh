@@ -8,7 +8,8 @@
 #   ↕  - diverged (both ahead and behind)
 #   (empty) - up-to-date or error (silent fail)
 #
-# Caches git fetch to avoid hammering remote (default: 5 min)
+# Caches git fetch (default: 5 min) and computed result (default: 30s)
+# to avoid expensive git operations on every status bar refresh.
 
 set -euo pipefail
 
@@ -17,14 +18,25 @@ CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
 CACHE_FILE="$CACHE_DIR/sync-status"
 FETCH_CACHE_FILE="$CACHE_DIR/last-fetch"
 CACHE_TTL_SECONDS="${DOTFILES_SYNC_CACHE_TTL:-300}"  # 5 minutes default
-
-# Ensure cache directory exists
-mkdir -p "$CACHE_DIR"
+RESULT_TTL_SECONDS="${DOTFILES_RESULT_CACHE_TTL:-30}" # 30 seconds default
 
 # Silent exit helper (no output on failure)
 bail() {
     exit 0
 }
+
+# Serve from result cache if fresh (avoids all git forks)
+if [[ -f "$CACHE_FILE" ]]; then
+    now=$(date +%s)
+    cache_mtime=$(stat -f %m "$CACHE_FILE" 2>/dev/null) || cache_mtime=0
+    if (( now - cache_mtime < RESULT_TTL_SECONDS )); then
+        cat "$CACHE_FILE"
+        exit 0
+    fi
+fi
+
+# Ensure cache directory exists (only reached on cache miss)
+[[ -d "$CACHE_DIR" ]] || mkdir -p "$CACHE_DIR"
 
 # Check if we're in a git repo
 cd "$DOTFILES_DIR" 2>/dev/null || bail
@@ -62,7 +74,7 @@ maybe_fetch() {
     now=$(date +%s)
 
     if [[ -f "$FETCH_CACHE_FILE" ]]; then
-        last_fetch=$(cat "$FETCH_CACHE_FILE" 2>/dev/null || echo 0)
+        last_fetch=$(<"$FETCH_CACHE_FILE") || last_fetch=0
         age=$((now - last_fetch))
 
         if [[ $age -lt $CACHE_TTL_SECONDS ]]; then
@@ -97,8 +109,8 @@ main() {
         output="↑ "
     fi
 
-    # Cache the result
-    echo "$output" > "$CACHE_FILE"
+    # Cache the result (file mtime is used for TTL)
+    printf "%s" "$output" > "$CACHE_FILE"
 
     # Output for tmux
     printf "%s" "$output"
