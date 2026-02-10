@@ -56,33 +56,10 @@ local function read_theme_file()
 end
 
 --- Apply a colourscheme safely
+--- All colourschemes are custom files in nvim/colors/ — no plugin loading needed
 ---@param scheme string colourscheme name
 ---@return boolean success
 local function apply_colourscheme(scheme)
-  -- Ensure lazy-loaded plugins are loaded before applying
-  local lazy_schemes = {
-    ['tokyonight-night'] = 'tokyonight.nvim',
-    ['nord'] = 'nord.nvim',
-    ['gruvbox'] = 'gruvbox.nvim',
-    ['onedark'] = 'onedark.nvim',
-    ['ayu-dark'] = 'neovim-ayu',
-    ['everforest'] = 'everforest-nvim',
-    ['kanagawa'] = 'kanagawa.nvim',
-    ['rose-pine'] = 'rose-pine',
-    ['nightfox'] = 'nightfox.nvim',
-    -- Custom colourschemes in colors/ directory (no plugins needed):
-    -- gruvbox-dark, monokai, solarized-dark, synthwave
-  }
-
-  local plugin_name = lazy_schemes[scheme]
-  if plugin_name then
-    local ok_load = pcall(require('lazy.core.loader').load, { plugin_name }, { colorscheme = scheme })
-    if not ok_load then
-      vim.notify(string.format('Failed to load plugin for "%s"', scheme), vim.log.levels.WARN)
-      return false
-    end
-  end
-
   local ok, err = pcall(vim.cmd.colorscheme, scheme)
   if not ok then
     vim.notify(string.format('Failed to load colourscheme "%s": %s', scheme, err), vim.log.levels.WARN)

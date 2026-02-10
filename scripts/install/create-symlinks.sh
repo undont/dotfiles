@@ -224,6 +224,23 @@ if should_install "core"; then
     create_link "$DOTFILES_DIR/launchers/tnew" "$HOME/.local/launchers/tnew"
 fi
 
+# LazyGit / LazyDocker (core)
+if should_install "core"; then
+    echo ""
+    echo "LazyGit configuration:"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        mkdir -p "$HOME/Library/Application Support/lazygit"
+        create_link "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
+        mkdir -p "$HOME/Library/Application Support/lazydocker"
+        create_link "$DOTFILES_DIR/lazydocker/config.yml" "$HOME/Library/Application Support/lazydocker/config.yml"
+    else
+        mkdir -p "$HOME/.config/lazygit"
+        create_link "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
+        mkdir -p "$HOME/.config/lazydocker"
+        create_link "$DOTFILES_DIR/lazydocker/config.yml" "$HOME/.config/lazydocker/config.yml"
+    fi
+fi
+
 # Claude/OpenCode shared configuration (core)
 if should_install "core"; then
     # Check if claude-config repository exists

@@ -1,41 +1,35 @@
--- Synthwave colorscheme for Neovim
--- Matches the dotfiles synthwave theme exactly
--- Cyberpunk vaporwave aesthetic
+-- Catppuccin Mocha colourscheme for Neovim
+-- Matches the dotfiles catppuccin-mocha.theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
   vim.cmd 'syntax reset'
 end
 
-vim.g.colors_name = 'synthwave'
+vim.g.colors_name = 'catppuccin-mocha'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/synthwave.theme)
+-- Theme colours (matching themes/catppuccin-mocha.theme)
 local colors = {
   -- Base colours
-  bg_primary = '#1a1226',
-  fg_primary = '#e4dfed',
-  bg_secondary = '#2a1f3d',
-  fg_secondary = '#9d8ec7',
+  bg_primary = '#1e1e2e',
+  fg_primary = '#cdd6f4',
+  bg_secondary = '#313244',
+  fg_secondary = '#6c7086',
 
   -- Accents
-  purple = '#b794f6',
-  pink = '#ff2e97',
-  cyan = '#00d9ff',
-  green = '#39ff14',
-  yellow = '#ffd700',
-  red = '#ff003c',
+  purple = '#cba6f7',
+  pink = '#f5c2e7',
+  cyan = '#89dceb',
+  green = '#a6e3a1',
+  yellow = '#f9e2af',
+  red = '#f38ba8',
 
   -- Additional shades
-  selection = '#3d2861',
-  comment = '#6b5a82',
-  line_highlight = '#241735',
-
-  -- Bright variants
-  bright_cyan = '#5cefff',
-  bright_pink = '#ff5ac8',
-  bright_green = '#6bff59',
-  bright_purple = '#d6acff',
+  selection = '#313244',
+  comment = '#6c7086',
+  line_highlight = '#262637',
+  blue = '#89b4fa',
 }
 
 -- Helper function to set highlight groups
@@ -48,16 +42,16 @@ hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
 hl('ColorColumn', { bg = colors.line_highlight })
-hl('Cursor', { fg = colors.bg_primary, bg = colors.cyan })
+hl('Cursor', { fg = colors.bg_primary, bg = colors.fg_primary })
 hl('CursorLine', { bg = colors.line_highlight })
-hl('CursorLineNr', { fg = colors.cyan, bold = true })
+hl('CursorLineNr', { fg = '#cba6f7', bold = true })
 hl('LineNr', { fg = colors.comment })
 hl('SignColumn', { bg = colors.bg_primary })
 hl('Visual', { bg = colors.selection })
 hl('VisualNOS', { bg = colors.selection })
 hl('Search', { fg = colors.bg_primary, bg = colors.yellow })
-hl('IncSearch', { fg = colors.bg_primary, bg = colors.pink })
-hl('MatchParen', { fg = colors.pink, bold = true })
+hl('IncSearch', { fg = colors.bg_primary, bg = '#f5c2e7' })
+hl('MatchParen', { fg = '#f5c2e7', bold = true })
 hl('Question', { fg = colors.cyan })
 hl('ModeMsg', { fg = colors.green, bold = true })
 hl('MoreMsg', { fg = colors.green })
@@ -68,56 +62,56 @@ hl('WinSeparator', { fg = colors.bg_secondary })
 hl('Folded', { fg = colors.comment, bg = colors.line_highlight })
 hl('FoldColumn', { fg = colors.comment })
 hl('Pmenu', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('PmenuSel', { fg = colors.bg_primary, bg = colors.cyan })
+hl('PmenuSel', { fg = colors.bg_primary, bg = '#cba6f7' })
 hl('PmenuSbar', { bg = colors.bg_secondary })
-hl('PmenuThumb', { bg = colors.cyan })
-hl('StatusLine', { fg = colors.cyan, bg = colors.bg_secondary })
+hl('PmenuThumb', { bg = '#cba6f7' })
+hl('StatusLine', { fg = '#cba6f7', bg = colors.bg_secondary })
 hl('StatusLineNC', { fg = colors.comment, bg = colors.bg_secondary })
 hl('TabLine', { fg = colors.fg_secondary, bg = colors.bg_secondary })
 hl('TabLineFill', { bg = colors.bg_secondary })
-hl('TabLineSel', { fg = colors.cyan, bg = colors.bg_primary, bold = true })
+hl('TabLineSel', { fg = '#cba6f7', bg = colors.bg_primary, bold = true })
 hl('Directory', { fg = colors.cyan })
-hl('Title', { fg = colors.pink, bold = true })
+hl('Title', { fg = '#f5c2e7', bold = true })
 hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
 -- Syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
-hl('Constant', { fg = colors.purple })
-hl('String', { fg = colors.yellow })
-hl('Character', { fg = colors.yellow })
-hl('Number', { fg = colors.purple })
-hl('Boolean', { fg = colors.purple })
-hl('Float', { fg = colors.purple })
+hl('Constant', { fg = '#cba6f7' })
+hl('String', { fg = '#a6e3a1' })
+hl('Character', { fg = '#a6e3a1' })
+hl('Number', { fg = '#cba6f7' })
+hl('Boolean', { fg = '#cba6f7' })
+hl('Float', { fg = '#cba6f7' })
 hl('Identifier', { fg = colors.fg_primary })
-hl('Function', { fg = colors.green })
-hl('Statement', { fg = colors.pink })
-hl('Conditional', { fg = colors.pink })
-hl('Repeat', { fg = colors.pink })
-hl('Label', { fg = colors.pink })
-hl('Operator', { fg = colors.cyan })
-hl('Keyword', { fg = colors.pink })
-hl('Exception', { fg = colors.pink })
-hl('PreProc', { fg = colors.pink })
-hl('Include', { fg = colors.pink })
-hl('Define', { fg = colors.pink })
-hl('Macro', { fg = colors.purple })
-hl('PreCondit', { fg = colors.pink })
-hl('Type', { fg = colors.cyan })
-hl('StorageClass', { fg = colors.pink })
-hl('Structure', { fg = colors.cyan })
-hl('Typedef', { fg = colors.cyan })
-hl('Special', { fg = colors.bright_pink })
-hl('SpecialChar', { fg = colors.bright_pink })
-hl('Tag', { fg = colors.cyan })
+hl('Function', { fg = '#89dceb' })
+hl('Statement', { fg = '#cba6f7' })
+hl('Conditional', { fg = '#cba6f7' })
+hl('Repeat', { fg = '#cba6f7' })
+hl('Label', { fg = '#cba6f7' })
+hl('Operator', { fg = '#f9e2af' })
+hl('Keyword', { fg = '#cba6f7' })
+hl('Exception', { fg = '#cba6f7' })
+hl('PreProc', { fg = '#cba6f7' })
+hl('Include', { fg = '#cba6f7' })
+hl('Define', { fg = '#cba6f7' })
+hl('Macro', { fg = '#cba6f7' })
+hl('PreCondit', { fg = '#cba6f7' })
+hl('Type', { fg = '#f9e2af' })
+hl('StorageClass', { fg = '#cba6f7' })
+hl('Structure', { fg = '#f9e2af' })
+hl('Typedef', { fg = '#f9e2af' })
+hl('Special', { fg = '#f5c2e7' })
+hl('SpecialChar', { fg = '#f5c2e7' })
+hl('Tag', { fg = '#f9e2af' })
 hl('Delimiter', { fg = colors.fg_primary })
 hl('SpecialComment', { fg = colors.comment, italic = true })
 hl('Debug', { fg = colors.red })
 hl('Underlined', { fg = colors.cyan, underline = true })
 hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
-hl('Todo', { fg = colors.pink, bold = true })
+hl('Todo', { fg = '#f5c2e7', bold = true })
 
 -- Diff
 hl('DiffAdd', { fg = colors.green, bg = colors.line_highlight })
@@ -131,12 +125,12 @@ hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
-hl('GitSignsAddLn', { bg = '#263231' })
-hl('GitSignsChangeLn', { bg = '#3e2e2e' })
-hl('GitSignsDeleteLn', { bg = '#3e1435' })
-hl('GitSignsAddNr', { fg = colors.green, bg = '#263231' })
-hl('GitSignsChangeNr', { fg = colors.yellow, bg = '#3e2e2e' })
-hl('GitSignsDeleteNr', { fg = colors.red, bg = '#3e1435' })
+hl('GitSignsAddLn', { bg = '#353c43' })
+hl('GitSignsChangeLn', { bg = '#3f3c45' })
+hl('GitSignsDeleteLn', { bg = '#3e3244' })
+hl('GitSignsAddNr', { fg = colors.green, bg = '#353c43' })
+hl('GitSignsChangeNr', { fg = colors.yellow, bg = '#3f3c45' })
+hl('GitSignsDeleteNr', { fg = colors.red, bg = '#3e3244' })
 
 -- Diagnostics
 hl('DiagnosticError', { fg = colors.red })
@@ -155,86 +149,86 @@ hl('LspReferenceWrite', { bg = colors.selection })
 
 -- Treesitter
 hl('@variable', { fg = colors.fg_primary })
-hl('@variable.builtin', { fg = colors.purple })
+hl('@variable.builtin', { fg = '#cba6f7' })
 hl('@variable.parameter', { fg = colors.fg_secondary })
-hl('@variable.member', { fg = colors.cyan })
-hl('@constant', { fg = colors.purple })
-hl('@constant.builtin', { fg = colors.purple })
+hl('@variable.member', { fg = '#f9e2af' })
+hl('@constant', { fg = '#cba6f7' })
+hl('@constant.builtin', { fg = '#cba6f7' })
 hl('@module', { fg = colors.cyan })
-hl('@string', { fg = colors.yellow })
-hl('@string.escape', { fg = colors.bright_pink })
-hl('@string.special', { fg = colors.bright_pink })
-hl('@character', { fg = colors.yellow })
-hl('@number', { fg = colors.purple })
-hl('@boolean', { fg = colors.purple })
-hl('@function', { fg = colors.green })
-hl('@function.builtin', { fg = colors.green })
-hl('@function.call', { fg = colors.green })
-hl('@function.macro', { fg = colors.purple })
-hl('@method', { fg = colors.green })
-hl('@method.call', { fg = colors.green })
-hl('@constructor', { fg = colors.cyan })
-hl('@keyword', { fg = colors.pink })
-hl('@keyword.function', { fg = colors.pink })
-hl('@keyword.operator', { fg = colors.pink })
-hl('@keyword.return', { fg = colors.pink })
-hl('@conditional', { fg = colors.pink })
-hl('@repeat', { fg = colors.pink })
-hl('@label', { fg = colors.pink })
-hl('@operator', { fg = colors.cyan })
-hl('@exception', { fg = colors.pink })
-hl('@type', { fg = colors.cyan })
-hl('@type.builtin', { fg = colors.cyan })
-hl('@type.qualifier', { fg = colors.pink })
-hl('@property', { fg = colors.cyan })
-hl('@attribute', { fg = colors.purple })
-hl('@tag', { fg = colors.pink })
-hl('@tag.attribute', { fg = colors.cyan })
+hl('@string', { fg = '#a6e3a1' })
+hl('@string.escape', { fg = '#f5c2e7' })
+hl('@string.special', { fg = '#f5c2e7' })
+hl('@character', { fg = '#a6e3a1' })
+hl('@number', { fg = '#cba6f7' })
+hl('@boolean', { fg = '#cba6f7' })
+hl('@function', { fg = '#89dceb' })
+hl('@function.builtin', { fg = '#89dceb' })
+hl('@function.call', { fg = '#89dceb' })
+hl('@function.macro', { fg = '#cba6f7' })
+hl('@method', { fg = '#89dceb' })
+hl('@method.call', { fg = '#89dceb' })
+hl('@constructor', { fg = '#f9e2af' })
+hl('@keyword', { fg = '#cba6f7' })
+hl('@keyword.function', { fg = '#cba6f7' })
+hl('@keyword.operator', { fg = '#cba6f7' })
+hl('@keyword.return', { fg = '#cba6f7' })
+hl('@conditional', { fg = '#cba6f7' })
+hl('@repeat', { fg = '#cba6f7' })
+hl('@label', { fg = '#cba6f7' })
+hl('@operator', { fg = '#f9e2af' })
+hl('@exception', { fg = '#cba6f7' })
+hl('@type', { fg = '#f9e2af' })
+hl('@type.builtin', { fg = '#f9e2af' })
+hl('@type.qualifier', { fg = '#cba6f7' })
+hl('@property', { fg = '#f9e2af' })
+hl('@attribute', { fg = '#cba6f7' })
+hl('@tag', { fg = '#f5c2e7' })
+hl('@tag.attribute', { fg = '#f9e2af' })
 hl('@tag.delimiter', { fg = colors.fg_secondary })
 hl('@punctuation.delimiter', { fg = colors.fg_primary })
 hl('@punctuation.bracket', { fg = colors.fg_primary })
-hl('@punctuation.special', { fg = colors.bright_pink })
+hl('@punctuation.special', { fg = '#f5c2e7' })
 hl('@comment', { link = 'Comment' })
 hl('@markup.strong', { bold = true })
 hl('@markup.italic', { italic = true })
 hl('@markup.underline', { underline = true })
-hl('@markup.heading', { fg = colors.pink, bold = true })
+hl('@markup.heading', { fg = '#f5c2e7', bold = true })
 hl('@markup.link', { fg = colors.cyan, underline = true })
 hl('@markup.link.url', { fg = colors.purple, underline = true })
-hl('@markup.list', { fg = colors.cyan })
-hl('@markup.raw', { fg = colors.yellow })
+hl('@markup.list', { fg = '#f9e2af' })
+hl('@markup.raw', { fg = '#a6e3a1' })
 
 -- Telescope
-hl('TelescopeBorder', { fg = colors.cyan, bg = colors.bg_secondary })
-hl('TelescopePromptBorder', { fg = colors.pink, bg = colors.bg_secondary })
-hl('TelescopePromptTitle', { fg = colors.pink, bold = true })
-hl('TelescopePreviewTitle', { fg = colors.cyan, bold = true })
-hl('TelescopeResultsTitle', { fg = colors.cyan, bold = true })
-hl('TelescopeSelection', { fg = colors.cyan, bg = colors.selection, bold = true })
-hl('TelescopeMatching', { fg = colors.pink, bold = true })
+hl('TelescopeBorder', { fg = '#cba6f7', bg = colors.bg_secondary })
+hl('TelescopePromptBorder', { fg = '#f5c2e7', bg = colors.bg_secondary })
+hl('TelescopePromptTitle', { fg = '#f5c2e7', bold = true })
+hl('TelescopePreviewTitle', { fg = '#cba6f7', bold = true })
+hl('TelescopeResultsTitle', { fg = '#cba6f7', bold = true })
+hl('TelescopeSelection', { fg = '#cba6f7', bg = colors.selection, bold = true })
+hl('TelescopeMatching', { fg = '#f5c2e7', bold = true })
 
 -- Neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#49405a' })
+hl('NeoTreeCursorLine', { bg = '#4f5060' })
 hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
 hl('NeoTreeDirectoryName', { fg = colors.cyan })
 hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = colors.pink })
+hl('NeoTreeFileNameOpened', { fg = '#f5c2e7' })
 hl('NeoTreeGitModified', { fg = colors.yellow })
 hl('NeoTreeGitAdded', { fg = colors.green })
 hl('NeoTreeGitDeleted', { fg = colors.red })
 hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = colors.pink, bold = true })
+hl('NeoTreeRootName', { fg = '#f5c2e7', bold = true })
 
 -- Which-key
-hl('WhichKey', { fg = colors.cyan })
-hl('WhichKeyGroup', { fg = colors.pink })
+hl('WhichKey', { fg = '#cba6f7' })
+hl('WhichKeyGroup', { fg = '#f5c2e7' })
 hl('WhichKeyDesc', { fg = colors.fg_primary })
 hl('WhichKeySeparator', { fg = colors.comment })
 
 -- Mini.nvim statusline
-hl('MiniStatuslineModeNormal', { fg = colors.bg_primary, bg = colors.cyan, bold = true })
+hl('MiniStatuslineModeNormal', { fg = colors.bg_primary, bg = '#cba6f7', bold = true })
 hl('MiniStatuslineModeInsert', { fg = colors.bg_primary, bg = colors.green, bold = true })
 hl('MiniStatuslineModeVisual', { fg = colors.bg_primary, bg = colors.purple, bold = true })
 hl('MiniStatuslineModeReplace', { fg = colors.bg_primary, bg = colors.red, bold = true })

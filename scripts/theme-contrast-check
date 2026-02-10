@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+# Theme contrast checker - validates WCAG 2.1 contrast ratios for theme colours
+
+set -euo pipefail
+
+SCRIPT_DIR="${BASH_SOURCE%/*}"
+# shellcheck source=scripts/_lib/common.sh
+source "$SCRIPT_DIR/_lib/common.sh"
+
+# Calculate WCAG 2.1 contrast ratio between two hex colours
+# Usage: calculate_contrast "#RRGGBB" "#RRGGBB"
+# Returns: ratio as float (e.g. "4.52")
+calculate_contrast() {
+    local colour1="$1"
+    local colour2="$2"
+
+    awk -v c1="$colour1" -v c2="$colour2" '
+    function parse_hex(hex) {
+        # Remove # prefix
+        gsub(/^#/, "", hex)
+        # Extract RGB components
+        r = ("0x" substr(hex, 1, 2)) + 0
+        g = ("0x" substr(hex, 3, 2)) + 0
+        b = ("0x" substr(hex, 5, 2)) + 0
+        return r " " g " " b
+    }
+
+    function linearise(channel) {
+        # Convert 0-255 to 0-1
+        srgb = channel / 255.0
+        # Apply sRGB to linear RGB formula
+        if (srgb <= 0.04045) {
+            return srgb / 12.92
+        } else {
+            return ((srgb + 0.055) / 1.055) ^ 2.4
+        }
+    }
+
+    function luminance(hex) {
+        # Parse hex to RGB
+        split(parse_hex(hex), rgb, " ")
+        r = rgb[1]
+        g = rgb[2]
+        b = rgb[3]
+
+        # Linearise each channel
+        r_linear = linearise(r)
+        g_linear = linearise(g)
+        b_linear = linearise(b)
+
+        # Calculate relative luminance
+        return 0.2126 * r_linear + 0.7152 * g_linear + 0.0722 * b_linear
+    }
+
+    BEGIN {
+        l1 = luminance(c1)
+        l2 = luminance(c2)
+
+        # Calculate contrast ratio
+        lighter = (l1 > l2) ? l1 : l2
+        darker = (l1 <= l2) ? l1 : l2
+
+        ratio = (lighter + 0.05) / (darker + 0.05)
+
+        printf "%.2f", ratio
+    }
+    '
+}
+
+# Check a single colour pair against WCAG threshold
+# Usage: check_pair "foreground_hex" "background_hex" "threshold" "description"
+check_pair() {
+    local fg="$1"
+    local bg="$2"
+    local threshold="$3"
+    local description="$4"
+    local ratio
+    local passed=0
+
+    ratio=$(calculate_contrast "$fg" "$bg")
+
+    # Compare ratio to threshold (awk for float comparison)
+    if awk -v r="$ratio" -v t="$threshold" 'BEGIN { exit !(r >= t) }'; then
+        printf "  ${GREEN}✓${NC} %s: %s:1 (>= %s:1)\n" "$description" "$ratio" "$threshold"
+        passed=1
+    else
+        printf "  ${RED}✗${NC} %s: %s:1 (< %s:1)\n" "$description" "$ratio" "$threshold"
+
+        if [[ "$FIX_MODE" == "1" ]]; then
+            printf "    ${CYAN}→${NC} Consider lightening the foreground colour for better readability\n"
+        fi
+    fi
+
+    return $((1 - passed))
+}
+
+# Check all colour pairs in a theme file
+# Usage: check_theme "path/to/theme.theme"
+check_theme() {
+    local theme_file="$1"
+    local theme_name
+    local failures=0
+
+    theme_name=$(basename "$theme_file" .theme)
+
+    print_header "Checking theme: $theme_name"
+
+    # Source theme file to load colour variables
+    # shellcheck source=/dev/null
+    source "$theme_file"
+
+    # Check tmux colour pairs
+    info "Tmux colours:"
+    check_pair "$TMUX_FG_PRIMARY" "$TMUX_BG_PRIMARY" "4.5" "Main text" || ((failures++))
+    check_pair "$TMUX_FG_SECONDARY" "$TMUX_BG_PRIMARY" "4.5" "Muted text" || ((failures++))
+    check_pair "$TMUX_FG_PRIMARY" "$TMUX_BG_SECONDARY" "4.5" "Text on panel bg" || ((failures++))
+    check_pair "$TMUX_FG_SECONDARY" "$TMUX_BG_SECONDARY" "4.5" "Muted text on panel" || ((failures++))
+
+    # Check tmux accent colours against primary background
+    info "Tmux accent colours (on primary bg):"
+    check_pair "$TMUX_ACCENT_PURPLE" "$TMUX_BG_PRIMARY" "4.5" "Purple accent" || ((failures++))
+    check_pair "$TMUX_ACCENT_PINK" "$TMUX_BG_PRIMARY" "4.5" "Pink accent" || ((failures++))
+    check_pair "$TMUX_ACCENT_CYAN" "$TMUX_BG_PRIMARY" "4.5" "Cyan accent" || ((failures++))
+    check_pair "$TMUX_ACCENT_GREEN" "$TMUX_BG_PRIMARY" "4.5" "Green accent" || ((failures++))
+    check_pair "$TMUX_ACCENT_YELLOW" "$TMUX_BG_PRIMARY" "4.5" "Yellow accent" || ((failures++))
+    check_pair "$TMUX_ACCENT_RED" "$TMUX_BG_PRIMARY" "4.5" "Red accent" || ((failures++))
+
+    # Check accent readability on secondary background (sidebars, panels)
+    info "Tmux accent colours (on panel bg):"
+    check_pair "$TMUX_ACCENT_PURPLE" "$TMUX_BG_SECONDARY" "4.5" "Purple on panel" || ((failures++))
+    check_pair "$TMUX_ACCENT_PINK" "$TMUX_BG_SECONDARY" "4.5" "Pink on panel" || ((failures++))
+    check_pair "$TMUX_ACCENT_CYAN" "$TMUX_BG_SECONDARY" "4.5" "Cyan on panel" || ((failures++))
+    check_pair "$TMUX_ACCENT_GREEN" "$TMUX_BG_SECONDARY" "4.5" "Green on panel" || ((failures++))
+    check_pair "$TMUX_ACCENT_YELLOW" "$TMUX_BG_SECONDARY" "4.5" "Yellow on panel" || ((failures++))
+    check_pair "$TMUX_ACCENT_RED" "$TMUX_BG_SECONDARY" "4.5" "Red on panel" || ((failures++))
+
+    # Check ghostty colour pairs
+    info "Ghostty colours:"
+    check_pair "$GHOSTTY_FOREGROUND" "$GHOSTTY_BACKGROUND" "4.5" "Main text" || ((failures++))
+    check_pair "$GHOSTTY_SELECTION_FG" "$GHOSTTY_SELECTION_BG" "3.0" "Selection text" || ((failures++))
+
+    # Check ghostty palette colours
+    info "Ghostty palette colours:"
+    check_pair "$GHOSTTY_PALETTE_1" "$GHOSTTY_BACKGROUND" "4.5" "Palette 1 (red)" || ((failures++))
+    check_pair "$GHOSTTY_PALETTE_2" "$GHOSTTY_BACKGROUND" "4.5" "Palette 2 (green)" || ((failures++))
+    check_pair "$GHOSTTY_PALETTE_3" "$GHOSTTY_BACKGROUND" "4.5" "Palette 3 (yellow)" || ((failures++))
+    check_pair "$GHOSTTY_PALETTE_4" "$GHOSTTY_BACKGROUND" "4.5" "Palette 4 (blue)" || ((failures++))
+    check_pair "$GHOSTTY_PALETTE_5" "$GHOSTTY_BACKGROUND" "4.5" "Palette 5 (magenta)" || ((failures++))
+    check_pair "$GHOSTTY_PALETTE_6" "$GHOSTTY_BACKGROUND" "4.5" "Palette 6 (cyan)" || ((failures++))
+    check_pair "$GHOSTTY_PALETTE_8" "$GHOSTTY_BACKGROUND" "4.5" "Bright black" || ((failures++))
+
+    # Cross-check palette colours: terminal apps (LazyGit, fzf, etc.) can use any
+    # ANSI colour as foreground or background. Check that each colour works both ways:
+    # - As fg text on the terminal background (already checked above)
+    # - As a bg highlight with palette 0 (black) text on it
+    # - As a bg highlight with palette 7 (white) text on it
+    # Each colour must be readable with at least one of black/white text on it.
+    info "Palette as background (terminal app highlights):"
+    local palette_names=("red" "green" "yellow" "blue" "magenta" "cyan")
+    local palette_vals=("$GHOSTTY_PALETTE_1" "$GHOSTTY_PALETTE_2" "$GHOSTTY_PALETTE_3" "$GHOSTTY_PALETTE_4" "$GHOSTTY_PALETTE_5" "$GHOSTTY_PALETTE_6")
+    local black="$GHOSTTY_PALETTE_0"
+    local white="$GHOSTTY_PALETTE_7"
+
+    for i in "${!palette_vals[@]}"; do
+        local colour="${palette_vals[$i]}"
+        local name="${palette_names[$i]}"
+        local black_ratio white_ratio best_pair best_ratio
+        black_ratio=$(calculate_contrast "$black" "$colour")
+        white_ratio=$(calculate_contrast "$white" "$colour")
+
+        # Pick the better pairing
+        if awk -v b="$black_ratio" -v w="$white_ratio" 'BEGIN { exit !(b >= w) }'; then
+            best_pair="black" best_ratio="$black_ratio"
+        else
+            best_pair="white" best_ratio="$white_ratio"
+        fi
+
+        # Must have at least 4.5:1 with the better of black or white
+        if awk -v r="$best_ratio" 'BEGIN { exit !(r >= 4.5) }'; then
+            printf "  ${GREEN}✓${NC} %s bg: %s text %s:1 (>= 4.5:1)\n" "$name" "$best_pair" "$best_ratio"
+        else
+            printf "  ${RED}✗${NC} %s bg: best is %s text %s:1 (< 4.5:1)\n" "$name" "$best_pair" "$best_ratio"
+            ((failures++))
+        fi
+    done
+
+    printf "\n"
+
+    if [[ $failures -eq 0 ]]; then
+        success "Theme '$theme_name' passed all contrast checks"
+    else
+        error "Theme '$theme_name' failed $failures contrast check(s)"
+    fi
+
+    printf "\n"
+
+    return "$failures"
+}
+
+# Show usage information
+show_usage() {
+    cat << EOF
+Usage: $(basename "$0") [OPTIONS] [THEME_FILE]
+
+Check WCAG 2.1 contrast ratios for dotfiles themes.
+
+OPTIONS:
+    --all           Check all themes in themes/ directory
+    --fix           Suggest fixes for failing colour pairs
+    -h, --help      Show this help message
+
+EXAMPLES:
+    $(basename "$0") themes/dracula.theme       # Check single theme
+    $(basename "$0") --all                       # Check all themes
+    $(basename "$0") --fix themes/maple.theme   # Check with suggestions
+
+THRESHOLDS:
+    All readable text:  4.5:1 (WCAG AA for normal text)
+    Ghostty selection:  3.0:1 (UI highlight, not primary reading)
+
+EOF
+}
+
+# Main script logic
+main() {
+    local all_themes=0
+    local theme_file=""
+    local total_failures=0
+
+    # Global flag for fix mode
+    FIX_MODE=0
+
+    # Parse arguments
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --all)
+                all_themes=1
+                shift
+                ;;
+            --fix)
+                FIX_MODE=1
+                shift
+                ;;
+            -h|--help)
+                show_usage
+                exit 0
+                ;;
+            *)
+                theme_file="$1"
+                shift
+                ;;
+        esac
+    done
+
+    # Validate arguments
+    if [[ $all_themes -eq 1 ]]; then
+        # Check all themes
+        for theme in "$SCRIPT_DIR/../themes/"*.theme; do
+            if [[ -f "$theme" ]]; then
+                check_theme "$theme" || ((total_failures += $?))
+            fi
+        done
+    elif [[ -n "$theme_file" ]]; then
+        # Check single theme
+        if [[ ! -f "$theme_file" ]]; then
+            error "Theme file not found: $theme_file"
+            exit 1
+        fi
+        check_theme "$theme_file" || ((total_failures += $?))
+    else
+        error "No theme file specified"
+        show_usage
+        exit 1
+    fi
+
+    # Exit with failure if any checks failed
+    if [[ $total_failures -gt 0 ]]; then
+        exit 1
+    fi
+}
+
+main "$@"
