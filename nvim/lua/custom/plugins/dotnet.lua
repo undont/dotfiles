@@ -48,6 +48,21 @@ return {
       end,
     }
 
+    -- Auto-select solution file: skip .ci.sln/.ci.slnx variants
+    -- Runs synchronously before Roslyn's root_dir callback fires
+    local current_solution = require 'easy-dotnet.current_solution'
+    if not current_solution.try_get_selected_solution() then
+      local solutions = vim.fn.glob('**/*.slnx', false, true)
+      vim.list_extend(solutions, vim.fn.glob('**/*.sln', false, true))
+      local filtered = vim.tbl_filter(function(path)
+        return not vim.fs.basename(path):match '%.ci%.slnx?$'
+      end, solutions)
+      if #filtered == 1 then
+        local abs = vim.fs.normalize(vim.fn.fnamemodify(filtered[1], ':p'))
+        current_solution.set_solution(abs)
+      end
+    end
+
     -- Project commands only (tests handled by neotest)
     vim.keymap.set('n', '<leader>nr', '<cmd>Dotnet run<cr>', { desc = '.NET: Run project' })
     vim.keymap.set('n', '<leader>nb', '<cmd>Dotnet build<cr>', { desc = '.NET: Build project' })
