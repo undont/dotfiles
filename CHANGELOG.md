@@ -32,6 +32,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Neovim: Treesitter `auto_install` disabled to prevent race condition — concurrent Neovim instances (e.g. neotest subprocess) would race to create the same tmp directory, causing `mkdir: tree-sitter-*-tmp: File exists` errors
 - Neovim: C# syntax highlighting in markdown code fences — registered `csharp`/`cs` as aliases for the `c_sharp` treesitter parser
 - Neovim: Quickfix build opens empty on success when tool output doesn't match errorformat — now validates parsed entries before opening
+- Neovim: `grr` (LSP references) broken on Neovim 0.11 — `on_list` handler was passed as LSP context instead of options, causing "Cannot serialise function" error
 
 ## [0.2.18] - 2026-02-10
 
