@@ -1,0 +1,11 @@
+# LazyDocker configuration
+# Managed by dotfiles — changes here will be overwritten on update
+
+gui:
+  theme:
+    # Use reverse video for selections — works with any terminal colour scheme
+    # and avoids poor contrast from ANSI colours used as backgrounds
+    selectedLineBgColor:
+      - reverse
+    selectedRangeBgColor:
+      - reverse

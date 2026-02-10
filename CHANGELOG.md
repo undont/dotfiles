@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.19] - 2026-02-10
+
+### Added
+- Neovim: Custom colourscheme files in `nvim/colors/` for all 16 themes — removes dependency on 12 colourscheme plugins
+- Theme contrast checker script (`scripts/theme-contrast-check`) — validates WCAG contrast ratios for theme files
+- LazyGit and LazyDocker config files with reverse-video selection styling (works with any theme)
+
+### Changed
+- Theme files: Refined accent colours and secondary foreground values across all themes for better contrast
+- Neovim: Removed all colourscheme plugin dependencies from `ui.lua` — themes are now self-contained
+- Gitsigns: Simplified highlight configuration to use built-in groups
+- Themes README: Streamlined documentation to match simplified theme variable format
+
 ## [0.2.18] - 2026-02-10
 
 ### Added

@@ -19,11 +19,11 @@ TMUX_FG_SECONDARY="#9d8ec7"     # Muted lavender
 # ══════════════════════════════════════════════════════════════
 
 TMUX_ACCENT_PURPLE="#b794f6"    # Electric purple
-TMUX_ACCENT_PINK="#ff2e97"      # Hot pink/magenta
+TMUX_ACCENT_PINK="#ff389c"      # Hot pink/magenta
 TMUX_ACCENT_CYAN="#00d9ff"      # Vibrant cyan
 TMUX_ACCENT_GREEN="#39ff14"     # Neon green
 TMUX_ACCENT_YELLOW="#ffd700"    # Gold
-TMUX_ACCENT_RED="#ff003c"       # Neon red
+TMUX_ACCENT_RED="#ff3f6c"       # Neon red
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Status Indicators
@@ -58,7 +58,7 @@ GHOSTTY_PALETTE_4="#00d9ff"      # Blue (cyan)
 GHOSTTY_PALETTE_5="#ff2e97"      # Magenta (hot pink)
 GHOSTTY_PALETTE_6="#00ffcc"      # Cyan (turquoise)
 GHOSTTY_PALETTE_7="#e4dfed"      # White
-GHOSTTY_PALETTE_8="#6b5a82"      # Bright black (muted purple)
+GHOSTTY_PALETTE_8="#9d8ec7"      # Bright black (muted purple)
 GHOSTTY_PALETTE_9="#ff4d6a"      # Bright red
 GHOSTTY_PALETTE_10="#6bff59"     # Bright green
 GHOSTTY_PALETTE_11="#ffe45c"     # Bright yellow

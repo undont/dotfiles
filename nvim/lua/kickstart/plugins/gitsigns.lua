@@ -5,27 +5,7 @@ return {
     'lewis6991/gitsigns.nvim',
     config = function(_, opts)
       require('gitsigns').setup(opts)
-
-      -- Override gitsigns default highlights after setup
-      local function set_gitsigns_highlights()
-        -- Sign column text colours
-        vim.api.nvim_set_hl(0, 'GitSignsAdd', { fg = '#a6e3a1', bold = true })
-        vim.api.nvim_set_hl(0, 'GitSignsChange', { fg = '#f9e2af', bold = true })
-        vim.api.nvim_set_hl(0, 'GitSignsDelete', { fg = '#f38ba8', bold = true })
-        vim.api.nvim_set_hl(0, 'GitSignsTopdelete', { fg = '#f38ba8', bold = true })
-        vim.api.nvim_set_hl(0, 'GitSignsChangedelete', { fg = '#fab387', bold = true })
-        -- Line number background colours (used in fugitive review mode)
-        vim.api.nvim_set_hl(0, 'GitSignsAddNr', { fg = '#a6e3a1', bg = '#1a2e1a' })
-        vim.api.nvim_set_hl(0, 'GitSignsChangeNr', { fg = '#f9e2af', bg = '#2e2a1a' })
-        vim.api.nvim_set_hl(0, 'GitSignsDeleteNr', {})
-        -- Full line background colours (used in fugitive review mode)
-        vim.api.nvim_set_hl(0, 'GitSignsAddLn', { bg = '#1a2e1a' })
-        vim.api.nvim_set_hl(0, 'GitSignsChangeLn', { bg = '#2e2a1a' })
-        vim.api.nvim_set_hl(0, 'GitSignsDeleteLn', {})
-      end
-
-      set_gitsigns_highlights()
-      vim.api.nvim_create_autocmd('ColorScheme', { callback = set_gitsigns_highlights })
+      -- Git sign colours are defined in nvim/colors/*.lua colourschemes
     end,
     opts = {
       signs = {

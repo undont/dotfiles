@@ -12,18 +12,18 @@ THEME_ACTIVE_ACCENT="purple"
 TMUX_BG_PRIMARY="#1f1f28"
 TMUX_FG_PRIMARY="#dcd7ba"
 TMUX_BG_SECONDARY="#2a2a37"
-TMUX_FG_SECONDARY="#54546d"
+TMUX_FG_SECONDARY="#95948e"
 
 # ══════════════════════════════════════════════════════════════
 # Accent Colours
 # ══════════════════════════════════════════════════════════════
 
-TMUX_ACCENT_PURPLE="#957fb8"
+TMUX_ACCENT_PURPLE="#9f8bbf"
 TMUX_ACCENT_PINK="#d27e99"
 TMUX_ACCENT_CYAN="#7fb4ca"
 TMUX_ACCENT_GREEN="#98bb6c"
 TMUX_ACCENT_YELLOW="#e6c384"
-TMUX_ACCENT_RED="#c34043"
+TMUX_ACCENT_RED="#d5797b"
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Status Indicators
@@ -51,14 +51,14 @@ GHOSTTY_SELECTION_FG="#c8c093"
 
 # Terminal palette
 GHOSTTY_PALETTE_0="#090618"
-GHOSTTY_PALETTE_1="#c34043"
+GHOSTTY_PALETTE_1="#d5797b"
 GHOSTTY_PALETTE_2="#76946a"
 GHOSTTY_PALETTE_3="#c0a36e"
 GHOSTTY_PALETTE_4="#7e9cd8"
 GHOSTTY_PALETTE_5="#957fb8"
 GHOSTTY_PALETTE_6="#6a9589"
 GHOSTTY_PALETTE_7="#c8c093"
-GHOSTTY_PALETTE_8="#727169"
+GHOSTTY_PALETTE_8="#95948e"
 GHOSTTY_PALETTE_9="#e82424"
 GHOSTTY_PALETTE_10="#98bb6c"
 GHOSTTY_PALETTE_11="#e6c384"

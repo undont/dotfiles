@@ -3,7 +3,7 @@
 # ══════════════════════════════════════════════════════════════
 
 .PHONY: help test test-verbose test-tmux test-no-tmux \
-        lint lint-shell lint-lua \
+        lint lint-shell lint-lua theme-check \
         test-libs test-scripts test-integration \
         install install-minimal install-core install-full \
         check clean
@@ -55,7 +55,7 @@ test-integration: ## Run integration tests only
 # Linting
 # ──────────────────────────────────────────────────────────────
 
-lint: lint-shell lint-lua ## Run all linters
+lint: lint-shell lint-lua theme-check ## Run all linters
 
 lint-shell: ## Run ShellCheck on shell scripts
 	@printf '\033[1;36mRunning ShellCheck...\033[0m\n'
@@ -69,6 +69,11 @@ lint-lua: ## Run luacheck on Neovim config
 	@printf '\033[1;36mRunning luacheck...\033[0m\n'
 	@luacheck nvim/lua/ --no-unused-args --no-max-line-length
 	@printf '\033[0;32m✓ luacheck passed\033[0m\n'
+
+theme-check: ## Run WCAG contrast checker on all themes
+	@printf '\033[1;36mRunning theme contrast checks...\033[0m\n'
+	@./scripts/theme-contrast-check --all
+	@printf '\033[0;32m✓ All themes passed contrast checks\033[0m\n'
 
 # ──────────────────────────────────────────────────────────────
 # Installation

@@ -8,11 +8,11 @@ Run `theme-switch list` to see all available themes.
 
 ## Adding a New Theme
 
-To add a new theme to this repository, you need to update **three** files:
+To add a new theme, you need to update **three** files:
 
 ### 1. Create Theme File: `themes/<theme-name>.theme`
 
-Create a new `.theme` file with the following structure:
+Create a new `.theme` file following the structure of any existing theme. All themes share the same variable format:
 
 ```bash
 #!/bin/bash
@@ -20,105 +20,49 @@ Create a new `.theme` file with the following structure:
 # <URL to theme project>
 
 THEME_NAME="<Display Name>"
-THEME_ACTIVE_ACCENT="purple"  # or "cyan", "green", "pink", "yellow", "red"
+THEME_ACTIVE_ACCENT="purple"  # purple, cyan, green, pink, yellow, or red
 
-# ══════════════════════════════════════════════════════════════
 # Base Colours
-# ══════════════════════════════════════════════════════════════
+TMUX_BG_PRIMARY="#282a36"       # Main background
+TMUX_FG_PRIMARY="#f8f8f2"       # Main text
+TMUX_BG_SECONDARY="#44475a"     # Panel/sidebar background
+TMUX_FG_SECONDARY="#b0b8d1"     # Muted text (comments, line numbers)
 
-TMUX_BG_PRIMARY="#282a36"
-TMUX_FG_PRIMARY="#f8f8f2"
-TMUX_BG_SECONDARY="#44475a"
-TMUX_FG_SECONDARY="#6272a4"
-
-# ══════════════════════════════════════════════════════════════
 # Accent Colours
-# ══════════════════════════════════════════════════════════════
-
-TMUX_ACCENT_PURPLE="#bd93f9"
-TMUX_ACCENT_PINK="#ff79c6"
+TMUX_ACCENT_PURPLE="#caa8fa"
+TMUX_ACCENT_PINK="#ff93d1"
 TMUX_ACCENT_CYAN="#8be9fd"
 TMUX_ACCENT_GREEN="#50fa7b"
 TMUX_ACCENT_YELLOW="#f1fa8c"
-TMUX_ACCENT_RED="#ff5555"
+TMUX_ACCENT_RED="#ffa1a1"
 
-# ══════════════════════════════════════════════════════════════
-# Plugin Status Indicators
-# ══════════════════════════════════════════════════════════════
+# Plugin Status Indicators (8 colours)
+# ... see existing themes for examples
 
-TMUX_CPU_LOW_BG="#264d5a"
-TMUX_CPU_MEDIUM_BG="#3d3b5c"
-TMUX_CPU_HIGH_BG="#503b50"
-TMUX_RAM_LOW_BG="#2a4a3a"
-TMUX_RAM_MEDIUM_BG="#2d4a50"
-TMUX_RAM_HIGH_BG="#443a5a"
-TMUX_BATTERY_NORMAL_BG="#2a4a40"
-TMUX_BATTERY_LOW_BG="#503030"
+# Ghostty Colours + 16-colour terminal palette
+# ... see existing themes for examples
 
-# ══════════════════════════════════════════════════════════════
-# Ghostty Colours
-# ══════════════════════════════════════════════════════════════
-
-GHOSTTY_BACKGROUND="#282a36"
-GHOSTTY_FOREGROUND="#f8f8f2"
-GHOSTTY_CURSOR_COLOR="#f8f8f2"
-GHOSTTY_CURSOR_TEXT="#282a36"
-GHOSTTY_SELECTION_BG="#44475a"
-GHOSTTY_SELECTION_FG="#ffffff"
-
-# Terminal palette (0-15)
-GHOSTTY_PALETTE_0="#21222c"
-GHOSTTY_PALETTE_1="#ff5555"
-GHOSTTY_PALETTE_2="#50fa7b"
-GHOSTTY_PALETTE_3="#f1fa8c"
-GHOSTTY_PALETTE_4="#bd93f9"
-GHOSTTY_PALETTE_5="#ff79c6"
-GHOSTTY_PALETTE_6="#8be9fd"
-GHOSTTY_PALETTE_7="#f8f8f2"
-GHOSTTY_PALETTE_8="#6272a4"
-GHOSTTY_PALETTE_9="#ff6e6e"
-GHOSTTY_PALETTE_10="#69ff94"
-GHOSTTY_PALETTE_11="#ffffa5"
-GHOSTTY_PALETTE_12="#d6acff"
-GHOSTTY_PALETTE_13="#ff92df"
-GHOSTTY_PALETTE_14="#a4ffff"
-GHOSTTY_PALETTE_15="#ffffff"
-
-# ══════════════════════════════════════════════════════════════
-# Neovim Colours
-# ══════════════════════════════════════════════════════════════
-
-NVIM_COLORSCHEME="dracula"
+# Neovim colourscheme name (must match nvim/colors/<name>.lua)
+NVIM_COLORSCHEME="<theme-name>"
 ```
 
-**Notes:**
-- `THEME_NAME`: Display name shown in `theme-switch list`
-- `THEME_ACTIVE_ACCENT`: Which accent colour to use for active windows/borders (`purple`, `cyan`, `green`, `pink`, `yellow`, or `red`)
-- Base colours and accents are **required** - they're used by `theme-defaults.sh` to generate status bar, pane borders, and FZF colours automatically
-- `NVIM_COLORSCHEME`: Must match the exact colorscheme name used in Neovim
+### 2. Create Neovim Colourscheme: `nvim/colors/<name>.lua`
 
-### 2. Add Neovim Plugin: `nvim/lua/custom/plugins/ui.lua`
+Create a custom colourscheme file. Use any existing file as a template (e.g. `nvim/colors/dracula.lua`). Each colourscheme defines highlight groups for:
 
-Add the Neovim colorscheme plugin to the plugins list:
+- **Editor**: Normal, CursorLine, Visual, Search, Pmenu, StatusLine
+- **Syntax**: Comment, String, Function, Keyword, Type, Operator
+- **Diff / Git signs**: DiffAdd, DiffChange, DiffDelete, GitSignsAdd
+- **Diagnostics / LSP**: DiagnosticError, DiagnosticWarn, DiagnosticInfo
+- **Treesitter**: @variable, @function, @keyword, @string, @type, etc.
+- **Plugins**: Telescope, Neo-tree, Which-key, Mini statusline
 
-```lua
--- <Theme Name> theme
-{
-  'author/plugin-name',
-  lazy = true,
-  opts = {
-    -- plugin-specific options
-  },
-},
-```
+The `colors` table at the top should match the `.theme` file values. The `NVIM_COLORSCHEME` value in the `.theme` file must match `vim.g.colors_name` in the Lua file.
 
-**Important:** All theme plugins **must** be `lazy = true` to avoid slowing down startup.
+### 3. Update Theme Mapping: `nvim/lua/custom/core/theme.lua`
 
-### 3. Update Theme Mappings: `nvim/lua/custom/core/theme.lua`
+Add an entry to the `theme_map` table:
 
-Add two entries:
-
-**In `theme_map`** (maps dotfiles theme names to Neovim colorscheme names):
 ```lua
 local theme_map = {
   -- ... existing themes ...
@@ -126,22 +70,47 @@ local theme_map = {
 }
 ```
 
-**In `lazy_schemes`** (maps Neovim colorscheme names to plugin names):
-```lua
-local lazy_schemes = {
-  -- ... existing schemes ...
-  ['<nvim-colorscheme-name>'] = '<plugin-name>',
-}
+## Accessibility & Contrast
+
+All themes must pass WCAG 2.1 contrast ratio checks to ensure readability.
+
+### Requirements
+
+| Check | Minimum ratio | What it covers |
+|-------|--------------|----------------|
+| All readable text | 4.5:1 | FG on BG, muted text, accents, palette colours |
+| Palette as background | 4.5:1 | Best of black/white text on each palette colour |
+| Selection text | 3.0:1 | UI highlight (Ghostty selection) |
+
+### Running the Contrast Checker
+
+```bash
+# Check a single theme
+scripts/theme-contrast-check themes/my-theme.theme
+
+# Check all themes
+scripts/theme-contrast-check --all
+
+# Check with fix suggestions
+scripts/theme-contrast-check --fix themes/my-theme.theme
 ```
 
-**Example:**
-```lua
--- theme_map
-['monokai'] = 'monokai-pro',
+### What Gets Checked
 
--- lazy_schemes
-['monokai-pro'] = 'monokai-pro.nvim',
-```
+- **Primary text** on both primary and secondary backgrounds
+- **Muted text** (FG_SECONDARY) on both backgrounds
+- **All 6 accent colours** on both backgrounds
+- **Ghostty palette colours 1-6** as foreground on the terminal background
+- **Palette 8** (bright black / comments) on background
+- **Each palette colour as a background** — must be readable with either black or white text (for terminal apps like LazyGit that use ANSI colours as backgrounds)
+
+### Tips for Fixing Contrast Issues
+
+- **Lighten foreground colours** rather than darkening backgrounds (preserves theme character)
+- **FG_SECONDARY** is the most common failure — it needs to pass 4.5:1 on *both* BG_PRIMARY and BG_SECONDARY
+- **GHOSTTY_PALETTE_8** should match or be close to FG_SECONDARY
+- Use [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) for quick manual checks
+- Test visually with `theme-switch <name>` and open Neovim, LazyGit, and Neo-tree
 
 ## Theme Architecture
 
@@ -154,11 +123,6 @@ Theme files only define **base colours** and **accents**. The following are auto
 - **Message/command bar**: Uses chosen accent
 - **FZF colours**: Automatically mapped from base and accent colours
 
-This standardisation means:
-- Less duplication across theme files
-- Consistent behaviour across all themes
-- Easier maintenance
-
 ### Consumer Scripts
 
 Two scripts consume theme files and apply defaults:
@@ -166,37 +130,20 @@ Two scripts consume theme files and apply defaults:
 1. **`scripts/theme-switch`**: Applies theme to tmux and Ghostty templates
 2. **`scripts/fzf-theme.sh`**: Generates FZF colours (sourced by `.zshrc`)
 
-Both scripts:
-1. Source the `.theme` file
-2. Source `theme-defaults.sh`
-3. Call `apply_theme_defaults()`
+Both scripts source the `.theme` file, then `theme-defaults.sh`, then call `apply_theme_defaults()`.
 
 ## Testing a New Theme
 
-After adding all three files:
-
 ```bash
-# List themes (verify new theme appears)
+# Verify theme appears in list
 theme-switch list
 
 # Apply the theme
 theme-switch <theme-name>
 
-# In Neovim, manually reload
+# Run contrast checks
+scripts/theme-contrast-check themes/<theme-name>.theme
+
+# In Neovim, reload the colourscheme
 :ThemeReload
-
-# Or restart Neovim to see the theme applied
 ```
-
-## Colour Palette Guidelines
-
-When creating a new theme, ensure you define all required colour variables:
-
-**Required:**
-- 4 base colours (primary/secondary background/foreground)
-- 6 accent colours (purple, pink, cyan, green, yellow, red)
-- 8 plugin indicator backgrounds (CPU low/med/high, RAM low/med/high, battery normal/low)
-- Ghostty colours (background, foreground, cursor, selection)
-- 16-colour terminal palette (PALETTE_0 through PALETTE_15)
-
-**Tip:** Use existing theme files as templates - they all follow the same structure.
