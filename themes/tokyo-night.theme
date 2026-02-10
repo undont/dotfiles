@@ -12,14 +12,14 @@ THEME_ACTIVE_ACCENT="cyan"
 TMUX_BG_PRIMARY="#1a1b26"
 TMUX_FG_PRIMARY="#c0caf5"
 TMUX_BG_SECONDARY="#24283b"
-TMUX_FG_SECONDARY="#565f89"
+TMUX_FG_SECONDARY="#8f94b4"
 
 # ══════════════════════════════════════════════════════════════
 # Accent Colours
 # ══════════════════════════════════════════════════════════════
 
 TMUX_ACCENT_PURPLE="#bb9af7"
-TMUX_ACCENT_PINK="#ff007c"
+TMUX_ACCENT_PINK="#ff4ca3"
 TMUX_ACCENT_CYAN="#7dcfff"
 TMUX_ACCENT_GREEN="#9ece6a"
 TMUX_ACCENT_YELLOW="#e0af68"
@@ -58,7 +58,7 @@ GHOSTTY_PALETTE_4="#7aa2f7"
 GHOSTTY_PALETTE_5="#bb9af7"
 GHOSTTY_PALETTE_6="#7dcfff"
 GHOSTTY_PALETTE_7="#a9b1d6"
-GHOSTTY_PALETTE_8="#414868"
+GHOSTTY_PALETTE_8="#8f94b4"
 GHOSTTY_PALETTE_9="#f7768e"
 GHOSTTY_PALETTE_10="#9ece6a"
 GHOSTTY_PALETTE_11="#e0af68"
