@@ -63,14 +63,12 @@ return {
           map('n', 'j', 'gj', bopts)
           map('n', 'k', 'gk', bopts)
 
-          -- Renumber ordered lists automatically after deleting lines
-          vim.api.nvim_create_autocmd('TextChanged', {
+          -- Renumber ordered lists on cursor idle (debounced via updatetime)
+          vim.api.nvim_create_autocmd('CursorHold', {
             buffer = ev.buf,
             callback = function()
-              -- Only renumber if cursor is on/near a numbered list
               local line = vim.api.nvim_get_current_line()
               if line:match '^%s*%d+[%.%)%)]%s' then
-                pcall(vim.cmd, 'undojoin')
                 pcall(vim.cmd, 'MkdnUpdateNumbering')
               end
             end,

@@ -48,14 +48,18 @@ return {
       end,
     }
 
-    -- Auto-select solution file: skip .ci.sln/.ci.slnx variants
+    -- Auto-select solution file: skip build variant solutions (.ci.sln, .build.slnx, etc.)
+    -- Only keeps files where the segment before .sln/.slnx is PascalCase (starts uppercase)
     -- Runs synchronously before Roslyn's root_dir callback fires
     local current_solution = require 'easy-dotnet.current_solution'
     if not current_solution.try_get_selected_solution() then
       local solutions = vim.fn.glob('**/*.slnx', false, true)
       vim.list_extend(solutions, vim.fn.glob('**/*.sln', false, true))
       local filtered = vim.tbl_filter(function(path)
-        return not vim.fs.basename(path):match '%.ci%.slnx?$'
+        -- Filter out compound extensions where the segment before .sln/.slnx starts
+        -- with a lowercase letter (e.g., .ci.sln, .build.slnx, .test.sln)
+        -- Keeps PascalCase names like Dana.Platform.sln
+        return not vim.fs.basename(path):match '%.[%l][%w]*%.slnx?$'
       end, solutions)
       if #filtered == 1 then
         local abs = vim.fs.normalize(vim.fn.fnamemodify(filtered[1], ':p'))
