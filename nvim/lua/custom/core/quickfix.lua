@@ -31,19 +31,19 @@ local function tsc_cmd(dir)
   return { 'npx', 'tsc', '--noEmit', '--pretty', 'false' }
 end
 
---- Build vite/esbuild build command using the detected package manager
+--- Build check command (eslint + tsc) using the detected package manager
 ---@param dir string
 ---@return string[] cmd
-local function vite_build_cmd(dir)
+local function check_cmd(dir)
   local runner = detect_pkg_runner(dir)
   if runner == 'bun' then
-    return { 'bun', 'run', 'build' }
+    return { 'bun', 'run', 'check' }
   elseif runner == 'pnpm' then
-    return { 'pnpm', 'run', 'build' }
+    return { 'pnpm', 'run', 'check' }
   elseif runner == 'yarn' then
-    return { 'yarn', 'build' }
+    return { 'yarn', 'check' }
   end
-  return { 'npm', 'run', 'build' }
+  return { 'npm', 'run', 'check' }
 end
 
 -- Build commands keyed by root marker file
@@ -57,7 +57,7 @@ local build_configs = {
   },
   {
     marker = 'vite.config.*',
-    cmd = vite_build_cmd, -- resolved at runtime from matched directory
+    cmd = check_cmd, -- resolved at runtime from matched directory
     efm = '%f:%l:%c: ERROR: %m,%f:%l:%c: error: %m,%f:%l:%c: warning: %m,%-G%.%#',
   },
   {
@@ -234,15 +234,30 @@ local function run_build(cfg)
         return
       end
 
-      -- Build failed — populate quickfix with errors
-      handle:report { message = 'Failed — ' .. #lines .. ' line(s)' }
-      handle:finish()
-
+      -- Parse output into quickfix entries
       local qf_opts = { title = 'Build: ' .. cmd_str, lines = lines }
       if cfg.efm then
         qf_opts.efm = cfg.efm
       end
       vim.fn.setqflist({}, 'r', qf_opts)
+
+      -- Check if any parsed entries have a valid file/line — if not, treat as success
+      -- (e.g. bun echoes the command being run, producing output that doesn't match efm)
+      local has_valid = false
+      for _, item in ipairs(vim.fn.getqflist()) do
+        if item.valid == 1 then
+          has_valid = true
+          break
+        end
+      end
+      if not has_valid then
+        handle:report { message = 'Succeeded' }
+        handle:finish()
+        return
+      end
+
+      handle:report { message = 'Failed — ' .. #lines .. ' line(s)' }
+      handle:finish()
 
       -- Temporarily disable equalalways so copen doesn't equalise windows
       local saved_ea = vim.o.equalalways

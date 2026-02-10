@@ -16,6 +16,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Launcher wizard: Worktree awareness step — optional worktree directory resolution for session launchers
 
 ### Changed
+- Neovim: Quickfix Vite/esbuild config runs `check` (eslint + tsc) instead of `build` — finds more errors without producing artifacts
 - Theme files: Refined accent colours and secondary foreground values across all themes for better contrast
 - Neovim: Removed all colourscheme plugin dependencies from `ui.lua` — themes are now self-contained
 - Gitsigns: Simplified highlight configuration to use built-in groups
@@ -29,6 +30,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `git-prune` alias uses `-D` (force delete) instead of `-d` — squash-merged branches weren't recognised as fully merged, causing "not fully merged" errors
 - Neovim: Treesitter injection highlighting for markdown code blocks — use `nvim-treesitter.configs` module for proper language injection support
 - Neovim: Treesitter `auto_install` disabled to prevent race condition — concurrent Neovim instances (e.g. neotest subprocess) would race to create the same tmp directory, causing `mkdir: tree-sitter-*-tmp: File exists` errors
+- Neovim: C# syntax highlighting in markdown code fences — registered `csharp`/`cs` as aliases for the `c_sharp` treesitter parser
+- Neovim: Quickfix build opens empty on success when tool output doesn't match errorformat — now validates parsed entries before opening
 
 ## [0.2.18] - 2026-02-10
 
