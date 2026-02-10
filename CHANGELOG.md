@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.18] - 2026-02-10
+
+### Added
+- Neovim: Quickfix build picker (`<leader>q`) — run project builds and populate quickfix with errors
+  - Detects Go (`go vet`), TypeScript (`tsc`), .NET (`dotnet build`), and Makefile projects
+  - TypeScript: Auto-detects package manager (bun/pnpm/yarn/npm) from lockfiles
+  - Makefile: Parses build targets, shows numbered picker sorted by complexity
+  - Buffer-aware: Walks up from current file to find nearest project marker
+  - Progress: Shows fidget spinner during build
+  - Only opens quickfix on failure (exit ≠ 0), shows "Succeeded" notification otherwise
+  - ANSI codes stripped from output, quickfix height capped at 10 lines
+- Neovim: .NET solution auto-selection — skips `.ci.sln`/`.ci.slnx` variants when only one non-CI solution exists
+- Makefile: Git worktree management targets (`worktree-create`, `worktree-list`, `worktree-remove`)
+
 ## [0.2.17] - 2026-02-09
 
 ### Added

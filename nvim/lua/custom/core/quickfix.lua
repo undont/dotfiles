@@ -2,8 +2,23 @@
 
 local M = {}
 
+--- Detect package manager from lockfile in a directory
+---@param dir string
+---@return string[] cmd tsc command with correct runner
+local function tsc_cmd(dir)
+  if vim.fn.filereadable(dir .. '/bun.lock') == 1 or vim.fn.filereadable(dir .. '/bun.lockb') == 1 then
+    return { 'bun', 'run', 'tsc', '--noEmit', '--pretty', 'false' }
+  elseif vim.fn.filereadable(dir .. '/pnpm-lock.yaml') == 1 then
+    return { 'pnpm', 'exec', 'tsc', '--noEmit', '--pretty', 'false' }
+  elseif vim.fn.filereadable(dir .. '/yarn.lock') == 1 then
+    return { 'yarn', 'tsc', '--noEmit', '--pretty', 'false' }
+  end
+  return { 'npx', 'tsc', '--noEmit', '--pretty', 'false' }
+end
+
 -- Build commands keyed by root marker file
--- Each entry: { marker = file/pattern to detect, cmd = build command, efm = errorformat }
+-- Each entry: { marker, cmd (table or function(dir)->table), efm }
+-- Checked in priority order — first match wins (unless Makefile, which extracts targets)
 local build_configs = {
   {
     marker = 'go.mod',
@@ -12,7 +27,7 @@ local build_configs = {
   },
   {
     marker = 'tsconfig.json',
-    cmd = { 'npx', 'tsc', '--noEmit', '--pretty', 'false' },
+    cmd = tsc_cmd, -- resolved at runtime from matched directory
     efm = '%f(%l\\,%c): error TS%n: %m,%f(%l\\,%c): warning TS%n: %m',
   },
   {
@@ -20,58 +35,209 @@ local build_configs = {
     cmd = { 'dotnet', 'build', '--no-restore', '-consoleloggerparameters:NoSummary' },
     efm = '%f(%l\\,%c): %trror %m,%f(%l\\,%c): %tarning %m',
   },
-  {
-    marker = 'Makefile',
-    cmd = { 'make' },
-    efm = nil, -- uses Neovim default errorformat
-  },
 }
 
---- Detect project type from cwd and return build config
----@return table|nil
-local function detect_build()
-  local cwd = vim.fn.getcwd()
+-- Lua patterns that indicate a build-related make target
+-- Plain find for 'build'/'compile' (match anywhere in name)
+-- 'check' requires a prefix separator so bare 'check' doesn't match
+local make_build_patterns = {
+  { pattern = 'build', plain = true },
+  { pattern = 'compile', plain = true },
+  { pattern = '[_-]check', plain = false },
+}
+
+--- Parse Makefile and extract build-related targets
+---@param makefile_path string
+---@return string[] targets
+local function parse_make_build_targets(makefile_path)
+  local lines = vim.fn.readfile(makefile_path)
+  if not lines or #lines == 0 then
+    return {}
+  end
+
+  local targets = {}
+  local seen = {}
+  for _, line in ipairs(lines) do
+    -- Match target definitions: `target-name:` at start of line
+    -- Exclude .PHONY, .DEFAULT_GOAL, etc (dot-prefixed)
+    local target = line:match '^([a-zA-Z][a-zA-Z0-9_-]*):'
+    if target then
+      local name_lower = target:lower()
+      for _, p in ipairs(make_build_patterns) do
+        if name_lower:find(p.pattern, 1, p.plain) and not seen[target] then
+          seen[target] = true
+          table.insert(targets, target)
+          break
+        end
+      end
+    end
+  end
+  -- Sort by fewest segments (hyphens) so broader targets appear first
+  table.sort(targets, function(a, b)
+    local _, a_seps = a:gsub('-', '')
+    local _, b_seps = b:gsub('-', '')
+    if a_seps ~= b_seps then
+      return a_seps < b_seps
+    end
+    return a < b
+  end)
+  return targets
+end
+
+--- Resolve a build config's cmd for a given directory
+--- cmd can be a static table or a function(dir) returning a table
+---@param cfg table
+---@param dir string
+---@return table resolved config with cmd as table and build_dir set
+local function resolve_config(cfg, dir)
+  local cmd = type(cfg.cmd) == 'function' and cfg.cmd(dir) or cfg.cmd
+  return { cmd = cmd, efm = cfg.efm, build_dir = dir }
+end
+
+--- Check a directory for any language-specific marker
+---@param dir string
+---@return table|nil resolved config with build_dir
+local function check_dir_for_markers(dir)
   for _, cfg in ipairs(build_configs) do
-    -- Check for glob patterns (e.g. *.csproj)
     if cfg.marker:find '%*' then
-      local matches = vim.fn.glob(cwd .. '/' .. cfg.marker, false, true)
+      local matches = vim.fn.glob(dir .. '/' .. cfg.marker, false, true)
       if #matches > 0 then
-        return cfg
+        return resolve_config(cfg, dir)
       end
     else
-      if vim.fn.filereadable(cwd .. '/' .. cfg.marker) == 1 then
-        return cfg
+      if vim.fn.filereadable(dir .. '/' .. cfg.marker) == 1 then
+        return resolve_config(cfg, dir)
       end
     end
   end
   return nil
 end
 
+--- Detect project type and return build config
+--- Walks up from the current buffer's directory to find the nearest
+--- language-specific marker before falling back to Makefile targets
+---@return table|nil config, boolean|nil is_makefile
+local function detect_build()
+  local cwd = vim.fn.getcwd()
+
+  -- Walk up from current buffer dir to cwd looking for language markers
+  local buf_dir = vim.fn.expand '%:p:h'
+  if buf_dir ~= '' and buf_dir:find(cwd, 1, true) == 1 then
+    local dir = buf_dir
+    while #dir >= #cwd do
+      local cfg = check_dir_for_markers(dir)
+      if cfg then
+        return cfg, false
+      end
+      local parent = vim.fn.fnamemodify(dir, ':h')
+      if parent == dir then
+        break
+      end
+      dir = parent
+    end
+  else
+    -- Buffer not under cwd — just check cwd itself
+    local cfg = check_dir_for_markers(cwd)
+    if cfg then
+      return cfg, false
+    end
+  end
+
+  -- Check for Makefile with build targets
+  local makefile_path = cwd .. '/Makefile'
+  if vim.fn.filereadable(makefile_path) == 1 then
+    local targets = parse_make_build_targets(makefile_path)
+    if #targets > 0 then
+      return { makefile_path = makefile_path, targets = targets }, true
+    end
+  end
+
+  return nil, nil
+end
+
+--- Strip ANSI escape codes from a string
+---@param str string
+---@return string
+local function strip_ansi(str)
+  return (str:gsub('\027%[[%d;]*m', ''))
+end
+
 --- Run async build and populate quickfix list
----@param cfg table Build config from detect_build()
+---@param cfg table Build config with cmd and optional efm
 local function run_build(cfg)
   local cmd_str = table.concat(cfg.cmd, ' ')
-  vim.notify('Building: ' .. cmd_str, vim.log.levels.INFO)
 
-  vim.system(cfg.cmd, {
-    text = true,
-    cwd = vim.fn.getcwd(),
-  }, vim.schedule_wrap(function(result)
-    local output = (result.stdout or '') .. (result.stderr or '')
-    local lines = vim.split(output, '\n', { trimempty = true })
+  -- Show fidget progress spinner
+  local progress = require 'fidget.progress'
+  local handle = progress.handle.create {
+    title = cmd_str,
+    message = 'Running...',
+    lsp_client = { name = 'build' },
+  }
 
-    if #lines == 0 then
-      vim.notify('Build clean — no issues found', vim.log.levels.INFO)
+  vim.system(
+    cfg.cmd,
+    {
+      text = true,
+      cwd = cfg.build_dir or vim.fn.getcwd(),
+    },
+    vim.schedule_wrap(function(result)
+      local output = strip_ansi((result.stdout or '') .. (result.stderr or ''))
+      local lines = vim.split(output, '\n', { trimempty = true })
+
+      -- Build succeeded — just finish the spinner, no quickfix
+      if result.code == 0 then
+        handle:report { message = 'Succeeded' }
+        handle:finish()
+        return
+      end
+
+      -- Build failed but no output
+      if #lines == 0 then
+        handle:report { message = 'Failed (exit ' .. result.code .. ')' }
+        handle:finish()
+        return
+      end
+
+      -- Build failed — populate quickfix with errors
+      handle:report { message = 'Failed — ' .. #lines .. ' line(s)' }
+      handle:finish()
+
+      local qf_opts = { title = 'Build: ' .. cmd_str, lines = lines }
+      if cfg.efm then
+        qf_opts.efm = cfg.efm
+      end
+      vim.fn.setqflist({}, 'r', qf_opts)
+      vim.cmd 'copen 10'
+    end)
+  )
+end
+
+--- Show make target picker and run selected target
+---@param targets string[]
+local function pick_make_target(targets)
+  -- Single target — run directly without sub-picker
+  if #targets == 1 then
+    run_build { cmd = { 'make', targets[1] } }
+    return
+  end
+
+  vim.ui.select(targets, {
+    prompt = 'Make target',
+    format_item = function(target)
+      for i, t in ipairs(targets) do
+        if t == target then
+          return i .. '. make ' .. target
+        end
+      end
+      return 'make ' .. target
+    end,
+  }, function(target)
+    if not target then
       return
     end
-
-    local qf_opts = { title = 'Build: ' .. cmd_str, lines = lines }
-    if cfg.efm then
-      qf_opts.efm = cfg.efm
-    end
-    vim.fn.setqflist({}, 'r', qf_opts)
-    vim.cmd 'copen'
-  end))
+    run_build { cmd = { 'make', target } }
+  end)
 end
 
 --- Show quickfix picker
@@ -102,19 +268,21 @@ function M.pick()
         severity = { min = vim.diagnostic.severity.WARN },
         open = true,
       }
-
     elseif choice.value == 'workspace' then
       vim.diagnostic.setqflist {
         severity = { min = vim.diagnostic.severity.WARN },
       }
-
     elseif choice.value == 'build' then
-      local cfg = detect_build()
+      local cfg, is_makefile = detect_build()
       if not cfg then
         vim.notify('No build config detected (go.mod, tsconfig.json, *.csproj, Makefile)', vim.log.levels.WARN)
         return
       end
-      run_build(cfg)
+      if is_makefile then
+        pick_make_target(cfg.targets)
+      else
+        run_build(cfg)
+      end
     end
   end)
 end
