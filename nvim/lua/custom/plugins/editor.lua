@@ -36,6 +36,9 @@ return {
         highlight = { enable = true },
         indent = { enable = true },
       }
+
+      -- Register language aliases for markdown code fence highlighting
+      vim.treesitter.language.register('c_sharp', { 'csharp', 'cs' })
     end,
   },
 
