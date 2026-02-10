@@ -26,7 +26,7 @@ return {
       -- Deduplicate LSP results and display with Telescope
       local function lsp_dedup(method)
         return function()
-          vim.lsp.buf[method] {
+          local on_list_opts = {
             on_list = function(options)
               local seen = {}
               local items = {}
@@ -50,6 +50,11 @@ return {
               end
             end,
           }
+          if method == 'references' then
+            vim.lsp.buf[method](nil, on_list_opts)
+          else
+            vim.lsp.buf[method](on_list_opts)
+          end
         end
       end
 
