@@ -4,16 +4,46 @@ local M = {}
 
 --- Detect package manager from lockfile in a directory
 ---@param dir string
----@return string[] cmd tsc command with correct runner
-local function tsc_cmd(dir)
+---@return string runner 'bun', 'pnpm', 'yarn', or 'npm'
+local function detect_pkg_runner(dir)
   if vim.fn.filereadable(dir .. '/bun.lock') == 1 or vim.fn.filereadable(dir .. '/bun.lockb') == 1 then
-    return { 'bun', 'run', 'tsc', '--noEmit', '--pretty', 'false' }
+    return 'bun'
   elseif vim.fn.filereadable(dir .. '/pnpm-lock.yaml') == 1 then
-    return { 'pnpm', 'exec', 'tsc', '--noEmit', '--pretty', 'false' }
+    return 'pnpm'
   elseif vim.fn.filereadable(dir .. '/yarn.lock') == 1 then
+    return 'yarn'
+  end
+  return 'npm'
+end
+
+--- Build tsc command using the detected package manager
+---@param dir string
+---@return string[] cmd
+local function tsc_cmd(dir)
+  local runner = detect_pkg_runner(dir)
+  if runner == 'bun' then
+    return { 'bun', 'run', 'tsc', '--noEmit', '--pretty', 'false' }
+  elseif runner == 'pnpm' then
+    return { 'pnpm', 'exec', 'tsc', '--noEmit', '--pretty', 'false' }
+  elseif runner == 'yarn' then
     return { 'yarn', 'tsc', '--noEmit', '--pretty', 'false' }
   end
   return { 'npx', 'tsc', '--noEmit', '--pretty', 'false' }
+end
+
+--- Build vite/esbuild build command using the detected package manager
+---@param dir string
+---@return string[] cmd
+local function vite_build_cmd(dir)
+  local runner = detect_pkg_runner(dir)
+  if runner == 'bun' then
+    return { 'bun', 'run', 'build' }
+  elseif runner == 'pnpm' then
+    return { 'pnpm', 'run', 'build' }
+  elseif runner == 'yarn' then
+    return { 'yarn', 'build' }
+  end
+  return { 'npm', 'run', 'build' }
 end
 
 -- Build commands keyed by root marker file
@@ -23,7 +53,12 @@ local build_configs = {
   {
     marker = 'go.mod',
     cmd = { 'go', 'vet', './...' },
-    efm = '%f:%l:%c: %m,%f:%l: %m',
+    efm = 'vet: %f:%l:%c: %m,vet: %f:%l: %m,%f:%l:%c: %m,%f:%l: %m,%-G# %.%#,%-G%.%#',
+  },
+  {
+    marker = 'vite.config.*',
+    cmd = vite_build_cmd, -- resolved at runtime from matched directory
+    efm = '%f:%l:%c: ERROR: %m,%f:%l:%c: error: %m,%f:%l:%c: warning: %m,%-G%.%#',
   },
   {
     marker = 'tsconfig.json',
@@ -208,17 +243,58 @@ local function run_build(cfg)
         qf_opts.efm = cfg.efm
       end
       vim.fn.setqflist({}, 'r', qf_opts)
-      vim.cmd 'copen 10'
+
+      -- Temporarily disable equalalways so copen doesn't equalise windows
+      local saved_ea = vim.o.equalalways
+      vim.o.equalalways = false
+
+      vim.cmd 'botright copen'
+      -- Ensure there's a window above so the quickfix isn't the sole window
+      if vim.fn.winnr '$' == 1 then
+        vim.cmd 'above new'
+        vim.cmd 'wincmd j'
+      end
+      local qf_win = vim.api.nvim_get_current_win()
+      vim.wo[qf_win].winfixheight = true
+      vim.api.nvim_win_set_height(qf_win, 10)
+
+      vim.o.equalalways = saved_ea
+
+      -- <CR> mapping to resize quickfix after jumping to error
+      vim.keymap.set('n', '<CR>', function()
+        local ea = vim.o.equalalways
+        vim.o.equalalways = false
+        vim.cmd '.cc'
+        if vim.api.nvim_win_is_valid(qf_win) then
+          vim.api.nvim_win_set_height(qf_win, 10)
+        end
+        vim.o.equalalways = ea
+      end, { buffer = true })
     end)
   )
+end
+
+--- Build a combined efm from all build_configs (most specific patterns first)
+--- Used for Makefile targets where the underlying tool is unknown
+---@return string combined errorformat
+local function combined_efm()
+  local parts = {}
+  for _, cfg in ipairs(build_configs) do
+    table.insert(parts, cfg.efm)
+  end
+  -- Append catch-all ignore for non-matching lines (status messages, decoration, etc.)
+  table.insert(parts, '%-G%.%#')
+  return table.concat(parts, ',')
 end
 
 --- Show make target picker and run selected target
 ---@param targets string[]
 local function pick_make_target(targets)
+  local efm = combined_efm()
+
   -- Single target — run directly without sub-picker
   if #targets == 1 then
-    run_build { cmd = { 'make', targets[1] } }
+    run_build { cmd = { 'make', targets[1] }, efm = efm }
     return
   end
 
@@ -236,7 +312,7 @@ local function pick_make_target(targets)
     if not target then
       return
     end
-    run_build { cmd = { 'make', target } }
+    run_build { cmd = { 'make', target }, efm = efm }
   end)
 end
 
@@ -275,7 +351,7 @@ function M.pick()
     elseif choice.value == 'build' then
       local cfg, is_makefile = detect_build()
       if not cfg then
-        vim.notify('No build config detected (go.mod, tsconfig.json, *.csproj, Makefile)', vim.log.levels.WARN)
+        vim.notify('No build config detected (go.mod, vite.config.*, tsconfig.json, *.csproj, Makefile)', vim.log.levels.WARN)
         return
       end
       if is_makefile then

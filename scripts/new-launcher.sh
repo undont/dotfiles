@@ -85,6 +85,18 @@ load_existing_launcher() {
     fi
     project_dir="${project_dir/#\$HOME/\~}"
 
+    # Detect worktree configuration
+    if grep -q 'WORKTREES_DIR=' "$file" 2>/dev/null; then
+        worktree_aware="y"
+        worktrees_dir=$(grep -m1 '^WORKTREES_DIR=' "$file" 2>/dev/null | sed 's/^WORKTREES_DIR=//' | tr -d '"' || true)
+        if [[ "$worktrees_dir" =~ :-(.+)\}$ ]]; then
+            worktrees_dir="${BASH_REMATCH[1]}"
+        fi
+        worktrees_dir="${worktrees_dir/#\$HOME/\~}"
+    else
+        worktree_aware="n"
+    fi
+
     win_names=()
     win_cmds=()
     win_splits=()
@@ -131,6 +143,11 @@ load_existing_launcher() {
 
     if [[ ${#win_names[@]} -gt 0 ]]; then
         num_windows="${#win_names[@]}"
+    fi
+
+    # Recalculate total steps with pre-loaded window count
+    if [[ -n "$num_windows" ]]; then
+        total_steps=$((5 + num_windows))
     fi
 }
 
@@ -303,10 +320,12 @@ declare -a win_names=()
 declare -a win_cmds=()
 declare -a win_splits=()
 declare -a win_split_cmds=()
+worktree_aware=""
+worktrees_dir=""
 default_names=("dev" "edit" "shell")
 
-# Calculate total steps (recalculated after step 4)
-total_steps=4
+# Calculate total steps (recalculated after step 5)
+total_steps=5
 step=1
 
 # Handle edit mode: resolve source and load existing values
@@ -322,10 +341,6 @@ if [[ -n "$edit_source" ]]; then
     load_existing_launcher "$edit_file"
     if [[ -z "$name" ]]; then
         name="$edit_source"
-    fi
-    # Recalculate total steps with pre-loaded window count
-    if [[ -n "$num_windows" ]]; then
-        total_steps=$((4 + num_windows))
     fi
 fi
 
@@ -427,12 +442,47 @@ while true; do
             ;;
 
         4)
-            # Step 4: Number of windows
+            # Step 4: Worktree awareness
             draw_header 4 "$total_steps"
+            printf "  ${GREEN}Resolve worktree directories for instances?${NC}\n"
+            printf "  ${DIM}e.g. %s-1252 → worktrees/%s-1252-*${NC}\n\n" "$name" "$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
+            show_context "Name" "$name"
+            show_context "Desc" "$description"
+            show_context "Dir" "$project_dir"
+            draw_footer "true"
+
+            local_wt=""
+            if ! ask_yn "Worktree aware?" "${worktree_aware:-n}" local_wt; then
+                step=3
+                continue
+            fi
+
+            if [[ "$local_wt" =~ ^[Yy] ]]; then
+                worktree_aware="y"
+                local_wtdir=""
+                if ! ask "Worktrees directory" "${worktrees_dir:-\$HOME/src/$name-worktrees}" local_wtdir; then
+                    step=3
+                    continue
+                fi
+                worktrees_dir="$local_wtdir"
+                worktrees_dir="${worktrees_dir/#\~\//\$HOME/}"
+            else
+                worktree_aware="n"
+                worktrees_dir=""
+            fi
+            step=5
+            ;;
+
+        5)
+            # Step 5: Number of windows
+            draw_header 5 "$total_steps"
             printf "  ${GREEN}How many windows?${NC}\n\n"
             show_context "Name" "$name"
             show_context "Desc" "$description"
             show_context "Dir" "$project_dir"
+            if [[ "$worktree_aware" == "y" ]]; then
+                show_context "Worktrees" "$worktrees_dir"
+            fi
             draw_footer "true"
 
             local_num=""
@@ -451,16 +501,16 @@ while true; do
                     win_split_cmds=()
                 fi
                 num_windows="$local_num"
-                total_steps=$((4 + num_windows))
-                step=5
+                total_steps=$((5 + num_windows))
+                step=6
             else
-                step=3
+                step=4
             fi
             ;;
 
         *)
-            # Steps 4+: Window configuration
-            local_win_idx=$((step - 4))  # 1-based window index
+            # Steps 6+: Window configuration
+            local_win_idx=$((step - 5))  # 1-based window index
 
             if [[ $local_win_idx -gt $num_windows ]]; then
                 # Past last window — done
@@ -472,6 +522,9 @@ while true; do
             show_context "Name" "$name"
             show_context "Desc" "$description"
             show_context "Dir" "$project_dir"
+            if [[ "$worktree_aware" == "y" ]]; then
+                show_context "Worktrees" "$worktrees_dir"
+            fi
 
             # Show previously configured windows
             for ((p = 1; p < local_win_idx; p++)); do
@@ -564,7 +617,7 @@ session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
         instance_tag=$'\n'"# @instance: prompt"
     fi
 
-    cat << HEADER
+    cat << PREAMBLE
 #!/usr/bin/env bash
 set -euo pipefail
 
@@ -587,26 +640,54 @@ EOF
     exit 0
 fi
 
+PREAMBLE
+
+    # Generate SESSION and PROJECT_DIR (worktree-aware or simple)
+    if [[ "$worktree_aware" == "y" ]]; then
+        worktree_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
+        cat << WTBLOCK
+SESSION="\${SESSION_NAME:-$name}"
+WORKTREES_DIR="\${${session_var}_WORKTREES:-$worktrees_dir}"
+BASE_DIR="\${${session_var}_ROOT:-$project_dir}"
+
+# Resolve project directory — check for a matching worktree when session has a suffix
+PROJECT_DIR="\$BASE_DIR"
+if [[ "\$SESSION" =~ -([0-9]+)\$ ]]; then
+    ticket_num="\${BASH_REMATCH[1]}"
+    for wt in "\$WORKTREES_DIR"/${worktree_prefix}-"\${ticket_num}"-*; do
+        if [[ -d "\$wt" ]]; then
+            PROJECT_DIR="\$wt"
+            break
+        fi
+    done
+fi
+WTBLOCK
+    else
+        cat << SIMPLE
 SESSION="\${SESSION_NAME:-$name}"
 PROJECT_DIR="\${${session_var}_ROOT:-$project_dir}"
+SIMPLE
+    fi
+
+    cat << 'VALIDATE'
 
 # Validate project directory exists
-if [[ ! -d "\$PROJECT_DIR" ]]; then
-    echo "Error: Project directory not found: \$PROJECT_DIR" >&2
+if [[ ! -d "$PROJECT_DIR" ]]; then
+    echo "Error: Project directory not found: $PROJECT_DIR" >&2
     exit 1
 fi
 
 # Check if session already exists
-if tmux has-session -t "\$SESSION" 2>/dev/null; then
-    if [[ -n "\${TMUX:-}" ]]; then
-        tmux switch-client -t "\$SESSION"
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "$SESSION"
     else
-        tmux attach-session -t "\$SESSION"
+        tmux attach-session -t "$SESSION"
     fi
     exit 0
 fi
 
-HEADER
+VALIDATE
 
     # Generate window commands
     for ((i = 0; i < ${#win_names[@]}; i++)); do
