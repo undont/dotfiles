@@ -97,8 +97,7 @@ nvim/
 
 | Plugin | Purpose |
 |--------|---------|
-| [dracula.nvim](https://github.com/Mofiqul/dracula.nvim) | Dark colourscheme |
-| [catppuccin](https://github.com/catppuccin/nvim) | Light colourscheme (latte variant) |
+| Custom colourschemes (`nvim/colors/`) | 16 themes matching dotfiles theme system |
 | [auto-dark-mode.nvim](https://github.com/f-person/auto-dark-mode.nvim) | Follows system theme |
 | [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects |
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
@@ -231,13 +230,7 @@ Search and install servers from the Mason UI, or add them to `lua/custom/plugins
 
 ### Changing Colourscheme
 
-Edit `lua/custom/plugins/ui.lua` to modify the auto-dark-mode settings or set a fixed theme:
-
-```lua
--- For a fixed theme (disable auto-dark-mode first)
-vim.cmd.colorscheme 'dracula'     -- Dark theme
-vim.cmd.colorscheme 'catppuccin-latte'  -- Light theme
-```
+Themes are managed by the dotfiles theme system. Run `theme-switch <theme>` to change — Neovim picks up the colourscheme automatically from `nvim/colors/`. No plugin installation needed.
 
 ### Adding Keybindings
 
