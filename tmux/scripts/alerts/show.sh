@@ -2,7 +2,7 @@
 # Display agent alerts for tmux status bar (Claude, OpenCode, etc.)
 # Shows one alert per session (aggregates all windows in that session)
 
-SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPT_DIR="${BASH_SOURCE%/*}"
 ALERTS_FILE="$HOME/.claude/alerts"
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 
@@ -12,9 +12,8 @@ source "$SCRIPT_DIR/../_lib/alerts.sh"
 if [[ -f "$ALERTS_FILE" && -s "$ALERTS_FILE" ]]; then
     # Filter alerts to exclude current session
     filtered_alerts=$(grep -v "^${CURRENT_SESSION}:" "$ALERTS_FILE" 2>/dev/null | sort -u)
-    count=$(echo "$filtered_alerts" | grep -c "^" | tr -d ' ')
 
-    if [[ $count -gt 0 ]]; then
+    if [[ -n "$filtered_alerts" ]]; then
         # Build associative array: session -> agents (aggregate across all windows)
         declare -A session_agents
 

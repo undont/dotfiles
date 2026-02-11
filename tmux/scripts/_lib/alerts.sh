@@ -35,16 +35,15 @@ get_agent_colour() {
     esac
 }
 
-# Get agent display icon and colour
+# Get agent display icon and colour (inlined to avoid subshell forks)
 # Usage: get_agent_display "agent_name"
 # Returns: "icon|colour"
 get_agent_display() {
-    local agent="$1"
-    local icon
-    local colour
-    icon=$(get_agent_icon "$agent")
-    colour=$(get_agent_colour "$agent")
-    echo "$icon|$colour"
+    case "$1" in
+        claude)   echo "⚡|#f1fa8c" ;;
+        opencode) echo "🔮|#bd93f9" ;;
+        *)        echo "🤖|#6272a4" ;;
+    esac
 }
 
 # Set an alert for the current window

@@ -62,6 +62,9 @@ fi
 # =============================================================================
 # Note: Additional PATH entries may exist in ~/.zprofile (added by installers)
 
+# Deduplicate PATH entries (zsh built-in — removes duplicates automatically)
+typeset -U path
+
 # Homebrew (detected location)
 export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
 
@@ -133,11 +136,32 @@ else
 fi
 
 # =============================================================================
+# CACHED EVAL HELPER
+# =============================================================================
+# Cache the output of slow eval commands (direnv, fzf) to avoid forking on
+# every shell startup. Cache is invalidated when the binary is newer than the
+# cached file (covers brew upgrade). Usage: _cached_eval <name> <command...>
+_cached_eval() {
+  local name="$1"; shift
+  local cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+  local cache_file="$cache_dir/$name.zsh"
+  local bin_path="${commands[$name]}"
+
+  if [[ -n "$bin_path" && -f "$cache_file" && "$cache_file" -nt "$bin_path" ]]; then
+    source "$cache_file"
+  else
+    [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
+    "$@" > "$cache_file"
+    source "$cache_file"
+  fi
+}
+
+# =============================================================================
 # DIRENV
 # =============================================================================
 # Automatically load/unload environment variables when entering directories
 # with .envrc files. Great for per-project env vars.
-eval "$(direnv hook zsh)"
+_cached_eval direnv direnv hook zsh
 
 # =============================================================================
 # ZSH PLUGINS
@@ -150,7 +174,7 @@ fi
 
 # fzf: fuzzy finder for files, history, and more
 # Keybindings: Ctrl+R (history), Ctrl+T (files), Opt+C (cd to directory)
-eval "$(fzf --zsh)"
+_cached_eval fzf fzf --zsh
 
 # Apply theme colours to fzf
 if [[ -f "$HOME/dotfiles/scripts/fzf-theme.sh" ]]; then
@@ -163,10 +187,28 @@ fi
 # Dynamic terminal/tab titles that show context
 # precmd: runs before each prompt (shows directory + git branch)
 # preexec: runs before each command (shows running command)
+#
+# Performance: git branch is cached in _git_branch to avoid forking
+# git rev-parse on every prompt (~28ms). Cache is refreshed on directory
+# change (chpwd) and after git commands (preexec).
+
+_git_branch=""
+
+_update_git_branch() {
+  _git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
+}
+
+# Refresh branch cache when changing directories
+chpwd() {
+  _update_git_branch
+}
+
+# Initialise cache for the first prompt
+_update_git_branch
+
 precmd() {
-  local branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
-  if [[ -n "$branch" ]]; then
-    print -Pn "\e]0;%1~ ($branch)\a"
+  if [[ -n "$_git_branch" ]]; then
+    print -Pn "\e]0;%1~ ($_git_branch)\a"
   else
     print -Pn "\e]0;%1~\a"
   fi
@@ -176,6 +218,11 @@ preexec() {
   # Extract first word safely using parameter expansion
   local cmd="${1%% *}"
   print -Pn "\e]0;${cmd}\a"
+
+  # Refresh git branch cache after git commands that may change the branch
+  case "$cmd" in
+    git|gh|tig) _update_git_branch ;;
+  esac
 }
 
 # =============================================================================
@@ -202,8 +249,6 @@ export DOTNET_CLI_TELEMETRY_OPTOUT='true'
 # =============================================================================
 # SonarScanner CLI for code quality analysis
 export SONAR_HOST_URL="https://sonarcloud.io"
-
-export PATH="$HOME/bin:$PATH"
 
 # =============================================================================
 # SSH WRAPPER
