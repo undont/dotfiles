@@ -105,7 +105,7 @@ while IFS= read -r line; do
     else
         nvim_panes+=("${display}"$'\t'"")
     fi
-done < <(tmux list-panes -a -F '#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid} #{pane_current_command}' | sort -rn)
+done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid} #{pane_current_command}' | sort -rn)
 
 # Add NVIM logo at top (green: 107)
 NVIM_GREEN="\033[38;5;107m"

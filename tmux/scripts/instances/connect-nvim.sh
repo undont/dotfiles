@@ -30,7 +30,7 @@ CURRENT_SESSION=$(tmux display-message -p '#S')
 
 # List panes in current session, sorted by last-viewed, excluding nvim panes
 # Format: timestamp window_index.pane_index<tab>window_name (command)
-pane_list=$(tmux list-panes -s -F '#{?#{@last-viewed},#{@last-viewed},0} #{window_index}.#{pane_index}	#{window_name} (#{pane_current_command})' 2>/dev/null | \
+pane_list=$(tmux list-panes -s -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{window_index}.#{pane_index}	#{window_name} (#{pane_current_command})' 2>/dev/null | \
     grep -v '(nvim)$' | \
     sort -rn | \
     cut -d' ' -f2-)

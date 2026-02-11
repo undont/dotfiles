@@ -67,7 +67,7 @@ lint-shell: ## Run ShellCheck on shell scripts
 
 lint-lua: ## Run luacheck on Neovim config
 	@printf '\033[1;36mRunning luacheck...\033[0m\n'
-	@luacheck nvim/lua/ --no-unused-args --no-max-line-length --globals vim bit
+	@luacheck nvim/lua/ --config nvim/.luacheckrc
 	@printf '\033[0;32m✓ luacheck passed\033[0m\n'
 
 theme-check: ## Run WCAG contrast checker on all themes
