@@ -155,9 +155,7 @@ end
 
 --- Setup theme integration
 ---@param opts table|nil options (currently unused, for future expansion)
-function M.setup(opts)
-  opts = opts or {}
-
+function M.setup(_opts)
   -- Apply theme on startup
   M.reload()
 

@@ -11,26 +11,6 @@ local unified = {
 
 local ns_unified = vim.api.nvim_create_namespace 'octo_unified_hl'
 
--- Own highlight groups for the unified review — immune to gitsigns overrides
-local function tint_bg(colour, amount)
-  local normal_bg = vim.api.nvim_get_hl(0, { name = 'Normal', link = false }).bg or 0x1e1e2e
-  local r1, g1, b1 = bit.rshift(normal_bg, 16), bit.band(bit.rshift(normal_bg, 8), 0xff), bit.band(normal_bg, 0xff)
-  local r2, g2, b2 = bit.rshift(colour, 16), bit.band(bit.rshift(colour, 8), 0xff), bit.band(colour, 0xff)
-  return bit.bor(bit.lshift(math.floor(r1 + (r2 - r1) * amount), 16), bit.lshift(math.floor(g1 + (g2 - g1) * amount), 8), math.floor(b1 + (b2 - b1) * amount))
-end
-
-local function set_review_highlights()
-  local add_bg = tint_bg(0x00ff00, 0.04)
-  local del_bg = tint_bg(0xff0000, 0.06)
-  local comment_fg = vim.api.nvim_get_hl(0, { name = 'Comment', link = false }).fg
-  vim.api.nvim_set_hl(0, 'OctoReviewAddLn', { bg = add_bg })
-  vim.api.nvim_set_hl(0, 'OctoReviewAddNr', { fg = '#a6e3a1', bg = add_bg })
-  vim.api.nvim_set_hl(0, 'OctoReviewDeleteVirtLn', { fg = comment_fg, bg = del_bg, strikethrough = true })
-end
-
-set_review_highlights()
-vim.api.nvim_create_autocmd('ColorScheme', { callback = set_review_highlights })
-
 -- Parse a file's patch and apply add/delete highlights to the right buffer
 local function apply_patch_highlights(file, right_bufnr)
   if not right_bufnr or not vim.api.nvim_buf_is_valid(right_bufnr) then

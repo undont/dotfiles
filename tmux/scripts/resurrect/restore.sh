@@ -379,6 +379,8 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
         fi
 
         mark_window_created "${window_number}"
+        # Prevent automatic-rename from overwriting saved names before Pass 2
+        tmux set-option -t "${SESSION_NAME}:${window_number}" automatic-rename off 2>/dev/null || true
         SESSION_CREATED=true
         continue
     fi
@@ -393,6 +395,8 @@ while IFS="${d}" read -r line_type sess_name window_number window_active window_
             tmux new-window -d -t "${SESSION_NAME}:${window_number}" -c "${dir}" 2>/dev/null || true
         fi
         mark_window_created "${window_number}"
+        # Prevent automatic-rename from overwriting saved names before Pass 2
+        tmux set-option -t "${SESSION_NAME}:${window_number}" automatic-rename off 2>/dev/null || true
     else
         # Add pane to existing window (split)
         if pane_contents_enabled && pane_contents_file_exists "$SESSION_NAME" "$window_number" "$pane_index"; then
