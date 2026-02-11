@@ -104,6 +104,7 @@ if should_install "core"; then
     echo "Required - Editor & Dev Tools:"
     echo "------------------------------"
     check "neovim" "nvim" "brew install neovim"
+    check "tree-sitter-cli" "tree-sitter" "brew install tree-sitter-cli"
     # ghostty is checked via app existence on macOS (cask installs to /Applications)
     if is_macos; then
         printf "Checking %-20s" "ghostty..."

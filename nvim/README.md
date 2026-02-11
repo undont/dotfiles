@@ -31,10 +31,13 @@ ln -sf ~/dotfiles/nvim ~/.config/nvim
 
 ### First Launch
 
+**Prerequisites:** Neovim >= 0.11, `tree-sitter-cli` (`brew install tree-sitter-cli`)
+
 On first launch, lazy.nvim will automatically:
 1. Install itself (bootstrapped by `lazy-bootstrap.lua`)
 2. Install all configured plugins
-3. Set up Mason for LSP servers
+3. Compile treesitter parsers (requires `tree-sitter` CLI)
+4. Set up Mason for LSP servers
 
 This may take a few minutes. Press `Space` to see lazy.nvim status.
 
