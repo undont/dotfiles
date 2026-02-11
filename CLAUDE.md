@@ -76,7 +76,7 @@ shellcheck -x install.sh scripts/install/*.sh scripts/_lib/*.sh
 shellcheck -x tmux/scripts/*/*.sh tmux/scripts/_lib/*.sh
 
 # Lua check on Neovim config
-luacheck nvim/lua/ --no-unused-args --no-max-line-length
+luacheck nvim/lua/ --config nvim/.luacheckrc
 ```
 
 ### Makefile Shortcuts

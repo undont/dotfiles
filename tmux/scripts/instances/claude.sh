@@ -76,7 +76,7 @@ while IFS= read -r line; do
     else
         claude_panes+=("${target} ${window_name}")
     fi
-done < <(tmux list-panes -a -F '#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
+done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
 
 # Add Claude Code ghost at top (Anthropic orange: #d97757 ≈ 173)
 echo ""

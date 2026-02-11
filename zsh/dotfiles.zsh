@@ -185,8 +185,9 @@ fi
 # TERMINAL TITLE HOOKS
 # =============================================================================
 # Dynamic terminal/tab titles that show context
-# precmd: runs before each prompt (shows directory + git branch)
-# preexec: runs before each command (shows running command)
+# _dotfiles_precmd: runs before each prompt (shows directory + git branch)
+# _dotfiles_preexec: runs before each command (shows running command)
+# Uses *_functions arrays to stack with other hooks (p10k, plugins, etc.)
 #
 # Performance: git branch is cached in _git_branch to avoid forking
 # git rev-parse on every prompt (~28ms). Cache is refreshed on directory
@@ -199,22 +200,21 @@ _update_git_branch() {
 }
 
 # Refresh branch cache when changing directories
-chpwd() {
-  _update_git_branch
-}
+chpwd_functions+=(_update_git_branch)
 
 # Initialise cache for the first prompt
 _update_git_branch
 
-precmd() {
+_dotfiles_precmd() {
   if [[ -n "$_git_branch" ]]; then
     print -Pn "\e]0;%1~ ($_git_branch)\a"
   else
     print -Pn "\e]0;%1~\a"
   fi
 }
+precmd_functions+=(_dotfiles_precmd)
 
-preexec() {
+_dotfiles_preexec() {
   # Extract first word safely using parameter expansion
   local cmd="${1%% *}"
   print -Pn "\e]0;${cmd}\a"
@@ -224,6 +224,7 @@ preexec() {
     git|gh|tig) _update_git_branch ;;
   esac
 }
+preexec_functions+=(_dotfiles_preexec)
 
 # =============================================================================
 # SECRETS & CREDENTIALS

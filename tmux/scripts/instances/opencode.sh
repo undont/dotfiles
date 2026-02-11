@@ -70,7 +70,7 @@ while IFS= read -r line; do
     else
         opencode_panes+=("${target} ${window_name}")
     fi
-done < <(tmux list-panes -a -F '#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
+done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
 
 # Add OpenCode logo at top
 # "open" in dark slate (colour 60), "code" in light blue (colour 103)
