@@ -10,4 +10,5 @@ return {
   { import = 'custom.plugins.git' },
   { import = 'custom.plugins.copilot' },
   { import = 'custom.plugins.pr-review' },
+  { import = 'custom.plugins.claude-prompt' },
 }

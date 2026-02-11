@@ -116,10 +116,10 @@ else
     fail "Should include NVIM ASCII logo"
 fi
 
-if [[ "$list_content" == *'@last-viewed'* ]]; then
-    pass "Uses @last-viewed for sorting"
+if [[ "$list_content" == *'@pane-viewed'* ]]; then
+    pass "Uses @pane-viewed for sorting"
 else
-    fail "Should use @last-viewed for activity sorting"
+    fail "Should use @pane-viewed for activity sorting"
 fi
 
 # =============================================================================

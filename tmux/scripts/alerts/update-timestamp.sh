@@ -27,8 +27,14 @@ fi
 # Ensure lock is released on exit
 trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
 
-# Update timestamp
+# Update window-level timestamp (used by window sorting)
 tmux set-option -wt "$WINDOW_ID" @last-viewed "$TIMESTAMP" 2>/dev/null || true
+
+# Update pane-level timestamp (used by instance sorting)
+PANE_ID=$(tmux display-message -t "$WINDOW_ID" -p '#{pane_id}' 2>/dev/null) || true
+if [[ -n "$PANE_ID" ]]; then
+    tmux set-option -pt "$PANE_ID" @pane-viewed "$TIMESTAMP" 2>/dev/null || true
+fi
 
 # Clear any agent alerts for this window (safety net)
 SESSION=$(tmux display-message -t "$WINDOW_ID" -p '#S' 2>/dev/null)
