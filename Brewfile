@@ -79,6 +79,7 @@ cask "dotnet-sdk"
 
 # Code Quality
 brew "shellcheck"              # Shell script linter
+brew "luacheck"               # Lua linter
 brew "sonar-scanner"
 
 # Database

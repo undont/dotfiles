@@ -123,6 +123,7 @@ if should_install "core"; then
     check "jq" "jq" "brew install jq"
     check "tree" "tree" "brew install tree"
     check "shellcheck" "shellcheck" "brew install shellcheck"
+    check "luacheck" "luacheck" "brew install luacheck"
 
     echo ""
     echo "Required - AI & Dev Tools:"

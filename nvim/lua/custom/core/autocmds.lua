@@ -36,6 +36,9 @@ function M.setup()
     end,
   })
 
+  -- Dynamic diff highlights (fugitive, diffview, octo)
+  require('custom.core.diff-highlights').setup()
+
   -- Disable swap file for Octo buffers (not needed and causes warnings)
   vim.api.nvim_create_autocmd('FileType', {
     pattern = 'octo',

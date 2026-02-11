@@ -26,9 +26,14 @@ dotfiles/
 │   └── tmux-help.txt # Keybinding help popup content
 ├── nvim/             # Neovim configuration
 │   ├── init.lua      # Entry point
+│   ├── colors/       # 15 self-contained colourschemes (no plugin deps)
+│   ├── cheatsheet.txt # Searchable keybinding reference (Space ?)
+│   ├── snippets/     # Custom LuaSnip snippets
 │   └── lua/custom/   # Modular config
-│       ├── core/     # Options, keymaps, autocmds, theme
+│       ├── core/     # Options, keymaps, autocmds, theme, quickfix, diff-highlights
 │       └── plugins/  # Plugin configurations
+├── lazygit/          # LazyGit configuration
+├── lazydocker/       # LazyDocker configuration
 ├── btop/             # System monitor configuration
 │   └── btop.conf
 ├── launchers/        # Session launch scripts (picker: prefix + p)
@@ -51,6 +56,7 @@ dotfiles/
 │   └── *.theme       # Individual theme files
 ├── docs/             # Documentation
 │   ├── INSTALLATION-GUIDE.md
+│   ├── THEME-SYSTEM.md
 │   └── TROUBLESHOOTING.md
 └── Brewfile          # Homebrew dependencies
 ```
@@ -172,6 +178,7 @@ ln -sf ~/dotfiles/karabiner/karabiner.json ~/.config/karabiner/karabiner.json
 ### Documentation
 
 - [Installation Guide](docs/INSTALLATION-GUIDE.md) - Detailed walkthrough of each installation step
+- [Theme System](docs/THEME-SYSTEM.md) - How themes work across tmux, ghostty, and neovim
 - [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
 
 ## Updating
@@ -233,12 +240,15 @@ The uninstall script uses your saved preset to determine which packages to remov
 - LSP support (TypeScript, Go, Python, Lua, C#/.NET via Roslyn, ESLint)
 - Telescope fuzzy finder with filename-first path display
 - Git integration — Fugitive (status, blame, diff), LazyGit, gitsigns
-- PR review — Octo.nvim (GitHub PRs), diffview (side-by-side diffs)
-- .NET development — easy-dotnet.nvim with Roslyn LSP and Neotest runner
+- PR review — Octo.nvim (GitHub PRs with unified diff mode), diffview (side-by-side diffs)
+- Quickfix build picker (`Space q`) — Go, TypeScript, .NET, Makefile with auto-detection
+- Test runner — Neotest with .NET, Go, and Vitest/Bun adapters
+- .NET development — easy-dotnet.nvim with Roslyn LSP
 - Markdown editing — mkdnflow.nvim (list continuation, todo toggles, table formatting)
 - GitHub Copilot (disabled for sensitive files)
+- 15 self-contained colourschemes matching the dotfiles theme system (no plugin deps)
+- Dynamic diff highlights — consistent tinted backgrounds across fugitive, diffview, and octo
 - Treesitter syntax highlighting
-- Maple custom colourscheme (theme system integration)
 
 ### AI Coding Assistants
 - Claude Code (with tmux alert integration)
@@ -280,16 +290,18 @@ Press `prefix + p` to open the launcher picker. Launchers are shell scripts that
 | Rename window | `Opt+r` |
 | Close pane | `Opt+s` |
 | Close window | `Opt+x` |
-| URL picker | `Opt+y` |
+| URL picker | `` ` y `` |
 | Undo pane/window | `Opt+u` |
 
 ### Neovim
 | Action | Keybinding |
 |--------|------------|
 | Leader | `Space` |
-| Help | `` ` h `` (in tmux) |
+| Help popup | `Space h` |
+| Cheatsheet | `Space ?` |
 | Find files | `Space sf` |
 | Live grep | `Space sg` |
 | File explorer | `Space e` |
 | Git (LazyGit) | `Space g` |
+| Build (quickfix) | `Space q` |
 | Format | `Space f` |
