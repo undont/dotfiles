@@ -30,7 +30,8 @@ brew "direnv"
 # =============================================================================
 
 # Editors
-brew "neovim"                 # >= 0.9 required for lazy.nvim
+brew "neovim"                 # >= 0.11 required for nvim-treesitter
+brew "tree-sitter-cli"        # Required by nvim-treesitter for parser compilation
 cask "visual-studio-code"
 
 # AI Coding Assistants

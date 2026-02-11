@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- Neovim: Migrated nvim-treesitter from deprecated `master` branch (`require('nvim-treesitter.configs').setup`) to new `main` branch API (`require('nvim-treesitter').install`, `vim.treesitter.start()`)
+- Brewfile: Added `tree-sitter-cli` as a dependency (required by new nvim-treesitter for parser compilation)
+- Brewfile: Updated Neovim version requirement comment from >= 0.9 to >= 0.11
+- Installer: Added `tree-sitter-cli` to core prerequisites check
+
 ## [0.2.20] - 2026-02-10
 
 ### Added
