@@ -1028,6 +1028,97 @@ EOF
 # Restore All Sessions Tests (regression test for arithmetic bug)
 # ══════════════════════════════════════════════════════════════
 
+test_window_name_restoration() {
+    section "Window Name Restoration Tests"
+
+    # Check if tmux-resurrect plugin is installed
+    if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
+        skip "Window name restoration tests require tmux-resurrect plugin"
+        return
+    fi
+
+    # Test 1: Custom window names are preserved after restore
+    setup_test_env
+    setup_test_server
+
+    $TEST_TMUX_CMD new-session -d -s "test-winnames" -n "editor"
+    $TEST_TMUX_CMD new-window -t "test-winnames" -n "server"
+    $TEST_TMUX_CMD new-window -t "test-winnames" -n "logs"
+    # Disable automatic-rename to simulate user-set names
+    $TEST_TMUX_CMD set-option -t "test-winnames:0" automatic-rename off
+    $TEST_TMUX_CMD set-option -t "test-winnames:1" automatic-rename off
+    $TEST_TMUX_CMD set-option -t "test-winnames:2" automatic-rename off
+    sleep 0.5
+
+    # Save, split, kill, restore
+    $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
+    sleep 0.5
+    bash "$SCRIPTS_DIR/resurrect/split.sh"
+    $TEST_TMUX_CMD kill-session -t "test-winnames"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-winnames"
+
+    if $TEST_TMUX_CMD has-session -t "test-winnames" 2>/dev/null; then
+        local name0 name1 name2
+        name0=$($TEST_TMUX_CMD display-message -t "test-winnames:0" -p "#{window_name}" 2>/dev/null)
+        name1=$($TEST_TMUX_CMD display-message -t "test-winnames:1" -p "#{window_name}" 2>/dev/null)
+        name2=$($TEST_TMUX_CMD display-message -t "test-winnames:2" -p "#{window_name}" 2>/dev/null)
+
+        if [[ "$name0" == "editor" ]] && [[ "$name1" == "server" ]] && [[ "$name2" == "logs" ]]; then
+            pass "Custom window names preserved after restore"
+        else
+            fail "Window names not preserved (0:$name0, 1:$name1, 2:$name2)"
+        fi
+    else
+        fail "Session restoration failed for window name test"
+    fi
+
+    cleanup_test_server
+    cleanup_test_env
+
+    # Test 2: Window names not overwritten by automatic-rename during restore
+    # This tests the race condition fix where automatic-rename is disabled
+    # in Pass 1 before names are applied in Pass 2
+    setup_test_env
+    setup_test_server
+
+    # Enable automatic-rename globally (the default that causes the race)
+    $TEST_TMUX_CMD set-option -g automatic-rename on
+
+    $TEST_TMUX_CMD new-session -d -s "test-autorename" -n "code"
+    $TEST_TMUX_CMD new-window -t "test-autorename" -n "build"
+    # Leave automatic-rename on for these windows (as saved in backup)
+    sleep 0.5
+
+    $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
+    sleep 0.5
+    bash "$SCRIPTS_DIR/resurrect/split.sh"
+    $TEST_TMUX_CMD kill-session -t "test-autorename"
+
+    # Restore with global automatic-rename on (triggers the race condition)
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-autorename"
+    sleep 0.3
+
+    if $TEST_TMUX_CMD has-session -t "test-autorename" 2>/dev/null; then
+        local aname0 aname1
+        aname0=$($TEST_TMUX_CMD display-message -t "test-autorename:0" -p "#{window_name}" 2>/dev/null)
+        aname1=$($TEST_TMUX_CMD display-message -t "test-autorename:1" -p "#{window_name}" 2>/dev/null)
+
+        if [[ "$aname0" == "code" ]] && [[ "$aname1" == "build" ]]; then
+            pass "Window names survive automatic-rename race condition"
+        else
+            fail "Automatic-rename overwrote window names (0:$aname0, 1:$aname1)"
+        fi
+    else
+        fail "Session restoration failed for automatic-rename test"
+    fi
+
+    # Reset global setting
+    $TEST_TMUX_CMD set-option -ug automatic-rename
+
+    cleanup_test_server
+    cleanup_test_env
+}
+
 test_restore_all_sessions() {
     section "Restore All Sessions Tests"
 
@@ -1146,6 +1237,7 @@ test_cleanup_trap
 test_non_consecutive_windows
 test_pane_readiness
 test_fuzzy_process_matching
+test_window_name_restoration
 test_restore_all_sessions
 
 section "Test Summary"

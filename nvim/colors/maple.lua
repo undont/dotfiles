@@ -130,24 +130,12 @@ hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
 hl('Todo', { fg = colors.yellow, bg = colors.bg_secondary, bold = true })
 
--- Diff
-hl('DiffAdd', { fg = colors.green, bg = colors.line_highlight })
-hl('DiffChange', { fg = colors.yellow, bg = colors.line_highlight })
-hl('DiffDelete', { fg = colors.red, bg = colors.line_highlight })
-hl('DiffText', { fg = colors.cyan, bg = colors.line_highlight, bold = true })
-
 -- Git signs
 hl('GitSignsAdd', { fg = colors.green })
 hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
-hl('GitSignsAddLn', { bg = '#312f1f' })
-hl('GitSignsChangeLn', { bg = '#3a2f1c' })
-hl('GitSignsDeleteLn', { bg = '#38261d' })
-hl('GitSignsAddNr', { fg = colors.green, bg = '#312f1f' })
-hl('GitSignsChangeNr', { fg = colors.yellow, bg = '#3a2f1c' })
-hl('GitSignsDeleteNr', { fg = colors.red, bg = '#38261d' })
 
 -- Diagnostics
 hl('DiagnosticError', { fg = colors.red })

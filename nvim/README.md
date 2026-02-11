@@ -43,6 +43,7 @@ This may take a few minutes. Press `Space` to see lazy.nvim status.
 ```
 nvim/
 ├── init.lua                           # Entry point - loads core config and plugins
+├── colors/                            # 15 self-contained colourschemes (no plugin deps)
 ├── cheatsheet.txt                     # Custom cheatsheet for Space ? (searchable)
 ├── snippets/                          # Custom LuaSnip snippets
 │   └── all.lua                        # Snippets available in all filetypes
@@ -51,7 +52,10 @@ nvim/
     │   ├── core/
     │   │   ├── options.lua            # Neovim options (line numbers, tabs, etc.)
     │   │   ├── keymaps.lua            # Custom keybindings and help popup
-    │   │   └── autocmds.lua           # Autocommands (highlighting on yank, etc.)
+    │   │   ├── autocmds.lua           # Autocommands (highlighting on yank, etc.)
+    │   │   ├── theme.lua              # Theme integration (file watcher, auto-reload)
+    │   │   ├── quickfix.lua           # Build picker and quickfix helpers
+    │   │   └── diff-highlights.lua    # Dynamic diff/gitsigns tinted backgrounds
     │   ├── plugins/
     │   │   ├── init.lua               # Plugin loader
     │   │   ├── ui.lua                 # Theme, statusline, which-key, todo-comments

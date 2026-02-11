@@ -8,7 +8,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.2.20] - 2026-02-10
 
+### Added
+- Neovim: Dynamic diff highlights module (`diff-highlights.lua`) — computes tinted backgrounds from the active theme's Normal bg, consistent across fugitive, diffview, and octo
+- Tmux: Window name restoration tests (custom names preserved, automatic-rename race condition covered)
+- Brewfile: `luacheck` added as a Homebrew dependency
+- Installer: `luacheck` added to core prerequisites check
+
 ### Changed
+- Neovim: Removed hardcoded `Diff*` and `GitSigns*Ln/Nr` highlights from all 15 colourscheme files (now computed dynamically)
+- Neovim: Moved Octo review highlight setup from `pr-review.lua` to shared `diff-highlights.lua`
+- Makefile: `luacheck` target adds `--globals vim bit` for Neovim/LuaJIT compatibility
 - Zsh: Shell startup performance — cached eval for direnv and fzf hooks, git branch caching for terminal titles, PATH deduplication via `typeset -U`
 - Tmux: Status bar performance — inlined agent display function to avoid subshell forks, added 30s result cache for dotfiles sync status
 - Neovim: Lazy-loading for guess-indent (`BufReadPost`), cheatsheet (`cmd`/`keys`), and fidget.nvim (`LspAttach`)
@@ -17,6 +26,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 - Neovim: Dotnet solution filter now excludes all build variant solutions (`.ci.sln`, `.build.slnx`, `.test.sln`) instead of only `.ci.sln`
 - Tmux: Alert show script used unreliable line count for empty check — replaced with `-n` string test
+- Tmux: Window names overwritten by `automatic-rename` during resurrect restore — disabled per-window in Pass 1 before names are applied in Pass 2
 
 ## [0.2.19] - 2026-02-10
 
