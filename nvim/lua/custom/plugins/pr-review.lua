@@ -122,7 +122,6 @@ return {
       { '<leader>pb', '<cmd>Octo pr browser<CR>', desc = '[P]R [B]rowser' },
       { '<leader>py', '<cmd>Octo pr url<CR>', desc = '[P]R [Y]ank URL' },
       { '<leader>pk', '<cmd>Octo pr checks<CR>', desc = '[P]R chec[K]s' },
-      { '<leader>pn', '<cmd>Octo pr changes<CR>', desc = '[P]R cha[N]ged files' },
       { '<leader>pO', '<cmd>Octo pr checkout<CR>', desc = '[P]R check[O]ut' },
       { '<leader>pR', '<cmd>Octo pr ready<CR>', desc = '[P]R [R]eady' },
       { '<leader>pD', '<cmd>Octo pr draft<CR>', desc = '[P]R [D]raft' },
@@ -152,6 +151,11 @@ return {
           review_thread = {
             select_next_entry = { lhs = ']f', desc = 'move to next changed file' },
             select_prev_entry = { lhs = '[f', desc = 'move to previous changed file' },
+          },
+          submit_win = {
+            approve_review = { lhs = '<C-a>', desc = 'approve review', mode = { 'n', 'i' } },
+            comment_review = { lhs = '<C-m>', desc = 'comment review', mode = { 'n', 'i' } },
+            request_changes = { lhs = '<C-r>', desc = 'request changes review', mode = { 'n', 'i' } },
           },
         },
       }

@@ -121,7 +121,6 @@ Close PR | <leader>pX
 Open in browser | <leader>pb
 Yank PR URL | <leader>py
 CI checks | <leader>pk
-Changed files | <leader>pn
 Checkout branch | <leader>pO
 Mark ready | <leader>pR
 Convert to draft | <leader>pD
