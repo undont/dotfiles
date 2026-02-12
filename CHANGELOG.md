@@ -10,6 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Launcher picker: Settings panel (`s` key) to configure `DEV_ROOT` and `PROJECTS_ROOT` from within the picker
+- Neovim: `<leader>pC` to close Octo review, `<leader>pX` to close PR
 - Launcher picker: New directory helper (`new-dir.sh`) with root picker for `DEV_ROOT`, `PROJECTS_ROOT`, or custom path
 - `dotfiles set dev|projects <dir>` CLI command with zsh tab completion
 - `scripts/_lib/common.sh`: `update_zshrc_export()` helper for safe `~/.zshrc` export updates
@@ -23,11 +24,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Neovim: IDE0079 diagnostic filter scoped to C# filetype in `dotnet.lua` (was global in `lsp.lua`)
 - Neovim: Roslyn LSP `auto_refresh_codelens` disabled
 - Neovim: PR review keybinding `<leader>ps` → `<leader>pf` (Find), added `<leader>psm` (squash merge)
-- Neovim: Octo unified diff always runs original `show_diff` first before applying layout
+- Neovim: Octo uses standard side-by-side diff (removed custom unified diff mode)
+- Neovim: Octo `enable_builtin` disabled, `mappings_disable_default` enabled for cleaner keybinding control
+- Neovim: Diff highlights no longer set Octo-specific highlight groups (uses core Vim diff groups)
 
 ### Removed
 - `scripts/new-launcher.sh` (moved to `tmux/scripts/launchers/new.sh`)
 - Health check: Removed `dana` command check
+- Neovim: Custom unified review mode (toggle, hunk navigation, patch highlight parsing)
+- Neovim: `<localleader>u` unified diff toggle and `]c`/`[c` hunk navigation in Octo reviews
 
 ## [0.2.20] - 2026-02-10
 

@@ -116,8 +116,8 @@ Submit review | <leader>pm
 Approve PR | <leader>pp
 Add comment | <leader>pa
 PR comments | <leader>pc
-Toggle unified/split diff | <localleader>u
-Next/prev changed line | ]c / [c
+Close review | <leader>pC
+Close PR | <leader>pX
 Next/prev changed file | ]f / [f
 
 ## debug @debug
