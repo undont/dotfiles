@@ -12,8 +12,10 @@ set -euo pipefail
 #        new-launcher.sh --edit SOURCE [name]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
+# shellcheck source=tmux/scripts/_lib/common.sh
+source "$SCRIPT_DIR/../_lib/common.sh"
 # shellcheck source=scripts/_lib/common.sh
-source "$SCRIPT_DIR/_lib/common.sh"
+source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 
@@ -368,7 +370,7 @@ if [[ -n "$name" ]]; then
         while true; do
             read -rsn1 _err_key
             case "$_err_key" in
-                r|' '|'') exec "$SCRIPT_DIR/../tmux/scripts/launchers/prompt.sh" ;;
+                r|' '|'') exec "$SCRIPT_DIR/prompt.sh" ;;
                 q|$'\x1b') exit 0 ;;
             esac
         done
@@ -394,9 +396,9 @@ while true; do
             else
                 # ctrl+b on step 1 — go back to name prompt
                 if [[ -n "$edit_source" ]]; then
-                    exec "$SCRIPT_DIR/../tmux/scripts/launchers/prompt.sh" --edit "$edit_source"
+                    exec "$SCRIPT_DIR/prompt.sh" --edit "$edit_source"
                 fi
-                exec "$SCRIPT_DIR/../tmux/scripts/launchers/prompt.sh"
+                exec "$SCRIPT_DIR/prompt.sh"
             fi
             ;;
 
@@ -423,22 +425,62 @@ while true; do
             ;;
 
         3)
-            # Step 3: Project directory
+            # Step 3: Project directory (inline fzf picker)
+            load_fzf_theme
             draw_header 3 "$total_steps"
             printf "  ${GREEN}Where is the project?${NC}\n\n"
             show_context "Name" "$name"
             show_context "Desc" "$description"
-            draw_footer "true"
+            printf "\n"
 
-            local_dir=""
-            if ask "Project directory" "${project_dir:-~/src/$name}" local_dir; then
-                project_dir="$local_dir"
-                # Expand ~ for template but keep $HOME in generated script
-                project_dir="${project_dir/#\~\//\$HOME/}"
-                step=4
-            else
-                step=2
+            local_default_dir="${project_dir:-~/src/$name}"
+
+            local_fzf_result=""
+            local_fzf_result=$(list_project_dirs | fzf \
+                --print-query \
+                --query="$local_default_dir" \
+                --prompt='  Directory: ' \
+                --height=~60% \
+                --layout=reverse \
+                --no-info \
+                --pointer='▸' \
+                --bind 'enter:accept' \
+                --bind 'esc:abort' \
+                2>/dev/null) || {
+                    # esc/abort → go back to step 2
+                    step=2
+                    continue
+                }
+
+            # --print-query: line 1 = query, line 2 = selected item
+            local_query=$(printf '%s' "$local_fzf_result" | sed -n '1p' | sed 's/^[[:space:]]*//')
+            local_selected=$(printf '%s' "$local_fzf_result" | sed -n '2p' | sed 's/^[[:space:]]*//')
+            local_dir="${local_selected:-$local_query}"
+
+            if [[ -z "$local_dir" ]]; then
+                local_dir="$local_default_dir"
             fi
+
+            # Check if directory exists (expand ~ for the check)
+            local_expanded="${local_dir/#\~/$HOME}"
+            if [[ ! -d "$local_expanded" ]]; then
+                printf "\n"
+                printf "  ${YELLOW}Directory not found:${NC} %s\n" "$local_dir"
+                local_create=""
+                if ask_yn "Create it?" "y" local_create; then
+                    if [[ "$local_create" =~ ^[Yy] ]]; then
+                        mkdir -p "$local_expanded"
+                    fi
+                else
+                    # ctrl+b → stay on step 3
+                    continue
+                fi
+            fi
+
+            project_dir="$local_dir"
+            # Expand ~ for template but keep $HOME in generated script
+            project_dir="${project_dir/#\~\//\$HOME/}"
+            step=4
             ;;
 
         4)

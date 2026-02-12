@@ -215,7 +215,6 @@ if should_install "core"; then
     mkdir -p "$HOME/.config/btop"
     create_link "$DOTFILES_DIR/btop/btop.conf" "$HOME/.config/btop/btop.conf"
 fi
-
 # Launchers (core)
 if should_install "core"; then
     echo ""

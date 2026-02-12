@@ -203,12 +203,6 @@ if should_install "core"; then
         echo "  Add ~/.local/launchers to your PATH"
     fi
 
-    if command_exists dana; then
-        printf "Checking %-30s${GREEN}OK${NC}\n" "dana command"
-    else
-        printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "dana command"
-        echo "  Add ~/.local/launchers to your PATH"
-    fi
 fi
 
 echo ""

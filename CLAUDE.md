@@ -172,7 +172,7 @@ dotfiles/
 ├── nvim/                 # Neovim configuration (kickstart.nvim based)
 │   ├── init.lua          # Entry point
 │   └── lua/custom/       # Modular config (core/, plugins/)
-├── launchers/            # Session launch scripts (tnew, dana, code)
+├── launchers/            # Session launch scripts (tnew)
 ├── hammerspoon/          # macOS window automation
 ├── ghostty/              # Terminal emulator config (config.template for theming)
 ├── karabiner/            # Keyboard customisation
@@ -246,7 +246,7 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - **sessions/**: `list.sh`, `new.sh`, `rename.sh`, `kill.sh`, `undo.sh` - Session management with fzf integration
 - **windows/**: `list.sh`, `rename.sh`, `kill.sh`, `undo.sh`, `duplicate.sh`, `move.sh` - Window operations
 - **panes/**: `kill.sh`, `undo.sh` - Pane management
-- **launchers/**: `list.sh`, `picker.sh`, `run.sh`, `prompt.sh`, `delete.sh` - Session launcher system
+- **launchers/**: `list.sh`, `picker.sh`, `run.sh`, `prompt.sh`, `new.sh`, `new-dir.sh`, `settings.sh`, `delete.sh` - Session launcher system
 - **instances/**: `claude.sh`, `opencode.sh`, `nvim.sh`, `new.sh`, `kill.sh`, `connect-nvim.sh` - Process instance management (list, create, kill)
 - **alerts/**: `show.sh`, `clear.sh`, `update-rename.sh`, `update-timestamp.sh` - Agent alert system for status bar
 - **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions

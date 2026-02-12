@@ -18,6 +18,10 @@ require('custom.core.autocmds').setup()
 -- Bootstrap and load plugins
 require('custom.lazy-bootstrap').setup()
 
+-- Apply colourscheme before plugins load so gitsigns, diffview, etc.
+-- pick up the correct highlight groups during their own setup.
+require('custom.core.theme').setup()
+
 require('lazy').setup({
   -- Custom plugins
   { import = 'custom.plugins' },
@@ -42,12 +46,4 @@ require('lazy').setup({
       lazy = '💤 ',
     },
   },
-})
-
--- Load dotfiles theme integration (after plugins are loaded)
-vim.api.nvim_create_autocmd('User', {
-  pattern = 'VeryLazy',
-  callback = function()
-    require('custom.core.theme').setup()
-  end,
 })

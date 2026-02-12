@@ -116,8 +116,17 @@ Submit review | <leader>pm
 Approve PR | <leader>pp
 Add comment | <leader>pa
 PR comments | <leader>pc
-Toggle unified/split diff | <localleader>u
-Next/prev changed line | ]c / [c
+Close review | <leader>pC
+Close PR | <leader>pX
+Open in browser | <leader>pb
+Yank PR URL | <leader>py
+CI checks | <leader>pk
+Checkout branch | <leader>pO
+Mark ready | <leader>pR
+Convert to draft | <leader>pD
+Discard review | <leader>pd
+Thread resolve | <leader>pt
+Thread unresolve | <leader>pT
 Next/prev changed file | ]f / [f
 
 ## debug @debug

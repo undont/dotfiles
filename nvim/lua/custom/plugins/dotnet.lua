@@ -9,12 +9,27 @@ return {
   },
   ft = { 'cs', 'fsharp', 'vb' },
   config = function()
+    -- Filter IDE0079 (Remove unnecessary suppression) from Roslyn diagnostics.
+    -- Roslyn false-positives on pragmas for third-party analysers (SonarAnalyzer, etc.)
+    -- because it doesn't recognise their rule IDs (S107, S3776, etc.).
+    -- Wraps vim.diagnostic.set to intercept both push and pull diagnostics.
+    local orig_diag_set = vim.diagnostic.set
+    vim.diagnostic.set = function(namespace, bufnr, diagnostics, opts)
+      if bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].filetype == 'cs' then
+        diagnostics = vim.tbl_filter(function(d)
+          return d.code ~= 'IDE0079'
+        end, diagnostics)
+      end
+      return orig_diag_set(namespace, bufnr, diagnostics, opts)
+    end
+
     require('easy-dotnet').setup {
       -- Use built-in Roslyn LSP (replaces OmniSharp)
       -- Requires Neovim 0.11+
       lsp = {
         enabled = true,
         roslynator_enabled = true,
+        auto_refresh_codelens = false,
       },
       -- Keep test_runner for buffer signs (test indicators in gutter)
       test_runner = {
