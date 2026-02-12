@@ -35,6 +35,21 @@ return {
         defaults = {
           -- Results show full relative path (default behaviour)
           path_display = { 'filename_first' },
+          file_ignore_patterns = {
+            '%.git/',
+            '%.DS_Store',
+          },
+        },
+        pickers = {
+          find_files = {
+            hidden = true,
+          },
+          live_grep = {
+            additional_args = { '--hidden' },
+          },
+          grep_string = {
+            additional_args = { '--hidden' },
+          },
         },
         extensions = {
           ['ui-select'] = {

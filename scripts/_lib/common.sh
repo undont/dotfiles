@@ -165,6 +165,73 @@ sanitise_launcher_name() {
     printf '%s' "$raw"
 }
 
+# Update or add an export line in ~/.zshrc
+# Usage: update_zshrc_export "VAR_NAME" "value"
+# - Replaces existing `export VAR_NAME=...` line
+# - If not found, appends after the "YOUR PERSONAL CONFIGURATION" section marker
+# - Also auto-updates PROJECT_DIRS when DEV_ROOT or PROJECTS_ROOT is changed
+update_zshrc_export() {
+    local var_name="$1"
+    local value="$2"
+    local zshrc="$HOME/.zshrc"
+
+    if [[ ! -f "$zshrc" ]]; then
+        error "$HOME/.zshrc not found"
+        return 1
+    fi
+
+    # Check if the export line already exists
+    if grep -q "^export ${var_name}=" "$zshrc"; then
+        # Replace existing line
+        sed -i '' "s|^export ${var_name}=.*|export ${var_name}=\"${value}\"|" "$zshrc"
+    else
+        # Append after the "YOUR PERSONAL CONFIGURATION" section marker
+        local marker="YOUR PERSONAL CONFIGURATION"
+        if grep -q "$marker" "$zshrc"; then
+            # Find the marker line and append after the comment block
+            local line_num
+            line_num=$(grep -n "$marker" "$zshrc" | head -1 | cut -d: -f1)
+            # Skip past the comment block (lines starting with #) after the marker
+            local total_lines
+            total_lines=$(wc -l < "$zshrc" | tr -d ' ')
+            local insert_after=$line_num
+            for ((i = line_num + 1; i <= total_lines; i++)); do
+                local line
+                line=$(sed -n "${i}p" "$zshrc")
+                if [[ "$line" =~ ^#.*$ ]] || [[ -z "$line" ]]; then
+                    insert_after=$i
+                else
+                    break
+                fi
+            done
+            sed -i '' "${insert_after}a\\
+export ${var_name}=\"${value}\"
+" "$zshrc"
+        else
+            # No marker found — append to end
+            printf '\nexport %s="%s"\n' "$var_name" "$value" >> "$zshrc"
+        fi
+    fi
+
+    # Auto-update PROJECT_DIRS when DEV_ROOT or PROJECTS_ROOT changes
+    if [[ "$var_name" == "DEV_ROOT" || "$var_name" == "PROJECTS_ROOT" ]]; then
+        # shellcheck disable=SC2016
+        local project_dirs_line='export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT"'
+        if grep -q '^export PROJECT_DIRS=' "$zshrc"; then
+            sed -i '' "s|^export PROJECT_DIRS=.*|${project_dirs_line}|" "$zshrc"
+        else
+            # Add PROJECT_DIRS after the last of DEV_ROOT/PROJECTS_ROOT
+            local last_root_line
+            last_root_line=$(grep -n '^export \(DEV_ROOT\|PROJECTS_ROOT\)=' "$zshrc" | tail -1 | cut -d: -f1)
+            if [[ -n "$last_root_line" ]]; then
+                sed -i '' "${last_root_line}a\\
+${project_dirs_line}
+" "$zshrc"
+            fi
+        fi
+    fi
+}
+
 # Get the script directory (for relative sourcing)
 get_script_dir() {
     cd "$(dirname "${BASH_SOURCE[1]}")" && pwd

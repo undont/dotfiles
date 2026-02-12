@@ -256,3 +256,24 @@ is_pane_running() {
     # Filter out stopped/suspended processes (state 'T')
     [[ "$(ps -o state= -p "$pid" 2>/dev/null)" != T* ]]
 }
+
+# List project directories from PROJECT_DIRS (colon-separated, like PATH)
+# Outputs paths with ~ prefix for display, one per line
+# Uses fd if available, falls back to find
+list_project_dirs() {
+    local project_dirs="${PROJECT_DIRS:-$HOME/src}"
+    local roots
+    IFS=':' read -ra roots <<< "$project_dirs"
+    for root in "${roots[@]}"; do
+        [[ -n "$root" ]] || continue
+        root="${root/#\~/$HOME}"
+        [[ -d "$root" ]] || continue
+        if command -v fd &>/dev/null; then
+            fd --type d --max-depth 1 . "$root" 2>/dev/null
+        else
+            find "$root" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
+        fi
+    done | while IFS= read -r d; do
+        printf '%s\n' "${d/#$HOME/\~}"
+    done
+}

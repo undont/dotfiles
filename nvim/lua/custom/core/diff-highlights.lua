@@ -27,11 +27,7 @@ function M.apply()
   local del_bg = tint(0xff0000, 0.14)
   local text_bg = tint(0xffff00, 0.22)
 
-  -- Octo review overlays existing content so uses subtler tints
-  local octo_add_bg = tint(0x00ff00, 0.04)
-  local octo_del_bg = tint(0xff0000, 0.06)
-
-  -- Core Vim diff groups (used by fugitive, diffview)
+  -- Core Vim diff groups (used by fugitive, diffview, octo)
   vim.api.nvim_set_hl(0, 'DiffAdd', { bg = add_bg })
   vim.api.nvim_set_hl(0, 'DiffChange', { bg = change_bg })
   vim.api.nvim_set_hl(0, 'DiffDelete', { bg = del_bg })
@@ -50,12 +46,6 @@ function M.apply()
   vim.api.nvim_set_hl(0, 'GitSignsAddNr', { fg = green_fg, bg = add_bg })
   vim.api.nvim_set_hl(0, 'GitSignsChangeNr', { fg = yellow_fg, bg = change_bg })
   vim.api.nvim_set_hl(0, 'GitSignsDeleteNr', { fg = red_fg, bg = del_bg })
-
-  -- Octo unified review highlights
-  local comment_fg = vim.api.nvim_get_hl(0, { name = 'Comment', link = false }).fg
-  vim.api.nvim_set_hl(0, 'OctoReviewAddLn', { bg = octo_add_bg })
-  vim.api.nvim_set_hl(0, 'OctoReviewAddNr', { fg = green_fg, bg = octo_add_bg })
-  vim.api.nvim_set_hl(0, 'OctoReviewDeleteVirtLn', { fg = comment_fg, bg = octo_del_bg, strikethrough = true })
 end
 
 function M.setup()

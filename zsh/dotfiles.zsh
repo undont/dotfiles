@@ -349,6 +349,7 @@ tattach() {
 # Development tools
 alias gols="ls ~/go/bin"               # List installed Go binaries
 alias git-prune="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
+alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"  # Fix stale plugin cache
 
 # Homebrew update
 alias brewup="brew update && brew upgrade"
@@ -379,12 +380,34 @@ _dotfiles() {
     'update:Pull latest changes and re-run installer'
     'status:Show sync status and quick health summary'
     'health:Run full health check'
+    'set:Configure project directories (dev, projects)'
     'edit:Open dotfiles directory in $EDITOR'
     'cd:Print dotfiles path'
     'sync:Fetch from origin and show what'\''s changed'
     'help:Show help message'
   )
-  _describe 'dotfiles command' commands
+
+  # Handle subcommand completions
+  if (( CURRENT == 2 )); then
+    _describe 'dotfiles command' commands
+  elif (( CURRENT == 3 )); then
+    case "${words[2]}" in
+      set)
+        local -a targets
+        targets=(
+          'dev:Set DEV_ROOT directory'
+          'projects:Set PROJECTS_ROOT directory'
+        )
+        _describe 'set target' targets
+        ;;
+    esac
+  elif (( CURRENT == 4 )); then
+    case "${words[2]}" in
+      set)
+        _files -/
+        ;;
+    esac
+  fi
 }
 compdef _dotfiles dotfiles
 

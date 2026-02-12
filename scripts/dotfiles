@@ -6,6 +6,7 @@
 #   update    Pull latest changes and re-run installer
 #   status    Show sync status and quick health summary
 #   health    Run full health check
+#   set       Configure project directories (DEV_ROOT, PROJECTS_ROOT)
 #   edit      Open dotfiles directory in $EDITOR
 #   cd        Print dotfiles path (use: cd "$(dotfiles cd)")
 #   sync      Fetch from origin and show what's changed
@@ -212,6 +213,61 @@ cmd_theme() {
     esac
 }
 
+# ─────────────────────────────────────────
+# Set configuration
+# ─────────────────────────────────────────
+cmd_set() {
+    local target="${1:-}"
+    local dir="${2:-}"
+
+    if [[ -z "$target" ]]; then
+        error "Usage: dotfiles set <dev|projects> <directory>"
+        echo ""
+        echo "Examples:"
+        echo "  dotfiles set dev ~/src"
+        echo "  dotfiles set projects ~/playground"
+        return 1
+    fi
+
+    local var_name
+    case "$target" in
+        dev)
+            var_name="DEV_ROOT"
+            ;;
+        projects)
+            var_name="PROJECTS_ROOT"
+            ;;
+        *)
+            error "Unknown target: $target (use 'dev' or 'projects')"
+            return 1
+            ;;
+    esac
+
+    if [[ -z "$dir" ]]; then
+        error "Directory argument required"
+        echo "Usage: dotfiles set $target <directory>"
+        return 1
+    fi
+
+    # Expand ~ and resolve to absolute path
+    dir="${dir/#\~/$HOME}"
+    if [[ -d "$dir" ]]; then
+        dir=$(cd "$dir" && pwd)
+    elif [[ -d "$(dirname "$dir")" ]]; then
+        dir=$(cd "$(dirname "$dir")" && pwd)/$(basename "$dir")
+    fi
+
+    # Store with $HOME for portability
+    local stored_value="\$HOME${dir#"$HOME"}"
+
+    update_zshrc_export "$var_name" "$stored_value"
+
+    success "$var_name set to $dir"
+    printf "  ${GREY}Updated ~/.zshrc${NC}\n"
+    echo ""
+    info "Run 'source ~/.zshrc' or open a new shell to apply."
+}
+
 cmd_help() {
     print_logo
     cat << 'EOF'
@@ -223,6 +279,9 @@ Commands:
   update    Pull latest changes and re-run installer with saved preset
   status    Show sync status, preset, and local changes
   health    Run full health check (symlinks, plugins, secrets)
+  set       Configure project directories
+            dotfiles set dev <dir>       - Set DEV_ROOT in ~/.zshrc
+            dotfiles set projects <dir>  - Set PROJECTS_ROOT in ~/.zshrc
   theme     Manage colour themes
             dotfiles theme list          - List available themes
             dotfiles theme current       - Show current theme
@@ -236,6 +295,7 @@ Examples:
   dotfiles status          # Check if updates are available
   dotfiles update          # Pull and re-install
   dotfiles sync            # Preview incoming changes
+  dotfiles set dev ~/src   # Set DEV_ROOT for launcher picker
   dotfiles theme list      # Show available themes
   dotfiles theme dracula   # Switch to Dracula theme
   cd "$(dotfiles cd)"      # Navigate to dotfiles directory
@@ -259,6 +319,10 @@ main() {
             ;;
         health)
             cmd_health
+            ;;
+        set)
+            shift
+            cmd_set "$@"
             ;;
         theme)
             shift

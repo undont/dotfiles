@@ -154,8 +154,7 @@ local function stop_watcher()
 end
 
 --- Setup theme integration
----@param opts table|nil options (currently unused, for future expansion)
-function M.setup(_opts)
+function M.setup()
   -- Apply theme on startup
   M.reload()
 
