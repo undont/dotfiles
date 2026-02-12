@@ -130,11 +130,6 @@ return {
       { '<leader>pd', '<cmd>Octo review discard<CR>', desc = '[P]R review [D]iscard' },
       { '<leader>pt', '<cmd>Octo thread resolve<CR>', desc = '[P]R [T]hread resolve' },
       { '<leader>pT', '<cmd>Octo thread unresolve<CR>', desc = '[P]R [T]hread unresolve' },
-      -- Comment/people/labels
-      { '<leader>pS', '<cmd>Octo comment suggest<CR>', desc = '[P]R [S]uggest', mode = { 'n', 'v' } },
-      { '<leader>pv', '<cmd>Octo reviewer add<CR>', desc = '[P]R re[V]iewer add' },
-      { '<leader>pla', '<cmd>Octo label add<CR>', desc = '[P]R [L]abel [A]dd' },
-      { '<leader>plr', '<cmd>Octo label remove<CR>', desc = '[P]R [L]abel [R]emove' },
     },
     config = function()
       vim.treesitter.language.register('markdown', 'octo')
