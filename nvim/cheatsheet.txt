@@ -118,6 +118,20 @@ Add comment | <leader>pa
 PR comments | <leader>pc
 Close review | <leader>pC
 Close PR | <leader>pX
+Open in browser | <leader>pb
+Yank PR URL | <leader>py
+CI checks | <leader>pk
+Changed files | <leader>pn
+Checkout branch | <leader>pO
+Mark ready | <leader>pR
+Convert to draft | <leader>pD
+Discard review | <leader>pd
+Thread resolve | <leader>pt
+Thread unresolve | <leader>pT
+Suggest comment | <leader>pS
+Add reviewer | <leader>pv
+Label add | <leader>pla
+Label remove | <leader>plr
 Next/prev changed file | ]f / [f
 
 ## debug @debug

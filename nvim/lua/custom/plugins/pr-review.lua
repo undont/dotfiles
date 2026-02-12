@@ -60,13 +60,30 @@ return {
         end
       end
     end,
-    opts = {
-      enhanced_diff_hl = true,
-      view = {
-        default = { layout = 'diff2_horizontal' },
-        merge_tool = { layout = 'diff3_mixed' },
-      },
-    },
+    opts = function()
+      local actions = require 'diffview.actions'
+      return {
+        enhanced_diff_hl = true,
+        view = {
+          default = { layout = 'diff2_horizontal' },
+          merge_tool = { layout = 'diff3_mixed' },
+        },
+        keymaps = {
+          view = {
+            { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
+            { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+          },
+          file_panel = {
+            { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
+            { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+          },
+          file_history_panel = {
+            { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
+            { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+          },
+        },
+      }
+    end,
   },
 
   -- Octo: GitHub PR review from within Neovim
@@ -101,6 +118,23 @@ return {
       { '<leader>pc', '<cmd>Octo pr comments<CR>', desc = '[P]R [C]omments' },
       { '<leader>pC', '<cmd>Octo review close<CR>', desc = '[P]R review [C]lose' },
       { '<leader>pX', '<cmd>Octo pr close<CR>', desc = '[P]R close' },
+      -- PR actions
+      { '<leader>pb', '<cmd>Octo pr browser<CR>', desc = '[P]R [B]rowser' },
+      { '<leader>py', '<cmd>Octo pr url<CR>', desc = '[P]R [Y]ank URL' },
+      { '<leader>pk', '<cmd>Octo pr checks<CR>', desc = '[P]R chec[K]s' },
+      { '<leader>pn', '<cmd>Octo pr changes<CR>', desc = '[P]R cha[N]ged files' },
+      { '<leader>pO', '<cmd>Octo pr checkout<CR>', desc = '[P]R check[O]ut' },
+      { '<leader>pR', '<cmd>Octo pr ready<CR>', desc = '[P]R [R]eady' },
+      { '<leader>pD', '<cmd>Octo pr draft<CR>', desc = '[P]R [D]raft' },
+      -- Review/thread actions
+      { '<leader>pd', '<cmd>Octo review discard<CR>', desc = '[P]R review [D]iscard' },
+      { '<leader>pt', '<cmd>Octo thread resolve<CR>', desc = '[P]R [T]hread resolve' },
+      { '<leader>pT', '<cmd>Octo thread unresolve<CR>', desc = '[P]R [T]hread unresolve' },
+      -- Comment/people/labels
+      { '<leader>pS', '<cmd>Octo comment suggest<CR>', desc = '[P]R [S]uggest', mode = { 'n', 'v' } },
+      { '<leader>pv', '<cmd>Octo reviewer add<CR>', desc = '[P]R re[V]iewer add' },
+      { '<leader>pla', '<cmd>Octo label add<CR>', desc = '[P]R [L]abel [A]dd' },
+      { '<leader>plr', '<cmd>Octo label remove<CR>', desc = '[P]R [L]abel [R]emove' },
     },
     config = function()
       vim.treesitter.language.register('markdown', 'octo')

@@ -11,6 +11,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Launcher picker: Settings panel (`s` key) to configure `DEV_ROOT` and `PROJECTS_ROOT` from within the picker
 - Neovim: `<leader>pC` to close Octo review, `<leader>pX` to close PR
+- Neovim: Expanded Octo PR keybindings — browser, URL yank, CI checks, changed files, checkout, ready/draft, thread resolve, suggest comment, reviewer/label management
+- Neovim: Diffview scroll keymaps (`f`/`b`) for quarter-page scrolling in view, file panel, and history panel
+- Zsh: `nvim-clear` alias to clear Neovim bytecode cache
 - Launcher picker: New directory helper (`new-dir.sh`) with root picker for `DEV_ROOT`, `PROJECTS_ROOT`, or custom path
 - `dotfiles set dev|projects <dir>` CLI command with zsh tab completion
 - `scripts/_lib/common.sh`: `update_zshrc_export()` helper for safe `~/.zshrc` export updates

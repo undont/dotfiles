@@ -349,6 +349,7 @@ tattach() {
 # Development tools
 alias gols="ls ~/go/bin"               # List installed Go binaries
 alias git-prune="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
+alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"  # Fix stale plugin cache
 
 # Homebrew update
 alias brewup="brew update && brew upgrade"
