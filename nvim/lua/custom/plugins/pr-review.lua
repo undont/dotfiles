@@ -312,7 +312,8 @@ return {
     },
     keys = {
       { '<leader>pl', '<cmd>Octo pr list<CR>', desc = '[P]R [L]ist' },
-      { '<leader>ps', '<cmd>Octo pr search<CR>', desc = '[P]R [S]earch' },
+      { '<leader>pf', '<cmd>Octo pr search<CR>', desc = '[P]R [F]ind' },
+      { '<leader>psm', '<cmd>Octo pr merge squash<CR>', desc = '[P]R [S]quash [M]erge' },
       {
         '<leader>po',
         function()
@@ -361,16 +362,10 @@ return {
       local FileEntry = require('octo.reviews.file-entry').FileEntry
       unified.orig_show_diff = FileEntry.show_diff
       FileEntry.show_diff = function(self)
+        -- Always run the original to load/attach buffers properly
+        unified.orig_show_diff(self)
         if not unified.active then
-          return unified.orig_show_diff(self)
-        end
-        -- Disable vim diff on both buffers
-        for _, bufid in ipairs { self.left_bufid, self.right_bufid } do
-          if bufid then
-            vim.api.nvim_buf_call(bufid, function()
-              pcall(vim.cmd, 'diffoff')
-            end)
-          end
+          return
         end
         -- Apply unified layout after a tick (buffers need to settle)
         vim.defer_fn(function()

@@ -6,11 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.21] - 2026-02-12
+
+### Added
+- Launcher picker: Settings panel (`s` key) to configure `DEV_ROOT` and `PROJECTS_ROOT` from within the picker
+- Launcher picker: New directory helper (`new-dir.sh`) with root picker for `DEV_ROOT`, `PROJECTS_ROOT`, or custom path
+- `dotfiles set dev|projects <dir>` CLI command with zsh tab completion
+- `scripts/_lib/common.sh`: `update_zshrc_export()` helper for safe `~/.zshrc` export updates
+- `tmux/scripts/_lib/common.sh`: `list_project_dirs()` shared helper for `PROJECT_DIRS` listing
+- Neovim: Telescope `find_files` and `live_grep` now search hidden files (excluding `.git/`)
+
 ### Changed
-- Neovim: Migrated nvim-treesitter from deprecated `master` branch (`require('nvim-treesitter.configs').setup`) to new `main` branch API (`require('nvim-treesitter').install`, `vim.treesitter.start()`)
-- Brewfile: Added `tree-sitter-cli` as a dependency (required by new nvim-treesitter for parser compilation)
-- Brewfile: Updated Neovim version requirement comment from >= 0.9 to >= 0.11
-- Installer: Added `tree-sitter-cli` to core prerequisites check
+- `tnew` launcher: 3 separate windows (zsh, nvim, code) instead of 2 windows with split pane; directory argument is now required
+- Launcher wizard (`new-launcher.sh`) moved from `scripts/` to `tmux/scripts/launchers/new.sh`
+- Neovim: Theme setup runs before plugin load (ensures gitsigns, diffview pick up correct highlight groups)
+- Neovim: IDE0079 diagnostic filter scoped to C# filetype in `dotnet.lua` (was global in `lsp.lua`)
+- Neovim: Roslyn LSP `auto_refresh_codelens` disabled
+- Neovim: PR review keybinding `<leader>ps` → `<leader>pf` (Find), added `<leader>psm` (squash merge)
+- Neovim: Octo unified diff always runs original `show_diff` first before applying layout
+
+### Removed
+- `scripts/new-launcher.sh` (moved to `tmux/scripts/launchers/new.sh`)
+- Health check: Removed `dana` command check
 
 ## [0.2.20] - 2026-02-10
 
@@ -27,6 +44,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Zsh: Shell startup performance — cached eval for direnv and fzf hooks, git branch caching for terminal titles, PATH deduplication via `typeset -U`
 - Tmux: Status bar performance — inlined agent display function to avoid subshell forks, added 30s result cache for dotfiles sync status
 - Neovim: Lazy-loading for guess-indent (`BufReadPost`), cheatsheet (`cmd`/`keys`), and fidget.nvim (`LspAttach`)
+- Neovim: Migrated nvim-treesitter from deprecated `master` branch (`require('nvim-treesitter.configs').setup`) to new `main` branch API (`require('nvim-treesitter').install`, `vim.treesitter.start()`)
+- Brewfile: Added `tree-sitter-cli` as a dependency (required by new nvim-treesitter for parser compilation)
+- Brewfile: Updated Neovim version requirement comment from >= 0.9 to >= 0.11
+- Installer: Added `tree-sitter-cli` to core prerequisites check
 - Neovim: Markdown ordered list renumbering uses `CursorHold` (debounced) instead of `TextChanged` to avoid interference during edits
 
 ### Fixed

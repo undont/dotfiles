@@ -165,35 +165,11 @@ handle_fixed_session() {
 # Parameterised launcher handler
 # ─────────────────────────────────────────
 handle_parameterised() {
-    # Collect directories from PROJECT_DIRS (colon-separated, like PATH)
-    local project_dirs="${PROJECT_DIRS:-$HOME/src}"
-    local dirs=()
-
-    IFS=':' read -ra roots <<< "$project_dirs"
-    for root in "${roots[@]}"; do
-        # Skip empty entries (from trailing colons or double colons)
-        [[ -n "$root" ]] || continue
-        # Expand ~ to $HOME
-        root="${root/#\~/$HOME}"
-        [[ -d "$root" ]] || continue
-
-        # List immediate subdirectories
-        if command -v fd &>/dev/null; then
-            while IFS= read -r d; do
-                dirs+=("$d")
-            done < <(fd --type d --max-depth 1 . "$root" 2>/dev/null)
-        else
-            while IFS= read -r d; do
-                dirs+=("$d")
-            done < <(find "$root" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort)
-        fi
-    done
-
-    # Replace $HOME prefix with ~ for display
+    # Collect directories from PROJECT_DIRS using shared helper
     local display_dirs=()
-    for d in "${dirs[@]}"; do
-        display_dirs+=("${d/#$HOME/~}")
-    done
+    while IFS= read -r d; do
+        display_dirs+=("$d")
+    done < <(list_project_dirs)
 
     # Build content: header lines + directory list
     # Note: avoid $(printf...) for line building — command substitution strips trailing newlines
@@ -224,7 +200,7 @@ handle_parameterised() {
         --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,ctrl-d,ctrl-u,q,space,n)' \
         --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,ctrl-d,ctrl-u,q,space,n)" || echo "abort"' \
         --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-        --bind "n:become(dir=\$(printf '' | fzf --print-query --query='' --prompt='Path: ' --height=100% --layout=reverse --border=rounded --border-label=' ⏎ open · esc cancel ' --border-label-pos=bottom --no-info --pointer=' ' --bind 'enter:print-query' --bind 'esc:abort' 2>/dev/null | head -1) && [ -n \"\$dir\" ] && dir=\$(realpath -m -- \"\$dir\" 2>/dev/null || printf '%s' \"\$dir\") && exec '${LAUNCHER}' \"\$dir\")" \
+        --bind "n:become($SCRIPT_DIR/new-dir.sh '${LAUNCHER}')" \
         2>/dev/null) || exit 130
 
     # --print-query outputs: line 1 = query, line 2 = selected item

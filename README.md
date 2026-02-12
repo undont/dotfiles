@@ -37,7 +37,7 @@ dotfiles/
 ├── btop/             # System monitor configuration
 │   └── btop.conf
 ├── launchers/        # Session launch scripts (picker: prefix + p)
-│   └── tnew          # Tmux dev session launcher
+│   └── tnew          # Dev session launcher (zsh + nvim + claude)
 ├── hammerspoon/      # macOS automation
 │   └── init.lua
 ├── ghostty/          # Terminal emulator
@@ -272,9 +272,10 @@ The uninstall script uses your saved preset to determine which packages to remov
 ### Session Launchers
 Press `prefix + p` to open the launcher picker. Launchers are shell scripts that create pre-configured tmux sessions with custom window layouts.
 
-- **Built-in**: `tnew` (dev session with Claude + Neovim)
+- **Built-in**: `tnew` (dev session — 3 windows: zsh, nvim, claude code)
 - **User-created**: Stored in `~/.config/dotfiles/launchers/` (override repo launchers by name)
 - **Wizard**: Press `n` in the picker to scaffold a new launcher interactively
+- **Settings**: Press `s` in the picker to configure `DEV_ROOT` and `PROJECTS_ROOT` directories
 
 ## Keybinding Quick Reference
 

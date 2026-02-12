@@ -28,14 +28,15 @@ main() {
             --padding=0,0,1,0 \
             --prompt=': ' \
             --border=rounded \
-            --border-label=' j/k · ^d/^u · g/G · spc/⏎ sel · / srch · n new · e edit · x del · q/esc ' \
+            --border-label=' j/k · ^d/^u · g/G · spc/⏎ sel · / srch · n new · e edit · x del · s set · q/esc ' \
             --border-label-pos=bottom \
             --bind 'j:down,k:up,g:first,G:last,ctrl-d:half-page-down,ctrl-u:half-page-up,q:abort' \
             --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
-            --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,ctrl-d,ctrl-u,q,n,e,x)' \
-            --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,ctrl-d,ctrl-u,q,n,e,x)" || echo "abort"' \
+            --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,ctrl-d,ctrl-u,q,n,e,x,s)' \
+            --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,ctrl-d,ctrl-u,q,n,e,x,s)" || echo "abort"' \
             --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
             --bind 'n:become(printf "ACTION:new")' \
+            --bind 's:become(printf "ACTION:set")' \
             --bind 'e:become(printf "ACTION:edit:%s" {1})' \
             --bind "x:execute($SCRIPT_DIR/delete.sh {1})+reload-sync($SCRIPT_DIR/list.sh)" \
             --bind 'enter:become(printf "ACTION:run:%s" {1})' \
@@ -46,6 +47,10 @@ main() {
             ACTION:new)
                 "$SCRIPT_DIR/prompt.sh" && break
                 continue  # cancelled → back to picker
+                ;;
+            ACTION:set)
+                "$SCRIPT_DIR/settings.sh" || true
+                continue  # always return to picker
                 ;;
             ACTION:edit:*)
                 local edit_name="${action#ACTION:edit:}"

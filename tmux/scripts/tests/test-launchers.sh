@@ -12,7 +12,7 @@ DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 LIST_LAUNCHERS="$SCRIPT_DIR/../launchers/list.sh"
 RUN_LAUNCHER="$SCRIPT_DIR/../launchers/run.sh"
 DELETE_LAUNCHER="$SCRIPT_DIR/../launchers/delete.sh"
-NEW_LAUNCHER="$DOTFILES_ROOT/scripts/new-launcher.sh"
+NEW_LAUNCHER="$SCRIPT_DIR/../launchers/new.sh"
 
 # Test counters
 PASS=0
@@ -298,10 +298,10 @@ else
     fail "should sanitise suffix with tr in become() command"
 fi
 
-if [[ "$run_content" == *"realpath"* ]]; then
-    pass "sanitises directory path with realpath in become() command"
+if [[ "$run_content" == *"new-dir.sh"* ]]; then
+    pass "delegates new directory creation to new-dir.sh"
 else
-    fail "should sanitise directory path with realpath in become() command"
+    fail "should delegate new directory creation to new-dir.sh"
 fi
 
 section "launchers/run.sh: DOTFILES_ROOT Validation"
