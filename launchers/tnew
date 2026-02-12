@@ -3,6 +3,7 @@ set -euo pipefail
 
 # @description: Dev session - Claude + Neovim
 # Dev session launcher - creates a 3-window layout for development
+# Invoked via the launcher picker (prefix + p) with a directory argument.
 
 # Help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
@@ -10,60 +11,64 @@ if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
 tnew - tmux development session launcher
 
 USAGE:
-    tnew [DIRECTORY]
+    tnew <DIRECTORY>
 
 DESCRIPTION:
     Creates or attaches to a tmux development session with a 3-window layout:
-      • Window 1 (dev): Split panes with Claude Code (left) and terminal (right)
-      • Window 2 (edit): Neovim editor
+      • Window 1 (zsh): Terminal
+      • Window 2 (nvim): Neovim editor
+      • Window 3 (code): Claude Code
 
     The session name is derived from the directory basename.
+    Use the launcher picker (prefix + p) to select a directory.
 
 ARGUMENTS:
-    DIRECTORY    Directory to create session in 
-                 Can be absolute or relative path
+    DIRECTORY    Directory to create session in (required)
 
 OPTIONS:
     -h, --help   Show this help message
-
-EXAMPLES:
-    # Create session (specify directory) 
-    tnew
-
-    # Create session for specific project
-    tnew ~/src/my-project
-
-    # Create session using relative path
-    tnew ../other-project
 
 NOTES:
     • If a session with the same name exists, attaches to it instead
     • Session names are sanitised (alphanumeric, underscore, dot, dash only)
     • Works both inside and outside of tmux (uses switch-client vs attach-session)
     • Claude Code is launched via the 'claude' CLI command
-
-SEE ALSO:
-    new-launcher   Create a new project launcher
-    tattach        Smart attach to session (restores from backup if needed)
-    trestore       Restore tmux sessions from backup
 EOF
     exit 0
 fi
 
-# Default to current directory if no argument provided
-dir="${1:-$(pwd)}"
+# Resolve script location (follow symlinks) to find shared libraries
+_source="${BASH_SOURCE[0]}"
+while [[ -L "$_source" ]]; do _source=$(readlink "$_source"); done
+_script_dir="$(cd "$(dirname "$_source")" && pwd)"
+# shellcheck source=tmux/scripts/_lib/common.sh
+source "$_script_dir/../tmux/scripts/_lib/common.sh"
+# shellcheck source=tmux/scripts/_lib/ui.sh
+source "$_script_dir/../tmux/scripts/_lib/ui.sh"
+
+dir="${1:-}"
+if [[ -z "$dir" ]]; then
+    echo "Usage: tnew <DIRECTORY>" >&2
+    echo "Use the launcher picker (prefix + p) to select a directory." >&2
+    exit 1
+fi
+
+# Expand ~ to $HOME
+dir="${dir/#\~/$HOME}"
+
+# If directory doesn't exist, offer to create it
+if [[ ! -d "$dir" ]]; then
+    if ! show_visual_confirm "Create directory?" "$dir"; then
+        exit 1
+    fi
+    mkdir -p "$dir"
+fi
 
 # Resolve to absolute path
 dir=$(cd "$dir" && pwd)
 
-# Validate directory exists
-if [[ ! -d "$dir" ]]; then
-    echo "Error: Directory not found: $dir" >&2
-    exit 1
-fi
-
 # Use directory basename as session name (sanitised)
-session=$(basename "$dir" | tr -c '[:alnum:]_.-' '_')
+session=$(basename "$dir" | tr -c '[:alnum:]_.\-\n' '_')
 
 # Check if session already exists
 if tmux has-session -t "$session" 2>/dev/null; then
@@ -75,18 +80,18 @@ if tmux has-session -t "$session" 2>/dev/null; then
     exit 0
 fi
 
-# Create new session with development layout
-tmux new-session -d -s "$session" -n "dev" -c "$dir"
+# Window 1: zsh
+tmux new-session -d -s "$session" -n "zsh" -c "$dir"
 
-# Window 1: Split for Claude (left) and terminal (right)
-tmux split-window -t "$session:1" -h -c "$dir"
-tmux send-keys -t "$session:1.1" 'claude' Enter
+# Window 2: nvim
+tmux new-window -t "$session" -n "nvim" -c "$dir"
+tmux send-keys -t "$session:nvim" 'nvim' Enter
 
-# Window 2: Neovim
-tmux new-window -t "$session" -n "edit" -c "$dir"
-tmux send-keys -t "$session:2" 'nvim' Enter
+# Window 3: code
+tmux new-window -t "$session" -n "code" -c "$dir"
+tmux send-keys -t "$session:code" 'claude' Enter
 
-# Select first window, first pane
+# Select first window
 tmux select-window -t "$session:1"
 tmux select-pane -t "$session:1.1"
 

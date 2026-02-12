@@ -59,8 +59,8 @@ if [[ -z "$name" ]]; then
 fi
 
 if [[ -n "$edit_source" ]]; then
-    exec "$DOTFILES_ROOT/scripts/new-launcher.sh" --edit "$edit_source" "$name"
+    exec "$SCRIPT_DIR/new.sh" --edit "$edit_source" "$name"
 fi
 
 # Hand off to the full scaffolding script
-exec "$DOTFILES_ROOT/scripts/new-launcher.sh" "$name"
+exec "$SCRIPT_DIR/new.sh" "$name"

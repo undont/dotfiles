@@ -156,15 +156,8 @@ return {
         },
       }
 
-      -- Filter out IDE0079 (Remove unnecessary suppression) - known Roslyn false positive
-      vim.lsp.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx, config)
-        if result and result.diagnostics then
-          result.diagnostics = vim.tbl_filter(function(d)
-            return d.code ~= 'IDE0079'
-          end, result.diagnostics)
-        end
-        vim.lsp.diagnostic.on_publish_diagnostics(err, result, ctx, config)
-      end
+      -- NOTE: IDE0079 (Remove unnecessary suppression) filtering is in dotnet.lua
+      -- scoped to the Roslyn LSP client where the false positives originate
 
       -- Configure LSP hover to use bordered windows with proper syntax highlighting
       vim.lsp.handlers['textDocument/hover'] = vim.lsp.with(vim.lsp.handlers.hover, {
