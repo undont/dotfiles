@@ -18,10 +18,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `dotfiles set dev|projects <dir>` CLI command with zsh tab completion
 - `scripts/_lib/common.sh`: `update_zshrc_export()` helper for safe `~/.zshrc` export updates
 - `tmux/scripts/_lib/common.sh`: `list_project_dirs()` shared helper for `PROJECT_DIRS` listing
-- Neovim: Telescope `find_files` and `live_grep` now search hidden files (excluding `.git/`)
+- Neovim: Telescope `find_files`, `live_grep`, and `grep_string` now search hidden files (excluding `.git/`)
+- Gemini instance switcher (`prefix + g`) with fzf picker, alert integration, and inline instance management
+- Gemini agent support in alert system (💎 cyan icon and colour)
+- Zsh: `alerts-clear` alias to clear agent alerts directory
+
+### Fixed
+- Launcher test: corrected sanitisation assertion to match actual hyphen replacement character
 
 ### Changed
-- `tnew` launcher: 3 separate windows (zsh, nvim, code) instead of 2 windows with split pane; directory argument is now required
+- `tnew` launcher: 3 separate windows (zsh, nvim, code) instead of 2 windows with split pane; directory argument is now required; offers to create directory if it doesn't exist
+- Launcher picker: `n` (new directory) action uses dedicated root picker (`new-dir.sh`) instead of inline fzf path prompt
+- `scripts/_lib/common.sh`: `update_zshrc_export()` auto-updates `PROJECT_DIRS` when `DEV_ROOT` or `PROJECTS_ROOT` changes
+- Neovim: Cheatsheet updated with expanded PR review keybindings (browser, URL yank, CI checks, checkout, ready/draft, thread resolve)
 - Launcher wizard (`new-launcher.sh`) moved from `scripts/` to `tmux/scripts/launchers/new.sh`
 - Neovim: Theme setup runs before plugin load (ensures gitsigns, diffview pick up correct highlight groups)
 - Neovim: IDE0079 diagnostic filter scoped to C# filetype in `dotnet.lua` (was global in `lsp.lua`)

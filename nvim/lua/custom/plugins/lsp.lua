@@ -77,7 +77,26 @@ return {
           map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
           map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
           map('grt', lsp_dedup 'type_definition', '[G]oto [T]ype Definition')
-          map('<leader>lr', '<cmd>LspRestart<CR>', '[L]SP [R]estart')
+          map('<leader>lr', function()
+            -- Get all LSP clients attached to the current buffer
+            local clients = vim.lsp.get_clients { bufnr = event.buf }
+            local restarted_count = 0
+
+            for _, client in ipairs(clients) do
+              -- Only restart clients that have server_capabilities (actual LSP servers)
+              -- This filters out non-LSP clients like Copilot
+              if client.server_capabilities then
+                vim.cmd('LspRestart ' .. client.id)
+                restarted_count = restarted_count + 1
+              end
+            end
+
+            if restarted_count > 0 then
+              vim.notify(string.format('Restarted %d LSP server(s)', restarted_count), vim.log.levels.INFO)
+            else
+              vim.notify('No LSP servers attached to buffer', vim.log.levels.WARN)
+            end
+          end, '[L]SP [R]estart')
 
           -- Helper for checking client support
           ---@param client vim.lsp.Client

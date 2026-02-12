@@ -25,12 +25,11 @@
 ║  d / u            half-page   ║  ` t              theme picker       ║
 ║  g / G            top/bottom  ║  ` p              launchers          ║
 ║                               ║  ` c              Claude picker      ║
-║                               ║  ` y              open URL picker    ║
-║  / / ?            search ↓/↑  ║  Opt+u            undo pane/win      ║
-║  n / N            next / prev ║                                      ║
-║                               ║                                      ║
-║  v / V            select /    ║                                      ║
-║                   line        ║                                      ║
+║  / / ?            search ↓/↑  ║  ` o              OpenCode picker    ║
+║  n / N            next / prev ║  ` g              Gemini picker      ║
+║                               ║  ` n              nvim picker        ║
+║  v / V            select /    ║  ` y              open URL picker    ║
+║                   line        ║  Opt+u            undo pane/win      ║
 ║  y / Y            yank /      ║                                      ║
 ║                   yank ln     ║                                      ║
 ║  q / Esc          exit mode   ║                                      ║
