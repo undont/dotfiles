@@ -17,6 +17,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | Restore one session   | `trestore -s <name>`              |
 | List Claude instances | `prefix + c`                      |
 | List OpenCode instances | `prefix + o`                    |
+| List Gemini instances | `prefix + g`                      |
 | List nvim instances   | `prefix + n`                      |
 
 ## Setup Guide (New Machine)
@@ -242,9 +243,9 @@ Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so
 
 **Undo:** When you kill a session or window with `x`, press `u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
-**Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for Gemini and OpenCode). Press `prefix + c` to open an fzf picker showing all running agent instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
+**Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for OpenCode, 💎 cyan for Gemini). Press `prefix + c` to open an fzf picker showing all running agent instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
 
-**Instance Management:** The Claude (`prefix + c`), OpenCode (`prefix + o`), and nvim (`prefix + n`) pickers support inline instance management:
+**Instance Management:** The Claude (`prefix + c`), OpenCode (`prefix + o`), Gemini (`prefix + g`), and nvim (`prefix + n`) pickers support inline instance management:
 - Press `n` to create a new instance (opens a new window in the current session and launches the process)
 - Press `x` to kill the selected instance (sends SIGTERM with graceful shutdown, confirms before killing)
 
@@ -391,10 +392,12 @@ Available session backups:
 │   │   └── ui.sh                         # Terminal UI (dialogs, prompts)
 │   ├── tests/                            # Test suites
 │   │   ├── cleanup-tests.sh              # Clean up orphaned test resources
+│   │   ├── test-list-gemini.sh            # Tests for Gemini instance listing
 │   │   └── test-show-dotfiles-status.sh  # Tests for dotfiles sync indicator
 │   ├── instances/                        # Process instance management (list, create, kill)
 │   │   ├── claude.sh                     # List Claude Code instances
 │   │   ├── opencode.sh                   # List OpenCode instances
+│   │   ├── gemini.sh                     # List Gemini instances
 │   │   ├── nvim.sh                       # List nvim instances for buffer sync
 │   │   ├── new.sh                        # Create new process window
 │   │   ├── kill.sh                       # Kill process instance (with confirm)
@@ -535,7 +538,7 @@ Key settings:
 - Auto-rename: shows directory name or running command
 - Auto-save: every 1 minute
 - Status refresh: every 2 seconds
-- Status bar: shows dotfiles sync indicator (↓↑↕ cyan), agent alerts (⚡ yellow for Claude, 🔮 purple for OpenCode), zoom indicator (cyan `Z`), CPU (⚙), RAM (☰), and battery % with Dracula-themed colour indicators
+- Status bar: shows dotfiles sync indicator (↓↑↕ cyan), agent alerts (⚡ yellow for Claude, 🔮 purple for OpenCode, 💎 cyan for Gemini), zoom indicator (cyan `Z`), CPU (⚙), RAM (☰), and battery % with Dracula-themed colour indicators
 - Status bar time: background aligned with powerlevel10k right prompt edge
 - Bell monitoring: windows are highlighted in red when they send a bell (used by Claude Code hooks to signal when attention is needed)
 

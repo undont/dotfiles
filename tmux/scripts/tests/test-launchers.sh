@@ -292,7 +292,7 @@ fi
 section "launchers/run.sh: Input Sanitisation"
 
 # Check that fzf become() commands sanitise user input
-if [[ "$run_content" == *"tr -c '[:alnum:]_.-' '_'"* ]]; then
+if [[ "$run_content" == *"tr -c '[:alnum:]_.-' '-'"* ]]; then
     pass "sanitises suffix input in become() command"
 else
     fail "should sanitise suffix with tr in become() command"

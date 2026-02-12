@@ -19,6 +19,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `scripts/_lib/common.sh`: `update_zshrc_export()` helper for safe `~/.zshrc` export updates
 - `tmux/scripts/_lib/common.sh`: `list_project_dirs()` shared helper for `PROJECT_DIRS` listing
 - Neovim: Telescope `find_files`, `live_grep`, and `grep_string` now search hidden files (excluding `.git/`)
+- Gemini instance switcher (`prefix + g`) with fzf picker, alert integration, and inline instance management
+- Gemini agent support in alert system (💎 cyan icon and colour)
+- Zsh: `alerts-clear` alias to clear agent alerts directory
+
+### Fixed
+- Launcher test: corrected sanitisation assertion to match actual hyphen replacement character
 
 ### Changed
 - `tnew` launcher: 3 separate windows (zsh, nvim, code) instead of 2 windows with split pane; directory argument is now required; offers to create directory if it doesn't exist
