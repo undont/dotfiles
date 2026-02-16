@@ -36,11 +36,11 @@ cask "visual-studio-code"
 
 # AI Coding Assistants
 brew "opencode"
+brew "ollama"                # Local LLM runner
 
 # Git & GitHub
 brew "gh"
 brew "lazygit"
-brew "oug-t/difi/difi"           # Inline diff TUI
 
 # Search & Navigation
 brew "ripgrep"                # >= 13.0
@@ -49,6 +49,12 @@ brew "tree"
 brew "jq"
 brew "wget"
 brew "bat"                    # Cat with syntax highlighting
+
+# Build Tools
+brew "binutils"              # GNU binary utilities
+brew "gcc"                   # GNU compiler collection
+brew "nasm"                  # Netwide assembler
+brew "nano"                  # Text editor
 
 # =============================================================================
 # @preset: core
@@ -87,9 +93,12 @@ brew "sonar-scanner"
 brew "postgresql@14"
 brew "mongosh"
 brew "libsql/sqld/sqld"
+brew "lazysql"               # Database TUI
 
 # Containers & Infrastructure
 brew "act"                    # GitHub Actions locally
+brew "cloudflared"           # Cloudflare Tunnel client
+brew "lazydocker"            # Docker TUI
 
 # Misc Dev Tools
 brew "cmake"
