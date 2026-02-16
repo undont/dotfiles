@@ -32,8 +32,8 @@ return {
           MkdnTablePrevCell = false, -- frees <S-Tab> for snippets
           MkdnToggleToDo = { 'n', '<leader>mt' }, -- moved from <C-Space> (blink conflict)
           -- List / navigation (defaults are fine)
-          MkdnEnter = { { 'n', 'v' }, '<CR>' },
-          MkdnNewListItem = { 'i', '<CR>' }, -- auto-continues lists in insert mode
+          MkdnEnter = false, -- disabled: was mangling numbered lists on <CR>
+          MkdnNewListItem = false, -- disabled: was mangling links on <CR> in insert mode
           MkdnGoBack = { 'n', '<BS>' },
           MkdnGoForward = { 'n', '<Del>' },
           MkdnNextHeading = { 'n', ']]' },

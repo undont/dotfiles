@@ -47,6 +47,27 @@ function M.setup()
     end,
   })
 
+  -- Sort JSON keys (strip trailing commas, sort with jq, reformat with prettier)
+  local function sort_json_keys(buf)
+    local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
+    local content = table.concat(lines, '\n')
+    local result = vim.fn.system([[perl -0777 -pe 's/,(\s*[\]}])/$1/g' | jq -S . | prettier --parser json]], content)
+    if vim.v.shell_error == 0 then
+      local new_lines = vim.split(result, '\n', { trimempty = true })
+      vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
+    else
+      vim.notify('JsonSort failed: ' .. result, vim.log.levels.ERROR)
+    end
+  end
+
+  vim.api.nvim_create_user_command('JsonSort', function()
+    sort_json_keys(vim.api.nvim_get_current_buf())
+  end, { desc = 'Sort JSON keys' })
+
+  vim.lsp.commands['json.sort'] = function(_, ctx)
+    sort_json_keys(ctx.bufnr)
+  end
+
   -- Clean up unnamed empty buffers when opening a file
   -- Removes the default [No Name] buffer that nvim creates at startup
   local cleanup_group = vim.api.nvim_create_augroup('cleanup-empty-buffers', { clear = true })
