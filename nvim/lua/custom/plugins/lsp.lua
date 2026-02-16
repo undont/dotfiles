@@ -86,7 +86,7 @@ return {
               -- Only restart clients that have server_capabilities (actual LSP servers)
               -- This filters out non-LSP clients like Copilot
               if client.server_capabilities then
-                vim.cmd('LspRestart ' .. client.id)
+                vim.cmd('LspRestart ' .. client.name)
                 restarted_count = restarted_count + 1
               end
             end
