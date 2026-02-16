@@ -277,6 +277,7 @@ alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across 
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
+alias alerts-clear="rm -rf ~/.claude/alerts"  # Clear Claude agent alerts
 
 # Functions (instead of aliases) for tab completion support
 trestore() {
