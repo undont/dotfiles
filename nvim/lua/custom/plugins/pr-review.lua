@@ -170,6 +170,30 @@ return {
         require('octo.picker').changed_files { repo = buffer.repo, number = buffer.number }
       end)
 
+      -- Scroll keymaps for review diff buffers (non-modifiable, so safe to use single keys)
+      local file_entry = require 'octo.reviews.file-entry'
+      local orig_configure = file_entry._configure_buffer
+      file_entry._configure_buffer = function(bufid)
+        orig_configure(bufid)
+        local function scroll(fraction)
+          local lines = math.floor(vim.api.nvim_win_get_height(0) * math.abs(fraction))
+          local key = fraction > 0 and '<C-e>' or '<C-y>'
+          vim.cmd('normal! ' .. lines .. vim.api.nvim_replace_termcodes(key, true, true, true))
+        end
+        vim.keymap.set('n', 'f', function()
+          scroll(0.25)
+        end, { buffer = bufid, desc = 'Scroll down quarter page' })
+        vim.keymap.set('n', 'b', function()
+          scroll(-0.25)
+        end, { buffer = bufid, desc = 'Scroll up quarter page' })
+        vim.keymap.set('n', 'd', function()
+          scroll(0.5)
+        end, { buffer = bufid, desc = 'Scroll down half page' })
+        vim.keymap.set('n', 'u', function()
+          scroll(-0.5)
+        end, { buffer = bufid, desc = 'Scroll up half page' })
+      end
+
       -- Mark current file as viewed when navigating forward, not backward
       local reviews = require 'octo.reviews'
 

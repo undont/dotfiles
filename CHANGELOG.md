@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.22] - 2026-02-16
+
+### Added
+- Neovim: `JsonSort` command and `json.sort` LSP command for sorting JSON keys (strips trailing commas, sorts with jq, reformats with prettier)
+- Neovim: Octo review diff scroll keymaps — `f`/`b` quarter-page, `d`/`u` half-page scrolling in review buffers
+
+### Fixed
+- Neovim: `LspRestart` uses `client.name` instead of `client.id` for correct server targeting
+- Neovim: Disabled mkdnflow `MkdnEnter` and `MkdnNewListItem` keymaps that were mangling numbered lists and links on `<CR>`
+- Tmux: Gemini instance switcher template binding was missing from previous release
+
 ## [0.2.21] - 2026-02-12
 
 ### Added
