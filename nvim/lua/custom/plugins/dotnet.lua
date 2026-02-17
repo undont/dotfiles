@@ -23,6 +23,37 @@ return {
       return orig_diag_set(namespace, bufnr, diagnostics, opts)
     end
 
+    -- Filter build-variant solutions (.ci.slnx, .build.sln, .test.sln, etc.)
+    -- from Roslyn's solution discovery. Without this, the "Pick solution file
+    -- to start Roslyn from" picker appears every time a cs file is opened in a
+    -- project with both Dana.slnx and Dana.ci.slnx.
+    --
+    -- Patches root_finder.find_solutions_from_file which walks up from .csproj
+    -- files collecting .sln/.slnx matches. The picker in roslyn/lsp.lua uses
+    -- the unfiltered results, so we filter at the source.
+
+    --- @param path string
+    --- @return boolean
+    local function is_build_variant(path)
+      return vim.fs.basename(path):match '%.[%l][%w]*%.slnx?$' ~= nil
+    end
+
+    local root_finder = require 'easy-dotnet.roslyn.root_finder'
+    local orig_find_solutions = root_finder.find_solutions_from_file
+    root_finder.find_solutions_from_file = function(...)
+      local results = orig_find_solutions(...)
+      return vim.tbl_filter(function(path)
+        return not is_build_variant(path)
+      end, results)
+    end
+
+    -- Also clear any previously cached build-variant solution
+    local current_solution = require 'easy-dotnet.current_solution'
+    local cached = current_solution.try_get_selected_solution()
+    if cached and is_build_variant(cached) then
+      current_solution.clear_selected_solution()
+    end
+
     require('easy-dotnet').setup {
       -- Use built-in Roslyn LSP (replaces OmniSharp)
       -- Requires Neovim 0.11+
@@ -63,32 +94,13 @@ return {
       end,
     }
 
-    -- Auto-select solution file: skip build variant solutions (.ci.sln, .build.slnx, etc.)
-    -- Only keeps files where the segment before .sln/.slnx is PascalCase (starts uppercase)
-    -- Runs synchronously before Roslyn's root_dir callback fires
-    local current_solution = require 'easy-dotnet.current_solution'
-    if not current_solution.try_get_selected_solution() then
-      local solutions = vim.fn.glob('**/*.slnx', false, true)
-      vim.list_extend(solutions, vim.fn.glob('**/*.sln', false, true))
-      local filtered = vim.tbl_filter(function(path)
-        -- Filter out compound extensions where the segment before .sln/.slnx starts
-        -- with a lowercase letter (e.g., .ci.sln, .build.slnx, .test.sln)
-        -- Keeps PascalCase names like Dana.Platform.sln
-        return not vim.fs.basename(path):match '%.[%l][%w]*%.slnx?$'
-      end, solutions)
-      if #filtered == 1 then
-        local abs = vim.fs.normalize(vim.fn.fnamemodify(filtered[1], ':p'))
-        current_solution.set_solution(abs)
-      end
-    end
-
     -- Project commands only (tests handled by neotest)
-    vim.keymap.set('n', '<leader>nr', '<cmd>Dotnet run<cr>', { desc = '.NET: Run project' })
-    vim.keymap.set('n', '<leader>nb', '<cmd>Dotnet build<cr>', { desc = '.NET: Build project' })
-    vim.keymap.set('n', '<leader>nc', '<cmd>Dotnet clean<cr>', { desc = '.NET: Clean project' })
-    vim.keymap.set('n', '<leader>ns', '<cmd>Dotnet secrets<cr>', { desc = '.NET: Manage secrets' })
-    vim.keymap.set('n', '<leader>nw', '<cmd>Dotnet watch<cr>', { desc = '.NET: Watch project' })
-    vim.keymap.set('n', '<leader>nn', '<cmd>Dotnet new<cr>', { desc = '.NET: New item' })
-    vim.keymap.set('n', '<leader>no', '<cmd>Dotnet outdated<cr>', { desc = '.NET: Outdated packages' })
+    vim.keymap.set('n', '<leader>nr', '<cmd>Dotnet run<cr>', { desc = '[R]un project' })
+    vim.keymap.set('n', '<leader>nb', '<cmd>Dotnet build<cr>', { desc = '[B]uild project' })
+    vim.keymap.set('n', '<leader>nc', '<cmd>Dotnet clean<cr>', { desc = '[C]lean project' })
+    vim.keymap.set('n', '<leader>ns', '<cmd>Dotnet secrets<cr>', { desc = 'Manage [S]ecrets' })
+    vim.keymap.set('n', '<leader>nw', '<cmd>Dotnet watch<cr>', { desc = '[W]atch project' })
+    vim.keymap.set('n', '<leader>nn', '<cmd>Dotnet new<cr>', { desc = '[N]ew item' })
+    vim.keymap.set('n', '<leader>no', '<cmd>Dotnet outdated<cr>', { desc = '[O]utdated packages' })
   end,
 }

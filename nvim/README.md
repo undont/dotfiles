@@ -13,6 +13,10 @@ Customised Neovim setup based on [kickstart.nvim](https://github.com/nvim-lua/ki
 - **.NET Development** - easy-dotnet.nvim for project management with Roslyn LSP
 - **Fuzzy Finding** - Telescope for files, buffers, grep, and more
 - **File Explorer** - Neo-tree sidebar navigation
+- **Navigation** - Flash.nvim for jump/motion, treesitter textobjects for structural selection
+- **Search & Replace** - Grug-far for project-wide search and replace
+- **Diagnostics** - Trouble.nvim for better diagnostics lists
+- **File Editing** - Oil.nvim for filesystem-as-buffer editing
 - **UI Enhancements** - Auto dark/light mode (Dracula/Catppuccin), statusline, indent guides
 - **Debugging** - DAP integration for debugging support
 - **Formatting & Linting** - Conform for formatting, nvim-lint for linting
@@ -54,7 +58,7 @@ nvim/
     ├── custom/                        # Custom configuration
     │   ├── core/
     │   │   ├── options.lua            # Neovim options (line numbers, tabs, etc.)
-    │   │   ├── keymaps.lua            # Custom keybindings and help popup
+    │   │   ├── keymaps.lua            # Custom keybindings
     │   │   ├── autocmds.lua           # Autocommands (highlighting on yank, etc.)
     │   │   ├── theme.lua              # Theme integration (file watcher, auto-reload)
     │   │   ├── quickfix.lua           # Build picker and quickfix helpers
@@ -65,7 +69,7 @@ nvim/
     │   │   ├── lsp.lua                # LSP configuration, Mason, conform (formatting)
     │   │   ├── completion.lua         # blink.cmp completion setup
     │   │   ├── telescope.lua          # Fuzzy finder configuration
-    │   │   ├── editor.lua             # Treesitter, guess-indent
+    │   │   ├── editor.lua             # Treesitter, flash, textobjects, grug-far, oil
     │   │   ├── copilot.lua            # GitHub Copilot integration
     │   │   ├── git.lua                # Git plugins (fugitive, LazyGit)
     │   │   ├── pr-review.lua          # PR review (diffview, octo)
@@ -112,6 +116,7 @@ nvim/
 | [which-key.nvim](https://github.com/folke/which-key.nvim) | Keybinding popup hints |
 | [cheatsheet.nvim](https://github.com/sudormrfbin/cheatsheet.nvim) | Searchable keybinding/command cheatsheet |
 | [todo-comments.nvim](https://github.com/folke/todo-comments.nvim) | Highlight TODO/FIXME comments |
+| [trouble.nvim](https://github.com/folke/trouble.nvim) | Better diagnostics list and quickfix |
 
 ### Editing & Navigation
 
@@ -119,6 +124,10 @@ nvim/
 |--------|---------|
 | [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) | Fuzzy finder (files, buffers, grep) |
 | [nvim-autopairs](https://github.com/windwp/nvim-autopairs) | Auto-close brackets and quotes |
+| [flash.nvim](https://github.com/folke/flash.nvim) | Jump/motion with search labels |
+| [nvim-treesitter-textobjects](https://github.com/nvim-treesitter/nvim-treesitter-textobjects) | Structural selection and motion |
+| [grug-far.nvim](https://github.com/MagicDuck/grug-far.nvim) | Project-wide search and replace |
+| [oil.nvim](https://github.com/stevearc/oil.nvim) | Filesystem-as-buffer editing |
 | [guess-indent.nvim](https://github.com/NMAC427/guess-indent.nvim) | Auto-detect indentation |
 | [lazydev.nvim](https://github.com/folke/lazydev.nvim) | Lua development for Neovim |
 | [fidget.nvim](https://github.com/j-hui/fidget.nvim) | LSP progress indicator |
@@ -171,13 +180,12 @@ nvim/
 
 ### Quick Reference
 
-Press **`Space h`** in normal mode to open the keybinding help popup.
+Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 
 ### Essential Keybindings
 
 | Mode | Keybinding | Action |
 |------|------------|--------|
-| Normal | `Space h` | Show keybinding help popup |
 | Normal | `Space ?` | Open searchable cheatsheet |
 | Normal | `Space Space` | Find existing buffers |
 | Normal | `Space sf` | Search files (Telescope) |
@@ -194,7 +202,7 @@ Press **`Space h`** in normal mode to open the keybinding help popup.
 | Insert | `Ctrl+Space` | Trigger completion |
 | Insert | `Tab` | Accept Copilot suggestion |
 
-**Full keybinding reference**: Press `Space h` or see `lua/custom/core/keymaps.lua`
+**Full keybinding reference**: Press `Space ?` or see `lua/custom/core/keymaps.lua`
 
 ## LSP Servers
 

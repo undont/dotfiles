@@ -3,43 +3,6 @@
 
 local M = {}
 
--- Helper function to show help from external file
-local function show_nvim_help()
-  local help_file = vim.fn.stdpath 'config' .. '/lua/custom/nvim-help.txt'
-  local lines = {}
-
-  local file = io.open(help_file, 'r')
-  if file then
-    for line in file:lines() do
-      table.insert(lines, line)
-    end
-    file:close()
-  else
-    lines = { 'Help file not found: ' .. help_file }
-  end
-
-  local width = 78
-  local height = math.min(#lines, vim.o.lines - 6)
-  local buf = vim.api.nvim_create_buf(false, true)
-  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-  vim.api.nvim_set_option_value('modifiable', false, { buf = buf })
-  vim.api.nvim_set_option_value('bufhidden', 'wipe', { buf = buf })
-
-  local win_opts = {
-    relative = 'editor',
-    width = width,
-    height = height,
-    col = math.floor((vim.o.columns - width) / 2),
-    row = math.floor((vim.o.lines - height) / 2) - 1,
-    style = 'minimal',
-    border = 'rounded',
-  }
-
-  vim.api.nvim_open_win(buf, true, win_opts)
-  vim.keymap.set('n', 'q', '<cmd>close<CR>', { buffer = buf, silent = true })
-  vim.keymap.set('n', '<Esc>', '<cmd>close<CR>', { buffer = buf, silent = true })
-end
-
 function M.setup()
   -- Clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
@@ -47,21 +10,18 @@ function M.setup()
   -- Diagnostics
   vim.keymap.set('n', '<leader>q', function()
     require('custom.core.quickfix').pick()
-  end, { desc = '[Q]uickfix picker (diagnostics / build)' })
+  end, { desc = '[Q]uickfix picker' })
 
   -- File explorer
-  vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'Toggle file [E]xplorer' })
-
-  -- Help
-  vim.keymap.set('n', '<leader>h', show_nvim_help, { desc = 'Show Nvim [H]elp' })
+  vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'File [E]xplorer' })
 
   -- Git UI
-  vim.keymap.set('n', '<leader>g', '<cmd>LazyGit<CR>', { desc = 'Open [G]it UI (LazyGit)' })
+  vim.keymap.set('n', '<leader>g', '<cmd>LazyGit<CR>', { desc = 'Lazy[G]it' })
 
   -- Theme reload
   vim.keymap.set('n', '<leader>tr', function()
     require('custom.core.theme').reload(true)
-  end, { desc = '[T]heme [R]eload' })
+  end, { desc = '[R]eload theme' })
 
   -- Terminal mode escape
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
@@ -73,10 +33,10 @@ function M.setup()
   vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
   -- Window resize
-  vim.keymap.set('n', '<leader>wh', '<cmd>vertical resize -5<CR>', { desc = '[W]indow resize left' })
-  vim.keymap.set('n', '<leader>wl', '<cmd>vertical resize +5<CR>', { desc = '[W]indow resize right' })
-  vim.keymap.set('n', '<leader>wj', '<cmd>resize -5<CR>', { desc = '[W]indow resize down' })
-  vim.keymap.set('n', '<leader>wk', '<cmd>resize +5<CR>', { desc = '[W]indow resize up' })
+  vim.keymap.set('n', '<leader>wh', '<cmd>vertical resize -5<CR>', { desc = 'Resize [H] left' })
+  vim.keymap.set('n', '<leader>wl', '<cmd>vertical resize +5<CR>', { desc = 'Resize [L] right' })
+  vim.keymap.set('n', '<leader>wj', '<cmd>resize -5<CR>', { desc = 'Resize [J] down' })
+  vim.keymap.set('n', '<leader>wk', '<cmd>resize +5<CR>', { desc = 'Resize [K] up' })
 
   -- macOS-style navigation (Opt+arrows = word, Cmd+arrows = line)
   vim.keymap.set('i', '<M-BS>', '<C-w>', { desc = 'Delete word backward (Opt+Backspace)' })
@@ -103,7 +63,7 @@ function M.setup()
         return
       end
     end
-  end, { desc = 'Insert [C]laude [C]omment template' })
+  end, { desc = '[C]omment template' })
 
   -- LuaSnip: Insert Claude user/exchange snippet
   vim.keymap.set('n', '<leader>cu', function()
@@ -116,7 +76,7 @@ function M.setup()
         return
       end
     end
-  end, { desc = 'Insert [C]laude [U]ser/exchange snippet' })
+  end, { desc = '[U]ser exchange snippet' })
 
   -- LuaSnip navigation keymaps
   vim.keymap.set({ 'i', 's' }, '<C-k>', function()
