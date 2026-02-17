@@ -1,4 +1,4 @@
--- Quickfix picker: buffer diagnostics, workspace diagnostics, or async project build
+-- Async project build: detect project type, run build, populate quickfix for Trouble
 
 local M = {}
 
@@ -197,7 +197,7 @@ local function strip_ansi(str)
   return (str:gsub('\027%[[%d;]*m', ''))
 end
 
---- Run async build and populate quickfix list
+--- Run async build and populate quickfix list, then open Trouble
 ---@param cfg table Build config with cmd and optional efm
 local function run_build(cfg)
   local cmd_str = table.concat(cfg.cmd, ' ')
@@ -220,7 +220,7 @@ local function run_build(cfg)
       local output = strip_ansi((result.stdout or '') .. (result.stderr or ''))
       local lines = vim.split(output, '\n', { trimempty = true })
 
-      -- Build succeeded — just finish the spinner, no quickfix
+      -- Build succeeded — just finish the spinner
       if result.code == 0 then
         handle:report { message = 'Succeeded' }
         handle:finish()
@@ -259,32 +259,7 @@ local function run_build(cfg)
       handle:report { message = 'Failed — ' .. #lines .. ' line(s)' }
       handle:finish()
 
-      -- Temporarily disable equalalways so copen doesn't equalise windows
-      local saved_ea = vim.o.equalalways
-      vim.o.equalalways = false
-
-      vim.cmd 'botright copen'
-      -- Ensure there's a window above so the quickfix isn't the sole window
-      if vim.fn.winnr '$' == 1 then
-        vim.cmd 'above new'
-        vim.cmd 'wincmd j'
-      end
-      local qf_win = vim.api.nvim_get_current_win()
-      vim.wo[qf_win].winfixheight = true
-      vim.api.nvim_win_set_height(qf_win, 10)
-
-      vim.o.equalalways = saved_ea
-
-      -- <CR> mapping to resize quickfix after jumping to error
-      vim.keymap.set('n', '<CR>', function()
-        local ea = vim.o.equalalways
-        vim.o.equalalways = false
-        vim.cmd '.cc'
-        if vim.api.nvim_win_is_valid(qf_win) then
-          vim.api.nvim_win_set_height(qf_win, 10)
-        end
-        vim.o.equalalways = ea
-      end, { buffer = true })
+      vim.cmd 'Trouble qflist open'
     end)
   )
 end
@@ -331,51 +306,18 @@ local function pick_make_target(targets)
   end)
 end
 
---- Show quickfix picker
-function M.pick()
-  local options = {
-    { label = 'Buffer diagnostics', value = 'buffer' },
-    { label = 'Workspace diagnostics', value = 'workspace' },
-    { label = 'Build project', value = 'build' },
-  }
-
-  vim.ui.select(options, {
-    prompt = 'Quickfix',
-    format_item = function(item)
-      for i, opt in ipairs(options) do
-        if opt == item then
-          return i .. '. ' .. item.label
-        end
-      end
-      return item.label
-    end,
-  }, function(choice)
-    if not choice then
-      return
-    end
-
-    if choice.value == 'buffer' then
-      vim.diagnostic.setqflist {
-        severity = { min = vim.diagnostic.severity.WARN },
-        open = true,
-      }
-    elseif choice.value == 'workspace' then
-      vim.diagnostic.setqflist {
-        severity = { min = vim.diagnostic.severity.WARN },
-      }
-    elseif choice.value == 'build' then
-      local cfg, is_makefile = detect_build()
-      if not cfg then
-        vim.notify('No build config detected (go.mod, vite.config.*, tsconfig.json, *.csproj, Makefile)', vim.log.levels.WARN)
-        return
-      end
-      if is_makefile then
-        pick_make_target(cfg.targets)
-      else
-        run_build(cfg)
-      end
-    end
-  end)
+--- Run project build (auto-detects project type)
+function M.run()
+  local cfg, is_makefile = detect_build()
+  if not cfg then
+    vim.notify('No build config detected (go.mod, vite.config.*, tsconfig.json, *.csproj, Makefile)', vim.log.levels.WARN)
+    return
+  end
+  if is_makefile then
+    pick_make_target(cfg.targets)
+  else
+    run_build(cfg)
+  end
 end
 
 return M
