@@ -7,10 +7,10 @@ function M.setup()
   -- Clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
-  -- Diagnostics
+  -- Build
   vim.keymap.set('n', '<leader>q', function()
-    require('custom.core.quickfix').pick()
-  end, { desc = '[Q]uickfix picker' })
+    require('custom.core.build').run()
+  end, { desc = 'Build project' })
 
   -- File explorer
   vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'File [E]xplorer' })

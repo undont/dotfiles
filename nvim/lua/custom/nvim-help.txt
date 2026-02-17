@@ -33,7 +33,7 @@
 │  <leader>e           file tree       │  <leader>do         diff open      │
 │  -                   oil (parent dir)│  <leader>dc         diff close     │
 │  <leader>g           git (lazygit)   │  <leader>dp         PR diff review │
-│  <leader>q           quickfix picker │  <leader>pl         list PRs       │
+│  <leader>q           build project   │  <leader>pl         list PRs       │
 │  <leader>xx          all diagnostics │  <leader>pr         start review   │
 │  Ctrl+hjkl           move windows    │                                    │
 │                                      │                                    │
