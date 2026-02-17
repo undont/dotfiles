@@ -8,8 +8,10 @@
 │  w / b               word fwd/back   │  <leader>sg        live grep       │
 │  0 / $               line start/end  │  <leader>/         buffer search   │
 │  gg / G              file top/bottom │  <leader><leader>  open buffers    │
-│  Ctrl+d / Ctrl+u     half-page       │  <leader>?         full cheatsheet │
-│  Ctrl+o / Ctrl+i     jump back/fwd   │                                    │
+│  Ctrl+d / Ctrl+u     half-page       │  <leader>sR        search/replace  │
+│  Ctrl+o / Ctrl+i     jump back/fwd   │  <leader>?         full cheatsheet │
+│  s                   flash jump      │                                    │
+│  S                   flash treesitter│                                    │
 │                                      │                                    │
 └──────────────────────────────────────┴────────────────────────────────────┘
 
@@ -21,25 +23,27 @@
 │  p / P               paste after/bef │  gra                code action    │
 │  u / Ctrl+r          undo / redo     │  K                  hover docs     │
 │  .                   repeat last     │  <leader>lr         restart LSP    │
-│  <leader>f          format buffer  │
+│  <leader>f           format buffer   │  <leader>th         inlay hints    │
+│  <leader>a / A       swap param next │                                    │
 │                                      │                                    │
 └──────────────────────────────────────┴────────────────────────────────────┘
 
 ┌─ TOOLS ──────────────────────────────┬─ DIFF / PR ────────────────────────┐
 │                                      │                                    │
 │  <leader>e           file tree       │  <leader>do         diff open      │
-│  <leader>g           git (lazygit)   │  <leader>dc         diff close     │
-│  <leader>q           quickfix picker │  <leader>dp         PR diff review │
-│  <leader>h           this help       │  <leader>pl         list PRs       │
-│  Ctrl+hjkl           move windows    │  <leader>pr         start review   │
+│  -                   oil (parent dir)│  <leader>dc         diff close     │
+│  <leader>g           git (lazygit)   │  <leader>dp         PR diff review │
+│  <leader>q           quickfix picker │  <leader>pl         list PRs       │
+│  <leader>xx          all diagnostics │  <leader>pr         start review   │
+│  Ctrl+hjkl           move windows    │                                    │
 │                                      │                                    │
-├─ VCS (FUGITIVE) ─────────────────────┼─ WINDOW RESIZE ────────────────────┤
+├─ GIT HUNKS ──────────────────────────┼─ WINDOW RESIZE ────────────────────┤
 │                                      │                                    │
-│  <leader>vs          git status      │  <leader>wh         resize left    │
-│  <leader>vb          git blame       │  <leader>wl         resize right   │
-│  <leader>vd          diff split      │  <leader>wj         resize down    │
-│  l (in status)       open file       │  <leader>wk         resize up      │
-│  h (in file)         back to status  │                                    │
+│  <leader>hs          stage hunk      │  <leader>wh         resize left    │
+│  <leader>hr          reset hunk      │  <leader>wl         resize right   │
+│  <leader>hp          preview hunk    │  <leader>wj         resize down    │
+│  <leader>hb          blame line      │  <leader>wk         resize up      │
+│  <leader>hd          diff index      │                                    │
 │                                      │                                    │
 └──────────────────────────────────────┴────────────────────────────────────┘
 

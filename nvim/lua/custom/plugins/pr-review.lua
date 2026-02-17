@@ -96,9 +96,9 @@ return {
       'nvim-tree/nvim-web-devicons',
     },
     keys = {
-      { '<leader>pl', '<cmd>Octo pr list<CR>', desc = '[P]R [L]ist' },
-      { '<leader>pf', '<cmd>Octo pr search<CR>', desc = '[P]R [F]ind' },
-      { '<leader>psm', '<cmd>Octo pr merge squash<CR>', desc = '[P]R [S]quash [M]erge' },
+      { '<leader>pl', '<cmd>Octo pr list<CR>', desc = '[L]ist PRs' },
+      { '<leader>pf', '<cmd>Octo pr search<CR>', desc = '[F]ind PR' },
+      { '<leader>psm', '<cmd>Octo pr merge squash<CR>', desc = '[S]quash [M]erge' },
       {
         '<leader>po',
         function()
@@ -108,27 +108,27 @@ return {
             end
           end)
         end,
-        desc = '[P]R [O]pen by number',
+        desc = '[O]pen by number',
       },
-      { '<leader>pr', '<cmd>Octo review start<CR>', desc = '[P]R [R]eview start' },
-      { '<leader>pe', '<cmd>Octo review resume<CR>', desc = '[P]R review r[E]sume' },
-      { '<leader>pm', '<cmd>Octo review submit<CR>', desc = '[P]R review sub[M]it' },
-      { '<leader>pp', '<cmd>Octo pr approve<CR>', desc = '[P]R a[P]prove' },
-      { '<leader>pa', '<cmd>Octo comment add<CR>', desc = '[P]R comment [A]dd', mode = { 'n', 'v' } },
-      { '<leader>pc', '<cmd>Octo pr comments<CR>', desc = '[P]R [C]omments' },
-      { '<leader>pC', '<cmd>Octo review close<CR>', desc = '[P]R review [C]lose' },
-      { '<leader>pX', '<cmd>Octo pr close<CR>', desc = '[P]R close' },
+      { '<leader>pr', '<cmd>Octo review start<CR>', desc = '[R]eview start' },
+      { '<leader>pe', '<cmd>Octo review resume<CR>', desc = 'Review r[E]sume' },
+      { '<leader>pm', '<cmd>Octo review submit<CR>', desc = 'Review sub[M]it' },
+      { '<leader>pp', '<cmd>Octo pr approve<CR>', desc = 'A[P]prove' },
+      { '<leader>pa', '<cmd>Octo comment add<CR>', desc = 'Comment [A]dd', mode = { 'n', 'v' } },
+      { '<leader>pc', '<cmd>Octo pr comments<CR>', desc = '[C]omments' },
+      { '<leader>pC', '<cmd>Octo review close<CR>', desc = 'Review [C]lose' },
+      { '<leader>pX', '<cmd>Octo pr close<CR>', desc = 'Close PR' },
       -- PR actions
-      { '<leader>pb', '<cmd>Octo pr browser<CR>', desc = '[P]R [B]rowser' },
-      { '<leader>py', '<cmd>Octo pr url<CR>', desc = '[P]R [Y]ank URL' },
-      { '<leader>pk', '<cmd>Octo pr checks<CR>', desc = '[P]R chec[K]s' },
-      { '<leader>pO', '<cmd>Octo pr checkout<CR>', desc = '[P]R check[O]ut' },
-      { '<leader>pR', '<cmd>Octo pr ready<CR>', desc = '[P]R [R]eady' },
-      { '<leader>pD', '<cmd>Octo pr draft<CR>', desc = '[P]R [D]raft' },
+      { '<leader>pb', '<cmd>Octo pr browser<CR>', desc = 'Open in [B]rowser' },
+      { '<leader>py', '<cmd>Octo pr url<CR>', desc = '[Y]ank URL' },
+      { '<leader>pk', '<cmd>Octo pr checks<CR>', desc = 'Chec[K]s' },
+      { '<leader>pO', '<cmd>Octo pr checkout<CR>', desc = 'Check[O]ut' },
+      { '<leader>pR', '<cmd>Octo pr ready<CR>', desc = 'Mark [R]eady' },
+      { '<leader>pD', '<cmd>Octo pr draft<CR>', desc = 'Mark [D]raft' },
       -- Review/thread actions
-      { '<leader>pd', '<cmd>Octo review discard<CR>', desc = '[P]R review [D]iscard' },
-      { '<leader>pt', '<cmd>Octo thread resolve<CR>', desc = '[P]R [T]hread resolve' },
-      { '<leader>pT', '<cmd>Octo thread unresolve<CR>', desc = '[P]R [T]hread unresolve' },
+      { '<leader>pd', '<cmd>Octo review discard<CR>', desc = 'Review [D]iscard' },
+      { '<leader>pt', '<cmd>Octo thread resolve<CR>', desc = '[T]hread resolve' },
+      { '<leader>pT', '<cmd>Octo thread unresolve<CR>', desc = '[T]hread unresolve' },
     },
     config = function()
       vim.treesitter.language.register('markdown', 'octo')
