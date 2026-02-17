@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.23] - 2026-02-17
+
+### Added
+- Neovim: flash.nvim for jump/motion with search labels (`s`/`S` keys)
+- Neovim: nvim-treesitter-textobjects for structural selection (`am`/`im`, `aC`/`iC`), motion (`]m`/`[m`), and parameter swapping (`<leader>a`/`A`)
+- Neovim: grug-far.nvim for project-wide search and replace (`<leader>sR`)
+- Neovim: oil.nvim for filesystem-as-buffer editing (`-` key)
+- Neovim: trouble.nvim for better diagnostics lists (`<leader>xx`, `<leader>xX`, `<leader>xq`, `<leader>xl`)
+- Neovim: which-key group icons for all leader key groups
+- Neovim: Treesitter parsers for `dockerfile` and `make`
+- Brewfile: ollama (local LLM runner), build tools (binutils, gcc, nasm, nano), lazysql, cloudflared, lazydocker
+- Tmux: Gemini agent icon and colour support in alerts system
+- Zsh: `alerts-clear` alias to clear Claude agent alerts
+
+### Changed
+- Neovim: Shortened keymap descriptions across all plugins for cleaner which-key display
+- Neovim: Improved Roslyn solution filtering — patches `root_finder.find_solutions_from_file` instead of glob-based approach
+- Neovim: Removed `<leader>h` help popup (use `<leader>?` cheatsheet instead)
+- Neovim: Removed global fugitive keymaps (`<leader>vs/vb/vd`) — use LazyGit or gitsigns instead
+- Neovim: Removed which-key non-Nerd-Font icon fallbacks (Nerd Font assumed)
+
+### Removed
+- Brewfile: difi (inline diff TUI)
+
 ## [0.2.22] - 2026-02-16
 
 ### Added

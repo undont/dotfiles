@@ -19,70 +19,70 @@ return {
       function()
         require('neotest').run.run()
       end,
-      desc = 'Test: Run nearest',
+      desc = 'Run neares[T]',
     },
     {
       '<leader>tf',
       function()
         require('neotest').run.run(vim.fn.expand '%')
       end,
-      desc = 'Test: Run file',
+      desc = 'Run [F]ile',
     },
     {
       '<leader>ta',
       function()
         require('neotest').run.run { suite = true }
       end,
-      desc = 'Test: Run all',
+      desc = 'Run [A]ll',
     },
     {
       '<leader>tl',
       function()
         require('neotest').run.run_last()
       end,
-      desc = 'Test: Run last',
+      desc = 'Run [L]ast',
     },
     {
       '<leader>ts',
       function()
         require('neotest').summary.toggle()
       end,
-      desc = 'Test: Toggle summary',
+      desc = 'Toggle [S]ummary',
     },
     {
       '<leader>to',
       function()
         require('neotest').output.open { enter = true, auto_close = true }
       end,
-      desc = 'Test: Show output',
+      desc = 'Show [O]utput',
     },
     {
       '<leader>tO',
       function()
         require('neotest').output_panel.toggle()
       end,
-      desc = 'Test: Toggle output panel',
+      desc = 'Toggle [O]utput panel',
     },
     {
       '<leader>tS',
       function()
         require('neotest').run.stop()
       end,
-      desc = 'Test: Stop',
+      desc = '[S]top',
     },
     {
       '<leader>tw',
       function()
         require('neotest').watch.toggle(vim.fn.expand '%')
       end,
-      desc = 'Test: Toggle watch',
+      desc = 'Toggle [W]atch',
     },
     {
       '<leader>td',
       function()
         require('neotest').run.run { strategy = 'dap' }
       end,
-      desc = 'Test: Debug nearest',
+      desc = '[D]ebug nearest',
     },
     {
       '[t',

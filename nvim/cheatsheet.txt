@@ -5,6 +5,11 @@ Line start/end | 0 / $
 File top/bottom | gg / G
 Half-page down/up | Ctrl+d / Ctrl+u
 Jump back/forward | Ctrl+o / Ctrl+i
+Flash jump | s
+Flash treesitter | S
+Remote flash | r (operator-pending)
+Treesitter search | R (operator-pending/visual)
+Toggle flash in search | Ctrl+s (command mode)
 
 ## search @search
 Find files | <leader>sf
@@ -21,6 +26,7 @@ Search in open files | <leader>s/
 Search Neovim config | <leader>sn
 Go to line number | <leader>sl
 Select Telescope picker | <leader>ss
+Search & replace (grug-far) | <leader>sR
 Open cheatsheet | <leader>?
 
 ## editing @editing
@@ -30,6 +36,21 @@ Delete/yank line | dd / yy
 Paste after/before | p / P
 Undo / redo | u / Ctrl+r
 Repeat last action | .
+
+## text-objects @text-objects
+Inner/around word | iw / aw
+Inside quotes/parens/braces | i" / i( / i{
+Around/inside method/function | am / im
+Around/inside class | aC / iC
+Surround add (word with ") | saiw"
+Surround delete | sd'
+Surround replace | sr("
+Next function start | ]m
+Previous function start | [m
+Next function end | ]M
+Previous function end | [M
+Swap parameter with next | <leader>a
+Swap parameter with previous | <leader>A
 
 ## lsp @lsp
 Go to definition | grd
@@ -46,20 +67,19 @@ Toggle inlay hints | <leader>th
 Format buffer | <leader>f
 LSP restart | <leader>lr
 
-## text-objects @text-objects
-Inner/around word | iw / aw
-Inside quotes/parens/braces | i" / i( / i{
-Surround add (word with ") | saiw"
-Surround delete | sd'
-Surround replace | sr("
-
 ## tools @tools
 Toggle file tree | <leader>e
 NeoTree reveal | \
+Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
-Diagnostics list | <leader>q
-Help popup | <leader>h
+Quickfix picker | <leader>q
+
+## diagnostics @diagnostics
+All diagnostics (Trouble) | <leader>xx
+Buffer diagnostics (Trouble) | <leader>xX
+Quickfix list (Trouble) | <leader>xq
+Location list (Trouble) | <leader>xl
 
 ## windows @windows
 Move to window | Ctrl+hjkl
@@ -108,7 +128,7 @@ Diffview PR review | <leader>dp
 
 ## pr-review @pr-review
 List PRs | <leader>pl
-Search PRs | <leader>ps
+Search PRs | <leader>pf
 Open PR by number | <leader>po
 Start review | <leader>pr
 Resume review | <leader>pe
@@ -144,13 +164,6 @@ Fold section | <leader>mf
 Unfold section | <leader>mu
 Renumber list | <leader>mn
 Next/prev heading | ]] / [[
-
-## vcs @vcs
-VCS status (Fugitive) | <leader>vs
-VCS close | <leader>vc
-VCS blame | <leader>vb
-VCS diff split | <leader>vd
-Next/prev changed file | ]f / [f
 
 ## test @test
 Run nearest test | <leader>tt
