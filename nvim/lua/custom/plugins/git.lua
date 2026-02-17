@@ -190,16 +190,7 @@ return {
   {
     'tpope/vim-fugitive',
     cmd = { 'Git', 'G', 'Gvdiffsplit', 'Gvsplit', 'Gdiffsplit', 'Gread', 'Gwrite', 'GBrowse' },
-    keys = {
-      { '<leader>vs', '<cmd>Git<CR>', desc = '[V]cs [S]tatus' },
-      {
-        '<leader>vc',
-        close_fugitive,
-        desc = '[V]cs [C]lose fugitive',
-      },
-      { '<leader>vb', '<cmd>Git blame<CR>', desc = '[V]cs [B]lame' },
-      { '<leader>vd', '<cmd>Gvdiffsplit<CR>', desc = '[V]cs [D]iff split' },
-    },
+    keys = {},
     config = function()
       -- Make navigate_fugitive_file available globally for gitsigns ]f/[f
       _G._fugitive_navigate = navigate_fugitive_file
@@ -219,7 +210,7 @@ return {
 
           -- q / <leader>vc: close fugitive status
           vim.keymap.set('n', 'q', close_fugitive, vim.tbl_extend('force', opts, { desc = 'Close fugitive status' }))
-          vim.keymap.set('n', '<leader>vc', close_fugitive, vim.tbl_extend('force', opts, { desc = '[V]cs [C]lose fugitive' }))
+          vim.keymap.set('n', '<leader>dq', close_fugitive, vim.tbl_extend('force', opts, { desc = '[Q]uit Fugitive' }))
 
           -- ]c / [c: navigate between changed entries (no wrap)
           vim.keymap.set('n', ']c', function()
@@ -238,7 +229,7 @@ return {
           end, vim.tbl_extend('force', opts, { desc = 'Previous changed file' }))
 
           -- l: open file under cursor in the edit pane (reuse existing)
-          vim.keymap.set('n', 'l', fugitive_open_file, opts)
+          vim.keymap.set('n', 'l', fugitive_open_file, vim.tbl_extend('force', opts, { desc = 'Open file in edit pane' }))
 
           -- E: exit fugitive and edit the currently open file normally
           --    :q / :wq on the file will return to fugitive

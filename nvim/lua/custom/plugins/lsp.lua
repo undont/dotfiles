@@ -68,15 +68,15 @@ return {
           end
 
           -- LSP keymaps
-          map('grn', vim.lsp.buf.rename, '[R]e[n]ame')
-          map('gra', vim.lsp.buf.code_action, '[G]oto Code [A]ction', { 'n', 'x' })
-          map('grr', lsp_dedup 'references', '[G]oto [R]eferences')
-          map('gri', lsp_dedup 'implementation', '[G]oto [I]mplementation')
-          map('grd', lsp_dedup 'definition', '[G]oto [D]efinition')
-          map('grD', vim.lsp.buf.declaration, '[G]oto [D]eclaration')
-          map('gO', require('telescope.builtin').lsp_document_symbols, 'Open Document Symbols')
-          map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Open Workspace Symbols')
-          map('grt', lsp_dedup 'type_definition', '[G]oto [T]ype Definition')
+          map('grn', vim.lsp.buf.rename, 'Re[n]ame')
+          map('gra', vim.lsp.buf.code_action, 'Code [A]ction', { 'n', 'x' })
+          map('grr', lsp_dedup 'references', '[R]eferences')
+          map('gri', lsp_dedup 'implementation', '[I]mplementation')
+          map('grd', lsp_dedup 'definition', '[D]efinition')
+          map('grD', vim.lsp.buf.declaration, '[D]eclaration')
+          map('gO', require('telescope.builtin').lsp_document_symbols, 'Document symbols')
+          map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Workspace symbols')
+          map('grt', lsp_dedup 'type_definition', '[T]ype definition')
           map('<leader>lr', function()
             -- Get all LSP clients attached to the current buffer
             local clients = vim.lsp.get_clients { bufnr = event.buf }
@@ -96,7 +96,7 @@ return {
             else
               vim.notify('No LSP servers attached to buffer', vim.log.levels.WARN)
             end
-          end, '[L]SP [R]estart')
+          end, '[R]estart')
 
           -- Helper for checking client support
           ---@param client vim.lsp.Client
@@ -142,7 +142,7 @@ return {
           if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
-            end, '[T]oggle Inlay [H]ints')
+            end, 'Inlay [H]ints')
           end
         end,
       })
