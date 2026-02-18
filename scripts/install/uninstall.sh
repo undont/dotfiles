@@ -82,8 +82,8 @@ SYMLINKS=(
     "$HOME/.local/launchers/tnew"
 )
 
-# Add macOS-specific ghostty symlink
-if [[ "$(uname)" == "Darwin" ]]; then
+# Legacy macOS ghostty symlink (no longer created — Ghostty reads XDG natively)
+if [[ "$(uname)" == "Darwin" ]] && [[ -L "$HOME/Library/Application Support/com.mitchellh.ghostty/config" ]]; then
     SYMLINKS+=("$HOME/Library/Application Support/com.mitchellh.ghostty/config")
 fi
 
@@ -197,6 +197,40 @@ if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
         success "Removed empty local-aliases.zsh"
     else
         warn "Kept $ZSH_CONFIG_DIR/local-aliases.zsh (contains data)"
+    fi
+fi
+
+# Handle Ghostty local override file
+ghostty_local="$HOME/.config/ghostty/local"
+if [[ -f "$ghostty_local" ]]; then
+    # Check if it has any non-comment, non-blank content
+    if grep -qE '^[^#[:space:]]' "$ghostty_local" 2>/dev/null; then
+        warn "Kept $ghostty_local (contains your personal overrides — remove manually if desired)"
+    else
+        rm -f "$ghostty_local"
+        success "Removed $ghostty_local (empty/template-only)"
+    fi
+fi
+
+# Handle tmux local override file
+tmux_local="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/local.conf"
+if [[ -f "$tmux_local" ]]; then
+    if grep -qE '^[^#[:space:]]' "$tmux_local" 2>/dev/null; then
+        warn "Kept $tmux_local (contains your personal overrides — remove manually if desired)"
+    else
+        rm -f "$tmux_local"
+        success "Removed $tmux_local (empty/template-only)"
+    fi
+fi
+
+# Handle Neovim local override file
+nvim_local="$HOME/.config/nvim/local.lua"
+if [[ -f "$nvim_local" ]]; then
+    if grep -qE '^[^-[:space:]]' "$nvim_local" 2>/dev/null; then
+        warn "Kept $nvim_local (contains your personal overrides — remove manually if desired)"
+    else
+        rm -f "$nvim_local"
+        success "Removed $nvim_local (empty/template-only)"
     fi
 fi
 

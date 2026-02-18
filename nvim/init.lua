@@ -47,3 +47,10 @@ require('lazy').setup({
     },
   },
 })
+
+-- User overrides (not managed by dotfiles — survives dotfiles update)
+-- Edit ~/.config/nvim/local.lua to personalise options, keymaps, etc.
+local local_config = vim.fn.stdpath 'config' .. '/local.lua'
+if vim.uv.fs_stat(local_config) then
+  dofile(local_config)
+end

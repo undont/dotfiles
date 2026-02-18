@@ -179,8 +179,14 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts:
 3. `ghostty/config.template` - Ghostty template with `{{PLACEHOLDERS}}` (in repo)
 4. `~/.config/tmux/tmux.conf` - Generated config (XDG location)
 5. `~/.tmux.conf` - Compatibility symlink → `~/.config/tmux/tmux.conf`
-6. `~/.config/ghostty/config` - Generated ghostty config (XDG location)
-7. On macOS: `~/Library/Application Support/com.mitchellh.ghostty/config` → symlink to XDG
+6. `~/.config/ghostty/config` - Generated ghostty config (XDG location, read natively on all platforms)
+
+**Local Override Files (user-owned, survive theme changes):**
+- `~/.config/ghostty/local` — appended to Ghostty config via `config-file` include
+- `~/.config/tmux/local.conf` — sourced at end of tmux config via `source-file -q`
+- `~/.config/nvim/local.lua` — personal Neovim settings (cursor, options, keymaps)
+
+These files are created from templates on first install and never overwritten by `theme-switch` or `dotfiles update`. Add cursor style, font overrides, extra keybindings, etc. here.
 
 **Switching Themes:**
 ```bash
@@ -194,6 +200,7 @@ theme-switch current             # Show current theme
 - Templates stay clean in repository
 - Follows XDG standard (~/.config)
 - Backwards compatible via ~/.tmux.conf symlink
+- Personal overrides survive theme changes via local override files
 
 **Migration:** Existing users should run `scripts/migrate-tmux-config.sh` once to move from the old setup to XDG.
 

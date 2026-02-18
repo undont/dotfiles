@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.26] - 2026-02-18
+
+### Added
+- Local override files for personal settings that survive theme changes and `dotfiles update`: `~/.config/tmux/local.conf`, `~/.config/ghostty/local`, `~/.config/nvim/local.lua` — created from templates on install, never overwritten
+- `scripts/reload-locals.sh`: reload tmux, Ghostty, and all live Neovim instances after editing local overrides
+- Tmux: `prefix + r` reloads all local overrides (tmux + Ghostty + nvim); `prefix + I` reloads tmux config only
+- Tmux: `cursor-style block` default (overridable in `local.conf`)
+- Ghostty: `shift+backspace` and `shift+space` keybinds for correct terminal passthrough
+- ShellCheck: `.shellcheckrc` project-wide config to document and centralise suppressed codes
+
+### Changed
+- Ghostty: removed macOS Application Support symlink — Ghostty reads `~/.config/ghostty/config` natively on all platforms; no symlink needed
+- Shell scripts: fixed `printf` format strings to use `%s` placeholders instead of inline ANSI colour variables (ShellCheck SC2059)
+- Neovim: markdown-ui todo status config updated to new named-table API with `status_order`
+- Neovim: diffview file panel positioned at bottom with height 10
+
 ## [0.2.25] - 2026-02-18
 
 ### Added

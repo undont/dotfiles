@@ -1,0 +1,16 @@
+-- =============================================================================
+-- NEOVIM LOCAL OVERRIDES
+-- =============================================================================
+-- Your personal Neovim settings. This file is yours — add anything you want.
+-- It is loaded AFTER the base config and all plugins, so your values take
+-- priority.
+--
+-- This file survives dotfiles update (it's gitignored).
+--
+
+-- Examples:
+--   vim.opt.guicursor = 'a:ver25'  -- bar cursor in all modes
+--   vim.o.scrolloff = 5
+--   vim.o.relativenumber = false
+--   vim.o.wrap = true
+--   vim.keymap.set('n', '<leader>xx', ':!echo hello<CR>')
