@@ -6,6 +6,7 @@
 -- priority.
 --
 -- This file survives dotfiles update (it's gitignored).
+-- After making changes, reload with: prefix + r (in tmux)
 --
 
 -- Examples:

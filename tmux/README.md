@@ -19,6 +19,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | List OpenCode instances | `prefix + o`                    |
 | List Gemini instances | `prefix + g`                      |
 | List nvim instances   | `prefix + n`                      |
+| Reload local overrides | `prefix + r`                     |
 
 ## Setup Guide (New Machine)
 
@@ -82,10 +83,6 @@ tattach() {
 
 Then reload: `source ~/.zshrc`
 
-### 6. Optional: Create help file
-
-Create `~/.tmux/tmux-help.txt` with keybinding reference (displayed with `prefix + h`).
-
 ---
 
 ## Keybindings
@@ -93,10 +90,6 @@ Create `~/.tmux/tmux-help.txt` with keybinding reference (displayed with `prefix
 ### Prefix
 
 The prefix key is **`` ` ``** (backtick - double-tap for literal).
-
-### Help Popup
-
-Press `prefix + h` to display the keybinding reference. Close it by pressing `Esc`.
 
 ### Theme Picker
 
@@ -258,6 +251,12 @@ Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so
 | Install plugins | `prefix + I`     |
 | Update plugins  | `prefix + U`     |
 | Clean unused    | `prefix + Alt+u` |
+
+### Local Overrides
+
+`~/.config/tmux/local.conf` is your personal override file — sourced after the base config so your settings take priority. It is created from a template on first install and never overwritten by `theme-switch` or `dotfiles update`.
+
+Use it for cursor style, extra keybindings, plugin additions, or any other personal tweaks. After editing, reload with `prefix + r`.
 
 ---
 

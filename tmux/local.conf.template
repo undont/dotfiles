@@ -6,6 +6,7 @@
 # the defaults.
 #
 # This file survives theme-switch and dotfiles update.
+# After making changes, reload with: prefix + r
 #
 # File structure:
 #   ~/.config/tmux/tmux.conf   - Generated config (managed by theme-switch)
