@@ -77,8 +77,7 @@ nvim/
     │   │   ├── test.lua               # Test runner (neotest)
     │   │   ├── markdown-ui.lua        # Markdown editing (mkdnflow)
     │   │   └── claude-prompt.lua      # Claude prompt file utilities
-    │   ├── lazy-bootstrap.lua         # Lazy.nvim auto-installer
-    │   └── nvim-help.txt              # Help popup content
+    │   └── lazy-bootstrap.lua         # Lazy.nvim auto-installer
     └── kickstart/                     # Kickstart-provided plugins
         ├── health.lua                 # Health checks
         └── plugins/
@@ -243,6 +242,12 @@ The following formatters and linters are automatically installed:
 Search and install servers from the Mason UI, or add them to `lua/custom/plugins/lsp.lua`.
 
 ## Customisation
+
+### Personal Overrides
+
+`~/.config/nvim/local.lua` is your personal override file — loaded after all plugins so your settings take priority. It is created from a template on first install and never overwritten by `dotfiles update`.
+
+Use it for cursor style, personal keymaps, option overrides, or any other local settings. After editing, reload with `prefix + r` (in tmux).
 
 ### Changing Colourscheme
 

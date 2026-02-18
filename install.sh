@@ -310,6 +310,11 @@ if [[ "$PRESET" == "core" || "$PRESET" == "full" ]]; then
     ((STEP++))
 fi
 echo "  $STEP. Edit ~/.config/zsh/secrets.zsh to add your API keys"
+((STEP++))
+echo "  $STEP. Personalise with local override files (never overwritten by updates):"
+echo "       ~/.config/nvim/local.lua       → Neovim options, keymaps, cursor style"
+echo "       ~/.config/tmux/local.conf      → Extra tmux settings"
+echo "       ~/.config/ghostty/local        → Ghostty font/window overrides"
 echo ""
 if [[ $SKIP_BACKUP -eq 0 ]] && [[ -d "${BACKUP_DIR:-}" ]]; then
     echo "Backup location: $BACKUP_DIR"

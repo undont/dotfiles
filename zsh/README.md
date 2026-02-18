@@ -399,7 +399,6 @@ Edit `~/.zshrc` and add config below the framework source line:
 # =============================================================================
 export EDITOR="code"                    # Override default editor
 alias myproject="cd ~/src/myapp"        # Project shortcuts
-alias da="cd ~/src/dana"                # Quick navigation
 export PATH="$HOME/scripts:$PATH"       # Extra PATH entries
 ```
 
@@ -408,9 +407,8 @@ export PATH="$HOME/scripts:$PATH"       # Extra PATH entries
 #### Project Shortcuts
 
 ```bash
-export DANA_ROOT="$HOME/src/dana"
-alias da="cd $DANA_ROOT"
-alias dap="cd $DANA_ROOT/.claude/plans"
+export MYAPP_ROOT="$HOME/src/myapp"
+alias myapp="cd $MYAPP_ROOT"
 ```
 
 #### Multi-Project Workspace

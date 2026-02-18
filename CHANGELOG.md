@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.27] - 2026-02-18
+
+### Fixed
+- `prefix+I` now correctly installs TPM plugins (non-interactive) and shows a completion message, instead of incorrectly overriding to config reload
+- Added `prefix+r` reload hint to local override templates (tmux, Ghostty, Neovim)
+
+### Changed
+- Docs updated to reflect recent changes: new plugins, local override files, removed `Space h` help popup, removed `dana` references, corrected Ghostty setup instructions
+
 ## [0.2.26] - 2026-02-18
 
 ### Added

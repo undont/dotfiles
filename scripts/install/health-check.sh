@@ -181,6 +181,21 @@ echo "----------------"
 check_directory "$HOME/.tmux/plugins/tpm" "TPM (Tmux Plugin Manager)"
 if should_install "core"; then
     check_directory "$HOME/.local/share/nvim/lazy" "lazy.nvim (Neovim)"
+
+    # Warn if old packer install exists — it shadows lazy.nvim plugins in the
+    # runtimepath and can cause "attempt to call field X (a nil value)" errors
+    # when Neovim loads the wrong (pre-rewrite) version of a plugin module.
+    PACKER_DIR="$HOME/.local/share/nvim/site/pack/packer"
+    printf "Checking %-30s" "no stale packer install..."
+    if [[ -d "$PACKER_DIR" ]]; then
+        printf '%sWARN%s\n' "${YELLOW}" "${NC}"
+        printf '  Stale packer plugins at %s\n' "$PACKER_DIR"
+        printf '  These shadow lazy.nvim plugins and can break Neovim.\n'
+        printf '  Remove with: rm -rf %s\n' "$PACKER_DIR"
+        ISSUES=1
+    else
+        printf '%sOK%s\n' "${GREEN}" "${NC}"
+    fi
 fi
 
 echo ""
