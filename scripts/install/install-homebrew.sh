@@ -4,6 +4,7 @@ set -euo pipefail
 # Install Homebrew if not present, update if already installed
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/common.sh"
 
 print_section "Homebrew Setup"

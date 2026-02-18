@@ -14,9 +14,10 @@ return {
         },
         to_do = {
           statuses = {
-            { name = 'not_started', marker = ' ' },
-            { name = 'complete', marker = 'x' },
+            not_started = { marker = ' ' },
+            complete = { marker = 'x' },
           },
+          status_order = { 'not_started', 'complete' },
         },
         tables = {
           auto_extend_rows = true,

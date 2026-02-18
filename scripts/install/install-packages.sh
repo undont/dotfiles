@@ -4,7 +4,9 @@ set -euo pipefail
 # Install packages from Brewfile based on preset
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/common.sh"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/brewfile.sh"
 
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"

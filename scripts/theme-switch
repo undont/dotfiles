@@ -186,6 +186,12 @@ apply_theme() {
             -e "s|{{GHOSTTY_PALETTE_15}}|$GHOSTTY_PALETTE_15|g" \
             "$GHOSTTY_TEMPLATE" > "$GHOSTTY_OUTPUT"
         [[ "$quiet" != "true" ]] && success "Generated ghostty configuration"
+
+        # Ensure local override file exists (Ghostty errors on missing config-file includes)
+        local ghostty_local="$HOME/.config/ghostty/local"
+        if [[ ! -f "$ghostty_local" ]]; then
+            touch "$ghostty_local"
+        fi
     else
         [[ "$quiet" != "true" ]] && warn "Ghostty template not found, skipping"
     fi

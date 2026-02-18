@@ -1,6 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
+# shellcheck source=/dev/null
 source "$(dirname "${BASH_SOURCE[0]}")/brewfile.sh"
+# shellcheck source=/dev/null
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # Test suite for installation script libraries
@@ -405,7 +407,8 @@ if [[ -f "$FRAMEWORK_FILE" ]]; then
         fail "dotfiles.zsh missing zprof module loading"
     fi
 
-    # Check for ZPROF conditional
+    # Check for ZPROF conditional (single quotes are intentional — matching literal string)
+    # shellcheck disable=SC2016
     if [[ "$framework_content" == *'[[ -n "$ZPROF" ]]'* ]]; then
         pass "dotfiles.zsh has ZPROF conditional"
     else

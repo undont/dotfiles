@@ -27,6 +27,9 @@ nvim/.luarc.json
 # Neovim backup files
 nvim/init.lua.backup
 
+# Neovim local override (user-owned, not tracked)
+nvim/local.lua
+
 # AI Code Assistants
 .claude/*
 !.claude/commands/
