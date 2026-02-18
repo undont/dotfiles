@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.24] - 2026-02-18
+
+### Added
+- Neovim: `<leader>cr` keymap to toggle `<comment>` block state between open and resolved
+
+### Changed
+- Neovim: claude-prompt `@` file picker now activates for any `.md` file under a `.claude/` directory (not just `claude-prompt-*.md`)
+- Neovim: `@@` inserts a literal `@` in claude-prompt files (single `@` opens file picker)
+- Neovim: mkdnflow table config updated to `auto_extend_rows`/`auto_extend_cols` API
+
+### Fixed
+- Tmux: launcher name sanitisation now uses hyphens instead of underscores for invalid characters
+- Tmux: launcher directory picker supports `opt-enter` to use typed path when no match exists
+- Tmux: bare `~` path now correctly expands to `$HOME` in generated launcher scripts
+
+### Removed
+- Neovim: custom claude-diff plugin and associated hook scripts (`nvim-diff-checkpoint.sh`, `nvim-diff-permission.sh`, `nvim-diff-sync.sh`)
+- Tmux: `test-claude-diff.sh` integration tests
+
 ## [0.2.23] - 2026-02-17
 
 ### Added

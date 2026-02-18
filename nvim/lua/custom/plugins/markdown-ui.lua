@@ -12,9 +12,6 @@ return {
           yaml = false,
           cmp = false,
         },
-        lists = {
-          enable = true,
-        },
         to_do = {
           statuses = {
             { name = 'not_started', marker = ' ' },
@@ -22,8 +19,8 @@ return {
           },
         },
         tables = {
-          enable = true,
-          auto_extend = true,
+          auto_extend_rows = true,
+          auto_extend_cols = true,
           format_on_move = true,
         },
         mappings = {
