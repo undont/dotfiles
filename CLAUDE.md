@@ -100,49 +100,6 @@ dotfiles health    # Run health check
 ./scripts/install/uninstall.sh     # Remove symlinks
 ```
 
-### Claude Code Diff Plugin
-
-Interactive diff visualisation for Claude Code edits in Neovim. See changes before accepting them.
-
-**Setup:**
-1. Plugin is loaded automatically via `nvim/lua/custom/plugins/claude-diff.lua`
-2. Hook scripts are in `scripts/hooks/nvim-diff-checkpoint.sh` and `nvim-diff-sync.sh`
-3. Configure hooks in `~/.claude/settings.json` (see plugin README)
-
-**Usage:**
-1. Select nvim instance: `prefix+n` → press `c` → paste command
-2. Use Claude Code normally to edit files
-3. Diff UI appears automatically showing changes
-4. Review and accept/reject
-
-**Keybindings:**
-- `<leader>cv` - Toggle diff view
-- `<leader>ca` - Accept all changes (keep edits)
-- `<leader>cr` - Reject all changes (revert to checkpoint)
-- `q` or `Esc` - Close diff window
-
-**How it works:**
-- PreToolUse hook creates git stash checkpoint before Claude edits
-- PostToolUse hook sends diffs to Neovim via RPC
-- Plugin displays diffs in floating window
-- Accept = keep changes + drop stash
-- Reject = restore from stash + discard changes
-
-**Requirements:**
-- Git repository (dotfiles already is)
-- `NVIM_SOCKET` configured (already set up)
-- Neovim 0.9+
-
-**Testing:**
-```bash
-# Integration tests
-tmux/scripts/tests/test-claude-diff.sh
-```
-
-**Plugin repository:** `/Users/bssmnt/playground/nvim-claude-code-plugin/`
-
-See plugin README for full documentation.
-
 ## Architecture
 
 ### Directory Structure
