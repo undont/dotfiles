@@ -626,9 +626,8 @@ run '~/.tmux/plugins/tpm/tpm'
 bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "pbcopy"
 bind y display-popup -w 80% -h 60% -E "source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
 
-# Override TPM's prefix+I (install plugins) with config reload
-unbind I
-bind I source-file ~/.config/tmux/tmux.conf \; display-message "Config reloaded"    # prefix + I
+# Override TPM's prefix+I to show a completion message after installing plugins
+bind I run-shell "~/.tmux/plugins/tpm/bin/install_plugins > /dev/null 2>&1" \; display-message "All plugins installed successfully!"    # prefix + I
 
 # Reload all local overrides (tmux + Ghostty + nvim)
 bind r run-shell "~/dotfiles/scripts/reload-locals.sh > /dev/null 2>&1"    # prefix + r

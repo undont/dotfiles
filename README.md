@@ -232,6 +232,7 @@ The uninstall script uses your saved preset to determine which packages to remov
 - fzf session/window switcher with coloured indicators for agent alerts (⚡ Claude, 🔮 OpenCode)
 - Launcher picker (`prefix + p`) — create, run, and manage session launchers
 - 15 coordinated themes via `theme-switch` (Maple, Dracula, Catppuccin, Tokyo Night, Nord, and more)
+- Local override file (`~/.config/tmux/local.conf`) — survives theme changes and updates
 
 ### Neovim
 - lazy.nvim plugin manager
@@ -243,10 +244,14 @@ The uninstall script uses your saved preset to determine which packages to remov
 - Test runner — Neotest with .NET, Go, and Vitest/Bun adapters
 - .NET development — easy-dotnet.nvim with Roslyn LSP
 - Markdown editing — mkdnflow.nvim (list continuation, todo toggles, table formatting)
+- Navigation — flash.nvim (jump), grug-far (find and replace), oil.nvim (file operations), trouble.nvim (diagnostics)
+- Multiple cursors — vim-visual-multi (`Ctrl+n`, `Alt+↓/↑`)
+- mini.notify (notifications), mini.bracketed (`]/[` navigation), mini.splitjoin (`gS`/`gJ`)
 - GitHub Copilot (disabled for sensitive files)
 - 15 self-contained colourschemes matching the dotfiles theme system (no plugin deps)
 - Dynamic diff highlights — consistent tinted backgrounds across fugitive, diffview, and octo
 - Treesitter syntax highlighting
+- Local override file (`~/.config/nvim/local.lua`) — survives updates
 
 ### AI Coding Assistants
 - Claude Code (with tmux alert integration)
@@ -261,6 +266,7 @@ The uninstall script uses your saved preset to determine which packages to remov
 - Colour scheme follows active theme (via `theme-switch`)
 - Zsh shell integration
 - macOS optimised (glass icon, left Option as Alt)
+- Local override file (`~/.config/ghostty/local`) — survives theme changes and updates
 
 ### Karabiner Elements
 - Caps Lock to Escape (Ghostty and JetBrains IDEs)
@@ -291,12 +297,12 @@ Press `prefix + p` to open the launcher picker. Launchers are shell scripts that
 | Close window | `Opt+x` |
 | URL picker | `` ` y `` |
 | Undo pane/window | `Opt+u` |
+| Reload local overrides | `` ` r `` |
 
 ### Neovim
 | Action | Keybinding |
 |--------|------------|
 | Leader | `Space` |
-| Help popup | `Space h` |
 | Cheatsheet | `Space ?` |
 | Find files | `Space sf` |
 | Live grep | `Space sg` |

@@ -5,6 +5,7 @@
 # It is loaded AFTER the base config, so your values override the defaults.
 #
 # This file survives theme-switch and dotfiles update.
+# After making changes, reload with: prefix + r (in tmux)
 #
 # File structure:
 #   ~/.config/ghostty/config   - Generated config (managed by theme-switch)
