@@ -46,6 +46,37 @@ local function check_cmd(dir)
   return { 'npm', 'run', 'check' }
 end
 
+--- Find the best dotnet build target, preferring solutions over projects.
+--- From the matched .csproj directory, walks up to cwd looking for .sln/.slnx.
+---@param csproj_dir string directory containing the matched .csproj
+---@return string target path to build
+local function find_dotnet_target(csproj_dir)
+  local cwd = vim.fn.getcwd()
+  local dir = csproj_dir
+
+  -- Walk up looking for a solution file
+  while #dir >= #cwd do
+    for _, ext in ipairs { '*.slnx', '*.sln' } do
+      local matches = vim.fn.glob(dir .. '/' .. ext, false, true)
+      for _, path in ipairs(matches) do
+        -- Skip build variants (.ci.slnx, .build.sln, .test.sln, etc.)
+        if not vim.fs.basename(path):match '%.[%l][%w]*%.slnx?$' then
+          return path
+        end
+      end
+    end
+    local parent = vim.fn.fnamemodify(dir, ':h')
+    if parent == dir then
+      break
+    end
+    dir = parent
+  end
+
+  -- No solution found — use the .csproj directly
+  local csproj = vim.fn.glob(csproj_dir .. '/*.csproj', false, true)
+  return csproj[1] or csproj_dir
+end
+
 -- Build commands keyed by root marker file
 -- Each entry: { marker, cmd (table or function(dir)->table), efm }
 -- Checked in priority order — first match wins (unless Makefile, which extracts targets)
@@ -67,7 +98,9 @@ local build_configs = {
   },
   {
     marker = '*.csproj',
-    cmd = { 'dotnet', 'build', '--no-restore', '-consoleloggerparameters:NoSummary' },
+    cmd = function(dir)
+      return { 'dotnet', 'build', find_dotnet_target(dir), '-consoleloggerparameters:NoSummary' }
+    end,
     efm = '%f(%l\\,%c): %trror %m,%f(%l\\,%c): %tarning %m',
   },
 }

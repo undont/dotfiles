@@ -31,7 +31,13 @@ ln -sf ~/dotfiles/ghostty/config ~/.config/ghostty/config
 | Keybind | Action |
 |---------|--------|
 | `Shift+Enter` | Send escape + return (for tmux) |
+| `Ctrl+Enter` | Send kitty-protocol enter (zsh/nvim) |
+| `Ctrl+Shift+Enter` | Send kitty-protocol enter variant |
 | `Opt+c` | Send escape + c |
+| `Opt+Shift+[` | Send escape + `{` |
+| `Opt+Shift+]` | Send escape + `}` |
+| `Opt+Up` | Send modified cursor up (apps) |
+| `Opt+Down` | Send modified cursor down (apps) |
 
 ## Configuration Reference
 
