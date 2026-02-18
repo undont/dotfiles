@@ -156,7 +156,7 @@ confirm() {
 # Usage: sanitised=$(sanitise_launcher_name "My Launcher!")
 sanitise_launcher_name() {
     local raw="$1"
-    raw=$(printf '%s' "$raw" | tr -c '[:alnum:]_.-' '_' | tr '[:upper:]' '[:lower:]')
+    raw=$(printf '%s' "$raw" | tr -c '[:alnum:]_.-' '-' | tr '[:upper:]' '[:lower:]')
     raw="${raw#"${raw%%[[:alnum:]_]*}"}"
     raw="${raw:0:64}"
     case "$raw" in

@@ -76,7 +76,7 @@ nvim/
     │   │   ├── dotnet.lua             # .NET development (easy-dotnet)
     │   │   ├── test.lua               # Test runner (neotest)
     │   │   ├── markdown-ui.lua        # Markdown editing (mkdnflow)
-    │   │   └── claude-diff.lua        # Claude Code diff visualisation
+    │   │   └── claude-prompt.lua      # Claude prompt file utilities
     │   ├── lazy-bootstrap.lua         # Lazy.nvim auto-installer
     │   └── nvim-help.txt              # Help popup content
     └── kickstart/                     # Kickstart-provided plugins

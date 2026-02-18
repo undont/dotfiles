@@ -103,6 +103,9 @@ Scroll docs up/down | Ctrl+b / Ctrl+f
 ## snippets @snippets
 Claude comment template | <leader>cc
 Claude user/exchange | <leader>cu
+Toggle comment resolved | <leader>cr
+@ file reference (prompt files) | @ (insert mode)
+Literal @ (prompt files) | @@ (insert mode)
 Expand/jump next placeholder | Ctrl+k
 Jump prev placeholder | Ctrl+j
 
