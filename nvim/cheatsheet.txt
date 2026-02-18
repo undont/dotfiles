@@ -37,6 +37,17 @@ Paste after/before | p / P
 Undo / redo | u / Ctrl+r
 Repeat last action | .
 
+## multi-cursor @multi-cursor
+Select word / find next | Ctrl+n
+Add cursor below / above | Alt+Down / Alt+Up
+Skip current, find next | q
+Remove cursor from match | Q
+Select all occurrences | \A
+Add cursor at position | \c
+Next / prev match | n / N
+Toggle cursor/extend mode | Tab
+Exit multi-cursor | Esc
+
 ## text-objects @text-objects
 Inner/around word | iw / aw
 Inside quotes/parens/braces | i" / i( / i{
@@ -74,6 +85,7 @@ Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
 Quickfix picker | <leader>q
+Notification history | <leader>N
 
 ## diagnostics @diagnostics
 All diagnostics (Trouble) | <leader>xx
@@ -104,6 +116,7 @@ Scroll docs up/down | Ctrl+b / Ctrl+f
 Claude comment template | <leader>cc
 Claude user/exchange | <leader>cu
 Toggle comment resolved | <leader>cr
+Delete comment block | <leader>cd
 @ file reference (prompt files) | @ (insert mode)
 Literal @ (prompt files) | @@ (insert mode)
 Expand/jump next placeholder | Ctrl+k
@@ -189,6 +202,22 @@ Manage secrets | <leader>ns
 Watch project | <leader>nw
 New item | <leader>nn
 Outdated packages | <leader>no
+
+## bracketed @bracketed
+Next/prev buffer | ]b / [b
+Next/prev comment | ]C / [C
+Next/prev diagnostic | ]d / [d
+Next/prev file | ]F / [F
+Next/prev indent | ]i / [i
+Next/prev jump | ]j / [j
+Next/prev location | ]l / [l
+Next/prev oldfile | ]o / [o
+Next/prev quickfix | ]q / [q
+Next/prev treesitter | ]T / [T
+Next/prev undo | ]u / [u
+Next/prev window | ]w / [w
+Next/prev conflict | ]x / [x
+Next/prev yank | ]y / [y
 
 ## theme @theme
 Theme reload | <leader>tr

@@ -52,7 +52,7 @@ return {
     opts = {},
   },
 
-  -- Mini plugins (statusline, ai, surround)
+  -- Mini plugins (statusline, ai, surround, notify, bracketed, splitjoin)
   {
     'echasnovski/mini.nvim',
     config = function()
@@ -61,6 +61,110 @@ return {
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
       require('mini.surround').setup()
+
+      -- Drop-in vim.notify replacement with notification history
+      require('mini.notify').setup()
+
+      -- Wrap vim.notify to suppress duplicate messages within a rolling window.
+      -- Normalise messages before keying: Roslyn embeds worktree paths and counters
+      -- in progress strings, making visually identical messages appear distinct.
+      local _mini_notify = vim.notify
+      local _dedup = {}
+      vim.notify = function(msg, level, opts)
+        local normalised = msg
+          :gsub('%s+/[^%s]*', '') -- strip file/dir paths (e.g. " /src/worktree/X.sln")
+          :gsub('%s*%d+%%%s*', ' ') -- strip percentages like "50%"
+          :gsub('%s*%[%d+/%d+%]%s*', ' ') -- strip counters like "[5/12]"
+          :gsub('%s+', ' ') -- collapse whitespace
+          :match '^%s*(.-)%s*$' -- trim
+        local key = tostring(level) .. normalised
+        local now = vim.uv.now()
+        local window = normalised:match '^%u' and 30000 or 5000
+        if _dedup[key] and now - _dedup[key] < window then
+          return
+        end
+        _dedup[key] = now
+        _mini_notify(msg, level, opts)
+      end
+
+      -- LSP progress message patterns to suppress from the history view
+      local LSP_NOISE = {
+        '^Opening solution',
+        '^Loading ',
+        '^Initializ',
+        ' loaded$',
+        '^Client initializ',
+        '^Workspace ready',
+      }
+      local function is_lsp_noise(msg)
+        for _, pat in ipairs(LSP_NOISE) do
+          if msg:match(pat) then
+            return true
+          end
+        end
+        return false
+      end
+
+      -- Filtered history: warnings/errors + any INFO that isn't LSP progress noise
+      vim.keymap.set('n', '<leader>Nn', function()
+        local notifs = vim.tbl_values(require('mini.notify').get_all())
+        table.sort(notifs, function(a, b)
+          return a.ts_update < b.ts_update
+        end)
+        local filtered = vim.tbl_filter(function(n)
+          local lvl = n.level
+          if lvl == 'WARN' or lvl == 'ERROR' or lvl == vim.log.levels.WARN or lvl == vim.log.levels.ERROR then
+            return true
+          end
+          return not is_lsp_noise(n.msg or '')
+        end, notifs)
+
+        if #filtered == 0 then
+          vim.notify('No notifications', vim.log.levels.INFO)
+          return
+        end
+
+        local lines = vim.tbl_map(function(n)
+          local t = os.date('%H:%M:%S', math.floor(n.ts_update))
+          return string.format('%s  %s', t, (n.msg or ''):gsub('\n', ' '))
+        end, filtered)
+
+        local buf = vim.api.nvim_create_buf(false, true)
+        vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+        vim.bo[buf].modifiable = false
+        vim.bo[buf].bufhidden = 'wipe'
+
+        local w = math.min(math.floor(vim.o.columns * 0.7), 120)
+        local h = math.min(#lines, math.floor(vim.o.lines * 0.6))
+        vim.api.nvim_open_win(buf, true, {
+          relative = 'editor',
+          width = w,
+          height = h,
+          row = math.floor((vim.o.lines - h) / 2),
+          col = math.floor((vim.o.columns - w) / 2),
+          style = 'minimal',
+          border = 'rounded',
+          title = ' Notifications ',
+          title_pos = 'center',
+        })
+        vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true })
+        vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf, silent = true })
+      end, { desc = 'Notification history (filtered)' })
+
+      -- Full unfiltered history via mini.notify's built-in viewer
+      vim.keymap.set('n', '<leader>Na', function()
+        require('mini.notify').show_history()
+      end, { desc = 'Notification history (all)' })
+
+      -- Extended ]/[ navigation; use uppercase for conflicting suffixes
+      require('mini.bracketed').setup {
+        comment = { suffix = 'C' }, -- lowercase ]c/[c is gitsigns (git changes)
+        file = { suffix = 'F' }, -- lowercase ]f/[f is fugitive (changed files)
+        treesitter = { suffix = 'T' }, -- lowercase ]t/[t is neotest (failed tests)
+      }
+
+      -- Split/join code constructs (gS to split, gJ to join)
+      require('mini.splitjoin').setup()
 
       -- Simple and easy statusline
       local statusline = require 'mini.statusline'

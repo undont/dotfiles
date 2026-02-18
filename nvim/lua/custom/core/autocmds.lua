@@ -36,6 +36,33 @@ function M.setup()
     end,
   })
 
+  -- Auto-show diagnostic float on cursor hold; hide virtual_text while float is open
+  local diag_float_group = vim.api.nvim_create_augroup('diagnostic-float', { clear = true })
+  local vtext_hidden = false
+
+  vim.api.nvim_create_autocmd('CursorHold', {
+    desc = 'Show diagnostic float and suppress virtual text',
+    group = diag_float_group,
+    callback = function()
+      local _, win = vim.diagnostic.open_float(nil, { focusable = false, scope = 'cursor' })
+      if win then
+        vtext_hidden = true
+        vim.diagnostic.config { virtual_text = false }
+      end
+    end,
+  })
+
+  vim.api.nvim_create_autocmd('CursorMoved', {
+    desc = 'Restore virtual text after diagnostic float closes',
+    group = diag_float_group,
+    callback = function()
+      if vtext_hidden then
+        vtext_hidden = false
+        vim.diagnostic.config { virtual_text = { source = 'if_many', spacing = 2 } }
+      end
+    end,
+  })
+
   -- Dynamic diff highlights (fugitive, diffview, octo)
   require('custom.core.diff-highlights').setup()
 
