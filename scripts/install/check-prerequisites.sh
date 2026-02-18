@@ -55,6 +55,7 @@ EOF
 fi
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/common.sh"
 
 PRESET="${DOTFILES_PRESET:-full}"
@@ -109,10 +110,10 @@ if should_install "core"; then
     if is_macos; then
         printf "Checking %-20s" "ghostty..."
         if [[ -d "/Applications/Ghostty.app" ]]; then
-            printf "${GREEN}OK${NC}\n"
+            printf '%sOK%s\n' "${GREEN}" "${NC}"
         else
-            printf "${RED}MISSING${NC}\n"
-            printf "  ${YELLOW}Install with:${NC} brew install --cask ghostty\n"
+            printf '%sMISSING%s\n' "${RED}" "${NC}"
+            printf '  %sInstall with:%s brew install --cask ghostty\n' "${YELLOW}" "${NC}"
             FAILED=1
         fi
     fi
@@ -162,10 +163,10 @@ if should_install "full" && is_macos; then
     # Karabiner is checked via app existence since CLI isn't in PATH
     printf "Checking %-20s" "karabiner..."
     if [[ -d "/Applications/Karabiner-Elements.app" ]]; then
-        printf "${GREEN}OK${NC}\n"
+        printf '%sOK%s\n' "${GREEN}" "${NC}"
     else
-        printf "${RED}MISSING${NC}\n"
-        printf "  ${YELLOW}Install with:${NC} brew install --cask karabiner-elements\n"
+        printf '%sMISSING%s\n' "${RED}" "${NC}"
+        printf '  %sInstall with:%s brew install --cask karabiner-elements\n' "${YELLOW}" "${NC}"
         FAILED=1
     fi
 fi

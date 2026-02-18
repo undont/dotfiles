@@ -1,0 +1,25 @@
+# =============================================================================
+# TMUX LOCAL OVERRIDES
+# =============================================================================
+# Your personal tmux settings. This file is yours — add anything you want.
+# It is sourced AFTER the base config and plugins, so your values override
+# the defaults.
+#
+# This file survives theme-switch and dotfiles update.
+#
+# File structure:
+#   ~/.config/tmux/tmux.conf   - Generated config (managed by theme-switch)
+#   ~/.config/tmux/local.conf  - This file (your personal overrides)
+#
+
+# Examples:
+#   set -g cursor-style bar
+#   set -g status-position bottom
+#   set -g history-limit 100000
+#   set -g default-shell /usr/local/bin/fish
+#
+# Additional plugins (installed by TPM with prefix + I):
+#   set -g @plugin 'tmux-plugins/tmux-logging'
+#
+# Extra keybindings:
+#   bind M display-popup -E "man tmux"

@@ -28,6 +28,9 @@ bind ` send-prefix
 set -g default-terminal "tmux-256color"
 set -ag terminal-overrides ",xterm-256color:RGB"
 
+# Cursor: default to block (local.conf can override)
+set -g cursor-style block
+
 # Mouse: enable for pane selection, scrolling, and resizing
 set -g mouse on
 
@@ -622,3 +625,13 @@ run '~/.tmux/plugins/tpm/tpm'
 # Override tmux-yank bindings (must be after plugin load)
 bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "pbcopy"
 bind y display-popup -w 80% -h 60% -E "source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
+
+# Override TPM's prefix+I (install plugins) with config reload
+unbind I
+bind I source-file ~/.config/tmux/tmux.conf \; display-message "Config reloaded"    # prefix + I
+
+# Reload all local overrides (tmux + Ghostty + nvim)
+bind r run-shell "~/dotfiles/scripts/reload-locals.sh > /dev/null 2>&1"    # prefix + r
+
+# User overrides (not managed by dotfiles — survives theme-switch)
+source-file -q ~/.config/tmux/local.conf

@@ -1,0 +1,23 @@
+# =============================================================================
+# GHOSTTY LOCAL OVERRIDES
+# =============================================================================
+# Your personal Ghostty settings. This file is yours — add anything you want.
+# It is loaded AFTER the base config, so your values override the defaults.
+#
+# This file survives theme-switch and dotfiles update.
+#
+# File structure:
+#   ~/.config/ghostty/config   - Generated config (managed by theme-switch)
+#   ~/.config/ghostty/local    - This file (your personal overrides)
+#
+# Ghostty uses last-value-wins, so any setting here takes priority.
+#
+
+# Examples:
+#   cursor-style = bar
+#   font-size = 14
+#   font-family = JetBrains Mono
+#   background-opacity = 0.95
+#   window-padding-x = 4
+#   window-padding-y = 4
+#   mouse-hide-while-typing = false

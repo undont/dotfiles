@@ -1,0 +1,24 @@
+# ShellCheck configuration for dotfiles
+# These codes are intentionally excluded across this codebase:
+#
+#   SC1091 — source paths are dynamic (computed from SCRIPT_DIR); shellcheck
+#             can't follow them statically but they resolve correctly at runtime
+#
+#   SC2059 — printf format strings contain ANSI colour variables (${GREEN}, etc.)
+#             All colour variables contain only escape codes, never %-characters,
+#             so this is safe and intentional
+#
+#   SC2015 — A && B || C used as a conditional shorthand in several places;
+#             the scripts are written to be safe for this pattern
+#
+#   SC2016 — Single-quoted strings containing $ or [[ are used intentionally
+#             in two places: (a) tmux format strings passed as-is to tmux,
+#             and (b) test assertions checking for literal string content
+#
+#   SC2034 — Variables set in _lib/common.sh and similar files appear unused
+#             to shellcheck because they are consumed by sourcing scripts
+disable=SC1091
+disable=SC2059
+disable=SC2015
+disable=SC2016
+disable=SC2034

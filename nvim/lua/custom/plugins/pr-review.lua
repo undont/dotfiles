@@ -68,6 +68,10 @@ return {
           default = { layout = 'diff2_horizontal' },
           merge_tool = { layout = 'diff3_mixed' },
         },
+        file_panel = {
+          position = 'bottom',
+          height = 10,
+        },
         keymaps = {
           view = {
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
