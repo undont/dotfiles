@@ -427,7 +427,7 @@ else
 fi
 
 # Should sanitise special characters
-if [[ "$common_lib_content" == *"tr -c '[:alnum:]_.-' '_'"* ]]; then
+if [[ "$common_lib_content" == *"tr -c '[:alnum:]_.-' '-'"* ]]; then
     pass "sanitises special characters in launcher names"
 else
     fail "should sanitise special characters in launcher names"

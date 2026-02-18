@@ -436,21 +436,28 @@ while true; do
             local_default_dir="${project_dir:-~/src/$name}"
 
             local_fzf_result=""
+            local_fzf_exit=0
             local_fzf_result=$(list_project_dirs | fzf \
                 --print-query \
                 --query="$local_default_dir" \
                 --prompt='  Directory: ' \
+                --header='  opt-enter: use typed path' \
                 --height=~60% \
                 --layout=reverse \
                 --no-info \
                 --pointer='▸' \
                 --bind 'enter:accept' \
+                --bind 'alt-enter:become(echo {q})' \
                 --bind 'esc:abort' \
-                2>/dev/null) || {
-                    # esc/abort → go back to step 2
-                    step=2
-                    continue
-                }
+                2>/dev/null) || local_fzf_exit=$?
+
+            # exit 130 = esc/abort, exit 2 = error → go back
+            # exit 1 = no match → use the typed query
+            # alt-enter uses become() so exits 0 with just the query (no line 2)
+            if [[ $local_fzf_exit -gt 1 ]]; then
+                step=2
+                continue
+            fi
 
             # --print-query: line 1 = query, line 2 = selected item
             local_query=$(printf '%s' "$local_fzf_result" | sed -n '1p' | sed 's/^[[:space:]]*//')
@@ -479,7 +486,11 @@ while true; do
 
             project_dir="$local_dir"
             # Expand ~ for template but keep $HOME in generated script
-            project_dir="${project_dir/#\~\//\$HOME/}"
+            if [[ "$project_dir" == "~" ]]; then
+                project_dir="\$HOME"
+            else
+                project_dir="${project_dir/#\~\//\$HOME/}"
+            fi
             step=4
             ;;
 
@@ -507,7 +518,11 @@ while true; do
                     continue
                 fi
                 worktrees_dir="$local_wtdir"
-                worktrees_dir="${worktrees_dir/#\~\//\$HOME/}"
+                if [[ "$worktrees_dir" == "~" ]]; then
+                    worktrees_dir="\$HOME"
+                else
+                    worktrees_dir="${worktrees_dir/#\~\//\$HOME/}"
+                fi
             else
                 worktree_aware="n"
                 worktrees_dir=""

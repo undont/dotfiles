@@ -78,6 +78,46 @@ function M.setup()
     end
   end, { desc = '[U]ser exchange snippet' })
 
+  -- Toggle <comment> block state (open <-> resolved)
+  vim.keymap.set('n', '<leader>cr', function()
+    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    local comment_line
+    for i = cursor_line, 1, -1 do
+      if lines[i]:match '<comment%s+state=' then
+        comment_line = i
+        break
+      end
+      if i < cursor_line and lines[i]:match '</comment>' then
+        break
+      end
+    end
+    if not comment_line then
+      vim.notify('No comment block at cursor', vim.log.levels.WARN)
+      return
+    end
+    for i = comment_line, #lines do
+      if lines[i]:match '</comment>' then
+        if cursor_line > i then
+          vim.notify('No comment block at cursor', vim.log.levels.WARN)
+          return
+        end
+        break
+      end
+    end
+    local line = lines[comment_line]
+    local new_line
+    if line:match 'state="open"' then
+      new_line = line:gsub('state="open"', 'state="resolved"')
+    elseif line:match 'state="resolved"' then
+      new_line = line:gsub('state="resolved"', 'state="open"')
+    else
+      vim.notify('Unknown comment state', vim.log.levels.WARN)
+      return
+    end
+    vim.api.nvim_buf_set_lines(0, comment_line - 1, comment_line, false, { new_line })
+  end, { desc = 'Toggle comment [R]esolved' })
+
   -- LuaSnip navigation keymaps
   vim.keymap.set({ 'i', 's' }, '<C-k>', function()
     local ls = require 'luasnip'

@@ -1,12 +1,14 @@
 -- Claude Code prompt @ file picker
--- When editing Claude Code prompt files (claude-prompt-*.md via Ctrl+G),
+-- When editing Claude Code prompt files (claude-prompt-*.md, or any .md under .claude/),
 -- maps @ in insert mode to open Telescope file finder for project file references.
 -- On selection: inserts @path with proper spacing. On cancel: nothing inserted.
+-- Type @@ to insert a literal @ character.
 
 return {
   {
     dir = vim.fn.stdpath 'config',
     name = 'claude-prompt',
+    enabled = true,
     ft = 'markdown',
     config = function()
       local group = vim.api.nvim_create_augroup('claude-prompt', { clear = true })
@@ -15,15 +17,19 @@ return {
         pattern = '*.md',
         group = group,
         callback = function(ev)
-          -- Only activate for Claude Code prompt files
+          -- Only activate for Claude Code prompt files or files under .claude/
           local filename = vim.fn.fnamemodify(ev.file, ':t')
-          if not filename:match '^claude%-prompt%-.*%.md$' then
+          local abs_path = vim.fn.fnamemodify(ev.file, ':p')
+          if not filename:match '^claude%-prompt%-.*%.md$' and not abs_path:match '/%.claude/' then
             return
           end
 
           -- Use git root as project root (matches Claude Code's @ file resolution)
           local git_root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
           local cwd = (vim.v.shell_error == 0 and git_root ~= '') and git_root or vim.fn.getcwd()
+
+          -- Map @@ to insert a literal @ character
+          vim.keymap.set('i', '@@', '@', { buffer = ev.buf, desc = 'Insert literal @' })
 
           -- Map @ in insert mode to open file picker
           vim.keymap.set('i', '@', function()
