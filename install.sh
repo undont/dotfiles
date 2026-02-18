@@ -144,7 +144,7 @@ esac
 echo ""
 
 # Confirmation prompt
-printf "Proceed with ${CYAN}${PRESET}${NC} installation? [y/N] "
+printf 'Proceed with %s%s%s installation? [y/N] ' "${CYAN}" "${PRESET}" "${NC}"
 read -r response
 case "$response" in
     [yY][eE][sS]|[yY])

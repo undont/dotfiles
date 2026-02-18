@@ -44,6 +44,7 @@ EOF
 fi
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
+# shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/common.sh"
 
 # Derive DOTFILES_DIR from script location if not set
@@ -67,19 +68,19 @@ check_symlink() {
         local actual_target
         actual_target=$(readlink "$link")
         if [[ "$actual_target" == "$target" ]]; then
-            printf "${GREEN}OK${NC}\n"
+            printf '%sOK%s\n' "${GREEN}" "${NC}"
             return 0
         else
-            printf "${YELLOW}WRONG TARGET${NC} (points to %s)\n" "$actual_target"
+            printf '%sWRONG TARGET%s (points to %s)\n' "${YELLOW}" "${NC}" "$actual_target"
             ISSUES=1
             return 1
         fi
     elif [[ -e "$link" ]]; then
-        printf "${RED}EXISTS BUT NOT SYMLINK${NC}\n"
+        printf '%sEXISTS BUT NOT SYMLINK%s\n' "${RED}" "${NC}"
         ISSUES=1
         return 1
     else
-        printf "${RED}MISSING${NC}\n"
+        printf '%sMISSING%s\n' "${RED}" "${NC}"
         ISSUES=1
         return 1
     fi
@@ -92,10 +93,10 @@ check_directory() {
     printf "Checking %-30s" "$name..."
 
     if [[ -d "$dir" ]]; then
-        printf "${GREEN}OK${NC}\n"
+        printf '%sOK%s\n' "${GREEN}" "${NC}"
         return 0
     else
-        printf "${RED}MISSING${NC}\n"
+        printf '%sMISSING%s\n' "${RED}" "${NC}"
         ISSUES=1
         return 1
     fi
@@ -108,10 +109,10 @@ check_file() {
     printf "Checking %-30s" "$name..."
 
     if [[ -f "$file" ]]; then
-        printf "${GREEN}OK${NC}\n"
+        printf '%sOK%s\n' "${GREEN}" "${NC}"
         return 0
     else
-        printf "${YELLOW}MISSING${NC}\n"
+        printf '%sMISSING%s\n' "${YELLOW}" "${NC}"
         ISSUES=1
         return 1
     fi
@@ -128,19 +129,19 @@ echo "---------"
 # ~/.zshrc may be a personal file (new) or symlink (legacy)
 printf "Checking %-30s" ".zshrc..."
 if [[ -L "$HOME/.zshrc" ]]; then
-    printf "${YELLOW}SYMLINK (legacy)${NC}\n"
+    printf '%sSYMLINK (legacy)%s\n' "${YELLOW}" "${NC}"
     echo "  Run 'dotfiles update' to migrate to personal ~/.zshrc"
     ISSUES=1
 elif [[ -f "$HOME/.zshrc" ]]; then
     if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
-        printf "${GREEN}OK${NC}\n"
+        printf '%sOK%s\n' "${GREEN}" "${NC}"
     else
-        printf "${YELLOW}WARN${NC}\n"
+        printf '%sWARN%s\n' "${YELLOW}" "${NC}"
         echo "  ~/.zshrc exists but doesn't source dotfiles.zsh"
         ISSUES=1
     fi
 else
-    printf "${RED}MISSING${NC}\n"
+    printf '%sMISSING%s\n' "${RED}" "${NC}"
     echo "  Run: cp ~/dotfiles/zsh/zshrc.template ~/.zshrc"
     ISSUES=1
 fi
@@ -164,12 +165,9 @@ if should_install "full"; then
 fi
 
 # Ghostty (core)
-# Config is generated to XDG, macOS symlinks Application Support to XDG
+# Config is generated to XDG — Ghostty reads ~/.config/ghostty/config natively on all platforms
 if should_install "core"; then
     check_file "$HOME/.config/ghostty/config" "ghostty config (XDG)"
-    if [[ "$(uname)" == "Darwin" ]]; then
-        check_symlink "$HOME/Library/Application Support/com.mitchellh.ghostty/config" "$HOME/.config/ghostty/config" "ghostty config (macOS symlink)"
-    fi
 fi
 
 # Karabiner (full)
