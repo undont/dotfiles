@@ -1,3 +1,4 @@
+# shellcheck shell=zsh
 # =============================================================================
 # DOTFILES ZSH FRAMEWORK
 # =============================================================================
@@ -129,6 +130,7 @@ fpath=("$HOME/.docker/completions" $fpath)
 
 # Cached compinit - only regenerate completion dump once per day (~50-100ms savings)
 autoload -Uz compinit
+# shellcheck disable=SC1009,SC1036,SC1072,SC1073
 if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
   compinit
 else
@@ -370,6 +372,13 @@ export KEYTIMEOUT=1                    # Wait 10ms for more chars after ESC
 # Ensure common word deletion shortcuts work correctly
 bindkey '^[^?' backward-kill-word      # Option+Backspace: delete word backwards
 bindkey '^W' backward-kill-word        # Ctrl+W: delete word backwards
+
+# Ghostty sends these sequences for modifier+enter combos; bind them to
+# accept-line so they act as Enter in zsh instead of printing garbage.
+bindkey '\e[13;5u'  accept-line        # Ctrl+Enter (kitty protocol)
+bindkey '\e[13;6u'  accept-line        # Ctrl+Shift+Enter (kitty protocol)
+bindkey '\e[;5;13~' accept-line        # Ctrl+Enter (Ghostty variant)
+bindkey '\e[;6;13~' accept-line        # Ctrl+Shift+Enter (Ghostty variant)
 
 # =============================================================================
 # DOTFILES CLI

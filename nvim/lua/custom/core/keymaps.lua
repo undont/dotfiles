@@ -118,6 +118,42 @@ function M.setup()
     vim.api.nvim_buf_set_lines(0, comment_line - 1, comment_line, false, { new_line })
   end, { desc = 'Toggle comment [R]esolved' })
 
+  -- Delete <comment> block under cursor
+  vim.keymap.set('n', '<leader>cd', function()
+    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    local comment_start
+    for i = cursor_line, 1, -1 do
+      if lines[i]:match '<comment%s+state=' then
+        comment_start = i
+        break
+      end
+      if i < cursor_line and lines[i]:match '</comment>' then
+        break
+      end
+    end
+    if not comment_start then
+      vim.notify('No comment block at cursor', vim.log.levels.WARN)
+      return
+    end
+    local comment_end
+    for i = comment_start, #lines do
+      if lines[i]:match '</comment>' then
+        if cursor_line > i then
+          vim.notify('No comment block at cursor', vim.log.levels.WARN)
+          return
+        end
+        comment_end = i
+        break
+      end
+    end
+    if not comment_end then
+      vim.notify('No closing </comment> tag found', vim.log.levels.WARN)
+      return
+    end
+    vim.api.nvim_buf_set_lines(0, comment_start - 1, comment_end, false, {})
+  end, { desc = '[D]elete comment block' })
+
   -- LuaSnip navigation keymaps
   vim.keymap.set({ 'i', 's' }, '<C-k>', function()
     local ls = require 'luasnip'
