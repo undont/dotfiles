@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.25] - 2026-02-18
+
+### Added
+- Neovim: vim-visual-multi plugin for multiple cursors (`Ctrl+n` select word, `Alt+Down/Up` add cursor, `\A` select all)
+- Neovim: mini.notify for drop-in `vim.notify` replacement with notification history (`<leader>Nn` filtered, `<leader>Na` all)
+- Neovim: mini.bracketed for `]`/`[` navigation (buffers, comments, diagnostics, files, jumps, quickfix, treesitter, undo, windows, conflicts, yanks)
+- Neovim: mini.splitjoin for splitting/joining code constructs (`gS` to split, `gJ` to join)
+- Neovim: `<leader>cd` keymap to delete `<comment>` block under cursor
+- Neovim: auto-show diagnostic float on `CursorHold`, suppressing virtual text while float is open
+- Ghostty: `Ctrl+Enter` and `Ctrl+Shift+Enter` keybinds (kitty protocol) passed through to terminal apps
+- Ghostty: `Opt+Shift+[` / `Opt+Shift+]` keybinds for escape bracket sequences
+- Zsh: `Ctrl+Enter` and `Ctrl+Shift+Enter` bound to `accept-line` for correct behaviour in zsh
+
+### Changed
+- Neovim: dotnet build now resolves the best target (prefers `.slnx`/`.sln` over `.csproj`, skips build-variant solution files)
+- Neovim: simplified `vim.diagnostic` virtual text config (removed redundant format function)
+- Ghostty: `Opt+Up`/`Opt+Down` updated to send modifier-qualified cursor sequences
+- Tmux: enabled `extended-keys always` for full kitty keyboard protocol support
+
+### Fixed
+- Zsh: added `shellcheck shell=zsh` declaration and suppressed SC1009/SC1036/SC1072/SC1073 on zsh glob qualifier syntax
+
 ## [0.2.24] - 2026-02-18
 
 ### Added

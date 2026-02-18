@@ -163,6 +163,20 @@ return {
     opts = {},
   },
 
+  -- Multiple cursors
+  {
+    'mg979/vim-visual-multi',
+    event = 'VeryLazy',
+    init = function()
+      vim.g.VM_leader = '\\'
+      vim.cmd [[
+        let g:VM_maps = {}
+        let g:VM_maps["Add Cursor Down"] = '<M-Down>'
+        let g:VM_maps["Add Cursor Up"] = '<M-Up>'
+      ]]
+    end,
+  },
+
   -- Oil: filesystem-as-buffer
   {
     'stevearc/oil.nvim',

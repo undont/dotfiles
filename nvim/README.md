@@ -110,7 +110,7 @@ nvim/
 |--------|---------|
 | Custom colourschemes (`nvim/colors/`) | 16 themes matching dotfiles theme system |
 | [auto-dark-mode.nvim](https://github.com/f-person/auto-dark-mode.nvim) | Follows system theme |
-| [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects |
+| [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects, notify, bracketed navigation, splitjoin |
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
 | [neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File explorer sidebar |
 | [which-key.nvim](https://github.com/folke/which-key.nvim) | Keybinding popup hints |
@@ -128,6 +128,7 @@ nvim/
 | [nvim-treesitter-textobjects](https://github.com/nvim-treesitter/nvim-treesitter-textobjects) | Structural selection and motion |
 | [grug-far.nvim](https://github.com/MagicDuck/grug-far.nvim) | Project-wide search and replace |
 | [oil.nvim](https://github.com/stevearc/oil.nvim) | Filesystem-as-buffer editing |
+| [vim-visual-multi](https://github.com/mg979/vim-visual-multi) | Multiple cursors (`Ctrl+n`, `Alt+Down/Up`) |
 | [guess-indent.nvim](https://github.com/NMAC427/guess-indent.nvim) | Auto-detect indentation |
 | [lazydev.nvim](https://github.com/folke/lazydev.nvim) | Lua development for Neovim |
 | [fidget.nvim](https://github.com/j-hui/fidget.nvim) | LSP progress indicator |
