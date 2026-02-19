@@ -32,10 +32,10 @@
 │                                      │                                    │
 │  <leader>e           file tree       │  <leader>do         diff open      │
 │  -                   oil (parent dir)│  <leader>dc         diff close     │
-│  <leader>g           git (lazygit)   │  <leader>dp         PR diff review │
-│  <leader>q           build project   │  <leader>pl         list PRs       │
-│  <leader>xx          all diagnostics │  <leader>pr         start review   │
-│  Ctrl+hjkl           move windows    │                                    │
+│  <leader>g           git (lazygit)   │  <leader>dh         file history   │
+│  <leader>q           build project   │  <leader>dp         PR diff review │
+│  <leader>xx          all diagnostics │  <leader>pl         list PRs       │
+│  Ctrl+hjkl           move windows    │  <leader>pr         start review   │
 │                                      │                                    │
 ├─ GIT HUNKS ──────────────────────────┼─ WINDOW RESIZE ────────────────────┤
 │                                      │                                    │

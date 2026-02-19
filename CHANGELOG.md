@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.28] - 2026-02-19
+
+### Changed
+- Neovim: removed vim-fugitive — LazyGit and gitsigns cover all git workflows
+- Neovim: `]f`/`[f` file navigation moved from fugitive to diffview
+- Neovim: `<leader>dh` file history now falls back to repo history when no file is open
+- Neovim: diffview `file_panel` config updated to `win_config` structure
+- Neovim: patched diffview `init_layout` to guard against invalid window IDs (upstream bug)
+
+### Added
+- Zsh: `nvim-sync` function for headless Lazy.nvim plugin sync
+
 ## [0.2.27] - 2026-02-18
 
 ### Fixed
