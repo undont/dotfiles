@@ -41,6 +41,12 @@ Use it for font overrides, custom keybindings, opacity, or any other personal tw
 | `Opt+c` | Send escape + c |
 | `Opt+Shift+[` | Send escape + `{` |
 | `Opt+Shift+]` | Send escape + `}` |
+| `Opt+Shift+H` | Send escape + `H` |
+| `Opt+Shift+J` | Send escape + `J` |
+| `Opt+Shift+K` | Send escape + `K` |
+| `Opt+Shift+L` | Send escape + `L` |
+| `Opt+Shift+D` | Send escape + `D` |
+| `Opt+Shift+0` | Send escape + `)` |
 | `Opt+Up` | Send modified cursor up (apps) |
 | `Opt+Down` | Send modified cursor down (apps) |
 
