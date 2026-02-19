@@ -9,15 +9,16 @@ return {
   },
   ft = { 'cs', 'fsharp', 'vb' },
   config = function()
-    -- Filter IDE0079 (Remove unnecessary suppression) from Roslyn diagnostics.
-    -- Roslyn false-positives on pragmas for third-party analysers (SonarAnalyzer, etc.)
-    -- because it doesn't recognise their rule IDs (S107, S3776, etc.).
+    -- Filter known Roslyn false positives from C# diagnostics.
+    -- IDE0079: false-positives on pragmas for third-party analysers (SonarAnalyzer, etc.)
+    -- CA1825: false-positives on C# 12 collection expressions (misidentified as zero-length arrays)
     -- Wraps vim.diagnostic.set to intercept both push and pull diagnostics.
     local orig_diag_set = vim.diagnostic.set
+    local roslyn_false_positives = { IDE0079 = true, CA1825 = true }
     vim.diagnostic.set = function(namespace, bufnr, diagnostics, opts)
       if bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].filetype == 'cs' then
         diagnostics = vim.tbl_filter(function(d)
-          return d.code ~= 'IDE0079'
+          return not roslyn_false_positives[d.code]
         end, diagnostics)
       end
       return orig_diag_set(namespace, bufnr, diagnostics, opts)
@@ -53,6 +54,9 @@ return {
     if cached and is_build_variant(cached) then
       current_solution.clear_selected_solution()
     end
+
+    -- Add missing imports across .cs files that have missing-type errors
+    local add_missing_imports_solution = require 'custom.plugins.dotnet.add_missing_imports'
 
     require('easy-dotnet').setup {
       -- Use built-in Roslyn LSP (replaces OmniSharp)
@@ -102,5 +106,6 @@ return {
     vim.keymap.set('n', '<leader>nw', '<cmd>Dotnet watch<cr>', { desc = '[W]atch project' })
     vim.keymap.set('n', '<leader>nn', '<cmd>Dotnet new<cr>', { desc = '[N]ew item' })
     vim.keymap.set('n', '<leader>no', '<cmd>Dotnet outdated<cr>', { desc = '[O]utdated packages' })
+    vim.keymap.set('n', '<leader>ni', add_missing_imports_solution, { desc = 'Add missing [I]mports (solution) (beta)' })
   end,
 }
