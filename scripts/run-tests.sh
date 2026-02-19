@@ -78,14 +78,6 @@ requires_tmux() {
     grep -q "_test-helpers.sh\|setup_test_server\|cleanup_test_server" "$test_file" 2>/dev/null
 }
 
-# Check if a test is known to fail (temporary workaround)
-is_known_failure() {
-    local test_file="$1"
-    local test_basename
-    test_basename=$(basename "$test_file")
-    [[ "$test_basename" == "test-kill-undo.sh" || "$test_basename" == "test-show-dotfiles-status.sh" ]]
-}
-
 # Reset suite counters
 reset_suite_counters() {
     SUITE_TOTAL=0
@@ -170,12 +162,6 @@ run_test() {
     
     if [[ "$needs_tmux" = true ]] && ! command -v tmux &>/dev/null; then
         skip_test "$test_name" "tmux not installed"
-        return 0
-    fi
-
-    # Skip known failing tests (temporary)
-    if is_known_failure "$test_file"; then
-        skip_test "$test_name" "known failure (pre-existing)"
         return 0
     fi
 

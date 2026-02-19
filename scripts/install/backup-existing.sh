@@ -12,12 +12,17 @@ source "$SCRIPT_DIR/../_lib/rollback.sh"
 PRESET="${DOTFILES_PRESET:-full}"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)-$$"
 
+# Ensure parent backup directory exists with restrictive permissions
+mkdir -p "$HOME/.dotfiles-backup"
+chmod 700 "$HOME/.dotfiles-backup"
+
 backup_if_exists() {
     local source="$1"
     local dest="$2"
 
     if [[ -e "$source" ]] || [[ -L "$source" ]]; then
         mkdir -p "$(dirname "$dest")"
+        chmod 700 "$BACKUP_DIR"
         mv "$source" "$dest"
         printf "${YELLOW}Backed up:${NC} %s -> %s\n" "$source" "$dest"
         return 0

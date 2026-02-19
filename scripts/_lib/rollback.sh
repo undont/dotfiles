@@ -3,6 +3,17 @@
 # Rollback utilities for installation scripts
 # Source this file after common.sh
 
+# Three-file state protocol for installation rollback:
+#   state.txt         — append-only log of completed install steps (for resume detection)
+#   symlinks.txt      — pipe-delimited "link_path|target_path" records of created symlinks
+#   backup-location.txt — path to the timestamped backup directory
+#
+# Lifecycle: init_rollback_state → record_step/record_symlink/record_backup_location
+#            → perform_rollback (on failure) or cleanup_rollback_state (on success)
+#
+# Rollback is two-phase: (1) remove created symlinks, (2) restore backed-up files.
+# Path traversal sanitisation prevents restoring files outside $HOME.
+
 # State file location
 ROLLBACK_STATE_DIR="${DOTFILES_DIR:-.}/.install-state"
 ROLLBACK_STATE_FILE="$ROLLBACK_STATE_DIR/state.txt"

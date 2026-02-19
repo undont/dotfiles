@@ -267,14 +267,29 @@ if [[ $REMOVE_BREW -eq 1 ]]; then
         echo ""
 
         if confirm "Remove these $TOTAL packages?"; then
-            # Uninstall each package
-            grep -E '^brew "' "$FILTERED_BREWFILE" | sed 's/brew "//;s/".*//' | while read -r pkg; do
-                brew uninstall --ignore-dependencies "$pkg" 2>/dev/null || true
-            done
-            grep -E '^cask "' "$FILTERED_BREWFILE" | sed 's/cask "//;s/".*//' | while read -r pkg; do
-                brew uninstall --cask "$pkg" 2>/dev/null || true
-            done
-            success "Homebrew packages removed"
+            warn "Note: Some packages may be shared with non-dotfiles software."
+            failed=0
+            while IFS= read -r pkg; do
+                if brew uninstall --ignore-dependencies "$pkg" 2>/dev/null; then
+                    success "Removed: $pkg"
+                else
+                    warn "Failed to remove: $pkg (may be a dependency or already removed)"
+                    failed=$((failed + 1))
+                fi
+            done < <(grep -E '^brew "' "$FILTERED_BREWFILE" | sed 's/brew "//;s/".*//')
+            while IFS= read -r pkg; do
+                if brew uninstall --cask "$pkg" 2>/dev/null; then
+                    success "Removed: $pkg"
+                else
+                    warn "Failed to remove cask: $pkg"
+                    failed=$((failed + 1))
+                fi
+            done < <(grep -E '^cask "' "$FILTERED_BREWFILE" | sed 's/cask "//;s/".*//')
+            if [[ $failed -gt 0 ]]; then
+                warn "$failed package(s) could not be removed"
+            else
+                success "Homebrew packages removed"
+            fi
         fi
     else
         warn "Brewfile not found or brew not installed"
