@@ -41,6 +41,12 @@ filter_brewfile() {
     local is_darwin="true"
     [[ "$(uname)" != "Darwin" ]] && is_darwin="false"
 
+    # AWK state machine: filters Brewfile by preset.
+    # Lines before the first @preset marker are always included (headers, taps).
+    # When a @preset marker is hit, `include` is set based on whether that
+    # preset level was requested (preset hierarchy: minimal ⊂ core ⊂ full).
+    # The `next` skips the marker line itself from output.
+    # Cask lines are additionally stripped on Linux (macOS-only packages).
     awk -v inc_min="$include_minimal" -v inc_core="$include_core" -v inc_full="$include_full" -v darwin="$is_darwin" '
     BEGIN {
         include = 1  # Include header lines before any preset marker

@@ -144,8 +144,14 @@ esac
 echo ""
 
 # Confirmation prompt
-printf 'Proceed with %s%s%s installation? [y/N] ' "${CYAN}" "${PRESET}" "${NC}"
-read -r response
+if [[ -t 0 ]]; then
+    printf 'Proceed with %s%s%s installation? [y/N] ' "${CYAN}" "${PRESET}" "${NC}"
+    read -r response
+else
+    error "Non-interactive shell detected. Cannot prompt for confirmation."
+    info "Re-run with a TTY or pipe 'yes' to confirm."
+    exit 1
+fi
 case "$response" in
     [yY][eE][sS]|[yY])
         echo ""
@@ -234,9 +240,12 @@ print_step 6 "Installing plugin managers..."
 # TPM (Tmux Plugin Manager) - all presets
 if [[ ! -d "$HOME/.tmux/plugins/tpm" ]]; then
     echo "Installing TPM..."
-    # Clone TPM at a known stable version for reproducibility
-    git clone --branch v3.1.0 --depth 1 https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"
-    success "TPM installed. Press prefix + I inside tmux to install plugins."
+    if git clone --branch v3.1.0 --depth 1 https://github.com/tmux-plugins/tpm "$HOME/.tmux/plugins/tpm"; then
+        success "TPM installed. Press prefix + I inside tmux to install plugins."
+    else
+        warn "Failed to clone TPM (network issue?). Tmux plugins won't be available."
+        warn "Install manually: git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm"
+    fi
 else
     echo "TPM already installed."
 fi
@@ -276,7 +285,11 @@ record_step "secrets"
 # Step 8: Run health check
 echo ""
 print_step 8 "Running health check..."
-"$DOTFILES_DIR/scripts/install/health-check.sh" || true
+if "$DOTFILES_DIR/scripts/install/health-check.sh"; then
+    success "Health check passed"
+else
+    warn "Health check reported issues (see above). Installation completed with warnings."
+fi
 record_step "health-check"
 
 # Step 9: Save preset for future updates
