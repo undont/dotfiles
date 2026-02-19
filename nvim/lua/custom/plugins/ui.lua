@@ -159,7 +159,7 @@ return {
       -- Extended ]/[ navigation; use uppercase for conflicting suffixes
       require('mini.bracketed').setup {
         comment = { suffix = 'C' }, -- lowercase ]c/[c is gitsigns (git changes)
-        file = { suffix = 'F' }, -- lowercase ]f/[f is fugitive (changed files)
+        file = { suffix = 'F' }, -- lowercase ]f/[f is diffview (changed files)
         treesitter = { suffix = 'T' }, -- lowercase ]t/[t is neotest (failed tests)
       }
 

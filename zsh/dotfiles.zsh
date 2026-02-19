@@ -354,6 +354,13 @@ alias gols="ls ~/go/bin"               # List installed Go binaries
 alias git-prune="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"  # Fix stale plugin cache
 
+# Sync all Lazy.nvim plugins (headless)
+nvim-sync() {
+  printf "Syncing Neovim plugins...\n"
+  nvim --headless "+Lazy! sync" +qa
+  printf "\033[0;32m✔\033[0m Neovim plugins synced\n"
+}
+
 # Homebrew update
 alias brewup="brew update && brew upgrade"
 

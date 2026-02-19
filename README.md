@@ -249,7 +249,7 @@ The uninstall script uses your saved preset to determine which packages to remov
 - mini.notify (notifications), mini.bracketed (`]/[` navigation), mini.splitjoin (`gS`/`gJ`)
 - GitHub Copilot (disabled for sensitive files)
 - 15 self-contained colourschemes matching the dotfiles theme system (no plugin deps)
-- Dynamic diff highlights — consistent tinted backgrounds across fugitive, diffview, and octo
+- Dynamic diff highlights — consistent tinted backgrounds across diffview and octo
 - Treesitter syntax highlighting
 - Local override file (`~/.config/nvim/local.lua`) — survives updates
 
