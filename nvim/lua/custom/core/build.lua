@@ -188,27 +188,31 @@ end
 local function detect_build()
   local cwd = vim.fn.getcwd()
 
-  -- Walk up from current buffer dir to cwd looking for language markers
-  local buf_dir = vim.fn.expand '%:p:h'
-  if buf_dir ~= '' and buf_dir:find(cwd, 1, true) == 1 then
-    local dir = buf_dir
-    while #dir >= #cwd do
-      local cfg = check_dir_for_markers(dir)
-      if cfg then
-        return cfg, false
+  -- Walk up from current buffer dir to cwd looking for language markers.
+  -- Only attempt for normal file buffers — special buffers (neo-tree, oil,
+  -- terminal, dashboard, etc.) can return nonsensical paths from expand().
+  if vim.bo.buftype == '' then
+    local buf_file = vim.fn.expand '%:p'
+    if buf_file ~= '' and buf_file:find(cwd, 1, true) == 1 then
+      local dir = vim.fn.fnamemodify(buf_file, ':h')
+      while #dir >= #cwd do
+        local cfg = check_dir_for_markers(dir)
+        if cfg then
+          return cfg, false
+        end
+        local parent = vim.fn.fnamemodify(dir, ':h')
+        if parent == dir then
+          break
+        end
+        dir = parent
       end
-      local parent = vim.fn.fnamemodify(dir, ':h')
-      if parent == dir then
-        break
-      end
-      dir = parent
     end
-  else
-    -- Buffer not under cwd — just check cwd itself
-    local cfg = check_dir_for_markers(cwd)
-    if cfg then
-      return cfg, false
-    end
+  end
+
+  -- No marker found from buffer walk — check cwd itself
+  local cfg = check_dir_for_markers(cwd)
+  if cfg then
+    return cfg, false
   end
 
   -- Check for Makefile with build targets
@@ -298,14 +302,20 @@ local function run_build(cfg)
 end
 
 --- Build a combined efm from all build_configs (most specific patterns first)
---- Used for Makefile targets where the underlying tool is unknown
+--- Used for Makefile targets where the underlying tool is unknown.
+--- Strips %-G%.%# (catch-all ignore) from individual efms so earlier configs
+--- don't swallow lines that later configs need to match.
 ---@return string combined errorformat
 local function combined_efm()
   local parts = {}
   for _, cfg in ipairs(build_configs) do
-    table.insert(parts, cfg.efm)
+    -- Remove catch-all ignore patterns that would short-circuit later configs
+    local efm = cfg.efm:gsub(',?%%%-G%%.%%#', '')
+    if efm ~= '' then
+      table.insert(parts, efm)
+    end
   end
-  -- Append catch-all ignore for non-matching lines (status messages, decoration, etc.)
+  -- Single catch-all at the very end, after all patterns have been tried
   table.insert(parts, '%-G%.%#')
   return table.concat(parts, ',')
 end

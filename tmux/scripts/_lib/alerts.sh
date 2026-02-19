@@ -97,6 +97,14 @@ set_window_alert() {
     fi
 }
 
+# File locking: uses mkdir as an atomic lock primitive (POSIX guarantees mkdir
+# is atomic even on NFS). Lock acquisition retries 10 times with 100ms backoff
+# (1 second total timeout). This prevents concurrent alert updates from
+# corrupting the alerts file when multiple tmux scripts fire simultaneously.
+#
+# grep exit codes: 0 = lines matched (filtered), 1 = no matches (file cleared),
+# both are valid. Exit code 2+ indicates an actual error.
+
 # Clear all alerts for a specific window
 # Usage: clear_window_alerts "session" "window" ["window_id"]
 clear_window_alerts() {

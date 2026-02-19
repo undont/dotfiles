@@ -19,6 +19,13 @@ create_link() {
     local source="$1"
     local dest="$2"
 
+    # Validate source exists before creating symlink
+    if [[ ! -e "$source" && ! -L "$source" ]]; then
+        printf "${RED}FAILED:${NC} Source not found: %s\n" "$source"
+        FAILED=1
+        return 1
+    fi
+
     # Ensure parent directory exists
     mkdir -p "$(dirname "$dest")"
 
@@ -32,7 +39,10 @@ create_link() {
         local backup_base="$HOME/.dotfiles-backup"
         local backup_dir
         backup_dir="$backup_base/inline-$(date +%Y%m%d-%H%M%S)-$$"
+        mkdir -p "$backup_base"
+        chmod 700 "$backup_base"
         mkdir -p "$backup_dir"
+        chmod 700 "$backup_dir"
 
         local relative_path="${dest#"$HOME"/}"
         local backup_path="$backup_dir/$relative_path"
@@ -60,6 +70,16 @@ echo "Source: $DOTFILES_DIR"
 echo "Preset: $PRESET"
 echo ""
 
+# Zsh migration: handle transition from old symlink-based setup to personal ~/.zshrc.
+# Four possible states:
+#   1. ~/.zshrc is a symlink to dotfiles/zsh/zshrc → offer migration to personal file
+#   2. ~/.zshrc is a symlink elsewhere → leave it alone (user's custom setup)
+#   3. ~/.zshrc is a regular file sourcing dotfiles.zsh → already migrated, check for unmigrated local-aliases
+#   4. ~/.zshrc doesn't exist → create from template
+#
+# Migration also consolidates local-aliases.zsh (deprecated) into ~/.zshrc directly,
+# since the new model sources dotfiles.zsh from a personal .zshrc rather than symlinking.
+
 # Zsh (minimal)
 echo "Zsh configuration:"
 
@@ -72,7 +92,7 @@ if [[ -L "$HOME/.zshrc" ]]; then
     info "Found ~/.zshrc symlinked to dotfiles (old setup)"
     if [[ -t 0 ]]; then
       printf '  %s⚠%s  Migrate to personal ~/.zshrc? Your config will be preserved. [Y/n] ' "${YELLOW}" "${NC}"
-      read -r response
+      read -r -t 60 response || response="y"
     else
       response="y"
     fi
@@ -121,7 +141,7 @@ elif [[ -f "$HOME/.zshrc" ]]; then
         info "Found unmigrated local-aliases.zsh"
         if [[ -t 0 ]]; then
           printf '  %s⚠%s  Append local-aliases.zsh content into ~/.zshrc? [Y/n] ' "${YELLOW}" "${NC}"
-          read -r response
+          read -r -t 60 response || response="y"
         else
           response="y"
         fi

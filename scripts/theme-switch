@@ -29,7 +29,7 @@ TMUX_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 
 # Ghostty config location (XDG only - macOS symlinks to this)
-GHOSTTY_OUTPUT="$HOME/.config/ghostty/config"
+GHOSTTY_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 
 # Colours for output
 RED='\033[0;31m'
@@ -117,12 +117,25 @@ apply_theme() {
     source "$THEMES_DIR/theme-defaults.sh"
     apply_theme_defaults
 
+    # Validate required theme variables are defined
+    local required_vars=(
+        THEME_NAME TMUX_BG_PRIMARY TMUX_FG_PRIMARY TMUX_STATUS_BG TMUX_STATUS_FG
+        GHOSTTY_BACKGROUND GHOSTTY_FOREGROUND
+    )
+    for var in "${required_vars[@]}"; do
+        if [[ -z "${!var:-}" ]]; then
+            error "Theme '$theme_name' is missing required variable: $var"
+            return 1
+        fi
+    done
+
     [[ "$quiet" != "true" ]] && print_info "Applying theme: $THEME_NAME"
 
     # Process tmux template using sed (much faster than bash string replacement)
     if [[ -f "$TMUX_TEMPLATE" ]]; then
         # Ensure XDG config directory exists
         mkdir -p "$(dirname "$TMUX_OUTPUT")"
+        local tmux_tmp="${TMUX_OUTPUT}.tmp.$$"
         sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
             -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
             -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
@@ -151,7 +164,8 @@ apply_theme() {
             -e "s|{{TMUX_RAM_HIGH_BG}}|$TMUX_RAM_HIGH_BG|g" \
             -e "s|{{TMUX_BATTERY_NORMAL_BG}}|$TMUX_BATTERY_NORMAL_BG|g" \
             -e "s|{{TMUX_BATTERY_LOW_BG}}|$TMUX_BATTERY_LOW_BG|g" \
-            "$TMUX_TEMPLATE" > "$TMUX_OUTPUT"
+            "$TMUX_TEMPLATE" > "$tmux_tmp" || { rm -f "$tmux_tmp"; return 1; }
+        mv "$tmux_tmp" "$TMUX_OUTPUT"
         [[ "$quiet" != "true" ]] && success "Generated tmux configuration"
     else
         [[ "$quiet" != "true" ]] && warn "Tmux template not found, skipping"
@@ -161,6 +175,7 @@ apply_theme() {
     if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
         # Ensure ghostty config directory exists
         mkdir -p "$(dirname "$GHOSTTY_OUTPUT")"
+        local ghostty_tmp="${GHOSTTY_OUTPUT}.tmp.$$"
         sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
             -e "s|{{GHOSTTY_BACKGROUND}}|$GHOSTTY_BACKGROUND|g" \
             -e "s|{{GHOSTTY_FOREGROUND}}|$GHOSTTY_FOREGROUND|g" \
@@ -184,11 +199,12 @@ apply_theme() {
             -e "s|{{GHOSTTY_PALETTE_13}}|$GHOSTTY_PALETTE_13|g" \
             -e "s|{{GHOSTTY_PALETTE_14}}|$GHOSTTY_PALETTE_14|g" \
             -e "s|{{GHOSTTY_PALETTE_15}}|$GHOSTTY_PALETTE_15|g" \
-            "$GHOSTTY_TEMPLATE" > "$GHOSTTY_OUTPUT"
+            "$GHOSTTY_TEMPLATE" > "$ghostty_tmp" || { rm -f "$ghostty_tmp"; return 1; }
+        mv "$ghostty_tmp" "$GHOSTTY_OUTPUT"
         [[ "$quiet" != "true" ]] && success "Generated ghostty configuration"
 
         # Ensure local override file exists (Ghostty errors on missing config-file includes)
-        local ghostty_local="$HOME/.config/ghostty/local"
+        local ghostty_local="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/local"
         if [[ ! -f "$ghostty_local" ]]; then
             touch "$ghostty_local"
         fi

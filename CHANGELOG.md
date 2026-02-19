@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.29] - 2026-02-19
+
+### Added
+- Neovim: SwapExists autocommand to auto-delete stale swap files (fixes E325 prompt spam)
+- Installation: TTY detection for confirmation prompt to prevent hang in non-interactive environments
+- Installation: Per-file symlink source validation during installation
+- Backup directory: Set permissions to 700 to protect old configs containing secrets
+
+### Changed
+- Installation: Improved TPM clone error handling with explicit network error messaging
+- Installation: Health check failures now display warnings instead of being silently suppressed
+- Neovim build detection: Skip special buffers (neo-tree, terminal, etc.) when walking up to find build markers
+- Neovim dotnet plugin: Refactored add_missing_imports logic into separate module for maintainability
+- Theme switching: XDG_CONFIG_HOME compliance fixes throughout theme-switch
+- Test runner: Removed permanently-skipped broken tests (test-kill-undo, test-show-dotfiles-status)
+
+### Fixed
+- Installation backup race condition on concurrent installations
+- Backup directory creation now uses secure permissions
+- Better build detection avoids nonsensical paths from special buffer types
+- Various shell script quality improvements (shellcheck, error handling)
+
+### Removed
+- CODE_REVIEW.md — detailed code review analysis (addressed issues incorporated into codebase)
+- Permanently-skipped broken test files that undermined test suite credibility
+
 ## [0.2.28] - 2026-02-19
 
 ### Changed
