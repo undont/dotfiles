@@ -9,16 +9,71 @@ return {
     keys = {
       { '<leader>do', '<cmd>DiffviewOpen<CR>', desc = '[D]iff [O]pen (vs index)' },
       { '<leader>dc', '<cmd>DiffviewClose<CR>', desc = '[D]iff [C]lose' },
-      { '<leader>dh', '<cmd>DiffviewFileHistory %<CR>', desc = '[D]iff file [H]istory' },
+      {
+        '<leader>dh',
+        function()
+          local file = vim.fn.expand '%'
+          if file ~= '' and vim.fn.filereadable(file) == 1 then
+            vim.cmd 'DiffviewFileHistory %'
+          else
+            vim.cmd 'DiffviewFileHistory'
+          end
+        end,
+        desc = '[D]iff file [H]istory',
+      },
       { '<leader>dp', '<cmd>DiffviewFileHistory --range=origin/HEAD...HEAD --right-only --no-merges<CR>', desc = '[D]iff [P]R review' },
     },
     config = function(_, opts)
       require('diffview').setup(opts)
 
-      -- Patch sync_scroll to guard against invalid window ids (upstream bug)
+      -- Global ]f/[f: active while diffview is open, cleaned up when it closes
+      local function set_nav()
+        local actions = require 'diffview.actions'
+        vim.keymap.set('n', ']f', actions.select_next_entry, { silent = true, desc = 'Next changed file (diffview)' })
+        vim.keymap.set('n', '[f', actions.select_prev_entry, { silent = true, desc = 'Previous changed file (diffview)' })
+      end
+
+      local function clear_nav()
+        pcall(vim.keymap.del, 'n', ']f')
+        pcall(vim.keymap.del, 'n', '[f')
+      end
+
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'DiffviewFiles', 'DiffviewFileHistory' },
+        callback = set_nav,
+      })
+      vim.api.nvim_create_autocmd('BufWinLeave', {
+        callback = function()
+          local ft = vim.bo.filetype
+          if ft == 'DiffviewFiles' or ft == 'DiffviewFileHistory' then
+            clear_nav()
+          end
+        end,
+      })
+
+      -- Patch diffview to guard against invalid window ids (upstream bug)
       -- See: https://github.com/sindrets/diffview.nvim/issues/550
-      local Layout = require 'diffview.scene.layout'
       local api = vim.api
+
+      -- Patch init_layout: curwin may already be closed after layout:create()
+      local SV = require('diffview.scene.views.standard.standard_view').StandardView
+      SV.init_layout = function(self)
+        local first_init = not vim.t[self.tabpage].diffview_view_initialized
+        local curwin = api.nvim_get_current_win()
+
+        self:use_layout(SV.get_temp_layout())
+        self.cur_layout:create()
+        vim.t[self.tabpage].diffview_view_initialized = true
+
+        if first_init and api.nvim_win_is_valid(curwin) then
+          api.nvim_win_close(curwin, false)
+        end
+
+        self.panel:focus()
+        self.emitter:emit 'post_layout'
+      end
+
+      local Layout = require('diffview.scene.layout').Layout
       Layout.sync_scroll = function(self)
         local curwin = api.nvim_get_current_win()
         local target, max = nil, 0
@@ -69,8 +124,10 @@ return {
           merge_tool = { layout = 'diff3_mixed' },
         },
         file_panel = {
-          position = 'bottom',
-          height = 10,
+          win_config = {
+            position = 'bottom',
+            height = 10,
+          },
         },
         keymaps = {
           view = {

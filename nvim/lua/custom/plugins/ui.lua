@@ -156,11 +156,11 @@ return {
         require('mini.notify').show_history()
       end, { desc = 'Notification history (all)' })
 
-      -- Extended ]/[ navigation; use uppercase for conflicting suffixes
+      -- Extended ]/[ navigation; disable suffixes that conflict with other plugins
       require('mini.bracketed').setup {
-        comment = { suffix = 'C' }, -- lowercase ]c/[c is gitsigns (git changes)
-        file = { suffix = 'F' }, -- lowercase ]f/[f is fugitive (changed files)
-        treesitter = { suffix = 'T' }, -- lowercase ]t/[t is neotest (failed tests)
+        comment = { suffix = '' }, -- ]c/[c reserved for gitsigns (git changes)
+        file = { suffix = 'F' }, -- ]f/[f reserved for diffview (changed files)
+        treesitter = { suffix = '' }, -- ]t/[t reserved for neotest (failed tests)
       }
 
       -- Split/join code constructs (gS to split, gJ to join)

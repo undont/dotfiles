@@ -8,7 +8,7 @@ Customised Neovim setup based on [kickstart.nvim](https://github.com/nvim-lua/ki
 - **LSP Support** - Language servers via Mason with auto-configuration
 - **Completion** - Fast completion with blink.cmp and snippets
 - **AI Assistance** - GitHub Copilot integration
-- **Git Integration** - Fugitive for git status/blame, LazyGit for git operations, gitsigns for inline decorations
+- **Git Integration** - LazyGit for git operations, gitsigns for inline decorations
 - **PR Review** - Octo.nvim for GitHub PRs, diffview for side-by-side diffs
 - **.NET Development** - easy-dotnet.nvim for project management with Roslyn LSP
 - **Fuzzy Finding** - Telescope for files, buffers, grep, and more
@@ -71,7 +71,7 @@ nvim/
     │   │   ├── telescope.lua          # Fuzzy finder configuration
     │   │   ├── editor.lua             # Treesitter, flash, textobjects, grug-far, oil
     │   │   ├── copilot.lua            # GitHub Copilot integration
-    │   │   ├── git.lua                # Git plugins (fugitive, LazyGit)
+    │   │   ├── git.lua                # Git plugins (LazyGit)
     │   │   ├── pr-review.lua          # PR review (diffview, octo)
     │   │   ├── dotnet.lua             # .NET development (easy-dotnet)
     │   │   ├── test.lua               # Test runner (neotest)
@@ -137,14 +137,13 @@ nvim/
 | Plugin | Purpose |
 |--------|---------|
 | [gitsigns.nvim](https://github.com/lewis6991/gitsigns.nvim) | Git decorations and hunks |
-| [vim-fugitive](https://github.com/tpope/vim-fugitive) | Git status, blame, diff with review mode |
 | [lazygit.nvim](https://github.com/kdheepak/lazygit.nvim) | LazyGit integration |
 
 ### PR Review & Diff
 
 | Plugin | Purpose |
 |--------|---------|
-| [diffview.nvim](https://github.com/sindrets/diffview.nvim) | Side-by-side diff tab, file history, merge conflicts |
+| [diffview.nvim](https://github.com/sindrets/diffview.nvim) | Side-by-side diff tab, file history, merge conflicts, `]f`/`[f` file navigation |
 | [octo.nvim](https://github.com/pwntester/octo.nvim) | GitHub PR review with side-by-side diffs |
 
 ### .NET Development
