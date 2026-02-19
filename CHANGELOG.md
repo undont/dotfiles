@@ -14,6 +14,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Neovim: `<leader>dh` file history now falls back to repo history when no file is open
 - Neovim: diffview `file_panel` config updated to `win_config` structure
 - Neovim: patched diffview `init_layout` to guard against invalid window IDs (upstream bug)
+- Neovim: gitsigns blame keybindings moved under `<leader>d` prefix — `<leader>db` toggle inline blame, `<leader>dB` blame popup (aligned with diffview group)
+- Neovim: mini.bracketed `comment` and `treesitter` suffixes disabled (reserved for gitsigns `]c`/`[c` and neotest `]t`/`[t`)
+- Ghostty: added `Opt+Shift+H/J/K/L/D/0` keybinds for escape sequence passthrough
 
 ### Added
 - Zsh: `nvim-sync` function for headless Lazy.nvim plugin sync

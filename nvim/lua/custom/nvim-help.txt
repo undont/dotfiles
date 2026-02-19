@@ -33,17 +33,16 @@
 │  <leader>e           file tree       │  <leader>do         diff open      │
 │  -                   oil (parent dir)│  <leader>dc         diff close     │
 │  <leader>g           git (lazygit)   │  <leader>dh         file history   │
-│  <leader>q           build project   │  <leader>dp         PR diff review │
-│  <leader>xx          all diagnostics │  <leader>pl         list PRs       │
-│  Ctrl+hjkl           move windows    │  <leader>pr         start review   │
+│  <leader>q           build project   │  <leader>db         toggle blame   │
+│  <leader>xx          all diagnostics │  <leader>dB         blame popup    │
+│  Ctrl+hjkl           move windows    │  <leader>dp         PR diff review │
 │                                      │                                    │
 ├─ GIT HUNKS ──────────────────────────┼─ WINDOW RESIZE ────────────────────┤
 │                                      │                                    │
 │  <leader>hs          stage hunk      │  <leader>wh         resize left    │
 │  <leader>hr          reset hunk      │  <leader>wl         resize right   │
 │  <leader>hp          preview hunk    │  <leader>wj         resize down    │
-│  <leader>hb          blame line      │  <leader>wk         resize up      │
-│  <leader>hd          diff index      │                                    │
+│  <leader>hd          diff index      │  <leader>wk         resize up      │
 │                                      │                                    │
 └──────────────────────────────────────┴────────────────────────────────────┘
 
