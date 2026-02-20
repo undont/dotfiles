@@ -74,24 +74,6 @@ function M.setup()
     end,
   })
 
-  -- Auto-delete stale swap files instead of showing E325 prompt
-  -- If the swap owner process is dead, the swap is stale — delete it and edit normally
-  vim.api.nvim_create_autocmd('SwapExists', {
-    desc = 'Auto-delete stale swap files',
-    callback = function()
-      local info = vim.fn.swapinfo(vim.v.swapname)
-      local pid = tonumber(info.pid) or 0
-      -- pid 0 means the process info is unavailable/corrupt — treat as stale
-      -- Otherwise check if the process is still running
-      if pid == 0 or vim.fn.getpid() == pid or os.execute('kill -0 ' .. pid .. ' 2>/dev/null') ~= 0 then
-        vim.v.swapchoice = 'e' -- edit the file, swap will be overwritten
-        vim.notify('Deleted stale swap: ' .. vim.fs.basename(vim.v.swapname), vim.log.levels.INFO)
-        os.remove(vim.v.swapname)
-      end
-      -- If the process IS running, fall through to the default E325 prompt
-    end,
-  })
-
   -- Sort JSON keys (strip trailing commas, sort with jq, reformat with prettier)
   local function sort_json_keys(buf)
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)

@@ -99,7 +99,7 @@ local build_configs = {
   {
     marker = '*.csproj',
     cmd = function(dir)
-      return { 'dotnet', 'build', find_dotnet_target(dir), '-consoleloggerparameters:NoSummary' }
+      return { 'dotnet', 'build', find_dotnet_target(dir), '--no-incremental', '-consoleloggerparameters:NoSummary' }
     end,
     efm = '%f(%l\\,%c): %trror %m,%f(%l\\,%c): %tarning %m',
   },
