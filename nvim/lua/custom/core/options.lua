@@ -33,6 +33,9 @@ function M.setup()
   -- Persistent undo
   vim.o.undofile = true
 
+  -- Disable swap files (undo + autoread + git make them redundant)
+  vim.o.swapfile = false
+
   -- Search
   vim.o.ignorecase = true
   vim.o.smartcase = true

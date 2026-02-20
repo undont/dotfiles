@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.30] - 2026-02-20
+
+### Changed
+- Neovim: Disable swap files entirely (undo + autoread + git make them redundant)
+- Neovim: Removed SwapExists autocommand (no longer needed without swap files)
+
+### Fixed
+- Neovim: dotnet build now uses `--no-incremental` to report errors from the entire solution
+
 ## [0.2.29] - 2026-02-19
 
 ### Added
