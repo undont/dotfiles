@@ -8,8 +8,7 @@ return {
     lazy = false, -- treesitter doesn't support lazy loading
     build = ':TSUpdate',
     config = function()
-      -- Install parsers (async, only fetches missing ones)
-      require('nvim-treesitter').install {
+      local parsers = {
         'bash',
         'c',
         'c_sharp',
@@ -18,6 +17,7 @@ return {
         'dockerfile',
         'go',
         'html',
+        'http',
         'javascript',
         'jsdoc',
         'json',
@@ -34,6 +34,51 @@ return {
         'vimdoc',
         'yaml',
       }
+
+      -- Purge compiled parsers when nvim-treesitter updates to prevent ABI crashes.
+      -- Old .so files compiled against a previous treesitter ABI can crash Neovim
+      -- when opened (e.g. markdown, c_sharp after breaking updates).
+      local parser_dir = vim.fn.stdpath 'data' .. '/site/parser'
+      local marker_path = vim.fn.stdpath 'data' .. '/nvim-treesitter-rev'
+      local plugin_dir = vim.fn.stdpath 'data' .. '/lazy/nvim-treesitter'
+      local current_rev = vim.fn.system('git -C ' .. plugin_dir .. ' rev-parse --short HEAD 2>/dev/null'):gsub('%s+', '')
+      if current_rev ~= '' then
+        local stored_rev = ''
+        local f = io.open(marker_path, 'r')
+        if f then
+          stored_rev = f:read '*a' or ''
+          f:close()
+          stored_rev = stored_rev:gsub('%s+', '')
+        end
+        if stored_rev ~= current_rev then
+          -- Plugin updated — purge all compiled parsers so they reinstall cleanly
+          local stat = vim.uv.fs_stat(parser_dir)
+          if stat and stat.type == 'directory' then
+            local handle = vim.uv.fs_scandir(parser_dir)
+            if handle then
+              while true do
+                local name, typ = vim.uv.fs_scandir_next(handle)
+                if not name then
+                  break
+                end
+                if typ == 'file' and name:match '%.so$' then
+                  os.remove(parser_dir .. '/' .. name)
+                end
+              end
+            end
+            vim.notify('nvim-treesitter updated — reinstalling parsers', vim.log.levels.INFO)
+          end
+          -- Write new marker
+          f = io.open(marker_path, 'w')
+          if f then
+            f:write(current_rev)
+            f:close()
+          end
+        end
+      end
+
+      -- Install parsers (async, only fetches missing ones)
+      require('nvim-treesitter').install(parsers)
 
       -- Enable treesitter highlighting and indentation for all supported filetypes
       vim.api.nvim_create_autocmd('FileType', {
