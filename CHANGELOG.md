@@ -8,9 +8,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.2.30] - 2026-02-20
 
+### Added
+- Neovim: `http` treesitter parser
+- Neovim: Auto-purge compiled treesitter parsers on plugin update to prevent ABI crashes
+
 ### Changed
 - Neovim: Disable swap files entirely (undo + autoread + git make them redundant)
 - Neovim: Removed SwapExists autocommand (no longer needed without swap files)
+- Neovim: Gitsigns priority raised to 30 (above easy-dotnet test signs at 20)
 
 ### Fixed
 - Neovim: dotnet build now uses `--no-incremental` to report errors from the entire solution
