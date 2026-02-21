@@ -94,7 +94,7 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 - **Dotfiles sync indicator** — status bar shows `↓` `↑` `↕` when updates are available
 - **Local overrides** — `~/.config/tmux/local.conf` survives theme changes and updates
 
-### Neovim — Modular Config, 14 Plugin Files
+### Neovim — Modular Config, Diverse Tooling
 
 > Based on kickstart.nvim with lazy.nvim, Treesitter, and 10 language servers via Mason.
 
