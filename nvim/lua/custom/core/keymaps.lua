@@ -23,6 +23,9 @@ function M.setup()
     require('custom.core.theme').reload(true)
   end, { desc = '[R]eload theme' })
 
+  -- Shift+Enter → Enter (Ghostty sends Alt+Enter / \x1b\r)
+  vim.keymap.set({ 'i', 'n', 'v', 'c' }, '<M-CR>', '<CR>')
+
   -- Terminal mode escape
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
@@ -153,6 +156,33 @@ function M.setup()
     end
     vim.api.nvim_buf_set_lines(0, comment_start - 1, comment_end, false, {})
   end, { desc = '[D]elete comment block' })
+
+  -- Refresh: wipe all buffers, restart LSP, re-source config
+  vim.keymap.set('n', '<leader>lR', function()
+    local cur_file = vim.fn.expand '%:p'
+
+    -- Stop all LSP clients
+    vim.lsp.stop_client(vim.lsp.get_clients(), true)
+
+    -- Wipe all buffers (closes diffview, stale scratch buffers, etc.)
+    local bufs = vim.api.nvim_list_bufs()
+    for _, buf in ipairs(bufs) do
+      if vim.api.nvim_buf_is_valid(buf) then
+        vim.api.nvim_buf_delete(buf, { force = true })
+      end
+    end
+
+    -- Re-source config
+    vim.cmd 'source $MYVIMRC'
+
+    -- Reopen the file we were editing and let LSP re-attach
+    vim.defer_fn(function()
+      if cur_file ~= '' and vim.fn.filereadable(cur_file) == 1 then
+        vim.cmd('edit ' .. vim.fn.fnameescape(cur_file))
+      end
+      vim.notify('Neovim refreshed', vim.log.levels.INFO)
+    end, 200)
+  end, { desc = '[R]efresh Neovim (clear buffers, restart LSP)' })
 
   -- LuaSnip navigation keymaps
   vim.keymap.set({ 'i', 's' }, '<C-k>', function()

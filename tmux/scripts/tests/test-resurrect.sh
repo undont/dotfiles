@@ -264,10 +264,12 @@ EOF
 
 test_restore_operation() {
     section "Restore Operation Tests"
-    
+
     # Note: Full restore testing requires tmux server setup
     # These tests focus on backup file handling and validation
-    
+    # A test server is required so restore.sh's tmux calls don't hit the live server
+    setup_test_server
+
     setup_test_env
     
     # Create a session backup file
@@ -307,14 +309,16 @@ EOF
     fi
     
     cleanup_test_env
+    cleanup_test_server
 }
 
 test_delete_operation() {
     section "Delete Operation Tests"
-    
-    # Note: These tests focus on backup file deletion
-    # Session killing requires tmux server
-    
+
+    # A test server is required so delete.sh's tmux calls don't hit the live server
+    setup_test_server
+
+    # Note: These tests focus on backup file deletion; session killing requires tmux server
     setup_test_env
     
     # Create a session backup file
@@ -337,8 +341,9 @@ test_delete_operation() {
     # Note: Script may not delete if session validation fails
     # This is expected behaviour
     skip "Delete operation requires tmux server for full testing"
-    
+
     cleanup_test_env
+    cleanup_test_server
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -347,7 +352,10 @@ test_delete_operation() {
 
 test_edge_cases() {
     section "Edge Case Tests"
-    
+
+    # A test server is required so restore.sh's tmux calls don't hit the live server
+    setup_test_server
+
     # Test 1: Session name with special characters in backup
     setup_test_env
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
@@ -392,6 +400,7 @@ test_edge_cases() {
     fi
     
     cleanup_test_env
+    cleanup_test_server
 }
 
 # ══════════════════════════════════════════════════════════════
@@ -425,7 +434,7 @@ test_content_restoration() {
     $TEST_TMUX_CMD kill-session -t "test-content"
     
     # Restore the session
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-content"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-content"
     
     # Check if session was restored
     if $TEST_TMUX_CMD has-session -t "test-content" 2>/dev/null; then
@@ -471,7 +480,7 @@ test_command_restoration() {
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-commands"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-commands"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-commands"
     
     # Check if session was restored
     if $TEST_TMUX_CMD has-session -t "test-commands" 2>/dev/null; then
@@ -515,7 +524,7 @@ test_process_list_configuration() {
     sleep 0.3
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-default"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-default"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-default"
     
     if $TEST_TMUX_CMD has-session -t "test-default" 2>/dev/null; then
         pass "Restoration works with default process list"
@@ -541,7 +550,7 @@ test_process_list_configuration() {
     sleep 0.3
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-custom"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-custom"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-custom"
     
     if $TEST_TMUX_CMD has-session -t "test-custom" 2>/dev/null; then
         pass "Restoration works with custom process list"
@@ -578,7 +587,7 @@ test_mixed_restoration() {
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-mixed"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-mixed"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-mixed"
     
     # Check if session was restored with all panes
     if $TEST_TMUX_CMD has-session -t "test-mixed" 2>/dev/null; then
@@ -616,7 +625,7 @@ window	test-no-contents	0	bash	1		b6af,80x24,0,0,0	1
 EOF
     
     $TEST_TMUX_CMD kill-session -t "test-no-contents"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-no-contents"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-no-contents"
     
     # Should still restore successfully without contents files
     if $TEST_TMUX_CMD has-session -t "test-no-contents" 2>/dev/null; then
@@ -647,7 +656,7 @@ window	test-missing-window	1	window1	1	:*	1234,80x24,0,0,1	0
 EOF
 
     # Should skip malformed line but not crash
-    if bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-missing-window" 2>/dev/null; then
+    if bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-missing-window" 2>/dev/null; then
         pass "Handles missing window_number in pane line gracefully"
     else
         skip "Script may fail on malformed files (depends on validation logic)"
@@ -666,7 +675,7 @@ pane	test-missing-pane	1	0	:	0	:	/tmp	0	bash	:
 window	test-missing-pane	1	window1	1	:*	1234,80x24,0,0,1	0
 EOF
 
-    if bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-missing-pane" 2>/dev/null; then
+    if bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-missing-pane" 2>/dev/null; then
         pass "Handles missing pane_index in pane line gracefully"
     else
         skip "Script may fail on malformed pane index"
@@ -684,7 +693,7 @@ pane	test-missing-layout	0	0	:	0	:	/tmp	1	bash	:
 window	test-missing-layout	0	window1	1	:*		0
 EOF
 
-    if bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-missing-layout" 2>/dev/null; then
+    if bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-missing-layout" 2>/dev/null; then
         pass "Handles missing window_layout gracefully"
     else
         skip "Script may fail on missing layout"
@@ -704,7 +713,7 @@ window	test-empty-lines	0	window1	1	:*	1234,80x24,0,0,1	0
 
 EOF
 
-    if bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-empty-lines" 2>/dev/null; then
+    if bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-empty-lines" 2>/dev/null; then
         pass "Handles empty lines in backup file gracefully"
     else
         skip "Script may fail on empty lines"
@@ -741,7 +750,7 @@ window	test-cleanup	0	window1	1	:*	1234,80x24,0,0,1	0
 EOF
 
     # Attempt restoration (may succeed or fail depending on environment)
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-cleanup" 2>/dev/null || true
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-cleanup" 2>/dev/null || true
 
     # If it failed, verify no partial session remains
     if ! $TEST_TMUX_CMD has-session -t "test-cleanup" 2>/dev/null; then
@@ -798,7 +807,7 @@ test_non_consecutive_windows() {
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-gaps"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-gaps"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-gaps"
 
     # Verify gaps are preserved
     if $TEST_TMUX_CMD has-session -t "test-gaps" 2>/dev/null; then
@@ -844,7 +853,7 @@ test_non_consecutive_windows() {
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-gaps-base1"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-gaps-base1"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-gaps-base1"
 
     if $TEST_TMUX_CMD has-session -t "test-gaps-base1" 2>/dev/null; then
         local restored_wins
@@ -896,7 +905,7 @@ test_pane_readiness() {
     $TEST_TMUX_CMD kill-session -t "test-wait-pane"
 
     # Restore - wait_for_pane should prevent race conditions
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-wait-pane"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-wait-pane"
 
     if $TEST_TMUX_CMD has-session -t "test-wait-pane" 2>/dev/null; then
         pass "Session restored with pane readiness polling"
@@ -935,7 +944,7 @@ test_pane_readiness() {
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-multi-panes"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-multi-panes"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-multi-panes"
 
     # Verify all panes were restored
     if $TEST_TMUX_CMD has-session -t "test-multi-panes" 2>/dev/null; then
@@ -989,7 +998,7 @@ window	test-fuzzy	0	test	1		1234,80x24,0,0,0	0
 EOF
 
     $TEST_TMUX_CMD kill-session -t "test-fuzzy" 2>/dev/null || true
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-fuzzy" 2>/dev/null || true
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-fuzzy" 2>/dev/null || true
 
     if $TEST_TMUX_CMD has-session -t "test-fuzzy" 2>/dev/null; then
         pass "Restoration works with fuzzy process matching configured"
@@ -1012,7 +1021,7 @@ pane	test-mixed-match	0	1		0	bash	/tmp	1	ssh	ssh user@host
 window	test-mixed-match	0	test	1		1234,80x24,0,0,0	0
 EOF
 
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-mixed-match" 2>/dev/null || true
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-mixed-match" 2>/dev/null || true
 
     if $TEST_TMUX_CMD has-session -t "test-mixed-match" 2>/dev/null; then
         pass "Mixed exact and fuzzy matching works"
@@ -1055,7 +1064,7 @@ test_window_name_restoration() {
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-winnames"
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-winnames"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-winnames"
 
     if $TEST_TMUX_CMD has-session -t "test-winnames" 2>/dev/null; then
         local name0 name1 name2
@@ -1095,7 +1104,7 @@ test_window_name_restoration() {
     $TEST_TMUX_CMD kill-session -t "test-autorename"
 
     # Restore with global automatic-rename on (triggers the race condition)
-    bash "$SCRIPTS_DIR/resurrect/restore.sh" --session "test-autorename"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-autorename"
     sleep 0.3
 
     if $TEST_TMUX_CMD has-session -t "test-autorename" 2>/dev/null; then

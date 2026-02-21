@@ -2,7 +2,7 @@
 # Dotfiles Makefile
 # ══════════════════════════════════════════════════════════════
 
-.PHONY: help test test-verbose test-tmux test-no-tmux \
+.PHONY: help test test-verbose test-tmux test-no-tmux test-failures \
         lint lint-shell lint-lua theme-check \
         test-libs test-scripts test-integration \
         install install-minimal install-core install-full \
@@ -25,8 +25,13 @@ help: ## Show this help message
 # Testing
 # ──────────────────────────────────────────────────────────────
 
-test: ## Run all tests
-	@./scripts/run-tests.sh
+TEST_FLAGS ?=
+ifdef VERBOSE
+TEST_FLAGS += --verbose
+endif
+
+test: ## Run all tests (VERBOSE=1 for verbose output)
+	@./scripts/run-tests.sh $(TEST_FLAGS)
 
 test-verbose: ## Run all tests with verbose output
 	@./scripts/run-tests.sh --verbose
@@ -36,6 +41,9 @@ test-tmux: ## Run only tmux-dependent tests
 
 test-no-tmux: ## Run tests that don't require tmux
 	@./scripts/run-tests.sh --no-tmux
+
+test-failures: ## Run tests, show only failures and skips with context
+	@./scripts/run-tests.sh --verbose 2>&1 | grep -E '(FAIL|SKIP|✗|skipped|failed)' -B2 -A5 --color=never || printf '\033[0;32m✓ No failures or skips found\033[0m\n'
 
 test-libs: ## Run library tests only
 	@./scripts/_lib/test-install-libs.sh

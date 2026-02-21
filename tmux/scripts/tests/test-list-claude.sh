@@ -227,7 +227,9 @@ section "Integration (Live Execution)"
 
 if ! command -v tmux &>/dev/null; then
     skip "tmux not installed"
-elif ! tmux list-sessions &>/dev/null 2>&1; then
+elif ! command tmux list-sessions &>/dev/null 2>&1; then
+    # Intentionally queries the real tmux server (not the test socket) to check
+    # whether there are live sessions to run the integration smoke-test against.
     skip "no tmux sessions running"
 else
     # Test default (fzf) mode

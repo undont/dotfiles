@@ -91,12 +91,12 @@ else
     skip "multiple invocation test (ghostty not running)"
 fi
 
-section "Test Summary"
-
-echo "─────────────────────────────────────────"
-printf "${GREEN}Passed:${NC}  %d\n" "$PASS"
-printf "${RED}Failed:${NC}  %d\n" "$FAIL"
-printf "${YELLOW}Skipped:${NC} %d\n" "$SKIP"
-echo "─────────────────────────────────────────"
-
-[[ $FAIL -eq 0 ]]
+echo ""
+echo "${CYAN}═══════════════════════════════════════════${NC}"
+if [[ $FAIL -eq 0 ]]; then
+    echo "${GREEN}✓ All tests passed${NC} ($PASS passed)"
+    exit 0
+else
+    echo "${RED}✗ Some tests failed${NC} ($PASS passed, $FAIL failed)"
+    exit 1
+fi

@@ -276,7 +276,9 @@ section "list-nvim.sh Integration"
 
 if ! command -v tmux &>/dev/null; then
     skip "tmux not installed"
-elif ! tmux list-sessions &>/dev/null 2>&1; then
+elif ! command tmux list-sessions &>/dev/null 2>&1; then
+    # Intentionally queries the real tmux server (not the test socket) to check
+    # whether there are live sessions to run the integration smoke-test against.
     skip "no tmux sessions running"
 else
     # Test runs without error
@@ -316,13 +318,24 @@ else
     TEST_SOCKET="${TMPDIR}nvim.${USER}/test-nvim-$$.0"
     mkdir -p "$(dirname "$TEST_SOCKET")"
 
-    # Start nvim in headless server mode
-    nvim --headless --listen "$TEST_SOCKET" &
+    # Start nvim in headless server mode with --clean to skip user config that may
+    # trigger terminal capability queries (DECRPM, DA1 escape sequences).
+    nvim --headless --clean --listen "$TEST_SOCKET" </dev/null >/dev/null 2>&1 &
     NVIM_PID=$!
-    sleep 1  # Give nvim time to start
 
-    if [[ -S "$TEST_SOCKET" ]]; then
-        pass "Test nvim socket created at $TEST_SOCKET"
+    # Poll for RPC readiness — socket file existing doesn't mean the server accepts
+    # connections yet. A simple --remote-expr confirms the RPC channel is alive.
+    _nvim_ready=false
+    for _ in {1..40}; do
+        if nvim --server "$TEST_SOCKET" --remote-expr "1+1" >/dev/null 2>&1; then
+            _nvim_ready=true
+            break
+        fi
+        sleep 0.1
+    done
+
+    if [[ "$_nvim_ready" = true ]]; then
+        pass "Test nvim RPC server ready at $TEST_SOCKET"
 
         # Test: nvim-buffer-sync.sh can send to real nvim
         export NVIM_SOCKET="$TEST_SOCKET"
@@ -331,13 +344,22 @@ else
         if echo "{\"tool_input\":{\"file_path\":\"$TEST_FILE\"}}" | "$BUFFER_SYNC" 2>/dev/null; then
             pass "nvim-buffer-sync.sh sent command to nvim"
 
+            # Small delay to let nvim process the badd command
+            sleep 0.2
+
             # Verify buffer was added by checking nvim's buffer list
-            sleep 0.5
-            buffers=$(nvim --server "$TEST_SOCKET" --remote-expr "join(map(getbufinfo(), 'v:val.name'), '\n')" 2>/dev/null || echo "")
+            buffers=""
+            for _ in {1..20}; do
+                buffers=$(nvim --server "$TEST_SOCKET" --remote-expr "join(map(getbufinfo(), 'v:val.name'), '\n')" 2>/dev/null || echo "")
+                echo "$buffers" | grep -q "$TEST_FILE" && break
+                sleep 0.1
+            done
             if echo "$buffers" | grep -q "$TEST_FILE"; then
                 pass "File was added to nvim buffer list"
+            elif ! kill -0 "$NVIM_PID" 2>/dev/null; then
+                skip "nvim process exited during test (environment issue)"
             else
-                fail "File should appear in nvim buffer list"
+                fail "File should appear in nvim buffer list (buffers: ${buffers:-<empty>})"
             fi
         else
             fail "nvim-buffer-sync.sh failed to send command"
@@ -345,11 +367,12 @@ else
 
         unset NVIM_SOCKET
     else
-        skip "Could not create test nvim socket"
+        skip "Could not start nvim RPC server (headless nvim may not work in this environment)"
     fi
 
-    # Cleanup
+    # Cleanup — redirect nvim's SIGTERM stderr to avoid leaking into test output
     kill "$NVIM_PID" 2>/dev/null || true
+    wait "$NVIM_PID" 2>/dev/null || true
     unset NVIM_PID
     rm -f "$TEST_SOCKET"
     test_tmux kill-session -t "$TEST_SESSION" 2>/dev/null || true

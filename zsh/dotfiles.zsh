@@ -43,6 +43,13 @@ case "$(uname)" in
 esac
 
 # =============================================================================
+# FILE DESCRIPTOR LIMIT
+# =============================================================================
+# macOS default soft limit is 256 — too low for Neovim plugins that spawn many
+# git subprocesses (diffview, gitsigns). Raise to 10240 to prevent EMFILE errors.
+[[ "$IS_MACOS" == "1" ]] && ulimit -n 10240 2>/dev/null
+
+# =============================================================================
 # TERMINFO FALLBACK
 # =============================================================================
 # Ghostty sets TERM=xterm-ghostty, but remote machines (e.g. SSH targets)
@@ -272,6 +279,7 @@ ssh() {
 # Editor
 export EDITOR="nvim"                   # Default editor for git, etc.
 alias oc="opencode"                    # Launch OpenCode editor
+alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 
 # MCP (Model Context Protocol)
 alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across tools
@@ -280,6 +288,57 @@ alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across 
 alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 alias alerts-clear="rm -rf ~/.claude/alerts"  # Clear Claude agent alerts
+alias ta="tattach" # Attach to tmux session, restoring from backup if needed (see tattach function below)
+
+# Navigation
+alias c="clear"
+alias ..="cd .."
+alias ...="cd ../.."
+
+# File listing (colour-aware: BSD ls uses -G, GNU ls uses --color=auto)
+if [[ "$IS_MACOS" == "1" ]]; then
+  alias ls="ls -G"
+else
+  alias ls="ls --color=auto"
+fi
+alias ll="ls -alF"
+alias la="ls -A"
+alias l="ls -CF"
+
+# Search
+alias grep="grep --color=auto"
+
+# Shell shortcuts
+alias h="cd ~"
+alias j="jobs"
+alias v="nvim"
+
+# Clipboard — Linux only (macOS has pbcopy/pbpaste natively)
+if [[ "$IS_MACOS" != "1" ]]; then
+  alias pbcopy="xclip -selection clipboard"
+  alias pbpaste="xclip -selection clipboard -o"
+fi
+
+# Safer file operations
+alias cp="cp -i"
+alias mv="mv -i"
+
+# System
+alias df="df -h"
+alias du="du -sh"
+alias psg="ps aux | grep -v grep | grep"   # e.g. psg nvim
+alias ports="lsof -i -P -n | grep LISTEN"
+
+# Networking
+alias myip="curl -s ifconfig.me"
+
+# Open — platform-aware (macOS: open, Linux: xdg-open)
+if [[ "$IS_MACOS" == "1" ]]; then
+  alias o="open"
+  alias finder="open ."
+else
+  alias o="xdg-open"
+fi
 
 # Functions (instead of aliases) for tab completion support
 trestore() {
@@ -328,6 +387,9 @@ compdef _trestore_complete trestore
 compdef _tmux_sessions_running tkill
 compdef _tmux_sessions_running tattach
 
+# Make directory and cd into it
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
 # Attach to tmux session, restoring from backup if needed
 tattach() {
   # Try to attach to running session
@@ -349,9 +411,23 @@ tattach() {
   return 1
 }
 
+# Git
+alias gs="git status -sb"
+alias gd="git diff"
+alias gds="git diff --staged"
+alias gl="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ar, %an)%C(reset)' -20"
+alias glf="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ad, %an)%C(reset)' --date=format:'%d %B %Y %H:%M'"
+alias gco="git checkout"
+alias gsw="git switch"
+alias gb="git branch -vv"
+alias gp="git push"
+alias gpl="git pull"
+alias gst="git stash"
+alias gfp="git fetch -pf"             # Fetch and prune remote-tracking branches
+alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
+
 # Development tools
 alias gols="ls ~/go/bin"               # List installed Go binaries
-alias git-prune="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"  # Fix stale plugin cache
 
 # Sync all Lazy.nvim plugins (headless)
@@ -397,6 +473,7 @@ _dotfiles() {
     'update:Pull latest changes and re-run installer'
     'status:Show sync status and quick health summary'
     'health:Run full health check'
+    'aliases:Show all shell aliases, functions, and utilities'
     'set:Configure project directories (dev, projects)'
     'edit:Open dotfiles directory in $EDITOR'
     'cd:Print dotfiles path'
@@ -427,6 +504,7 @@ _dotfiles() {
   fi
 }
 compdef _dotfiles dotfiles
+compdef _dotfiles dot
 
 # =============================================================================
 # SHELL STARTUP PROFILING

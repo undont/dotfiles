@@ -10,38 +10,8 @@ THEMES_DIR="$DOTFILES_ROOT/themes"
 TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/tmux.conf.template"
 GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 
-# Test counters
-PASS=0
-FAIL=0
-SKIP=0
-
-# Colours
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
-
-pass() {
-    PASS=$((PASS + 1))
-    printf "${GREEN}✓${NC} %s\n" "$1"
-}
-
-fail() {
-    FAIL=$((FAIL + 1))
-    printf "${RED}✗${NC} %s\n" "$1"
-}
-
-skip() {
-    SKIP=$((SKIP + 1))
-    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
-}
-
-section() {
-    echo ""
-    echo "─────────────────────────────────────────"
-    echo "$1"
-    echo "─────────────────────────────────────────"
-}
+# Source shared test helpers (colours, pass/fail/skip/section, assertions)
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ===========================================================================
 # Required Variables
@@ -504,10 +474,7 @@ done
 # Summary
 # ===========================================================================
 
-echo ""
-echo "==========================================="
-echo "Test Results: ${GREEN}${PASS} passed${NC}, ${RED}${FAIL} failed${NC}, ${YELLOW}${SKIP} skipped${NC}"
-echo "==========================================="
+print_summary
 
 if [[ $FAIL -gt 0 ]]; then
     exit 1

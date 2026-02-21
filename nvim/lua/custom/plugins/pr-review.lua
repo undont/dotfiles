@@ -51,9 +51,11 @@ return {
         end,
       })
 
-      -- Patch diffview to guard against invalid window ids (upstream bug)
+      -- Patch diffview upstream bugs (nil guards for async race conditions)
       -- See: https://github.com/sindrets/diffview.nvim/issues/550
       local api = vim.api
+
+      -- Patch init_layout: curwin may already be closed after layout:create()
 
       -- Patch init_layout: curwin may already be closed after layout:create()
       local SV = require('diffview.scene.views.standard.standard_view').StandardView
