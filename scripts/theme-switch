@@ -149,6 +149,8 @@ apply_theme() {
             -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
             -e "s|{{TMUX_ACCENT_PURPLE}}|$TMUX_ACCENT_PURPLE|g" \
             -e "s|{{TMUX_ACCENT_YELLOW}}|$TMUX_ACCENT_YELLOW|g" \
+            -e "s|{{TMUX_ACCENT_GREEN}}|$TMUX_ACCENT_GREEN|g" \
+            -e "s|{{TMUX_BG_SECONDARY}}|$TMUX_BG_SECONDARY|g" \
             -e "s|{{TMUX_FG_SECONDARY}}|$TMUX_FG_SECONDARY|g" \
             -e "s|{{TMUX_PANE_BORDER_INACTIVE}}|$TMUX_PANE_BORDER_INACTIVE|g" \
             -e "s|{{TMUX_PANE_BORDER_ACTIVE}}|$TMUX_PANE_BORDER_ACTIVE|g" \

@@ -101,3 +101,39 @@ jobs:
         run: |
           luacheck nvim/lua/ --no-unused-args --no-max-line-length || true
         continue-on-error: true  # Advisory only initially
+
+  auto-tag:
+    name: Auto Tag
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+    needs: [shellcheck, test-all, syntax-check, lua-check]
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Create tag from CHANGELOG version
+        run: |
+          # Extract latest version from CHANGELOG.md (skip [Unreleased])
+          VERSION=$(grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1 | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
+
+          if [[ -z "$VERSION" ]]; then
+            echo "No version found in CHANGELOG.md"
+            exit 0
+          fi
+
+          TAG="v${VERSION}"
+
+          # Check if tag already exists
+          if git rev-parse "$TAG" >/dev/null 2>&1; then
+            echo "Tag $TAG already exists, skipping"
+            exit 0
+          fi
+
+          echo "Creating tag $TAG"
+          git config user.name "github-actions[bot]"
+          git config user.email "github-actions[bot]@users.noreply.github.com"
+          git tag -a "$TAG" -m "Release $TAG"
+          git push origin "$TAG"

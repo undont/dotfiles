@@ -116,6 +116,9 @@ unbind t
 # Unbind default paste (use prefix+p for launcher picker instead)
 unbind p
 
+# Unbind default next-layout (use prefix+Space for thumbs instead)
+unbind Space
+
 # ─────────────────────────────────────────
 # Window (tab) navigation
 # ─────────────────────────────────────────
@@ -195,34 +198,6 @@ bind o display-popup -w 95% -h 95% -E "\
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
       --bind 'n:become(~/.tmux/scripts/instances/new.sh opencode)' \
       --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) opencode)+reload-sync(~/.tmux/scripts/instances/opencode.sh)' | \
-  cut -d' ' -f1 | \
-  xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/alerts/clear.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
-
-# ─────────────────────────────────────────
-# Gemini instance switcher (prefix + g)
-# Navigation: j/k (up/down), g/G (first/last)
-# Press / to start searching, Esc to return to navigation mode
-# ─────────────────────────────────────────
-bind g display-popup -w 95% -h 95% -E "\
-  source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/instances/gemini.sh | \
-  fzf --ansi --reverse --disabled --cycle \
-      --color=label:{{TMUX_FG_PRIMARY}} \
-      --header-lines=7 \
-      --prompt ': ' \
-      --border=rounded \
-      --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
-      --border-label-pos=bottom \
-      --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
-      --preview-window=right:70% \
-      --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
-      --bind 'enter:accept' \
-      --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,x)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
-      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-      --bind 'n:become(~/.tmux/scripts/instances/new.sh gemini)' \
-      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) gemini)+reload-sync(~/.tmux/scripts/instances/gemini.sh)' | \
   cut -d' ' -f1 | \
   xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/alerts/clear.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
 
@@ -451,9 +426,9 @@ set -g message-command-style 'bg={{TMUX_MESSAGE_COMMAND_BG}} fg={{TMUX_MESSAGE_C
 set -g mode-style 'bg={{TMUX_ACCENT_CYAN}} fg={{TMUX_BG_PRIMARY}} bold'
 
 # Search match highlighting in copy mode (tmux 3.2+)
-# All matches highlighted in yellow, current match in bright cyan
+# All matches highlighted in yellow, current match in pink (high contrast)
 set -g copy-mode-match-style 'bg={{TMUX_ACCENT_YELLOW}} fg={{TMUX_BG_PRIMARY}}'
-set -g copy-mode-current-match-style 'bg={{TMUX_ACCENT_CYAN}} fg={{TMUX_BG_PRIMARY}} bold'
+set -g copy-mode-current-match-style 'bg={{TMUX_ACCENT_PINK}} fg={{TMUX_BG_PRIMARY}} bold,underscore'
 
 # Show search counter in mode indicator (e.g., "[3/12]" when searching)
 set -g copy-mode-mark-style 'bg={{TMUX_ACCENT_PINK}} fg={{TMUX_BG_PRIMARY}} bold'
@@ -473,6 +448,7 @@ set -g @plugin 'tmux-plugins/tmux-cpu'         # CPU/RAM monitoring
 set -g @plugin 'tmux-plugins/tmux-battery'    # Battery status
 set -g @plugin 'tmux-plugins/tmux-open'        # Open highlighted selection
 set -g @plugin 'tmux-plugins/tmux-yank'        # System clipboard integration
+set -g @plugin 'Morantron/tmux-fingers'        # Quick pattern copy (flash.nvim-like)
 
 # ─────────────────────────────────────────
 # Resurrect configuration
@@ -545,6 +521,36 @@ set -g @batt_color_charge_primary_tier4 '{{TMUX_BATTERY_NORMAL_BG}}'
 set -g @batt_color_charge_primary_tier3 '{{TMUX_BATTERY_NORMAL_BG}}'
 set -g @batt_color_charge_primary_tier2 '{{TMUX_BATTERY_LOW_BG}}'
 set -g @batt_color_charge_primary_tier1 '{{TMUX_BATTERY_LOW_BG}}'
+
+# ─────────────────────────────────────────
+# tmux-fingers configuration
+# ─────────────────────────────────────────
+# prefix + Space to activate — shows hint labels over copyable patterns
+# Press hint letter to copy, Ctrl+hint to open in browser, Shift+hint to paste
+set -g @fingers-key Space
+set -g @fingers-keyboard-layout qwerty-homerow
+set -g @fingers-main-action ':copy:'
+set -g @fingers-ctrl-action ':open:'
+set -g @fingers-shift-action ':paste:'
+set -g @fingers-show-copied-notification 1
+
+# Built-in patterns: disable noisy path matcher, keep the rest
+set -g @fingers-enabled-builtin-patterns 'ip,uuid,sha,digit,url,hex,kubernetes,git-status,git-status-branch,diff'
+
+# Custom patterns (stricter replacements + extras)
+set -g @fingers-pattern-0 '(~?(/[a-zA-Z0-9._-]+){2,})/?'
+set -g @fingers-pattern-1 '[A-Z][A-Z0-9_]+-[0-9]+'
+set -g @fingers-pattern-2 '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
+set -g @fingers-pattern-3 '([a-zA-Z0-9.-]+(/[a-zA-Z0-9._-]+)+:[a-zA-Z0-9._-]+)'
+set -g @fingers-pattern-4 '#[0-9a-fA-F]{6}\b'
+set -g @fingers-pattern-5 'postgres(?:ql)?://\S+'
+set -g @fingers-pattern-6 '[❯$] (?<match>[a-zA-Z][\w.-]+( +\S+)+)'
+
+# Styles (tmux-fingers only supports named colours / colourN)
+set -g @fingers-highlight-style 'fg=green'
+set -g @fingers-hint-style 'fg=magenta,bold'
+set -g @fingers-selected-highlight-style 'fg=cyan'
+set -g @fingers-selected-hint-style 'fg=cyan,bold'
 
 # Post-save hook: split combined save file into per-session files
 # This enables restoring individual sessions independently

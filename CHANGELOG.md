@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.31] - 2026-02-21
+
+### Added
+- Tmux: `tmux-fingers` plugin for quick pattern copy (prefix + Space) — flash.nvim-like hint labels over URLs, paths, SHAs, IPs, Jira keys, emails, and more
+- Tmux: Custom finger patterns for file paths, Jira keys, emails, connection strings, hex colours, and shell commands
+
+### Changed
+- Tmux: Removed Gemini instance picker (prefix + g)
+- Tmux: Search highlight current match now uses pink with underscore for better contrast
+- Tmux: `pick-url.sh` captures 50k lines instead of 5k for deeper URL history
+- Tmux: `theme-switch` now substitutes `TMUX_ACCENT_GREEN` and `TMUX_BG_SECONDARY` placeholders
+
+### Fixed
+- Docs: Updated all three docs files (INSTALLATION-GUIDE, THEME-SYSTEM, TROUBLESHOOTING) with current codebase state — fixed stale paths, step counts, symlink lists, prerequisites, and XDG locations
+
 ## [0.2.30] - 2026-02-20
 
 ### Added
