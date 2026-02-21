@@ -166,37 +166,11 @@ refactor: split zsh config into modular files
     git commit -m "<prefix>: <description>"
     ```
 
-4. **Tag Version if CHANGELOG Updated**:
-    - **Check if CHANGELOG.md version changed**:
-      ```bash
-      # Extract the latest version from CHANGELOG.md (skip [Unreleased])
-      NEW_VERSION=$(grep -E "^## \[[0-9]+\.[0-9]+\.[0-9]+\]" CHANGELOG.md | head -1 | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
-
-      # Get the latest git tag
-      LATEST_TAG=$(git tag -l 'v*' | sort -V | tail -1 | sed 's/^v//')
-
-      # Compare versions
-      if [ "$NEW_VERSION" != "$LATEST_TAG" ] && [ -n "$NEW_VERSION" ]; then
-        echo "Creating tag v${NEW_VERSION} for new changelog version"
-        git tag -a "v${NEW_VERSION}" -m "Release v${NEW_VERSION}"
-      fi
-      ```
-    - **When to create tags**:
-      - Only when CHANGELOG.md contains a new version entry (not just [Unreleased])
-      - Only when the new version differs from the latest git tag
-      - Tag format: `v<version>` (e.g., `v0.1.9`, `v0.2.0`)
-    - **Tag message**: Use `"Release v<version>"` as the annotation
-
-5. Push to remote:
+4. Push to remote:
     ```bash
-    # Push branch
     git push -u origin <branch>
-
-    # If tag was created, push it too
-    if [ -n "$NEW_VERSION" ] && [ "$NEW_VERSION" != "$LATEST_TAG" ]; then
-      git push origin "v${NEW_VERSION}"
-    fi
     ```
+    **Note**: Version tags are created automatically by CI when merged to main. The `auto-tag` job reads the latest version from CHANGELOG.md and creates a `vX.Y.Z` tag if it doesn't already exist. No manual tagging needed.
 
 ## Pull Request Creation
 
@@ -262,9 +236,10 @@ The following checks run on push/PR to main (see `.github/workflows/ci.yml`):
 2. **Library Tests** - Runs tmux and installation library tests
 3. **Syntax Check** - Validates bash and zsh syntax
 4. **Lua Check** - Advisory luacheck on nvim config
+5. **Auto Tag** - On push to main only: creates a git tag from CHANGELOG.md version if new
 
 ### Release Management
-**IMPORTANT**: This repository does NOT use automated releases. There are no release workflows to watch after merging PRs. Do not check for releases or watch for release workflow runs - they don't exist in this repo.
+Tags are created automatically by the `auto-tag` CI job when changes are merged to main. The job extracts the latest version from CHANGELOG.md and creates a `vX.Y.Z` tag if it doesn't already exist. Do NOT create tags manually.
 
 ### Files to Never Commit
 - `zsh/.zsh/.secrets.zsh` - Contains API keys

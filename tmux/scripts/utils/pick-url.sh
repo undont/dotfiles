@@ -14,9 +14,9 @@ PANE_ID="${1:-}"
 
 # Capture pane content and extract URLs
 if [[ -n "$PANE_ID" ]]; then
-    urls=$(tmux capture-pane -t "$PANE_ID" -Jp -S -5000 2>/dev/null | grep -oE 'https?://[^][ \"<>]+' | tail -r | awk '!seen[$0]++') || true
+    urls=$(tmux capture-pane -t "$PANE_ID" -Jp -S -50000 2>/dev/null | grep -oE 'https?://[^][ \"<>]+' | tail -r | awk '!seen[$0]++') || true
 else
-    urls=$(tmux capture-pane -Jp -S -5000 2>/dev/null | grep -oE 'https?://[^][ \"<>]+' | tail -r | awk '!seen[$0]++') || true
+    urls=$(tmux capture-pane -Jp -S -50000 2>/dev/null | grep -oE 'https?://[^][ \"<>]+' | tail -r | awk '!seen[$0]++') || true
 fi
 
 if [[ -z "$urls" ]]; then

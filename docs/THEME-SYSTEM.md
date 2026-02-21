@@ -16,16 +16,20 @@ The dotfiles theme system uses XDG Base Directory standard to prevent git confli
 
 ```
 Repository (tracked in git):
-  themes/*.theme              - Theme definitions
-  tmux/.tmux.conf.template    - Tmux config template with {{PLACEHOLDERS}}
+  themes/*.theme              - Theme definitions (15+ themes)
+  tmux/tmux.conf.template     - Tmux config template with {{PLACEHOLDERS}}
   ghostty/config.template     - Ghostty config template with {{PLACEHOLDERS}}
 
 User Configuration (gitignored):
   ~/.config/tmux/tmux.conf    - Generated tmux config (XDG standard)
   ~/.tmux.conf                - Compatibility symlink → ~/.config/tmux/tmux.conf
-  ~/.config/ghostty/config    - Generated ghostty config (Linux)
-  ~/Library/.../config        - Generated ghostty config (macOS)
+  ~/.config/ghostty/config    - Generated ghostty config (XDG, all platforms)
   ~/.config/dotfiles/current-theme - Current theme name
+
+Local Overrides (user-owned, survive theme changes):
+  ~/.config/tmux/local.conf   - Personal tmux settings (sourced at end of config)
+  ~/.config/ghostty/local     - Personal ghostty settings (included via config-file)
+  ~/.config/nvim/local.lua    - Personal neovim settings
 ```
 
 ### Theme Switching Flow
@@ -67,6 +71,9 @@ theme-switch dracula
 theme-switch catppuccin-mocha
 theme-switch tokyo-night
 theme-switch nord
+theme-switch gruvbox-dark
+theme-switch rose-pine
+# ... and more (15 themes available)
 
 # List available themes
 theme-switch list
@@ -123,12 +130,7 @@ This respects the `XDG_CONFIG_HOME` environment variable if set.
 
 ### Git Configuration
 
-`.gitignore` excludes generated configs:
-
-```
-# Tmux generated config (user-specific theme)
-tmux/.tmux.conf
-```
+`.gitignore` excludes generated configs and local overrides (they live in `~/.config/`, outside the repo).
 
 ## Troubleshooting
 
@@ -144,15 +146,15 @@ tmux/.tmux.conf
 2. Run migration script with verbose output
 3. Check file permissions on `~/.config/tmux/`
 
-### Git shows tmux/.tmux.conf as modified
+### Git shows tmux config as modified
 
-You haven't migrated yet. Run:
+If you're on the old setup (pre-XDG), run the migration script:
 
 ```bash
 ./scripts/migrate-tmux-config.sh
 ```
 
-After migration, `tmux/.tmux.conf` won't exist in your working directory.
+After migration, tmux config is generated to `~/.config/tmux/tmux.conf` and won't affect the repository.
 
 ## See Also
 
