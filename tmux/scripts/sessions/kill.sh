@@ -68,8 +68,11 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
         # Background: clear alerts and update saves for remaining sessions
         (
             clear_session_alerts "$SESSION_NAME"
-            ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
-            ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1 || true
+            # Skip resurrect operations during test runs (TMUX_TEST_SOCKET is set by tests)
+            if [[ -z "${TMUX_TEST_SOCKET:-}" ]]; then
+                ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
+                ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1 || true
+            fi
         ) &
         exit 0
     else
@@ -112,7 +115,10 @@ else
     # Background: clear alerts and update saves for remaining sessions
     (
         clear_session_alerts "$SESSION_NAME"
-        ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
-        ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1 || true
+        # Skip resurrect operations during test runs (TMUX_TEST_SOCKET is set by tests)
+        if [[ -z "${TMUX_TEST_SOCKET:-}" ]]; then
+            ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
+            ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1 || true
+        fi
     ) &
 fi

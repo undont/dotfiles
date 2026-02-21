@@ -8,8 +8,24 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_test-helpers.sh"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
+# Isolate the alerts file to a temp directory so tests never touch the real one.
+# ALERTS_FILE must be set before sourcing alerts.sh — it guards with
+# [[ -z "${ALERTS_FILE:-}" ]] before declaring it readonly.
+TEST_ALERTS_DIR="$(mktemp -d)"
+export ALERTS_FILE="$TEST_ALERTS_DIR/alerts"
+touch "$ALERTS_FILE"
+
+# Source alerts.sh after ALERTS_FILE is set so it picks up our isolated path
+source "$SCRIPT_DIR/../_lib/alerts.sh"
+
+# shellcheck disable=SC2317  # Called indirectly via trap
+_cleanup_rename_tests() {
+    cleanup_test_server
+    rm -rf "$TEST_ALERTS_DIR"
+}
+
 # Trap to ensure cleanup on exit/interrupt
-trap cleanup_test_server EXIT INT TERM
+trap _cleanup_rename_tests EXIT INT TERM
 
 echo ""
 echo "${CYAN}═══════════════════════════════════════════${NC}"
@@ -28,27 +44,13 @@ setup_test_server "rename-no-alerts"
 tmux new-session -d -s test-rename-1 -n window1
 
 # Create alerts file with entry for this session
-mkdir -p "$HOME/.claude"
-ALERTS_FILE="$HOME/.claude/alerts"
-BACKUP_ALERTS=""
-if [[ -f "$ALERTS_FILE" ]]; then
-    BACKUP_ALERTS=$(cat "$ALERTS_FILE")
-fi
 echo "test-rename-1:window1:claude" > "$ALERTS_FILE"
 
 # Clear session alerts (should not fail even with no @*_alert options)
-source "$SCRIPT_DIR/../_lib/alerts.sh"
 if clear_session_alerts "test-rename-1"; then
     pass "Clear alerts succeeded with no options set"
 else
     fail "Clear alerts failed with no options set"
-fi
-
-# Restore alerts file
-if [[ -n "$BACKUP_ALERTS" ]]; then
-    echo "$BACKUP_ALERTS" > "$ALERTS_FILE"
-else
-    rm -f "$ALERTS_FILE"
 fi
 
 cleanup_test_server
@@ -67,15 +69,9 @@ tmux new-session -d -s test-rename-2 -n window1
 tmux set-option -wt test-rename-2:window1 "@claude_alert" 1
 
 # Create alerts file entry
-mkdir -p "$HOME/.claude"
-BACKUP_ALERTS=""
-if [[ -f "$ALERTS_FILE" ]]; then
-    BACKUP_ALERTS=$(cat "$ALERTS_FILE")
-fi
 echo "test-rename-2:window1:claude" > "$ALERTS_FILE"
 
 # Clear session alerts
-source "$SCRIPT_DIR/../_lib/alerts.sh"
 if clear_session_alerts "test-rename-2"; then
     pass "Clear alerts succeeded with options set"
 else
@@ -87,13 +83,6 @@ if tmux show-options -wt test-rename-2:window1 "@claude_alert" 2>/dev/null; then
     fail "Alert option was not cleared"
 else
     pass "Alert option was cleared"
-fi
-
-# Restore alerts file
-if [[ -n "$BACKUP_ALERTS" ]]; then
-    echo "$BACKUP_ALERTS" > "$ALERTS_FILE"
-else
-    rm -f "$ALERTS_FILE"
 fi
 
 cleanup_test_server
@@ -166,12 +155,6 @@ setup_test_server "rename-workflow-1"
 # Create test session
 tmux new-session -d -s old-name -n window1
 
-# Backup alerts file
-BACKUP_ALERTS=""
-if [[ -f "$ALERTS_FILE" ]]; then
-    BACKUP_ALERTS=$(cat "$ALERTS_FILE")
-fi
-
 # Simulate rename script logic
 current_session="old-name"
 newname="new-name"
@@ -212,13 +195,6 @@ else
     pass "Old session name removed"
 fi
 
-# Restore alerts file
-if [[ -n "$BACKUP_ALERTS" ]]; then
-    echo "$BACKUP_ALERTS" > "$ALERTS_FILE"
-else
-    rm -f "$ALERTS_FILE"
-fi
-
 cleanup_test_server
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -235,10 +211,6 @@ tmux new-session -d -s alert-session -n window1
 tmux set-option -wt alert-session:window1 "@claude_alert" 1
 
 # Create alerts file entry
-BACKUP_ALERTS=""
-if [[ -f "$ALERTS_FILE" ]]; then
-    BACKUP_ALERTS=$(cat "$ALERTS_FILE")
-fi
 echo "alert-session:window1:claude" > "$ALERTS_FILE"
 
 # Simulate rename
@@ -269,13 +241,6 @@ if session_exists "$newname"; then
     pass "Renamed session exists"
 else
     fail "Renamed session does not exist"
-fi
-
-# Restore alerts file
-if [[ -n "$BACKUP_ALERTS" ]]; then
-    echo "$BACKUP_ALERTS" > "$ALERTS_FILE"
-else
-    rm -f "$ALERTS_FILE"
 fi
 
 cleanup_test_server

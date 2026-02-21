@@ -53,7 +53,8 @@ USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 LAUNCHER_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/launcher-history"
 
 # Wrapper for tmux command that respects test socket
-# When TMUX_TEST_SOCKET is set, all tmux commands use that socket
+# When TMUX_TEST_SOCKET is set, all tmux commands use that socket.
+# Exported so subshells (e.g. pipefail-safety tests) inherit the isolation.
 tmux() {
     if [[ -n "${TMUX_TEST_SOCKET:-}" ]]; then
         command tmux -L "$TMUX_TEST_SOCKET" "$@"
@@ -61,6 +62,7 @@ tmux() {
         command tmux "$@"
     fi
 }
+export -f tmux
 
 # Load FZF theme colours from current theme
 # Call this before using fzf to ensure it uses the active theme

@@ -1,4 +1,12 @@
-# Dotfiles
+<div align="center">
+
+<picture>
+  <source media="(prefers-color-scheme: dark)" srcset=".github/assets/logo-dark.svg">
+  <source media="(prefers-color-scheme: light)" srcset=".github/assets/logo-light.svg">
+  <img alt="dotfiles" src=".github/assets/logo-dark.svg" width="480">
+</picture>
+
+**Personal configuration files for zsh, tmux, neovim, ghostty, git and much more.**
 
 [![CI](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
 [![macOS](https://img.shields.io/badge/macOS-compatible-A2AAAD?logo=apple&logoColor=white)](https://www.apple.com/macos/)
@@ -7,102 +15,34 @@
 [![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
-Personal configuration files for zsh, tmux, neovim, hammerspoon, ghostty, and karabiner.
+[Quick Start](#quick-start) · [Features](#-whats-inside) · [Themes](#-themes) · [Keybindings](#-keybindings) · [Docs](#documentation)
 
-## Contents
+</div>
 
-```
-dotfiles/
-├── zsh/              # Zsh shell configuration
-│   ├── dotfiles.zsh  # Shared framework (sourced by ~/.zshrc)
-│   ├── zshrc         # Backwards-compat wrapper for legacy symlinks
-│   ├── zshrc.template # Template for user's personal ~/.zshrc
-│   ├── zprofile      # Login shell config
-│   └── p10k.zsh      # Powerlevel10k theme
-├── tmux/             # Tmux terminal multiplexer
-│   ├── tmux.conf.template # Config template (processed by theme-switch)
-│   ├── scripts/      # Custom scripts (session management, undo, alerts)
-│   ├── plugins/      # TPM-managed plugins
-│   └── tmux-help.txt # Keybinding help popup content
-├── nvim/             # Neovim configuration
-│   ├── init.lua      # Entry point
-│   ├── colors/       # 15 self-contained colourschemes (no plugin deps)
-│   ├── cheatsheet.txt # Searchable keybinding reference (Space ?)
-│   ├── snippets/     # Custom LuaSnip snippets
-│   └── lua/custom/   # Modular config
-│       ├── core/     # Options, keymaps, autocmds, theme, quickfix, diff-highlights
-│       └── plugins/  # Plugin configurations
-├── lazygit/          # LazyGit configuration
-├── lazydocker/       # LazyDocker configuration
-├── btop/             # System monitor configuration
-│   └── btop.conf
-├── launchers/        # Session launch scripts (picker: prefix + p)
-│   └── tnew          # Dev session launcher (zsh + nvim + claude)
-├── hammerspoon/      # macOS automation
-│   └── init.lua
-├── ghostty/          # Terminal emulator
-│   └── config.template # Config template (processed by theme-switch)
-├── karabiner/        # Keyboard customisation
-│   └── karabiner.json
-├── scripts/          # Installation and utility scripts
-│   ├── dotfiles      # CLI for managing dotfiles
-│   ├── theme-switch  # Theme switching utility
-│   ├── install/      # Installer modules
-│   ├── hooks/        # Tool hooks (e.g. agent alerts)
-│   ├── tests/        # Test suites
-│   └── _lib/         # Shared shell libraries
-├── themes/           # Theme definitions (15 themes: dracula, catppuccin, maple, etc.)
-│   ├── README.md     # Theme system documentation
-│   └── *.theme       # Individual theme files
-├── docs/             # Documentation
-│   ├── INSTALLATION-GUIDE.md
-│   ├── THEME-SYSTEM.md
-│   └── TROUBLESHOOTING.md
-└── Brewfile          # Homebrew dependencies
-```
+---
 
 ## Quick Start
 
-### Prerequisites
-
-- macOS/Linux (some features are macOS-only; keyboard remapping is optimised for Apple Silicon MacBook Pro)
-  - **Fresh macOS**: Install Xcode Command Line Tools first: `xcode-select --install`
-
-### Automatic Installation
+**Prerequisites** — macOS or Linux. Fresh macOS? Run `xcode-select --install` first.
 
 ```bash
-# Clone the repository
 git clone https://github.com/seanhalberthal/dotfiles.git ~/dotfiles
 cd ~/dotfiles
-
-# Run the installer (defaults to full preset)
-./install.sh
-
-# Or choose a specific preset
-./install.sh --core       # Cross-platform dev setup
-./install.sh --minimal    # Lightweight server setup
+./install.sh            # Full install (default)
 ```
-
-The installer will:
-1. Install/update Homebrew
-2. Install packages from `Brewfile` (filtered by preset)
-3. Check prerequisites
-4. Backup existing configuration
-5. Create symlinks
-6. Prompt to create local aliases from template (optional)
-7. Install plugin managers (TPM)
-8. Create secrets file from template
-9. Run a health check
 
 ### Install Presets
 
 | Preset | Components | Use Case |
 |--------|------------|----------|
 | `--minimal` | zsh, tmux | Servers, remote machines, SSH |
-| `--core` | + nvim, ghostty, AI/CLI tools, session launch scripts | Linux desktop, cross-platform dev |
+| `--core` | + nvim, ghostty, AI/CLI tools, launchers | Linux desktop, cross-platform dev |
 | `--full` | + Hammerspoon, Karabiner | macOS power user (default) |
 
-### Installation Options
+The installer backs up existing configs, installs Homebrew packages filtered by preset, creates symlinks, sets up plugin managers, and runs a health check. Your preset is saved so `dotfiles update` remembers it.
+
+<details>
+<summary><b>All installation options</b></summary>
 
 ```bash
 ./install.sh              # Full installation (default)
@@ -114,30 +54,229 @@ The installer will:
 ./install.sh --check-only  # Only run prerequisite and health checks
 ```
 
-### Post-Installation
-
-1. **Restart your terminal** or run `source ~/.zshrc`
-2. **Install tmux plugins**: Open tmux and press `` ` + I ``
-3. **Configure Neovim**: Open nvim - plugins install automatically
-4. **Add secrets**: Edit `~/.config/zsh/secrets.zsh` with your API keys
-5. **Install Node.js**: `fnm install --lts && fnm default lts-latest`
-
-### Verification
-
-```bash
-# Run health check
-./scripts/install/health-check.sh
-
-# Check prerequisites
-./scripts/install/check-prerequisites.sh
-```
-
-### Manual Installation
-
-If you prefer manual setup, see the symlink commands below:
+</details>
 
 <details>
-<summary>Click to expand manual symlink commands</summary>
+<summary><b>Post-installation steps</b></summary>
+
+1. **Restart your terminal** or run `source ~/.zshrc`
+2. **Install tmux plugins** — open tmux and press `` ` + I ``
+3. **Configure Neovim** — open nvim, plugins install automatically
+4. **Add secrets** — edit `~/.config/zsh/secrets.zsh` with your API keys
+5. **Install Node.js** — `fnm install --lts && fnm default lts-latest`
+6. **Verify** — run `./scripts/install/health-check.sh`
+
+</details>
+
+---
+
+## ✨ What's Inside
+
+### Zsh — Fast, Framework-Based Shell
+
+- **Powerlevel10k** prompt with instant prompt and git status
+- **Framework architecture** — `~/.zshrc` is your personal file, sourcing `dotfiles.zsh` as a shared framework (no git conflicts)
+- **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt+C` directories
+- **Performance** — lazy-loaded completions, fnm (~5ms) over nvm (~300ms), cached eval for direnv/fzf
+- **Tab completion** for `dotfiles` / `dot`, `trestore`, `tkill`, `tattach`
+- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `tattach` (attach or restore from backup), `brewup`, `nvim-sync`, `mkcd`, and more — run `dot aliases` for the full list
+
+### Tmux — 60+ Custom Scripts, One Cohesive Workflow
+
+> Backtick (`` ` ``) prefix with vim-style navigation, 11 script categories, and 6 TPM plugins.
+
+- **Undo system** (`Opt+u`) — accidentally closed a pane or window? Restore it with full directory, scrollback, and layout
+- **Session save/restore** — tmux-resurrect + continuum with **per-session backups** (custom extension splits combined saves into individual files)
+- **Launcher picker** (`` ` p ``) — create, run, and manage session launchers with an interactive wizard
+- **Multi-agent alerts** — coloured indicators in session lists when AI agents need attention (⚡ Claude, 🔮 OpenCode) with auto-clearing
+- **Instance management** — list, create, and kill running instances of Claude, OpenCode, and nvim from fzf pickers
+- **URL picker** (`` ` y ``) — grab URLs from scrollback via fzf popup
+- **Dotfiles sync indicator** — status bar shows `↓` `↑` `↕` when updates are available
+- **Local overrides** — `~/.config/tmux/local.conf` survives theme changes and updates
+
+### Neovim — Modular Config, 14 Plugin Files
+
+> Based on kickstart.nvim with lazy.nvim, Treesitter, and 10 language servers via Mason.
+
+- **LSP** — TypeScript, Go, Python, Lua, C#/.NET (Roslyn), ESLint, Bash, CSS, HTML, YAML
+- **Git** — LazyGit (status, blame, diff), gitsigns (inline decorations, hunk navigation)
+- **PR review** — Octo.nvim for GitHub PRs + diffview for side-by-side diffs and merge conflict resolution
+- **Build picker** (`Space q`) — auto-detects Go, TypeScript, .NET, and Makefile projects
+- **Test runner** — Neotest with three adapters: .NET, Go, and Vitest/Bun
+- **Navigation** — flash.nvim (jump), grug-far (project-wide search & replace), oil.nvim (file ops), trouble.nvim (diagnostics)
+- **Multiple cursors** — vim-visual-multi (`Ctrl+n`, `Alt+↓/↑`)
+- **Markdown** — mkdnflow with list continuation, todo toggles, table formatting
+- **15 colourschemes** matching the theme system — self-contained Lua files, no plugin deps
+- **GitHub Copilot** with security (disabled for `.env`, credentials, secrets)
+- **Searchable cheatsheet** — `Space ?` opens a filterable keybinding reference
+- **Local overrides** — `~/.config/nvim/local.lua` survives updates
+
+### AI Coding Assistants
+
+- **Claude Code** and **OpenCode** — both with tmux alert hooks
+
+### Ghostty, Hammerspoon & Karabiner
+
+- **Ghostty** — colour scheme follows active theme, zsh shell integration, macOS optimised, local override file
+- **Hammerspoon** — auto-centre windows for 7+ apps (Ghostty, Arc, JetBrains, Discord, Slack, Notion), CLI via IPC
+- **Karabiner** — Caps Lock to Escape, Right Option to Control (Ghostty + JetBrains), UK keyboard layout fixes
+
+### Session Launchers
+
+Press `` ` p `` to open the launcher picker — shell scripts that create pre-configured tmux sessions.
+
+- **Built-in**: `tnew` — dev session with 3 windows (zsh, nvim, claude code)
+- **Wizard**: press `n` to scaffold a new launcher interactively
+- **User launchers** in `~/.config/dotfiles/launchers/` override repo launchers by name
+- **Set**: press `s` to configure `DEV_ROOT` and `PROJECTS_ROOT` for dynamic project discovery
+
+### Dotfiles CLI (`dot`)
+
+```bash
+dot update    # Pull latest + re-run installer with saved preset
+dot status    # Sync status, local changes, health summary
+dot health    # Full health check (symlinks, plugins, secrets)
+dot theme     # List / switch themes
+dot aliases   # Browse all shell aliases and shortcuts
+dot sync      # Preview incoming changes without applying
+dot edit      # Open dotfiles in $EDITOR
+```
+
+> `dot` is a shorthand alias for `dotfiles` — both work interchangeably with full tab completion.
+
+---
+
+## 🎨 Themes
+
+**15 coordinated themes** applied atomically across tmux, ghostty, neovim, and fzf. Switch at runtime — no restart required.
+
+```bash
+theme-switch catppuccin-mocha    # Apply a theme
+theme-switch list                # Show all themes
+```
+
+> Dracula, Catppuccin Mocha, Tokyo Night, Nord, Rosé Pine, Kanagawa, Gruvbox, Maple, Synthwave, One Dark, Monokai, Nightfox, Everforest, Ayu Dark, and Solarized. Every theme includes a full 16-colour terminal palette, 6 accent colours, status bar styling, and a matching self-contained neovim colourscheme. All themes pass [WCAG 2.1 contrast checks](themes/README.md) for accessibility.
+
+**Local overrides survive theme switches** — customise cursor, fonts, and keybindings in files that are never overwritten:
+
+| App | Override File |
+|-----|--------------|
+| Tmux | `~/.config/tmux/local.conf` |
+| Neovim | `~/.config/nvim/local.lua` |
+| Ghostty | `~/.config/ghostty/local` |
+| Zsh | `~/.zshrc` (your personal config) |
+
+---
+
+## ⌨ Keybindings
+
+<table>
+<tr><td>
+
+### Tmux
+
+| Action | Keybinding |
+|--------|------------|
+| Prefix | `` ` `` |
+| Help popup | `` ` h `` |
+| Launcher picker | `` ` p `` |
+| Theme picker | `` ` t `` |
+| Save session | `` ` w `` |
+| Session switcher | `` ` s `` |
+| Window switcher | `` ` f `` |
+| URL picker | `` ` y `` |
+| Rename window | `Opt+r` |
+| Close pane | `Opt+s` |
+| Close window | `Opt+x` |
+| Undo pane/window | `Opt+u` |
+| Reload local overrides | `` ` r `` |
+
+</td><td>
+
+### Neovim
+
+| Action | Keybinding |
+|--------|------------|
+| Leader | `Space` |
+| Cheatsheet | `Space ?` |
+| Find files | `Space sf` |
+| Live grep | `Space sg` |
+| File explorer | `Space e` |
+| Git (LazyGit) | `Space g` |
+| Build (quickfix) | `Space q` |
+| Format | `Space f` |
+| Test nearest | `Space tn` |
+| Diagnostics | `Space xx` |
+| PR review | `Space op` |
+
+</td></tr>
+</table>
+
+---
+
+## Uninstalling
+
+```bash
+./scripts/install/uninstall.sh                                    # Remove symlinks only
+./scripts/install/uninstall.sh --restore-backup                   # Restore original configs
+./scripts/install/uninstall.sh --restore-backup --remove-brew-packages  # Full uninstall
+```
+
+---
+
+## Contents
+
+<details>
+<summary><b>Repository structure</b></summary>
+
+```
+dotfiles/
+├── zsh/              # Zsh shell configuration
+│   ├── dotfiles.zsh  # Shared framework (sourced by ~/.zshrc)
+│   ├── zshrc         # Backwards-compat wrapper for legacy symlinks
+│   ├── zshrc.template # Template for user's personal ~/.zshrc
+│   ├── zprofile      # Login shell config
+│   └── p10k.zsh      # Powerlevel10k theme
+├── tmux/             # Tmux terminal multiplexer
+│   ├── tmux.conf.template # Config template (processed by theme-switch)
+│   ├── scripts/      # 60+ custom scripts across 11 categories
+│   ├── plugins/      # TPM-managed plugins
+│   └── tmux-help.txt # Keybinding help popup content
+├── nvim/             # Neovim configuration
+│   ├── init.lua      # Entry point
+│   ├── colors/       # 15 self-contained colourschemes (no plugin deps)
+│   ├── cheatsheet.txt # Searchable keybinding reference (Space ?)
+│   ├── snippets/     # Custom LuaSnip snippets
+│   └── lua/custom/   # Modular config (14 plugin files)
+│       ├── core/     # Options, keymaps, autocmds, theme, quickfix
+│       └── plugins/  # Plugin configurations
+├── lazygit/          # LazyGit configuration
+├── lazydocker/       # LazyDocker configuration
+├── btop/             # System monitor configuration
+├── launchers/        # Session launch scripts (picker: prefix + p)
+│   └── tnew          # Dev session launcher (zsh + nvim + claude)
+├── hammerspoon/      # macOS automation (auto-centre windows)
+├── ghostty/          # Terminal emulator (themed via theme-switch)
+├── karabiner/        # Keyboard customisation
+├── scripts/          # Installation and utility scripts
+│   ├── dotfiles      # CLI for managing dotfiles
+│   ├── theme-switch  # Theme switching utility
+│   ├── install/      # Installer modules
+│   ├── hooks/        # Agent alert + buffer sync hooks
+│   ├── tests/        # Test suites
+│   └── _lib/         # Shared shell libraries
+├── themes/           # 15 theme definitions with WCAG contrast checks
+├── docs/             # Documentation
+│   ├── INSTALLATION-GUIDE.md
+│   ├── THEME-SYSTEM.md
+│   └── TROUBLESHOOTING.md
+└── Brewfile          # Homebrew dependencies (preset-filtered)
+```
+
+</details>
+
+<details>
+<summary><b>Manual symlink commands</b></summary>
 
 ```bash
 # Zsh (template creates ~/.zshrc which sources dotfiles.zsh)
@@ -173,140 +312,8 @@ ln -sf ~/dotfiles/karabiner/karabiner.json ~/.config/karabiner/karabiner.json
 
 </details>
 
-### Documentation
+## Documentation
 
-- [Installation Guide](docs/INSTALLATION-GUIDE.md) - Detailed walkthrough of each installation step
-- [Theme System](docs/THEME-SYSTEM.md) - How themes work across tmux, ghostty, and neovim
-- [Troubleshooting](docs/TROUBLESHOOTING.md) - Common issues and solutions
-
-## Updating
-
-Use the `dotfiles` CLI to keep your configuration up-to-date:
-
-```bash
-dotfiles update    # Pull latest changes and re-run installer
-dotfiles status    # Check if updates are available
-dotfiles sync      # Preview incoming changes without applying
-dotfiles health    # Run full health check
-```
-
-The `update` command remembers your installation preset (minimal/core/full) and re-applies it automatically.
-
-For manual updates:
-```bash
-cd ~/dotfiles && git pull
-```
-
-Then reload your shell: `source ~/.zshrc`
-
-## Uninstalling
-
-To remove the dotfiles installation:
-
-```bash
-# Remove symlinks only
-./scripts/install/uninstall.sh
-
-# Remove symlinks and restore original configs from backup
-./scripts/install/uninstall.sh --restore-backup
-
-# Full uninstall including Homebrew packages
-./scripts/install/uninstall.sh --restore-backup --remove-brew-packages
-```
-
-The uninstall script uses your saved preset to determine which packages to remove.
-
-## Key Features
-
-### Zsh
-- Powerlevel10k prompt with instant prompt
-- Framework architecture — `~/.zshrc` is your personal file, sourcing `dotfiles.zsh` as a shared framework
-- fzf integration for fuzzy finding
-- Lazy-loaded completions for performance
-- Custom aliases and functions
-
-### Tmux
-- Backtick (`` ` ``) as prefix key
-- Vim-style navigation
-- Session save/restore (tmux-resurrect + continuum)
-- fzf session/window switcher with coloured indicators for agent alerts (⚡ Claude, 🔮 OpenCode)
-- Launcher picker (`prefix + p`) — create, run, and manage session launchers
-- 15 coordinated themes via `theme-switch` (Maple, Dracula, Catppuccin, Tokyo Night, Nord, and more)
-- Local override file (`~/.config/tmux/local.conf`) — survives theme changes and updates
-
-### Neovim
-- lazy.nvim plugin manager
-- LSP support (TypeScript, Go, Python, Lua, C#/.NET via Roslyn, ESLint)
-- Telescope fuzzy finder with filename-first path display
-- Git integration — Fugitive (status, blame, diff), LazyGit, gitsigns
-- PR review — Octo.nvim (GitHub PRs with unified diff mode), diffview (side-by-side diffs)
-- Quickfix build picker (`Space q`) — Go, TypeScript, .NET, Makefile with auto-detection
-- Test runner — Neotest with .NET, Go, and Vitest/Bun adapters
-- .NET development — easy-dotnet.nvim with Roslyn LSP
-- Markdown editing — mkdnflow.nvim (list continuation, todo toggles, table formatting)
-- Navigation — flash.nvim (jump), grug-far (find and replace), oil.nvim (file operations), trouble.nvim (diagnostics)
-- Multiple cursors — vim-visual-multi (`Ctrl+n`, `Alt+↓/↑`)
-- mini.notify (notifications), mini.bracketed (`]/[` navigation), mini.splitjoin (`gS`/`gJ`)
-- GitHub Copilot (disabled for sensitive files)
-- 15 self-contained colourschemes matching the dotfiles theme system (no plugin deps)
-- Dynamic diff highlights — consistent tinted backgrounds across diffview and octo
-- Treesitter syntax highlighting
-- Local override file (`~/.config/nvim/local.lua`) — survives updates
-
-### AI Coding Assistants
-- Claude Code (with tmux alert integration)
-- Gemini CLI (with tmux alert integration)
-- OpenCode (with tmux alert integration)
-
-### Hammerspoon
-- Auto-centre windows for specified apps
-- CLI enabled via IPC
-
-### Ghostty
-- Colour scheme follows active theme (via `theme-switch`)
-- Zsh shell integration
-- macOS optimised (glass icon, left Option as Alt)
-- Local override file (`~/.config/ghostty/local`) — survives theme changes and updates
-
-### Karabiner Elements
-- Caps Lock to Escape (Ghostty and JetBrains IDEs)
-- Right Option to Left Control (Ghostty and JetBrains IDEs)
-- UK keyboard layout fixes for Apple keyboards
-
-### Session Launchers
-Press `prefix + p` to open the launcher picker. Launchers are shell scripts that create pre-configured tmux sessions with custom window layouts.
-
-- **Built-in**: `tnew` (dev session — 3 windows: zsh, nvim, claude code)
-- **User-created**: Stored in `~/.config/dotfiles/launchers/` (override repo launchers by name)
-- **Wizard**: Press `n` in the picker to scaffold a new launcher interactively
-- **Settings**: Press `s` in the picker to configure `DEV_ROOT` and `PROJECTS_ROOT` directories
-
-## Keybinding Quick Reference
-
-### Tmux
-| Action | Keybinding |
-|--------|------------|
-| Prefix | `` ` `` |
-| Help | `` ` h `` |
-| Launcher picker | `` ` p `` |
-| Save session | `` ` w `` |
-| Session switcher | `` ` s `` |
-| Window switcher | `` ` f `` |
-| Rename window | `Opt+r` |
-| Close pane | `Opt+s` |
-| Close window | `Opt+x` |
-| URL picker | `` ` y `` |
-| Undo pane/window | `Opt+u` |
-| Reload local overrides | `` ` r `` |
-
-### Neovim
-| Action | Keybinding |
-|--------|------------|
-| Leader | `Space` |
-| Cheatsheet | `Space ?` |
-| Find files | `Space sf` |
-| Live grep | `Space sg` |
-| File explorer | `Space e` |
-| Git (LazyGit) | `Space g` |
-| Build (quickfix) | `Space q` |
-| Format | `Space f` |
+- [Installation Guide](docs/INSTALLATION-GUIDE.md) — Detailed walkthrough of each installation step
+- [Theme System](docs/THEME-SYSTEM.md) — How themes work across tmux, ghostty, and neovim
+- [Troubleshooting](docs/TROUBLESHOOTING.md) — Common issues and solutions

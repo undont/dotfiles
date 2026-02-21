@@ -8,31 +8,8 @@ DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 # shellcheck source=scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Test helpers
-TESTS_RUN=0
-TESTS_PASSED=0
-TESTS_FAILED=0
-
-pass() {
-    printf "${GREEN}✓${NC} %s\n" "$1"
-    ((TESTS_PASSED++)) || true
-    ((TESTS_RUN++)) || true
-}
-
-fail() {
-    printf "${RED}✗${NC} %s\n" "$1"
-    [[ -n "${2:-}" ]] && printf "  ${GREY}%s${NC}\n" "$2"
-    ((TESTS_FAILED++)) || true
-    ((TESTS_RUN++)) || true
-}
-
-skip() {
-    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
-}
-
-section() {
-    printf "\n${CYAN}━━━ %s${NC}\n\n" "$1"
-}
+# Source shared test helpers (colours, pass/fail/skip/section, assertions)
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ══════════════════════════════════════════════════════════════
 # Test Suite
@@ -124,22 +101,33 @@ main() {
 
     section "Theme Switching"
 
-    # Save current theme
+    # Isolate all theme-switch writes to a temp directory so real config files
+    # (tmux.conf, ghostty/config, dotfiles/current-theme) are never modified.
+    # Both theme-switch and fzf-theme.sh derive output paths from XDG_CONFIG_HOME.
+    _THEME_TEST_XDG=$(mktemp -d)
+    _ORIGINAL_XDG="${XDG_CONFIG_HOME:-}"
+
+    # Save current theme before overriding XDG_CONFIG_HOME
     local original_theme
-    if [[ -f "$HOME/.config/dotfiles/current-theme" ]]; then
-        original_theme=$(cat "$HOME/.config/dotfiles/current-theme")
+    if [[ -f "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme" ]]; then
+        original_theme=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme")
     else
         original_theme="dracula"
     fi
+
+    export XDG_CONFIG_HOME="$_THEME_TEST_XDG"
+    mkdir -p "$_THEME_TEST_XDG/dotfiles" "$_THEME_TEST_XDG/tmux" "$_THEME_TEST_XDG/ghostty"
+    # Seed the isolated current-theme file so fzf-theme.sh has a starting point
+    echo "$original_theme" > "$_THEME_TEST_XDG/dotfiles/current-theme"
 
     # Test: Switching to each theme loads correct colours
     for theme_file in "$DOTFILES_ROOT/themes"/*.theme; do
         theme_name=$(basename "$theme_file" .theme)
 
-        # Switch theme (quietly, no reload)
+        # Switch theme (quietly, no reload) — writes to isolated $XDG_CONFIG_HOME only
         "$DOTFILES_ROOT/scripts/theme-switch" "$theme_name" --no-reload --quiet
 
-        # Re-source fzf-theme.sh
+        # Re-source fzf-theme.sh (reads from isolated $XDG_CONFIG_HOME)
         # shellcheck disable=SC1091
         source "$DOTFILES_ROOT/scripts/fzf-theme.sh"
 
@@ -160,8 +148,13 @@ main() {
         ) && pass "$theme_name colours load correctly" || fail "$theme_name colours mismatch"
     done
 
-    # Restore original theme
-    "$DOTFILES_ROOT/scripts/theme-switch" "$original_theme" --no-reload --quiet
+    # Restore XDG_CONFIG_HOME and clean up isolated directory
+    if [[ -n "$_ORIGINAL_XDG" ]]; then
+        export XDG_CONFIG_HOME="$_ORIGINAL_XDG"
+    else
+        unset XDG_CONFIG_HOME
+    fi
+    rm -rf "$_THEME_TEST_XDG"
 
     section "Colour Format Validation"
 
@@ -240,14 +233,11 @@ main() {
     printf "\n"
     print_header "Test Summary"
 
-    printf "Total tests:  %d\n" "$TESTS_RUN"
-    printf "${GREEN}Passed:       %d${NC}\n" "$TESTS_PASSED"
+    print_summary
 
-    if [[ $TESTS_FAILED -gt 0 ]]; then
-        printf "${RED}Failed:       %d${NC}\n" "$TESTS_FAILED"
+    if [[ $FAIL -gt 0 ]]; then
         exit 1
     else
-        printf "\n${GREEN}All tests passed!${NC}\n"
         exit 0
     fi
 }

@@ -10,26 +10,24 @@ FAIL=0
 # shellcheck disable=SC2034
 VERBOSE="${1:-}"  # Reserved for future verbose output
 
-# Colours
-GREEN='\033[0;32m'
-RED='\033[0;31m'
-YELLOW='\033[0;33m'
-NC='\033[0m'
+# Source test helpers for isolated tmux server support
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../tests/_test-helpers.sh"
 
-# Test output helpers
-pass() {
-    PASS=$((PASS + 1))
-    printf "${GREEN}✓${NC} %s\n" "$1"
-}
+# Source common.sh to get the tmux() wrapper that respects TMUX_TEST_SOCKET
+# shellcheck source=tmux/scripts/_lib/common.sh
+source "$SCRIPT_DIR/common.sh"
 
-fail() {
-    FAIL=$((FAIL + 1))
-    printf "${RED}✗${NC} %s\n" "$1"
-}
+# Temp dir for isolated alerts file (set up before alerts.sh is sourced)
+_TEST_ALERTS_DIR="$(mktemp -d)"
+export ALERTS_FILE="$_TEST_ALERTS_DIR/alerts"
+touch "$ALERTS_FILE"
 
-skip() {
-    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
+_cleanup_lib_tests() {
+    cleanup_test_server 2>/dev/null || true
+    rm -rf "$_TEST_ALERTS_DIR"
 }
+trap _cleanup_lib_tests EXIT INT TERM
 
 section() {
     echo ""
@@ -345,7 +343,14 @@ rm -f "$UNDO_DIR/pane" "$UNDO_DIR/window" "$UNDO_DIR/session"
 section "Testing session.sh"
 source "$SCRIPT_DIR/session.sh"
 
-# These require tmux, so only test if inside tmux
+# Spin up an isolated server for session and alerts tests
+setup_test_server
+# Create a bootstrap session so the server has something to query
+test_tmux new-session -d -s lib-test-main -n main 2>/dev/null || true
+
+# session.sh functions that query the *current* tmux context require
+# being attached; skip those when not in a real tmux session but run
+# the server-querying tests against the isolated server regardless.
 if [[ -n "${TMUX:-}" ]]; then
     echo "  (running inside tmux - full tests)"
 
@@ -395,158 +400,138 @@ fi
 section "Testing alerts.sh"
 source "$SCRIPT_DIR/alerts.sh"
 
-# These require tmux, so only test if inside tmux
-if [[ -n "${TMUX:-}" ]]; then
-    echo "  (running inside tmux - full tests)"
+# Run against the isolated test server (set up above in session.sh section).
+# TMUX_TEST_SOCKET is exported, so all bare `tmux` calls are intercepted by
+# the wrapper in common.sh and routed to the isolated server.
+echo "  (using isolated test server)"
 
-    # Backup existing alerts file
-    ALERTS_FILE_BACKUP=""
-    if [[ -f "$HOME/.claude/alerts" ]]; then
-        ALERTS_FILE_BACKUP="$HOME/.claude/alerts.backup.$$"
-        cp "$HOME/.claude/alerts" "$ALERTS_FILE_BACKUP"
-    fi
-    # Clear alerts file for testing
-    : > "$HOME/.claude/alerts"
+# Clear the isolated alerts file for a clean slate
+: > "$ALERTS_FILE"
 
-    # Get current tmux context
-    CURRENT_SESSION=$(tmux display-message -p '#S')
-    CURRENT_WINDOW=$(tmux display-message -p '#W')
-    CURRENT_WINDOW_ID=$(tmux display-message -p '#{window_id}')
+# Use the bootstrap session created on the isolated server
+CURRENT_SESSION="lib-test-main"
+CURRENT_WINDOW="main"
+CURRENT_WINDOW_ID=$(tmux list-windows -t "$CURRENT_SESSION" -F '#{window_id}' 2>/dev/null | head -1)
+CURRENT_PANE_ID=$(tmux list-panes -t "$CURRENT_SESSION:$CURRENT_WINDOW" -F '#{pane_id}' 2>/dev/null | head -1)
 
-    # Test set_window_alert
-    echo ""
-    echo "  set_window_alert:"
-    set_window_alert "claude" "false" 2>/dev/null
-    if [[ -f "$ALERTS_FILE" ]] && grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude$" "$ALERTS_FILE"; then
-        pass "    creates alert file entry"
-    else
-        fail "    should create alert file entry"
-    fi
-
-    OPTION_VALUE=$(tmux show-options -wt "$CURRENT_WINDOW_ID" @claude_alert 2>/dev/null | cut -d' ' -f2)
-    if [[ "$OPTION_VALUE" == "1" ]]; then
-        pass "    sets tmux window option"
-    else
-        fail "    should set @claude_alert option to 1"
-    fi
-
-    # Test clear_window_alerts
-    echo ""
-    echo "  clear_window_alerts:"
-    clear_window_alerts "$CURRENT_SESSION" "$CURRENT_WINDOW" "$CURRENT_WINDOW_ID"
-
-    if ! grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:" "$ALERTS_FILE" 2>/dev/null; then
-        pass "    removes alert from file"
-    else
-        fail "    should remove alert from file"
-    fi
-
-    OPTION_AFTER_CLEAR=$(tmux show-options -wt "$CURRENT_WINDOW_ID" @claude_alert 2>/dev/null || echo "")
-    if [[ -z "$OPTION_AFTER_CLEAR" ]]; then
-        pass "    unsets tmux window option"
-    else
-        fail "    should unset @claude_alert option"
-    fi
-
-    # Test concurrent clearing (locking mechanism)
-    echo ""
-    echo "  clear_window_alerts locking:"
-
-    # Create test alerts
-    echo "${CURRENT_SESSION}:${CURRENT_WINDOW}:claude" > "$ALERTS_FILE"
-    echo "${CURRENT_SESSION}:test-window-1:claude" >> "$ALERTS_FILE"
-    echo "${CURRENT_SESSION}:test-window-2:claude" >> "$ALERTS_FILE"
-
-    # Simulate concurrent clears (file operations only, no tmux ops since windows don't exist)
-    (
-        LOCK_DIR="${ALERTS_FILE}.lock"
-        for _ in {1..10}; do
-            if mkdir "$LOCK_DIR" 2>/dev/null; then
-                grep -v "^${CURRENT_SESSION}:test-window-1:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp.$$" 2>/dev/null || true
-                mv "${ALERTS_FILE}.tmp.$$" "$ALERTS_FILE" 2>/dev/null || rm -f "${ALERTS_FILE}.tmp.$$"
-                rmdir "$LOCK_DIR" 2>/dev/null || true
-                break
-            fi
-            sleep 0.01
-        done
-    ) &
-    PID1=$!
-
-    (
-        LOCK_DIR="${ALERTS_FILE}.lock"
-        for _ in {1..10}; do
-            if mkdir "$LOCK_DIR" 2>/dev/null; then
-                grep -v "^${CURRENT_SESSION}:test-window-2:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp.$$" 2>/dev/null || true
-                mv "${ALERTS_FILE}.tmp.$$" "$ALERTS_FILE" 2>/dev/null || rm -f "${ALERTS_FILE}.tmp.$$"
-                rmdir "$LOCK_DIR" 2>/dev/null || true
-                break
-            fi
-            sleep 0.01
-        done
-    ) &
-    PID2=$!
-
-    wait $PID1 $PID2
-
-    # Check that file is in consistent state (only current window alert should remain)
-    REMAINING=$(wc -l < "$ALERTS_FILE" 2>/dev/null | tr -d ' ' || echo "0")
-    if [[ "$REMAINING" == "1" ]]; then
-        pass "    handles concurrent clears without corruption"
-    else
-        fail "    concurrent clears may have caused corruption (expected: 1, got: $REMAINING)"
-    fi
-
-    # Test cleanup_stale_alerts
-    echo ""
-    echo "  cleanup_stale_alerts:"
-
-    # Create alerts with mix of valid and invalid sessions/windows
-    echo "${CURRENT_SESSION}:${CURRENT_WINDOW}:claude" > "$ALERTS_FILE"
-    echo "nonexistent-session:window:claude" >> "$ALERTS_FILE"
-    echo "${CURRENT_SESSION}:nonexistent-window:claude" >> "$ALERTS_FILE"
-
-    BEFORE_COUNT=$(wc -l < "$ALERTS_FILE")
-    cleanup_stale_alerts
-    AFTER_COUNT=$(wc -l < "$ALERTS_FILE" 2>/dev/null || echo "0")
-
-    if [[ "$AFTER_COUNT" -lt "$BEFORE_COUNT" ]]; then
-        pass "    removes stale alerts ($BEFORE_COUNT -> $AFTER_COUNT)"
-    else
-        fail "    should remove stale alerts"
-    fi
-
-    if grep -q "nonexistent" "$ALERTS_FILE" 2>/dev/null; then
-        fail "    should remove nonexistent session/window alerts"
-    else
-        pass "    removes nonexistent session/window alerts"
-    fi
-
-    if grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude$" "$ALERTS_FILE"; then
-        pass "    preserves valid alerts"
-    else
-        fail "    should preserve valid alerts"
-    fi
-
-    # Restore backup alerts file
-    if [[ -n "$ALERTS_FILE_BACKUP" ]]; then
-        mv "$ALERTS_FILE_BACKUP" "$HOME/.claude/alerts"
-    else
-        # No backup existed, clear the test alerts
-        : > "$HOME/.claude/alerts"
-    fi
-    # Clean up any lock files
-    rm -f "$HOME/.claude/alerts.lock" "$HOME/.claude/alerts.tmp."*
-
-    # Clean up any test window options
-    tmux set-option -wt "$CURRENT_WINDOW_ID" -u @claude_alert 2>/dev/null || true
-
+# Test set_window_alert
+echo ""
+echo "  set_window_alert:"
+# set_window_alert uses TMUX_PANE to call display-message; point it at the
+# isolated server's pane so it can resolve the session:window context.
+TMUX_PANE="$CURRENT_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
+if grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "    creates alert file entry"
 else
-    echo "  (not in tmux - skipping tmux-dependent tests)"
-    skip "  set_window_alert"
-    skip "  clear_window_alerts"
-    skip "  clear_window_alerts locking"
-    skip "  cleanup_stale_alerts"
+    fail "    should create alert file entry"
 fi
+
+OPTION_VALUE=$(tmux show-options -wt "$CURRENT_WINDOW_ID" @claude_alert 2>/dev/null | cut -d' ' -f2)
+if [[ "$OPTION_VALUE" == "1" ]]; then
+    pass "    sets tmux window option"
+else
+    fail "    should set @claude_alert option to 1"
+fi
+
+# Test clear_window_alerts
+echo ""
+echo "  clear_window_alerts:"
+clear_window_alerts "$CURRENT_SESSION" "$CURRENT_WINDOW" "$CURRENT_WINDOW_ID"
+
+if ! grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:" "$ALERTS_FILE" 2>/dev/null; then
+    pass "    removes alert from file"
+else
+    fail "    should remove alert from file"
+fi
+
+OPTION_AFTER_CLEAR=$(tmux show-options -wt "$CURRENT_WINDOW_ID" @claude_alert 2>/dev/null || echo "")
+if [[ -z "$OPTION_AFTER_CLEAR" ]]; then
+    pass "    unsets tmux window option"
+else
+    fail "    should unset @claude_alert option"
+fi
+
+# Test concurrent clearing (locking mechanism)
+echo ""
+echo "  clear_window_alerts locking:"
+
+# Create test alerts
+echo "${CURRENT_SESSION}:${CURRENT_WINDOW}:claude" > "$ALERTS_FILE"
+echo "${CURRENT_SESSION}:test-window-1:claude" >> "$ALERTS_FILE"
+echo "${CURRENT_SESSION}:test-window-2:claude" >> "$ALERTS_FILE"
+
+# Simulate concurrent clears (file operations only, no tmux ops since windows don't exist)
+(
+    LOCK_DIR="${ALERTS_FILE}.lock"
+    for _ in {1..10}; do
+        if mkdir "$LOCK_DIR" 2>/dev/null; then
+            grep -v "^${CURRENT_SESSION}:test-window-1:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp.$$" 2>/dev/null || true
+            mv "${ALERTS_FILE}.tmp.$$" "$ALERTS_FILE" 2>/dev/null || rm -f "${ALERTS_FILE}.tmp.$$"
+            rmdir "$LOCK_DIR" 2>/dev/null || true
+            break
+        fi
+        sleep 0.01
+    done
+) &
+PID1=$!
+
+(
+    LOCK_DIR="${ALERTS_FILE}.lock"
+    for _ in {1..10}; do
+        if mkdir "$LOCK_DIR" 2>/dev/null; then
+            grep -v "^${CURRENT_SESSION}:test-window-2:" "$ALERTS_FILE" > "${ALERTS_FILE}.tmp.$$" 2>/dev/null || true
+            mv "${ALERTS_FILE}.tmp.$$" "$ALERTS_FILE" 2>/dev/null || rm -f "${ALERTS_FILE}.tmp.$$"
+            rmdir "$LOCK_DIR" 2>/dev/null || true
+            break
+        fi
+        sleep 0.01
+    done
+) &
+PID2=$!
+
+wait $PID1 $PID2
+
+# Check that file is in consistent state (only current window alert should remain)
+REMAINING=$(wc -l < "$ALERTS_FILE" 2>/dev/null | tr -d ' ' || echo "0")
+if [[ "$REMAINING" == "1" ]]; then
+    pass "    handles concurrent clears without corruption"
+else
+    fail "    concurrent clears may have caused corruption (expected: 1, got: $REMAINING)"
+fi
+
+# Test cleanup_stale_alerts
+echo ""
+echo "  cleanup_stale_alerts:"
+
+# Create alerts with mix of valid and invalid sessions/windows
+echo "${CURRENT_SESSION}:${CURRENT_WINDOW}:claude" > "$ALERTS_FILE"
+echo "nonexistent-session:window:claude" >> "$ALERTS_FILE"
+echo "${CURRENT_SESSION}:nonexistent-window:claude" >> "$ALERTS_FILE"
+
+BEFORE_COUNT=$(wc -l < "$ALERTS_FILE")
+cleanup_stale_alerts
+AFTER_COUNT=$(wc -l < "$ALERTS_FILE" 2>/dev/null || echo "0")
+
+if [[ "$AFTER_COUNT" -lt "$BEFORE_COUNT" ]]; then
+    pass "    removes stale alerts ($BEFORE_COUNT -> $AFTER_COUNT)"
+else
+    fail "    should remove stale alerts"
+fi
+
+if grep -q "nonexistent" "$ALERTS_FILE" 2>/dev/null; then
+    fail "    should remove nonexistent session/window alerts"
+else
+    pass "    removes nonexistent session/window alerts"
+fi
+
+if grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude$" "$ALERTS_FILE"; then
+    pass "    preserves valid alerts"
+else
+    fail "    should preserve valid alerts"
+fi
+
+# Clean up isolated server (trap also handles this on exit)
+cleanup_test_server
 
 # Test agent display functions (don't require tmux)
 echo ""
