@@ -79,9 +79,12 @@ assert_failure() {
 # Returns: Sets TEST_TMUX_SOCKET and TEST_TMUX_CMD
 setup_test_server() {
     TEST_TMUX_SOCKET="tmux-test-$$"
-    TEST_TMUX_CMD="tmux -L $TEST_TMUX_SOCKET"
-    
-    # Start a detached server
+    TEST_TMUX_CMD="tmux -L $TEST_TMUX_SOCKET -f /dev/null"
+
+    # Start a detached server with empty config (-f /dev/null)
+    # This prevents loading the user's tmux.conf via XDG_CONFIG_HOME,
+    # which would initialise plugins (TPM, resurrect, continuum) that
+    # make tmux calls targeting the live server.
     $TEST_TMUX_CMD new-session -d -s test-bootstrap 2>/dev/null || true
     
     # Export socket name for scripts to use
@@ -112,7 +115,7 @@ cleanup_test_server() {
 # Usage: test_tmux <tmux-args>
 test_tmux() {
     # Use command to bypass the wrapper function
-    command tmux -L "$TEST_TMUX_SOCKET" "$@"
+    command tmux -L "$TEST_TMUX_SOCKET" -f /dev/null "$@"
 }
 
 # Export these for use in test scripts

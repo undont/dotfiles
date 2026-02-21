@@ -8,36 +8,8 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_CLI="$SCRIPT_DIR/../dotfiles"
 DOTFILES_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
 
-# Test counters
-PASS=0
-FAIL=0
-
-# Colours
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
-
-pass() {
-    PASS=$((PASS + 1))
-    printf "${GREEN}✓${NC} %s\n" "$1"
-}
-
-fail() {
-    FAIL=$((FAIL + 1))
-    printf "${RED}✗${NC} %s\n" "$1"
-}
-
-skip() {
-    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
-}
-
-section() {
-    echo ""
-    echo "─────────────────────────────────────────"
-    echo "$1"
-    echo "─────────────────────────────────────────"
-}
+# Source shared test helpers (colours, pass/fail/skip/section, assertions)
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ===========================================================================
 # Tests
@@ -428,7 +400,7 @@ else
 fi
 
 # Check that theme command is routed in main case statement
-if [[ "$script_content" == *'theme)'* ]]; then
+if [[ "$script_content" == *'theme|'* ]]; then
     pass "theme command is handled in main case statement"
 else
     fail "theme command should be in main case statement"
@@ -1097,10 +1069,7 @@ fi
 # Summary
 # ===========================================================================
 
-echo ""
-echo "==========================================="
-echo "Test Results: ${GREEN}${PASS} passed${NC}, ${RED}${FAIL} failed${NC}"
-echo "==========================================="
+print_summary
 
 if [[ $FAIL -gt 0 ]]; then
     exit 1

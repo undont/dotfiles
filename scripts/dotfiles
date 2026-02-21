@@ -3,14 +3,16 @@
 # Usage: dotfiles <command> [options]
 #
 # Commands:
-#   update    Pull latest changes and re-run installer
-#   status    Show sync status and quick health summary
-#   health    Run full health check
-#   set       Configure project directories (DEV_ROOT, PROJECTS_ROOT)
-#   edit      Open dotfiles directory in $EDITOR
-#   cd        Print dotfiles path (use: cd "$(dotfiles cd)")
-#   sync      Fetch from origin and show what's changed
-#   help      Show this help message
+#   update  -u    Pull latest changes and re-run installer
+#   status  -s    Show sync status and quick health summary
+#   health        Run full health check
+#   set           Configure project directories (DEV_ROOT, PROJECTS_ROOT)
+#   theme   -t    Manage colour themes
+#   aliases -a    Show all shell aliases, functions, and utilities
+#   edit    -e    Open dotfiles directory in $EDITOR
+#   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
+#   sync          Fetch from origin and show what's changed
+#   help          Show this help message
 
 set -euo pipefail
 
@@ -273,28 +275,30 @@ cmd_help() {
     cat << 'EOF'
 Dotfiles CLI - manage your dotfiles installation
 
-Usage: dotfiles <command> [options]
+Usage: dotfiles <command> [options]    (shorthand: dot <command>)
 
 Commands:
-  update    Pull latest changes and re-run installer with saved preset
-  status    Show sync status, preset, and local changes
-  health    Run full health check (symlinks, plugins, secrets)
-  set       Configure project directories
-            dotfiles set dev <dir>       - Set DEV_ROOT in ~/.zshrc
-            dotfiles set projects <dir>  - Set PROJECTS_ROOT in ~/.zshrc
-  theme     Manage colour themes
-            dotfiles theme list          - List available themes
-            dotfiles theme current       - Show current theme
-            dotfiles theme <name>        - Switch to theme
-  edit      Open dotfiles directory in $EDITOR
-  cd        Print dotfiles path (use: cd "$(dotfiles cd)")
-  sync      Fetch from origin and show what's new (without applying)
-  help      Show this help message
+  update  -u    Pull latest changes and re-run installer with saved preset
+  status  -s    Show sync status, preset, and local changes
+  health        Run full health check (symlinks, plugins, secrets)
+  set           Configure project directories
+                dotfiles set dev <dir>       - Set DEV_ROOT in ~/.zshrc
+                dotfiles set projects <dir>  - Set PROJECTS_ROOT in ~/.zshrc
+  theme   -t    Manage colour themes
+                dotfiles theme list          - List available themes
+                dotfiles theme current       - Show current theme
+                dotfiles theme <name>        - Switch to theme
+  aliases -a    Show all shell aliases, functions, and utilities
+  edit    -e    Open dotfiles directory in $EDITOR
+  cd            Print dotfiles path (use: cd "$(dotfiles cd)")
+  sync          Fetch from origin and show what's new (without applying)
+  help          Show this help message
 
 Examples:
   dotfiles status          # Check if updates are available
   dotfiles update          # Pull and re-install
   dotfiles sync            # Preview incoming changes
+  dotfiles aliases         # Browse available aliases and shortcuts
   dotfiles set dev ~/src   # Set DEV_ROOT for launcher picker
   dotfiles theme list      # Show available themes
   dotfiles theme dracula   # Switch to Dracula theme
@@ -306,15 +310,152 @@ Configuration:
 EOF
 }
 
+cmd_aliases() {
+    local BOLD='\033[1m'
+
+    # Print entries in two columns (pairs of name/description)
+    # Names in yellow, descriptions in grey, columns separated by dim │
+    _2col() {
+        local -a items=("$@")
+        local i=0 count=${#items[@]}
+        while (( i < count )); do
+            if (( i + 3 < count )); then
+                printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%-12s${NC} ${GREY}%s${NC}\n" \
+                    "${items[$i]}" "${items[$((i+1))]}" \
+                    "${items[$((i+2))]}" "${items[$((i+3))]}"
+                (( i += 4 ))
+            else
+                printf "  ${YELLOW}%-12s${NC} ${GREY}%s${NC}\n" "${items[$i]}" "${items[$((i+1))]}"
+                (( i += 2 ))
+            fi
+        done
+    }
+
+    printf "${BOLD}SHELL REFERENCE${NC}\n"
+    printf '%0.s─' {1..80}; printf '\n'
+
+    printf "\n${CYAN}NAVIGATION${NC}\n"
+    _2col \
+        "c"           "clear" \
+        ".."          "cd .." \
+        "..."         "cd ../.." \
+        "mkcd <dir>"  "mkdir + cd"
+
+    printf "\n${CYAN}FILES${NC}\n"
+    _2col \
+        "ll"  "ls -alF" \
+        "la"  "ls -A" \
+        "l"   "ls -CF" \
+        "cp"  "cp -i (confirm overwrite)" \
+        "mv"  "mv -i (confirm overwrite)"
+
+    printf "\n${CYAN}SEARCH & PROCESS${NC}\n"
+    _2col \
+        "grep"        "grep --color=auto" \
+        "psg <name>"  "ps aux | grep" \
+        "ports"       "lsof ports (local)"
+
+    printf "\n${CYAN}GIT${NC}\n"
+    _2col \
+        "gs"   "git status -sb" \
+        "gd"   "git diff" \
+        "gds"  "git diff --staged" \
+        "gl"   "git log (last 20)" \
+        "glf"  "git log (full)" \
+        "gco"  "git checkout" \
+        "gsw"  "git switch" \
+        "gb"   "git branch -vv" \
+        "gp"   "git push" \
+        "gpl"  "git pull" \
+        "gst"  "git stash" \
+        "gfp"  "git fetch --prune" \
+        "gpr"  "prune local branches"
+
+    printf "\n${CYAN}TMUX${NC}\n"
+    _2col \
+        "tls"       "list session backups" \
+        "ta/tattach" "attach/restore session" \
+        "trestore"  "restore from backup" \
+        "tkill"     "delete session backup" \
+        "tcleanup"  "clean up test resources"
+
+    printf "\n${CYAN}SYSTEM & NETWORK${NC}\n"
+    _2col \
+        "df"      "df -h" \
+        "du"      "du -sh" \
+        "myip"    "curl ifconfig.me" \
+        "h"       "cd ~" \
+        "j"       "jobs" \
+        "v"       "nvim" \
+        "o"       "open file/dir" \
+        "finder"  "open in Finder (macOS)"
+
+    printf "\n${CYAN}DEVELOPMENT${NC}\n"
+    _2col \
+        "gols"       "list Go binaries" \
+        "nvim-clear" "clear nvim cache" \
+        "nvim-sync"  "sync Lazy.nvim plugins" \
+        "brewup"     "brew update + upgrade"
+
+    printf "\n${CYAN}PROFILING${NC}\n"
+    printf "  ${YELLOW}%-20s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%-20s${NC} ${GREY}%s${NC}\n" \
+        "zsh-profile" "benchmark startup (5x)" \
+        "zsh-profile-detailed" "detailed profile (ZPROF)"
+
+    printf "\n${CYAN}DOTFILES CLI${NC}\n"
+    _2col \
+        "update  -u"  "pull + re-install" \
+        "status  -s"  "sync status + changes" \
+        "health"      "full health check" \
+        "theme   -t"  "colour themes" \
+        "set dev <d>" "set DEV_ROOT" \
+        "sync"        "preview incoming commits" \
+        "edit    -e"  "open in \$EDITOR" \
+        "aliases -a"  "show this reference"
+
+    # Dotfiles-managed directories from ~/.zshrc
+    local zshrc="$HOME/.zshrc"
+    if [[ -f "$zshrc" ]]; then
+        local dev_root projects_root
+        dev_root=$(grep -E '^\s*export\s+DEV_ROOT=' "$zshrc" 2>/dev/null | head -1 | sed 's/.*=//; s/^"//; s/"$//' || true)
+        projects_root=$(grep -E '^\s*export\s+PROJECTS_ROOT=' "$zshrc" 2>/dev/null | head -1 | sed 's/.*=//; s/^"//; s/"$//' || true)
+        if [[ -n "$dev_root" || -n "$projects_root" ]]; then
+            printf "\n${CYAN}DOTFILES DIRECTORIES${NC}  ${GREY}(set via dotfiles set)${NC}\n"
+            [[ -n "$dev_root" ]] && printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "DEV_ROOT" "$dev_root"
+            [[ -n "$projects_root" ]] && printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "PROJECTS_ROOT" "$projects_root"
+        fi
+    fi
+
+    # User-defined aliases from ~/.zshrc
+    if [[ -f "$zshrc" ]]; then
+        local user_aliases
+        user_aliases=$(grep -E '^\s*alias\s+' "$zshrc" 2>/dev/null | sed 's/^[[:space:]]*alias[[:space:]]*//' || true)
+        if [[ -n "$user_aliases" ]]; then
+            printf "\n${CYAN}USER ALIASES${NC}  ${GREY}(~/.zshrc)${NC}\n"
+            while IFS= read -r line; do
+                local name="${line%%=*}"
+                local value="${line#*=}"
+                # Strip surrounding quotes
+                value="${value#[\"\']}"
+                value="${value%[\"\']}"
+                printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "$name" "$value"
+            done <<< "$user_aliases"
+        fi
+    fi
+
+    printf '\n'; printf '%0.s─' {1..80}; printf '\n'
+    printf "${GREEN}Tip:${NC} run ${YELLOW}dotfiles help${NC} for CLI usage, ${YELLOW}dotfiles health${NC} to verify your install.\n\n"
+}
+
 # Main dispatch
 main() {
     local cmd="${1:-help}"
 
     case "$cmd" in
-        update)
+        update|-u)
             cmd_update
             ;;
-        status)
+        status|-s)
             cmd_status
             ;;
         health)
@@ -324,11 +465,14 @@ main() {
             shift
             cmd_set "$@"
             ;;
-        theme)
+        theme|-t)
             shift
             cmd_theme "$@"
             ;;
-        edit)
+        aliases|alias|cheat|-a)
+            cmd_aliases
+            ;;
+        edit|-e)
             cmd_edit
             ;;
         cd)

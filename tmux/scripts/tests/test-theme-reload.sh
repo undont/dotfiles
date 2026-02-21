@@ -119,7 +119,7 @@ else
 fi
 
 # Check for running tmux detection
-if [[ "$script_content" == *'pgrep -x "tmux"'* ]] || [[ "$script_content" == *'tmux list-sessions'* ]]; then
+if [[ "$script_content" == *'tmux info'* ]] || [[ "$script_content" == *'tmux list-sessions'* ]]; then
     pass "theme-switch detects running tmux"
 else
     skip "running tmux detection not found"
@@ -138,7 +138,7 @@ if [[ -f "$TMUX_OUTPUT" ]]; then
 fi
 
 # Apply a theme to generate config
-theme_output=$("$THEME_SWITCH" dracula 2>&1) && theme_result=0 || theme_result=$?
+theme_output=$("$THEME_SWITCH" dracula --no-reload 2>&1) && theme_result=0 || theme_result=$?
 if [[ $theme_result -eq 0 ]]; then
     pass "theme-switch applied dracula theme"
 else
@@ -198,7 +198,7 @@ section "Theme Switching Tests"
 config_backup="${TMUX_OUTPUT}.test-backup"
 cp "$TMUX_OUTPUT" "$config_backup" 2>/dev/null || true
 
-theme_output=$("$THEME_SWITCH" nord 2>&1) && theme_result=0 || theme_result=$?
+theme_output=$("$THEME_SWITCH" nord --no-reload 2>&1) && theme_result=0 || theme_result=$?
 if [[ $theme_result -eq 0 ]]; then
     pass "theme-switch applied nord theme"
 
@@ -225,7 +225,7 @@ fi
 # Switch back to dracula
 config_nord=$(md5sum "$TMUX_OUTPUT" 2>/dev/null | cut -d' ' -f1 || echo "")
 
-theme_output=$("$THEME_SWITCH" dracula 2>&1) && theme_result=0 || theme_result=$?
+theme_output=$("$THEME_SWITCH" dracula --no-reload 2>&1) && theme_result=0 || theme_result=$?
 if [[ $theme_result -eq 0 ]]; then
     pass "theme-switch switched back to dracula"
 
@@ -260,7 +260,7 @@ else
 fi
 
 # Apply theme - all sessions should work with new config
-theme_output=$("$THEME_SWITCH" tokyo-night 2>&1) && theme_result=0 || theme_result=$?
+theme_output=$("$THEME_SWITCH" tokyo-night --no-reload 2>&1) && theme_result=0 || theme_result=$?
 if [[ $theme_result -eq 0 ]]; then
     pass "applied tokyo-night theme with multiple sessions"
 
@@ -349,10 +349,10 @@ fi
 section "Idempotency Tests"
 
 # Apply same theme twice - config should be identical
-"$THEME_SWITCH" dracula 2>/dev/null || true
+"$THEME_SWITCH" dracula --no-reload 2>/dev/null || true
 config_first=$(cat "$TMUX_OUTPUT")
 
-"$THEME_SWITCH" dracula 2>/dev/null || true
+"$THEME_SWITCH" dracula --no-reload 2>/dev/null || true
 config_second=$(cat "$TMUX_OUTPUT")
 
 if [[ "$config_first" == "$config_second" ]]; then

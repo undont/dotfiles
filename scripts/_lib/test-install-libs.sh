@@ -9,66 +9,11 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 # Usage: ./test.sh [--verbose]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-PASS=0
-FAIL=0
 # shellcheck disable=SC2034
 VERBOSE="${1:-}"  # Reserved for future verbose output
 
-# Test output helpers
-pass() {
-    PASS=$((PASS + 1))
-    printf "${GREEN}✓${NC} %s\n" "$1"
-}
-
-fail() {
-    FAIL=$((FAIL + 1))
-    printf "${RED}✗${NC} %s\n" "$1"
-}
-
-skip() {
-    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
-}
-
-section() {
-    printf "\n"
-    printf "${CYAN}%s${NC}\n" "────────────────────────────────────────"
-    printf "${CYAN}%s${NC}\n" "$1"
-    printf "${CYAN}%s${NC}\n" "────────────────────────────────────────"
-}
-
-# Assert that a command succeeds
-assert_success() {
-    local desc="$1"
-    shift
-    if "$@" 2>/dev/null; then
-        pass "$desc"
-    else
-        fail "$desc"
-    fi
-}
-
-# Assert that a command fails
-assert_failure() {
-    local desc="$1"
-    shift
-    if ! "$@" 2>/dev/null; then
-        pass "$desc"
-    else
-        fail "$desc"
-    fi
-}
-
-# Assert output equals expected value
-assert_equals() {
-    local desc="$1"
-    local expected="$2"
-    local actual="$3"
-    if [[ "$actual" == "$expected" ]]; then
-        pass "$desc"
-    else
-        fail "$desc (expected: '$expected', got: '$actual')"
-    fi
-}
+# Source shared test helpers (colours, pass/fail/skip/section, assertions)
+source "$SCRIPT_DIR/../tests/_test-helpers.sh"
 
 # ===========================================================================
 # Tests
@@ -120,13 +65,13 @@ fi
 section "Output Functions"
 
 # Test that output functions exist and are callable
-assert_success "error function exists" type error
-assert_success "warn function exists" type warn
-assert_success "info function exists" type info
-assert_success "success function exists" type success
-assert_success "print_header function exists" type print_header
-assert_success "print_section function exists" type print_section
-assert_success "print_step function exists" type print_step
+for fn in error warn info success print_header print_section print_step; do
+    if declare -F "$fn" >/dev/null 2>&1; then
+        pass "$fn function exists"
+    else
+        fail "$fn function not found"
+    fi
+done
 
 section "Utility Functions"
 
@@ -170,7 +115,7 @@ else
 fi
 
 # Test check_command with nonexistent command
-if ! check_command "nonexistent" "nonexistent_12345" "" 2>/dev/null; then
+if ! check_command "nonexistent" "nonexistent_12345" "" >/dev/null 2>&1; then
     pass "check_command returns 1 for missing command"
 else
     fail "check_command should return 1 for nonexistent"
@@ -463,10 +408,7 @@ fi
 # Summary
 # ===========================================================================
 
-echo ""
-echo "==========================================="
-echo "Test Results: ${GREEN}${PASS} passed${NC}, ${RED}${FAIL} failed${NC}"
-echo "==========================================="
+print_summary
 
 if [[ $FAIL -gt 0 ]]; then
     exit 1

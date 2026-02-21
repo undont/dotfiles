@@ -175,14 +175,15 @@ run_test() {
     
     if output=$("$test_file" 2>&1); then
         printf "${GREEN}✓${NC} %-50s ${GREEN}PASS${NC}\n" "$test_name"
+        if [[ "$VERBOSE" = true && -n "$output" ]]; then
+            printf "%s\n" "$output"
+        fi
         increment_counters "passed"
     else
         exit_code=$?
-        if [[ "$VERBOSE" = true ]]; then
-            printf "${RED}✗${NC} %-50s ${RED}FAIL${NC} (exit code: %d)\n" "$test_name" "$exit_code"
-        else
-            printf "${RED}✗${NC} %-50s ${RED}FAIL${NC}\n" "$test_name"
-            printf "${RED}Output:${NC}\n%s\n" "$output"
+        printf "${RED}✗${NC} %-50s ${RED}FAIL${NC} (exit code: %d)\n" "$test_name" "$exit_code"
+        if [[ -n "$output" ]]; then
+            printf "%s\n" "$output"
         fi
         increment_counters "failed"
     fi

@@ -19,6 +19,13 @@ return {
       numhl = false,
       linehl = false,
       on_attach = function(bufnr)
+        -- Skip diffview buffers — gutter signs are useless in diff panes and
+        -- each attachment spawns git subprocesses, risking EMFILE exhaustion.
+        local bufname = vim.api.nvim_buf_get_name(bufnr)
+        if bufname:match 'diffview://' then
+          return false
+        end
+
         local gitsigns = require 'gitsigns'
 
         local function map(mode, l, r, mopts)
@@ -32,7 +39,7 @@ return {
           if vim.wo.diff then
             vim.cmd.normal { ']c', bang = true }
           else
-            gitsigns.nav_hunk('next', { wrap = false })
+            gitsigns.nav_hunk('next', { wrap = false, target = 'all' })
           end
         end, { desc = 'Jump to next git [c]hange' })
 
@@ -40,7 +47,7 @@ return {
           if vim.wo.diff then
             vim.cmd.normal { '[c', bang = true }
           else
-            gitsigns.nav_hunk('prev', { wrap = false })
+            gitsigns.nav_hunk('prev', { wrap = false, target = 'all' })
           end
         end, { desc = 'Jump to previous git [c]hange' })
 

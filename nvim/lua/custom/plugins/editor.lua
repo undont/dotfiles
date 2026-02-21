@@ -21,17 +21,13 @@ return {
         'javascript',
         'jsdoc',
         'json',
-        'lua',
-        'luadoc',
         'make',
-        'markdown',
-        'markdown_inline',
         'python',
-        'query',
+        -- lua, luadoc, vim, vimdoc, query, markdown, markdown_inline are bundled
+        -- with Neovim 0.11+ — let Neovim manage them to avoid query/parser mismatches
         'tsx',
         'typescript',
-        'vim',
-        'vimdoc',
+        'xml',
         'yaml',
       }
 
@@ -77,8 +73,23 @@ return {
         end
       end
 
-      -- Install parsers (async, only fetches missing ones)
-      require('nvim-treesitter').install(parsers)
+      -- Remove any nvim-treesitter-managed copies of parsers bundled with Neovim 0.11+
+      -- so that Neovim's own (always-compatible) versions take precedence.
+      local nvim_bundled = { 'lua', 'luadoc', 'vim', 'vimdoc', 'query', 'markdown', 'markdown_inline' }
+      for _, lang in ipairs(nvim_bundled) do
+        local so = parser_dir .. '/' .. lang .. '.so'
+        if vim.uv.fs_stat(so) then
+          os.remove(so)
+        end
+      end
+
+      -- Install any parsers from the list that aren't already on disk
+      local missing = vim.tbl_filter(function(lang)
+        return not pcall(vim.treesitter.language.inspect, lang)
+      end, parsers)
+      if #missing > 0 then
+        require('nvim-treesitter').install(missing)
+      end
 
       -- Enable treesitter highlighting and indentation for all supported filetypes
       vim.api.nvim_create_autocmd('FileType', {

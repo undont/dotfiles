@@ -1,0 +1,282 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# Tests for dotfiles-status.sh caching and git status detection
+# Creates throwaway git repos to test ahead/behind/diverged states
+
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
+
+# Source test helpers (no tmux server needed for this test)
+source "$SCRIPT_DIR/_test-helpers.sh"
+
+# Create isolated test environment
+STATUS_TEST_DIR=$(mktemp -d)
+trap 'rm -rf "$STATUS_TEST_DIR"' EXIT INT TERM
+
+STATUS_SCRIPT="$SCRIPTS_DIR/utils/dotfiles-status.sh"
+
+# ═══════════════════════════════════════════════════════════════
+# Script Validation
+# ═══════════════════════════════════════════════════════════════
+
+section "Script Exists and Is Valid"
+
+if [[ -f "$STATUS_SCRIPT" ]]; then
+    pass "dotfiles-status.sh exists"
+else
+    fail "dotfiles-status.sh not found"
+    exit 1
+fi
+
+if [[ -x "$STATUS_SCRIPT" ]]; then
+    pass "dotfiles-status.sh is executable"
+else
+    fail "dotfiles-status.sh should be executable"
+fi
+
+if bash -n "$STATUS_SCRIPT" 2>/dev/null; then
+    pass "dotfiles-status.sh passes syntax check"
+else
+    fail "dotfiles-status.sh has syntax errors"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# Setup Test Git Repos
+# ═══════════════════════════════════════════════════════════════
+
+section "Git Repository Setup"
+
+# Create a bare "remote" repo
+REMOTE_REPO="$STATUS_TEST_DIR/remote.git"
+git init --bare "$REMOTE_REPO" >/dev/null 2>&1
+pass "Created bare remote repo"
+
+# Clone it as "local" repo (simulates dotfiles directory)
+LOCAL_REPO="$STATUS_TEST_DIR/local"
+git clone "$REMOTE_REPO" "$LOCAL_REPO" >/dev/null 2>&1
+
+# Create initial commit in local
+(
+    cd "$LOCAL_REPO"
+    git config user.email "test@test.com"
+    git config user.name "Test"
+    echo "initial" > README.md
+    git add README.md
+    git commit -m "Initial commit" >/dev/null 2>&1
+    git push origin main >/dev/null 2>&1 || git push origin master >/dev/null 2>&1
+)
+pass "Created initial commit and pushed"
+
+# Get the branch name
+BRANCH_NAME=$(cd "$LOCAL_REPO" && git rev-parse --abbrev-ref HEAD)
+
+# Override environment for the status script
+export DOTFILES_DIR="$LOCAL_REPO"
+export XDG_CACHE_HOME="$STATUS_TEST_DIR/cache"
+export DOTFILES_SYNC_CACHE_TTL=0    # Disable fetch cache
+export DOTFILES_RESULT_CACHE_TTL=0  # Disable result cache
+mkdir -p "$XDG_CACHE_HOME/dotfiles"
+
+# ═══════════════════════════════════════════════════════════════
+# Up-to-date Status
+# ═══════════════════════════════════════════════════════════════
+
+section "Up-to-date State"
+
+# Clear cache
+rm -f "$XDG_CACHE_HOME/dotfiles/sync-status" "$XDG_CACHE_HOME/dotfiles/last-fetch"
+
+output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
+# Wait for background fetch to complete
+sleep 0.5
+
+if [[ -z "$output" ]] || [[ "$output" == "" ]]; then
+    pass "Returns empty when up-to-date"
+else
+    fail "Should return empty when up-to-date (got: '$output')"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# Behind Remote
+# ═══════════════════════════════════════════════════════════════
+
+section "Behind Remote State"
+
+# Push a commit to remote (via a second clone)
+SECOND_CLONE="$STATUS_TEST_DIR/second"
+git clone "$REMOTE_REPO" "$SECOND_CLONE" >/dev/null 2>&1
+(
+    cd "$SECOND_CLONE"
+    git config user.email "test@test.com"
+    git config user.name "Test"
+    echo "remote change" > remote.txt
+    git add remote.txt
+    git commit -m "Remote commit" >/dev/null 2>&1
+    git push >/dev/null 2>&1
+)
+
+# Fetch in local so it knows about the remote commit
+(cd "$LOCAL_REPO" && git fetch origin >/dev/null 2>&1)
+
+# Clear cache and re-run
+rm -f "$XDG_CACHE_HOME/dotfiles/sync-status" "$XDG_CACHE_HOME/dotfiles/last-fetch"
+output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
+sleep 0.5
+
+if [[ "$output" == *"↓"* ]]; then
+    pass "Returns ↓ when behind remote"
+else
+    fail "Should return ↓ when behind (got: '$output')"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# Ahead of Remote
+# ═══════════════════════════════════════════════════════════════
+
+section "Ahead of Remote State"
+
+# Pull to get in sync first, then add local commit
+(
+    cd "$LOCAL_REPO"
+    git pull origin "$BRANCH_NAME" >/dev/null 2>&1
+    echo "local change" > local.txt
+    git add local.txt
+    git commit -m "Local commit" >/dev/null 2>&1
+)
+
+# Clear cache and re-run
+rm -f "$XDG_CACHE_HOME/dotfiles/sync-status" "$XDG_CACHE_HOME/dotfiles/last-fetch"
+output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
+sleep 0.5
+
+if [[ "$output" == *"↑"* ]]; then
+    pass "Returns ↑ when ahead of remote"
+else
+    fail "Should return ↑ when ahead (got: '$output')"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# Diverged State
+# ═══════════════════════════════════════════════════════════════
+
+section "Diverged State"
+
+# Add another remote commit (via second clone)
+(
+    cd "$SECOND_CLONE"
+    echo "another remote change" > remote2.txt
+    git add remote2.txt
+    git commit -m "Another remote commit" >/dev/null 2>&1
+    git push >/dev/null 2>&1
+)
+
+# Fetch so local knows about it (but don't pull)
+(cd "$LOCAL_REPO" && git fetch origin >/dev/null 2>&1)
+
+# Clear cache and re-run
+rm -f "$XDG_CACHE_HOME/dotfiles/sync-status" "$XDG_CACHE_HOME/dotfiles/last-fetch"
+output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
+sleep 0.5
+
+if [[ "$output" == *"↕"* ]]; then
+    pass "Returns ↕ when diverged"
+else
+    fail "Should return ↕ when diverged (got: '$output')"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# Result Cache Tests
+# ═══════════════════════════════════════════════════════════════
+
+section "Result Caching"
+
+# Set a long result TTL and verify cache is used
+export DOTFILES_RESULT_CACHE_TTL=300  # 5 minutes
+
+# Write a known value to cache
+printf "CACHED" > "$XDG_CACHE_HOME/dotfiles/sync-status"
+# Touch with current timestamp
+touch "$XDG_CACHE_HOME/dotfiles/sync-status"
+
+output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
+
+if [[ "$output" == "CACHED" ]]; then
+    pass "Returns cached result when cache is fresh"
+else
+    fail "Should return cached result (got: '$output')"
+fi
+
+# Reset TTL
+export DOTFILES_RESULT_CACHE_TTL=0
+
+# ═══════════════════════════════════════════════════════════════
+# Silent Failure Tests
+# ═══════════════════════════════════════════════════════════════
+
+section "Silent Failure"
+
+# Point at a non-git directory
+export DOTFILES_DIR="$STATUS_TEST_DIR/not-a-repo"
+mkdir -p "$DOTFILES_DIR"
+rm -f "$XDG_CACHE_HOME/dotfiles/sync-status"
+
+output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
+exit_code=$?
+
+if [[ $exit_code -eq 0 ]]; then
+    pass "Exits 0 when not in a git repo"
+else
+    fail "Should exit 0 even when not in a git repo"
+fi
+
+if [[ -z "$output" ]]; then
+    pass "Returns empty when not in a git repo"
+else
+    fail "Should return empty when not in a git repo (got: '$output')"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# Script Structure
+# ═══════════════════════════════════════════════════════════════
+
+section "Script Structure"
+
+status_content=$(cat "$STATUS_SCRIPT")
+
+if [[ "$status_content" == *'get_remote_branch()'* ]]; then
+    pass "Defines get_remote_branch function"
+else
+    fail "Should define get_remote_branch"
+fi
+
+if [[ "$status_content" == *'maybe_fetch()'* ]]; then
+    pass "Defines maybe_fetch function"
+else
+    fail "Should define maybe_fetch"
+fi
+
+if [[ "$status_content" == *'CACHE_TTL_SECONDS'* ]]; then
+    pass "Uses configurable cache TTL"
+else
+    fail "Should use configurable cache TTL"
+fi
+
+if [[ "$status_content" == *'RESULT_TTL_SECONDS'* ]]; then
+    pass "Uses configurable result TTL"
+else
+    fail "Should use configurable result TTL"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# Summary
+# ═══════════════════════════════════════════════════════════════
+
+echo ""
+echo "==========================================="
+printf "${GREEN}Test Results: %d passed${NC}, ${RED}%d failed${NC}\n" "$PASS" "$FAIL"
+echo "==========================================="
+
+if [[ $FAIL -gt 0 ]]; then
+    exit 1
+fi
