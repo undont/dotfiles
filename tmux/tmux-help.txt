@@ -27,11 +27,11 @@
 ║                               ║  ` p              launchers          ║
 ║  / / ?            search ↓/↑  ║  ` c              Claude picker      ║
 ║  n / N            next / prev ║  ` o              OpenCode picker    ║
-║                               ║  ` g              Gemini picker      ║
-║  v / V            select /    ║  ` n              nvim picker        ║
-║                   line        ║  ` y              open URL picker    ║
-║  y / Y            yank /      ║  Opt+u            undo pane/win      ║
-║                   yank ln     ║  ` I              install plugins    ║
+║                               ║  ` n              nvim picker        ║
+║  v / V            select /    ║  ` y              open URL picker    ║
+║                   line        ║  Opt+u            undo pane/win      ║
+║  y / Y            yank /      ║  ` I              install plugins    ║
+║                   yank ln     ║  ` Space          fingers (copy)     ║
 ║  q / Esc          exit mode   ║                                      ║
 ║                               ║                                      ║
 ╚═══════════════════════════════╩══════════════════════════════════════╝

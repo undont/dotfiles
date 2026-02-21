@@ -22,6 +22,7 @@ brew "tmux"                   # >= 3.3 required for popup support
 brew "powerlevel10k"
 brew "zsh-autosuggestions"
 brew "fzf"                    # >= 0.40 for --tmux flag
+brew "tmux-fingers"           # Quick pattern copy for tmux (flash.nvim-like)
 brew "direnv"
 
 # =============================================================================
