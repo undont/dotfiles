@@ -55,8 +55,8 @@ Quick reference for error messages and where to find solutions:
 # Check if rollback state exists
 ls -la ~/dotfiles/.install-state/
 
-# Check install log for error
-cat ~/dotfiles/.install-state/install.log 2>/dev/null | tail -50
+# Check what steps completed
+cat ~/dotfiles/.install-state/state.txt 2>/dev/null
 ```
 
 **Solution**:
@@ -115,9 +115,9 @@ cat ~/dotfiles/.install-state/install.log 2>/dev/null | tail -50
    ```
 
 **Notes**:
-- The install script creates automatic backups in `.install-state/backups/`
-- Rollback script restores from these backups
-- If installation fails, always check `.install-state/install.log` for details
+- The install script records rollback state in `.install-state/` (symlinks, backup locations, completed steps)
+- Backups are created in `~/.dotfiles-backup/` by the backup step
+- Rollback script uses both state files and backups to restore previous configuration
 
 ### Symlinks Not Working
 
@@ -157,13 +157,13 @@ chmod +x install.sh scripts/*.sh
 **Solution**:
 ```bash
 # Find your backup
-ls -la ~/.dotfiles-backup-*
+ls -la ~/.dotfiles-backup/
 
 # Restore specific file
-cp ~/.dotfiles-backup-YYYYMMDD-HHMMSS/.zshrc ~/.zshrc
+cp ~/.dotfiles-backup/<backup-dir>/.zshrc ~/.zshrc
 
 # Restore everything
-cp -r ~/.dotfiles-backup-YYYYMMDD-HHMMSS/* ~/
+cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
 ```
 
 ---
@@ -212,13 +212,13 @@ cp -r ~/.dotfiles-backup-YYYYMMDD-HHMMSS/* ~/
    sudo apt install xclip  # Debian/Ubuntu
    sudo yum install xclip  # RHEL/CentOS
 
-   # Create aliases (add to ~/.zsh/.secrets.zsh or ~/.zshrc.local)
+   # Create aliases (add to ~/.config/zsh/secrets.zsh or ~/.zshrc)
    alias pbcopy='xclip -selection clipboard'
    alias pbpaste='xclip -selection clipboard -o'
    ```
 
 4. **tmux clipboard integration**:
-   Edit `~/.tmux.conf` and change:
+   Edit `~/.config/tmux/local.conf` and add:
    ```bash
    # macOS (default)
    bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
@@ -334,11 +334,9 @@ echo $FNM_DIR
 
 2. **fnm not initialised**:
    ```bash
-   # The .zshrc should have this (line 103):
+   # The dotfiles framework (zsh/dotfiles.zsh) handles this automatically.
+   # If missing, add to your ~/.zshrc:
    eval "$(fnm env --use-on-cd)"
-
-   # If missing, add manually
-   echo 'eval "$(fnm env --use-on-cd)"' >> ~/.zshrc
 
    # Reload shell
    exec zsh
@@ -403,7 +401,7 @@ echo $PATH | tr ':' '\n' | grep platform-tools
 
 1. **ANDROID_HOME not set but needed**:
    ```bash
-   # Add to ~/.zsh/.secrets.zsh
+   # Add to ~/.config/zsh/secrets.zsh
    export ANDROID_HOME="$HOME/Library/Android/sdk"  # macOS
    export ANDROID_HOME="$HOME/Android/Sdk"          # Linux
 
@@ -516,7 +514,7 @@ tmux list-keys | grep prefix
 **Solution**:
 ```bash
 # Reload tmux config
-tmux source-file ~/.tmux.conf
+tmux source-file ~/.config/tmux/tmux.conf
 
 # Or restart tmux server
 tmux kill-server && tmux
@@ -551,20 +549,26 @@ TERM=xterm-256color tmux
 
 **Diagnosis**:
 ```bash
-# Check undo files exist
+# Check undo files exist (XDG location)
+ls -la ~/.cache/tmux/undo/
+
+# Check legacy location (auto-migrated)
 ls -la /tmp/tmux-undo-*
 
 # Check script permissions
-ls -la ~/.tmux/scripts/undo-*.sh
+ls -la ~/.tmux/scripts/panes/undo.sh
+ls -la ~/.tmux/scripts/windows/undo.sh
+ls -la ~/.tmux/scripts/sessions/undo.sh
 ```
 
 **Solution**:
 ```bash
 # Make scripts executable
-chmod +x ~/.tmux/scripts/*.sh
+chmod +x ~/.tmux/scripts/**/*.sh
 
 # Check if Alt key is being captured by terminal
-# In Ghostty: macos-option-as-alt = true
+# In Ghostty: add to ~/.config/ghostty/local:
+# macos-option-as-alt = true
 ```
 
 ---
@@ -666,7 +670,7 @@ tmux list-windows
 tmux show-options -g
 
 # Check for errors in config
-tmux source-file ~/.tmux.conf
+tmux source-file ~/.config/tmux/tmux.conf
 ```
 
 ### Neovim
@@ -707,10 +711,9 @@ echo "Cache: ${XDG_CACHE_HOME:-~/.cache}"
 
 If you're still experiencing issues:
 
-1. Check the component-specific README files:
-   - `zsh/.zsh/README.md`
-   - `tmux/.tmux/README.md`
-   - `nvim/README.md` (if present)
+1. Check related documentation:
+   - [Installation Guide](./INSTALLATION-GUIDE.md)
+   - [Theme System](./THEME-SYSTEM.md)
 
 2. Search for similar issues in the tool's documentation:
    - [Tmux manual](https://man7.org/linux/man-pages/man1/tmux.1.html)
