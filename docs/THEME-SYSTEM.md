@@ -16,14 +16,16 @@ The dotfiles theme system uses XDG Base Directory standard to prevent git confli
 
 ```
 Repository (tracked in git):
-  themes/*.theme              - Theme definitions (15+ themes)
-  tmux/tmux.conf.template     - Tmux config template with {{PLACEHOLDERS}}
-  ghostty/config.template     - Ghostty config template with {{PLACEHOLDERS}}
+  themes/*.theme                   - Theme definitions (15+ themes)
+  tmux/tmux.conf.template          - Tmux config template with {{PLACEHOLDERS}}
+  ghostty/config.template          - Ghostty config template with {{PLACEHOLDERS}}
+  gh-dash/config.yml.template      - gh-dash config template with {{PLACEHOLDERS}}
 
 User Configuration (gitignored):
-  ~/.config/tmux/tmux.conf    - Generated tmux config (XDG standard)
-  ~/.tmux.conf                - Compatibility symlink → ~/.config/tmux/tmux.conf
-  ~/.config/ghostty/config    - Generated ghostty config (XDG, all platforms)
+  ~/.config/tmux/tmux.conf         - Generated tmux config (XDG standard)
+  ~/.tmux.conf                     - Compatibility symlink → ~/.config/tmux/tmux.conf
+  ~/.config/ghostty/config         - Generated ghostty config (XDG, all platforms)
+  ~/.config/gh-dash/config.yml     - Generated gh-dash config (XDG standard)
   ~/.config/dotfiles/current-theme - Current theme name
 
 Local Overrides (user-owned, survive theme changes):
@@ -39,7 +41,7 @@ Local Overrides (user-owned, survive theme changes):
 3. Script processes templates, replacing `{{PLACEHOLDERS}}` with actual values
 4. Generated configs are written to XDG locations
 5. Current theme name is saved to `~/.config/dotfiles/current-theme`
-6. Running applications are reloaded (tmux, ghostty, fzf)
+6. Running applications are reloaded (tmux, ghostty, fzf); gh-dash reads config at launch time
 
 ## Benefits
 

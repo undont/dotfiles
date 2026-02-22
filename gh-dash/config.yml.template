@@ -1,0 +1,117 @@
+# gh-dash configuration
+# Theme colours are managed by theme-switch — do not edit colour values directly.
+# To change theme: theme-switch <theme-name>
+
+prSections:
+    - title: My Pull Requests
+      filters: is:open author:@me
+    - title: Needs My Review
+      filters: is:open review-requested:@me
+    - title: Involved
+      filters: is:open involves:@me -author:@me
+issuesSections:
+    - title: My Issues
+      filters: is:open author:@me
+    - title: Assigned
+      filters: is:open assignee:@me
+    - title: Involved
+      filters: is:open involves:@me -author:@me
+notificationsSections:
+    - title: All
+      filters: ""
+    - title: Created
+      filters: reason:author
+    - title: Participating
+      filters: reason:participating
+    - title: Mentioned
+      filters: reason:mention
+    - title: Review Requested
+      filters: reason:review-requested
+    - title: Assigned
+      filters: reason:assign
+    - title: Subscribed
+      filters: reason:subscribed
+    - title: Team Mentioned
+      filters: reason:team-mention
+repo:
+    branchesRefetchIntervalSeconds: 30
+    prsRefetchIntervalSeconds: 60
+defaults:
+    preview:
+        open: true
+        width: 50
+    prsLimit: 20
+    prApproveComment: LGTM
+    issuesLimit: 20
+    notificationsLimit: 20
+    view: prs
+    layout:
+        prs:
+            updatedAt:
+                width: 5
+            createdAt:
+                width: 5
+            repo:
+                width: 20
+            author:
+                width: 15
+            authorIcon:
+                hidden: false
+            assignees:
+                width: 20
+                hidden: true
+            base:
+                width: 15
+                hidden: true
+            lines:
+                width: 15
+        issues:
+            updatedAt:
+                width: 5
+            createdAt:
+                width: 5
+            repo:
+                width: 15
+            creator:
+                width: 10
+            creatorIcon:
+                hidden: false
+            assignees:
+                width: 20
+                hidden: true
+    refetchIntervalMinutes: 30
+keybindings: {}
+repoPaths: {}
+theme:
+    ui:
+        sectionsShowCount: true
+        table:
+            showSeparator: true
+            compact: false
+    colors:
+        text:
+            primary: "{{TMUX_FG_PRIMARY}}"
+            secondary: "{{TMUX_FG_PRIMARY}}"
+            inverted: "{{TMUX_BG_PRIMARY}}"
+            faint: "{{TMUX_FG_SECONDARY}}"
+            warning: "{{TMUX_ACCENT_YELLOW}}"
+            success: "{{TMUX_ACCENT_GREEN}}"
+            error: "{{TMUX_ACCENT_RED}}"
+        background:
+            selected: "{{TMUX_BG_SECONDARY}}"
+        border:
+            primary: "{{TMUX_BG_SECONDARY}}"
+            secondary: "{{TMUX_BG_SECONDARY}}"
+            faint: "{{TMUX_BG_PRIMARY}}"
+        icon:
+            owner: "{{TMUX_ACCENT_YELLOW}}"
+            member: "{{TMUX_ACCENT_GREEN}}"
+            collaborator: "{{TMUX_ACCENT_CYAN}}"
+            contributor: "{{TMUX_ACCENT_PURPLE}}"
+            newcontributor: "{{TMUX_ACCENT_PINK}}"
+            unknownrole: "{{TMUX_FG_SECONDARY}}"
+pager:
+    diff: ""
+confirmQuit: false
+showAuthorIcons: true
+smartFilteringAtLaunch: true
