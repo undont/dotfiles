@@ -94,6 +94,12 @@ else
     fail "help should mention theme command"
 fi
 
+if [[ "$help_output" == *"links"* ]]; then
+    pass "help mentions links command"
+else
+    fail "help should mention links command"
+fi
+
 # Test --help flag
 help_flag_output=$("$DOTFILES_CLI" --help 2>&1) || true
 if [[ "$help_flag_output" == *"Usage:"* ]]; then
@@ -161,6 +167,12 @@ if [[ "$script_content" == *"cmd_sync()"* ]]; then
     pass "cmd_sync function defined"
 else
     fail "cmd_sync function not found"
+fi
+
+if [[ "$script_content" == *"cmd_links()"* ]]; then
+    pass "cmd_links function defined"
+else
+    fail "cmd_links function not found"
 fi
 
 if [[ "$script_content" == *"get_preset()"* ]]; then
@@ -1063,6 +1075,189 @@ if [[ "$prereq_content" == *'exit 0'* ]] && [[ "$prereq_content" == *'exit 1'* ]
     pass "prerequisites has proper exit codes"
 else
     fail "prerequisites should have proper exit codes"
+fi
+
+# ===========================================================================
+# Links Command Tests
+# ===========================================================================
+
+section "Links Command - Structure"
+
+# Check that links command is routed in main case statement
+if [[ "$script_content" == *'links|'* ]]; then
+    pass "links command is handled in main case statement"
+else
+    fail "links command should be in main case statement"
+fi
+
+# Check -l shorthand
+if [[ "$script_content" == *'-l)'* ]]; then
+    pass "links command supports -l shorthand"
+else
+    fail "links command should support -l shorthand"
+fi
+
+# Check that cmd_links uses _check_link helper
+if [[ "$script_content" == *'_check_link()'* ]]; then
+    pass "cmd_links defines _check_link helper"
+else
+    fail "cmd_links should define _check_link helper"
+fi
+
+# Check that cmd_links uses preset detection
+if [[ "$script_content" == *'cmd_links'*'get_preset'* ]] || grep -q 'get_preset' <<< "$(sed -n '/cmd_links()/,/^}/p' "$DOTFILES_CLI")"; then
+    pass "cmd_links uses get_preset"
+else
+    fail "cmd_links should use get_preset"
+fi
+
+# Check that cmd_links uses should_install for preset hierarchy
+if grep -q 'should_install' <<< "$(sed -n '/cmd_links()/,/^}/p' "$DOTFILES_CLI")"; then
+    pass "cmd_links uses should_install for preset filtering"
+else
+    fail "cmd_links should use should_install for preset filtering"
+fi
+
+# Check that help documents links command usage
+if [[ "$help_output" == *"symlinks"* ]] || [[ "$help_output" == *"links"* ]]; then
+    pass "help documents links command"
+else
+    fail "help should document links command"
+fi
+
+# ===========================================================================
+# Launcher Scripts Tests
+# ===========================================================================
+
+LAUNCHERS_DIR="$DOTFILES_DIR/launchers"
+
+section "Launcher Scripts - Config"
+
+config_launcher="$LAUNCHERS_DIR/config"
+if [[ -f "$config_launcher" ]]; then
+    pass "config launcher exists"
+else
+    fail "config launcher not found at $config_launcher"
+fi
+
+if [[ -x "$config_launcher" ]]; then
+    pass "config launcher is executable"
+else
+    fail "config launcher is not executable"
+fi
+
+section "Launcher Scripts - Dotfiles"
+
+dotfiles_launcher="$LAUNCHERS_DIR/dotfiles"
+if [[ -f "$dotfiles_launcher" ]]; then
+    pass "dotfiles launcher exists"
+else
+    fail "dotfiles launcher not found at $dotfiles_launcher"
+fi
+
+if [[ -x "$dotfiles_launcher" ]]; then
+    pass "dotfiles launcher is executable"
+else
+    fail "dotfiles launcher is not executable"
+fi
+
+section "Launcher Scripts - ShellCheck"
+
+if command -v shellcheck &>/dev/null; then
+    if shellcheck -x -S warning -e SC1091 "$config_launcher" 2>/dev/null; then
+        pass "config launcher passes shellcheck"
+    else
+        fail "config launcher has shellcheck warnings"
+    fi
+
+    if shellcheck -x -S warning -e SC1091 "$dotfiles_launcher" 2>/dev/null; then
+        pass "dotfiles launcher passes shellcheck"
+    else
+        fail "dotfiles launcher has shellcheck warnings"
+    fi
+else
+    skip "shellcheck not installed"
+fi
+
+section "Launcher Scripts - Structure"
+
+config_content=$(cat "$config_launcher")
+dotfiles_content=$(cat "$dotfiles_launcher")
+
+if [[ "$config_content" == *'set -euo pipefail'* ]]; then
+    pass "config launcher uses strict mode"
+else
+    fail "config launcher should use strict mode"
+fi
+
+if [[ "$dotfiles_content" == *'set -euo pipefail'* ]]; then
+    pass "dotfiles launcher uses strict mode"
+else
+    fail "dotfiles launcher should use strict mode"
+fi
+
+if [[ "$config_content" == *'@description:'* ]]; then
+    pass "config launcher has @description metadata"
+else
+    fail "config launcher should have @description metadata"
+fi
+
+if [[ "$dotfiles_content" == *'@description:'* ]]; then
+    pass "dotfiles launcher has @description metadata"
+else
+    fail "dotfiles launcher should have @description metadata"
+fi
+
+if [[ "$config_content" == *'--help'* ]]; then
+    pass "config launcher supports --help flag"
+else
+    fail "config launcher should support --help flag"
+fi
+
+if [[ "$dotfiles_content" == *'--help'* ]]; then
+    pass "dotfiles launcher supports --help flag"
+else
+    fail "dotfiles launcher should support --help flag"
+fi
+
+# Check help output
+config_help=$("$config_launcher" --help 2>&1) || true
+if [[ "$config_help" == *"USAGE:"* ]]; then
+    pass "config launcher --help shows USAGE"
+else
+    fail "config launcher --help should show USAGE"
+fi
+
+dotfiles_help=$("$dotfiles_launcher" --help 2>&1) || true
+if [[ "$dotfiles_help" == *"USAGE:"* ]]; then
+    pass "dotfiles launcher --help shows USAGE"
+else
+    fail "dotfiles launcher --help should show USAGE"
+fi
+
+# Check tmux session handling
+if [[ "$config_content" == *'tmux has-session'* ]]; then
+    pass "config launcher checks for existing session"
+else
+    fail "config launcher should check for existing session"
+fi
+
+if [[ "$dotfiles_content" == *'tmux has-session'* ]]; then
+    pass "dotfiles launcher checks for existing session"
+else
+    fail "dotfiles launcher should check for existing session"
+fi
+
+if [[ "$config_content" == *'tmux new-session'* ]]; then
+    pass "config launcher creates tmux session"
+else
+    fail "config launcher should create tmux session"
+fi
+
+if [[ "$dotfiles_content" == *'tmux new-session'* ]]; then
+    pass "dotfiles launcher creates tmux session"
+else
+    fail "dotfiles launcher should create tmux session"
 fi
 
 # ===========================================================================

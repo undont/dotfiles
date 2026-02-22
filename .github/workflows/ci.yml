@@ -56,6 +56,13 @@ jobs:
             shellcheck -x $EXCLUDES scripts/tests/*.sh
           fi
 
+      - name: Run ShellCheck on CI scripts
+        run: |
+          EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
+          if [[ -d scripts/ci ]]; then
+            shellcheck -x $EXCLUDES scripts/ci/*.sh
+          fi
+
   test-all:
     name: All Tests
     runs-on: macos-latest
@@ -102,11 +109,49 @@ jobs:
           luacheck nvim/lua/ --no-unused-args --no-max-line-length || true
         continue-on-error: true  # Advisory only initially
 
+  startup-benchmark:
+    name: Startup Benchmark
+    runs-on: macos-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Install hyperfine
+        run: brew install hyperfine
+
+      - name: Benchmark zsh startup
+        run: ./scripts/ci/benchmark-startup.sh 500
+
+      - name: Store benchmark results
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: customSmallerIsBetter
+          output-file-path: benchmark-results.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          auto-push: true
+          alert-threshold: '120%'
+          comment-on-alert: true
+          fail-on-alert: false
+
+      - name: Compare with baseline (PRs)
+        if: github.event_name == 'pull_request'
+        uses: benchmark-action/github-action-benchmark@v1
+        with:
+          tool: customSmallerIsBetter
+          output-file-path: benchmark-results.json
+          gh-pages-branch: gh-pages
+          benchmark-data-dir-path: dev/bench
+          auto-push: false
+          alert-threshold: '120%'
+          comment-on-alert: true
+          fail-on-alert: false
+
   auto-tag:
     name: Auto Tag
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [shellcheck, test-all, syntax-check, lua-check]
+    needs: [shellcheck, test-all, syntax-check, lua-check, startup-benchmark]
     permissions:
       contents: write
     steps:

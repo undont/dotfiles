@@ -127,7 +127,9 @@ bq() { _load_gcloud && bq "$@"; }
 # fnm (Fast Node Manager) - Rust-based, ~5ms init vs NVM's 300-500ms
 # Usage: fnm install 22, fnm use 20, fnm default 22
 # Reads .nvmrc and .node-version files automatically with --use-on-cd
-eval "$(fnm env --use-on-cd)"
+if command -v fnm &>/dev/null; then
+  eval "$(fnm env --use-on-cd)"
+fi
 
 # =============================================================================
 # DOCKER & COMPLETIONS
@@ -432,6 +434,58 @@ cdf() {
   _dir_nav_active=0
 }
 
+# Directory history picker (fzf-powered)
+cdl() {
+  if (( ${#_dir_back_stack} == 0 )); then
+    echo "No directory history" >&2
+    return 1
+  fi
+
+  # Reverse stack (most recent first) and deduplicate consecutive entries
+  local -a reversed=()
+  local prev=""
+  local i
+  for (( i=${#_dir_back_stack}; i>=1; i-- )); do
+    local entry="${_dir_back_stack[$i]}"
+    if [[ "$entry" != "$prev" ]]; then
+      reversed+=("$entry")
+      prev="$entry"
+    fi
+  done
+
+  local count=${#reversed[@]}
+  local dest
+
+  if command -v fzf &>/dev/null; then
+    dest=$(printf '%s\n' "${reversed[@]}" | fzf \
+      --height=40% --reverse \
+      --header="$count entries" \
+      --preview='ls -CF {}' \
+    ) || return 0
+  else
+    # Fallback: numbered list
+    local n=1
+    for entry in "${reversed[@]}"; do
+      printf "  %2d  %s\n" "$n" "$entry"
+      (( n++ ))
+    done
+    printf "\nSelect [1-%d]: " "$count"
+    read -r n
+    if [[ -z "$n" || "$n" -lt 1 || "$n" -gt "$count" ]] 2>/dev/null; then
+      return 0
+    fi
+    dest="${reversed[$n]}"
+  fi
+
+  if [[ -n "$dest" && -d "$dest" ]]; then
+    _dir_back_stack+=("$PWD")
+    _dir_forward_stack=()
+    _dir_nav_active=1
+    cd "$dest"
+    _dir_nav_active=0
+  fi
+}
+
 # Attach to tmux session, restoring from backup if needed
 tattach() {
   # Try to attach to running session
@@ -515,7 +569,9 @@ _dotfiles() {
     'update:Pull latest changes and re-run installer'
     'status:Show sync status and quick health summary'
     'health:Run full health check'
+    'links:Show all managed symlinks and their status'
     'aliases:Show all shell aliases, functions, and utilities'
+    'theme:Manage colour themes'
     'set:Configure project directories (dev, projects)'
     'edit:Open dotfiles directory in $EDITOR'
     'cd:Print dotfiles path'
@@ -535,6 +591,21 @@ _dotfiles() {
           'projects:Set PROJECTS_ROOT directory'
         )
         _describe 'set target' targets
+        ;;
+      theme|-t)
+        local -a theme_opts
+        theme_opts=(
+          'list:List available themes'
+          'current:Show current theme'
+        )
+        # Add available theme names from themes/ directory
+        local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
+        local theme_file
+        for theme_file in "$dotfiles_dir"/themes/*.theme(N); do
+          local name="${theme_file:t:r}"
+          theme_opts+=("${name}:Switch to ${name} theme")
+        done
+        _describe 'theme' theme_opts
         ;;
     esac
   elif (( CURRENT == 4 )); then

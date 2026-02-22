@@ -245,6 +245,7 @@ direnv allow
 | `dotfiles status` | Show sync status and local changes                |
 | `dotfiles sync`  | Preview incoming changes without applying          |
 | `dotfiles health` | Run full health check                             |
+| `dotfiles links` | Show all managed symlinks and their status          |
 | `dotfiles edit`  | Open dotfiles directory in $EDITOR                 |
 | `dotfiles cd`    | Print dotfiles path (use: `cd "$(dotfiles cd)"`)  |
 
@@ -254,6 +255,7 @@ Tab completion is available for all dotfiles commands.
 | -------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cdb`          | `cdb`                        | Go back to previous directory (browser-style history). |
 | `cdf`          | `cdf`                        | Go forward after `cdb` (browser-style history). Normal `cd` clears the forward stack. |
+| `cdl`          | `cdl`                        | Pick from directory history with fzf (most recent first, deduplicated). Falls back to numbered list without fzf. |
 | `tattach <name>` | `tattach myproject`        | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tkill <name>` | `tkill myproject`            | Kills the specified tmux session and removes its backup file from `~/.tmux/resurrect/sessions/`. |
 | `trestore`     | `trestore [options]`         | Restore tmux sessions. No args = restore ALL; `--session <name>` = specific session; `--delete <name>` = delete backup. |

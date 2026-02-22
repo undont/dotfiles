@@ -79,7 +79,7 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 - **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt+C` directories
 - **Performance** — lazy-loaded completions, fnm (~5ms) over nvm (~300ms), cached eval for direnv/fzf
 - **Tab completion** for `dotfiles` / `dot`, `trestore`, `tkill`, `tattach`
-- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `tattach` (attach or restore from backup), `cdb`/`cdf` (browser-style directory back/forward), `brewup`, `nvim-sync`, `mkcd`, and more — run `dot aliases` for the full list
+- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `tattach` (attach or restore from backup), `cdb`/`cdf`/`cdl` (browser-style directory back/forward/history), `brewup`, `nvim-sync`, `mkcd`, and more — run `dot aliases` for the full list
 
 ### Tmux — 60+ Custom Scripts, One Cohesive Workflow
 
@@ -136,6 +136,7 @@ Press `` ` p `` to open the launcher picker — shell scripts that create pre-co
 dot update    # Pull latest + re-run installer with saved preset
 dot status    # Sync status, local changes, health summary
 dot health    # Full health check (symlinks, plugins, secrets)
+dot links     # Show all managed symlinks and their status
 dot theme     # List / switch themes
 dot aliases   # Browse all shell aliases and shortcuts
 dot sync      # Preview incoming changes without applying
@@ -211,6 +212,14 @@ theme-switch list                # Show all themes
 
 </td></tr>
 </table>
+
+---
+
+## Performance
+
+Zsh startup time is benchmarked in CI on every push and PR. If the median startup exceeds 500ms, the benchmark job fails — preventing regressions from landing.
+
+View the [startup time trend chart](https://seanhalberthal.github.io/dotfiles/dev/bench/).
 
 ---
 

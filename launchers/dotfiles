@@ -1,0 +1,59 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# @description: Dotfiles - Neovim with Neo-tree
+
+SESSION="${SESSION_NAME:-dotfiles}"
+PROJECT_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+
+# Help flag handling
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    cat << EOF
+$SESSION - Dotfiles editing session
+
+USAGE:
+    $SESSION
+
+DESCRIPTION:
+    Creates or attaches to the '$SESSION' tmux session with Neovim
+    opened in the dotfiles directory (Neo-tree file browser).
+
+WINDOWS:
+    1. nvim   Neovim with Neo-tree
+
+OPTIONS:
+    -h, --help   Show this help message
+
+NOTES:
+    • Uses DOTFILES_DIR or falls back to ~/dotfiles
+    • If session exists, attaches instead of creating
+EOF
+    exit 0
+fi
+
+if [[ ! -d "$PROJECT_DIR" ]]; then
+    echo "Error: Dotfiles directory not found: $PROJECT_DIR" >&2
+    echo "Define DOTFILES_DIR in ~/.zshrc or create the directory." >&2
+    exit 1
+fi
+
+# Check if session already exists
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "$SESSION"
+    else
+        tmux attach-session -t "$SESSION"
+    fi
+    exit 0
+fi
+
+# Window 1: nvim (opening directory triggers Neo-tree)
+tmux new-session -d -s "$SESSION" -n "nvim" -c "$PROJECT_DIR"
+tmux send-keys -t "$SESSION:nvim" "nvim ." Enter
+
+# Attach to session
+if [[ -n "${TMUX:-}" ]]; then
+    tmux switch-client -t "$SESSION"
+else
+    tmux attach-session -t "$SESSION"
+fi
