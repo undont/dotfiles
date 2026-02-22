@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Theme Switcher for Tmux & Ghostty
+# Theme Switcher for Tmux, Ghostty & gh-dash
 # ══════════════════════════════════════════════════════════════
 # Usage:
 #   theme-switch <theme-name>
@@ -30,6 +30,8 @@ GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 
 # Ghostty config location (XDG only - macOS symlinks to this)
 GHOSTTY_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
+GH_DASH_TEMPLATE="$DOTFILES_ROOT/gh-dash/config.yml.template"
+GH_DASH_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/config.yml"
 
 # Colours for output
 RED='\033[0;31m'
@@ -212,6 +214,25 @@ apply_theme() {
         fi
     else
         [[ "$quiet" != "true" ]] && warn "Ghostty template not found, skipping"
+    fi
+
+    # Process gh-dash template using sed
+    if [[ -f "$GH_DASH_TEMPLATE" ]]; then
+        mkdir -p "$(dirname "$GH_DASH_OUTPUT")"
+        local ghdash_tmp="${GH_DASH_OUTPUT}.tmp.$$"
+        sed -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
+            -e "s|{{TMUX_FG_SECONDARY}}|$TMUX_FG_SECONDARY|g" \
+            -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
+            -e "s|{{TMUX_BG_SECONDARY}}|$TMUX_BG_SECONDARY|g" \
+            -e "s|{{TMUX_ACCENT_YELLOW}}|$TMUX_ACCENT_YELLOW|g" \
+            -e "s|{{TMUX_ACCENT_GREEN}}|$TMUX_ACCENT_GREEN|g" \
+            -e "s|{{TMUX_ACCENT_RED}}|$TMUX_ACCENT_RED|g" \
+            -e "s|{{TMUX_ACCENT_CYAN}}|$TMUX_ACCENT_CYAN|g" \
+            -e "s|{{TMUX_ACCENT_PURPLE}}|$TMUX_ACCENT_PURPLE|g" \
+            -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
+            "$GH_DASH_TEMPLATE" > "$ghdash_tmp" || { rm -f "$ghdash_tmp"; return 1; }
+        mv "$ghdash_tmp" "$GH_DASH_OUTPUT"
+        [[ "$quiet" != "true" ]] && success "Generated gh-dash configuration"
     fi
 
     # Save current theme preference

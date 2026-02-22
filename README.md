@@ -256,6 +256,7 @@ dotfiles/
 ├── launchers/        # Session launch scripts (picker: prefix + p)
 │   └── tnew          # Dev session launcher (zsh + nvim + claude)
 ├── hammerspoon/      # macOS automation (auto-centre windows)
+├── gh-dash/          # GitHub dashboard (themed via theme-switch)
 ├── ghostty/          # Terminal emulator (themed via theme-switch)
 ├── karabiner/        # Keyboard customisation
 ├── scripts/          # Installation and utility scripts

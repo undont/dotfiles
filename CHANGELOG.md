@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Zsh: `cdb`/`cdf` browser-style directory back/forward navigation
 - CLI: `tnew` now shown in `dot aliases` when installed
+- gh-dash: Integrated into theme system — `theme-switch` now generates a themed `~/.config/gh-dash/config.yml` with 17 colour keys
 
 ### Changed
 - CLI: Fixed column overflow in `dot aliases` for FILES, TMUX, and PROFILING sections
