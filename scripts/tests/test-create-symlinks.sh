@@ -114,6 +114,12 @@ else
     fail "Should link launchers for core preset"
 fi
 
+if [[ "$script_content" == *'gh-dash'* ]]; then
+    pass "Handles gh-dash config directory (core)"
+else
+    fail "Should handle gh-dash for core preset"
+fi
+
 # ═══════════════════════════════════════════════════════════════
 # Full Preset Symlinks
 # ═══════════════════════════════════════════════════════════════
@@ -258,6 +264,7 @@ declare -a SOURCE_FILES=(
     "zsh/p10k.zsh"
     "zsh/zshrc.template"
     "tmux/local.conf.template"
+    "gh-dash/config.yml.template"
     "scripts/dotfiles"
 )
 

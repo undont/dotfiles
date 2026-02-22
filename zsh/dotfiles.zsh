@@ -390,6 +390,48 @@ compdef _tmux_sessions_running tattach
 # Make directory and cd into it
 mkcd() { mkdir -p "$1" && cd "$1"; }
 
+# Directory back/forward navigation (browser-style)
+# cdb: go back to previous directory
+# cdf: go forward (after going back)
+typeset -ga _dir_back_stack _dir_forward_stack
+_dir_nav_active=0
+
+_dir_track_chpwd() {
+  # Skip tracking when cdb/cdf triggered the change
+  if (( _dir_nav_active )); then return; fi
+  _dir_back_stack+=("$OLDPWD")
+  _dir_forward_stack=()
+  # Cap stack size at 50 entries
+  (( ${#_dir_back_stack} > 50 )) && _dir_back_stack=("${_dir_back_stack[@]: -50}")
+}
+chpwd_functions+=(_dir_track_chpwd)
+
+cdb() {
+  if (( ${#_dir_back_stack} == 0 )); then
+    echo "No previous directory" >&2
+    return 1
+  fi
+  local dest="${_dir_back_stack[-1]}"
+  _dir_back_stack[-1]=()
+  _dir_forward_stack+=("$PWD")
+  _dir_nav_active=1
+  cd "$dest"
+  _dir_nav_active=0
+}
+
+cdf() {
+  if (( ${#_dir_forward_stack} == 0 )); then
+    echo "No forward directory" >&2
+    return 1
+  fi
+  local dest="${_dir_forward_stack[-1]}"
+  _dir_forward_stack[-1]=()
+  _dir_back_stack+=("$PWD")
+  _dir_nav_active=1
+  cd "$dest"
+  _dir_nav_active=0
+}
+
 # Attach to tmux session, restoring from backup if needed
 tattach() {
   # Try to attach to running session
