@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.32] - 2026-02-22
+
+### Added
+- Zsh: `cdb`/`cdf` browser-style directory back/forward navigation
+- CLI: `tnew` now shown in `dot aliases` when installed
+
+### Changed
+- CLI: Fixed column overflow in `dot aliases` for FILES, TMUX, and PROFILING sections
+
+### Removed
+- Brewfile: Removed unused `oug-t/difi` tap
+
 ## [0.2.31] - 2026-02-21
 
 ### Added

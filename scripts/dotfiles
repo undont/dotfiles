@@ -339,15 +339,17 @@ cmd_aliases() {
         "c"           "clear" \
         ".."          "cd .." \
         "..."         "cd ../.." \
-        "mkcd <dir>"  "mkdir + cd"
+        "mkcd <dir>"  "mkdir + cd" \
+        "cdb"         "cd back (browser)" \
+        "cdf"         "cd forward (after cdb)"
 
     printf "\n${CYAN}FILES${NC}\n"
     _2col \
         "ll"  "ls -alF" \
         "la"  "ls -A" \
         "l"   "ls -CF" \
-        "cp"  "cp -i (confirm overwrite)" \
-        "mv"  "mv -i (confirm overwrite)"
+        "cp"  "cp -i (safe overwrite)" \
+        "mv"  "mv -i (safe overwrite)"
 
     printf "\n${CYAN}SEARCH & PROCESS${NC}\n"
     _2col \
@@ -372,12 +374,17 @@ cmd_aliases() {
         "gpr"  "prune local branches"
 
     printf "\n${CYAN}TMUX${NC}\n"
-    _2col \
-        "tls"       "list session backups" \
-        "ta/tattach" "attach/restore session" \
-        "trestore"  "restore from backup" \
-        "tkill"     "delete session backup" \
-        "tcleanup"  "clean up test resources"
+    local tmux_items=(
+        "tls"       "list session backups"
+        "ta/tattach" "attach/restore session"
+        "trestore"  "restore from backup"
+        "tkill"     "delete session backup"
+        "tcleanup"  "clean test resources"
+    )
+    if command -v tnew &>/dev/null; then
+        tmux_items+=("tnew" "dev session launcher")
+    fi
+    _2col "${tmux_items[@]}"
 
     printf "\n${CYAN}SYSTEM & NETWORK${NC}\n"
     _2col \
@@ -398,9 +405,9 @@ cmd_aliases() {
         "brewup"     "brew update + upgrade"
 
     printf "\n${CYAN}PROFILING${NC}\n"
-    printf "  ${YELLOW}%-20s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%-20s${NC} ${GREY}%s${NC}\n" \
+    printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%s${NC} ${GREY}%s${NC}\n" \
         "zsh-profile" "benchmark startup (5x)" \
-        "zsh-profile-detailed" "detailed profile (ZPROF)"
+        "zsh-profile-detailed" "detailed (ZPROF)"
 
     printf "\n${CYAN}DOTFILES CLI${NC}\n"
     _2col \

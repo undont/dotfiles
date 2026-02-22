@@ -79,7 +79,7 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 - **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt+C` directories
 - **Performance** — lazy-loaded completions, fnm (~5ms) over nvm (~300ms), cached eval for direnv/fzf
 - **Tab completion** for `dotfiles` / `dot`, `trestore`, `tkill`, `tattach`
-- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `tattach` (attach or restore from backup), `brewup`, `nvim-sync`, `mkcd`, and more — run `dot aliases` for the full list
+- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `tattach` (attach or restore from backup), `cdb`/`cdf` (browser-style directory back/forward), `brewup`, `nvim-sync`, `mkcd`, and more — run `dot aliases` for the full list
 
 ### Tmux — 60+ Custom Scripts, One Cohesive Workflow
 

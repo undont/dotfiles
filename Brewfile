@@ -9,7 +9,6 @@
 # Taps
 tap "libsql/sqld"
 tap "oven-sh/bun"
-tap "oug-t/difi"
 tap "teamookla/speedtest"
 
 # =============================================================================
