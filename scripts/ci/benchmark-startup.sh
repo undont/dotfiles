@@ -84,23 +84,6 @@ echo "Results: median=${MEDIAN_MS}ms  min=${MIN_MS}ms  max=${MAX_MS}ms  stddev=$
 echo ""
 
 # ─────────────────────────────────────────
-# Output benchmark-action compatible JSON
-# ─────────────────────────────────────────
-BENCH_OUTPUT="benchmark-results.json"
-cat > "$BENCH_OUTPUT" << EOF
-[
-  {
-    "name": "Zsh Startup Time",
-    "unit": "ms",
-    "value": $MEDIAN_MS,
-    "range": "$STDDEV_MS",
-    "extra": "min=${MIN_MS}ms max=${MAX_MS}ms threshold=${THRESHOLD}ms"
-  }
-]
-EOF
-echo "Wrote benchmark-action results to $BENCH_OUTPUT"
-
-# ─────────────────────────────────────────
 # Write GitHub step summary
 # ─────────────────────────────────────────
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then

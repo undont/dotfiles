@@ -219,8 +219,6 @@ theme-switch list                # Show all themes
 
 Zsh startup time is benchmarked in CI on every push and PR. If the median startup exceeds 500ms, the benchmark job fails — preventing regressions from landing.
 
-View the [startup time trend chart](https://seanhalberthal.github.io/dotfiles/dev/bench/).
-
 ---
 
 ## Uninstalling

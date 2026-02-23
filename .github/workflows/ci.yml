@@ -121,35 +121,6 @@ jobs:
       - name: Benchmark zsh startup
         run: ./scripts/ci/benchmark-startup.sh 500
 
-      - name: Store benchmark results
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          tool: customSmallerIsBetter
-          output-file-path: benchmark-results.json
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          gh-pages-branch: gh-pages
-          benchmark-data-dir-path: dev/bench
-          auto-push: true
-          alert-threshold: '120%'
-          comment-on-alert: true
-          fail-on-alert: false
-
-      - name: Compare with baseline (PRs)
-        if: github.event_name == 'pull_request'
-        continue-on-error: true  # Fails gracefully if gh-pages branch doesn't exist yet
-        uses: benchmark-action/github-action-benchmark@v1
-        with:
-          tool: customSmallerIsBetter
-          output-file-path: benchmark-results.json
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          gh-pages-branch: gh-pages
-          benchmark-data-dir-path: dev/bench
-          auto-push: false
-          alert-threshold: '120%'
-          comment-on-alert: true
-          fail-on-alert: false
-
   auto-tag:
     name: Auto Tag
     runs-on: ubuntu-latest
