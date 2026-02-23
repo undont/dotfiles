@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.33] - 2026-02-22
+
+### Added
+- CLI: `dot links` command — shows all managed symlinks and their status (OK/broken/absent), filtered by preset
+- Zsh: `cdl` function — pick from directory history with fzf (browser-style, most recent first)
+- Zsh: Tab completion for `dotfiles theme` subcommands (lists available themes)
+- CI: Zsh startup benchmark job using hyperfine with benchmark-action trend tracking
+- Launchers: `config` and `dotfiles` session launchers for tnew
+- Zsh: `fnm` init is now guarded with command check (prevents errors when fnm is absent)
+
+### Changed
+- FZF: Collapsed multi-line `FZF_DEFAULT_OPTS` colour string into single-line format (avoids whitespace issues)
+
 ## [0.2.32] - 2026-02-22
 
 ### Added
