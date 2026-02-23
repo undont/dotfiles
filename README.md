@@ -9,6 +9,7 @@
 **Personal configuration files for zsh, tmux, neovim, ghostty, git and much more.**
 
 [![CI](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
+[![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/seanhalberthal/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
 [![macOS](https://img.shields.io/badge/macOS-compatible-A2AAAD?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Linux](https://img.shields.io/badge/Linux-compatible-blue?logo=linux&logoColor=white)](https://www.linux.org/)
 [![Neovim](https://img.shields.io/badge/Neovim-0.9+-57A143?logo=neovim&logoColor=white)](https://neovim.io/)

@@ -119,7 +119,25 @@ jobs:
         run: brew install hyperfine fzf direnv fnm
 
       - name: Benchmark zsh startup
+        id: benchmark
         run: ./scripts/ci/benchmark-startup.sh 500
+
+      - name: Update startup badge
+        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        uses: schneegans/dynamic-badges-action@v1.7.0
+        with:
+          auth: ${{ secrets.GIST_SECRET }}
+          gistID: ${{ vars.BADGE_GIST_ID }}
+          filename: zsh-startup.json
+          label: zsh startup
+          message: ${{ steps.benchmark.outputs.median_ms }}ms
+          color: >-
+            ${{
+              steps.benchmark.outputs.median_ms < 200 && 'brightgreen' ||
+              steps.benchmark.outputs.median_ms < 350 && 'green' ||
+              steps.benchmark.outputs.median_ms < 500 && 'yellow' ||
+              'red'
+            }}
 
   auto-tag:
     name: Auto Tag

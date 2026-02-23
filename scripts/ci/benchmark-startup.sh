@@ -83,6 +83,11 @@ echo ""
 echo "Results: median=${MEDIAN_MS}ms  min=${MIN_MS}ms  max=${MAX_MS}ms  stddev=${STDDEV_MS}ms"
 echo ""
 
+# Export median for downstream steps (e.g. badge update)
+if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
+    echo "median_ms=${MEDIAN_MS}" >> "$GITHUB_OUTPUT"
+fi
+
 # ─────────────────────────────────────────
 # Write GitHub step summary
 # ─────────────────────────────────────────
