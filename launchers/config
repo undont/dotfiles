@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# @description: Config - Neovim with Neo-tree in ~/.config
+# @description: Config - Launches in nvim ~/.config
 
 SESSION="${SESSION_NAME:-config}"
 PROJECT_DIR="${XDG_CONFIG_HOME:-$HOME/.config}"
@@ -16,7 +16,7 @@ USAGE:
 
 DESCRIPTION:
     Creates or attaches to the '$SESSION' tmux session with Neovim
-    opened in ~/.config (Neo-tree file browser).
+    opened in ~/.config.
 
 WINDOWS:
     1. nvim   Neovim with Neo-tree

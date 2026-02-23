@@ -41,6 +41,11 @@ function M.setup()
   vim.keymap.set('n', '<leader>wj', '<cmd>resize -5<CR>', { desc = 'Resize [J] down' })
   vim.keymap.set('n', '<leader>wk', '<cmd>resize +5<CR>', { desc = 'Resize [K] up' })
 
+  -- Line navigation: m/M for beginning/end of line, gm for marks
+  vim.keymap.set({ 'n', 'v', 'o' }, 'm', '^', { desc = 'First non-blank character' })
+  vim.keymap.set({ 'n', 'v', 'o' }, 'M', '$', { desc = 'End of line' })
+  vim.keymap.set('n', 'gm', 'm', { desc = 'Set mark' })
+
   -- macOS-style navigation (Opt+arrows = word, Cmd+arrows = line)
   vim.keymap.set('i', '<M-BS>', '<C-w>', { desc = 'Delete word backward (Opt+Backspace)' })
   vim.keymap.set('i', '<D-BS>', '<C-u>', { desc = 'Delete to beginning of line (Cmd+Backspace)' })

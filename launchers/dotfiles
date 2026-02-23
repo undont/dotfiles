@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# @description: Dotfiles - Neovim with Neo-tree
+# @description: Dotfiles - Launches in nvim ~/.config
 
 SESSION="${SESSION_NAME:-dotfiles}"
 PROJECT_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
@@ -16,7 +16,7 @@ USAGE:
 
 DESCRIPTION:
     Creates or attaches to the '$SESSION' tmux session with Neovim
-    opened in the dotfiles directory (Neo-tree file browser).
+    opened in the dotfiles directory.
 
 WINDOWS:
     1. nvim   Neovim with Neo-tree
