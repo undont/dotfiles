@@ -144,6 +144,9 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Close pane        | `Opt+s`             |
 | Undo close        | `Opt+u`             |
 | Zoom (fullscreen) | `Opt+z`             |
+| Previous layout   | `` `+[ ``           |
+| Next layout       | `` `+] ``           |
+| Equalise sizes    | `Opt+Shift+0`       |
 
 **Note:** Closing the last pane in the last window or the last window in a session will prompt for confirmation.
 | Swap up/down      | `prefix + H/J/K/L`  |

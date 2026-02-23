@@ -14,7 +14,7 @@
 ║  Opt+Shift+d      duplicate   ║  Opt+s            close pane         ║
 ║  Opt+x            kill tab    ║  Opt+z            zoom pane          ║
 ║                               ║  Opt+Shift+0      equalise sizes     ║
-║                               ║                                      ║
+║                               ║  ` [ / ` ]        prev/next layout   ║
 ╠═ SCROLL MODE ═════════════════╬═ SESSION ════════════════════════════╣
 ║                               ║                                      ║
 ║  Opt+v / ` v      enter mode  ║  ` s              switch session     ║

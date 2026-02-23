@@ -195,6 +195,8 @@ Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 | Normal | `grn` | Rename symbol (LSP) |
 | Normal | `gra` | Code action (LSP) |
 | Normal | `K` | Hover documentation (LSP) |
+| Normal | `m` / `M` | First non-blank / end of line (`^`/`$`) |
+| Normal | `gm` | Set mark (original `m`) |
 | Normal | `Space e` | Toggle file explorer (Neo-tree) |
 | Normal | `Space g` | Open LazyGit |
 | Normal | `Space f` | Format buffer |

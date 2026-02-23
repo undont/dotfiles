@@ -58,7 +58,7 @@ description: Commit staged changes and create a PR, push on top if PR already ex
     | Directory with changes | Documentation files to read |
     |------------------------|----------------------------|
     | `tmux/` | `tmux/.tmux/README.md`, `tmux/.tmux/tmux-help.txt` |
-    | `nvim/` | `nvim/README.md`, `nvim/lua/custom/nvim-help.txt` |
+    | `nvim/` | `nvim/README.md`, `nvim/cheatsheet.txt` |
     | `zsh/` | `zsh/.zsh/README.md` |
     | `karabiner/` | `karabiner/README.md` |
     | `ghostty/` | `ghostty/README.md` |
