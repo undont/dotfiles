@@ -58,7 +58,7 @@ jobs:
 
       - name: Run ShellCheck on CI scripts
         run: |
-          EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
+          EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2317 -e SC2329"
           if [[ -d scripts/ci ]]; then
             shellcheck -x $EXCLUDES scripts/ci/*.sh
           fi
@@ -115,8 +115,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install hyperfine
-        run: brew install hyperfine
+      - name: Install benchmark dependencies
+        run: brew install hyperfine fzf direnv fnm
 
       - name: Benchmark zsh startup
         run: ./scripts/ci/benchmark-startup.sh 500

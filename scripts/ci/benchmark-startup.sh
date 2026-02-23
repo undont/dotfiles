@@ -18,8 +18,9 @@ RESULTS_FILE="$(mktemp)"
 # ─────────────────────────────────────────
 TEMP_ZSHRC="$(mktemp)"
 cat > "$TEMP_ZSHRC" << EOF
-# CI benchmark — minimal .zshrc sourcing the dotfiles framework
-export DOTFILES_CI_BENCHMARK=1
+# CI benchmark — sources the dotfiles framework
+# Suppress powerlevel10k instant prompt (not installed in CI)
+typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet 2>/dev/null
 source "$DOTFILES_DIR/zsh/dotfiles.zsh"
 EOF
 
