@@ -180,6 +180,31 @@ return {
       { '<leader>pa', '<cmd>Octo comment add<CR>', desc = 'Comment [A]dd', mode = { 'n', 'v' } },
       { '<leader>pc', '<cmd>Octo pr comments<CR>', desc = '[C]omments' },
       { '<leader>pC', '<cmd>Octo review close<CR>', desc = 'Review [C]lose' },
+      {
+        '<leader>pq',
+        function()
+          -- Close review layout if active
+          local ok, reviews = pcall(require, 'octo.reviews')
+          if ok then
+            local review = reviews.get_current_review()
+            if review and review.layout then
+              review.layout:close()
+            end
+          end
+          -- Close all octo buffers
+          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+            if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
+              vim.api.nvim_buf_delete(buf, { force = true })
+            end
+          end
+          -- Re-trigger BufEnter so which-key re-attaches after layout teardown
+          -- (closing Octo review windows/tabs can disrupt which-key's state)
+          vim.schedule(function()
+            vim.cmd 'doautocmd BufEnter'
+          end)
+        end,
+        desc = '[Q]uit Octo',
+      },
       { '<leader>pX', '<cmd>Octo pr close<CR>', desc = 'Close PR' },
       -- PR actions
       { '<leader>pb', '<cmd>Octo pr browser<CR>', desc = 'Open in [B]rowser' },
@@ -220,6 +245,17 @@ return {
             approve_review = { lhs = '<C-a>', desc = 'approve review', mode = { 'n', 'i' } },
             comment_review = { lhs = '<C-m>', desc = 'comment review', mode = { 'n', 'i' } },
             request_changes = { lhs = '<C-r>', desc = 'request changes review', mode = { 'n', 'i' } },
+          },
+          -- Required: octo.workflow_runs reads these at module load time and crashes
+          -- the telescope picker if they're nil (mappings_disable_default removes them)
+          runs = {
+            expand_step = { lhs = 'o', desc = 'expand workflow step' },
+            open_in_browser = { lhs = '<C-b>', desc = 'open workflow run in browser' },
+            refresh = { lhs = '<C-r>', desc = 'refresh workflow' },
+            rerun = { lhs = '<C-o>', desc = 'rerun workflow' },
+            rerun_failed = { lhs = '<C-f>', desc = 'rerun failed workflow' },
+            cancel = { lhs = '<C-x>', desc = 'cancel workflow' },
+            copy_url = { lhs = '<C-y>', desc = 'copy url to system clipboard' },
           },
         },
       }
