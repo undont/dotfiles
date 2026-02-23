@@ -8,6 +8,7 @@
 #   health        Run full health check
 #   set           Configure project directories (DEV_ROOT, PROJECTS_ROOT)
 #   theme   -t    Manage colour themes
+#   links   -l    Show all managed symlinks and their status
 #   aliases -a    Show all shell aliases, functions, and utilities
 #   edit    -e    Open dotfiles directory in $EDITOR
 #   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
@@ -288,6 +289,7 @@ Commands:
                 dotfiles theme list          - List available themes
                 dotfiles theme current       - Show current theme
                 dotfiles theme <name>        - Switch to theme
+  links   -l    Show all managed symlinks and their status
   aliases -a    Show all shell aliases, functions, and utilities
   edit    -e    Open dotfiles directory in $EDITOR
   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
@@ -341,7 +343,8 @@ cmd_aliases() {
         "..."         "cd ../.." \
         "mkcd <dir>"  "mkdir + cd" \
         "cdb"         "cd back (browser)" \
-        "cdf"         "cd forward (after cdb)"
+        "cdf"         "cd forward (after cdb)" \
+        "cdl"         "cd from history (fzf)"
 
     printf "\n${CYAN}FILES${NC}\n"
     _2col \
@@ -414,6 +417,7 @@ cmd_aliases() {
         "update  -u"  "pull + re-install" \
         "status  -s"  "sync status + changes" \
         "health"      "full health check" \
+        "links   -l"  "managed symlinks" \
         "theme   -t"  "colour themes" \
         "set dev <d>" "set DEV_ROOT" \
         "sync"        "preview incoming commits" \
@@ -454,6 +458,127 @@ cmd_aliases() {
     printf "${GREEN}Tip:${NC} run ${YELLOW}dotfiles help${NC} for CLI usage, ${YELLOW}dotfiles health${NC} to verify your install.\n\n"
 }
 
+# ─────────────────────────────────────────
+# Managed symlinks
+# ─────────────────────────────────────────
+cmd_links() {
+    local preset
+    preset=$(get_preset)
+
+    local ok=0 broken=0 absent=0 file_exists=0
+
+    _check_link() {
+        local dest="$1"
+        # Display path with ~ for $HOME prefix
+        local label="${dest/#"$HOME"/\~}"
+
+        if [[ -L "$dest" ]]; then
+            if [[ -e "$dest" ]]; then
+                printf "  ${GREEN}OK${NC}      %s  ${GREY}→ %s${NC}\n" "$label" "$(readlink "$dest")"
+                ok=$(( ok + 1 ))
+            else
+                printf "  ${RED}BROKEN${NC}  %s  ${GREY}→ %s${NC}\n" "$label" "$(readlink "$dest")"
+                broken=$(( broken + 1 ))
+            fi
+        elif [[ -e "$dest" ]]; then
+            printf "  ${YELLOW}FILE${NC}    %s  ${GREY}(exists but not a symlink)${NC}\n" "$label"
+            file_exists=$(( file_exists + 1 ))
+        else
+            printf "  ${YELLOW}ABSENT${NC}  %s\n" "$label"
+            absent=$(( absent + 1 ))
+        fi
+    }
+
+    print_logo
+    print_header "Managed Symlinks"
+    printf "${CYAN}Preset:${NC} %s\n\n" "$preset"
+
+    # Zsh (minimal)
+    printf "${CYAN}Zsh${NC}\n"
+    _check_link "$HOME/.zprofile"
+    _check_link "$HOME/.p10k.zsh"
+
+    # Tmux (minimal)
+    printf "\n${CYAN}Tmux${NC}\n"
+    _check_link "$HOME/.tmux"
+    _check_link "$HOME/.tmux.conf"
+
+    # CLI (minimal)
+    printf "\n${CYAN}CLI${NC}\n"
+    _check_link "$HOME/.local/bin/dotfiles"
+
+    # Neovim (core)
+    if should_install "core"; then
+        printf "\n${CYAN}Neovim${NC}\n"
+        _check_link "$HOME/.config/nvim"
+    fi
+
+    # Ghostty (core) — config is generated, not symlinked
+    # gh-dash (core) — config is generated, not symlinked
+
+    # btop (core)
+    if should_install "core"; then
+        printf "\n${CYAN}btop${NC}\n"
+        _check_link "$HOME/.config/btop/btop.conf"
+    fi
+
+    # Launchers (core)
+    if should_install "core"; then
+        printf "\n${CYAN}Launchers${NC}\n"
+        _check_link "$HOME/.local/launchers/tnew"
+    fi
+
+    # LazyGit / LazyDocker (core)
+    if should_install "core"; then
+        printf "\n${CYAN}LazyGit / LazyDocker${NC}\n"
+        if [[ "$(uname)" == "Darwin" ]]; then
+            _check_link "$HOME/Library/Application Support/lazygit/config.yml"
+            _check_link "$HOME/Library/Application Support/lazydocker/config.yml"
+        else
+            _check_link "$HOME/.config/lazygit/config.yml"
+            _check_link "$HOME/.config/lazydocker/config.yml"
+        fi
+    fi
+
+    # Claude / OpenCode (core)
+    if should_install "core"; then
+        local claude_config="$HOME/claude-config"
+        if [[ -d "$claude_config" ]]; then
+            printf "\n${CYAN}Claude / OpenCode${NC}\n"
+            _check_link "$HOME/.claude/agents"
+            _check_link "$HOME/.claude/CLAUDE.md"
+            _check_link "$HOME/.claude/commands"
+            _check_link "$HOME/.claude/settings.json"
+            _check_link "$HOME/.claude/statusline.sh"
+            _check_link "$HOME/.claude/plans"
+            _check_link "$HOME/.claude/docs"
+            _check_link "$HOME/.config/opencode/opencode.json"
+            _check_link "$HOME/.config/opencode/package.json"
+            _check_link "$HOME/.config/opencode/plugin"
+            _check_link "$HOME/.config/opencode/command"
+        fi
+    fi
+
+    # Hammerspoon (full)
+    if should_install "full"; then
+        printf "\n${CYAN}Hammerspoon${NC}\n"
+        _check_link "$HOME/.hammerspoon"
+    fi
+
+    # Karabiner (full)
+    if should_install "full"; then
+        printf "\n${CYAN}Karabiner${NC}\n"
+        _check_link "$HOME/.config/karabiner/karabiner.json"
+    fi
+
+    # Summary
+    local total=$(( ok + broken + absent + file_exists ))
+    echo ""
+    printf "${GREEN}%d OK${NC}  ${RED}%d broken${NC}  ${YELLOW}%d absent${NC}  ${YELLOW}%d file${NC}  (%d total)\n" \
+        "$ok" "$broken" "$absent" "$file_exists" "$total"
+    echo ""
+}
+
 # Main dispatch
 main() {
     local cmd="${1:-help}"
@@ -475,6 +600,9 @@ main() {
         theme|-t)
             shift
             cmd_theme "$@"
+            ;;
+        links|-l)
+            cmd_links
             ;;
         aliases|alias|cheat|-a)
             cmd_aliases
