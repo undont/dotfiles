@@ -1,10 +1,11 @@
 ## navigation @navigation
 Move cursor | hjkl
 Word forward/back | w / b
-Line start/end | 0 / $
+Line start/end | m / M (or 0 / $)
 File top/bottom | gg / G
 Half-page down/up | Ctrl+d / Ctrl+u
 Jump back/forward | Ctrl+o / Ctrl+i
+Set mark | gm{a-z}
 Flash jump | s
 Flash treesitter | S
 Remote flash | r (operator-pending)

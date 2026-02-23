@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.34] - 2026-02-23
+
+### Added
+- Nvim: `m`/`M` keymaps for line start/end (`^`/`$`), marks relocated to `gm`
+- Tmux: `` `+[ `` / `` `+] `` for previous/next pane layout cycling
+
 ## [0.2.33] - 2026-02-22
 
 ### Added

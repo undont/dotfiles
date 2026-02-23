@@ -224,6 +224,8 @@ bind -n M-= split-window -v -b -c "#{pane_current_path}"  # Opt+= = split up
 bind -n M-s display-popup -E -w 60 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"    # Opt+s = close pane (saves state for undo)
 bind -n M-z resize-pane -Z           # Opt+z = toggle zoom (fullscreen)
 bind -n "M-)" select-layout -E       # Opt+Shift+0 = equalise pane sizes
+bind [ previous-layout                # `+[ = previous layout
+bind ] next-layout                    # `+] = next layout
 
 # Swap panes (requires prefix)
 bind H swap-pane -U
