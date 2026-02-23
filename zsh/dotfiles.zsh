@@ -639,4 +639,4 @@ zsh-profile-detailed() {
 # ZPROF OUTPUT (end of startup)
 # =============================================================================
 # Print profiling results if ZPROF is set
-[[ -n "$ZPROF" ]] && zprof
+[[ -n "$ZPROF" ]] && zprof || true
