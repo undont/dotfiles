@@ -137,6 +137,7 @@ jobs:
 
       - name: Compare with baseline (PRs)
         if: github.event_name == 'pull_request'
+        continue-on-error: true  # Fails gracefully if gh-pages branch doesn't exist yet
         uses: benchmark-action/github-action-benchmark@v1
         with:
           tool: customSmallerIsBetter
