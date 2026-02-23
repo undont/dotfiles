@@ -154,6 +154,7 @@ Approve PR | <leader>pp
 Add comment | <leader>pa
 PR comments | <leader>pc
 Close review | <leader>pC
+Quit Octo | <leader>pq
 Close PR | <leader>pX
 Open in browser | <leader>pb
 Yank PR URL | <leader>py

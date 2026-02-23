@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.35] - 2026-02-23
+
+### Added
+- Nvim: `<leader>pq` keymap to quit Octo (closes review layout and all octo buffers)
+- Nvim: Octo `runs` mappings to fix workflow runs telescope picker crash
+
+### Changed
+- Nvim: Widened telescope ui-select dropdown to 0.9
+
 ## [0.2.34] - 2026-02-23
 
 ### Added
