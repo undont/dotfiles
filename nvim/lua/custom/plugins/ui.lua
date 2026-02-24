@@ -159,7 +159,7 @@ return {
       -- Extended ]/[ navigation; disable suffixes that conflict with other plugins
       require('mini.bracketed').setup {
         comment = { suffix = '' }, -- ]c/[c reserved for gitsigns (git changes)
-        file = { suffix = 'F' }, -- ]f/[f reserved for diffview (changed files)
+        file = { suffix = 'f' }, -- diffview overrides ]f/[f when open
         treesitter = { suffix = '' }, -- ]t/[t reserved for neotest (failed tests)
       }
 

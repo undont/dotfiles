@@ -224,14 +224,15 @@ Both `prefix + s` (sessions) and `prefix + f` (windows) use vim-style navigation
 | Toggle all sessions | `a` (windows only)       |
 | Kill session/window | `x`                      |
 | Undo kill           | `u`                      |
+| Move window         | `m` (windows only)       |
 | New session         | `n` (sessions only)      |
-| Rename session      | `r` (sessions only)      |
+| Rename              | `r`                      |
 
 **Toggle all sessions:** In the window switcher (`prefix + f`), press `a` to toggle between showing windows from the current session only (`:` prompt) and windows from all sessions (`*` prompt). When viewing all sessions, selecting a window will switch to that session and window.
 
 **New session:** Press `n` to open a dialog to create a new session. Type the name and press `Enter` to create (starts at `~`), or `Esc` to cancel. If a session with that name already exists, it will switch to it instead.
 
-**Rename:** Press `r` to open a rename dialog with the current session name pre-filled. Edit the name and press `Enter` to confirm, or `Esc` to cancel.
+**Rename:** Press `r` to open a rename dialog with the current name pre-filled. Edit the name and press `Enter` to confirm, or `Esc` to cancel. Works in both session and window switchers — the list reloads after renaming so you stay in the picker.
 
 **Modes:** Switchers start in navigation mode (`:` prompt). Press `/` to search (`>` prompt), `Esc` to return.
 

@@ -13,8 +13,13 @@ require_tmux
 # Load current theme colours for fzf
 load_fzf_theme
 
-CURRENT_SESSION=$(get_current_session)
-CURRENT_NAME=$(get_window_name)
+# Accept optional target window (session:index) or default to current
+TARGET_WINDOW="${1:-}"
+if [[ -n "$TARGET_WINDOW" ]]; then
+    CURRENT_NAME=$(tmux display-message -t "$TARGET_WINDOW" -p '#{window_name}')
+else
+    CURRENT_NAME=$(get_window_name)
+fi
 
 # Prompt for new name with current name as default
 newname=$(printf '' | fzf \
@@ -48,10 +53,16 @@ fi
 
 # Rename the window and disable automatic-rename to preserve the name
 # Note: Alert updates are handled by the after-rename-window hook
-if ! tmux rename-window "$newname" 2>/dev/null; then
-    show_error "Failed to rename window to '$newname'"
-    exit 1
+if [[ -n "$TARGET_WINDOW" ]]; then
+    if ! tmux rename-window -t "$TARGET_WINDOW" "$newname" 2>/dev/null; then
+        show_error "Failed to rename window to '$newname'"
+        exit 1
+    fi
+    tmux set-window-option -t "$TARGET_WINDOW" automatic-rename off
+else
+    if ! tmux rename-window "$newname" 2>/dev/null; then
+        show_error "Failed to rename window to '$newname'"
+        exit 1
+    fi
+    tmux set-window-option automatic-rename off
 fi
-
-# Disable automatic-rename to preserve the custom name
-tmux set-window-option automatic-rename off

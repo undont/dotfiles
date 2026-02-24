@@ -34,8 +34,19 @@ return {
       end
 
       local function clear_nav()
-        pcall(vim.keymap.del, 'n', ']f')
-        pcall(vim.keymap.del, 'n', '[f')
+        -- Restore mini.bracketed file navigation (don't just delete, or the built-in [f takes over)
+        local mb_ok, mb = pcall(require, 'mini.bracketed')
+        if mb_ok then
+          vim.keymap.set('n', ']f', function()
+            mb.file 'forward'
+          end, { silent = true, desc = 'Next file on disk' })
+          vim.keymap.set('n', '[f', function()
+            mb.file 'backward'
+          end, { silent = true, desc = 'Previous file on disk' })
+        else
+          pcall(vim.keymap.del, 'n', ']f')
+          pcall(vim.keymap.del, 'n', '[f')
+        end
       end
 
       vim.api.nvim_create_autocmd('FileType', {

@@ -203,6 +203,11 @@ echo "Dotfiles CLI:"
 mkdir -p "$HOME/.local/bin"
 create_link "$DOTFILES_DIR/scripts/dotfiles" "$HOME/.local/bin/dotfiles"
 
+# Prettier (minimal)
+echo ""
+echo "Prettier configuration:"
+create_link "$DOTFILES_DIR/formatters/prettierrc.json" "$HOME/.prettierrc"
+
 # Neovim (core)
 if should_install "core"; then
     echo ""
