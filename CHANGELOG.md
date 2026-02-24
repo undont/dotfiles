@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.37] - 2026-02-24
+
+### Added
+- Tmux: `m` / `M` in copy-mode for first non-blank / end of line (matches nvim keymaps)
+
+### Fixed
+- Nvim: `<leader>cd` delete comment block preserves spacing when blank lines exist on both sides
+
 ## [0.2.36] - 2026-02-24
 
 ### Added

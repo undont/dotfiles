@@ -177,6 +177,8 @@ Restores the last closed pane or window (whichever was killed most recently). Re
 | ----------------- | --------------------- |
 | Enter scroll mode | `Opt+v` or `prefix+v` |
 | Navigate          | `h` / `j` / `k` / `l` |
+| First non-blank   | `m`                   |
+| End of line       | `M`                   |
 | Page down/up      | `Ctrl+f` / `Ctrl+b`    |
 | Half-page down/up | `d` / `u` (cursor moves to screen edge) |
 | Top of history    | `g`                   |

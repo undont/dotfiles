@@ -256,12 +256,15 @@ function M.setup()
       return
     end
     -- Expand deletion range to include surrounding blank spacing lines
+    -- If both sides have blanks, only consume one to preserve spacing
     local del_start = comment_start
     local del_end = comment_end
-    if del_start > 1 and not lines[del_start - 1]:match '%S' then
+    local blank_above = del_start > 1 and not lines[del_start - 1]:match '%S'
+    local blank_below = del_end < #lines and not lines[del_end + 1]:match '%S'
+    if blank_above then
       del_start = del_start - 1
     end
-    if del_end < #lines and not lines[del_end + 1]:match '%S' then
+    if blank_below and not blank_above then
       del_end = del_end + 1
     end
     vim.api.nvim_buf_set_lines(0, del_start - 1, del_end, false, {})
