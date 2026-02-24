@@ -60,30 +60,101 @@ function M.setup()
   vim.keymap.set('i', '<Home>', '<C-o>0', { desc = 'Beginning of line (Cmd+Left)' })
   vim.keymap.set('i', '<End>', '<C-o>$', { desc = 'End of line (Cmd+Right)' })
 
-  -- LuaSnip: Insert Claude comment template
-  vim.keymap.set('n', '<leader>cc', function()
+  -- Helper: insert snippet with smart spacing (blank lines only where needed)
+  local function insert_snippet(trigger)
     local ls = require 'luasnip'
     local snippets = ls.get_snippets 'all'
     for _, snip in ipairs(snippets) do
-      if snip.trigger == 'claudecomment' then
-        vim.cmd 'normal! o'
+      if snip.trigger == trigger then
+        local row = vim.api.nvim_win_get_cursor(0)[1]
+        local line_count = vim.api.nvim_buf_line_count(0)
+        local cur_line = vim.api.nvim_get_current_line()
+        local next_line = row < line_count and vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1] or nil
+
+        local new_lines = {}
+        if cur_line:match '%S' then
+          table.insert(new_lines, '') -- blank line before for spacing
+        end
+        table.insert(new_lines, '') -- line where snippet will expand
+        if next_line and next_line:match '%S' then
+          table.insert(new_lines, '') -- blank line after for spacing
+        end
+
+        vim.api.nvim_buf_set_lines(0, row, row, false, new_lines)
+        local snippet_row = row + (cur_line:match '%S' and 2 or 1)
+        vim.api.nvim_win_set_cursor(0, { snippet_row, 0 })
+        vim.cmd 'undojoin'
         ls.snip_expand(snip)
         return
       end
     end
+  end
+
+  -- LuaSnip: Insert Claude comment template
+  vim.keymap.set('n', '<leader>cc', function()
+    insert_snippet 'claudecomment'
   end, { desc = '[C]omment template' })
 
   -- LuaSnip: Insert Claude user/exchange snippet
+  -- If inside a <comment> block, adds a properly indented exchange before </comment>
+  -- If outside, uses the standalone snippet with smart spacing
   vim.keymap.set('n', '<leader>cu', function()
-    local ls = require 'luasnip'
-    local snippets = ls.get_snippets 'all'
-    for _, snip in ipairs(snippets) do
-      if snip.trigger == 'cu' then
-        vim.cmd 'normal! o'
-        ls.snip_expand(snip)
-        return
+    local row = vim.api.nvim_win_get_cursor(0)[1]
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+
+    -- Check if we're inside a <comment> block
+    local comment_start, comment_end
+    for i = row, 1, -1 do
+      if lines[i]:match '<comment%s+state=' then
+        comment_start = i
+        break
+      end
+      if lines[i]:match '</comment>' then
+        break
       end
     end
+    if comment_start then
+      for i = comment_start, #lines do
+        if lines[i]:match '</comment>' then
+          if row <= i then
+            comment_end = i
+          end
+          break
+        end
+      end
+    end
+
+    if not comment_end then
+      insert_snippet 'cu'
+      return
+    end
+
+    -- Detect indentation from existing <user> tags in the block
+    local indent = '    '
+    for i = comment_start, comment_end do
+      local m = lines[i]:match '^(%s*)<user>'
+      if m then
+        indent = m
+        break
+      end
+    end
+    local inner_indent = indent .. '    '
+
+    -- Insert new exchange before </comment>
+    local new_lines = {
+      indent .. '<user>',
+      inner_indent,
+      indent .. '</user>',
+      indent .. '<claude>',
+      inner_indent .. '[ claude - reply here ]',
+      indent .. '</claude>',
+    }
+    vim.api.nvim_buf_set_lines(0, comment_end - 1, comment_end - 1, false, new_lines)
+
+    -- Position cursor on the user content line and enter insert mode
+    local cursor_row = comment_end + 1 -- the inner_indent line (1-indexed)
+    vim.api.nvim_win_set_cursor(0, { cursor_row, #inner_indent })
+    vim.cmd 'startinsert!'
   end, { desc = '[U]ser exchange snippet' })
 
   -- Toggle <comment> block state (open <-> resolved)
@@ -126,6 +197,31 @@ function M.setup()
     vim.api.nvim_buf_set_lines(0, comment_line - 1, comment_line, false, { new_line })
   end, { desc = 'Toggle comment [R]esolved' })
 
+  -- Navigate to next/previous <comment> block
+  vim.keymap.set('n', '<leader>c]', function()
+    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    for i = cursor_line + 1, #lines do
+      if lines[i]:match '<comment%s+state=' then
+        vim.api.nvim_win_set_cursor(0, { i, 0 })
+        return
+      end
+    end
+    vim.notify('No next comment block', vim.log.levels.INFO)
+  end, { desc = 'Next comment block' })
+
+  vim.keymap.set('n', '<leader>c[', function()
+    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
+    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
+    for i = cursor_line - 1, 1, -1 do
+      if lines[i]:match '<comment%s+state=' then
+        vim.api.nvim_win_set_cursor(0, { i, 0 })
+        return
+      end
+    end
+    vim.notify('No previous comment block', vim.log.levels.INFO)
+  end, { desc = 'Previous comment block' })
+
   -- Delete <comment> block under cursor
   vim.keymap.set('n', '<leader>cd', function()
     local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
@@ -159,7 +255,19 @@ function M.setup()
       vim.notify('No closing </comment> tag found', vim.log.levels.WARN)
       return
     end
-    vim.api.nvim_buf_set_lines(0, comment_start - 1, comment_end, false, {})
+    -- Expand deletion range to include surrounding blank spacing lines
+    local del_start = comment_start
+    local del_end = comment_end
+    if del_start > 1 and not lines[del_start - 1]:match '%S' then
+      del_start = del_start - 1
+    end
+    if del_end < #lines and not lines[del_end + 1]:match '%S' then
+      del_end = del_end + 1
+    end
+    vim.api.nvim_buf_set_lines(0, del_start - 1, del_end, false, {})
+    local new_line = math.max(1, del_start - 1)
+    local line_count = vim.api.nvim_buf_line_count(0)
+    vim.api.nvim_win_set_cursor(0, { math.min(new_line, line_count), 0 })
   end, { desc = '[D]elete comment block' })
 
   -- Refresh: wipe all buffers, restart LSP, re-source config
