@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.38] - 2026-02-24
+
+### Changed
+- Install: btop, karabiner, lazygit, lazydocker, hammerspoon configs use copy-on-install pattern — personal edits now survive `dotfiles update`
+- Install: Uninstall preserves user-owned configs with warning instead of deleting
+- Hooks: `nvim --server` commands use `--headless` flag to prevent terminal flicker
+
+### Removed
+- Tmux: Gemini agent support — removed instance picker, alert hooks, status bar integration, and resurrect process
+
+### Added
+- Docs: `docs/AGENT-HOOKS.md` — setup guide for agent alert hooks (Claude Code, OpenCode)
+
 ## [0.2.37] - 2026-02-24
 
 ### Added

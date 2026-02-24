@@ -60,8 +60,6 @@ EXPECTED_WRAPPERS=(
     "claude-alert-clear.sh"
     "opencode-alert.sh"
     "opencode-alert-clear.sh"
-    "gemini-alert.sh"
-    "gemini-alert-clear.sh"
 )
 
 for wrapper in "${EXPECTED_WRAPPERS[@]}"; do
@@ -88,7 +86,7 @@ section "Wrapper Agent Name Routing"
 
 # Verify each alert wrapper passes the correct agent name
 # Wrappers use pattern: "$SCRIPT_DIR/agent-alert.sh" <agent>
-for agent in claude opencode gemini; do
+for agent in claude opencode; do
     wrapper_content=$(cat "$WRAPPERS_DIR/${agent}-alert.sh")
     if [[ "$wrapper_content" == *"agent-alert.sh\" ${agent}"* ]] || [[ "$wrapper_content" == *"agent-alert.sh ${agent}"* ]]; then
         pass "${agent}-alert.sh passes agent name '${agent}'"
@@ -98,7 +96,7 @@ for agent in claude opencode gemini; do
 done
 
 # Verify clear wrappers reference the clear script
-for agent in claude opencode gemini; do
+for agent in claude opencode; do
     clear_content=$(cat "$WRAPPERS_DIR/${agent}-alert-clear.sh")
     if [[ "$clear_content" == *"agent-alert-clear.sh"* ]] || [[ "$clear_content" == *"clear.sh"* ]]; then
         pass "${agent}-alert-clear.sh references clear script"
@@ -153,7 +151,7 @@ section "Alert Library - Agent Icons"
 # Test agent icon lookup
 assert_equals "Claude icon is ⚡" "⚡" "$(get_agent_icon claude)"
 assert_equals "OpenCode icon is 🔮" "🔮" "$(get_agent_icon opencode)"
-assert_equals "Gemini icon is 💎" "💎" "$(get_agent_icon gemini)"
+
 assert_equals "Unknown agent icon is 🤖" "🤖" "$(get_agent_icon unknown)"
 
 section "Alert Library - Agent Colours"
