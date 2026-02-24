@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.36] - 2026-02-24
+
+### Added
+- Tmux: `r` rename binding in window switcher (`prefix + f`) — rename windows inline without leaving the picker
+- Nvim: `<leader>c]` / `<leader>c[` to navigate between comment blocks
+- Nvim: `<leader>cu` inside a `<comment>` block inserts a new exchange before `</comment>`
+- Brewfile: `asciinema` terminal recorder, `tmux-fingers` tap fix
+- Install: `.prettierrc` symlink for global Prettier config
+
+### Changed
+- Tmux: Session rename (`r`) in session switcher now stays in picker instead of switching to renamed session
+- Tmux: URL picker (`prefix + y`) improved URL extraction — strips trailing punctuation and balances parens/brackets
+- Nvim: Snippet insertion uses smart spacing (blank lines only where needed, no trailing blank)
+- Nvim: `<leader>cd` delete comment block now removes surrounding blank lines
+- Nvim: `mini.bracketed` `]f`/`[f` file navigation restored when diffview closes (was previously deleted)
+- btop: Default process sort changed from threads to memory
+
 ## [0.2.35] - 2026-02-23
 
 ### Added

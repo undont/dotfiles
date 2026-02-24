@@ -8,6 +8,7 @@
 
 # Taps
 tap "libsql/sqld"
+tap "morantron/tmux-fingers"
 tap "oven-sh/bun"
 tap "teamookla/speedtest"
 
@@ -21,7 +22,7 @@ brew "tmux"                   # >= 3.3 required for popup support
 brew "powerlevel10k"
 brew "zsh-autosuggestions"
 brew "fzf"                    # >= 0.40 for --tmux flag
-brew "tmux-fingers"           # Quick pattern copy for tmux (flash.nvim-like)
+brew "morantron/tmux-fingers/tmux-fingers"  # Quick pattern copy for tmux
 brew "direnv"
 
 # =============================================================================
@@ -117,6 +118,7 @@ brew "btop"                   # System monitor (htop replacement)
 brew "fastfetch"              # neofetch replacement (faster, maintained)
 brew "teamookla/speedtest/speedtest"
 brew "glow"                   # Markdown renderer
+brew "asciinema"              # Terminal session recorder
 
 # =============================================================================
 # @preset: core

@@ -12,11 +12,24 @@ load_fzf_theme
 
 PANE_ID="${1:-}"
 
+# Extract URLs from text, cleaning trailing punctuation and balancing parens
+# Handles: trailing ,.:;!?' and unbalanced closing parens/brackets
+extract_urls() {
+    grep -oE "https?://[^][[:space:]\"'<>{}|\\\^]+" | awk '{
+        # Strip trailing punctuation that is almost never part of a URL
+        while (match($0, /[,.:;!?]+$/)) $0 = substr($0, 1, RSTART - 1)
+        # Strip trailing ) only if no matching ( in URL (unbalanced)
+        if (match($0, /\)+$/) && index($0, "(") == 0) $0 = substr($0, 1, RSTART - 1)
+        # Strip trailing ] only if no matching [ in URL (unbalanced)
+        if (match($0, /\]+$/) && index($0, "[") == 0) $0 = substr($0, 1, RSTART - 1)
+    } NF { if (seen[$0] == 0) { seen[$0] = 1; print } }'
+}
+
 # Capture pane content and extract URLs
 if [[ -n "$PANE_ID" ]]; then
-    urls=$(tmux capture-pane -t "$PANE_ID" -Jp -S -50000 2>/dev/null | grep -oE 'https?://[^][ \"<>]+' | tail -r | awk '!seen[$0]++') || true
+    urls=$(tmux capture-pane -t "$PANE_ID" -Jp -S -50000 2>/dev/null | extract_urls | tail -r) || true
 else
-    urls=$(tmux capture-pane -Jp -S -50000 2>/dev/null | grep -oE 'https?://[^][ \"<>]+' | tail -r | awk '!seen[$0]++') || true
+    urls=$(tmux capture-pane -Jp -S -50000 2>/dev/null | extract_urls | tail -r) || true
 fi
 
 if [[ -z "$urls" ]]; then
