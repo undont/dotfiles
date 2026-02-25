@@ -4,7 +4,7 @@
 
 # Alerts file location (only set if not already defined)
 if [[ -z "${ALERTS_FILE:-}" ]]; then
-    readonly ALERTS_FILE="$HOME/.claude/alerts"
+    readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts/alerts"
 fi
 
 # Alert file format: session:window:agent

@@ -7,12 +7,12 @@ This dotfiles repo includes a hook system that triggers tmux status bar alerts w
 ```
 Agent stops working
   → Hook wrapper fires (e.g. claude-alert.sh)
-    → agent-alert.sh sets a tmux window option + writes to ~/.claude/alerts
+    → agent-alert.sh sets a tmux window option + writes to ~/.config/agent-alerts/alerts
       → tmux status bar reads alerts file and displays icons
 
 User sends a message
   → Clear wrapper fires (e.g. claude-alert-clear.sh)
-    → agent-alert-clear.sh removes the entry from ~/.claude/alerts
+    → agent-alert-clear.sh removes the entry from ~/.config/agent-alerts/alerts
       → tmux status bar clears
 ```
 
@@ -43,7 +43,7 @@ The wrappers are thin scripts that pass the agent name to the shared core script
 
 ### Claude Code
 
-Claude Code uses a `settings.json` hooks configuration. The relevant file is `~/.ai/claude/settings.json` (or wherever your Claude Code settings live).
+Claude Code uses a `settings.json` hooks configuration. The relevant file is `~/.claude/settings.json` (or wherever your Claude Code settings live).
 
 Add the following to your `settings.json`:
 
@@ -102,7 +102,7 @@ Add the following to your `settings.json`:
 - **PostToolUse** (`AskUserQuestion`) — Agent asked you a question via the AskUserQuestion tool
 - **UserPromptSubmit** — You sent a message, so clear the alert
 
-#### Optional: Nvim Buffer Sync
+#### Optional: Nvim Buffer Sync (Beta feature)
 
 If you pair Claude Code with a running Neovim instance (via the `nvim-pair` function), you can add a hook that automatically loads edited files into Neovim's buffer list:
 
@@ -128,60 +128,37 @@ This reads the `NVIM_SOCKET` environment variable (set by `nvim-pair`) and calls
 
 ### OpenCode
 
-OpenCode uses a JavaScript plugin system. The plugin file lives at `~/.ai/opencode/plugin/opencode-alert.js`.
+OpenCode uses the [`opencode-tmux-alert`](https://github.com/seanhalberthal/opencode-tmux-alert) plugin. The plugin triggers alerts on session idle, permission requests, tool pending, and prompt appends — and clears when the user sends a message.
 
-**1. Register the plugin** in `opencode.json`:
+**1. Install the plugin:**
+
+```bash
+cd ~/.config/opencode  # or wherever your opencode.json lives
+bun install opencode-tmux-alert
+```
+
+**2. Register the plugin** in `opencode.json`:
 
 ```json
 {
   "plugin": [
-    "./plugin/opencode-alert.js"
+    "opencode-tmux-alert"
   ]
 }
 ```
 
-**2. Create the plugin** at `plugin/opencode-alert.js`:
+**3. Set environment variables** so the plugin uses the dotfiles hook scripts (already set in `dotfiles.zsh`):
 
-```javascript
-var OpencodeAlertPlugin = async ({ $ }) => {
-  const alertScript = `${process.env.HOME}/dotfiles/scripts/hooks/wrappers/opencode-alert.sh`;
-  const clearScript = `${process.env.HOME}/dotfiles/scripts/hooks/agent-alert-clear.sh`;
-
-  return {
-    event: async ({ event }) => {
-      try {
-        // Alert when agent is idle or waiting for permission
-        if (event.type === "session.idle") {
-          await $`${alertScript}`;
-        }
-        if (event.type === "permission.asked") {
-          await $`${alertScript}`;
-        }
-        if (event.type === "message.part.updated" &&
-            event.properties?.part?.type === "tool" &&
-            event.properties?.part?.state?.status === "waiting") {
-          await $`${alertScript}`;
-        }
-        if (event.type === "tui.prompt.append") {
-          await $`${alertScript}`;
-        }
-
-        // Clear when user sends a message
-        if (event.type === "message.updated" && event.data?.role === "user") {
-          await $`${clearScript}`;
-        }
-      } catch (error) {
-        // Silently ignore hook errors
-      }
-    }
-  };
-};
-export { OpencodeAlertPlugin };
+```bash
+export OPENCODE_ALERT_SCRIPT="$HOME/dotfiles/scripts/hooks/wrappers/opencode-alert.sh"
+export OPENCODE_CLEAR_SCRIPT="$HOME/dotfiles/scripts/hooks/agent-alert-clear.sh"
 ```
+
+Without these env vars, the plugin falls back to its own bundled scripts that set a `@opencode-alert` tmux user option and send a bell character.
 
 ## How Alerts Are Stored
 
-Alerts are tracked in `~/.claude/alerts` (the path is shared across all agents, not Claude-specific). Each line has the format:
+Alerts are tracked in `~/.config/agent-alerts/alerts` (the path is shared across all agents, not Claude-specific). Each line has the format:
 
 ```
 session:window:agent
@@ -238,18 +215,19 @@ tmux/scripts/alerts/clear.sh
 1. Check the hooks are registered — run the wrapper directly and verify it writes to the alerts file:
    ```bash
    bash ~/dotfiles/scripts/hooks/wrappers/claude-alert.sh
-   cat ~/.claude/alerts
+   cat ~/.config/agent-alerts/alerts
    ```
 2. Verify you're inside a tmux session (hooks need `$TMUX_PANE` to identify the window)
-3. Check `~/.claude/alerts` has content after triggering
+3. Check `~/.config/agent-alerts/alerts` has content after triggering
 
 **Alerts not clearing:**
 
 1. Verify the clear hook is registered for the right event
 2. Check the clear script can find the tmux session/window names
-3. Run `cat ~/.claude/alerts` to see what's stuck
+3. Run `cat ~/.config/agent-alerts/alerts` to see what's stuck
 
 **OpenCode plugin not loading:**
 
-1. Ensure `opencode.json` has the `"plugin"` array pointing to the correct path
-2. Check the debug log at `~/.opencode-alert-debug.log` for event traces
+1. Ensure `opencode-tmux-alert` is installed (`bun install opencode-tmux-alert` in the opencode config directory)
+2. Ensure `opencode.json` has `"opencode-tmux-alert"` in the `"plugin"` array
+3. Verify the env vars are set: `echo $OPENCODE_ALERT_SCRIPT $OPENCODE_CLEAR_SCRIPT`

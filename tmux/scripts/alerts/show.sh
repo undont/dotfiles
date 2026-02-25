@@ -3,7 +3,7 @@
 # Shows one alert per session (aggregates all windows in that session)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-ALERTS_FILE="$HOME/.claude/alerts"
+ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts/alerts"
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 
 # Source the alerts library for agent configuration

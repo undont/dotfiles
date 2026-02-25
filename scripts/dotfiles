@@ -383,6 +383,7 @@ cmd_aliases() {
         "trestore"  "restore from backup"
         "tkill"     "delete session backup"
         "tcleanup"  "clean test resources"
+        "alerts-clear" "clear agent alerts"
     )
     if command -v tnew &>/dev/null; then
         tmux_items+=("tnew" "dev session launcher")
@@ -402,6 +403,7 @@ cmd_aliases() {
 
     printf "\n${CYAN}DEVELOPMENT${NC}\n"
     _2col \
+        "oc"         "opencode" \
         "gols"       "list Go binaries" \
         "nvim-clear" "clear nvim cache" \
         "nvim-sync"  "sync Lazy.nvim plugins" \
@@ -422,7 +424,8 @@ cmd_aliases() {
         "set dev <d>" "set DEV_ROOT" \
         "sync"        "preview incoming commits" \
         "edit    -e"  "open in \$EDITOR" \
-        "aliases -a"  "show this reference"
+        "aliases -a"  "show this reference" \
+        "dot"         "shorthand for dotfiles"
 
     # Dotfiles-managed directories from ~/.zshrc
     local zshrc="$HOME/.zshrc"
