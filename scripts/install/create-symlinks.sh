@@ -65,6 +65,31 @@ create_link() {
     fi
 }
 
+# Copy config file from repo to destination (copy-on-install pattern).
+# If destination is a symlink (old setup), migrates to a personal file.
+# If destination already exists as a regular file, keeps it untouched.
+copy_config() {
+    local source="$1"
+    local dest="$2"
+
+    # Ensure parent directory exists
+    mkdir -p "$(dirname "$dest")"
+
+    # Migrate from symlink to owned file
+    if [[ -L "$dest" ]]; then
+        rm "$dest"
+        cp "$source" "$dest"
+        success "Migrated to personal config: $dest"
+        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
+    elif [[ ! -e "$dest" ]]; then
+        cp "$source" "$dest"
+        success "Created $dest from dotfiles"
+        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
+    else
+        info "Kept existing $dest"
+    fi
+}
+
 print_section "Creating symlinks"
 echo "Source: $DOTFILES_DIR"
 echo "Preset: $PRESET"
@@ -229,7 +254,22 @@ fi
 if should_install "full"; then
     echo ""
     echo "Hammerspoon configuration:"
-    create_link "$DOTFILES_DIR/hammerspoon" "$HOME/.hammerspoon"
+
+    # Migrate from directory symlink to owned directory
+    if [[ -L "$HOME/.hammerspoon" ]]; then
+        rm "$HOME/.hammerspoon"
+        mkdir -p "$HOME/.hammerspoon"
+        cp "$DOTFILES_DIR/hammerspoon/init.lua" "$HOME/.hammerspoon/init.lua"
+        success "Migrated to personal config: ~/.hammerspoon/"
+        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$HOME/.hammerspoon/init.lua"
+    elif [[ ! -f "$HOME/.hammerspoon/init.lua" ]]; then
+        mkdir -p "$HOME/.hammerspoon"
+        cp "$DOTFILES_DIR/hammerspoon/init.lua" "$HOME/.hammerspoon/init.lua"
+        success "Created ~/.hammerspoon/init.lua from dotfiles"
+        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$HOME/.hammerspoon/init.lua"
+    else
+        info "Kept existing ~/.hammerspoon/init.lua"
+    fi
 fi
 
 # Ghostty (core)
@@ -259,8 +299,7 @@ fi
 if should_install "full"; then
     echo ""
     echo "Karabiner configuration:"
-    mkdir -p "$HOME/.config/karabiner"
-    create_link "$DOTFILES_DIR/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
+    copy_config "$DOTFILES_DIR/karabiner/karabiner.json" "$HOME/.config/karabiner/karabiner.json"
 fi
 
 # gh-dash (core)
@@ -276,8 +315,7 @@ fi
 if should_install "core"; then
     echo ""
     echo "btop configuration:"
-    mkdir -p "$HOME/.config/btop"
-    create_link "$DOTFILES_DIR/btop/btop.conf" "$HOME/.config/btop/btop.conf"
+    copy_config "$DOTFILES_DIR/btop/btop.conf" "$HOME/.config/btop/btop.conf"
 fi
 # Launchers (core)
 if should_install "core"; then
@@ -292,15 +330,11 @@ if should_install "core"; then
     echo ""
     echo "LazyGit configuration:"
     if [[ "$(uname)" == "Darwin" ]]; then
-        mkdir -p "$HOME/Library/Application Support/lazygit"
-        create_link "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
-        mkdir -p "$HOME/Library/Application Support/lazydocker"
-        create_link "$DOTFILES_DIR/lazydocker/config.yml" "$HOME/Library/Application Support/lazydocker/config.yml"
+        copy_config "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
+        copy_config "$DOTFILES_DIR/lazydocker/config.yml" "$HOME/Library/Application Support/lazydocker/config.yml"
     else
-        mkdir -p "$HOME/.config/lazygit"
-        create_link "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
-        mkdir -p "$HOME/.config/lazydocker"
-        create_link "$DOTFILES_DIR/lazydocker/config.yml" "$HOME/.config/lazydocker/config.yml"
+        copy_config "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
+        copy_config "$DOTFILES_DIR/lazydocker/config.yml" "$HOME/.config/lazydocker/config.yml"
     fi
 fi
 

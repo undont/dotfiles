@@ -4,7 +4,7 @@
 
 # Alerts file location (only set if not already defined)
 if [[ -z "${ALERTS_FILE:-}" ]]; then
-    readonly ALERTS_FILE="$HOME/.claude/alerts"
+    readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts/alerts"
 fi
 
 # Alert file format: session:window:agent
@@ -19,7 +19,6 @@ get_agent_icon() {
     case "$agent" in
         claude) echo "⚡" ;;
         opencode) echo "🔮" ;;
-        gemini) echo "💎" ;;
         *) echo "🤖" ;;
     esac
 }
@@ -32,7 +31,6 @@ get_agent_colour() {
     case "$agent" in
         claude) echo "#f1fa8c" ;;      # Yellow
         opencode) echo "#bd93f9" ;;    # Dracula purple
-        gemini) echo "#8be9fd" ;;      # Dracula cyan
         *) echo "#6272a4" ;;           # Dracula blue
     esac
 }
@@ -44,7 +42,6 @@ get_agent_display() {
     case "$1" in
         claude)   echo "⚡|#f1fa8c" ;;
         opencode) echo "🔮|#bd93f9" ;;
-        gemini)   echo "💎|#8be9fd" ;;
         *)        echo "🤖|#6272a4" ;;
     esac
 }

@@ -417,7 +417,7 @@ set -g status-left-length 30
 set -g status-right-length 150
 
 # Window tabs: inactive=grey, active=purple highlight, bell/alert=pink
-setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@gemini_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],} #I:#W '
+setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],} #I:#W '
 setw -g window-status-current-format '#[fg={{TMUX_STATUS_ACTIVE_FG}},bg={{TMUX_STATUS_ACTIVE_BG}},bold] #I:#W '
 
 # Pane borders: inactive=dark grey, active=purple
@@ -465,7 +465,7 @@ set -g @resurrect-capture-pane-contents 'on'
 # Restore specific programs (space-separated list)
 # Default: vi vim nvim emacs man less more tail top htop irssi weechat mutt ssh
 # Add more as needed:
-set -g @resurrect-processes 'ssh psql mysql sqlite3 claude opencode gemini "~rails server" "~npm start"'
+set -g @resurrect-processes 'ssh psql mysql sqlite3 claude opencode "~rails server" "~npm start"'
 
 # Alternative: Restore ALL running programs (use with caution)
 # set -g @resurrect-processes ':all:'

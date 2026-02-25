@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.38] - 2026-02-25
+
+### Changed
+- Install: btop, karabiner, lazygit, lazydocker, hammerspoon configs use copy-on-install pattern — personal edits now survive `dotfiles update`
+- Install: Uninstall preserves user-owned configs with warning instead of deleting
+- Hooks: `nvim --server` commands use `--headless` flag to prevent terminal flicker
+- Alerts: Storage path moved from `~/.claude/alerts` to `~/.config/agent-alerts/alerts` (XDG compliant)
+- Docs: OpenCode hooks updated to use published `opencode-tmux-alert` plugin
+- CLI: Added missing aliases (`alerts-clear`, `oc`, `dot`) to `dotfiles aliases` output
+
+### Removed
+- Tmux: Gemini agent support — removed instance picker, alert hooks, status bar integration, and resurrect process
+
+### Added
+- Docs: `docs/AGENT-HOOKS.md` — setup guide for agent alert hooks (Claude Code, OpenCode)
+- Zsh: `OPENCODE_ALERT_SCRIPT` and `OPENCODE_CLEAR_SCRIPT` env vars for opencode-tmux-alert plugin
+
 ## [0.2.37] - 2026-02-24
 
 ### Added
