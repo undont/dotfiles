@@ -263,6 +263,13 @@ export DOTNET_CLI_TELEMETRY_OPTOUT='true'
 export SONAR_HOST_URL="https://sonarcloud.io"
 
 # =============================================================================
+# OPENCODE
+# =============================================================================
+# Point opencode-tmux-alert plugin to dotfiles hook scripts
+export OPENCODE_ALERT_SCRIPT="$HOME/dotfiles/scripts/hooks/wrappers/opencode-alert.sh"
+export OPENCODE_CLEAR_SCRIPT="$HOME/dotfiles/scripts/hooks/agent-alert-clear.sh"
+
+# =============================================================================
 # SSH WRAPPER
 # =============================================================================
 # Ghostty sets TERM=xterm-ghostty which most remote hosts don't recognise.
@@ -289,7 +296,7 @@ alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across 
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
-alias alerts-clear="rm -rf ~/.claude/alerts"  # Clear Claude agent alerts
+alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts"  # Clear agent alerts
 alias ta="tattach" # Attach to tmux session, restoring from backup if needed (see tattach function below)
 
 # Navigation

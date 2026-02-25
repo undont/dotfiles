@@ -77,8 +77,6 @@ SYMLINKS=(
     "$HOME/.tmux"
     "$HOME/.local/bin/dotfiles"
     "$HOME/.config/nvim"
-    "$HOME/.config/karabiner/karabiner.json"
-    "$HOME/.hammerspoon"
     "$HOME/.local/launchers/tnew"
 )
 
@@ -232,6 +230,38 @@ if [[ -f "$nvim_local" ]]; then
         rm -f "$nvim_local"
         success "Removed $nvim_local (empty/template-only)"
     fi
+fi
+
+# Handle user-owned config files (copy-on-install pattern)
+# These are personal configs — warn and preserve, like ~/.zshrc
+
+btop_conf="$HOME/.config/btop/btop.conf"
+if [[ -f "$btop_conf" ]]; then
+    warn "Kept $btop_conf (personal config — remove manually if desired)"
+fi
+
+karabiner_conf="$HOME/.config/karabiner/karabiner.json"
+if [[ -f "$karabiner_conf" ]]; then
+    warn "Kept $karabiner_conf (personal config — remove manually if desired)"
+fi
+
+hammerspoon_dir="$HOME/.hammerspoon"
+if [[ -d "$hammerspoon_dir" && ! -L "$hammerspoon_dir" ]]; then
+    warn "Kept $hammerspoon_dir/ (personal config — remove manually if desired)"
+fi
+
+if [[ "$(uname)" == "Darwin" ]]; then
+    lazygit_conf="$HOME/Library/Application Support/lazygit/config.yml"
+    lazydocker_conf="$HOME/Library/Application Support/lazydocker/config.yml"
+else
+    lazygit_conf="$HOME/.config/lazygit/config.yml"
+    lazydocker_conf="$HOME/.config/lazydocker/config.yml"
+fi
+if [[ -f "$lazygit_conf" ]]; then
+    warn "Kept $lazygit_conf (personal config — remove manually if desired)"
+fi
+if [[ -f "$lazydocker_conf" ]]; then
+    warn "Kept $lazydocker_conf (personal config — remove manually if desired)"
 fi
 
 # Step 4: Remove Homebrew packages if requested

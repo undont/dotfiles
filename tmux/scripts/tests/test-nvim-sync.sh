@@ -327,7 +327,7 @@ else
     # connections yet. A simple --remote-expr confirms the RPC channel is alive.
     _nvim_ready=false
     for _ in {1..40}; do
-        if nvim --server "$TEST_SOCKET" --remote-expr "1+1" >/dev/null 2>&1; then
+        if nvim --headless --server "$TEST_SOCKET" --remote-expr "1+1" >/dev/null 2>&1; then
             _nvim_ready=true
             break
         fi
@@ -350,7 +350,7 @@ else
             # Verify buffer was added by checking nvim's buffer list
             buffers=""
             for _ in {1..20}; do
-                buffers=$(nvim --server "$TEST_SOCKET" --remote-expr "join(map(getbufinfo(), 'v:val.name'), '\n')" 2>/dev/null || echo "")
+                buffers=$(nvim --headless --server "$TEST_SOCKET" --remote-expr "join(map(getbufinfo(), 'v:val.name'), '\n')" 2>/dev/null || echo "")
                 echo "$buffers" | grep -q "$TEST_FILE" && break
                 sleep 0.1
             done

@@ -253,6 +253,98 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
+# Copy-on-Install Pattern
+# ═══════════════════════════════════════════════════════════════
+
+section "copy_config Function"
+
+if [[ "$script_content" == *'copy_config()'* ]]; then
+    pass "Defines copy_config function"
+else
+    fail "Should define copy_config function"
+fi
+
+# copy_config should handle three states: symlink, missing, existing
+if [[ "$script_content" == *'-L "$dest"'* ]]; then
+    pass "copy_config detects existing symlinks"
+else
+    fail "copy_config should detect existing symlinks"
+fi
+
+if [[ "$script_content" == *'cp "$source" "$dest"'* ]]; then
+    pass "copy_config copies files (not symlinks)"
+else
+    fail "copy_config should copy files"
+fi
+
+section "Copy-on-Install Configs"
+
+# These configs should use copy_config, NOT create_link
+for config in "btop.conf" "karabiner.json" "lazygit/config.yml" "lazydocker/config.yml"; do
+    config_name=$(basename "$config")
+    # Check the config appears in a copy_config call, not create_link
+    if echo "$script_content" | grep -q "copy_config.*$config_name"; then
+        pass "$config_name uses copy_config"
+    else
+        fail "$config_name should use copy_config (not create_link)"
+    fi
+done
+
+# Hammerspoon is handled inline (directory symlink migration)
+if [[ "$script_content" == *'cp "$DOTFILES_DIR/hammerspoon/init.lua"'* ]]; then
+    pass "Hammerspoon copies init.lua (inline migration)"
+else
+    fail "Hammerspoon should copy init.lua"
+fi
+
+# Hammerspoon should NOT use create_link anymore
+if echo "$script_content" | grep -q 'create_link.*hammerspoon'; then
+    fail "Hammerspoon should not use create_link"
+else
+    pass "Hammerspoon does not use create_link"
+fi
+
+section "copy_config Function Behaviour"
+
+# Test copy_config in isolation using a temp directory
+TEST_DIR=$(mktemp -d)
+trap 'rm -rf "$TEST_DIR"' EXIT
+
+# Source only the function (extract it) and needed colour vars
+source "$DOTFILES_DIR/scripts/_lib/colours.sh"
+
+# Define minimal stubs for functions used by copy_config
+success() { :; }
+info() { :; }
+
+# Re-source the function
+eval "$(sed -n '/^copy_config()/,/^}/p' "$CREATE_SYMLINKS")"
+
+# Test 1: Copies to new destination
+echo "test content" > "$TEST_DIR/source.conf"
+copy_config "$TEST_DIR/source.conf" "$TEST_DIR/dest/config.conf"
+if [[ -f "$TEST_DIR/dest/config.conf" ]] && [[ ! -L "$TEST_DIR/dest/config.conf" ]]; then
+    pass "copy_config creates regular file at new destination"
+else
+    fail "copy_config should create regular file at new destination"
+fi
+assert_equals "copy_config copies content correctly" "test content" "$(cat "$TEST_DIR/dest/config.conf")"
+
+# Test 2: Migrates from symlink
+ln -sf "$TEST_DIR/source.conf" "$TEST_DIR/symlinked.conf"
+copy_config "$TEST_DIR/source.conf" "$TEST_DIR/symlinked.conf"
+if [[ -f "$TEST_DIR/symlinked.conf" ]] && [[ ! -L "$TEST_DIR/symlinked.conf" ]]; then
+    pass "copy_config migrates symlink to regular file"
+else
+    fail "copy_config should replace symlink with regular file"
+fi
+
+# Test 3: Preserves existing regular file
+echo "user customised" > "$TEST_DIR/existing.conf"
+copy_config "$TEST_DIR/source.conf" "$TEST_DIR/existing.conf"
+assert_equals "copy_config preserves existing file content" "user customised" "$(cat "$TEST_DIR/existing.conf")"
+
+# ═══════════════════════════════════════════════════════════════
 # Source File Existence
 # ═══════════════════════════════════════════════════════════════
 
@@ -273,6 +365,56 @@ for src_file in "${SOURCE_FILES[@]}"; do
         pass "Source exists: $src_file"
     else
         fail "Source missing: $src_file"
+    fi
+done
+
+section "Copy-on-Install Source Files Exist"
+
+# Verify source configs for copy-on-install pattern exist in the repo
+declare -a COPY_SOURCES=(
+    "btop/btop.conf"
+    "karabiner/karabiner.json"
+    "hammerspoon/init.lua"
+    "lazygit/config.yml"
+    "lazydocker/config.yml"
+)
+
+for src_file in "${COPY_SOURCES[@]}"; do
+    if [[ -e "$DOTFILES_DIR/$src_file" ]]; then
+        pass "Copy source exists: $src_file"
+    else
+        fail "Copy source missing: $src_file"
+    fi
+done
+
+# ═══════════════════════════════════════════════════════════════
+# Uninstall Script Consistency
+# ═══════════════════════════════════════════════════════════════
+
+section "Uninstall Script - Copy-on-Install Handling"
+
+UNINSTALL="$DOTFILES_DIR/scripts/install/uninstall.sh"
+uninstall_content=$(cat "$UNINSTALL")
+
+# Copy-on-install configs should NOT be in the SYMLINKS array
+if echo "$uninstall_content" | grep -A 20 '^SYMLINKS=(' | grep -q 'karabiner'; then
+    fail "Uninstall SYMLINKS should not contain karabiner (now copy-on-install)"
+else
+    pass "Uninstall SYMLINKS does not contain karabiner"
+fi
+
+if echo "$uninstall_content" | grep -A 20 '^SYMLINKS=(' | grep -q 'hammerspoon'; then
+    fail "Uninstall SYMLINKS should not contain hammerspoon (now copy-on-install)"
+else
+    pass "Uninstall SYMLINKS does not contain hammerspoon"
+fi
+
+# Should have preservation warnings for user-owned configs
+for config in "btop" "karabiner" "hammerspoon" "lazygit" "lazydocker"; do
+    if [[ "$uninstall_content" == *"personal config"*"$config"* ]] || [[ "$uninstall_content" == *"$config"*"personal config"* ]]; then
+        pass "Uninstall preserves $config with warning"
+    else
+        fail "Uninstall should preserve $config with personal config warning"
     fi
 done
 

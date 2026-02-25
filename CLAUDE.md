@@ -113,7 +113,7 @@ dotfiles/
 │   ├── _lib/             # Shared shell libraries (common.sh, brewfile.sh)
 │   ├── hooks/            # Agent alert hooks
 │   │   ├── agent-alert.sh, agent-alert-clear.sh
-│   │   └── wrappers/     # Per-agent wrappers (claude, opencode, gemini)
+│   │   └── wrappers/     # Per-agent wrappers (claude, opencode)
 │   └── tests/            # Test suites
 ├── themes/               # Theme definitions (dracula, catppuccin, tokyo-night, nord)
 ├── zsh/                  # Zsh configuration
@@ -166,7 +166,7 @@ Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`.
 - `common.sh`: Error handling, tmux validation
 - `paths.sh`: XDG-compliant undo file paths with legacy fallback
 - `session.sh`: Session management functions
-- `alerts.sh`: Multi-agent alert system (Claude, OpenCode, Gemini)
+- `alerts.sh`: Multi-agent alert system (Claude, OpenCode)
 - `ui.sh`: Terminal dialogs and prompts
 
 ### Theme System
@@ -203,6 +203,17 @@ theme-switch current             # Show current theme
 - Personal overrides survive theme changes via local override files
 
 **Migration:** Existing users should run `scripts/migrate-tmux-config.sh` once to move from the old setup to XDG.
+
+### Config Ownership Patterns
+
+Two patterns are used for configuration files:
+
+- **Symlinked**: Config lives in the repo, changes are tracked in git. Used for
+  configs that are shared exactly (zprofile, p10k, tmux scripts, nvim plugins).
+- **Copy-on-install**: Config is copied from the repo on first install, then
+  user-owned. Changes survive `dotfiles update`. Used for configs that tools may
+  rewrite or users commonly personalise (btop, lazygit, lazydocker, karabiner,
+  hammerspoon, zshrc).
 
 ### Tmux Scripts Architecture
 
