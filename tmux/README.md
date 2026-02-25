@@ -408,7 +408,7 @@ Available session backups:
 │   │   ├── kill.sh                       # Kill process instance (with confirm)
 │   │   └── connect-nvim.sh               # Connect nvim to Claude pane
 │   ├── alerts/                           # Agent alert system
-│   │   ├── show.sh                       # Status bar: Multi-agent alerts (⚡ 🔮 🤖)
+│   │   ├── show.sh                       # Status bar: Multi-agent alerts (⚡ 🔮)
 │   │   ├── clear.sh                      # Clear agent alerts for window
 │   │   ├── update-rename.sh              # Update alerts on window rename
 │   │   └── update-timestamp.sh           # Window access tracking hook
