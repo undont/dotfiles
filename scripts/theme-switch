@@ -232,6 +232,24 @@ apply_theme() {
             -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
             "$GH_DASH_TEMPLATE" > "$ghdash_tmp" || { rm -f "$ghdash_tmp"; return 1; }
         mv "$ghdash_tmp" "$GH_DASH_OUTPUT"
+
+        # Merge user local overrides on top (survives theme-switch)
+        local ghdash_local="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/local.yml"
+        if [[ -f "$ghdash_local" ]] && command -v yq >/dev/null 2>&1; then
+            local merge_tmp="${GH_DASH_OUTPUT}.merge.$$"
+            # Deep merge: local.yml values win; lists are appended (*+)
+            if yq eval-all '. as $item ireduce ({}; . *+ $item)' \
+                "$GH_DASH_OUTPUT" "$ghdash_local" > "$merge_tmp" 2>/dev/null; then
+                mv "$merge_tmp" "$GH_DASH_OUTPUT"
+                [[ "$quiet" != "true" ]] && success "Merged gh-dash local overrides"
+            else
+                rm -f "$merge_tmp"
+                [[ "$quiet" != "true" ]] && warn "gh-dash local merge failed, using base config"
+            fi
+        elif [[ -f "$ghdash_local" ]] && ! command -v yq >/dev/null 2>&1; then
+            [[ "$quiet" != "true" ]] && warn "yq not found — gh-dash local.yml not merged (run: brew install yq)"
+        fi
+
         [[ "$quiet" != "true" ]] && success "Generated gh-dash configuration"
     fi
 

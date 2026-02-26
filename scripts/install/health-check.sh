@@ -212,10 +212,10 @@ if should_install "core"; then
     echo ""
     echo "Session Launchers:"
     echo "------------------"
-    if command_exists tnew; then
-        printf "Checking %-30s${GREEN}OK${NC}\n" "tnew command"
+    if command_exists dev; then
+        printf "Checking %-30s${GREEN}OK${NC}\n" "dev command"
     else
-        printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "tnew command"
+        printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "dev command"
         echo "  Add ~/.local/launchers to your PATH"
     fi
 

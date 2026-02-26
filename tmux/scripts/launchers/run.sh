@@ -66,7 +66,7 @@ instance_mode=$(grep -m1 '# @instance:' "$LAUNCHER" 2>/dev/null | sed 's/.*# @in
 
 # Detect launcher type by checking for a fixed SESSION= value
 # Fixed: SESSION="myproject" or SESSION="${SESSION_NAME:-myproject}"
-# Parameterised: no SESSION= line (e.g. tnew derives session from directory)
+# Parameterised: no SESSION= line (e.g. dev derives session from directory)
 session_value=$(grep -m1 '^SESSION=' "$LAUNCHER" 2>/dev/null | sed 's/^SESSION=//' | tr -d '"' || true)
 
 is_fixed_session() {

@@ -43,7 +43,7 @@ fi
 #   alias myproject="cd ~/src/myapp"  # Project shortcuts
 #   bindkey -v                         # Switch to vi mode (framework sets emacs)
 #
-# Project directories for launcher picker (prefix+p → tnew).
+# Project directories for launcher picker (prefix+p → dev).
 # Colon-separated roots — the picker lists subdirectories of each:
 #   export DEV_ROOT="$HOME/src"
 #   export PROJECTS_ROOT="$HOME/playground"

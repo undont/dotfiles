@@ -1,0 +1,55 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+# @description: Launches gh dash from ~
+
+# Help flag handling
+if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
+    cat << 'EOF'
+github - Project tmux session launcher
+
+USAGE:
+    github
+
+DESCRIPTION:
+    Creates or attaches to the 'github' tmux session.
+
+OPTIONS:
+    -h, --help   Show this help message
+EOF
+    exit 0
+fi
+
+SESSION="${SESSION_NAME:-github}"
+PROJECT_DIR="${GITHUB_ROOT:-$HOME}"
+
+# Validate project directory exists
+if [[ ! -d "$PROJECT_DIR" ]]; then
+    echo "Error: Project directory not found: $PROJECT_DIR" >&2
+    exit 1
+fi
+
+# Check if session already exists
+if tmux has-session -t "$SESSION" 2>/dev/null; then
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux switch-client -t "$SESSION"
+    else
+        tmux attach-session -t "$SESSION"
+    fi
+    exit 0
+fi
+
+# Window 1: dash
+tmux new-session -d -s "$SESSION" -n "dash" -c "$PROJECT_DIR"
+tmux send-keys -t "$SESSION:dash" 'gh dash' Enter
+
+# Select first window
+tmux select-window -t "$SESSION:1"
+tmux select-pane -t "$SESSION:1.1"
+
+# Attach to session
+if [[ -n "${TMUX:-}" ]]; then
+    tmux switch-client -t "$SESSION"
+else
+    tmux attach-session -t "$SESSION"
+fi

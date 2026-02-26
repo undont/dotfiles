@@ -114,18 +114,18 @@ else
     fail "output should include dotfiles logo header"
 fi
 
-# Should list repo launchers (tnew has @description)
-if [[ "$output" == *"tnew"* ]]; then
-    pass "output lists tnew launcher"
+# Should list repo launchers (dev has @description)
+if [[ "$output" == *"dev"* ]]; then
+    pass "output lists dev launcher"
 else
-    fail "output should list tnew launcher (has @description tag)"
+    fail "output should list dev launcher (has @description tag)"
 fi
 
 # Should show description from @description tag
 if [[ "$output" == *"Dev session"* ]]; then
-    pass "output shows tnew description"
+    pass "output shows dev description"
 else
-    fail "output should show tnew @description text"
+    fail "output should show dev @description text"
 fi
 
 # code launcher has no @description — should be hidden
@@ -148,22 +148,22 @@ section "launchers/list.sh: Launcher Dedup (user overrides repo)"
 TEST_XDG=$(mktemp -d)
 TEST_USER_DIR="$TEST_XDG/dotfiles/launchers"
 mkdir -p "$TEST_USER_DIR"
-cat > "$TEST_USER_DIR/tnew" << 'TESTEOF'
+cat > "$TEST_USER_DIR/dev" << 'TESTEOF'
 #!/usr/bin/env bash
-# @description: User override of tnew
-echo "user tnew"
+# @description: User override of dev
+echo "user dev"
 TESTEOF
-chmod +x "$TEST_USER_DIR/tnew"
+chmod +x "$TEST_USER_DIR/dev"
 
 dedup_output=$(XDG_CONFIG_HOME="$TEST_XDG" "$LIST_LAUNCHERS" 2>&1) || true
 # Strip ANSI for counting
 plain_dedup=$(printf '%s' "$dedup_output" | sed 's/\x1b\[[0-9;]*m//g')
-tnew_count=$(printf '%s' "$plain_dedup" | grep -c 'tnew' || true)
+dev_count=$(printf '%s' "$plain_dedup" | grep -c 'dev' || true)
 
-if [[ "$tnew_count" -eq 1 ]]; then
-    pass "dedup: tnew appears exactly once when user overrides repo"
+if [[ "$dev_count" -eq 1 ]]; then
+    pass "dedup: dev appears exactly once when user overrides repo"
 else
-    fail "dedup: tnew should appear once, got $tnew_count times"
+    fail "dedup: dev should appear once, got $dev_count times"
 fi
 
 # User version description should win
@@ -259,11 +259,11 @@ else
     fail "is_fixed_session function should exist"
 fi
 
-# tnew has no SESSION= line — should be detected as parameterised
-if grep -q '^SESSION=' "$DOTFILES_ROOT/launchers/tnew"; then
-    fail "tnew should NOT have a SESSION= line (it's parameterised)"
+# dev has no SESSION= line — should be detected as parameterised
+if grep -q '^SESSION=' "$DOTFILES_ROOT/launchers/dev"; then
+    fail "dev should NOT have a SESSION= line (it's parameterised)"
 else
-    pass "tnew correctly has no SESSION= line (parameterised launcher)"
+    pass "dev correctly has no SESSION= line (parameterised launcher)"
 fi
 
 # launcher.template has SESSION= — should be detected as fixed

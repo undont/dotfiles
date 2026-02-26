@@ -48,8 +48,10 @@ brew "ripgrep"                # >= 13.0
 brew "fd"                     # Fast find alternative
 brew "tree"
 brew "jq"
+brew "yq"                    # YAML processor (used by gh-dash local merge)
 brew "wget"
 brew "bat"                    # Cat with syntax highlighting
+brew "diffnav"               # Diff navigator for GitHub PRs
 
 # Build Tools
 brew "binutils"              # GNU binary utilities

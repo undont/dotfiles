@@ -1,0 +1,81 @@
+#!/usr/bin/env bash
+# Discover local GitHub repos and sync repoPaths into gh-dash config.
+# Scans DEV_ROOT and PROJECTS_ROOT for git repos with GitHub remotes.
+#
+# Usage: dash-repo-sync [--dry-run]
+
+set -euo pipefail
+
+GHDASH_LOCAL="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/local.yml"
+
+if [[ ! -f "$GHDASH_LOCAL" ]]; then
+    echo "gh-dash local.yml not found: $GHDASH_LOCAL" >&2
+    echo "Run: dotfiles update (or install.sh) to create it from template" >&2
+    exit 1
+fi
+
+if ! command -v yq >/dev/null 2>&1; then
+    echo "yq is required (brew install yq)" >&2
+    exit 1
+fi
+
+dry_run=false
+[[ "${1:-}" == "--dry-run" ]] && dry_run=true
+
+# Collect roots to scan
+roots=()
+[[ -n "${DEV_ROOT:-}" && -d "${DEV_ROOT:-}" ]] && roots+=("$DEV_ROOT")
+[[ -n "${PROJECTS_ROOT:-}" && -d "${PROJECTS_ROOT:-}" ]] && roots+=("$PROJECTS_ROOT")
+
+if (( ${#roots[@]} == 0 )); then
+    echo "No project roots configured." >&2
+    echo "Set DEV_ROOT and/or PROJECTS_ROOT:" >&2
+    echo "  dotfiles set dev ~/src" >&2
+    echo "  dotfiles set projects ~/playground" >&2
+    exit 1
+fi
+
+# Discover repos (first root wins on duplicates)
+seen=""
+count=0
+yq_expr='.repoPaths = {}'
+
+for root in "${roots[@]}"; do
+    for dir in "$root"/*/; do
+        [[ -d "$dir/.git" ]] || continue
+        remote=$(git -C "$dir" remote get-url origin 2>/dev/null) || continue
+        owner_repo=$(echo "$remote" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
+        [[ "$owner_repo" == */* ]] || continue
+
+        # Deduplicate
+        case "$seen" in
+            *"|$owner_repo|"*) continue ;;
+        esac
+        seen="${seen}|${owner_repo}|"
+
+        display="${dir%/}"
+        display="${display#"$HOME"}"
+        display="~${display}"
+        yq_expr="${yq_expr} | .repoPaths.\"${owner_repo}\" = \"${display}\""
+        count=$(( count + 1 ))
+    done
+done
+
+if (( count == 0 )); then
+    echo "No GitHub repos found in: ${roots[*]}"
+    exit 0
+fi
+
+if [[ "$dry_run" == "true" ]]; then
+    echo "Would sync $count repo paths to $GHDASH_LOCAL"
+    yq eval "$yq_expr" /dev/null | sed '1d'
+    exit 0
+fi
+
+# Update repoPaths in-place (preserves comments and other keys)
+if yq eval -i "$yq_expr" "$GHDASH_LOCAL" 2>/dev/null; then
+    echo "Synced $count repo paths to $GHDASH_LOCAL"
+else
+    echo "yq update failed" >&2
+    exit 1
+fi

@@ -1,5 +1,6 @@
-# LazyGit configuration
-# Managed by dotfiles — changes here will be overwritten on update
+# LazyGit base configuration
+# Managed by dotfiles — symlinked from ~/dotfiles/lazygit/config.yml.
+# Personal overrides go in local.yml (same directory) — set via LG_CONFIG_FILE.
 
 gui:
   theme:

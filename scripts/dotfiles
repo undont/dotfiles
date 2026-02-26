@@ -385,8 +385,8 @@ cmd_aliases() {
         "tcleanup"  "clean test resources"
         "alerts-clear" "clear agent alerts"
     )
-    if command -v tnew &>/dev/null; then
-        tmux_items+=("tnew" "dev session launcher")
+    if command -v dev &>/dev/null; then
+        tmux_items+=("dev" "dev session launcher")
     fi
     _2col "${tmux_items[@]}"
 
@@ -404,6 +404,7 @@ cmd_aliases() {
     printf "\n${CYAN}DEVELOPMENT${NC}\n"
     _2col \
         "oc"         "opencode" \
+        "drs"        "sync repo paths to gh-dash" \
         "gols"       "list Go binaries" \
         "nvim-clear" "clear nvim cache" \
         "nvim-sync"  "sync Lazy.nvim plugins" \
@@ -510,6 +511,10 @@ cmd_links() {
     printf "\n${CYAN}CLI${NC}\n"
     _check_link "$HOME/.local/bin/dotfiles"
 
+    # Prettier (minimal)
+    printf "\n${CYAN}Prettier${NC}\n"
+    _check_link "$HOME/.prettierrc"
+
     # Neovim (core)
     if should_install "core"; then
         printf "\n${CYAN}Neovim${NC}\n"
@@ -517,61 +522,31 @@ cmd_links() {
     fi
 
     # Ghostty (core) — config is generated, not symlinked
-    # gh-dash (core) — config is generated, not symlinked
 
-    # btop (core)
+    # gh-dash (core) — config is generated, not symlinked
     if should_install "core"; then
-        printf "\n${CYAN}btop${NC}\n"
-        _check_link "$HOME/.config/btop/btop.conf"
+        printf "\n${CYAN}gh-dash${NC}\n"
+        _check_link "$HOME/.local/bin/dash-repo-sync"
     fi
 
     # Launchers (core)
     if should_install "core"; then
         printf "\n${CYAN}Launchers${NC}\n"
-        _check_link "$HOME/.local/launchers/tnew"
+        _check_link "$HOME/.local/launchers/dev"
     fi
 
-    # LazyGit / LazyDocker (core)
+    # LazyGit (core)
     if should_install "core"; then
-        printf "\n${CYAN}LazyGit / LazyDocker${NC}\n"
-        if [[ "$(uname)" == "Darwin" ]]; then
-            _check_link "$HOME/Library/Application Support/lazygit/config.yml"
-            _check_link "$HOME/Library/Application Support/lazydocker/config.yml"
-        else
-            _check_link "$HOME/.config/lazygit/config.yml"
-            _check_link "$HOME/.config/lazydocker/config.yml"
-        fi
+        printf "\n${CYAN}LazyGit${NC}\n"
+        _check_link "$HOME/.config/lazygit/config.yml"
     fi
 
-    # Claude / OpenCode (core)
-    if should_install "core"; then
-        local claude_config="$HOME/claude-config"
-        if [[ -d "$claude_config" ]]; then
-            printf "\n${CYAN}Claude / OpenCode${NC}\n"
-            _check_link "$HOME/.claude/agents"
-            _check_link "$HOME/.claude/CLAUDE.md"
-            _check_link "$HOME/.claude/commands"
-            _check_link "$HOME/.claude/settings.json"
-            _check_link "$HOME/.claude/statusline.sh"
-            _check_link "$HOME/.claude/plans"
-            _check_link "$HOME/.claude/docs"
-            _check_link "$HOME/.config/opencode/opencode.json"
-            _check_link "$HOME/.config/opencode/package.json"
-            _check_link "$HOME/.config/opencode/plugin"
-            _check_link "$HOME/.config/opencode/command"
-        fi
-    fi
+
 
     # Hammerspoon (full)
     if should_install "full"; then
         printf "\n${CYAN}Hammerspoon${NC}\n"
-        _check_link "$HOME/.hammerspoon"
-    fi
-
-    # Karabiner (full)
-    if should_install "full"; then
-        printf "\n${CYAN}Karabiner${NC}\n"
-        _check_link "$HOME/.config/karabiner/karabiner.json"
+        _check_link "$HOME/.hammerspoon/init.lua"
     fi
 
     # Summary

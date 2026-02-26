@@ -1,0 +1,41 @@
+-- =============================================================================
+-- HAMMERSPOON LOCAL OVERRIDES
+-- =============================================================================
+-- Your personal Hammerspoon config. This file is yours — add anything you want.
+-- It is loaded AFTER init.lua, so your definitions override the defaults.
+--
+-- This file survives dotfiles update.
+--
+-- File structure:
+--   ~/.hammerspoon/init.lua    — Shared config (symlink → dotfiles)
+--   ~/.hammerspoon/local.lua   — This file (your personal overrides)
+--
+-- Hammerspoon docs: https://www.hammerspoon.org/docs/
+-- =============================================================================
+
+-- Examples:
+
+-- Add extra apps to auto-centre on window creation (extends init.lua list):
+-- local extraApps = { "Figma", "Linear" }
+-- for _, appName in ipairs(extraApps) do
+--   local filter = hs.window.filter.new(appName)
+--   filter:subscribe(hs.window.filter.windowCreated, function(window)
+--     hs.timer.doAfter(0.1, function()
+--       if window and window:isVisible() then
+--         window:centerOnScreen()
+--       end
+--     end)
+--   end)
+-- end
+
+-- Bind a hotkey to reload config:
+-- hs.hotkey.bind({"cmd", "ctrl"}, "R", function()
+--   hs.reload()
+-- end)
+
+-- Move focused window to left half of screen:
+-- hs.hotkey.bind({"cmd", "ctrl"}, "Left", function()
+--   local win = hs.window.focusedWindow()
+--   local max = win:screen():frame()
+--   win:setFrame({ x = max.x, y = max.y, w = max.w / 2, h = max.h })
+-- end)
