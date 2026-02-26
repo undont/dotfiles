@@ -1,0 +1,39 @@
+# =============================================================================
+# LAZYGIT LOCAL OVERRIDES
+# =============================================================================
+# Your personal lazygit settings. This file is yours — add anything you want.
+# It is loaded AFTER the base config, so your values override the defaults.
+#
+# This file survives dotfiles update.
+# lazygit merges both files at launch via LG_CONFIG_FILE (set in dotfiles.zsh).
+#
+# File structure:
+#   ~/.config/lazygit/config.yml  — Base config (symlink → dotfiles)
+#   ~/.config/lazygit/local.yml   — This file (your overrides)
+#
+# Full config reference: https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+# =============================================================================
+
+# Examples:
+#
+# gui:
+#   theme:
+#     activeBorderColor:
+#       - green
+#       - bold
+#   language: "en"
+#   mouseEvents: true
+#
+# git:
+#   paging:
+#     colorArg: always
+#     pager: delta --dark --paging=never
+#
+# customCommands:
+#   - key: "<c-r>"
+#     description: "Interactive rebase"
+#     command: "git rebase -i HEAD~{{index .PromptResponses 0}}"
+#     context: "commits"
+#     prompts:
+#       - type: "input"
+#         title: "How many commits back?"

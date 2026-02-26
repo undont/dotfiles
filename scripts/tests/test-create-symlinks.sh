@@ -290,18 +290,18 @@ for config in "btop.conf" "karabiner.json" "lazygit/config.yml" "lazydocker/conf
     fi
 done
 
-# Hammerspoon is handled inline (directory symlink migration)
-if [[ "$script_content" == *'cp "$DOTFILES_DIR/hammerspoon/init.lua"'* ]]; then
-    pass "Hammerspoon copies init.lua (inline migration)"
+# Hammerspoon uses layered pattern (symlink + local override via migrate_to_symlink)
+if echo "$script_content" | grep -q 'migrate_to_symlink.*hammerspoon'; then
+    pass "Hammerspoon uses migrate_to_symlink (layered config)"
 else
-    fail "Hammerspoon should copy init.lua"
+    fail "Hammerspoon should use migrate_to_symlink"
 fi
 
-# Hammerspoon should NOT use create_link anymore
-if echo "$script_content" | grep -q 'create_link.*hammerspoon'; then
-    fail "Hammerspoon should not use create_link"
+# Hammerspoon should have a local override template
+if echo "$script_content" | grep -q 'install_local.*hammerspoon'; then
+    pass "Hammerspoon installs local override from template"
 else
-    pass "Hammerspoon does not use create_link"
+    fail "Hammerspoon should install local override from template"
 fi
 
 section "copy_config Function Behaviour"

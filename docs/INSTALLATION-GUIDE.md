@@ -80,7 +80,7 @@ The installer supports three presets to customise what gets installed:
 - Editor: Neovim with LSP, Telescope, and plugins
 - Terminal: Ghostty configuration
 - AI Tools: Claude Code, development CLI tools
-- Custom scripts: `tnew`
+- Custom scripts: `dev`
 - Ideal for: Linux desktops, cross-platform setups
 
 **Full** (`--full`, default):
@@ -314,7 +314,7 @@ LazyGit/LazyDocker (core):
   ~/Library/Application Support/lazydocker/config.yml -> ~/dotfiles/lazydocker/config.yml (macOS)
 
 Session Launchers (core):
-  ~/.local/launchers/tnew  -> ~/dotfiles/launchers/tnew
+  ~/.local/launchers/dev  -> ~/dotfiles/launchers/dev
 
 Hammerspoon (full):
   ~/.hammerspoon           -> ~/dotfiles/hammerspoon
@@ -426,7 +426,7 @@ The health check confirms the installation completed successfully. It catches is
 | TPM | minimal | `~/.tmux/plugins/tpm` exists |
 | lazy.nvim | core | `~/.local/share/nvim/lazy` exists (after first nvim launch) |
 | Secrets | minimal | `~/.config/zsh/secrets.zsh` exists |
-| Scripts | core | `tnew` command is in PATH |
+| Scripts | core | `dev` command is in PATH |
 
 **What you'll see**:
 ```

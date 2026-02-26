@@ -18,6 +18,9 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# shellcheck source=scripts/_lib/ghdash.sh
+source "$DOTFILES_ROOT/scripts/_lib/ghdash.sh"
+
 # Directories
 THEMES_DIR="$DOTFILES_ROOT/themes"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
@@ -232,6 +235,14 @@ apply_theme() {
             -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
             "$GH_DASH_TEMPLATE" > "$ghdash_tmp" || { rm -f "$ghdash_tmp"; return 1; }
         mv "$ghdash_tmp" "$GH_DASH_OUTPUT"
+
+        # Merge user local overrides on top (survives theme-switch)
+        if [[ "$quiet" == "true" ]]; then
+            ghdash_merge_local --quiet
+        else
+            ghdash_merge_local
+        fi
+
         [[ "$quiet" != "true" ]] && success "Generated gh-dash configuration"
     fi
 

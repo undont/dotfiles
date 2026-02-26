@@ -70,3 +70,6 @@ end
 
 -- Reload config notification
 hs.alert.show("Hammerspoon config loaded")
+
+-- Load personal local overrides if present (survives dotfiles update)
+pcall(require, "local")

@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.39] - 2026-02-26
+
+### Added
+- Launchers: `github` (gh-dash session) and `btop` (system monitor session)
+- gh-dash: `dash-repo-sync` utility syncs local repo paths into gh-dash config (`drs` alias)
+- gh-dash: Keybindings — `g` (lazygit), `C` (Octo code review), `D` (diffnav), `A` (actions)
+- gh-dash: `local.yml` template for personal overrides (deep-merged via `yq` on theme-switch)
+- Hammerspoon: `local.lua` override support via `pcall(require, "local")`
+- LazyGit: `local.yml` template for personal overrides (loaded via `LG_CONFIG_FILE`)
+- Brewfile: `yq` (YAML processor), `diffnav` (diff navigator), `gh-enhance` extension
+
+### Changed
+- Launchers: Renamed `tnew` to `dev` (same 3-window layout: zsh + nvim + claude)
+- Install: Extracted `install_local()` and `migrate_to_symlink()` helpers in create-symlinks
+- Install: Hammerspoon migrates from directory symlink to owned dir with file symlinks
+- Install: LazyGit uses XDG path on all platforms via `LG_CONFIG_FILE` env var
+- CLI: Simplified `dotfiles links` — removed stale btop, karabiner, lazydocker sections
+- Docs: Expanded config ownership to three patterns (symlinked, layered, copy-on-install)
+
+### Removed
+- Install: Claude/OpenCode config symlinks (managed separately)
+
 ## [0.2.38] - 2026-02-25
 
 ### Changed

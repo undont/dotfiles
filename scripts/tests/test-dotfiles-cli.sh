@@ -339,10 +339,10 @@ else
     fail "create-symlinks should create launchers directory"
 fi
 
-if [[ "$symlinks_content" == *'launchers/tnew'* ]]; then
-    pass "create-symlinks links tnew launcher"
+if [[ "$symlinks_content" == *'launchers/dev'* ]]; then
+    pass "create-symlinks links dev launcher"
 else
-    fail "create-symlinks should link tnew launcher"
+    fail "create-symlinks should link dev launcher"
 fi
 
 

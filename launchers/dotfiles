@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# @description: Dotfiles - Launches in nvim ~/.config
+# @description: Dotfiles - Launches in nvim ~/dotfiles
 
 SESSION="${SESSION_NAME:-dotfiles}"
 PROJECT_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"

@@ -129,7 +129,7 @@ dotfiles/
 ├── nvim/                 # Neovim configuration (kickstart.nvim based)
 │   ├── init.lua          # Entry point
 │   └── lua/custom/       # Modular config (core/, plugins/)
-├── launchers/            # Session launch scripts (tnew)
+├── launchers/            # Session launch scripts (dev, github, btop)
 ├── hammerspoon/          # macOS window automation
 ├── ghostty/              # Terminal emulator config (config.template for theming)
 ├── karabiner/            # Keyboard customisation
@@ -185,6 +185,9 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts:
 - `~/.config/ghostty/local` — appended to Ghostty config via `config-file` include
 - `~/.config/tmux/local.conf` — sourced at end of tmux config via `source-file -q`
 - `~/.config/nvim/local.lua` — personal Neovim settings (cursor, options, keymaps)
+- `~/.config/gh-dash/local.yml` — deep-merged on top of generated config via `yq`
+- `~/.config/lazygit/local.yml` — loaded via `LG_CONFIG_FILE` env var
+- `~/.hammerspoon/local.lua` — loaded via `pcall(require, "local")` at end of init.lua
 
 These files are created from templates on first install and never overwritten by `theme-switch` or `dotfiles update`. Add cursor style, font overrides, extra keybindings, etc. here.
 
@@ -206,14 +209,60 @@ theme-switch current             # Show current theme
 
 ### Config Ownership Patterns
 
-Two patterns are used for configuration files:
+Three patterns are used for configuration files. Choose based on whether the tool
+supports a local override mechanism and how personal the config tends to be.
 
-- **Symlinked**: Config lives in the repo, changes are tracked in git. Used for
-  configs that are shared exactly (zprofile, p10k, tmux scripts, nvim plugins).
-- **Copy-on-install**: Config is copied from the repo on first install, then
-  user-owned. Changes survive `dotfiles update`. Used for configs that tools may
-  rewrite or users commonly personalise (btop, lazygit, lazydocker, karabiner,
-  hammerspoon, zshrc).
+#### 1. Symlinked
+
+Config lives in the repo. The installed path is a symlink pointing back to the
+dotfiles directory. Changes committed to the repo propagate to all users on the
+next `dotfiles update`.
+
+**Used for:** configs shared exactly as-is with no per-user variation (zprofile,
+p10k.zsh, tmux scripts, nvim plugins, launchers).
+
+```
+dotfiles/zsh/p10k.zsh  ←──symlink──  ~/.p10k.zsh
+```
+
+#### 2. Layered (symlink + local override)
+
+The base config is symlinked from the repo (updates propagate), but the tool also
+loads a second user-owned local file on top. The local file is created from a
+`*.template` on first install and never overwritten by `dotfiles update`.
+
+Use this pattern when the tool has a native include/multi-file mechanism.
+
+**Used for:** tools that support layered configs — tmux, ghostty, nvim, lazygit,
+hammerspoon, gh-dash.
+
+| Tool | Base (symlinked) | Local override | Mechanism |
+|---|---|---|---|
+| tmux | `~/.config/tmux/tmux.conf` (generated) | `~/.config/tmux/local.conf` | `source-file -q` at end of config |
+| ghostty | `~/.config/ghostty/config` (generated) | `~/.config/ghostty/local` | `config-file =` at end of config |
+| nvim | `~/.config/nvim/` (symlinked dir) | `~/.config/nvim/local.lua` | `pcall(require, "local")` in init.lua |
+| lazygit | `~/.config/lazygit/config.yml` (symlinked) | `~/.config/lazygit/local.yml` | `LG_CONFIG_FILE="base,local"` env var |
+| hammerspoon | `~/.hammerspoon/init.lua` (symlinked) | `~/.hammerspoon/local.lua` | `pcall(require, "local")` at end of init.lua |
+| gh-dash | `~/.config/gh-dash/config.yml` (generated) | `~/.config/gh-dash/local.yml` | `yq` deep-merge after `theme-switch` generation |
+
+Template files for local overrides live in the repo next to the base config:
+`lazygit/local.yml.template`, `hammerspoon/local.lua.template`, etc.
+
+#### 3. Copy-on-install
+
+Config is copied from the repo to the destination on first install, then becomes
+fully user-owned. The repo version is a reference/default only — changes to it do
+**not** propagate to existing installs. Use this only when the tool has no include
+mechanism and the config is highly personal.
+
+**Used for:** btop, lazydocker, karabiner, zshrc.
+
+```
+dotfiles/btop/btop.conf  ──copy──▶  ~/.config/btop/btop.conf  (user-owned)
+```
+
+**Implication:** if you improve a copy-on-install config in the repo, document the
+change in `CHANGELOG.md` so users know to apply it manually.
 
 ### Tmux Scripts Architecture
 
