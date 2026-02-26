@@ -164,7 +164,7 @@ fi
 
 # Hammerspoon (full)
 if should_install "full"; then
-    check_symlink "$HOME/.hammerspoon" "$DOTFILES_DIR/hammerspoon" "hammerspoon"
+    check_symlink "$HOME/.hammerspoon/init.lua" "$DOTFILES_DIR/hammerspoon/init.lua" "hammerspoon"
 fi
 
 # Ghostty (core)
