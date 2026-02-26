@@ -77,7 +77,7 @@ SYMLINKS=(
     "$HOME/.tmux"
     "$HOME/.local/bin/dotfiles"
     "$HOME/.config/nvim"
-    "$HOME/.local/launchers/tnew"
+    "$HOME/.local/launchers/dev"
 )
 
 # Legacy macOS ghostty symlink (no longer created — Ghostty reads XDG natively)

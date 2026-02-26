@@ -105,7 +105,8 @@ fi
 # gh extensions
 if command_exists gh; then
     echo "Installing gh extensions..."
-    gh extension install dlvhdr/gh-dash 2>/dev/null || true
+    gh extension install dlvhdr/gh-dash    2>/dev/null || true
+    gh extension install dlvhdr/gh-enhance 2>/dev/null || true
 fi
 
 # fnm shell setup reminder

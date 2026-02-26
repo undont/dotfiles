@@ -7,7 +7,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | Action                | Keybinding / Command              |
 | --------------------- | --------------------------------- |
 | **Prefix**            | `` ` `` (backtick)                |
-| **Start dev session** | `tnew` (from any directory)       |
+| **Start dev session** | `dev` (from any directory)       |
 | Help popup            | `prefix + h`                      |
 | Launcher picker       | `prefix + p`                      |
 | Theme picker          | `prefix + t`                      |
@@ -40,7 +40,7 @@ Copy the following to your home directory:
 │   ├── resurrect/restore.sh
 │   └── split-resurrect.sh
 ~/.local/launchers/
-└── tnew                        # Dev session launcher
+└── dev                        # Dev session launcher
 ```
 
 ### 3. Install TPM (Tmux Plugin Manager)
@@ -111,7 +111,7 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Delete launcher     | `x` (user launchers only)|
 | Quit                | `q` or `Esc`             |
 
-**Fixed-session launchers** (with `SESSION=`) show an instance picker when selected — attach to running instances or create new ones. **Parameterised launchers** (like `tnew`) show a directory picker.
+**Fixed-session launchers** (with `SESSION=`) show an instance picker when selected — attach to running instances or create new ones. **Parameterised launchers** (like `dev`) show a directory picker.
 
 ### Windows (Tabs)
 
@@ -268,13 +268,13 @@ Use it for cursor style, extra keybindings, plugin additions, or any other perso
 
 ## Shell Commands & Aliases
 
-### `tnew` - Dev Session Launcher
+### `dev` - Dev Session Launcher
 
 Start a tmux dev session named after the current directory:
 
 ```bash
 cd ~/src/myproject
-tnew
+dev
 ```
 
 This creates a session called `myproject` with:
@@ -282,9 +282,9 @@ This creates a session called `myproject` with:
 - **Window 1 (dev):** Claude Code + terminal (side-by-side split panes)
 - **Window 2 (edit):** neovim
 
-If a session with that name already exists, `tnew` attaches to it instead of creating a new one.
+If a session with that name already exists, `dev` attaches to it instead of creating a new one.
 
-Location: `~/.local/launchers/tnew`
+Location: `~/.local/launchers/dev`
 
 ### Aliases
 
@@ -450,7 +450,7 @@ Available session backups:
 └── README.md                             # This file
 
 ~/.local/launchers/
-└── tnew                                  # Dev session launcher
+└── dev                                  # Dev session launcher
 ```
 
 ---

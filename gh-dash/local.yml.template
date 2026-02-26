@@ -1,0 +1,85 @@
+# =============================================================================
+# GH-DASH LOCAL OVERRIDES
+# =============================================================================
+# Your personal gh-dash settings. This file is yours — add anything you want.
+# It is deep-merged ON TOP of the generated config after every theme-switch,
+# so your values always win.
+#
+# This file survives theme-switch and dotfiles update.
+# After making changes, run: theme-switch current   (re-applies current theme + merge)
+#
+# File structure:
+#   ~/.config/gh-dash/config.yml  — Generated config (managed by theme-switch)
+#   ~/.config/gh-dash/local.yml   — This file (your personal overrides)
+#
+# gh-dash also supports per-repo overrides: create a .gh-dash.yml in any
+# repo root to add project-specific sections on top of everything here.
+# =============================================================================
+
+# ---------------------------------------------------------------------------
+# PR Sections
+# Uncomment and customise to replace the default prSections entirely.
+# ---------------------------------------------------------------------------
+# prSections:
+#     - title: My Pull Requests
+#       filters: is:open author:@me
+#     - title: Needs My Review
+#       filters: is:open review-requested:@me
+#     - title: Involved
+#       filters: is:open involves:@me -author:@me
+
+# ---------------------------------------------------------------------------
+# Issue Sections
+# Add your own filtered views — e.g. issues for specific projects or orgs.
+# ---------------------------------------------------------------------------
+# issuesSections:
+#     - title: My Issues
+#       filters: is:open author:@me
+#     - title: Assigned
+#       filters: is:open assignee:@me
+#     - title: Involved
+#       filters: is:open involves:@me -author:@me
+#     # Example: follow a specific repo's issues
+#     - title: Neovim
+#       filters: is:open repo:neovim/neovim
+
+# ---------------------------------------------------------------------------
+# Repo Paths
+# Map org/repo names (or wildcards) to local clone paths.
+# Required for commands that use {{.RepoPath}} (lazygit, Octo, etc.).
+# ---------------------------------------------------------------------------
+# repoPaths:
+#     your-org/*: ~/code/*
+#     your-org/specific-repo: ~/code/specific-repo
+
+# ---------------------------------------------------------------------------
+# Extra Keybindings
+# These are APPENDED to the base keybindings from config.yml.
+# Use different keys to avoid conflicts with D and A (defined in base config).
+#
+# The commands below require repoPaths to be configured (they use RepoPath).
+# Uncomment repoPaths above first, then uncomment the keybindings.
+# ---------------------------------------------------------------------------
+# keybindings:
+#     universal:
+#         - key: g
+#           name: lazygit
+#           command: cd {{.RepoPath}} && lazygit
+#     prs:
+#         - key: C
+#           name: code review (Octo)
+#           command: tmux new-window -c {{.RepoPath}} 'nvim -c ":silent Octo pr edit {{.PrNumber}}"'
+#         - key: v
+#           name: approve
+#           command: gh pr review --repo {{.RepoName}} --approve {{.PrNumber}}
+#     issues:
+#         - key: P
+#           name: pin issue
+#           command: gh issue pin {{.IssueNumber}} --repo {{.RepoName}}
+
+# ---------------------------------------------------------------------------
+# Pager override
+# diffnav is set as the default in config.yml. Override here if preferred.
+# ---------------------------------------------------------------------------
+# pager:
+#     diff: delta

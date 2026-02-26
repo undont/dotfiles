@@ -90,6 +90,35 @@ copy_config() {
     fi
 }
 
+# Install a local override file from template (never overwrite user customisations).
+install_local() {
+    local template="$1"
+    local dest="$2"
+
+    mkdir -p "$(dirname "$dest")"
+    if [[ ! -f "$dest" ]]; then
+        cp "$template" "$dest"
+        success "Created $dest from template"
+        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
+    else
+        info "Kept existing $dest"
+    fi
+}
+
+# Migrate a personal config file back to a symlink.
+# Removes the personal copy (if any) and creates a symlink to the repo file.
+migrate_to_symlink() {
+    local name="$1"
+    local source="$2"
+    local dest="$3"
+
+    if [[ -f "$dest" && ! -L "$dest" ]]; then
+        rm "$dest"
+        success "Removed personal $name config (migrating to symlink)"
+    fi
+    create_link "$source" "$dest"
+}
+
 print_section "Creating symlinks"
 echo "Source: $DOTFILES_DIR"
 echo "Preset: $PRESET"
@@ -211,16 +240,7 @@ echo "Tmux configuration:"
 # We'll create the compatibility symlink after theme generation (see below)
 create_link "$DOTFILES_DIR/tmux" "$HOME/.tmux"
 
-# Create local override file from template (never overwrite user customisations)
-tmux_local="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/local.conf"
-mkdir -p "$(dirname "$tmux_local")"
-if [[ ! -f "$tmux_local" ]]; then
-    cp "$DOTFILES_DIR/tmux/local.conf.template" "$tmux_local"
-    success "Created $tmux_local from template"
-    printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$tmux_local"
-else
-    info "Kept existing $tmux_local"
-fi
+install_local "$DOTFILES_DIR/tmux/local.conf.template" "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/local.conf"
 
 # Dotfiles CLI (minimal)
 echo ""
@@ -239,37 +259,21 @@ if should_install "core"; then
     echo "Neovim configuration:"
     create_link "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
 
-    # Create local override file from template (never overwrite user customisations)
-    nvim_local="$HOME/.config/nvim/local.lua"
-    if [[ ! -f "$nvim_local" ]]; then
-        cp "$DOTFILES_DIR/nvim/local.lua.template" "$nvim_local"
-        success "Created $nvim_local from template"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$nvim_local"
-    else
-        info "Kept existing $nvim_local"
-    fi
+    install_local "$DOTFILES_DIR/nvim/local.lua.template" "$HOME/.config/nvim/local.lua"
 fi
 
 # Hammerspoon (full)
 if should_install "full"; then
     echo ""
     echo "Hammerspoon configuration:"
-
-    # Migrate from directory symlink to owned directory
+    # Migrate from directory symlink (old setup) to owned directory with file symlinks
     if [[ -L "$HOME/.hammerspoon" ]]; then
         rm "$HOME/.hammerspoon"
-        mkdir -p "$HOME/.hammerspoon"
-        cp "$DOTFILES_DIR/hammerspoon/init.lua" "$HOME/.hammerspoon/init.lua"
-        success "Migrated to personal config: ~/.hammerspoon/"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$HOME/.hammerspoon/init.lua"
-    elif [[ ! -f "$HOME/.hammerspoon/init.lua" ]]; then
-        mkdir -p "$HOME/.hammerspoon"
-        cp "$DOTFILES_DIR/hammerspoon/init.lua" "$HOME/.hammerspoon/init.lua"
-        success "Created ~/.hammerspoon/init.lua from dotfiles"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$HOME/.hammerspoon/init.lua"
-    else
-        info "Kept existing ~/.hammerspoon/init.lua"
+        success "Removed directory symlink ~/.hammerspoon (migrating to layered config)"
     fi
+    mkdir -p "$HOME/.hammerspoon"
+    migrate_to_symlink "hammerspoon" "$DOTFILES_DIR/hammerspoon/init.lua" "$HOME/.hammerspoon/init.lua"
+    install_local "$DOTFILES_DIR/hammerspoon/local.lua.template" "$HOME/.hammerspoon/local.lua"
 fi
 
 # Ghostty (core)
@@ -284,15 +288,7 @@ if should_install "core"; then
     # and ~/.config/ghostty/. We only write to XDG — no symlink needed.
     # A symlink between them causes double-loading and config-file cycle errors.
 
-    # Create local override file from template (never overwrite user customisations)
-    ghostty_local="$HOME/.config/ghostty/local"
-    if [[ ! -f "$ghostty_local" ]]; then
-        cp "$DOTFILES_DIR/ghostty/local.template" "$ghostty_local"
-        success "Created $ghostty_local from template"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$ghostty_local"
-    else
-        info "Kept existing $ghostty_local"
-    fi
+    install_local "$DOTFILES_DIR/ghostty/local.template" "$HOME/.config/ghostty/local"
 fi
 
 # Karabiner (full)
@@ -308,7 +304,9 @@ if should_install "core"; then
     echo ""
     echo "gh-dash configuration:"
     mkdir -p "$HOME/.config/gh-dash"
-    success "Ensured gh-dash config directory exists"
+
+    install_local "$DOTFILES_DIR/gh-dash/local.yml.template" "$HOME/.config/gh-dash/local.yml"
+    create_link "$DOTFILES_DIR/gh-dash/dash-repo-sync" "$HOME/.local/bin/dash-repo-sync"
 fi
 
 # btop (core)
@@ -322,54 +320,36 @@ if should_install "core"; then
     echo ""
     echo "Launchers:"
     mkdir -p "$HOME/.local/launchers"
-    create_link "$DOTFILES_DIR/launchers/tnew" "$HOME/.local/launchers/tnew"
+    create_link "$DOTFILES_DIR/launchers/dev" "$HOME/.local/launchers/dev"
 fi
 
 # LazyGit / LazyDocker (core)
 if should_install "core"; then
     echo ""
     echo "LazyGit configuration:"
-    if [[ "$(uname)" == "Darwin" ]]; then
-        copy_config "$DOTFILES_DIR/lazygit/config.yml" "$HOME/Library/Application Support/lazygit/config.yml"
-        copy_config "$DOTFILES_DIR/lazydocker/config.yml" "$HOME/Library/Application Support/lazydocker/config.yml"
-    else
-        copy_config "$DOTFILES_DIR/lazygit/config.yml" "$HOME/.config/lazygit/config.yml"
-        copy_config "$DOTFILES_DIR/lazydocker/config.yml" "$HOME/.config/lazydocker/config.yml"
-    fi
-fi
+    # Use ~/.config/lazygit/ on all platforms (LG_CONFIG_FILE overrides the default path)
+    lazygit_dir="$HOME/.config/lazygit"
+    mkdir -p "$lazygit_dir"
 
-# Claude/OpenCode shared configuration (core)
-if should_install "core"; then
-    # Check if claude-config repository exists
-    CLAUDE_CONFIG_DIR="$HOME/claude-config"
-    
-    if [[ -d "$CLAUDE_CONFIG_DIR" ]]; then
-        echo ""
-        echo "Claude configuration:"
-        mkdir -p "$HOME/.claude"
-        create_link "$CLAUDE_CONFIG_DIR/agents" "$HOME/.claude/agents"
-        create_link "$CLAUDE_CONFIG_DIR/CLAUDE.md" "$HOME/.claude/CLAUDE.md"
-        create_link "$CLAUDE_CONFIG_DIR/commands" "$HOME/.claude/commands"
-        create_link "$CLAUDE_CONFIG_DIR/settings.json" "$HOME/.claude/settings.json"
-        create_link "$CLAUDE_CONFIG_DIR/statusline/statusline.sh" "$HOME/.claude/statusline.sh"
-        
-        # Local plans and docs from dotfiles
-        create_link "$DOTFILES_DIR/.claude/plans" "$HOME/.claude/plans"
-        create_link "$DOTFILES_DIR/.claude/docs" "$HOME/.claude/docs"
-        
-        echo ""
-        echo "OpenCode configuration:"
-        mkdir -p "$HOME/.config/opencode"
-        create_link "$DOTFILES_DIR/opencode/opencode.json" "$HOME/.config/opencode/opencode.json"
-        create_link "$DOTFILES_DIR/opencode/package.json" "$HOME/.config/opencode/package.json"
-        create_link "$DOTFILES_DIR/opencode/plugin" "$HOME/.config/opencode/plugin"
-        
-        # Share commands between Claude and OpenCode
-        create_link "$CLAUDE_CONFIG_DIR/commands" "$HOME/.config/opencode/command"
-    else
-        warn "claude-config directory not found at $CLAUDE_CONFIG_DIR"
-        warn "Skipping Claude/OpenCode configuration symlinks"
+    # Migrate from old macOS location if needed
+    if [[ "$(uname)" == "Darwin" ]]; then
+        old_lazygit="$HOME/Library/Application Support/lazygit/config.yml"
+        if [[ -e "$old_lazygit" ]]; then
+            rm -f "$old_lazygit"
+            success "Cleaned up old lazygit config from Application Support"
+        fi
     fi
+
+    migrate_to_symlink "lazygit" "$DOTFILES_DIR/lazygit/config.yml" "$lazygit_dir/config.yml"
+    install_local "$DOTFILES_DIR/lazygit/local.yml.template" "$lazygit_dir/local.yml"
+
+    # Lazydocker: keep as copy-on-install (no include mechanism)
+    if [[ "$(uname)" == "Darwin" ]]; then
+        lazydocker_dir="$HOME/Library/Application Support/lazydocker"
+    else
+        lazydocker_dir="$HOME/.config/lazydocker"
+    fi
+    copy_config "$DOTFILES_DIR/lazydocker/config.yml" "$lazydocker_dir/config.yml"
 fi
 
 # ─────────────────────────────────────────

@@ -8,10 +8,10 @@ set -euo pipefail
 # Help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat << 'EOF'
-tnew - tmux development session launcher
+dev - tmux development session launcher
 
 USAGE:
-    tnew <DIRECTORY>
+    dev <DIRECTORY>
 
 DESCRIPTION:
     Creates or attaches to a tmux development session with a 3-window layout:
@@ -48,7 +48,7 @@ source "$_script_dir/../tmux/scripts/_lib/ui.sh"
 
 dir="${1:-}"
 if [[ -z "$dir" ]]; then
-    echo "Usage: tnew <DIRECTORY>" >&2
+    echo "Usage: dev <DIRECTORY>" >&2
     echo "Use the launcher picker (prefix + p) to select a directory." >&2
     exit 1
 fi

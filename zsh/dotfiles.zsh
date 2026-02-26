@@ -93,7 +93,8 @@ export PATH="$PATH:$HOME/.local/launchers"
 export PATH="$HOME/bin:$PATH"
 
 # Neovim Mason LSP/tools (lua-language-server, gopls, pyright, etc.)
-export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
+# Appended (not prepended) so Homebrew-installed versions take priority
+export PATH="$PATH:$HOME/.local/share/nvim/mason/bin"
 
 # .NET global tools (EasyDotnet, etc.)
 export PATH="$PATH:$HOME/.dotnet/tools"
@@ -263,6 +264,21 @@ export DOTNET_CLI_TELEMETRY_OPTOUT='true'
 export SONAR_HOST_URL="https://sonarcloud.io"
 
 # =============================================================================
+# LAZYGIT
+# =============================================================================
+# Load base config (symlinked from dotfiles) + personal local overrides.
+# local.yml only needs the keys you want to override — lazygit merges both files.
+# LG_CONFIG_FILE overrides the default path, so we use ~/.config/lazygit/ on all platforms.
+_lg_base="$HOME/.config/lazygit/config.yml"
+_lg_local="$HOME/.config/lazygit/local.yml"
+if [[ -f "$_lg_local" ]]; then
+    export LG_CONFIG_FILE="$_lg_base,$_lg_local"
+else
+    export LG_CONFIG_FILE="$_lg_base"
+fi
+unset _lg_base _lg_local
+
+# =============================================================================
 # OPENCODE
 # =============================================================================
 # Point opencode-tmux-alert plugin to dotfiles hook scripts
@@ -289,6 +305,7 @@ ssh() {
 export EDITOR="nvim"                   # Default editor for git, etc.
 alias oc="opencode"                    # Launch OpenCode editor
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI
+alias drs="dash-repo-sync"            # Sync local repo paths into gh-dash config
 
 # MCP (Model Context Protocol)
 alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across tools
