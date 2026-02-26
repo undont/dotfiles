@@ -93,7 +93,8 @@ export PATH="$PATH:$HOME/.local/launchers"
 export PATH="$HOME/bin:$PATH"
 
 # Neovim Mason LSP/tools (lua-language-server, gopls, pyright, etc.)
-export PATH="$HOME/.local/share/nvim/mason/bin:$PATH"
+# Appended (not prepended) so Homebrew-installed versions take priority
+export PATH="$PATH:$HOME/.local/share/nvim/mason/bin"
 
 # .NET global tools (EasyDotnet, etc.)
 export PATH="$PATH:$HOME/.dotnet/tools"

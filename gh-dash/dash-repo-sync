@@ -6,7 +6,12 @@
 
 set -euo pipefail
 
-GHDASH_LOCAL="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/local.yml"
+# Resolve script location (follow symlinks) to find shared libraries
+_source="${BASH_SOURCE[0]}"
+while [[ -L "$_source" ]]; do _source=$(readlink "$_source"); done
+_script_dir="$(cd "$(dirname "$_source")" && pwd)"
+# shellcheck source=scripts/_lib/ghdash.sh
+source "$_script_dir/../scripts/_lib/ghdash.sh"
 
 if [[ ! -f "$GHDASH_LOCAL" ]]; then
     echo "gh-dash local.yml not found: $GHDASH_LOCAL" >&2
@@ -79,3 +84,6 @@ else
     echo "yq update failed" >&2
     exit 1
 fi
+
+# Merge local overrides into the active config so gh-dash picks them up immediately
+ghdash_merge_local

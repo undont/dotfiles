@@ -18,6 +18,9 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# shellcheck source=scripts/_lib/ghdash.sh
+source "$DOTFILES_ROOT/scripts/_lib/ghdash.sh"
+
 # Directories
 THEMES_DIR="$DOTFILES_ROOT/themes"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
@@ -234,20 +237,10 @@ apply_theme() {
         mv "$ghdash_tmp" "$GH_DASH_OUTPUT"
 
         # Merge user local overrides on top (survives theme-switch)
-        local ghdash_local="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/local.yml"
-        if [[ -f "$ghdash_local" ]] && command -v yq >/dev/null 2>&1; then
-            local merge_tmp="${GH_DASH_OUTPUT}.merge.$$"
-            # Deep merge: local.yml values win; lists are appended (*+)
-            if yq eval-all '. as $item ireduce ({}; . *+ $item)' \
-                "$GH_DASH_OUTPUT" "$ghdash_local" > "$merge_tmp" 2>/dev/null; then
-                mv "$merge_tmp" "$GH_DASH_OUTPUT"
-                [[ "$quiet" != "true" ]] && success "Merged gh-dash local overrides"
-            else
-                rm -f "$merge_tmp"
-                [[ "$quiet" != "true" ]] && warn "gh-dash local merge failed, using base config"
-            fi
-        elif [[ -f "$ghdash_local" ]] && ! command -v yq >/dev/null 2>&1; then
-            [[ "$quiet" != "true" ]] && warn "yq not found — gh-dash local.yml not merged (run: brew install yq)"
+        if [[ "$quiet" == "true" ]]; then
+            ghdash_merge_local --quiet
+        else
+            ghdash_merge_local
         fi
 
         [[ "$quiet" != "true" ]] && success "Generated gh-dash configuration"
