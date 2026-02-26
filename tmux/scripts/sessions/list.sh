@@ -18,16 +18,24 @@ print_dotfiles_logo
 while read -r session; do
     # Check if this session has any alerts and collect unique agents
     if [[ -f "$ALERTS_FILE" ]]; then
-        agents=$(grep "^${session}:" "$ALERTS_FILE" 2>/dev/null | cut -d: -f3 | sort -u)
-        if [[ -n "$agents" ]]; then
-            # Build icon string for all agents in this session
+        session_alerts=$(grep "^${session}:" "$ALERTS_FILE" 2>/dev/null)
+        if [[ -n "$session_alerts" ]]; then
+            # Build icon string for all alerts in this session
             icons=""
-            while IFS= read -r agent; do
-                display=$(get_agent_display "$agent")
-                icon="${display%%|*}"
-                icons="${icons}${icon}"
-            done <<< "$agents"
-            echo "${session} ${icons}"
+            while IFS= read -r entry; do
+                IFS=':' read -r _sess _win field3 field4 field5 <<< "$entry"
+                if [[ "$field3" == "exit" ]]; then
+                    display=$(get_exit_code_display "$field4")
+                    icon="${display%%|*}"
+                    colour="${display##*|}"
+                    icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon} ${field5}\033[0m "
+                else
+                    display=$(get_agent_display "$field3")
+                    icon="${display%%|*}"
+                    icons="${icons}${icon} "
+                fi
+            done <<< "$session_alerts"
+            printf "%s %b\n" "${session}" "${icons}"
         else
             echo "$session"
         fi

@@ -46,6 +46,96 @@ get_agent_display() {
     esac
 }
 
+# Exit code icon (separate from agent icons)
+# Usage: get_exit_code_icon "exit_code"
+get_exit_code_icon() {
+    local code="$1"
+    case "$code" in
+        0)   echo "✓" ;;
+        *)   echo "✗" ;;
+    esac
+}
+
+# Exit code colour
+# Usage: get_exit_code_colour "exit_code"
+get_exit_code_colour() {
+    local code="$1"
+    case "$code" in
+        0)   echo "#50fa7b" ;;    # Dracula green
+        *)   echo "#ff5555" ;;    # Dracula red
+    esac
+}
+
+# Exit code display (combined icon|colour, avoids subshell forks)
+# Usage: get_exit_code_display "exit_code"
+get_exit_code_display() {
+    local code="$1"
+    case "$code" in
+        0)   echo "✓|#50fa7b" ;;
+        *)   echo "✗|#ff5555" ;;
+    esac
+}
+
+# Set an exit code alert for the current window
+# Usage: set_exit_alert "exit_code" "label" [ring_bell]
+# Sets @exit_alert and @exit_alert_colour window options and adds 5-field entry to alerts file
+set_exit_alert() {
+    local code="$1"
+    local label="$2"
+    local ring_bell="${3:-true}"
+
+    # Ensure alerts directory exists
+    local alerts_dir
+    alerts_dir="$(dirname "$ALERTS_FILE")"
+    if [[ ! -d "$alerts_dir" ]]; then
+        mkdir -p "$alerts_dir"
+        chmod 700 "$alerts_dir"
+    fi
+
+    # Get colour for this exit code
+    local colour
+    colour="$(get_exit_code_colour "$code")"
+
+    # Determine the window target — prefer TMUX_PANE (a pane ID like %12) since
+    # it's set to the origin pane by cmd-alert.sh and works even when we've
+    # switched windows. tmux accepts pane IDs directly as -wt targets.
+    local target=""
+    if [[ -n "${TMUX_PANE:-}" ]]; then
+        target="$TMUX_PANE"
+    fi
+
+    # Set the @exit_alert and @exit_alert_colour window options on the origin window
+    if [[ -n "$target" ]]; then
+        tmux set-option -wt "$target" "@exit_alert" 1 2>/dev/null
+        tmux set-option -wt "$target" "@exit_alert_colour" "$colour" 2>/dev/null
+    fi
+
+    # Resolve session:window name for the alerts file (needed for show.sh / list.sh)
+    local win=""
+    if [[ -n "${TMUX_PANE:-}" ]]; then
+        win=$(tmux display-message -t "$TMUX_PANE" -p '#S:#W' 2>/dev/null || true)
+    fi
+    if [[ -z "$win" && -n "${TMUX:-}" ]]; then
+        win=$(tmux display-message -p '#S:#W' 2>/dev/null || true)
+    fi
+
+    # Add window to alerts file with exit code and label (5-field format)
+    # Validate win is in format "session:window" (both non-empty, valid chars)
+    if [[ "$win" =~ ^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$ ]]; then
+        local entry="${win}:exit:${code}:${label}"
+        grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
+    fi
+
+    # Ring the terminal bell (only if requested and /dev/tty is available)
+    if [[ "$ring_bell" == "true" ]]; then
+        {
+            if [[ -w /dev/tty ]]; then
+                printf '\a' > /dev/tty
+            fi
+        } 2>/dev/null || true
+    fi
+}
+
 # Set an alert for the current window
 # Usage: set_window_alert "agent_name" [ring_bell]
 # Sets tmux window option and adds to alerts file

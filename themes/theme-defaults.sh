@@ -14,39 +14,47 @@ apply_theme_defaults() {
     TMUX_STATUS_FG="$TMUX_FG_PRIMARY"
     TMUX_STATUS_INACTIVE_FG="$TMUX_FG_SECONDARY"
     
-    # Active window and bell/alert colours use the theme's chosen accent
+    # Active window colour uses the theme's chosen accent
+    # TMUX_STATUS_BELL_FG can be overridden in the theme file; only set here if not already defined
     case "$active_accent" in
         cyan)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_CYAN"
-            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_CYAN"
+            TMUX_STATUS_BELL_FG="${TMUX_STATUS_BELL_FG:-$TMUX_ACCENT_CYAN}"
             ;;
         purple)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PURPLE"
-            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_PURPLE"
+            TMUX_STATUS_BELL_FG="${TMUX_STATUS_BELL_FG:-$TMUX_ACCENT_PURPLE}"
             ;;
         pink)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PINK"
-            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_PINK"
+            TMUX_STATUS_BELL_FG="${TMUX_STATUS_BELL_FG:-$TMUX_ACCENT_PINK}"
             ;;
         green)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_GREEN"
-            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_GREEN"
+            TMUX_STATUS_BELL_FG="${TMUX_STATUS_BELL_FG:-$TMUX_ACCENT_GREEN}"
             ;;
         yellow)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_YELLOW"
-            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_YELLOW"
+            TMUX_STATUS_BELL_FG="${TMUX_STATUS_BELL_FG:-$TMUX_ACCENT_YELLOW}"
             ;;
         red)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_RED"
-            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_RED"
+            TMUX_STATUS_BELL_FG="${TMUX_STATUS_BELL_FG:-$TMUX_ACCENT_RED}"
             ;;
         *)
             TMUX_STATUS_ACTIVE_BG="$TMUX_ACCENT_PURPLE"
-            TMUX_STATUS_BELL_FG="$TMUX_ACCENT_PURPLE"
+            TMUX_STATUS_BELL_FG="${TMUX_STATUS_BELL_FG:-$TMUX_ACCENT_PURPLE}"
             ;;
     esac
     TMUX_STATUS_ACTIVE_FG="$TMUX_BG_PRIMARY"
-    
+
+    # ══════════════════════════════════════════════════════════════
+    # Command exit alert colours - use theme accent green/red
+    # Can be overridden per-theme if needed
+    # ══════════════════════════════════════════════════════════════
+    TMUX_EXIT_PASS_COLOUR="${TMUX_EXIT_PASS_COLOUR:-$TMUX_ACCENT_GREEN}"
+    TMUX_EXIT_FAIL_COLOUR="${TMUX_EXIT_FAIL_COLOUR:-$TMUX_ACCENT_RED}"
+
     # ══════════════════════════════════════════════════════════════
     # Pane borders - active border matches active window
     # ══════════════════════════════════════════════════════════════

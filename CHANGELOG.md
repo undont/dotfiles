@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.40] - 2026-02-26
+
+### Added
+- Zsh: Command exit alerts — automatically notifies when a command finishes in another tmux window (✓/✗ icon in status bar + window tab highlight), no wrapping required
+- Tmux: `@exit_alert` / `@exit_alert_colour` window options for per-window exit state; `@exit_pass_colour` / `@exit_fail_colour` global options sourced from theme
+- Alerts: `set_exit_alert` function in `alerts.sh` library; session and window list pickers show exit alert icons with ANSI colour
+- Theme: `TMUX_EXIT_PASS_COLOUR` / `TMUX_EXIT_FAIL_COLOUR` derived variables (green/red) added to `theme-defaults.sh` and `theme-switch`
+- Docs: `docs/CMD-ALERTS.md` — detailed guide for the command exit alert system
+- Nvim: `<leader>wH/wL/wJ/wK` maximise-direction window resize keymaps (shift variants of small-increment maps)
+
+### Changed
+- Alerts: `show.sh` now handles both agent alerts (3-field) and exit alerts (5-field) in the same alerts file
+- Alerts: Session and window list pickers handle mixed alert types with correct icons and colours
+- Tmux: Zoom indicator uses `TMUX_STATUS_BELL_FG` (theme accent) instead of hardcoded cyan; clock background uses `TMUX_BG_SECONDARY`
+- Theme: `TMUX_STATUS_BELL_FG` uses `${VAR:-fallback}` to allow per-theme overrides without clobbering explicit values set in the theme file
+- Nvim: `<leader>lR` refresh runs `only` before wiping buffers and `wincmd =` after, resetting the layout cleanly
+
 ## [0.2.39] - 2026-02-26
 
 ### Added

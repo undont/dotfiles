@@ -232,7 +232,7 @@ direnv allow
 | `mcp-sync` | `~/.config/sync-mcp-servers.sh` | Sync MCP server configs            |
 | `tls`      | `trestore --list`               | List saved tmux session backups    |
 | `tcleanup` | `~/.tmux/scripts/tests/cleanup-tests.sh` | Clean up orphaned test resources (servers/backups) |
-| `alerts-clear` | `rm -rf ~/.config/agent-alerts` | Clear agent alerts |
+| `alerts-clear` | `rm -rf ~/.config/agent-alerts` | Clear all agent and command exit alerts |
 | `gols`     | `ls ~/go/bin`                   | List installed Go binaries         |
 | `dot`      | `cd ~/dotfiles`                 | Navigate to dotfiles directory     |
 | `claudeconfig` | `cd ~/claude-config`        | Navigate to claude-config directory |

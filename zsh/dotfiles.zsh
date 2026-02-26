@@ -98,6 +98,7 @@ export PATH="$PATH:$HOME/.local/share/nvim/mason/bin"
 
 # .NET global tools (EasyDotnet, etc.)
 export PATH="$PATH:$HOME/.dotnet/tools"
+export DOTNET_ROLL_FORWARD='Major'
 
 # ARM embedded development (for microcontroller/firmware work)
 export INCLUDE="$HOMEBREW_PREFIX/arm-none-eabi/include"
@@ -642,6 +643,13 @@ _dotfiles() {
 }
 compdef _dotfiles dotfiles
 compdef _dotfiles dot
+
+# =============================================================================
+# COMMAND EXIT ALERTS (auto-alert for long-running commands)
+# =============================================================================
+# Automatically sends a tmux alert when a command finishes after ≥10 seconds
+# and you've switched away from the window while it was running.
+[[ -f "$HOME/dotfiles/scripts/hooks/cmd-alert-hook.zsh" ]] && source "$HOME/dotfiles/scripts/hooks/cmd-alert-hook.zsh"
 
 # =============================================================================
 # SHELL STARTUP PROFILING

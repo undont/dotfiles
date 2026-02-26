@@ -29,6 +29,8 @@ Each agent has a dedicated icon and colour in the status bar:
 scripts/hooks/
 ├── agent-alert.sh           # Core: set alert for any agent
 ├── agent-alert-clear.sh     # Core: clear alert for current window
+├── cmd-alert.sh             # Core: set exit code alert for a command
+├── cmd-alert-hook.zsh       # zsh preexec/precmd hooks (sourced by dotfiles.zsh)
 ├── nvim-buffer-sync.sh      # Sync edited files to paired nvim
 └── wrappers/
     ├── claude-alert.sh      # Calls agent-alert.sh claude
@@ -207,6 +209,10 @@ tmux/scripts/alerts/clear.sh
    ```
 
 3. Wire the wrappers into your agent's hook/plugin configuration.
+
+## Command Exit Alerts
+
+The alert system also supports command exit code notifications via the `notify` shell function. See [CMD-ALERTS.md](CMD-ALERTS.md) for details.
 
 ## Troubleshooting
 

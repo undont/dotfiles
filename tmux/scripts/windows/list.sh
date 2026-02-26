@@ -33,18 +33,26 @@ fi | sort -rn | cut -d' ' -f2- | while read -r line; do
     window_name=$(echo "$line" | cut -d' ' -f2-)      # e.g., "dev"
     alert_key="${session_name}:${window_name}:"       # e.g., "dotfiles:dev:" (prefix match)
 
-    # Check if this window has alerts and collect unique agents
+    # Check if this window has alerts and collect icons
     if [[ -f "$ALERTS_FILE" ]]; then
-        agents=$(grep "^${alert_key}" "$ALERTS_FILE" 2>/dev/null | cut -d: -f3 | sort -u)
-        if [[ -n "$agents" ]]; then
-            # Build icon string for all agents in this window
+        window_alerts=$(grep "^${alert_key}" "$ALERTS_FILE" 2>/dev/null)
+        if [[ -n "$window_alerts" ]]; then
+            # Build icon string for all alerts in this window
             icons=""
-            while IFS= read -r agent; do
-                display=$(get_agent_display "$agent")
-                icon="${display%%|*}"
-                icons="${icons}${icon}"
-            done <<< "$agents"
-            echo "$line ${icons}"
+            while IFS= read -r entry; do
+                IFS=':' read -r _sess _win field3 field4 field5 <<< "$entry"
+                if [[ "$field3" == "exit" ]]; then
+                    display=$(get_exit_code_display "$field4")
+                    icon="${display%%|*}"
+                    colour="${display##*|}"
+                    icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon} ${field5}\033[0m "
+                else
+                    display=$(get_agent_display "$field3")
+                    icon="${display%%|*}"
+                    icons="${icons}${icon} "
+                fi
+            done <<< "$window_alerts"
+            printf "%s %b\n" "$line" "${icons}"
         else
             echo "$line"
         fi
