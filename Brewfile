@@ -38,6 +38,7 @@ cask "visual-studio-code"
 # AI Coding Assistants
 brew "opencode"
 brew "ollama"                # Local LLM runner
+cask "codexbar"              # Menu bar usage monitor for Codex and Claude
 
 # Git & GitHub
 brew "gh"
@@ -107,6 +108,7 @@ brew "lazydocker"            # Docker TUI
 # Misc Dev Tools
 brew "cmake"
 brew "staticcheck"            # Go linter
+brew "golangci-lint"          # Go meta-linter
 brew "swift-format"
 brew "golang-migrate"
 
