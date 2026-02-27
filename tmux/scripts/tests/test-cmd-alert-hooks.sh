@@ -155,6 +155,7 @@ if command -v zsh &>/dev/null; then
     assert_equals "3-word command: npm run build" "npm run build" "$label"
 
     label=$(zsh -c '
+        _CMD_ALERT_EXCLUDE=()
         source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
         _cmd_alert_preexec "docker compose -f prod.yml up --build"
         echo "$_cmd_alert_label"
@@ -182,7 +183,7 @@ if command -v zsh &>/dev/null; then
     fired=$(zsh -c '
         export ALERTS_FILE="'"$ALERT_TEST_DIR/alerts-threshold"'"
         export _CMD_ALERT_SCRIPT="'"$HOOKS_DIR/cmd-alert.sh"'"
-        export _CMD_ALERT_THRESHOLD=9999
+        export _CMD_ALERT_MIN_SECONDS=9999
         source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
         _cmd_alert_preexec "make test"
         _cmd_alert_precmd
@@ -198,7 +199,7 @@ if command -v zsh &>/dev/null; then
     fired=$(zsh -c '
         export ALERTS_FILE="'"$ALERT_TEST_DIR/alerts-nowindow"'"
         export _CMD_ALERT_SCRIPT="'"$HOOKS_DIR/cmd-alert.sh"'"
-        export _CMD_ALERT_THRESHOLD=0
+        export _CMD_ALERT_MIN_SECONDS=0
         unset TMUX
         source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
         _cmd_alert_preexec "make test"

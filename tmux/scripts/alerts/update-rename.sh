@@ -9,6 +9,11 @@ NEW_WINDOW="$3"
 
 readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 
+# Source the alerts library for lock helpers
+SCRIPT_DIR="${BASH_SOURCE%/*}"
+# shellcheck source=../_lib/alerts.sh
+source "$SCRIPT_DIR/../_lib/alerts.sh"
+
 # If format strings weren't expanded, get the values directly from tmux
 if [[ "$SESSION" == '#{session_name}' ]] || [[ -z "$SESSION" ]]; then
     SESSION=$(tmux display-message -p '#S' 2>/dev/null) || exit 1
@@ -31,26 +36,12 @@ if [[ ! "$OLD_WINDOW" =~ ^[a-zA-Z0-9._-]+$ ]]; then
 fi
 
 # Check if there are any alerts for this window before attempting update
-if ! grep -q "^${SESSION}:${OLD_WINDOW}:" "$ALERTS_FILE" 2>/dev/null; then
+if ! grep -qF "${SESSION}:${OLD_WINDOW}:" "$ALERTS_FILE" 2>/dev/null; then
     exit 0
 fi
 
-# Update alerts file with proper file locking
-# Use the same locking pattern as clear_window_alerts in alerts.sh
-readonly LOCK_DIR="${ALERTS_FILE}.lock"
-lock_acquired=0
-
-# Try to acquire lock (with timeout to prevent deadlock)
-for _ in {1..10}; do
-    if mkdir "$LOCK_DIR" 2>/dev/null; then
-        lock_acquired=1
-        break
-    fi
-    sleep 0.1
-done
-
-# If we couldn't acquire lock, exit gracefully (don't block tmux)
-if [[ $lock_acquired -eq 0 ]]; then
+# Update alerts file with file locking
+if ! _acquire_alerts_lock; then
     exit 0
 fi
 
@@ -69,7 +60,6 @@ if [[ $update_success -eq 0 ]]; then
     rm -f "$tmp_file"
 fi
 
-# Release lock
-rmdir "$LOCK_DIR" 2>/dev/null || true
+_release_alerts_lock
 
 exit 0

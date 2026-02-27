@@ -76,6 +76,12 @@ _cmd_alert_preexec() {
         _cmd_alert_label="${first} ${words[2]}…"
     fi
 
+    # Sanitise label: strip colons (delimiter in alerts file), escape '#' (tmux
+    # format injection), and cap length to prevent oversized status bar entries
+    _cmd_alert_label="${_cmd_alert_label//:/ }"
+    _cmd_alert_label="${_cmd_alert_label//\#/##}"
+    _cmd_alert_label="${_cmd_alert_label:0:80}"
+
     # Capture the origin pane so the alert lands on the correct window
     # even if the user switches windows before the command finishes
     if [[ -n "${TMUX:-}" ]]; then
@@ -103,6 +109,18 @@ _cmd_alert_precmd() {
         _cmd_alert_label=""
         _cmd_alert_pane=""
         return
+    fi
+
+    # Window-switch guard: only alert if the user switched away from the origin
+    # pane. If still viewing the same pane, the command finished in plain sight.
+    if [[ -n "$_cmd_alert_pane" ]]; then
+        local current_pane
+        current_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null) || true
+        if [[ "$current_pane" == "$_cmd_alert_pane" ]]; then
+            _cmd_alert_label=""
+            _cmd_alert_pane=""
+            return
+        fi
     fi
 
     # Fire the alert hook, passing the origin pane so the alert lands on the

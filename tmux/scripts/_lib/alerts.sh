@@ -90,6 +90,8 @@ get_window_alert_icons() {
         exit_label=$(printf '%s\n' "$opts" | grep '^@exit_alert_label ' | cut -d' ' -f2-)
         exit_label="${exit_label#\"}"
         exit_label="${exit_label%\"}"
+        # Escape '#' to prevent tmux format injection
+        exit_label="${exit_label//\#/##}"
         display=$(get_exit_code_display "$exit_code")
         icon="${display%%|*}"
         colour="${display##*|}"
@@ -178,6 +180,12 @@ set_window_alert() {
     local agent="${1:-claude}"
     local ring_bell="${2:-true}"
 
+    # Validate agent name against whitelist
+    case "$agent" in
+        claude|opencode) ;;
+        *) return 1 ;;
+    esac
+
     # Ensure alerts directory exists
     local alerts_dir
     alerts_dir="$(dirname "$ALERTS_FILE")"
@@ -224,8 +232,48 @@ set_window_alert() {
 # (1 second total timeout). This prevents concurrent alert updates from
 # corrupting the alerts file when multiple tmux scripts fire simultaneously.
 #
+# Stale lock recovery: if the lock holder PID is no longer alive, the lock is
+# removed and acquisition retried.
+#
 # grep exit codes: 0 = lines matched (filtered), 1 = no matches (file cleared),
 # both are valid. Exit code 2+ indicates an actual error.
+
+# Acquire the alerts file lock
+# Usage: _acquire_alerts_lock
+# Returns: 0 on success, 1 on failure
+_acquire_alerts_lock() {
+    local lock_dir="${ALERTS_FILE}.lock"
+    local pid_file="${lock_dir}/pid"
+
+    for _ in {1..10}; do
+        if mkdir "$lock_dir" 2>/dev/null; then
+            echo $$ > "$pid_file" 2>/dev/null
+            return 0
+        fi
+
+        # Check for stale lock — if holder PID is no longer alive, remove it
+        if [[ -f "$pid_file" ]]; then
+            local holder_pid
+            holder_pid=$(cat "$pid_file" 2>/dev/null) || true
+            if [[ -n "$holder_pid" ]] && ! kill -0 "$holder_pid" 2>/dev/null; then
+                rmdir "$lock_dir" 2>/dev/null || rm -rf "$lock_dir" 2>/dev/null || true
+                continue
+            fi
+        fi
+
+        sleep 0.1
+    done
+
+    return 1
+}
+
+# Release the alerts file lock
+# Usage: _release_alerts_lock
+_release_alerts_lock() {
+    local lock_dir="${ALERTS_FILE}.lock"
+    rm -f "${lock_dir}/pid" 2>/dev/null
+    rmdir "$lock_dir" 2>/dev/null || true
+}
 
 # Clear all alerts for a specific window
 # Usage: clear_window_alerts "session" "window" ["window_id"]
@@ -235,35 +283,19 @@ clear_window_alerts() {
     local window_id="${3:-}"
 
     # Remove from alerts file (any agent) with file locking
-    if [[ -f "$ALERTS_FILE" ]]; then
-        local lock_dir="${ALERTS_FILE}.lock"
-        local lock_acquired=0
+    if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
+        local tmp_file="${ALERTS_FILE}.tmp.$$"
+        local grep_exit=0
+        grep -vF "${session}:${window}:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
 
-        # Try to acquire lock (with timeout to prevent deadlock)
-        for _ in {1..10}; do
-            if mkdir "$lock_dir" 2>/dev/null; then
-                lock_acquired=1
-                break
-            fi
-            sleep 0.1
-        done
-
-        if [[ $lock_acquired -eq 1 ]]; then
-            local tmp_file="${ALERTS_FILE}.tmp.$$"
-            local grep_exit=0
-            grep -v "^${session}:${window}:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
-
-            # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
-            if [[ $grep_exit -le 1 ]]; then
-                mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file"
-            else
-                # grep encountered an error - clean up
-                rm -f "$tmp_file"
-            fi
-
-            # Release lock
-            rmdir "$lock_dir" 2>/dev/null || true
+        # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
+        if [[ $grep_exit -le 1 ]]; then
+            mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file"
+        else
+            rm -f "$tmp_file"
         fi
+
+        _release_alerts_lock
     fi
 
     # Unset all @*_alert window options (agent-agnostic wildcard clearing)
@@ -274,8 +306,6 @@ clear_window_alerts() {
         target="${session}:${window}"
     fi
 
-    # Clear all agent alert options dynamically
-    # Use a more robust approach that handles empty input correctly
     local alert_options
     alert_options=$(tmux show-options -wt "$target" 2>/dev/null | grep '@.*_alert' | cut -d' ' -f1 || true)
 
@@ -291,27 +321,19 @@ clear_window_alerts() {
 cleanup_stale_alerts() {
     [[ ! -f "$ALERTS_FILE" ]] && return 0
 
-    local lock_dir="${ALERTS_FILE}.lock"
-    local lock_acquired=0
-
-    # Try to acquire lock (with timeout to prevent deadlock)
-    for _ in {1..10}; do
-        if mkdir "$lock_dir" 2>/dev/null; then
-            lock_acquired=1
-            break
-        fi
-        sleep 0.1
-    done
-
-    [[ $lock_acquired -eq 0 ]] && return 1
+    _acquire_alerts_lock || return 1
 
     local tmp_file="${ALERTS_FILE}.tmp.$$"
     local cleaned=0
 
     # Read each alert and verify the session:window exists
-    while IFS=':' read -r session window agent; do
-        # Validate format
-        if [[ -z "$session" || -z "$window" || -z "$agent" ]]; then
+    # Lines may be 3-field (session:window:agent) or 5-field (session:window:exit:code:label)
+    # so we read the full line and only split the first two fields for validation.
+    while IFS= read -r line; do
+        IFS=':' read -r session window field3 _rest <<< "$line"
+
+        # Validate format — need at least session, window, and one more field
+        if [[ -z "$session" || -z "$window" || -z "$field3" ]]; then
             cleaned=1
             continue
         fi
@@ -328,24 +350,21 @@ cleanup_stale_alerts() {
             continue
         fi
 
-        # Window exists, keep the alert
-        echo "${session}:${window}:${agent}" >> "$tmp_file"
+        # Window exists, keep the alert — preserve original line intact
+        echo "$line" >> "$tmp_file"
     done < "$ALERTS_FILE"
 
-    # Update alerts file if we cleaned anything
     if [[ $cleaned -eq 1 ]]; then
         if [[ -f "$tmp_file" ]]; then
             mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null
         else
-            # No valid alerts remain, create empty file
             : > "$ALERTS_FILE"
         fi
     else
         rm -f "$tmp_file"
     fi
 
-    # Release lock
-    rmdir "$lock_dir" 2>/dev/null || true
+    _release_alerts_lock
 }
 
 # Clear all alerts for a session
@@ -354,41 +373,24 @@ clear_session_alerts() {
     local session="$1"
 
     # Remove all entries for this session from alerts file with locking
-    if [[ -f "$ALERTS_FILE" ]]; then
-        local lock_dir="${ALERTS_FILE}.lock"
-        local lock_acquired=0
+    if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
+        local tmp_file="${ALERTS_FILE}.tmp.$$"
+        local grep_exit=0
+        grep -vF "${session}:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
 
-        # Try to acquire lock (with timeout to prevent deadlock)
-        for _ in {1..10}; do
-            if mkdir "$lock_dir" 2>/dev/null; then
-                lock_acquired=1
-                break
-            fi
-            sleep 0.1
-        done
-
-        if [[ $lock_acquired -eq 1 ]]; then
-            local tmp_file="${ALERTS_FILE}.tmp.$$"
-            local grep_exit=0
-            grep -v "^${session}:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
-
-            # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
-            if [[ $grep_exit -le 1 ]]; then
-                mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file"
-            else
-                # grep encountered an error - clean up
-                rm -f "$tmp_file"
-            fi
-
-            # Release lock
-            rmdir "$lock_dir" 2>/dev/null || true
+        # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
+        if [[ $grep_exit -le 1 ]]; then
+            mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file"
+        else
+            rm -f "$tmp_file"
         fi
+
+        _release_alerts_lock
     fi
 
     # Unset agent options for all windows in session
     local win
     for win in $(tmux list-windows -t "$session" -F '#D' 2>/dev/null); do
-        # Clear all agent alert options dynamically with robust handling
         local alert_options
         alert_options=$(tmux show-options -wt "$win" 2>/dev/null | grep '@.*_alert' | cut -d' ' -f1 || true)
 

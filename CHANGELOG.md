@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.41] - 2026-02-27
+
+### Changed
+- Alerts: `show.sh` rewritten to use parallel arrays for bash 3.2 (macOS stock) compatibility — removes `declare -A` dependency
+- Alerts: Extracted `_acquire_alerts_lock` / `_release_alerts_lock` helpers with stale-PID recovery; shared by `clear_window_alerts`, `cleanup_stale_alerts`, `clear_session_alerts`, and `update-rename.sh`
+- Alerts: `cleanup_stale_alerts` now correctly parses 5-field exit alert lines instead of splitting on 3 fields
+
+### Fixed
+- Cmd alerts: Label sanitisation — strip colons (alerts file delimiter), escape `#` (tmux format injection), and cap length at 80 chars
+- Cmd alerts: Window-switch guard — only fire alert if user has switched away from the origin pane; commands finishing in the active pane are silently ignored
+- Alerts: Agent name whitelist in `set_window_alert` prevents arbitrary values
+- Alerts: `grep -vF` (fixed-string) in clear/rename operations prevents regex injection from session or window names
+- Tests: Fix `_CMD_ALERT_THRESHOLD` → `_CMD_ALERT_MIN_SECONDS` rename and add `_CMD_ALERT_EXCLUDE=()` for test isolation
+
 ## [0.2.40] - 2026-02-26
 
 ### Added
