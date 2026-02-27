@@ -4,7 +4,7 @@
 
 # Alerts file location (only set if not already defined)
 if [[ -z "${ALERTS_FILE:-}" ]]; then
-    readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts/alerts"
+    readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 fi
 
 # Alert file format: session:window:agent
@@ -61,8 +61,8 @@ get_exit_code_icon() {
 get_exit_code_colour() {
     local code="$1"
     case "$code" in
-        0)   echo "#50fa7b" ;;    # Dracula green
-        *)   echo "#ff5555" ;;    # Dracula red
+        0)   echo "#7aab88" ;;    # Muted green
+        *)   echo "#c07878" ;;    # Muted red
     esac
 }
 
@@ -71,9 +71,42 @@ get_exit_code_colour() {
 get_exit_code_display() {
     local code="$1"
     case "$code" in
-        0)   echo "✓|#50fa7b" ;;
-        *)   echo "✗|#ff5555" ;;
+        0)   echo "✓|#7aab88" ;;
+        *)   echo "✗|#c07878" ;;
     esac
+}
+
+# Build alert icon string from tmux window options output
+# Usage: icons=$(get_window_alert_icons "$opts")
+# Returns: ANSI-coloured icon string (empty if no alerts)
+get_window_alert_icons() {
+    local opts="$1"
+    local icons=""
+
+    # Exit alert
+    if printf '%s\n' "$opts" | grep -q '^@exit_alert '; then
+        local exit_code exit_label display icon colour
+        exit_code=$(printf '%s\n' "$opts" | grep '^@exit_alert_code ' | cut -d' ' -f2)
+        exit_label=$(printf '%s\n' "$opts" | grep '^@exit_alert_label ' | cut -d' ' -f2-)
+        exit_label="${exit_label#\"}"
+        exit_label="${exit_label%\"}"
+        display=$(get_exit_code_display "$exit_code")
+        icon="${display%%|*}"
+        colour="${display##*|}"
+        icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon} ${exit_label}\033[0m "
+    fi
+
+    # Agent alerts
+    local agent
+    for agent in claude opencode; do
+        if printf '%s\n' "$opts" | grep -q "^@${agent}_alert "; then
+            display=$(get_agent_display "$agent")
+            icon="${display%%|*}"
+            icons="${icons}${icon} "
+        fi
+    done
+
+    printf '%s' "$icons"
 }
 
 # Set an exit code alert for the current window
@@ -108,6 +141,8 @@ set_exit_alert() {
     if [[ -n "$target" ]]; then
         tmux set-option -wt "$target" "@exit_alert" 1 2>/dev/null
         tmux set-option -wt "$target" "@exit_alert_colour" "$colour" 2>/dev/null
+        tmux set-option -wt "$target" "@exit_alert_code" "$code" 2>/dev/null
+        tmux set-option -wt "$target" "@exit_alert_label" "$label" 2>/dev/null
     fi
 
     # Resolve session:window name for the alerts file (needed for show.sh / list.sh)

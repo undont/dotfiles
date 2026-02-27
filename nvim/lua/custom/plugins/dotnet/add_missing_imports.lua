@@ -153,13 +153,13 @@ return function()
                 only = { 'source.addMissingImports' },
                 triggerKind = 1,
               },
-            }, function(err, result)
-              if err or not result or #result == 0 then
+            }, function(err, actions)
+              if err or not actions or #actions == 0 then
                 close_and_next()
                 return
               end
 
-              local action = result[1]
+              local action = actions[1]
 
               local function apply(edit)
                 if edit then

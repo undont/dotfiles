@@ -67,10 +67,10 @@ section "Exit Code Display Functions"
 assert_equals "Exit 0 icon is ✓"      "✓"        "$(get_exit_code_icon 0)"
 assert_equals "Exit 1 icon is ✗"      "✗"        "$(get_exit_code_icon 1)"
 assert_equals "Exit 127 icon is ✗"    "✗"        "$(get_exit_code_icon 127)"
-assert_equals "Exit 0 colour is green" "#50fa7b"  "$(get_exit_code_colour 0)"
-assert_equals "Exit 1 colour is red"   "#ff5555"  "$(get_exit_code_colour 1)"
-assert_equals "Exit 0 display"        "✓|#50fa7b" "$(get_exit_code_display 0)"
-assert_equals "Exit 1 display"        "✗|#ff5555" "$(get_exit_code_display 1)"
+assert_equals "Exit 0 colour is green" "#7aab88"  "$(get_exit_code_colour 0)"
+assert_equals "Exit 1 colour is red"   "#c07878"  "$(get_exit_code_colour 1)"
+assert_equals "Exit 0 display"        "✓|#7aab88" "$(get_exit_code_display 0)"
+assert_equals "Exit 1 display"        "✗|#c07878" "$(get_exit_code_display 1)"
 
 # ═══════════════════════════════════════════════════════════════
 # Alert File Format

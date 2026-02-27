@@ -308,13 +308,10 @@ alias oc="opencode"                    # Launch OpenCode editor
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"            # Sync local repo paths into gh-dash config
 
-# MCP (Model Context Protocol)
-alias mcp-sync="~/.ai/scripts/sync-mcp-servers.sh"    # Sync MCP servers across tools
-
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
-alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts"  # Clear agent alerts
+alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts"  # Clear all tmux alerts
 alias ta="tattach" # Attach to tmux session, restoring from backup if needed (see tattach function below)
 
 # Navigation
@@ -535,6 +532,7 @@ tattach() {
 # Git
 alias gs="git status -sb"
 alias gd="git diff"
+alias gdn="git diff | diffnav" # View git diffs in diffnav
 alias gds="git diff --staged"
 alias gl="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ar, %an)%C(reset)' -20"
 alias glf="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ad, %an)%C(reset)' --date=format:'%d %B %Y %H:%M'"
@@ -576,6 +574,21 @@ export KEYTIMEOUT=1                    # Wait 10ms for more chars after ESC
 # Ensure common word deletion shortcuts work correctly
 bindkey '^[^?' backward-kill-word      # Option+Backspace: delete word backwards
 bindkey '^W' backward-kill-word        # Ctrl+W: delete word backwards
+
+# Bind Home/End in both forms: Ghostty sends CSI H/F directly; tmux with
+# extended-keys re-encodes them as VT220-style \x1b[1~ and \x1b[4~.
+bindkey '\e[H'  beginning-of-line      # Home (Ghostty, CSI)
+bindkey '\e[F'  end-of-line            # End (Ghostty, CSI)
+bindkey '\e[1~' beginning-of-line      # Home (tmux-encoded)
+bindkey '\e[4~' end-of-line            # End (tmux-encoded)
+# \e[1~ shares the prefix \e[1 with modifier+arrow sequences (\e[1;2A etc).
+# Binding the full sequences resolves the ambiguity so ZLE doesn't garble them.
+bindkey '\e[1;2A' up-line-or-history   # Shift+Up
+bindkey '\e[1;2B' down-line-or-history # Shift+Down
+bindkey '\e[1;2C' forward-word         # Shift+Right
+bindkey '\e[1;2D' backward-word        # Shift+Left
+bindkey '\e[1;3A' up-line-or-history   # Opt+Up
+bindkey '\e[1;3B' down-line-or-history # Opt+Down
 
 # Ghostty sends these sequences for modifier+enter combos; bind them to
 # accept-line so they act as Enter in zsh instead of printing garbage.

@@ -7,7 +7,7 @@ SESSION="$1"
 OLD_WINDOW="$2"
 NEW_WINDOW="$3"
 
-readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts/alerts"
+readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 
 # If format strings weren't expanded, get the values directly from tmux
 if [[ "$SESSION" == '#{session_name}' ]] || [[ -z "$SESSION" ]]; then

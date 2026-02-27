@@ -27,6 +27,8 @@ bind ` send-prefix
 # Terminal colours: enable 256-colour and true colour (RGB) support
 set -g default-terminal "tmux-256color"
 set -ag terminal-overrides ",xterm-256color:RGB"
+# Remap Home/End to CSI sequences so cmd+left/right work in all pane apps
+set -ag terminal-overrides ",xterm-256color:khome=\E[H,kend=\E[F"
 
 # Cursor: default to block (local.conf can override)
 set -g cursor-style block

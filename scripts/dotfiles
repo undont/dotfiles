@@ -364,6 +364,7 @@ cmd_aliases() {
     _2col \
         "gs"   "git status -sb" \
         "gd"   "git diff" \
+        "gdn"  "git diff (diffnav)" \
         "gds"  "git diff --staged" \
         "gl"   "git log (last 20)" \
         "glf"  "git log (full)" \
@@ -383,7 +384,7 @@ cmd_aliases() {
         "trestore"  "restore from backup"
         "tkill"     "delete session backup"
         "tcleanup"  "clean test resources"
-        "alerts-clear" "clear agent alerts"
+        "alerts-clear" "clear all tmux alerts"
     )
     if command -v dev &>/dev/null; then
         tmux_items+=("dev" "dev session launcher")
@@ -450,6 +451,8 @@ cmd_aliases() {
             while IFS= read -r line; do
                 local name="${line%%=*}"
                 local value="${line#*=}"
+                # Strip inline comment (everything from whitespace+# onwards)
+                value="${value%%[[:space:]]# *}"
                 # Strip surrounding quotes
                 value="${value#[\"\']}"
                 value="${value%[\"\']}"

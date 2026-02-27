@@ -16,47 +16,29 @@ load_fzf_theme
 print_dotfiles_logo
 
 # Get windows sorted by last-viewed, then add alert indicator
+# Format includes window_id (tab-separated) for direct tmux option queries
 if [[ "$1" == "--all" ]]; then
     # All sessions: session_name:window_index window_name
-    FORMAT='#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index} #{window_name}'
+    FORMAT='#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index} #{window_name}'$'\t''#{window_id}'
     tmux list-windows -a -F "$FORMAT"
 else
     # Current session only
     SESSION=$(tmux display-message -p '#S')
-    FORMAT="#{?#{@last-viewed},#{@last-viewed},0} ${SESSION}:#{window_index} #{window_name}"
+    FORMAT="#{?#{@last-viewed},#{@last-viewed},0} ${SESSION}:#{window_index} #{window_name}"$'\t''#{window_id}'
     tmux list-windows -F "$FORMAT"
-fi | sort -rn | cut -d' ' -f2- | while read -r line; do
-    # Line format: "session:window_index window_name"
-    # Alerts file format: "session:window_name:agent"
-    session_idx=$(echo "$line" | cut -d' ' -f1)      # e.g., "dotfiles:1"
-    session_name="${session_idx%%:*}"                 # e.g., "dotfiles"
-    window_name=$(echo "$line" | cut -d' ' -f2-)      # e.g., "dev"
-    alert_key="${session_name}:${window_name}:"       # e.g., "dotfiles:dev:" (prefix match)
+fi | sort -rn | cut -d' ' -f2- | while IFS=$'\t' read -r display_line window_id; do
+    # display_line: "session:window_index window_name", window_id: "@N"
 
-    # Check if this window has alerts and collect icons
-    if [[ -f "$ALERTS_FILE" ]]; then
-        window_alerts=$(grep "^${alert_key}" "$ALERTS_FILE" 2>/dev/null)
-        if [[ -n "$window_alerts" ]]; then
-            # Build icon string for all alerts in this window
-            icons=""
-            while IFS= read -r entry; do
-                IFS=':' read -r _sess _win field3 field4 field5 <<< "$entry"
-                if [[ "$field3" == "exit" ]]; then
-                    display=$(get_exit_code_display "$field4")
-                    icon="${display%%|*}"
-                    colour="${display##*|}"
-                    icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon} ${field5}\033[0m "
-                else
-                    display=$(get_agent_display "$field3")
-                    icon="${display%%|*}"
-                    icons="${icons}${icon} "
-                fi
-            done <<< "$window_alerts"
-            printf "%s %b\n" "$line" "${icons}"
-        else
-            echo "$line"
-        fi
+    # Query tmux window options once for all alert checks
+    icons=""
+    if [[ -n "$window_id" ]]; then
+        opts=$(tmux show-options -wt "$window_id" 2>/dev/null || true)
+        icons=$(get_window_alert_icons "$opts")
+    fi
+
+    if [[ -n "$icons" ]]; then
+        printf "%s %b\n" "$display_line" "${icons}"
     else
-        echo "$line"
+        echo "$display_line"
     fi
 done

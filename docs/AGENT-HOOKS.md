@@ -7,12 +7,12 @@ This dotfiles repo includes a hook system that triggers tmux status bar alerts w
 ```
 Agent stops working
   → Hook wrapper fires (e.g. claude-alert.sh)
-    → agent-alert.sh sets a tmux window option + writes to ~/.config/agent-alerts/alerts
+    → agent-alert.sh sets a tmux window option + writes to ~/.config/tmux-alerts/alerts
       → tmux status bar reads alerts file and displays icons
 
 User sends a message
   → Clear wrapper fires (e.g. claude-alert-clear.sh)
-    → agent-alert-clear.sh removes the entry from ~/.config/agent-alerts/alerts
+    → agent-alert-clear.sh removes the entry from ~/.config/tmux-alerts/alerts
       → tmux status bar clears
 ```
 
@@ -160,7 +160,7 @@ Without these env vars, the plugin falls back to its own bundled scripts that se
 
 ## How Alerts Are Stored
 
-Alerts are tracked in `~/.config/agent-alerts/alerts` (the path is shared across all agents, not Claude-specific). Each line has the format:
+Alerts are tracked in `~/.config/tmux-alerts/alerts` (the path is shared across all agents, not Claude-specific). Each line has the format:
 
 ```
 session:window:agent
@@ -221,16 +221,16 @@ The alert system also supports command exit code notifications via the `notify` 
 1. Check the hooks are registered — run the wrapper directly and verify it writes to the alerts file:
    ```bash
    bash ~/dotfiles/scripts/hooks/wrappers/claude-alert.sh
-   cat ~/.config/agent-alerts/alerts
+   cat ~/.config/tmux-alerts/alerts
    ```
 2. Verify you're inside a tmux session (hooks need `$TMUX_PANE` to identify the window)
-3. Check `~/.config/agent-alerts/alerts` has content after triggering
+3. Check `~/.config/tmux-alerts/alerts` has content after triggering
 
 **Alerts not clearing:**
 
 1. Verify the clear hook is registered for the right event
 2. Check the clear script can find the tmux session/window names
-3. Run `cat ~/.config/agent-alerts/alerts` to see what's stuck
+3. Run `cat ~/.config/tmux-alerts/alerts` to see what's stuck
 
 **OpenCode plugin not loading:**
 

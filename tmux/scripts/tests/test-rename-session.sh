@@ -18,7 +18,7 @@ touch "$ALERTS_FILE"
 # Source alerts.sh after ALERTS_FILE is set so it picks up our isolated path
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# shellcheck disable=SC2317  # Called indirectly via trap
+# shellcheck disable=SC2329  # Called indirectly via trap
 _cleanup_rename_tests() {
     cleanup_test_server
     rm -rf "$TEST_ALERTS_DIR"

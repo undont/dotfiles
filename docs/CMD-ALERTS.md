@@ -48,8 +48,38 @@ The window tab colour changes:
 An alert fires only when **all** of the following are true:
 1. You are inside tmux
 2. You switched to a different window before the command finished
+3. The command is not in the exclude list
 
 If you're still watching the command, no alert fires — it would just be noise.
+
+## Excluded Commands
+
+Interactive commands (pagers, editors) never trigger alerts regardless of how long they run. Single-word entries match the first word of the command; multi-word entries match as a command prefix.
+
+Defaults:
+
+```
+git gd gdn gh claude opencode oc btop htop top
+lazydocker lazygit ssh less more man vim nvim v vi nano
+bat diffnav psql sqlite3 tmux
+```
+
+| Exclude entry | Matches | Doesn't match |
+|---|---|---|
+| `git` | `git diff`, `git push`, `git log` | `gitk` |
+| `gdn` | `gdn` | — |
+| `docker compose` | `docker compose up` | `docker run` |
+
+**Override** before sourcing:
+```zsh
+_CMD_ALERT_EXCLUDE=(less man git)
+source ~/dotfiles/scripts/hooks/cmd-alert-hook.zsh
+```
+
+**Append** after sourcing:
+```zsh
+_CMD_ALERT_EXCLUDE+=(mytool "docker compose")
+```
 
 ## Command Label Truncation
 
@@ -68,14 +98,14 @@ Rules: basename the first word, use as-is if ≤ 3 words, otherwise first 2 word
 
 Alerts clear automatically when you switch to the window. You can also manually clear:
 ```bash
-alerts-clear    # Alias for rm -rf ~/.config/agent-alerts
+alerts-clear    # Alias for rm -rf ~/.config/tmux-alerts
 ```
 
 ## Technical Details
 
 - `preexec` hook: records `$SECONDS` and current tmux window at command start
 - `precmd` hook: on completion, checks elapsed time and whether window changed
-- Alert file: `~/.config/agent-alerts/alerts` (format: `session:window:exit:<code>:<label>`)
+- Alert file: `~/.config/tmux-alerts/alerts` (format: `session:window:exit:<code>:<label>`)
 - Hook script: `scripts/hooks/cmd-alert.sh`
 - Bell + status bar rendering: `tmux/scripts/alerts/show.sh`
 - Auto-clear on window switch: `after-select-window` hook in `tmux.conf.template`

@@ -4,7 +4,7 @@
 # Also handles command exit alerts (session:window:exit:<code>:<label>)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts/alerts"
+ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 
 # Source the alerts library for agent configuration
@@ -63,11 +63,9 @@ if [[ -f "$ALERTS_FILE" && -s "$ALERTS_FILE" ]]; then
             ((i++))
             if [[ $i -gt 3 ]]; then break; fi
 
-            # Build combined display for this session
-            icons=""
-
-            # Agent icons first
+            # Agent icons first — also shows the session name
             if [[ -n "${session_agents[$session]:-}" ]]; then
+                icons=""
                 IFS=',' read -ra agents <<< "${session_agents[$session]}"
                 for agent in "${agents[@]}"; do
                     display=$(get_agent_display "$agent")
@@ -78,15 +76,20 @@ if [[ -f "$ALERTS_FILE" && -s "$ALERTS_FILE" ]]; then
                 output="${output}${icons} ${session}#[default] "
             fi
 
-            # Exit alert: show "icon session:label"
+            # Exit alert: icon and label only, coloured; session name shown separately
             if [[ -n "${session_exit[$session]:-}" ]]; then
                 exit_data="${session_exit[$session]}"
-                # Format: icon|colour|label
                 exit_icon="${exit_data%%|*}"
                 rest="${exit_data#*|}"
                 exit_colour="${rest%%|*}"
                 exit_label="${rest##*|}"
-                output="${output}#[fg=${exit_colour},bold]${exit_icon} ${session}:${exit_label}#[default] "
+                if [[ -z "${session_agents[$session]:-}" ]]; then
+                    # No agent alert — show session name + icon + label all in exit colour
+                    output="${output}#[fg=${exit_colour},bold]${session} ${exit_icon} ${exit_label}#[default] "
+                else
+                    # Agent alert already showed session name — just colour icon + label
+                    output="${output}#[fg=${exit_colour},bold]${exit_icon} ${exit_label}#[default] "
+                fi
             fi
         done
 

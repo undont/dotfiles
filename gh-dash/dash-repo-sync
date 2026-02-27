@@ -41,9 +41,11 @@ if (( ${#roots[@]} == 0 )); then
 fi
 
 # Discover repos (first root wins on duplicates)
+# Build individual key assignments — never resets repoPaths to {} so
+# manually added entries that aren't on disk are preserved.
 seen=""
 count=0
-yq_expr='.repoPaths = {}'
+yq_expr='.'
 
 for root in "${roots[@]}"; do
     for dir in "$root"/*/; do
