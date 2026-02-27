@@ -36,7 +36,8 @@ jobs:
       - name: Run ShellCheck on tmux scripts
         run: |
           EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
-          shellcheck -x $EXCLUDES tmux/scripts/*/*.sh
+          find tmux/scripts -path '*/tests/*' -prune -o -path '*/_lib/*' -prune -o -name '*.sh' -print \
+            | xargs shellcheck -x $EXCLUDES
           shellcheck -x $EXCLUDES tmux/scripts/_lib/*.sh
           shellcheck -x $EXCLUDES -e SC2317 tmux/scripts/tests/*.sh
 
