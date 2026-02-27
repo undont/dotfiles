@@ -111,8 +111,10 @@ dotfiles/
 │   ├── theme-switch      # Theme switching utility
 │   ├── install/          # Installer modules
 │   ├── _lib/             # Shared shell libraries (common.sh, brewfile.sh)
-│   ├── hooks/            # Agent alert hooks
+│   ├── hooks/            # Agent alert hooks + command exit alerts
 │   │   ├── agent-alert.sh, agent-alert-clear.sh
+│   │   ├── cmd-alert.sh          # Command exit alert hook (called by cmd-alert-hook.zsh)
+│   │   ├── cmd-alert-hook.zsh    # zsh preexec/precmd hooks (sourced by dotfiles.zsh)
 │   │   └── wrappers/     # Per-agent wrappers (claude, opencode)
 │   └── tests/            # Test suites
 ├── themes/               # Theme definitions (dracula, catppuccin, tokyo-night, nord)

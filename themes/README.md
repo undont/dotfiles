@@ -123,6 +123,17 @@ Theme files only define **base colours** and **accents**. The following are auto
 - **Message/command bar**: Uses chosen accent
 - **FZF colours**: Automatically mapped from base and accent colours
 
+### Overriding Individual Derived Variables
+
+Any variable set in the `.theme` file before `apply_theme_defaults` runs will be respected — the defaults use `${VAR:-fallback}` so they won't clobber an explicit value.
+
+For example, to use cyan for agent/zoom alerts while keeping purple as the active window accent:
+
+```bash
+THEME_ACTIVE_ACCENT="purple"
+TMUX_STATUS_BELL_FG="#8be9fd"    # Cyan — overrides the purple default
+```
+
 ### Consumer Scripts
 
 Two scripts consume theme files and apply defaults:

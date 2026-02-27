@@ -27,6 +27,8 @@ bind ` send-prefix
 # Terminal colours: enable 256-colour and true colour (RGB) support
 set -g default-terminal "tmux-256color"
 set -ag terminal-overrides ",xterm-256color:RGB"
+# Remap Home/End to CSI sequences so cmd+left/right work in all pane apps
+set -ag terminal-overrides ",xterm-256color:khome=\E[H,kend=\E[F"
 
 # Cursor: default to block (local.conf can override)
 set -g cursor-style block
@@ -74,6 +76,10 @@ setw -g pane-base-index 1
 
 # Auto-renumber windows when one is closed (no gaps in numbering)
 set -g renumber-windows on
+
+# Command exit alert colours (theme-aware, set by theme-switch)
+set -g @exit_pass_colour "{{TMUX_EXIT_PASS_COLOUR}}"
+set -g @exit_fail_colour "{{TMUX_EXIT_FAIL_COLOUR}}"
 
 # Bell monitoring: highlight windows when Claude Code needs attention (via hooks)
 setw -g monitor-activity off
@@ -412,12 +418,12 @@ bind f display-popup -w 95% -h 95% -E "\
 set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
 set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
-set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_ACCENT_CYAN}}]Z ,}#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ☰ #{ram_percentage} #[bg={{TMUX_FG_SECONDARY}},fg={{TMUX_STATUS_FG}}] %a %h-%d %H:%M '
+set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ☰ #{ram_percentage} #[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] %a %h-%d %H:%M '
 set -g status-left-length 30
 set -g status-right-length 150
 
 # Window tabs: inactive=grey, active=purple highlight, bell/alert=pink
-setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],} #I:#W '
+setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
 setw -g window-status-current-format '#[fg={{TMUX_STATUS_ACTIVE_FG}},bg={{TMUX_STATUS_ACTIVE_BG}},bold] #I:#W '
 
 # Pane borders: inactive=dark grey, active=purple

@@ -150,6 +150,8 @@ apply_theme() {
             -e "s|{{TMUX_STATUS_ACTIVE_FG}}|$TMUX_STATUS_ACTIVE_FG|g" \
             -e "s|{{TMUX_STATUS_INACTIVE_FG}}|$TMUX_STATUS_INACTIVE_FG|g" \
             -e "s|{{TMUX_STATUS_BELL_FG}}|$TMUX_STATUS_BELL_FG|g" \
+            -e "s|{{TMUX_EXIT_PASS_COLOUR}}|$TMUX_EXIT_PASS_COLOUR|g" \
+            -e "s|{{TMUX_EXIT_FAIL_COLOUR}}|$TMUX_EXIT_FAIL_COLOUR|g" \
             -e "s|{{TMUX_ACCENT_CYAN}}|$TMUX_ACCENT_CYAN|g" \
             -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
             -e "s|{{TMUX_ACCENT_PURPLE}}|$TMUX_ACCENT_PURPLE|g" \

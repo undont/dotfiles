@@ -244,6 +244,8 @@ Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so
 
 **Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for OpenCode). Press `prefix + c` to open an fzf picker showing all running agent instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
 
+**Command Exit Alerts:** When you run a command and switch away, a ✓ (green) or ✗ (red) alert appears automatically when it finishes — no wrapping needed. The window tab highlights in the pass/fail colour, and the status bar shows `session:command` for commands in other sessions. Alerts clear automatically when you switch back to the window. Only fires if you switched away before the command finished, and the command ran for at least 1 second. See [docs/CMD-ALERTS.md](../docs/CMD-ALERTS.md) for details.
+
 **Instance Management:** The Claude (`prefix + c`), OpenCode (`prefix + o`), and nvim (`prefix + n`) pickers support inline instance management:
 - Press `n` to create a new instance (opens a new window in the current session and launches the process)
 - Press `x` to kill the selected instance (sends SIGTERM with graceful shutdown, confirms before killing)
@@ -389,7 +391,7 @@ Available session backups:
 │   └── last                              # Symlink to latest save
 ├── scripts/
 │   ├── _lib/                             # Shared utility libraries
-│   │   ├── alerts.sh                     # Agent alert utilities (multi-agent: Claude, OpenCode)
+│   │   ├── alerts.sh                     # Agent + command exit alert utilities
 │   │   ├── common.sh                     # Error handling, validation
 │   │   ├── paths.sh                      # Undo file path definitions
 │   │   ├── session.sh                    # Session management utilities
@@ -407,9 +409,9 @@ Available session backups:
 │   │   ├── new.sh                        # Create new process window
 │   │   ├── kill.sh                       # Kill process instance (with confirm)
 │   │   └── connect-nvim.sh               # Connect nvim to Claude pane
-│   ├── alerts/                           # Agent alert system
-│   │   ├── show.sh                       # Status bar: Multi-agent alerts (⚡ 🔮)
-│   │   ├── clear.sh                      # Clear agent alerts for window
+│   ├── alerts/                           # Agent + command exit alert system
+│   │   ├── show.sh                       # Status bar: agent alerts (⚡ 🔮) + exit alerts (✓ ✗)
+│   │   ├── clear.sh                      # Clear alerts for window
 │   │   ├── update-rename.sh              # Update alerts on window rename
 │   │   └── update-timestamp.sh           # Window access tracking hook
 │   ├── launchers/                        # Session launcher system
@@ -543,7 +545,7 @@ Key settings:
 - Auto-rename: shows directory name or running command
 - Auto-save: every 1 minute
 - Status refresh: every 2 seconds
-- Status bar: shows dotfiles sync indicator (↓↑↕ cyan), agent alerts (⚡ yellow for Claude, 🔮 purple for OpenCode), zoom indicator (cyan `Z`), CPU (⚙), RAM (☰), and battery % with Dracula-themed colour indicators
+- Status bar: shows dotfiles sync indicator (↓↑↕ cyan), agent alerts (⚡ yellow for Claude, 🔮 purple for OpenCode), command exit alerts (✓/✗ with `session:command` label, theme-aware green/red), zoom indicator (`Z` in accent colour), CPU (⚙), RAM (☰), and battery % with themed colour indicators
 - Status bar time: background aligned with powerlevel10k right prompt edge
 - Bell monitoring: windows are highlighted in red when they send a bell (used by Claude Code hooks to signal when attention is needed)
 

@@ -12,7 +12,7 @@ LIB_DIR="$(dirname "$SCRIPT_DIR")/_lib"
 # ---------------------------------------------------------
 
 # Mock tmux command to simulate specific session states
-# shellcheck disable=SC2317  # Mock function called indirectly
+# shellcheck disable=SC2329  # Mock function called indirectly via export -f
 tmux() {
     case "$1" in
         list-sessions) 

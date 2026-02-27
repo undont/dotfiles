@@ -65,6 +65,7 @@ fi
 section "Ghostty Process Detection"
 
 # Check if ghostty is running
+# shellcheck disable=SC2009  # ps | grep intentional: matches full .app path on macOS
 ghostty_pid=$(ps -eo pid,comm | grep -E '/ghostty$' | awk '{print $1}' | head -1)
 
 if [[ -n "$ghostty_pid" ]]; then

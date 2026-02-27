@@ -1,65 +1,117 @@
 #!/usr/bin/env bash
 # Display agent alerts for tmux status bar (Claude, OpenCode, etc.)
 # Shows one alert per session (aggregates all windows in that session)
+# Also handles command exit alerts (session:window:exit:<code>:<label>)
+#
+# Compatible with bash 3.2 (macOS stock) — no associative arrays.
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/agent-alerts/alerts"
+ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 
 # Source the alerts library for agent configuration
+[[ -f "$SCRIPT_DIR/../_lib/alerts.sh" ]] || exit 0
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-if [[ -f "$ALERTS_FILE" && -s "$ALERTS_FILE" ]]; then
-    # Filter alerts to exclude current session
-    filtered_alerts=$(grep -v "^${CURRENT_SESSION}:" "$ALERTS_FILE" 2>/dev/null | sort -u)
+if [[ ! -f "$ALERTS_FILE" ]] || [[ ! -s "$ALERTS_FILE" ]]; then
+    exit 0
+fi
 
-    if [[ -n "$filtered_alerts" ]]; then
-        # Build associative array: session -> agents (aggregate across all windows)
-        declare -A session_agents
+# Parallel arrays for bash 3.2 compatibility (no associative arrays)
+# sessions[i]     — unique session name
+# sess_agents[i]  — comma-separated agent names
+# sess_exit[i]    — "icon|colour|label" for exit alert (last wins per session)
+sessions=()
+sess_agents=()
+sess_exit=()
 
-        while IFS=: read -r session _window agent; do
-            # Skip empty lines or malformed entries
-            if [[ -z "$session" || -z "$agent" ]]; then
-                continue
-            fi
+# Find index of session, or echo -1
+_find_idx() {
+    local target="$1" i
+    for (( i=0; i<${#sessions[@]}; i++ )); do
+        [[ "${sessions[$i]}" == "$target" ]] && echo "$i" && return
+    done
+    echo "-1"
+}
 
-            if [[ -z "${session_agents[$session]}" ]]; then
-                session_agents[$session]="$agent"
-            else
-                # Append agent if not already present
-                if [[ ! "${session_agents[$session]}" =~ (^|,)${agent}(,|$) ]]; then
-                    session_agents[$session]="${session_agents[$session]},${agent}"
-                fi
-            fi
-        done <<< "$filtered_alerts"
+while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
 
-        # Display alerts with agent-specific icons using tmux format codes
-        output=""
-        i=0
+    # Split on ':' — exit alerts have 5 fields, agent alerts have 3
+    IFS=':' read -r session _window field3 field4 field5 <<< "$line"
 
-        for session in "${!session_agents[@]}"; do
-            ((i++))
-            if [[ $i -gt 3 ]]; then break; fi
+    # Skip current session and malformed entries
+    [[ "$session" == "$CURRENT_SESSION" ]] && continue
+    [[ -z "$session" || -z "$field3" ]] && continue
 
-            # Build combined icon string for all agents in this session
-            icons=""
-            IFS=',' read -ra agents <<< "${session_agents[$session]}"
-            for agent in "${agents[@]}"; do
-                display=$(get_agent_display "$agent")
-                icon="${display%%|*}"
-                colour="${display##*|}"
-                icons="${icons}#[fg=${colour},bold]${icon}"
-            done
+    idx=$(_find_idx "$session")
+    if [[ "$idx" == "-1" ]]; then
+        idx=${#sessions[@]}
+        sessions+=("$session")
+        sess_agents+=("")
+        sess_exit+=("")
+    fi
 
-            output="${output}${icons} ${session}#[default] "
-        done
-
-        # Show overflow count if more than 3 sessions
-        session_count="${#session_agents[@]}"
-        if [[ $session_count -gt 3 ]]; then
-            echo "${output}+ $((session_count-3)) "
+    if [[ "$field3" == "exit" ]]; then
+        local_code="$field4"
+        local_label="$field5"
+        # Escape '#' to prevent tmux format injection
+        local_label="${local_label//\#/##}"
+        display=$(get_exit_code_display "$local_code")
+        sess_exit[idx]="${display}|${local_label}"
+    else
+        agent="$field3"
+        if [[ -z "${sess_agents[idx]}" ]]; then
+            sess_agents[idx]="$agent"
         else
-            echo "$output"
+            # Append agent if not already present
+            case ",${sess_agents[idx]}," in
+                *,"$agent",*) ;;
+                *) sess_agents[idx]="${sess_agents[idx]},${agent}" ;;
+            esac
         fi
     fi
+done < "$ALERTS_FILE"
+
+session_count=${#sessions[@]}
+[[ $session_count -eq 0 ]] && exit 0
+
+output=""
+
+for (( i=0; i<session_count && i<3; i++ )); do
+    session="${sessions[$i]}"
+
+    # Agent icons first — also shows the session name
+    if [[ -n "${sess_agents[$i]}" ]]; then
+        icons=""
+        IFS=',' read -ra agent_list <<< "${sess_agents[$i]}"
+        for agent in "${agent_list[@]}"; do
+            display=$(get_agent_display "$agent")
+            icon="${display%%|*}"
+            colour="${display##*|}"
+            icons="${icons}#[fg=${colour},bold]${icon}"
+        done
+        output="${output}${icons} ${session}#[default] "
+    fi
+
+    # Exit alert: icon and label only, coloured; session name shown separately
+    if [[ -n "${sess_exit[$i]}" ]]; then
+        exit_data="${sess_exit[$i]}"
+        exit_icon="${exit_data%%|*}"
+        rest="${exit_data#*|}"
+        exit_colour="${rest%%|*}"
+        exit_label="${rest##*|}"
+        if [[ -z "${sess_agents[$i]}" ]]; then
+            output="${output}#[fg=${exit_colour},bold]${session} ${exit_icon} ${exit_label}#[default] "
+        else
+            output="${output}#[fg=${exit_colour},bold]${exit_icon} ${exit_label}#[default] "
+        fi
+    fi
+done
+
+# Show overflow count if more than 3 sessions
+if [[ $session_count -gt 3 ]]; then
+    echo "${output}+ $((session_count-3)) "
+else
+    echo "$output"
 fi

@@ -105,6 +105,9 @@ return {
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = 'Telescope built-in[S]' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = 'Search [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = 'Search [G]rep' })
+      vim.keymap.set('n', '<leader>sG', function()
+        builtin.live_grep { additional_args = { '--hidden', '--fixed-strings' } }
+      end, { desc = 'Search [G]rep (literal)' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = 'Search [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = 'Search [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = 'Recent files [.]' })
