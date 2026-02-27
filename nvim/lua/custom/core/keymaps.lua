@@ -35,11 +35,17 @@ function M.setup()
   vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
   vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
-  -- Window resize
+  -- Window resize (small increments)
   vim.keymap.set('n', '<leader>wh', '<cmd>vertical resize -5<CR>', { desc = 'Resize [H] left' })
   vim.keymap.set('n', '<leader>wl', '<cmd>vertical resize +5<CR>', { desc = 'Resize [L] right' })
   vim.keymap.set('n', '<leader>wj', '<cmd>resize -5<CR>', { desc = 'Resize [J] down' })
   vim.keymap.set('n', '<leader>wk', '<cmd>resize +5<CR>', { desc = 'Resize [K] up' })
+
+  -- Window resize (maximise in a direction)
+  vim.keymap.set('n', '<leader>wH', '<cmd>vertical resize 1<CR>', { desc = 'Maximise [H] left (shrink width)' })
+  vim.keymap.set('n', '<leader>wL', '<cmd>vertical resize 999<CR>', { desc = 'Maximise [L] right (expand width)' })
+  vim.keymap.set('n', '<leader>wJ', '<cmd>resize 1<CR>', { desc = 'Maximise [J] down (shrink height)' })
+  vim.keymap.set('n', '<leader>wK', '<cmd>resize 999<CR>', { desc = 'Maximise [K] up (expand height)' })
 
   -- Line navigation: m/M for beginning/end of line, gm for marks
   vim.keymap.set({ 'n', 'v', 'o' }, 'm', '^', { desc = 'First non-blank character' })
@@ -273,9 +279,12 @@ function M.setup()
     vim.api.nvim_win_set_cursor(0, { math.min(new_line, line_count), 0 })
   end, { desc = '[D]elete comment block' })
 
-  -- Refresh: wipe all buffers, restart LSP, re-source config
+  -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()
     local cur_file = vim.fn.expand '%:p'
+
+    -- Close all splits so the window fills the terminal before wiping buffers
+    vim.cmd 'only'
 
     -- Stop all LSP clients
     vim.lsp.stop_client(vim.lsp.get_clients(), true)
@@ -296,9 +305,11 @@ function M.setup()
       if cur_file ~= '' and vim.fn.filereadable(cur_file) == 1 then
         vim.cmd('edit ' .. vim.fn.fnameescape(cur_file))
       end
+      -- Equalise any remaining splits to fill the full terminal
+      vim.cmd 'wincmd ='
       vim.notify('Neovim refreshed', vim.log.levels.INFO)
     end, 200)
-  end, { desc = '[R]efresh Neovim (clear buffers, restart LSP)' })
+  end, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })
 
   -- LuaSnip navigation keymaps
   vim.keymap.set({ 'i', 's' }, '<C-k>', function()

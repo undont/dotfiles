@@ -9,6 +9,7 @@ set -euo pipefail
 # Find Ghostty main process (the .app binary, not child shells)
 # Use ps instead of pgrep to reliably find the process across platforms
 # The || true prevents pipefail from failing when grep finds no matches
+# shellcheck disable=SC2009  # ps | grep intentional: pgrep misses .app path on macOS
 ghostty_pid=$(ps -eo pid,comm | grep -E '/ghostty$' | awk '{print $1}' | head -1 || true)
 
 if [[ -z "$ghostty_pid" ]]; then

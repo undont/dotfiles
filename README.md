@@ -90,6 +90,7 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 - **Session save/restore** — tmux-resurrect + continuum with **per-session backups** (custom extension splits combined saves into individual files)
 - **Launcher picker** (`` ` p ``) — create, run, and manage session launchers with an interactive wizard
 - **Multi-agent alerts** — coloured indicators in session lists when AI agents need attention (⚡ Claude, 🔮 OpenCode) with auto-clearing
+- **Command exit alerts** — switch away from any command and get a ✓/✗ alert when it finishes automatically
 - **Instance management** — list, create, and kill running instances of Claude, OpenCode, and nvim from fzf pickers
 - **URL picker** (`` ` y ``) — grab URLs from scrollback via fzf popup
 - **Dotfiles sync indicator** — status bar shows `↓` `↑` `↕` when updates are available
@@ -276,12 +277,13 @@ dotfiles/
 │   ├── dotfiles      # CLI for managing dotfiles
 │   ├── theme-switch  # Theme switching utility
 │   ├── install/      # Installer modules
-│   ├── hooks/        # Agent alert + buffer sync hooks
+│   ├── hooks/        # Agent alert, command exit alert + buffer sync hooks
 │   ├── tests/        # Test suites
 │   └── _lib/         # Shared shell libraries
 ├── themes/           # 15 theme definitions with WCAG contrast checks
 ├── docs/             # Documentation
 │   ├── AGENT-HOOKS.md
+│   ├── CMD-ALERTS.md
 │   ├── INSTALLATION-GUIDE.md
 │   ├── THEME-SYSTEM.md
 │   └── TROUBLESHOOTING.md
@@ -337,6 +339,7 @@ cp -n ~/dotfiles/karabiner/karabiner.json ~/.config/karabiner/karabiner.json
 ## Documentation
 
 - [Agent Hooks](docs/AGENT-HOOKS.md) — Setup guide for agent alert hooks (Claude Code, OpenCode)
+- [Command Exit Alerts](docs/CMD-ALERTS.md) — Auto ✓/✗ alerts when commands finish in other windows
 - [Installation Guide](docs/INSTALLATION-GUIDE.md) — Detailed walkthrough of each installation step
 - [Theme System](docs/THEME-SYSTEM.md) — How themes work across tmux, ghostty, and neovim
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — Common issues and solutions

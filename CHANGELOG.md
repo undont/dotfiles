@@ -6,6 +6,37 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.41] - 2026-02-27
+
+### Changed
+- Alerts: `show.sh` rewritten to use parallel arrays for bash 3.2 (macOS stock) compatibility — removes `declare -A` dependency
+- Alerts: Extracted `_acquire_alerts_lock` / `_release_alerts_lock` helpers with stale-PID recovery; shared by `clear_window_alerts`, `cleanup_stale_alerts`, `clear_session_alerts`, and `update-rename.sh`
+- Alerts: `cleanup_stale_alerts` now correctly parses 5-field exit alert lines instead of splitting on 3 fields
+
+### Fixed
+- Cmd alerts: Label sanitisation — strip colons (alerts file delimiter), escape `#` (tmux format injection), and cap length at 80 chars
+- Cmd alerts: Window-switch guard — only fire alert if user has switched away from the origin pane; commands finishing in the active pane are silently ignored
+- Alerts: Agent name whitelist in `set_window_alert` prevents arbitrary values
+- Alerts: `grep -vF` (fixed-string) in clear/rename operations prevents regex injection from session or window names
+- Tests: Fix `_CMD_ALERT_THRESHOLD` → `_CMD_ALERT_MIN_SECONDS` rename and add `_CMD_ALERT_EXCLUDE=()` for test isolation
+
+## [0.2.40] - 2026-02-26
+
+### Added
+- Zsh: Command exit alerts — automatically notifies when a command finishes in another tmux window (✓/✗ icon in status bar + window tab highlight), no wrapping required
+- Tmux: `@exit_alert` / `@exit_alert_colour` window options for per-window exit state; `@exit_pass_colour` / `@exit_fail_colour` global options sourced from theme
+- Alerts: `set_exit_alert` function in `alerts.sh` library; session and window list pickers show exit alert icons with ANSI colour
+- Theme: `TMUX_EXIT_PASS_COLOUR` / `TMUX_EXIT_FAIL_COLOUR` derived variables (green/red) added to `theme-defaults.sh` and `theme-switch`
+- Docs: `docs/CMD-ALERTS.md` — detailed guide for the command exit alert system
+- Nvim: `<leader>wH/wL/wJ/wK` maximise-direction window resize keymaps (shift variants of small-increment maps)
+
+### Changed
+- Alerts: `show.sh` now handles both agent alerts (3-field) and exit alerts (5-field) in the same alerts file
+- Alerts: Session and window list pickers handle mixed alert types with correct icons and colours
+- Tmux: Zoom indicator uses `TMUX_STATUS_BELL_FG` (theme accent) instead of hardcoded cyan; clock background uses `TMUX_BG_SECONDARY`
+- Theme: `TMUX_STATUS_BELL_FG` uses `${VAR:-fallback}` to allow per-theme overrides without clobbering explicit values set in the theme file
+- Nvim: `<leader>lR` refresh runs `only` before wiping buffers and `wincmd =` after, resetting the layout cleanly
+
 ## [0.2.39] - 2026-02-26
 
 ### Added
