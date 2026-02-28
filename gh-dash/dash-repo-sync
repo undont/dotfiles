@@ -40,9 +40,7 @@ if (( ${#roots[@]} == 0 )); then
     exit 1
 fi
 
-# Discover repos (first root wins on duplicates)
-# Build individual key assignments — never resets repoPaths to {} so
-# manually added entries that aren't on disk are preserved.
+# ─── Discover repos (first root wins on duplicates) ──────────────────────────
 seen=""
 count=0
 yq_expr='.'
@@ -68,24 +66,65 @@ for root in "${roots[@]}"; do
     done
 done
 
-if (( count == 0 )); then
-    echo "No GitHub repos found in: ${roots[*]}"
+# ─── Detect stale entries ────────────────────────────────────────────────────
+# Entries not in the discovered set whose local path no longer exists on disk.
+# Wildcard entries (org/*: ~/code/*) are always preserved — they're manual.
+stale_del=""
+stale_count=0
+stale_names=""
+while IFS=$'\t' read -r key value; do
+    [[ -z "$key" ]] && continue
+    # Skip if just discovered
+    case "$seen" in *"|$key|"*) continue ;; esac
+    # Skip wildcard/glob entries (manual)
+    [[ "$value" == *'*'* ]] && continue
+    # Keep if path still exists on disk (valid manual entry)
+    expanded="${value/#\~/$HOME}"
+    [[ -d "$expanded" ]] && continue
+    # Stale — queue for removal
+    stale_del="${stale_del} | del(.repoPaths.\"${key}\")"
+    stale_count=$(( stale_count + 1 ))
+    stale_names="${stale_names}  - ${key} (${value})\n"
+done < <(yq -r '.repoPaths // {} | to_entries[] | [.key, .value] | @tsv' "$GHDASH_LOCAL" 2>/dev/null)
+
+# ─── Nothing to do? ─────────────────────────────────────────────────────────
+if (( count == 0 && stale_count == 0 )); then
+    echo "No changes (0 discovered, 0 stale)"
     exit 0
 fi
 
+# ─── Dry-run report ─────────────────────────────────────────────────────────
 if [[ "$dry_run" == "true" ]]; then
-    echo "Would sync $count repo paths to $GHDASH_LOCAL"
-    yq eval "$yq_expr" /dev/null | sed '1d'
+    echo "Would sync repo paths: $count discovered, $stale_count to remove"
+    if (( stale_count > 0 )); then
+        printf "Stale:\n%b" "$stale_names"
+    fi
+    if (( count > 0 )); then
+        echo "Discovered:"
+        yq eval "$yq_expr" /dev/null | sed '1d' | sed 's/^/  /'
+    fi
     exit 0
 fi
 
-# Update repoPaths in-place (preserves comments and other keys)
-if yq eval -i "$yq_expr" "$GHDASH_LOCAL" 2>/dev/null; then
-    echo "Synced $count repo paths to $GHDASH_LOCAL"
-else
-    echo "yq update failed" >&2
-    exit 1
+# ─── Apply changes ──────────────────────────────────────────────────────────
+# Remove stale entries first
+if (( stale_count > 0 )); then
+    stale_del="${stale_del# | }"
+    if ! yq eval -i "$stale_del" "$GHDASH_LOCAL" 2>/dev/null; then
+        echo "Failed to remove stale entries" >&2
+        exit 1
+    fi
 fi
+
+# Add/update discovered repos
+if (( count > 0 )); then
+    if ! yq eval -i "$yq_expr" "$GHDASH_LOCAL" 2>/dev/null; then
+        echo "yq update failed" >&2
+        exit 1
+    fi
+fi
+
+echo "Synced repo paths: $count discovered, $stale_count removed"
 
 # Merge local overrides into the active config so gh-dash picks them up immediately
 ghdash_merge_local

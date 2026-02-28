@@ -597,6 +597,12 @@ bindkey '\e[13;6u'  accept-line        # Ctrl+Shift+Enter (kitty protocol)
 bindkey '\e[;5;13~' accept-line        # Ctrl+Enter (Ghostty variant)
 bindkey '\e[;6;13~' accept-line        # Ctrl+Shift+Enter (Ghostty variant)
 
+# tmux extended-keys (modifyOtherKeys) sends CSI sequences for Ctrl+key
+# combos that have no standard terminal meaning. Swallow them to prevent
+# raw escape codes printing in the shell.
+bindkey -s '\e[27;5;45~' ''            # Ctrl+- (swallow)
+bindkey -s '\e[27;5;61~' ''            # Ctrl+= (swallow)
+
 # =============================================================================
 # DOTFILES CLI
 # =============================================================================

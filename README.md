@@ -92,6 +92,7 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 - **Multi-agent alerts** — coloured indicators in session lists when AI agents need attention (⚡ Claude, 🔮 OpenCode) with auto-clearing
 - **Command exit alerts** — switch away from any command and get a ✓/✗ alert when it finishes automatically
 - **Instance management** — list, create, and kill running instances of Claude, OpenCode, and nvim from fzf pickers
+- **Navigation history** (`` ` - `` / `` ` = ``) — browser-style back/forward across windows and sessions
 - **URL picker** (`` ` y ``) — grab URLs from scrollback via fzf popup
 - **Dotfiles sync indicator** — status bar shows `↓` `↑` `↕` when updates are available
 - **Local overrides** — `~/.config/tmux/local.conf` survives theme changes and updates
@@ -191,6 +192,8 @@ theme-switch list                # Show all themes
 | Session switcher | `` ` s `` |
 | Window switcher | `` ` f `` |
 | URL picker | `` ` y `` |
+| Navigate back | `` ` - `` |
+| Navigate forward | `` ` = `` |
 | Rename window | `Opt+r` |
 | Close pane | `Opt+s` |
 | Close window | `Opt+x` |
