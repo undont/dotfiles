@@ -34,7 +34,7 @@ GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 # Ghostty config location (XDG only - macOS symlinks to this)
 GHOSTTY_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 GH_DASH_TEMPLATE="$DOTFILES_ROOT/gh-dash/config.yml.template"
-GH_DASH_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/config.yml"
+GH_DASH_OUTPUT="$GHDASH_BASE"
 
 # Colours for output
 RED='\033[0;31m'

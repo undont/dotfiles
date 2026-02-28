@@ -18,7 +18,7 @@
 
 # ---------------------------------------------------------------------------
 # PR Sections
-# Uncomment and customise to replace the default prSections entirely.
+# Uncomment to add extra PR sections on top of the defaults.
 # ---------------------------------------------------------------------------
 # prSections:
 #     - title: My Pull Requests
@@ -30,7 +30,7 @@
 
 # ---------------------------------------------------------------------------
 # Issue Sections
-# Add your own filtered views — e.g. issues for specific projects or orgs.
+# Uncomment to add extra issue sections on top of the defaults.
 # ---------------------------------------------------------------------------
 # issuesSections:
 #     - title: My Issues
