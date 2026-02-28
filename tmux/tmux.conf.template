@@ -613,6 +613,13 @@ bind R command-prompt -p "Restore session:" "run-shell '~/.tmux/scripts/resurrec
 # prefix + R = restore specific session (prompts for name)
 
 # ─────────────────────────────────────────
+# Navigation history (browser-style back/forward)
+# ─────────────────────────────────────────
+bind - run-shell '~/.tmux/scripts/utils/nav.sh back'       # ` - = navigate back
+bind = run-shell '~/.tmux/scripts/utils/nav.sh forward'    # ` = = navigate forward
+bind § choose-buffer -Z                                     # ` § = paste buffer list
+
+# ─────────────────────────────────────────
 # Auto-cleanup on session close
 # ─────────────────────────────────────────
 # When a session is killed, trigger a save to update backups
@@ -626,14 +633,15 @@ set-hook -g session-closed 'run-shell -b "~/.tmux/plugins/tmux-resurrect/scripts
 # Update @last-viewed (window) and @pane-viewed (pane) timestamps for fuzzy finder sorting
 # Window-level: used by windows/list.sh  |  Pane-level: used by instance scripts
 # Also clear any claude alert on the window (backup to UserPromptSubmit hook)
-set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
+set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 
 # Track pane switches within the same window (doesn't fire after-select-window)
 set-hook -g after-select-pane 'run-shell -b "tmux set-option -pt \"#{pane_id}\" @pane-viewed \"$(date +%%s)\" 2>/dev/null || true"'
 
 # Update alerts when window is renamed to prevent stale alerts
 set-hook -g after-rename-window 'run-shell "~/.tmux/scripts/alerts/update-rename.sh \"#{session_name}\" \"#{window_name_old}\" \"#{window_name}\""'
-set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}"'
+set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}"'
+set-hook -g after-new-session 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}"'
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Manager Initialisation (must be at bottom)

@@ -277,7 +277,7 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - **alerts/**: `show.sh`, `clear.sh`, `update-rename.sh`, `update-timestamp.sh` - Agent alert system for status bar
 - **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions
 - **themes/**: `pick.sh`, `reload-fzf.sh`, `reload-ghostty.sh` - Runtime theme switching
-- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `confirm.sh`, `dotfiles-status.sh` - Shared utilities
+- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `confirm.sh`, `dotfiles-status.sh`, `nav.sh` - Shared utilities
 - **_lib/**: `common.sh`, `paths.sh`, `session.sh`, `alerts.sh`, `ui.sh` - Shared libraries
 - **tests/**: `test-*.sh` - Test suites
 

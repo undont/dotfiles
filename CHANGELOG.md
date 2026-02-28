@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.42] - 2026-02-28
+
+### Added
+- Tmux: Browser-style navigation history — `prefix + -` (back) and `prefix + =` (forward) navigate between previously visited windows across sessions
+- Tmux: `nav.sh` utility tracks window visits via hooks, prunes stale entries, and truncates forward history on new navigation (browser behaviour)
+- Tmux: Navigation history tests (`test-nav-history.sh`)
+
+### Changed
+- gh-dash: `dash-repo-sync` detects and removes stale repo entries (paths that no longer exist on disk), with dry-run support
+- gh-dash: `ghdash.sh` merge now starts from a clean `config.base.yml` to prevent array duplication from repeated `*+` merges
+- gh-dash: `theme-switch` writes to `config.base.yml` instead of `config.yml` directly
+- Nvim: Simplified `vim-visual-multi` plugin config (removed custom init, use `lazy = false`)
+- Zsh: Swallow Ctrl+-/Ctrl+= escape codes to prevent raw output in terminals with `modifyOtherKeys`
+
 ## [0.2.41] - 2026-02-27
 
 ### Changed

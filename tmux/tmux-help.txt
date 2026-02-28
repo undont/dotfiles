@@ -32,7 +32,7 @@
 ║                   line        ║  Opt+u            undo pane/win      ║
 ║  y / Y            yank /      ║  ` I              install plugins    ║
 ║                   yank ln     ║  ` Space          fingers (copy)     ║
-║  q / Esc          exit mode   ║                                      ║
+║  q / Esc          exit mode   ║  ` - / ` =        back / forward     ║
 ║                               ║                                      ║
 ╚═══════════════════════════════╩══════════════════════════════════════╝
 

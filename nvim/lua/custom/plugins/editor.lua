@@ -220,18 +220,7 @@ return {
   },
 
   -- Multiple cursors
-  {
-    'mg979/vim-visual-multi',
-    event = 'VeryLazy',
-    init = function()
-      vim.g.VM_leader = '\\'
-      vim.cmd [[
-        let g:VM_maps = {}
-        let g:VM_maps["Add Cursor Down"] = '<M-Down>'
-        let g:VM_maps["Add Cursor Up"] = '<M-Up>'
-      ]]
-    end,
-  },
+  { 'mg979/vim-visual-multi', lazy = false },
 
   -- Oil: filesystem-as-buffer
   {

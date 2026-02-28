@@ -252,6 +252,17 @@ Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so
 
 **Nvim Picker:** Press `prefix + n` to list all running nvim instances with their working directories. Select an instance with `Space`/`Enter` to jump to it, or press `c` to connect it to another pane (copies `export NVIM_SOCKET='...' && claude` to clipboard and switches to the target pane). This enables the nvim buffer sync hook - files edited by Claude Code are automatically added to the paired nvim's buffer list.
 
+### Navigation History
+
+Browser-style back/forward navigation across tmux windows and sessions.
+
+| Action          | Keybinding   |
+| --------------- | ------------ |
+| Navigate back   | `prefix + -` |
+| Navigate forward| `prefix + =` |
+
+History is recorded automatically via tmux hooks (`after-select-window`, `client-session-changed`, `after-new-session`). Stale entries (closed windows) are pruned on navigation. Forward history is truncated when you navigate to a new window after going back (same as browser behaviour).
+
 ### Plugins (TPM)
 
 | Action          | Keybinding       |
@@ -445,6 +456,7 @@ Available session backups:
 │   │   ├── reload-fzf.sh                 # Reload fzf theme colours
 │   │   └── reload-ghostty.sh             # Reload Ghostty terminal theme
 │   └── utils/                            # Shared utilities
+│       ├── nav.sh                        # Browser-style back/forward history
 │       ├── undo-dispatch.sh              # Undo dispatcher (Opt+u)
 │       ├── pick-url.sh                   # URL picker (prefix + y)
 │       ├── confirm.sh                    # FZF confirmation dialog helper
