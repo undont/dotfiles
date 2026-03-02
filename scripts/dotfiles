@@ -10,6 +10,7 @@
 #   theme   -t    Manage colour themes
 #   links   -l    Show all managed symlinks and their status
 #   aliases -a    Show all shell aliases, functions, and utilities
+#   notes   -n    Browse the full changelog in a pager
 #   edit    -e    Open dotfiles directory in $EDITOR
 #   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
 #   sync          Fetch from origin and show what's changed
@@ -43,6 +44,51 @@ get_preset() {
     else
         echo "full"
     fi
+}
+
+# ─────────────────────────────────────────
+# Changelog helpers
+# ─────────────────────────────────────────
+
+# Get the latest non-Unreleased version from the local changelog
+_changelog_local_version() {
+    sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' "$DOTFILES_DIR/CHANGELOG.md" | head -1
+}
+
+# Show changelog entries from the remote that are newer than the local version
+# Outputs nothing if no new entries exist
+_changelog_incoming() {
+    local remote_branch="$1"
+    local local_version
+
+    local_version=$(_changelog_local_version) || return 1
+    [[ -z "$local_version" ]] && return 1
+
+    local remote_changelog
+    remote_changelog=$(git show "$remote_branch:CHANGELOG.md" 2>/dev/null) || return 1
+
+    # Extract entries newer than local version (skip [Unreleased], stop at local version)
+    printf '%s\n' "$remote_changelog" | awk -v ver="$local_version" '
+        /^## \[Unreleased\]/ { next }
+        /^## \[/ {
+            if (index($0, "[" ver "]")) exit
+            found = 1
+        }
+        found { print }
+    '
+}
+
+# Colorise changelog markdown for terminal display
+_changelog_colorise() {
+    local cyan=$'\033[0;36m' green=$'\033[0;32m' yellow=$'\033[0;33m'
+    local red=$'\033[0;31m' grey=$'\033[0;90m' nc=$'\033[0m'
+    sed \
+        -e "s|^## \[.*|${cyan}&${nc}|" \
+        -e "s|^### Added.*|${green}&${nc}|" \
+        -e "s|^### Changed.*|${yellow}&${nc}|" \
+        -e "s|^### Fixed.*|${yellow}&${nc}|" \
+        -e "s|^### Removed.*|${red}&${nc}|" \
+        -e "s|^- |  ${grey}•${nc} |"
 }
 
 # Get the default remote branch
@@ -99,6 +145,16 @@ cmd_update() {
 
     if [[ $behind -gt 0 ]]; then
         printf "  ${CYAN}→${NC} Pulling %d new commit(s)...\n" "$behind"
+
+        # Show incoming changelog entries
+        local incoming
+        incoming=$(_changelog_incoming "$remote_branch") || true
+        if [[ -n "$incoming" ]]; then
+            echo ""
+            printf "  ${CYAN}What's new:${NC}\n"
+            printf '%s\n' "$incoming" | _changelog_colorise | sed 's/^/  /'
+        fi
+
         echo ""
         git pull --ff-only origin "$local_branch" || {
             error "Pull failed. You may have local changes that conflict."
@@ -145,6 +201,19 @@ cmd_status() {
         fi
         if [[ $ahead -gt 0 ]]; then
             printf "  ${YELLOW}↑${NC} %d commit(s) ahead of %s\n" "$ahead" "$remote_branch"
+        fi
+
+        # Show incoming changelog entries
+        if [[ $behind -gt 0 ]]; then
+            local incoming
+            incoming=$(_changelog_incoming "$remote_branch") || true
+            if [[ -n "$incoming" ]]; then
+                echo ""
+                printf "  ${CYAN}Incoming changes:${NC}\n"
+                printf '%s\n' "$incoming" | _changelog_colorise | sed 's/^/  /'
+                echo ""
+                printf "  ${GREY}Run 'dotfiles update' to apply.${NC}\n"
+            fi
         fi
     fi
 
@@ -194,6 +263,25 @@ cmd_sync() {
     git log --oneline HEAD.."$remote_branch"
     echo ""
     info "Run 'dotfiles update' to apply these changes."
+}
+
+# ─────────────────────────────────────────
+# Release notes
+# ─────────────────────────────────────────
+cmd_notes() {
+    local changelog="$DOTFILES_DIR/CHANGELOG.md"
+
+    if [[ ! -f "$changelog" ]]; then
+        error "CHANGELOG.md not found"
+        return 1
+    fi
+
+    # Use bat if available for rich markdown display, otherwise colorise + less
+    if command -v bat &>/dev/null; then
+        bat --style=plain --language=markdown --paging=always "$changelog"
+    else
+        _changelog_colorise < "$changelog" | less -R
+    fi
 }
 
 # ─────────────────────────────────────────
@@ -291,6 +379,7 @@ Commands:
                 dotfiles theme <name>        - Switch to theme
   links   -l    Show all managed symlinks and their status
   aliases -a    Show all shell aliases, functions, and utilities
+  notes   -n    Browse the full changelog in a pager
   edit    -e    Open dotfiles directory in $EDITOR
   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
   sync          Fetch from origin and show what's new (without applying)
@@ -299,6 +388,7 @@ Commands:
 Examples:
   dotfiles status          # Check if updates are available
   dotfiles update          # Pull and re-install
+  dotfiles notes           # Browse full changelog
   dotfiles sync            # Preview incoming changes
   dotfiles aliases         # Browse available aliases and shortcuts
   dotfiles set dev ~/src   # Set DEV_ROOT for launcher picker
@@ -339,6 +429,7 @@ cmd_aliases() {
     printf "\n${CYAN}NAVIGATION${NC}\n"
     _2col \
         "c"           "clear" \
+        "cl"          "clear + scrollback" \
         ".."          "cd .." \
         "..."         "cd ../.." \
         "mkcd <dir>"  "mkdir + cd" \
@@ -425,6 +516,7 @@ cmd_aliases() {
         "theme   -t"  "colour themes" \
         "set dev <d>" "set DEV_ROOT" \
         "sync"        "preview incoming commits" \
+        "notes   -n"  "browse changelog" \
         "edit    -e"  "open in \$EDITOR" \
         "aliases -a"  "show this reference" \
         "dot"         "shorthand for dotfiles"
@@ -596,6 +688,9 @@ main() {
             ;;
         sync)
             cmd_sync
+            ;;
+        notes|-n)
+            cmd_notes
             ;;
         help|--help|-h)
             cmd_help

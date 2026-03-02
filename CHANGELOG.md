@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.43] - 2026-03-02
+
+### Added
+- CLI: `dotfiles notes` / `dot -n` command — browse the full changelog in a pager (uses `bat` if available, falls back to colorised `less`)
+- CLI: Changelog preview during `dotfiles update` and `dotfiles status` — shows incoming release notes when new versions are available
+- Zsh: `cl` alias — clears screen, scrollback buffer, and tmux history in one keystroke
+
+### Changed
+- Nvim: vim-visual-multi Add Cursor Up/Down remapped to `<M-Up>` / `<M-Down>`
+- README: CLI examples use `dotfiles` (full command name) with note that `dot` is a shorthand alias
+
 ## [0.2.42] - 2026-02-28
 
 ### Added
