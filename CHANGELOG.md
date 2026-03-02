@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.44] - 2026-03-02
+
+### Added
+- Nvim: Discord Rich Presence via cord.nvim (catppuccin theme, repo link button)
+- Health check: generated config validation, TPM plugin checks, alert hook executability, local override status, PATH/tools verification
+
+### Fixed
+- Nvim: Deduplicate .NET diagnostics reported from multiple .csproj contexts (Roslyn multi-project)
+- Nvim: Diffview `]f`/`[f` navigation uses proper `DiffviewViewOpened`/`DiffviewViewClosed` user events instead of `FileType` autocmds
+- Nvim: Guard mini.bracketed file navigation against empty/invalid directories
+
 ## [0.2.43] - 2026-03-02
 
 ### Added
