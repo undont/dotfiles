@@ -231,6 +231,27 @@ return {
     end,
   },
 
+  -- Buffer removal without closing windows
+  {
+    'echasnovski/mini.bufremove',
+    keys = {
+      {
+        '<leader>bd',
+        function()
+          require('mini.bufremove').delete(0, false)
+        end,
+        desc = '[D]elete buffer',
+      },
+      {
+        '<leader>bD',
+        function()
+          require('mini.bufremove').delete(0, true)
+        end,
+        desc = '[D]elete buffer (force)',
+      },
+    },
+  },
+
   -- Oil: filesystem-as-buffer
   {
     'stevearc/oil.nvim',
