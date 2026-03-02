@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.45] - 2026-03-02
+
+### Added
+- Nvim: mini.bufremove for buffer deletion without closing windows (`<leader>bd`, `<leader>bD`)
+- Nvim: mini.pairs replaces nvim-autopairs (consolidated into mini.nvim)
+- Nvim: mini.hipatterns for inline hex colour highlighting
+
+### Changed
+- Nvim: NeoTree reveal key changed from `\` to `|`
+- Nvim: Breakpoint keybindings moved to `<leader>Bt` / `<leader>Bc` to free `<leader>b` for buffer group
+
 ## [0.2.44] - 2026-03-02
 
 ### Added

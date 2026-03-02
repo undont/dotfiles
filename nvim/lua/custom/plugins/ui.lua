@@ -15,6 +15,8 @@ return {
         mappings = vim.g.have_nerd_font,
       },
       spec = {
+        { '<leader>b', group = '[B]uffer', icon = { icon = '󰈔 ', color = 'azure' } },
+        { '<leader>B', group = '[B]reakpoint', icon = { icon = ' ', color = 'red' } },
         { '<leader>c', group = '[C]laude', icon = { icon = ' ', color = 'green' } },
         { '<leader>d', group = '[D]iff', icon = { cat = 'filetype', name = 'git' } },
         { '<leader>h', group = 'Git [H]unk', icon = { cat = 'filetype', name = 'git' } },
@@ -52,7 +54,7 @@ return {
     opts = {},
   },
 
-  -- Mini plugins (statusline, ai, surround, notify, bracketed, splitjoin)
+  -- Mini plugins
   {
     'echasnovski/mini.nvim',
     config = function()
@@ -61,6 +63,16 @@ return {
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
       require('mini.surround').setup()
+
+      -- Auto-close brackets, quotes, etc. (replaces nvim-autopairs)
+      require('mini.pairs').setup()
+
+      -- Highlight hex colour codes inline
+      require('mini.hipatterns').setup {
+        highlighters = {
+          hex_color = require('mini.hipatterns').gen_highlighter.hex_color(),
+        },
+      }
 
       -- Drop-in vim.notify replacement with notification history
       require('mini.notify').setup()
