@@ -94,6 +94,12 @@ else
     fail "help should mention theme command"
 fi
 
+if [[ "$help_output" == *"notes"* ]]; then
+    pass "help mentions notes command"
+else
+    fail "help should mention notes command"
+fi
+
 if [[ "$help_output" == *"links"* ]]; then
     pass "help mentions links command"
 else
@@ -169,10 +175,34 @@ else
     fail "cmd_sync function not found"
 fi
 
+if [[ "$script_content" == *"cmd_notes()"* ]]; then
+    pass "cmd_notes function defined"
+else
+    fail "cmd_notes function not found"
+fi
+
 if [[ "$script_content" == *"cmd_links()"* ]]; then
     pass "cmd_links function defined"
 else
     fail "cmd_links function not found"
+fi
+
+if [[ "$script_content" == *"_changelog_local_version()"* ]]; then
+    pass "_changelog_local_version helper defined"
+else
+    fail "_changelog_local_version helper not found"
+fi
+
+if [[ "$script_content" == *"_changelog_incoming()"* ]]; then
+    pass "_changelog_incoming helper defined"
+else
+    fail "_changelog_incoming helper not found"
+fi
+
+if [[ "$script_content" == *"_changelog_colorise()"* ]]; then
+    pass "_changelog_colorise helper defined"
+else
+    fail "_changelog_colorise helper not found"
 fi
 
 if [[ "$script_content" == *"get_preset()"* ]]; then
@@ -1075,6 +1105,40 @@ if [[ "$prereq_content" == *'exit 0'* ]] && [[ "$prereq_content" == *'exit 1'* ]
     pass "prerequisites has proper exit codes"
 else
     fail "prerequisites should have proper exit codes"
+fi
+
+# ===========================================================================
+# Release Notes Command Tests
+# ===========================================================================
+
+section "Notes Command - Structure"
+
+# Check that notes command is routed in main case statement
+if [[ "$script_content" == *'notes|'* ]]; then
+    pass "notes command is handled in main case statement"
+else
+    fail "notes command should be in main case statement"
+fi
+
+# Check -n shorthand
+if [[ "$script_content" == *'-n)'* ]]; then
+    pass "notes command supports -n shorthand"
+else
+    fail "notes command should support -n shorthand"
+fi
+
+# Check that cmd_notes references CHANGELOG.md
+if [[ "$script_content" == *'CHANGELOG.md'* ]]; then
+    pass "notes references CHANGELOG.md"
+else
+    fail "notes should reference CHANGELOG.md"
+fi
+
+# Check that changelog helpers use awk for parsing
+if [[ "$script_content" == *'_changelog_incoming'* ]]; then
+    pass "status/update uses _changelog_incoming helper"
+else
+    fail "status/update should use _changelog_incoming helper"
 fi
 
 # ===========================================================================

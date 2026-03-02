@@ -93,9 +93,10 @@ make clean        # Clean orphaned test resources
 ### Management
 
 ```bash
-dotfiles update    # Pull latest and re-run installer (shorthand: dot update)
-dotfiles status    # Check sync status
-dotfiles health    # Run health check
+dotfiles update         # Pull latest and re-run installer (shorthand: dot update)
+dotfiles status         # Check sync status
+dotfiles health         # Run health check
+dotfiles notes          # Browse full changelog in a pager (shorthand: dot -n)
 ./scripts/install/health-check.sh  # Verify installation
 ./scripts/install/uninstall.sh     # Remove symlinks
 ```
