@@ -76,7 +76,8 @@ nvim/
     │   │   ├── dotnet.lua             # .NET development (easy-dotnet)
     │   │   ├── test.lua               # Test runner (neotest)
     │   │   ├── markdown-ui.lua        # Markdown editing (mkdnflow)
-    │   │   └── claude-prompt.lua      # Claude prompt file utilities
+    │   │   ├── claude-prompt.lua      # Claude prompt file utilities
+    │   │   └── discord.lua            # Discord Rich Presence (cord.nvim)
     │   └── lazy-bootstrap.lua         # Lazy.nvim auto-installer
     └── kickstart/                     # Kickstart-provided plugins
         ├── health.lua                 # Health checks
@@ -166,6 +167,12 @@ nvim/
 | [neotest-dotnet](https://github.com/Issafalcon/neotest-dotnet) | .NET adapter (xUnit, NUnit, MSTest) with `.slnx` support |
 | [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (gotestsum runner, pinned to v1.15.1) |
 | [neotest-vitest](https://github.com/marilari88/neotest-vitest) | Vitest/Bun adapter (`bun run test`) |
+
+### Social
+
+| Plugin | Purpose |
+|--------|---------|
+| [cord.nvim](https://github.com/vyfor/cord.nvim) | Discord Rich Presence with catppuccin theme |
 
 ### AI & Development
 

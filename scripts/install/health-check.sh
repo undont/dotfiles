@@ -15,9 +15,12 @@ USAGE:
 DESCRIPTION:
     Runs comprehensive health checks on the dotfiles installation:
       • Verifies all symlinks point to correct locations
-      • Checks plugin managers are installed (TPM, lazy.nvim)
+      • Validates generated configs exist (tmux, ghostty, gh-dash, theme)
+      • Checks plugin managers and TPM-managed plugins
       • Validates secrets file exists
-      • Tests custom scripts are in PATH
+      • Checks alert system hooks are executable
+      • Reports local override file status
+      • Tests custom scripts and tools are in PATH
 
 OPTIONS:
     -h, --help   Show this help message
@@ -118,6 +121,43 @@ check_file() {
     fi
 }
 
+check_executable() {
+    local file="$1"
+    local name="$2"
+
+    printf "Checking %-30s" "$name..."
+
+    if [[ -x "$file" ]]; then
+        printf '%sOK%s\n' "${GREEN}" "${NC}"
+        return 0
+    elif [[ -f "$file" ]]; then
+        printf '%sNOT EXECUTABLE%s\n' "${YELLOW}" "${NC}"
+        printf '  Run: chmod +x %s\n' "$file"
+        ISSUES=1
+        return 1
+    else
+        printf '%sMISSING%s\n' "${RED}" "${NC}"
+        ISSUES=1
+        return 1
+    fi
+}
+
+# Informational check — does not set ISSUES
+check_local_override() {
+    local file="$1"
+    local name="$2"
+
+    printf "Checking %-30s" "$name..."
+
+    if [[ -f "$file" ]]; then
+        printf '%sOK%s\n' "${GREEN}" "${NC}"
+    else
+        printf '%sNOT CREATED%s\n' "${CYAN}" "${NC}"
+        printf '  Create from template with: dotfiles update\n'
+    fi
+    return 0
+}
+
 print_section "Dotfiles Health Check"
 echo "Preset: $PRESET"
 echo ""
@@ -151,6 +191,9 @@ check_symlink "$HOME/.p10k.zsh" "$DOTFILES_DIR/zsh/p10k.zsh" ".p10k.zsh"
 # Prettier (minimal)
 check_symlink "$HOME/.prettierrc" "$DOTFILES_DIR/formatters/prettierrc.json" ".prettierrc"
 
+# Dotfiles CLI (minimal)
+check_symlink "$HOME/.local/bin/dotfiles" "$DOTFILES_DIR/scripts/dotfiles" "dotfiles CLI"
+
 # Tmux (minimal)
 # Note: .tmux.conf is generated to XDG location and symlinked
 XDG_TMUX_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
@@ -162,6 +205,16 @@ if should_install "core"; then
     check_symlink "$HOME/.config/nvim" "$DOTFILES_DIR/nvim" "nvim config"
 fi
 
+# LazyGit (core)
+if should_install "core"; then
+    check_symlink "$HOME/.config/lazygit/config.yml" "$DOTFILES_DIR/lazygit/config.yml" "lazygit config"
+fi
+
+# gh-dash sync (core)
+if should_install "core"; then
+    check_symlink "$HOME/.local/bin/dash-repo-sync" "$DOTFILES_DIR/gh-dash/dash-repo-sync" "dash-repo-sync"
+fi
+
 # Hammerspoon (full)
 if should_install "full"; then
     check_symlink "$HOME/.hammerspoon/init.lua" "$DOTFILES_DIR/hammerspoon/init.lua" "hammerspoon"
@@ -171,17 +224,60 @@ fi
 # Config is generated to XDG — Ghostty reads ~/.config/ghostty/config natively on all platforms
 if should_install "core"; then
     check_file "$HOME/.config/ghostty/config" "ghostty config (XDG)"
+    # The generated config includes config-file = ~/.config/ghostty/local
+    check_file "$HOME/.config/ghostty/local" "ghostty local override"
 fi
 
 # Karabiner (full)
 if should_install "full"; then
-    check_symlink "$HOME/.config/karabiner/karabiner.json" "$DOTFILES_DIR/karabiner/karabiner.json" "karabiner config"
+    check_file "$HOME/.config/karabiner/karabiner.json" "karabiner config"
+fi
+
+echo ""
+echo "Generated Configs:"
+echo "------------------"
+
+# Tmux generated config (minimal) — the file that .tmux.conf symlinks to
+check_file "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf" "tmux config (generated)"
+
+# Current theme (minimal)
+printf "Checking %-30s" "current theme..."
+THEME_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
+if [[ -f "$THEME_FILE" ]]; then
+    printf '%sOK%s (%s)\n' "${GREEN}" "${NC}" "$(cat "$THEME_FILE")"
+else
+    printf '%sMISSING%s\n' "${YELLOW}" "${NC}"
+    printf '  Run: theme-switch <theme-name>\n'
+    ISSUES=1
+fi
+
+# gh-dash generated config (core)
+if should_install "core"; then
+    check_file "$HOME/.config/gh-dash/config.yml" "gh-dash config (generated)"
 fi
 
 echo ""
 echo "Plugin Managers:"
 echo "----------------"
 check_directory "$HOME/.tmux/plugins/tpm" "TPM (Tmux Plugin Manager)"
+
+# Key TPM-managed plugins (installed via prefix + I inside tmux)
+printf "Checking %-30s" "tmux plugins (via TPM)..."
+MISSING_PLUGINS=()
+for plugin in tmux-resurrect tmux-continuum tmux-yank tmux-fingers; do
+    if [[ ! -d "$HOME/.tmux/plugins/$plugin" ]]; then
+        MISSING_PLUGINS+=("$plugin")
+    fi
+done
+if [[ ${#MISSING_PLUGINS[@]} -eq 0 ]]; then
+    printf '%sOK%s\n' "${GREEN}" "${NC}"
+else
+    printf '%sWARN%s\n' "${YELLOW}" "${NC}"
+    printf '  Missing: %s\n' "${MISSING_PLUGINS[*]}"
+    printf '  Install with: prefix + I (inside tmux)\n'
+    ISSUES=1
+fi
+
 if should_install "core"; then
     check_directory "$HOME/.local/share/nvim/lazy" "lazy.nvim (Neovim)"
 
@@ -219,6 +315,64 @@ if should_install "core"; then
         echo "  Add ~/.local/launchers to your PATH"
     fi
 
+fi
+
+echo ""
+echo "Alerts System:"
+echo "--------------"
+
+# Hook scripts (must be executable for alerts to fire)
+check_executable "$DOTFILES_DIR/scripts/hooks/agent-alert.sh" "agent-alert hook"
+check_executable "$DOTFILES_DIR/scripts/hooks/agent-alert-clear.sh" "agent-alert-clear hook"
+check_executable "$DOTFILES_DIR/scripts/hooks/cmd-alert.sh" "cmd-alert hook"
+
+# Wrapper scripts (used by Claude Code and OpenCode hook configs)
+check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/claude-alert.sh" "claude alert wrapper"
+check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/claude-alert-clear.sh" "claude alert-clear wrapper"
+check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/opencode-alert.sh" "opencode alert wrapper"
+check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/opencode-alert-clear.sh" "opencode alert-clear wrapper"
+
+echo ""
+echo "Local Overrides:"
+echo "----------------"
+
+# These are user-owned files created from templates — informational only
+check_local_override "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/local.conf" "tmux local.conf"
+if should_install "core"; then
+    check_local_override "$HOME/.config/nvim/local.lua" "nvim local.lua"
+    check_local_override "$HOME/.config/lazygit/local.yml" "lazygit local.yml"
+    check_local_override "$HOME/.config/gh-dash/local.yml" "gh-dash local.yml"
+fi
+if should_install "full"; then
+    check_local_override "$HOME/.hammerspoon/local.lua" "hammerspoon local.lua"
+fi
+
+echo ""
+echo "Tools & PATH:"
+echo "-------------"
+
+# ~/.local/bin in PATH (required for dotfiles CLI, dash-repo-sync)
+# shellcheck disable=SC2088
+printf "Checking %-30s" "~/.local/bin in PATH..."
+if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
+    printf '%sOK%s\n' "${GREEN}" "${NC}"
+else
+    printf '%sNOT IN PATH%s\n' "${YELLOW}" "${NC}"
+    printf '  dotfiles CLI requires ~/.local/bin in PATH\n'
+    ISSUES=1
+fi
+
+# yq (required for gh-dash local merge)
+if should_install "core"; then
+    printf "Checking %-30s" "yq (gh-dash merge)..."
+    if command_exists yq; then
+        printf '%sOK%s\n' "${GREEN}" "${NC}"
+    else
+        printf '%sNOT FOUND%s\n' "${YELLOW}" "${NC}"
+        printf '  gh-dash local overrides will not apply without yq\n'
+        printf '  Install with: brew install yq\n'
+        ISSUES=1
+    fi
 fi
 
 echo ""

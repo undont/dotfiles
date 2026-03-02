@@ -17,9 +17,19 @@ return {
     local roslyn_false_positives = { IDE0079 = true, CA1825 = true }
     vim.diagnostic.set = function(namespace, bufnr, diagnostics, opts)
       if bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].filetype == 'cs' then
-        diagnostics = vim.tbl_filter(function(d)
-          return not roslyn_false_positives[d.code]
-        end, diagnostics)
+        -- Deduplicate diagnostics reported from multiple .csproj contexts
+        local seen = {}
+        local deduped = {}
+        for _, d in ipairs(diagnostics) do
+          if not roslyn_false_positives[d.code] then
+            local key = d.lnum .. ':' .. d.col .. ':' .. (d.end_lnum or '') .. ':' .. (d.end_col or '') .. ':' .. d.message
+            if not seen[key] then
+              seen[key] = true
+              table.insert(deduped, d)
+            end
+          end
+        end
+        diagnostics = deduped
       end
       return orig_diag_set(namespace, bufnr, diagnostics, opts)
     end
