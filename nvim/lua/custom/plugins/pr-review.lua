@@ -38,10 +38,16 @@ return {
         local mb_ok, mb = pcall(require, 'mini.bracketed')
         if mb_ok then
           vim.keymap.set('n', ']f', function()
-            mb.file 'forward'
+            local dir = vim.fn.expand '%:p:h'
+            if dir ~= '' and vim.fn.isdirectory(dir) == 1 then
+              mb.file 'forward'
+            end
           end, { silent = true, desc = 'Next file on disk' })
           vim.keymap.set('n', '[f', function()
-            mb.file 'backward'
+            local dir = vim.fn.expand '%:p:h'
+            if dir ~= '' and vim.fn.isdirectory(dir) == 1 then
+              mb.file 'backward'
+            end
           end, { silent = true, desc = 'Previous file on disk' })
         else
           pcall(vim.keymap.del, 'n', ']f')
@@ -49,17 +55,13 @@ return {
         end
       end
 
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = { 'DiffviewFiles', 'DiffviewFileHistory' },
+      vim.api.nvim_create_autocmd('User', {
+        pattern = 'DiffviewViewOpened',
         callback = set_nav,
       })
-      vim.api.nvim_create_autocmd('BufWinLeave', {
-        callback = function()
-          local ft = vim.bo.filetype
-          if ft == 'DiffviewFiles' or ft == 'DiffviewFileHistory' then
-            clear_nav()
-          end
-        end,
+      vim.api.nvim_create_autocmd('User', {
+        pattern = 'DiffviewViewClosed',
+        callback = clear_nav,
       })
 
       -- Patch diffview upstream bugs (nil guards for async race conditions)
