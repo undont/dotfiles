@@ -114,10 +114,6 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 - **Searchable cheatsheet** — `Space ?` opens a filterable keybinding reference
 - **Local overrides** — `~/.config/nvim/local.lua` survives updates
 
-### AI Coding Assistants
-
-- **Claude Code** and **OpenCode** — both with tmux alert hooks
-
 ### Ghostty, Hammerspoon & Karabiner
 
 - **Ghostty** — colour scheme follows active theme, zsh shell integration, macOS optimised, local override file
