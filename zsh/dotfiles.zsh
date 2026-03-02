@@ -316,6 +316,7 @@ alias ta="tattach" # Attach to tmux session, restoring from backup if needed (se
 
 # Navigation
 alias c="clear"
+alias cl="printf '\033[2J\033[3J\033[H'; [[ -n \$TMUX ]] && tmux clear-history"  # clear screen + scrollback
 alias ..="cd .."
 alias ...="cd ../.."
 
@@ -617,6 +618,7 @@ _dotfiles() {
     'aliases:Show all shell aliases, functions, and utilities'
     'theme:Manage colour themes'
     'set:Configure project directories (dev, projects)'
+    'notes:Browse the full changelog in a pager'
     'edit:Open dotfiles directory in $EDITOR'
     'cd:Print dotfiles path'
     'sync:Fetch from origin and show what'\''s changed'

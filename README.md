@@ -80,7 +80,7 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 - **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt+C` directories
 - **Performance** — lazy-loaded completions, fnm (~5ms) over nvm (~300ms), cached eval for direnv/fzf
 - **Tab completion** for `dotfiles` / `dot`, `trestore`, `tkill`, `tattach`
-- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `tattach` (attach or restore from backup), `cdb`/`cdf`/`cdl` (browser-style directory back/forward/history), `drs` (sync repo paths to gh-dash), `brewup`, `nvim-sync`, `mkcd`, and more — run `dot aliases` for the full list
+- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `tattach` (attach or restore from backup), `cdb`/`cdf`/`cdl` (browser-style directory back/forward/history), `cl` (full terminal reset), `drs` (sync repo paths to gh-dash), `brewup`, `nvim-sync`, `mkcd`, and more — run `dot aliases` for the full list
 
 ### Tmux — 60+ Custom Scripts, One Cohesive Workflow
 
@@ -133,17 +133,18 @@ Press `` ` p `` to open the launcher picker — shell scripts that create pre-co
 - **User launchers** in `~/.config/dotfiles/launchers/` override repo launchers by name
 - **Set**: press `s` to configure `DEV_ROOT` and `PROJECTS_ROOT` for dynamic project discovery
 
-### Dotfiles CLI (`dot`)
+### Dotfiles CLI 
 
 ```bash
-dot update    # Pull latest + re-run installer with saved preset
-dot status    # Sync status, local changes, health summary
-dot health    # Full health check (symlinks, plugins, secrets)
-dot links     # Show all managed symlinks and their status
-dot theme     # List / switch themes
-dot aliases   # Browse all shell aliases and shortcuts
-dot sync      # Preview incoming changes without applying
-dot edit      # Open dotfiles in $EDITOR
+dotfiles update    # Pull latest + re-run installer with saved preset
+dotfiles status    # Sync status, local changes, health summary
+dotfiles health    # Full health check (symlinks, plugins, secrets)
+dotfiles links     # Show all managed symlinks and their status
+dotfiles theme     # List / switch themes
+dotfiles aliases   # Browse all shell aliases and shortcuts
+dotfiles sync      # Preview incoming changes without applying
+dotfiles notes     # Browse full changelog in a pager 
+dotfiles edit      # Open dotfiles in $EDITOR
 ```
 
 > `dot` is a shorthand alias for `dotfiles` — both work interchangeably with full tab completion.
