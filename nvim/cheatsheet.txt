@@ -81,7 +81,7 @@ LSP restart | <leader>lr
 
 ## tools @tools
 Toggle file tree | <leader>e
-NeoTree reveal | \
+NeoTree reveal | |
 Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
@@ -172,8 +172,8 @@ Start/Continue | F5
 Step into | F1
 Step over | F2
 Step out | F3
-Toggle breakpoint | <leader>b
-Conditional breakpoint | <leader>B
+Toggle breakpoint | <leader>Bt
+Conditional breakpoint | <leader>Bc
 Toggle debug UI | F7
 
 ## markdown @markdown
@@ -204,6 +204,10 @@ Manage secrets | <leader>ns
 Watch project | <leader>nw
 New item | <leader>nn
 Outdated packages | <leader>no
+
+## buffers @buffers
+Delete buffer | <leader>bd
+Force delete buffer | <leader>bD
 
 ## bracketed @bracketed
 Next/prev buffer | ]b / [b

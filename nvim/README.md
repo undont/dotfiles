@@ -84,7 +84,7 @@ nvim/
         └── plugins/
             ├── neo-tree.lua           # File explorer
             ├── gitsigns.lua           # Git signs in gutter
-            ├── autopairs.lua          # Auto-close brackets
+            ├── autopairs.lua          # Disabled (using mini.pairs)
             ├── indent_line.lua        # Indent guides
             ├── debug.lua              # DAP debugging
             └── lint.lua               # Linting support
@@ -110,7 +110,7 @@ nvim/
 |--------|---------|
 | Custom colourschemes (`nvim/colors/`) | 16 themes matching dotfiles theme system |
 | [auto-dark-mode.nvim](https://github.com/f-person/auto-dark-mode.nvim) | Follows system theme |
-| [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects, notify, bracketed navigation, splitjoin |
+| [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects, notify, bracketed navigation, splitjoin, pairs, hipatterns |
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
 | [neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File explorer sidebar |
 | [which-key.nvim](https://github.com/folke/which-key.nvim) | Keybinding popup hints |
@@ -123,7 +123,7 @@ nvim/
 | Plugin | Purpose |
 |--------|---------|
 | [telescope.nvim](https://github.com/nvim-telescope/telescope.nvim) | Fuzzy finder (files, buffers, grep) |
-| [nvim-autopairs](https://github.com/windwp/nvim-autopairs) | Auto-close brackets and quotes |
+| [mini.bufremove](https://github.com/echasnovski/mini.bufremove) | Delete buffers without closing windows |
 | [flash.nvim](https://github.com/folke/flash.nvim) | Jump/motion with search labels |
 | [nvim-treesitter-textobjects](https://github.com/nvim-treesitter/nvim-treesitter-textobjects) | Structural selection and motion |
 | [grug-far.nvim](https://github.com/MagicDuck/grug-far.nvim) | Project-wide search and replace |
