@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.46] - 2026-03-03
+
+### Added
+- CLI: `dotfiles version` / `dot -v` command — shows version, preset, theme, branch, and path with gradient logo
+- CLI: `dotfiles notes` highlights the current version with a magenta `★ current` marker
+- Installer: Step 10 prompts for `DEV_ROOT` and `PROJECTS_ROOT` project directories during installation
+- Installer: Smart post-install "next steps" that detect what's already configured and only show relevant items
+- Zsh: fzf theme auto-refresh — `Ctrl+R`, `Ctrl+T`, `Alt+C`, and `cdl` pick up theme changes without restarting the shell
+
 ## [0.2.45] - 2026-03-02
 
 ### Added
