@@ -1122,6 +1122,20 @@ else
     fail "notes should reference CHANGELOG.md"
 fi
 
+# Check that cmd_notes fetches from remote
+if [[ "$script_content" == *'git show'*'CHANGELOG.md'* ]]; then
+    pass "notes fetches remote changelog via git show"
+else
+    fail "notes should fetch remote changelog via git show"
+fi
+
+# Check that cmd_notes falls back to local
+if [[ "$script_content" == *'Fall back to local'* ]]; then
+    pass "notes falls back to local changelog when remote unavailable"
+else
+    fail "notes should fall back to local changelog"
+fi
+
 # Check that changelog helpers use awk for parsing
 if [[ "$script_content" == *'_changelog_incoming'* ]]; then
     pass "status/update uses _changelog_incoming helper"
