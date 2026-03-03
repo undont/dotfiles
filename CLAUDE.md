@@ -94,8 +94,8 @@ make clean        # Clean orphaned test resources
 
 ```bash
 dotfiles update         # Pull latest and re-run installer (shorthand: dot update)
-dotfiles status         # Check sync status
-dotfiles health         # Run health check
+dotfiles status         # Version, sync status, and local changes
+dotfiles health         # Run health check (symlinks, plugins, env vars)
 dotfiles notes          # Browse full changelog in a pager (shorthand: dot -n)
 ./scripts/install/health-check.sh  # Verify installation
 ./scripts/install/uninstall.sh     # Remove symlinks
@@ -350,3 +350,7 @@ After completing any code change, check whether relevant documentation needs upd
 - New nvim plugins/keymaps → update `nvim/README.md`
 - New install behaviour/presets → update `CLAUDE.md` and `README.md`
 - New test files → confirm they're discovered by `scripts/run-tests.sh` (auto-discovery)
+
+### Versioning
+
+The version is read at runtime from `CHANGELOG.md` — there is **no hardcoded version string** anywhere in the codebase. When bumping the version, only update `CHANGELOG.md`. Do not search for or try to update a version constant in scripts.

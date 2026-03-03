@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.47] - 2026-03-03
+
+### Added
+- Nvim: codecompanion.nvim with copilot (default), anthropic, and opencode ACP adapters
+- Nvim: markdown-preview.nvim browser preview (`<leader>mp`)
+- Health check: environment variable checks for plugin API keys (informational)
+
+### Changed
+- Nvim: swap parameter keymaps moved from `<leader>a`/`<leader>A` to `>p`/`<p` (frees `<leader>a` for AI group)
+- Nvim: codecompanion default adapter changed from anthropic to copilot (no API key required)
+- Nvim: blink.cmp sort config migrated from `sort.comparators` to `fuzzy.sorts`
+
+### Fixed
+- Nvim: markdown-preview.nvim build failure (`mkdp#util#install` not available during lazy.nvim build)
+- Nvim: treesitter swap crash on buffers without a parser (now shows notification via mini.notify)
+- Alerts: opencode hook wrappers skip when running as ACP subprocess inside Neovim
+
 ## [0.2.46] - 2026-03-03
 
 ### Added

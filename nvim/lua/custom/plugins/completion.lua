@@ -44,9 +44,27 @@ return {
         list = {
           selection = { preselect = true, auto_insert = true },
         },
+        menu = {
+          draw = {
+            columns = { { 'kind_icon' }, { 'label', 'label_description', gap = 1 }, { 'source_name' } },
+          },
+        },
+      },
+      fuzzy = {
+        sorts = {
+          'exact',
+          'score',
+          'sort_text',
+          'kind',
+          'label',
+        },
       },
       sources = {
         default = { 'lsp', 'path', 'snippets', 'buffer' },
+        providers = {
+          snippets = { score_offset = -3 },
+          buffer = { score_offset = -5 },
+        },
       },
     },
     opts_extend = { 'sources.default' },
