@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.48] - 2026-03-03
+
+### Changed
+- CLI: `dotfiles notes` fetches changelog from remote so users can see unreceived changes above the `★ current` marker
+
 ## [0.2.47] - 2026-03-03
 
 ### Added
