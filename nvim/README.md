@@ -7,7 +7,7 @@ Customised Neovim setup based on [kickstart.nvim](https://github.com/nvim-lua/ki
 - **Modular Structure** - Organised into `lua/custom/core/` and `lua/custom/plugins/`
 - **LSP Support** - Language servers via Mason with auto-configuration
 - **Completion** - Fast completion with blink.cmp and snippets
-- **AI Assistance** - GitHub Copilot integration
+- **AI Assistance** - GitHub Copilot inline suggestions + CodeCompanion chat/inline/actions (Anthropic & Copilot)
 - **Git Integration** - LazyGit for git operations, gitsigns for inline decorations
 - **PR Review** - Octo.nvim for GitHub PRs, diffview for side-by-side diffs
 - **.NET Development** - easy-dotnet.nvim for project management with Roslyn LSP
@@ -75,7 +75,8 @@ nvim/
     │   │   ├── pr-review.lua          # PR review (diffview, octo)
     │   │   ├── dotnet.lua             # .NET development (easy-dotnet)
     │   │   ├── test.lua               # Test runner (neotest)
-    │   │   ├── markdown-ui.lua        # Markdown editing (mkdnflow)
+    │   │   ├── markdown-ui.lua        # Markdown editing (mkdnflow) + browser preview
+    │   │   ├── codecompanion.lua      # AI chat, inline assist, actions (Anthropic/Copilot)
     │   │   ├── claude-prompt.lua      # Claude prompt file utilities
     │   │   └── discord.lua            # Discord Rich Presence (cord.nvim)
     │   └── lazy-bootstrap.lua         # Lazy.nvim auto-installer
@@ -158,6 +159,7 @@ nvim/
 | Plugin | Purpose |
 |--------|---------|
 | [mkdnflow.nvim](https://github.com/jakewvincent/mkdnflow.nvim) | List continuation, todo toggles, table formatting |
+| [markdown-preview.nvim](https://github.com/iamcco/markdown-preview.nvim) | Live browser preview with KaTeX, Mermaid, PlantUML |
 
 ### Testing
 
@@ -178,7 +180,8 @@ nvim/
 
 | Plugin | Purpose |
 |--------|---------|
-| [copilot.vim](https://github.com/github/copilot.vim) | GitHub Copilot integration |
+| [copilot.vim](https://github.com/github/copilot.vim) | GitHub Copilot inline suggestions |
+| [codecompanion.nvim](https://github.com/olimorris/codecompanion.nvim) | AI chat, inline editing, actions (Anthropic/Copilot) |
 | [nvim-lint](https://github.com/mfussenegger/nvim-lint) | Linting framework |
 | [nvim-dap](https://github.com/mfussenegger/nvim-dap) | Debug Adapter Protocol |
 
@@ -209,6 +212,10 @@ Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 | Normal | `Space f` | Format buffer |
 | Insert | `Ctrl+Space` | Trigger completion |
 | Insert | `Tab` | Accept Copilot suggestion |
+| Normal | `Space ac` | AI chat toggle (CodeCompanion) |
+| Normal | `Space ai` | AI inline assist |
+| Normal | `Space aa` | AI action palette |
+| Normal | `Space mp` | Markdown preview in browser |
 
 **Full keybinding reference**: Press `Space ?` or see `lua/custom/core/keymaps.lua`
 

@@ -303,6 +303,31 @@ echo "--------"
 ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 check_file "$ZSH_CONFIG_DIR/secrets.zsh" "Secrets file"
 
+# Environment variables used by plugins (core) — informational only
+if should_install "core"; then
+    echo ""
+    echo "Environment Variables:"
+    echo "----------------------"
+
+    # Informational check — does not set ISSUES (copilot is the default adapter)
+    check_env_var() {
+        local var="$1"
+        local desc="$2"
+
+        printf "Checking %-30s" "$var..."
+
+        if [[ -n "${!var:-}" ]]; then
+            printf '%sOK%s\n' "${GREEN}" "${NC}"
+        else
+            printf '%sNOT SET%s\n' "${CYAN}" "${NC}"
+            printf '  %s\n' "$desc"
+        fi
+        return 0
+    }
+
+    check_env_var "ANTHROPIC_API_KEY" "Optional: enables anthropic adapter in codecompanion.nvim"
+fi
+
 # Session Launchers (core)
 if should_install "core"; then
     echo ""

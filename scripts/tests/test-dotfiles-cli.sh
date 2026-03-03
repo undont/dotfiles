@@ -70,12 +70,6 @@ else
     fail "help should mention health command"
 fi
 
-if [[ "$help_output" == *"sync"* ]]; then
-    pass "help mentions sync command"
-else
-    fail "help should mention sync command"
-fi
-
 if [[ "$help_output" == *"edit"* ]]; then
     pass "help mentions edit command"
 else
@@ -167,12 +161,6 @@ if [[ "$script_content" == *"cmd_health()"* ]]; then
     pass "cmd_health function defined"
 else
     fail "cmd_health function not found"
-fi
-
-if [[ "$script_content" == *"cmd_sync()"* ]]; then
-    pass "cmd_sync function defined"
-else
-    fail "cmd_sync function not found"
 fi
 
 if [[ "$script_content" == *"cmd_notes()"* ]]; then

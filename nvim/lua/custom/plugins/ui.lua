@@ -15,6 +15,7 @@ return {
         mappings = vim.g.have_nerd_font,
       },
       spec = {
+        { '<leader>a', group = '[A]I', icon = { icon = '󰚩 ', color = 'purple' } },
         { '<leader>b', group = '[B]uffer', icon = { icon = '󰈔 ', color = 'azure' } },
         { '<leader>B', group = '[B]reakpoint', icon = { icon = ' ', color = 'red' } },
         { '<leader>c', group = '[C]laude', icon = { icon = ' ', color = 'green' } },
