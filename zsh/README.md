@@ -247,6 +247,7 @@ direnv allow
 | `dotfiles health` | Run full health check                             |
 | `dotfiles links` | Show all managed symlinks and their status          |
 | `dotfiles notes` | Browse full changelog in a pager                    |
+| `dotfiles version` | Show current dotfiles version, preset, and theme |
 | `dotfiles edit`  | Open dotfiles directory in $EDITOR                 |
 | `dotfiles cd`    | Print dotfiles path (use: `cd "$(dotfiles cd)"`)  |
 

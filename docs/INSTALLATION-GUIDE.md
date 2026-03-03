@@ -17,6 +17,7 @@ A detailed explanation of what each step of the installation process does and wh
   - [Step 7: Setup Secrets File](#step-7-setup-secrets-file)
   - [Step 8: Run Health Check](#step-8-run-health-check)
   - [Step 9: Save Preset Configuration](#step-9-save-preset-configuration)
+  - [Step 10: Configure Project Directories](#step-10-configure-project-directories)
 - [Command-Line Options](#command-line-options)
 - [Post-Installation](#post-installation)
 - [What Gets Installed](#what-gets-installed)
@@ -140,7 +141,7 @@ Homebrew is the package manager used to install all other tools. Without it, you
 
 **What you'll see**:
 ```
-[1/9] Installing/updating Homebrew...
+[1/10] Installing/updating Homebrew...
   ✓ Homebrew already installed
   ✓ Updated Homebrew
   ✓ Analytics disabled
@@ -179,7 +180,7 @@ The Brewfile is a declarative list of all tools needed for the development envir
 
 **What you'll see**:
 ```
-[2/9] Installing packages from Brewfile...
+[2/10] Installing packages from Brewfile...
   Installing neovim...
   Installing ripgrep...
   Installing tmux...
@@ -216,7 +217,7 @@ This step catches configuration issues early. If a required tool isn't properly 
 
 **What you'll see**:
 ```
-[3/9] Checking prerequisites...
+[3/10] Checking prerequisites...
   ✓ git
   ✓ zsh
   ✓ tmux
@@ -252,7 +253,7 @@ If you have existing configurations (especially customised ones), this step ensu
 
 **What you'll see**:
 ```
-[4/9] Backing up existing configuration...
+[4/10] Backing up existing configuration...
   Created backup directory: ~/.dotfiles-backup/20260111-143022-12345/
   ✓ Backed up .zshrc
   ✓ Backed up .tmux.conf
@@ -325,7 +326,7 @@ Karabiner (full):
 
 **What you'll see**:
 ```
-[5/9] Creating symlinks...
+[5/10] Creating symlinks...
   ✓ Created personal ~/.zshrc (sources dotfiles framework)
   ✓ ~/.zprofile -> ~/dotfiles/zsh/zprofile
   ✓ ~/.tmux -> ~/dotfiles/tmux
@@ -357,7 +358,7 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 
 **What you'll see**:
 ```
-[6/9] Installing plugin managers...
+[6/10] Installing plugin managers...
   ✓ TPM installed to ~/.tmux/plugins/tpm
   ✓ lazy.nvim will auto-install on first Neovim launch
 ```
@@ -395,7 +396,7 @@ export AWS_SECRET_ACCESS_KEY="..."
 
 **What you'll see**:
 ```
-[7/9] Setting up secrets file...
+[7/10] Setting up secrets file...
   ✓ Created secrets file from template
   ✓ Set permissions to 600
   ! Edit ~/.config/zsh/secrets.zsh to add your API keys
@@ -430,7 +431,7 @@ The health check confirms the installation completed successfully. It catches is
 
 **What you'll see**:
 ```
-[8/9] Running health check...
+[8/10] Running health check...
   ✓ All symlinks verified
   ✓ TPM installed
   ✓ Secrets file configured
@@ -450,10 +451,43 @@ When you run `dotfiles update` later, it reads the saved preset so it can run th
 
 **What you'll see**:
 ```
-[9/9] Saving preset configuration...
+[9/10] Saving preset configuration...
   ✓ Saved preset: core
 
 Installation complete!
+```
+
+---
+
+### Step 10: Configure Project Directories
+
+**What it does**:
+- Prompts you to set `DEV_ROOT` — your main development directory (default: `~/src`)
+- Optionally prompts for `PROJECTS_ROOT` — a secondary directory for side projects, playgrounds, etc.
+- Writes the exports to your `~/.zshrc` using `update_zshrc_export()`
+- Creates the directories if they don't exist
+- Skips the prompt if either variable is already configured
+
+**Why this matters**:
+The launcher picker (`` ` p ``) and `dotfiles set` command use these paths for dynamic project discovery. Setting them during installation means the launcher can find your projects immediately.
+
+**What you'll see**:
+```
+[10/10] Project directories (optional)...
+  DEV_ROOT sets your main development directory for the launcher picker.
+  Default: /Users/you/src
+  Enter path (or press Enter for default, "skip" to skip):
+  ✓ DEV_ROOT set to /Users/you/src
+
+  PROJECTS_ROOT sets a secondary directory (side projects, playground, etc.).
+  Enter path (or press Enter to skip):
+  ✓ Skipped. Set later with: dotfiles set projects <path>
+```
+
+**Non-interactive mode**: When the installer runs non-interactively (e.g., piped or in CI), this step is skipped. You can configure directories later:
+```bash
+dotfiles set dev ~/src
+dotfiles set projects ~/playground
 ```
 
 ---
@@ -502,7 +536,7 @@ Installation complete!
 
 ## Post-Installation
 
-After the installation completes, you'll need to:
+The installer detects what's already configured and shows only the steps you still need. On a fresh install you'll see all of these; on a re-run you may see only one or two.
 
 ### 1. Reload Your Shell
 
@@ -513,6 +547,8 @@ source ~/.zshrc
 
 ### 2. Install Tmux Plugins
 
+Shown only if `~/.tmux/plugins/tmux-resurrect` doesn't exist yet.
+
 ```bash
 # Start tmux
 tmux
@@ -521,7 +557,9 @@ tmux
 # (prefix is backtick ` by default)
 ```
 
-### 3. Launch Neovim
+### 3. Launch Neovim (core/full presets)
+
+Shown only if lazy.nvim hasn't populated `~/.local/share/nvim/lazy` yet.
 
 ```bash
 # First launch triggers lazy.nvim plugin installation
@@ -530,7 +568,9 @@ nvim
 
 Wait for all plugins to install, then restart Neovim.
 
-### 4. Install Node.js
+### 4. Install Node.js (core/full presets)
+
+Shown only if `node` is not found in PATH.
 
 ```bash
 # Install latest LTS version
@@ -543,11 +583,22 @@ node --version
 
 ### 5. Add Your Secrets
 
+Shown only if `~/.config/zsh/secrets.zsh` doesn't contain any `export` lines yet.
+
 ```bash
 # Edit secrets file
 nvim ~/.config/zsh/secrets.zsh
 
 # Add your API keys and credentials
+```
+
+### 6. Configure Project Directories
+
+Shown only if `DEV_ROOT` or `PROJECTS_ROOT` aren't set in `~/.zshrc`. If you skipped the interactive prompt during Step 10, configure them now:
+
+```bash
+dotfiles set dev ~/src
+dotfiles set projects ~/playground
 ```
 
 ---

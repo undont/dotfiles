@@ -11,6 +11,7 @@
 #   links   -l    Show all managed symlinks and their status
 #   aliases -a    Show all shell aliases, functions, and utilities
 #   notes   -n    Browse the full changelog in a pager
+#   version -v    Show current dotfiles version
 #   edit    -e    Open dotfiles directory in $EDITOR
 #   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
 #   sync          Fetch from origin and show what's changed
@@ -80,9 +81,10 @@ _changelog_incoming() {
 
 # Colorise changelog markdown for terminal display
 _changelog_colorise() {
-    local cyan=$'\033[0;36m' green=$'\033[0;32m' yellow=$'\033[0;33m'
-    local red=$'\033[0;31m' grey=$'\033[0;90m' nc=$'\033[0m'
+    local cyan=$'\033[0;36m' green=$'\033[0;32m' magenta=$'\033[0;35m' bold_magenta=$'\033[1;35m'
+    local yellow=$'\033[0;33m' red=$'\033[0;31m' grey=$'\033[0;90m' nc=$'\033[0m'
     sed \
+        -e "s|^\(## \[.*\]\) ★ current\(.*\)|${magenta}\1 ${bold_magenta}★ current${magenta}\2${nc}|" \
         -e "s|^## \[.*|${cyan}&${nc}|" \
         -e "s|^### Added.*|${green}&${nc}|" \
         -e "s|^### Changed.*|${yellow}&${nc}|" \
@@ -276,12 +278,45 @@ cmd_notes() {
         return 1
     fi
 
-    # Use bat if available for rich markdown display, otherwise colorise + less
-    if command -v bat &>/dev/null; then
-        bat --style=plain --language=markdown --paging=always "$changelog"
+    local current_version
+    current_version=$(_changelog_local_version) || true
+
+    # Pre-process: mark the current version line with ★
+    local content
+    if [[ -n "$current_version" ]]; then
+        local escaped="${current_version//./\\.}"
+        content=$(sed "s/^## \[${escaped}\]/& ★ current/" "$changelog")
     else
-        _changelog_colorise < "$changelog" | less -R
+        content=$(<"$changelog")
     fi
+
+    # Always use custom coloriser so the ★ current marker gets accent colour
+    printf '%s\n' "$content" | _changelog_colorise | less -R
+}
+
+cmd_version() {
+    local version
+    version=$(_changelog_local_version) || true
+
+    if [[ -z "$version" ]]; then
+        error "Could not determine version from CHANGELOG.md"
+        return 1
+    fi
+
+    print_logo
+
+    printf "${CYAN}Version:${NC}  %s\n" "$version"
+    printf "${CYAN}Preset:${NC}   %s\n" "$(get_preset)"
+
+    local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
+    if [[ -f "$theme_file" ]]; then
+        printf "${CYAN}Theme:${NC}    %s\n" "$(<"$theme_file")"
+    fi
+
+    cd "$DOTFILES_DIR"
+    printf "${CYAN}Branch:${NC}   %s\n" "$(git rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")"
+    printf "${CYAN}Path:${NC}     %s\n" "$DOTFILES_DIR"
+    echo ""
 }
 
 # ─────────────────────────────────────────
@@ -380,6 +415,7 @@ Commands:
   links   -l    Show all managed symlinks and their status
   aliases -a    Show all shell aliases, functions, and utilities
   notes   -n    Browse the full changelog in a pager
+  version -v    Show current dotfiles version
   edit    -e    Open dotfiles directory in $EDITOR
   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
   sync          Fetch from origin and show what's new (without applying)
@@ -517,6 +553,7 @@ cmd_aliases() {
         "set dev <d>" "set DEV_ROOT" \
         "sync"        "preview incoming commits" \
         "notes   -n"  "browse changelog" \
+        "version -v"  "current version" \
         "edit    -e"  "open in \$EDITOR" \
         "aliases -a"  "show this reference" \
         "dot"         "shorthand for dotfiles"
@@ -691,6 +728,9 @@ main() {
             ;;
         notes|-n)
             cmd_notes
+            ;;
+        version|-v|--version)
+            cmd_version
             ;;
         help|--help|-h)
             cmd_help
