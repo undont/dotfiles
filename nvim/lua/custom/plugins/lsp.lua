@@ -12,6 +12,20 @@ return {
     },
   },
 
+  -- Automatic signature help on ( and , keystrokes
+  {
+    'ray-x/lsp_signature.nvim',
+    event = 'LspAttach',
+    opts = {
+      bind = true,
+      floating_window = true,
+      hint_enable = false,
+      handler_opts = { border = 'rounded' },
+      toggle_key = '<C-k>',
+      select_signature_key = '<C-s>',
+    },
+  },
+
   -- Main LSP Configuration
   {
     'neovim/nvim-lspconfig',
@@ -176,10 +190,7 @@ return {
         -- This ensures markdown code blocks in hover docs are properly highlighted
       })
 
-      -- Configure signature help with bordered windows
-      vim.lsp.handlers['textDocument/signatureHelp'] = vim.lsp.with(vim.lsp.handlers.signature_help, {
-        border = 'rounded',
-      })
+      -- Signature help is handled by lsp_signature.nvim (see plugin below)
 
       -- LSP capabilities with blink.cmp
       local capabilities = require('blink.cmp').get_lsp_capabilities()

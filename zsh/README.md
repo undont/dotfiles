@@ -242,9 +242,8 @@ direnv allow
 | Command          | Description                                        |
 | ---------------- | -------------------------------------------------- |
 | `dotfiles update` | Pull latest changes and re-run installer          |
-| `dotfiles status` | Show sync status and local changes                |
-| `dotfiles sync`  | Preview incoming changes without applying          |
-| `dotfiles health` | Run full health check                             |
+| `dotfiles status` | Show version, sync status, and local changes      |
+| `dotfiles health` | Run full health check (incl. env var checks)      |
 | `dotfiles links` | Show all managed symlinks and their status          |
 | `dotfiles notes` | Browse full changelog in a pager                    |
 | `dotfiles version` | Show current dotfiles version, preset, and theme |

@@ -4,17 +4,16 @@
 #
 # Commands:
 #   update  -u    Pull latest changes and re-run installer
-#   status  -s    Show sync status and quick health summary
+#   status  -s    Show version, sync status, and local changes
 #   health        Run full health check
 #   set           Configure project directories (DEV_ROOT, PROJECTS_ROOT)
 #   theme   -t    Manage colour themes
 #   links   -l    Show all managed symlinks and their status
 #   aliases -a    Show all shell aliases, functions, and utilities
 #   notes   -n    Browse the full changelog in a pager
-#   version -v    Show current dotfiles version
+#   version -v    Show current dotfiles version, preset, and theme
 #   edit    -e    Open dotfiles directory in $EDITOR
 #   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
-#   sync          Fetch from origin and show what's changed
 #   help          Show this help message
 
 set -euo pipefail
@@ -175,18 +174,22 @@ cmd_update() {
 cmd_status() {
     cd "$DOTFILES_DIR"
 
-    local preset remote_branch behind ahead
+    local preset remote_branch behind ahead version
 
     preset=$(get_preset)
     remote_branch=$(get_remote_branch)
+    version=$(_changelog_local_version) || true
 
     print_logo
     print_header "Dotfiles Status"
 
-    # Git status with prettier formatting
+    # Summary line: version, preset, theme, branch
+    [[ -n "$version" ]] && printf "${CYAN}Version:${NC}   %s\n" "$version"
     printf "${CYAN}Preset:${NC}    %s\n" "$preset"
-    printf "${CYAN}Location:${NC}  %s\n" "$DOTFILES_DIR"
+    local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
+    [[ -f "$theme_file" ]] && printf "${CYAN}Theme:${NC}     %s\n" "$(<"$theme_file")"
     printf "${CYAN}Branch:${NC}    %s\n" "$(git rev-parse --abbrev-ref HEAD)"
+    printf "${CYAN}Path:${NC}      %s\n" "$DOTFILES_DIR"
     echo ""
 
     # Fetch quietly
@@ -240,31 +243,6 @@ cmd_edit() {
 
 cmd_cd() {
     echo "$DOTFILES_DIR"
-}
-
-cmd_sync() {
-    cd "$DOTFILES_DIR"
-
-    local remote_branch behind
-
-    remote_branch=$(get_remote_branch)
-
-    info "Fetching from origin..."
-    git fetch origin --quiet
-
-    behind=$(git rev-list HEAD.."$remote_branch" --count 2>/dev/null) || behind=0
-
-    if [[ $behind -eq 0 ]]; then
-        success "Already up-to-date with $remote_branch"
-        return 0
-    fi
-
-    echo ""
-    info "$behind new commit(s) available:"
-    echo ""
-    git log --oneline HEAD.."$remote_branch"
-    echo ""
-    info "Run 'dotfiles update' to apply these changes."
 }
 
 # ─────────────────────────────────────────
@@ -403,7 +381,7 @@ Usage: dotfiles <command> [options]    (shorthand: dot <command>)
 
 Commands:
   update  -u    Pull latest changes and re-run installer with saved preset
-  status  -s    Show sync status, preset, and local changes
+  status  -s    Show version, sync status, and local changes
   health        Run full health check (symlinks, plugins, secrets)
   set           Configure project directories
                 dotfiles set dev <dir>       - Set DEV_ROOT in ~/.zshrc
@@ -415,17 +393,15 @@ Commands:
   links   -l    Show all managed symlinks and their status
   aliases -a    Show all shell aliases, functions, and utilities
   notes   -n    Browse the full changelog in a pager
-  version -v    Show current dotfiles version
+  version -v    Show current dotfiles version, preset, and theme
   edit    -e    Open dotfiles directory in $EDITOR
   cd            Print dotfiles path (use: cd "$(dotfiles cd)")
-  sync          Fetch from origin and show what's new (without applying)
   help          Show this help message
 
 Examples:
   dotfiles status          # Check if updates are available
   dotfiles update          # Pull and re-install
   dotfiles notes           # Browse full changelog
-  dotfiles sync            # Preview incoming changes
   dotfiles aliases         # Browse available aliases and shortcuts
   dotfiles set dev ~/src   # Set DEV_ROOT for launcher picker
   dotfiles theme list      # Show available themes
@@ -546,14 +522,13 @@ cmd_aliases() {
     printf "\n${CYAN}DOTFILES CLI${NC}\n"
     _2col \
         "update  -u"  "pull + re-install" \
-        "status  -s"  "sync status + changes" \
+        "status  -s"  "version + sync + changes" \
         "health"      "full health check" \
         "links   -l"  "managed symlinks" \
         "theme   -t"  "colour themes" \
         "set dev <d>" "set DEV_ROOT" \
-        "sync"        "preview incoming commits" \
         "notes   -n"  "browse changelog" \
-        "version -v"  "current version" \
+        "version -v"  "version, preset, theme" \
         "edit    -e"  "open in \$EDITOR" \
         "aliases -a"  "show this reference" \
         "dot"         "shorthand for dotfiles"
@@ -722,9 +697,6 @@ main() {
             ;;
         cd)
             cmd_cd
-            ;;
-        sync)
-            cmd_sync
             ;;
         notes|-n)
             cmd_notes

@@ -186,12 +186,20 @@ return {
       end, { desc = 'Previous function end' })
 
       -- Swap parameters
-      vim.keymap.set('n', '<leader>a', function()
+      vim.keymap.set('n', '>p', function()
+        if not pcall(vim.treesitter.get_parser) then
+          vim.notify('No treesitter parser for this buffer', vim.log.levels.WARN)
+          return
+        end
         ts_swap.swap_next '@parameter.inner'
-      end, { desc = 'Swap parameter with next' })
-      vim.keymap.set('n', '<leader>A', function()
+      end, { desc = 'Swap parameter right' })
+      vim.keymap.set('n', '<p', function()
+        if not pcall(vim.treesitter.get_parser) then
+          vim.notify('No treesitter parser for this buffer', vim.log.levels.WARN)
+          return
+        end
         ts_swap.swap_previous '@parameter.inner'
-      end, { desc = 'Swap parameter with previous' })
+      end, { desc = 'Swap parameter left' })
     end,
   },
 

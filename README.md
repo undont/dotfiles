@@ -136,12 +136,11 @@ Press `` ` p `` to open the launcher picker — shell scripts that create pre-co
 
 ```bash
 dotfiles update    # Pull latest + re-run installer with saved preset
-dotfiles status    # Sync status, local changes, health summary
-dotfiles health    # Full health check (symlinks, plugins, secrets)
+dotfiles status    # Version, sync status, and local changes
+dotfiles health    # Full health check (symlinks, plugins, env vars)
 dotfiles links     # Show all managed symlinks and their status
 dotfiles theme     # List / switch themes
 dotfiles aliases   # Browse all shell aliases and shortcuts
-dotfiles sync      # Preview incoming changes without applying
 dotfiles notes     # Browse full changelog in a pager
 dotfiles version   # Show current version, preset, and theme
 dotfiles edit      # Open dotfiles in $EDITOR
