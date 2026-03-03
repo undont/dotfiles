@@ -259,13 +259,23 @@ cmd_notes() {
     local current_version
     current_version=$(_changelog_local_version) || true
 
+    # Try to show the remote changelog so users can see unreceived changes
+    local content=""
+    cd "$DOTFILES_DIR"
+    git fetch origin --quiet 2>/dev/null || true
+    local remote_branch
+    remote_branch=$(get_remote_branch)
+    content=$(git show "$remote_branch:CHANGELOG.md" 2>/dev/null) || content=""
+
+    # Fall back to local changelog if remote is unavailable
+    if [[ -z "$content" ]]; then
+        content=$(<"$changelog")
+    fi
+
     # Pre-process: mark the current version line with ★
-    local content
     if [[ -n "$current_version" ]]; then
         local escaped="${current_version//./\\.}"
-        content=$(sed "s/^## \[${escaped}\]/& ★ current/" "$changelog")
-    else
-        content=$(<"$changelog")
+        content=$(printf '%s\n' "$content" | sed "s/^## \[${escaped}\]/& ★ current/")
     fi
 
     # Always use custom coloriser so the ★ current marker gets accent colour
