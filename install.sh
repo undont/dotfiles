@@ -301,8 +301,103 @@ echo "$PRESET" > "$PRESET_CONFIG_DIR/preset"
 success "Preset '$PRESET' saved to $PRESET_CONFIG_DIR/preset"
 record_step "save-preset"
 
+# Step 10: Configure project directories (optional)
+echo ""
+print_step 10 "Project directories (optional)..."
+
+if ! grep -q '^export DEV_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
+    if [[ -t 0 ]]; then
+        info "DEV_ROOT sets your main development directory for the launcher picker."
+        printf '  Default: %s\n' "$HOME/src"
+        printf '  Enter path (or press Enter for default, "skip" to skip): '
+        read -r dev_root_input
+        case "$dev_root_input" in
+            skip|s)
+                info "Skipped. Set later with: dotfiles set dev <path>"
+                ;;
+            "")
+                dev_root_input="$HOME/src"
+                update_zshrc_export "DEV_ROOT" "$dev_root_input"
+                mkdir -p "$dev_root_input"
+                success "DEV_ROOT set to $dev_root_input"
+                ;;
+            *)
+                dev_root_input="${dev_root_input/#\~/$HOME}"
+                update_zshrc_export "DEV_ROOT" "$dev_root_input"
+                mkdir -p "$dev_root_input"
+                success "DEV_ROOT set to $dev_root_input"
+                ;;
+        esac
+    fi
+else
+    success "DEV_ROOT already configured"
+fi
+
+if ! grep -q '^export PROJECTS_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
+    if [[ -t 0 ]]; then
+        info "PROJECTS_ROOT sets a secondary directory (side projects, playground, etc.)."
+        printf '  Enter path (or press Enter to skip): '
+        read -r projects_root_input
+        case "$projects_root_input" in
+            ""|skip|s)
+                info "Skipped. Set later with: dotfiles set projects <path>"
+                ;;
+            *)
+                projects_root_input="${projects_root_input/#\~/$HOME}"
+                update_zshrc_export "PROJECTS_ROOT" "$projects_root_input"
+                mkdir -p "$projects_root_input"
+                success "PROJECTS_ROOT set to $projects_root_input"
+                ;;
+        esac
+    fi
+else
+    success "PROJECTS_ROOT already configured"
+fi
+
+record_step "project-dirs"
+
 # Clean up rollback state on success
 cleanup_rollback_state
+
+# Detect what's already configured to tailor next steps
+has_tmux_plugins=false
+has_lazy_nvim=false
+has_node=false
+has_secrets_content=false
+has_dev_root=false
+has_projects_root=false
+
+# Tmux plugins already installed?
+if [[ -d "$HOME/.tmux/plugins/tmux-resurrect" ]]; then
+    has_tmux_plugins=true
+fi
+
+# Neovim lazy.nvim packages populated?
+if [[ -d "$HOME/.local/share/nvim/lazy" ]]; then
+    lazy_count=$(find "$HOME/.local/share/nvim/lazy" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l)
+    if [[ "$lazy_count" -gt 1 ]]; then
+        has_lazy_nvim=true
+    fi
+fi
+
+# Node.js available?
+if command -v node &>/dev/null; then
+    has_node=true
+fi
+
+# Secrets file has real content (not just template comments)?
+secrets_file="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/secrets.zsh"
+if [[ -f "$secrets_file" ]] && grep -q '^export ' "$secrets_file" 2>/dev/null; then
+    has_secrets_content=true
+fi
+
+# Project directories configured?
+if grep -q '^export DEV_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
+    has_dev_root=true
+fi
+if grep -q '^export PROJECTS_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
+    has_projects_root=true
+fi
 
 # Done
 print_logo
@@ -310,26 +405,56 @@ print_header "Installation Complete!"
 
 echo "Preset: $PRESET"
 echo ""
-echo "Next steps:"
-STEP=1
-echo "  $STEP. Restart your terminal or run: source ~/.zshrc"
-((STEP++))
-echo "  $STEP. Open tmux and press \` + I to install plugins"
-((STEP++))
-if [[ "$PRESET" == "core" || "$PRESET" == "full" ]]; then
-    echo "  $STEP. Open Neovim to trigger lazy.nvim plugin installation"
-    ((STEP++))
-    echo "  $STEP. Install Node.js: fnm install --lts && fnm default lts-latest"
-    ((STEP++))
+
+# Collect next steps into an array, only including relevant ones
+STEPS=()
+
+STEPS+=("Restart your terminal or run: source ~/.zshrc")
+
+if [[ "$has_tmux_plugins" == false ]]; then
+    STEPS+=("Open tmux and press \` + I to install plugins")
 fi
-echo "  $STEP. Edit ~/.config/zsh/secrets.zsh to add your API keys"
-((STEP++))
-echo "  $STEP. Personalise with local override files (never overwritten by updates):"
-echo "       ~/.config/nvim/local.lua       → Neovim options, keymaps, cursor style"
-echo "       ~/.config/tmux/local.conf      → Extra tmux settings"
-echo "       ~/.config/ghostty/local        → Ghostty font/window overrides"
-echo ""
+
+if [[ "$PRESET" == "core" || "$PRESET" == "full" ]] && [[ "$has_lazy_nvim" == false ]]; then
+    STEPS+=("Open Neovim to trigger lazy.nvim plugin installation")
+fi
+
+if [[ "$PRESET" == "core" || "$PRESET" == "full" ]] && [[ "$has_node" == false ]]; then
+    STEPS+=("Install Node.js: fnm install --lts && fnm default lts-latest")
+fi
+
+if [[ "$has_secrets_content" == false ]]; then
+    STEPS+=("Edit ~/.config/zsh/secrets.zsh to add your API keys")
+fi
+
+if [[ "$has_dev_root" == false ]] || [[ "$has_projects_root" == false ]]; then
+    STEPS+=("Configure project directories: dotfiles set dev <path>")
+fi
+
+# Local overrides — only show files relevant to the preset
+local_overrides=""
+if [[ "$PRESET" == "core" || "$PRESET" == "full" ]]; then
+    local_overrides+="       ~/.config/nvim/local.lua       → Neovim options, keymaps, cursor style\n"
+    local_overrides+="       ~/.config/ghostty/local        → Ghostty font/window overrides\n"
+fi
+local_overrides+="       ~/.config/tmux/local.conf      → Extra tmux settings"
+STEPS+=("Personalise with local override files (never overwritten by updates):\n${local_overrides}")
+
+# Print numbered steps
+if [[ ${#STEPS[@]} -gt 0 ]]; then
+    echo "Next steps:"
+    for i in "${!STEPS[@]}"; do
+        printf "  %d. %b\n" "$((i + 1))" "${STEPS[$i]}"
+    done
+    echo ""
+fi
+
 if [[ $SKIP_BACKUP -eq 0 ]] && [[ -d "${BACKUP_DIR:-}" ]]; then
     echo "Backup location: $BACKUP_DIR"
     echo ""
+fi
+
+# When nearly everything is already done, show a positive message
+if [[ ${#STEPS[@]} -le 2 ]]; then
+    success "Everything looks good — you're all set!"
 fi

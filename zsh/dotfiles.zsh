@@ -189,9 +189,28 @@ fi
 # Keybindings: Ctrl+R (history), Ctrl+T (files), Opt+C (cd to directory)
 _cached_eval fzf fzf --zsh
 
-# Apply theme colours to fzf
+# Apply theme colours to fzf (and auto-refresh on theme-switch)
 if [[ -f "$HOME/dotfiles/scripts/fzf-theme.sh" ]]; then
   source "$HOME/dotfiles/scripts/fzf-theme.sh"
+  _fzf_theme_cached="${CURRENT_THEME:-}"
+
+  # Re-source fzf-theme.sh if the active theme has changed since last check
+  _fzf_theme_refresh() {
+    local live
+    live=$(<"${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme" 2>/dev/null) || return
+    if [[ "$live" != "$_fzf_theme_cached" ]]; then
+      source "$HOME/dotfiles/scripts/fzf-theme.sh"
+      _fzf_theme_cached="$live"
+    fi
+  }
+
+  # Wrap fzf ZLE widgets so Ctrl+R/T and Alt+C pick up theme changes immediately
+  for _w in fzf-file-widget fzf-history-widget fzf-cd-widget; do
+    zle -A "$_w" "_orig-$_w"
+    eval "_wrapped-${_w}() { _fzf_theme_refresh; zle _orig-${_w}; }"
+    zle -N "$_w" "_wrapped-${_w}"
+  done
+  unset _w
 fi
 
 # =============================================================================
@@ -480,6 +499,7 @@ cdl() {
   local dest
 
   if command -v fzf &>/dev/null; then
+    _fzf_theme_refresh 2>/dev/null
     dest=$(printf '%s\n' "${reversed[@]}" | fzf \
       --height=40% --reverse \
       --header="$count entries" \
@@ -619,6 +639,7 @@ _dotfiles() {
     'theme:Manage colour themes'
     'set:Configure project directories (dev, projects)'
     'notes:Browse the full changelog in a pager'
+    'version:Show current dotfiles version'
     'edit:Open dotfiles directory in $EDITOR'
     'cd:Print dotfiles path'
     'sync:Fetch from origin and show what'\''s changed'

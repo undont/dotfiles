@@ -60,12 +60,15 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 <details>
 <summary><b>Post-installation steps</b></summary>
 
+The installer detects what's already configured and only shows steps you still need:
+
 1. **Restart your terminal** or run `source ~/.zshrc`
 2. **Install tmux plugins** — open tmux and press `` ` + I ``
 3. **Configure Neovim** — open nvim, plugins install automatically
 4. **Add secrets** — edit `~/.config/zsh/secrets.zsh` with your API keys
 5. **Install Node.js** — `fnm install --lts && fnm default lts-latest`
-6. **Verify** — run `./scripts/install/health-check.sh`
+6. **Configure project directories** — `dotfiles set dev ~/src` (also prompted during install)
+7. **Verify** — run `./scripts/install/health-check.sh`
 
 </details>
 
@@ -139,7 +142,8 @@ dotfiles links     # Show all managed symlinks and their status
 dotfiles theme     # List / switch themes
 dotfiles aliases   # Browse all shell aliases and shortcuts
 dotfiles sync      # Preview incoming changes without applying
-dotfiles notes     # Browse full changelog in a pager 
+dotfiles notes     # Browse full changelog in a pager
+dotfiles version   # Show current version, preset, and theme
 dotfiles edit      # Open dotfiles in $EDITOR
 ```
 
