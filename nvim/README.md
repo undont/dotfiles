@@ -69,7 +69,7 @@ nvim/
     │   │   ├── lsp.lua                # LSP configuration, Mason, conform (formatting)
     │   │   ├── completion.lua         # blink.cmp completion setup
     │   │   ├── telescope.lua          # Fuzzy finder configuration
-    │   │   ├── editor.lua             # Treesitter, flash, textobjects, grug-far, oil
+    │   │   ├── editor.lua             # Treesitter, flash, textobjects, grug-far, oil, dial, smart-paste
     │   │   ├── copilot.lua            # GitHub Copilot integration
     │   │   ├── git.lua                # Git plugins (LazyGit)
     │   │   ├── pr-review.lua          # PR review (diffview, octo)
@@ -130,6 +130,9 @@ nvim/
 | [grug-far.nvim](https://github.com/MagicDuck/grug-far.nvim) | Project-wide search and replace |
 | [oil.nvim](https://github.com/stevearc/oil.nvim) | Filesystem-as-buffer editing |
 | [vim-visual-multi](https://github.com/mg979/vim-visual-multi) | Multiple cursors (`Ctrl+n`, `Alt+Down/Up`) |
+| [smart-paste.nvim](https://github.com/nemanjamalesija/smart-paste.nvim) | Auto-adjust indentation when pasting |
+| [dial.nvim](https://github.com/monaqa/dial.nvim) | Enhanced increment/decrement (dates, semver, booleans) |
+| [tailwindcss-dial.nvim](https://github.com/ruicsh/tailwindcss-dial.nvim) | Cycle Tailwind CSS classes with Ctrl+a/Ctrl+x |
 | [guess-indent.nvim](https://github.com/NMAC427/guess-indent.nvim) | Auto-detect indentation |
 | [lazydev.nvim](https://github.com/folke/lazydev.nvim) | Lua development for Neovim |
 | [fidget.nvim](https://github.com/j-hui/fidget.nvim) | LSP progress indicator |
