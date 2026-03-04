@@ -461,6 +461,7 @@ cmd_aliases() {
 
     printf "\n${CYAN}FILES${NC}\n"
     _2col \
+        "ls"  "ls (colour-aware)" \
         "ll"  "ls -alF" \
         "la"  "ls -A" \
         "l"   "ls -CF" \
@@ -470,6 +471,7 @@ cmd_aliases() {
     printf "\n${CYAN}SEARCH & PROCESS${NC}\n"
     _2col \
         "grep"        "grep --color=auto" \
+        "rg"          "ripgrep (fast search)" \
         "psg <name>"  "ps aux | grep" \
         "ports"       "lsof ports (local)"
 
@@ -491,18 +493,13 @@ cmd_aliases() {
         "gpr"  "prune local branches"
 
     printf "\n${CYAN}TMUX${NC}\n"
-    local tmux_items=(
-        "tls"       "list session backups"
-        "ta/tattach" "attach/restore session"
-        "trestore"  "restore from backup"
-        "tkill"     "delete session backup"
-        "tcleanup"  "clean test resources"
+    _2col \
+        "tls"          "list session backups" \
+        "ta/tattach"   "attach/restore session" \
+        "trestore"     "restore from backup" \
+        "tkill"        "delete session backup" \
+        "tcleanup"     "clean test resources" \
         "alerts-clear" "clear all tmux alerts"
-    )
-    if command -v dev &>/dev/null; then
-        tmux_items+=("dev" "dev session launcher")
-    fi
-    _2col "${tmux_items[@]}"
 
     printf "\n${CYAN}SYSTEM & NETWORK${NC}\n"
     _2col \
@@ -541,7 +538,8 @@ cmd_aliases() {
         "version -v"  "version, preset, theme" \
         "edit    -e"  "open in \$EDITOR" \
         "aliases -a"  "show this reference" \
-        "dot"         "shorthand for dotfiles"
+        "dot"         "shorthand for dotfiles" \
+        "help"        "show help message"
 
     # Dotfiles-managed directories from ~/.zshrc
     local zshrc="$HOME/.zshrc"

@@ -22,7 +22,6 @@ brew "tmux"                   # >= 3.3 required for popup support
 brew "powerlevel10k"
 brew "zsh-autosuggestions"
 brew "fzf"                    # >= 0.40 for --tmux flag
-brew "morantron/tmux-fingers/tmux-fingers"  # Quick pattern copy for tmux
 brew "direnv"
 
 # =============================================================================
@@ -59,6 +58,9 @@ brew "binutils"              # GNU binary utilities
 brew "gcc"                   # GNU compiler collection
 brew "nasm"                  # Netwide assembler
 brew "nano"                  # Text editor
+
+# Tmux Extras
+brew "morantron/tmux-fingers/tmux-fingers"  # Quick pattern copy (requires gcc on Linux)
 
 # =============================================================================
 # @preset: core

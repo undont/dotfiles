@@ -1192,6 +1192,55 @@ else
 fi
 
 # ===========================================================================
+# Aliases Command Tests
+# ===========================================================================
+
+section "Aliases Command - Column Separator Consistency"
+
+# _2col renders two-column rows with a │ separator. When a call has an odd
+# number of entry pairs, the last row renders single-column (no │), breaking
+# visual consistency. Each _2col call should have an even number of pairs.
+_2col_check_failed=0
+while IFS= read -r info; do
+    start_line="${info%%:*}"
+    pair_count="${info#*:}"
+    if (( pair_count % 2 != 0 )); then
+        fail "_2col near line $start_line: $pair_count pairs (odd) — last row lacks │ separator"
+        _2col_check_failed=$(( _2col_check_failed + 1 ))
+    fi
+done < <(awk '
+    /^[[:space:]]*_2col[[:space:]]*\\[[:space:]]*$/ {
+        in_block = 1; n = 0; s = NR; next
+    }
+    in_block {
+        n++
+        if (!/\\[[:space:]]*$/) {
+            in_block = 0
+            print s ":" n
+        }
+    }
+' "$DOTFILES_CLI")
+
+# Array-based _2col calls (e.g. _2col "${arr[@]}"): conditional +=() additions
+# must add an even number of pairs so │ parity is preserved in all code paths
+while IFS= read -r arr_var; do
+    [[ -z "$arr_var" ]] && continue
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        quotes="${line//[^\"]/}"
+        pairs=$(( ${#quotes} / 4 ))
+        if (( pairs % 2 != 0 )); then
+            fail "${arr_var}+=(): adds $pairs pair(s) (odd) — flips │ column parity"
+            _2col_check_failed=$(( _2col_check_failed + 1 ))
+        fi
+    done < <(grep "${arr_var}+=(" "$DOTFILES_CLI")
+done < <(grep '_2col "\${' "$DOTFILES_CLI" | sed 's/.*\${\([a-zA-Z_]*\)\[.*/\1/')
+
+if (( _2col_check_failed == 0 )); then
+    pass "all _2col calls have even pair counts (consistent │ separators)"
+fi
+
+# ===========================================================================
 # Launcher Scripts Tests
 # ===========================================================================
 
