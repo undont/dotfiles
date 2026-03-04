@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.49] - 2026-03-04
+
+### Added
+- Nvim: dial.nvim for enhanced increment/decrement (dates, semver, booleans, hex)
+- Nvim: tailwindcss-dial.nvim to cycle Tailwind CSS classes with `Ctrl+a`/`Ctrl+x`
+- Nvim: smart-paste.nvim for auto-adjusted indentation on paste
+- Cheatsheet: increment-decrement section documenting `Ctrl+a`/`Ctrl+x` bindings
+
+### Changed
+- Brewfile: moved tmux-fingers from minimal preset to build tools section (requires gcc on Linux)
+- CLI: added `ls`, `rg`, and `help` entries to `dotfiles aliases` output
+- CLI: converted tmux aliases section from array-based to inline `_2col` for consistency
+
 ## [0.2.48] - 2026-03-03
 
 ### Changed

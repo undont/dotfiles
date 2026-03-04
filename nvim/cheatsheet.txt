@@ -225,5 +225,13 @@ Next/prev window | ]w / [w
 Next/prev conflict | ]x / [x
 Next/prev yank | ]y / [y
 
+## increment-decrement @increment-decrement
+Increment | Ctrl+a
+Decrement | Ctrl+x
+Increment (sequential) | g Ctrl+a
+Decrement (sequential) | g Ctrl+x
+Tailwind: cycle class up | Ctrl+a (on tailwind class)
+Tailwind: cycle class down | Ctrl+x (on tailwind class)
+
 ## theme @theme
 Theme reload | <leader>tr
