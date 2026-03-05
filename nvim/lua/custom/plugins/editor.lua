@@ -95,7 +95,14 @@ return {
       vim.api.nvim_create_autocmd('FileType', {
         callback = function()
           if pcall(vim.treesitter.start) then
-            vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+            -- Only set treesitter indentexpr when indent queries exist for this
+            -- language, otherwise fall back to Vim's native indent (autoindent,
+            -- cindent, or filetype-specific indentexpr). Without this check,
+            -- languages like C# that lack indent queries get forced to column 0.
+            local lang = vim.treesitter.language.get_lang(vim.bo.filetype) or vim.bo.filetype
+            if vim.treesitter.query.get(lang, 'indents') then
+              vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
+            end
           end
         end,
       })

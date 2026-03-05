@@ -96,8 +96,9 @@ Location list (Trouble) | <leader>xl
 
 ## windows @windows
 Move to window | Ctrl+hjkl
-Split vertical | :vs
-Split horizontal | :sp
+Split vertical | :vs (or Ctrl+v in Telescope)
+Split horizontal | :sp (or Ctrl+x in Telescope)
+Zoom toggle | <leader>z
 Resize left | <leader>wh
 Resize right | <leader>wl
 Resize down | <leader>wj
@@ -181,6 +182,10 @@ Toggle todo | <leader>mt
 Fold section | <leader>mf
 Unfold section | <leader>mu
 Renumber list | <leader>mn
+Table align centre | <leader>mAc
+Table align left | <leader>mAl
+Table align right | <leader>mAr
+Table align default | <leader>mAx
 Next/prev heading | ]] / [[
 
 ## test @test

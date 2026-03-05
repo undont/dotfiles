@@ -39,6 +39,11 @@ return {
           MkdnFoldSection = { 'n', '<leader>mf' },
           MkdnUnfoldSection = { 'n', '<leader>mu' },
           MkdnUpdateNumbering = { 'n', '<leader>mn' }, -- renumber ordered list
+          -- Table alignment: moved from <leader>a* (conflicts with codecompanion)
+          MkdnTableAlignCenter = { 'n', '<leader>mAc' },
+          MkdnTableAlignLeft = { 'n', '<leader>mAl' },
+          MkdnTableAlignRight = { 'n', '<leader>mAr' },
+          MkdnTableAlignDefault = { 'n', '<leader>mAx' },
         },
       }
 

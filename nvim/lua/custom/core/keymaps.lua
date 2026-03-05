@@ -35,6 +35,16 @@ function M.setup()
   vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
   vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 
+  -- Window zoom (toggle via tab)
+  vim.keymap.set('n', '<leader>z', function()
+    if vim.t.zoomed then
+      vim.cmd 'tab close'
+    else
+      vim.cmd 'tab split'
+      vim.t.zoomed = true
+    end
+  end, { desc = 'Toggle [Z]oom' })
+
   -- Window resize (small increments)
   vim.keymap.set('n', '<leader>wh', '<cmd>vertical resize -5<CR>', { desc = 'Resize [H] left' })
   vim.keymap.set('n', '<leader>wl', '<cmd>vertical resize +5<CR>', { desc = 'Resize [L] right' })
