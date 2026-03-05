@@ -5,6 +5,11 @@ return {
       display = {
         theme = 'catppuccin',
       },
+      idle = {
+        enabled = true,
+        timeout = 600000, -- 10 minutes
+        show_status = false,
+      },
       buttons = {
         {
           label = function(opts)

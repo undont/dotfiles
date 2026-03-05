@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.50] - 2026-03-05
+
+### Added
+- Nvim: window zoom toggle (`<leader>z`) with statusline indicator
+- Nvim: mkdnflow table alignment keybindings (`<leader>mA{c,l,r,x}`)
+
+### Changed
+- Nvim: blink.cmp Tab key now accepts completion when menu is visible (select_and_accept)
+- Nvim: treesitter indentexpr only set when indent queries exist for the language (fixes C# column-0 issue)
+- Nvim: discord presence idle timeout set to 10 minutes with hidden status
+- gh-dash: removed lazygit universal keybinding (conflicts resolved)
+
 ## [0.2.49] - 2026-03-04
 
 ### Added
