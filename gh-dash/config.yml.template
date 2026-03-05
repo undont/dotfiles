@@ -81,10 +81,7 @@ defaults:
                 hidden: true
     refetchIntervalMinutes: 30
 keybindings:
-    universal:
-        - key: g
-          name: lazygit
-          command: cd {{.RepoPath}} && lazygit
+    universal: {}
     prs:
         - key: C
           name: code review (Octo)
