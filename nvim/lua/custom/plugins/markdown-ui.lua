@@ -25,9 +25,11 @@ return {
           format_on_move = true,
         },
         mappings = {
-          -- Disable mappings that conflict with copilot/blink.cmp
-          MkdnTableNextCell = false, -- frees <Tab> for copilot/snippets
-          MkdnTablePrevCell = false, -- frees <S-Tab> for snippets
+          -- Disable mappings that conflict with C-i jumplist / blink.cmp Tab
+          MkdnNextLink = false,
+          MkdnPrevLink = false,
+          MkdnTableNextCell = false,
+          MkdnTablePrevCell = false,
           MkdnToggleToDo = { 'n', '<leader>mt' }, -- moved from <C-Space> (blink conflict)
           -- List / navigation (defaults are fine)
           MkdnEnter = false, -- disabled: was mangling numbered lists on <CR>

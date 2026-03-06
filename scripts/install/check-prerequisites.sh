@@ -83,9 +83,9 @@ if is_macos; then
     FZF_HINT="brew install fzf"
     DIRENV_HINT="brew install direnv"
 else
-    GIT_HINT="sudo apt install git"
-    ZSH_HINT="sudo apt install zsh"
-    TMUX_HINT="sudo apt install tmux"
+    GIT_HINT="brew install git (or use system package manager)"
+    ZSH_HINT="brew install zsh (or use system package manager)"
+    TMUX_HINT="brew install tmux (or use system package manager)"
     FZF_HINT="brew install fzf"
     DIRENV_HINT="brew install direnv"
 fi
@@ -106,7 +106,7 @@ if should_install "core"; then
     echo "------------------------------"
     check "neovim" "nvim" "brew install neovim"
     check "tree-sitter-cli" "tree-sitter" "brew install tree-sitter-cli"
-    # ghostty is checked via app existence on macOS (cask installs to /Applications)
+    # ghostty is checked via app existence on macOS, optional on Linux (system package)
     if is_macos; then
         printf "Checking %-20s" "ghostty..."
         if [[ -d "/Applications/Ghostty.app" ]]; then
@@ -155,26 +155,40 @@ if should_install "core"; then
     check "glow" "glow" "brew install glow"
 fi
 
-# Full preset tools (macOS-specific)
-if should_install "full" && is_macos; then
-    echo ""
-    echo "Required - macOS Apps:"
-    echo "----------------------"
-    # Karabiner is checked via app existence since CLI isn't in PATH
-    printf "Checking %-20s" "karabiner..."
-    if [[ -d "/Applications/Karabiner-Elements.app" ]]; then
-        printf '%sOK%s\n' "${GREEN}" "${NC}"
-    else
-        printf '%sMISSING%s\n' "${RED}" "${NC}"
-        printf '  %sInstall with:%s brew install --cask karabiner-elements\n' "${YELLOW}" "${NC}"
-        FAILED=1
+# Full preset tools (platform-specific keyboard remapping)
+if should_install "full"; then
+    if is_macos; then
+        echo ""
+        echo "Required - macOS Apps:"
+        echo "----------------------"
+        # Karabiner is checked via app existence since CLI isn't in PATH
+        printf "Checking %-20s" "karabiner..."
+        if [[ -d "/Applications/Karabiner-Elements.app" ]]; then
+            printf '%sOK%s\n' "${GREEN}" "${NC}"
+        else
+            printf '%sMISSING%s\n' "${RED}" "${NC}"
+            printf '  %sInstall with:%s brew install --cask karabiner-elements\n' "${YELLOW}" "${NC}"
+            FAILED=1
+        fi
+    elif is_linux; then
+        echo ""
+        echo "Required - Linux Keyboard Remapping:"
+        echo "------------------------------------"
+        check "keyd" "keyd" "sudo pacman -S keyd (Arch) or see https://github.com/rvaiya/keyd"
     fi
 fi
 
 echo ""
 echo "Optional tools:"
 echo "---------------"
-check_optional "fnm" "fnm" "brew install fnm"
+if is_macos; then
+    check_optional "fnm" "fnm" "brew install fnm"
+else
+    check_optional "fnm" "fnm" "curl -fsSL https://fnm.vercel.app/install | bash"
+    if should_install "core"; then
+        check_optional "ghostty" "ghostty" "sudo pacman -S ghostty (Arch) or see https://ghostty.org/docs/install"
+    fi
+fi
 check_optional "python" "python3" "brew install python"
 if is_macos; then
     check_optional "gcloud" "gcloud" "brew install --cask gcloud-cli"

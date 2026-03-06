@@ -72,6 +72,62 @@ else
     fail "Invalid preset should return error"
 fi
 
+section "macOS-only Formula Filtering"
+
+# Create test Brewfile with macOS-only markers
+MACOS_BREWFILE=$(mktemp)
+cat > "$MACOS_BREWFILE" << 'EOF'
+tap "homebrew/bundle"
+# @preset: core
+brew "fnm"                    # macOS-only (Linux uses curl installer)
+brew "neovim"
+brew "swift-format"           # macOS-only
+brew "oven-sh/bun/bun"
+EOF
+
+if is_macos; then
+    # On macOS: macOS-only formulas should be retained
+    macos_output=$(filter_brewfile "core" "$MACOS_BREWFILE")
+    if [[ "$macos_output" == *'brew "fnm"'* ]]; then
+        pass "macOS-only formula retained on Darwin (fnm)"
+    else
+        fail "macOS-only formula should be included on Darwin"
+    fi
+    if [[ "$macos_output" == *'brew "swift-format"'* ]]; then
+        pass "macOS-only formula retained on Darwin (swift-format)"
+    else
+        fail "macOS-only formula should be included on Darwin"
+    fi
+else
+    # On Linux: macOS-only formulas should be stripped
+    linux_output=$(filter_brewfile "core" "$MACOS_BREWFILE")
+    if [[ "$linux_output" != *'brew "fnm"'* ]]; then
+        pass "macOS-only formula stripped on Linux (fnm)"
+    else
+        fail "macOS-only formula should be excluded on Linux"
+    fi
+    if [[ "$linux_output" != *'brew "swift-format"'* ]]; then
+        pass "macOS-only formula stripped on Linux (swift-format)"
+    else
+        fail "macOS-only formula should be excluded on Linux"
+    fi
+fi
+
+# On both platforms: non-macOS-only formulas should be retained
+both_output=$(filter_brewfile "core" "$MACOS_BREWFILE")
+if [[ "$both_output" == *'brew "neovim"'* ]]; then
+    pass "Non-macOS-only formula retained"
+else
+    fail "Non-macOS-only formula should not be stripped"
+fi
+if [[ "$both_output" == *'brew "oven-sh/bun/bun"'* ]]; then
+    pass "Formula without macOS-only comment retained"
+else
+    fail "Formula without macOS-only comment should not be stripped"
+fi
+
+rm -f "$MACOS_BREWFILE"
+
 section "create_filtered_brewfile Function"
 
 # Test that create_filtered_brewfile creates a file that persists
