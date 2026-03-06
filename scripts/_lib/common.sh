@@ -67,6 +67,33 @@ command_exists() {
     command -v "$1" &>/dev/null
 }
 
+# Install a package via the system package manager (Linux only).
+# Usage: install_system_package "pkg-name" [fatal]
+#   fatal = exit 1 on failure (default: warn and return 1)
+install_system_package() {
+    local pkg="$1"
+    local on_failure="${2:-warn}"
+
+    if command_exists pacman; then
+        sudo pacman -S --noconfirm "$pkg" 2>/dev/null && return 0
+    elif command_exists apt-get; then
+        sudo apt-get install -y "$pkg" 2>/dev/null && return 0
+    elif command_exists dnf; then
+        sudo dnf install -y "$pkg" 2>/dev/null && return 0
+    elif command_exists yum; then
+        sudo yum install -y "$pkg" 2>/dev/null && return 0
+    fi
+
+    # If we get here, either no package manager was found or install failed
+    if [[ "$on_failure" == "fatal" ]]; then
+        error "Failed to install '$pkg'. Install manually via your system package manager."
+        exit 1
+    else
+        warn "Failed to install '$pkg'. Install manually via your system package manager."
+        return 1
+    fi
+}
+
 # Check for a command and print status
 check_command() {
     local name="$1"

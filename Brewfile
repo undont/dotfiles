@@ -68,7 +68,7 @@ brew "morantron/tmux-fingers/tmux-fingers"  # Quick pattern copy (requires gcc o
 # =============================================================================
 
 # Node.js (via fnm - Fast Node Manager)
-brew "fnm"
+brew "fnm"                    # macOS-only (Linux uses curl installer)
 brew "oven-sh/bun/bun"        # >= 1.0
 
 # Go
@@ -111,7 +111,7 @@ brew "lazydocker"            # Docker TUI
 brew "cmake"
 brew "staticcheck"            # Go linter
 brew "golangci-lint"          # Go meta-linter
-brew "swift-format"
+brew "swift-format"           # macOS-only
 brew "golang-migrate"
 
 # =============================================================================

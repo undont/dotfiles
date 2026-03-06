@@ -138,7 +138,11 @@ case "$PRESET" in
         echo "Components: zsh, tmux, nvim, ghostty, AI/CLI tools, session launch scripts"
         ;;
     full)
-        echo "Components: Everything (core + Hammerspoon, Karabiner)"
+        if is_macos; then
+            echo "Components: Everything (core + Hammerspoon, Karabiner)"
+        else
+            echo "Components: Everything (core + keyd keyboard remapping)"
+        fi
         ;;
 esac
 echo ""
@@ -256,9 +260,29 @@ if [[ "$PRESET" == "core" || "$PRESET" == "full" ]]; then
     echo "lazy.nvim will be auto-installed when you first open Neovim."
 fi
 
-# Step 7: Create secrets file if needed
+# Step 7: Setup keyd (Linux keyboard remapping - equivalent of Karabiner)
+if is_linux && should_install "full"; then
+    echo ""
+    print_step 7 "Setting up keyd (keyboard remapping)..."
+    "$DOTFILES_DIR/scripts/install/setup-keyd.sh"
+    record_step "keyd"
+else
+    if is_macos; then
+        print_skip 7 "keyd setup" "macOS (using Karabiner)"
+    else
+        print_skip 7 "keyd setup" "not included in $PRESET preset"
+    fi
+fi
+
+# Step 8: Set default shell to zsh
 echo ""
-print_step 7 "Setting up secrets..."
+print_step 8 "Setting default shell..."
+"$DOTFILES_DIR/scripts/install/set-default-shell.sh"
+record_step "default-shell"
+
+# Step 9: Create secrets file if needed
+echo ""
+print_step 9 "Setting up secrets..."
 SECRETS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 mkdir -p "$SECRETS_DIR"
 
@@ -282,9 +306,9 @@ else
 fi
 record_step "secrets"
 
-# Step 8: Run health check
+# Step 10: Run health check
 echo ""
-print_step 8 "Running health check..."
+print_step 10 "Running health check..."
 if "$DOTFILES_DIR/scripts/install/health-check.sh"; then
     success "Health check passed"
 else
@@ -292,18 +316,18 @@ else
 fi
 record_step "health-check"
 
-# Step 9: Save preset for future updates
+# Step 11: Save preset for future updates
 echo ""
-print_step 9 "Saving preset configuration..."
+print_step 11 "Saving preset configuration..."
 PRESET_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 mkdir -p "$PRESET_CONFIG_DIR"
 echo "$PRESET" > "$PRESET_CONFIG_DIR/preset"
 success "Preset '$PRESET' saved to $PRESET_CONFIG_DIR/preset"
 record_step "save-preset"
 
-# Step 10: Configure project directories (optional)
+# Step 12: Configure project directories (optional)
 echo ""
-print_step 10 "Project directories (optional)..."
+print_step 12 "Project directories (optional)..."
 
 if ! grep -q '^export DEV_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
     if [[ -t 0 ]]; then

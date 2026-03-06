@@ -16,6 +16,13 @@ return {
       { '<leader>aa', '<cmd>CodeCompanionActions<CR>', mode = { 'n', 'v' }, desc = 'Action palette' },
     },
     opts = {
+      display = {
+        chat = {
+          window = {
+            width = 0.40,
+          },
+        },
+      },
       adapters = {
         http = {
           copilot = function()

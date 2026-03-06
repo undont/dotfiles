@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.51] - 2026-03-06
+
+### Added
+- keyd: Linux keyboard remapping (Karabiner equivalent) with per-device Apple keyboard support
+- Installer: system gcc auto-install on Linux for native builds (tree-sitter, etc.)
+- Installer: `cc` symlink prefers system gcc over Homebrew's on Linux
+- Installer: `install_system_package` helper in common.sh for cross-distro package installs
+- Installer: set-default-shell step ensures zsh is the login shell
+- Installer: Ghostty and fnm Linux install hints in prerequisites and post-install
+- Installer: dnf support in Homebrew prerequisite installation
+
+### Changed
+- Installer: Brewfile filters macOS-only formulas (fnm, swift-format) on Linux
+- Installer: Linux prerequisite hints now suggest brew or system package manager
+- Installer: full preset description is platform-aware (Karabiner on macOS, keyd on Linux)
+- Nvim: CodeCompanion chat window width set to 40%
+- Nvim: mkdnflow disabled MkdnNextLink/MkdnPrevLink mappings (frees C-i for jumplist)
+
 ## [0.2.50] - 2026-03-05
 
 ### Added
