@@ -46,6 +46,9 @@ else
         if command_exists apt-get; then
             sudo apt-get update
             sudo apt-get install -y build-essential procps curl file git
+        elif command_exists dnf; then
+            sudo dnf groupinstall -y 'Development Tools'
+            sudo dnf install -y procps-ng curl file git
         elif command_exists yum; then
             sudo yum groupinstall -y 'Development Tools'
             sudo yum install -y procps-ng curl file git

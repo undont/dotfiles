@@ -69,6 +69,9 @@ filter_brewfile() {
     # Skip cask lines on Linux (casks are macOS-only)
     darwin != "true" && /^cask / { next }
 
+    # Skip formulas marked as macOS-only on Linux
+    darwin != "true" && /# macOS-only/ { next }
+
     # Print lines if we should include this section
     include { print }
     ' "$brewfile"
