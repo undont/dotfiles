@@ -66,7 +66,7 @@ FULL_TARGET="${CURRENT_SESSION}:${TARGET_PANE}"
 EXPORT_CMD="export NVIM_SOCKET='$SOCKET' && claude"
 
 # Copy export command to clipboard
-echo -n "$EXPORT_CMD" | pbcopy
+echo -n "$EXPORT_CMD" | clipboard_copy
 
 # Switch to the target pane
 tmux select-window -t "$FULL_TARGET"

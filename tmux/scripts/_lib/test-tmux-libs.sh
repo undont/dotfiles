@@ -662,6 +662,51 @@ fi
 rm -f "$TEST_STATE_FILE"
 
 # ─────────────────────────────────────────
+# Test cross-platform helpers
+# ─────────────────────────────────────────
+section "Testing cross-platform helpers"
+
+echo "  mod_key:"
+MOD_RESULT=$(mod_key)
+if [[ "$(uname)" == "Darwin" ]]; then
+    assert_equals "  returns 'Opt' on macOS" "Opt" "$MOD_RESULT"
+else
+    assert_equals "  returns 'Alt' on Linux" "Alt" "$MOD_RESULT"
+fi
+# Must return a non-empty string on any platform
+if [[ -n "$MOD_RESULT" ]]; then
+    pass "  returns non-empty value"
+else
+    fail "  should return non-empty value"
+fi
+
+echo ""
+echo "  clipboard_copy_cmd:"
+CLIP_CMD=$(clipboard_copy_cmd)
+if [[ -n "$CLIP_CMD" ]]; then
+    pass "  returns non-empty command"
+else
+    fail "  should return non-empty command"
+fi
+if [[ "$(uname)" == "Darwin" ]]; then
+    assert_equals "  returns 'pbcopy' on macOS" "pbcopy" "$CLIP_CMD"
+fi
+
+echo ""
+echo "  reverse_lines:"
+REVERSED=$(printf 'a\nb\nc\n' | reverse_lines)
+assert_equals "  reverses three lines" "$(printf 'c\nb\na')" "$REVERSED"
+
+SINGLE=$(printf 'only\n' | reverse_lines)
+assert_equals "  single line unchanged" "only" "$SINGLE"
+
+EMPTY=$(printf '' | reverse_lines)
+assert_equals "  empty input produces empty output" "" "$EMPTY"
+
+TWO_LINES=$(printf 'first\nsecond\n' | reverse_lines)
+assert_equals "  reverses two lines" "$(printf 'second\nfirst')" "$TWO_LINES"
+
+# ─────────────────────────────────────────
 # Syntax check all scripts
 # ─────────────────────────────────────────
 section "Syntax checking scripts"

@@ -142,10 +142,10 @@ else
     fail "Should load fzf theme"
 fi
 
-if [[ "$connect_content" == *'pbcopy'* ]]; then
-    pass "Copies to clipboard with pbcopy"
+if [[ "$connect_content" == *'clipboard_copy'* ]]; then
+    pass "Copies to clipboard (cross-platform)"
 else
-    fail "Should copy to clipboard"
+    fail "Should copy to clipboard via clipboard_copy"
 fi
 
 if [[ "$connect_content" == *'tmux select-window'* ]] && [[ "$connect_content" == *'tmux select-pane'* ]]; then

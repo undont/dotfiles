@@ -11,6 +11,7 @@ source "$SCRIPT_DIR/../_lib/ui.sh"
 load_fzf_theme
 
 PANE_ID="${1:-}"
+CLIPBOARD_CMD=$(clipboard_copy_cmd)
 
 # Extract URLs from text, cleaning trailing punctuation and balancing parens
 # Handles: trailing ,.:;!?' and unbalanced closing parens/brackets
@@ -27,16 +28,13 @@ extract_urls() {
 
 # Capture pane content and extract URLs
 if [[ -n "$PANE_ID" ]]; then
-    urls=$(tmux capture-pane -t "$PANE_ID" -Jp -S -50000 2>/dev/null | extract_urls | tail -r) || true
+    urls=$(tmux capture-pane -t "$PANE_ID" -Jp -S -50000 2>/dev/null | extract_urls | reverse_lines) || true
 else
-    urls=$(tmux capture-pane -Jp -S -50000 2>/dev/null | extract_urls | tail -r) || true
+    urls=$(tmux capture-pane -Jp -S -50000 2>/dev/null | extract_urls | reverse_lines) || true
 fi
 
 if [[ -z "$urls" ]]; then
-    show_centered_message "No URLs found" \
-        "" \
-        "No URLs were found in the current pane scrollback."
-    wait_for_key "Press any key to close..." true
+    show_notification "No URLs found in scrollback" 1
     exit 0
 fi
 
@@ -57,9 +55,9 @@ selected=$(echo "$urls" | fzf \
     --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,f,b,d,u,q,space,y,o)' \
     --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,f,b,d,u,q,space,y,o)" || echo "abort"' \
     --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
-    --bind "y:execute-silent(echo -n {} | pbcopy)+abort" \
+    --bind "y:execute-silent(echo -n {} | $CLIPBOARD_CMD)+abort" \
 ) || true
 
 if [[ -n "$selected" ]]; then
-    open "$selected"
+    open_url "$selected"
 fi
