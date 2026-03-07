@@ -297,3 +297,74 @@ list_project_dirs() {
         printf '%s\n' "${d/#$HOME/\~}"
     done
 }
+
+# ═════════════════════════════════════════════════════════════════
+# Cross-Platform Helpers
+# ═════════════════════════════════════════════════════════════════
+
+# Return the clipboard copy command string (for use in fzf --bind, etc.)
+# Usage: cmd=$(clipboard_copy_cmd)
+clipboard_copy_cmd() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        printf 'pbcopy'
+    elif command -v xclip &>/dev/null; then
+        printf 'xclip -selection clipboard'
+    elif command -v xsel &>/dev/null; then
+        printf 'xsel --clipboard --input'
+    elif command -v wl-copy &>/dev/null; then
+        printf 'wl-copy'
+    else
+        printf 'cat >/dev/null'
+    fi
+}
+
+# Copy stdin to system clipboard (works on macOS and Linux)
+clipboard_copy() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        pbcopy
+    elif command -v xclip &>/dev/null; then
+        xclip -selection clipboard
+    elif command -v xsel &>/dev/null; then
+        xsel --clipboard --input
+    elif command -v wl-copy &>/dev/null; then
+        wl-copy
+    else
+        # Fallback: silently consume stdin
+        cat >/dev/null
+        return 1
+    fi
+}
+
+# Open a URL or file with the system handler (works on macOS and Linux)
+open_url() {
+    local url="$1"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        open "$url"
+    elif command -v xdg-open &>/dev/null; then
+        xdg-open "$url" &>/dev/null &
+    elif command -v wslview &>/dev/null; then
+        wslview "$url"
+    else
+        error "No handler found to open URLs"
+        return 1
+    fi
+}
+
+# Reverse lines (cross-platform replacement for macOS 'tail -r')
+reverse_lines() {
+    if command -v tac &>/dev/null; then
+        tac
+    else
+        awk '{lines[NR]=$0} END {for(i=NR;i>=1;i--) print lines[i]}'
+    fi
+}
+
+# Return the platform-appropriate modifier key label
+# Usage: mod_key  →  "Opt" on macOS, "Alt" on Linux
+mod_key() {
+    if [[ "$(uname)" == "Darwin" ]]; then
+        printf 'Opt'
+    else
+        printf 'Alt'
+    fi
+}

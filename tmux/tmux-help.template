@@ -3,21 +3,21 @@
 ║                                                                      ║
 ╠═ TABS ════════════════════════╦═ PANES ══════════════════════════════╣
 ║                               ║                                      ║
-║  Opt+[ / Opt+]    prev / next ║  Opt+hjkl         navigate           ║
+║  {{M}}+[ / {{M}}+]    prev / next ║  {{M}}+hjkl         navigate           ║
 ║  ` 1-5            go to tab   ║  Ctrl+, / Ctrl+.  left / down        ║
-║                               ║  Opt+Shift+hjkl   resize             ║
-║  Opt+t            new tab     ║                                      ║
-║  Opt+r            rename tab  ║  Opt+'            split left         ║
-║                               ║  Opt+\            split right        ║
-║  Opt+Shift+[ / ]  swap left/  ║  Opt+-            split down         ║
-║                   right       ║  Opt+=            split up           ║
-║  Opt+Shift+d      duplicate   ║  Opt+s            close pane         ║
-║  Opt+x            kill tab    ║  Opt+z            zoom pane          ║
-║                               ║  Opt+Shift+0      equalise sizes     ║
+║                               ║  {{M}}+Shift+hjkl   resize             ║
+║  {{M}}+t            new tab     ║                                      ║
+║  {{M}}+r            rename tab  ║  {{M}}+'            split left         ║
+║                               ║  {{M}}+\            split right        ║
+║  {{M}}+Shift+[ / ]  swap left/  ║  {{M}}+-            split down         ║
+║                   right       ║  {{M}}+=            split up           ║
+║  {{M}}+Shift+d      duplicate   ║  {{M}}+s            close pane         ║
+║  {{M}}+x            kill tab    ║  {{M}}+z            zoom pane          ║
+║                               ║  {{M}}+Shift+0      equalise sizes     ║
 ║                               ║  ` [ / ` ]        prev/next layout   ║
 ╠═ SCROLL MODE ═════════════════╬═ SESSION ════════════════════════════╣
 ║                               ║                                      ║
-║  Opt+v / ` v      enter mode  ║  ` s              switch session     ║
+║  {{M}}+v / ` v      enter mode  ║  ` s              switch session     ║
 ║                               ║  ` f              switch window      ║
 ║  hjkl             navigate    ║  ` w              save all           ║
 ║  f / b            page down/  ║  ` d              detach             ║
@@ -29,7 +29,7 @@
 ║  n / N            next / prev ║  ` o              OpenCode picker    ║
 ║                               ║  ` n              nvim picker        ║
 ║  v / V            select /    ║  ` y              open URL picker    ║
-║                   line        ║  Opt+u            undo pane/win      ║
+║                   line        ║  {{M}}+u            undo pane/win      ║
 ║  y / Y            yank /      ║  ` I              install plugins    ║
 ║                   yank ln     ║  ` Space          fingers (copy)     ║
 ║  q / Esc          exit mode   ║  ` - / ` =        back / forward     ║
