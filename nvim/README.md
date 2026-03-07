@@ -65,7 +65,7 @@ nvim/
     │   │   └── diff-highlights.lua    # Dynamic diff/gitsigns tinted backgrounds
     │   ├── plugins/
     │   │   ├── init.lua               # Plugin loader
-    │   │   ├── ui.lua                 # Theme, statusline, which-key, todo-comments
+    │   │   ├── ui.lua                 # Theme, statusline, which-key, todo-comments, noice
     │   │   ├── lsp.lua                # LSP configuration, Mason, conform (formatting)
     │   │   ├── completion.lua         # blink.cmp completion setup
     │   │   ├── telescope.lua          # Fuzzy finder configuration
@@ -135,6 +135,7 @@ nvim/
 | [tailwindcss-dial.nvim](https://github.com/ruicsh/tailwindcss-dial.nvim) | Cycle Tailwind CSS classes with Ctrl+a/Ctrl+x |
 | [guess-indent.nvim](https://github.com/NMAC427/guess-indent.nvim) | Auto-detect indentation |
 | [lazydev.nvim](https://github.com/folke/lazydev.nvim) | Lua development for Neovim |
+| [noice.nvim](https://github.com/folke/noice.nvim) | Enhanced LSP hover and signature help rendering |
 | [fidget.nvim](https://github.com/j-hui/fidget.nvim) | LSP progress indicator |
 
 ### Git Integration

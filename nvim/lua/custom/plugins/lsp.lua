@@ -12,20 +12,6 @@ return {
     },
   },
 
-  -- Automatic signature help on ( and , keystrokes
-  {
-    'ray-x/lsp_signature.nvim',
-    event = 'LspAttach',
-    opts = {
-      bind = true,
-      floating_window = true,
-      hint_enable = false,
-      handler_opts = { border = 'rounded' },
-      toggle_key = '<C-k>',
-      select_signature_key = '<C-s>',
-    },
-  },
-
   -- Main LSP Configuration
   {
     'neovim/nvim-lspconfig',
@@ -183,14 +169,7 @@ return {
       -- NOTE: IDE0079 (Remove unnecessary suppression) filtering is in dotnet.lua
       -- scoped to the Roslyn LSP client where the false positives originate
 
-      -- Configure LSP hover to use bordered windows with proper syntax highlighting
-      vim.lsp.handlers['textDocument/hover'] = vim.lsp.with(vim.lsp.handlers.hover, {
-        border = 'rounded',
-        -- Enable syntax highlighting in hover windows
-        -- This ensures markdown code blocks in hover docs are properly highlighted
-      })
-
-      -- Signature help is handled by lsp_signature.nvim (see plugin below)
+      -- Hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
 
       -- LSP capabilities with blink.cmp
       local capabilities = require('blink.cmp').get_lsp_capabilities()
