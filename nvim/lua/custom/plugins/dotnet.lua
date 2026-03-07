@@ -17,6 +17,12 @@ return {
     local roslyn_false_positives = { IDE0079 = true, CA1825 = true }
     vim.diagnostic.set = function(namespace, bufnr, diagnostics, opts)
       if bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].filetype == 'cs' then
+        -- Suppress diagnostics on decompiled metadata source (read-only library code)
+        local bufname = vim.api.nvim_buf_get_name(bufnr)
+        if bufname:match 'MetadataAsSource' then
+          return orig_diag_set(namespace, bufnr, {}, opts)
+        end
+
         -- Deduplicate diagnostics reported from multiple .csproj contexts
         local seen = {}
         local deduped = {}

@@ -157,7 +157,7 @@ cmd_update() {
         fi
 
         echo ""
-        git pull --ff-only origin "$local_branch" || {
+        git pull --ff-only --quiet origin "$local_branch" || {
             error "Pull failed. You may have local changes that conflict."
             echo "Try: cd $DOTFILES_DIR && git status"
             return 1
@@ -167,7 +167,7 @@ cmd_update() {
         # Re-run installer with saved preset
         printf "  ${CYAN}→${NC} Re-running installer with --%s preset...\n" "$preset"
         echo ""
-        "$DOTFILES_DIR/install.sh" "--$preset" --skip-backup
+        "$DOTFILES_DIR/install.sh" "--$preset" --skip-backup --no-logo
     fi
 }
 

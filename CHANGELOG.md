@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.53] - 2026-03-07
+
+### Added
+- Nvim: noice.nvim for enhanced LSP hover and signature help rendering (replaces lsp_signature.nvim and manual hover handler)
+- Nvim: suppress diagnostics on decompiled .NET metadata source buffers (MetadataAsSource)
+- Installer: `--no-logo` flag to suppress ASCII logo (used by `dotfiles update`)
+
+### Changed
+- `dotfiles update` runs installer with `--no-logo` and quiet git pull for cleaner output
+
 ## [0.2.52] - 2026-03-07
 
 ### Added

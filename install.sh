@@ -47,6 +47,7 @@ trap 'on_error $LINENO' ERR
 SKIP_BACKUP=0
 SKIP_BREW=0
 CHECK_ONLY=0
+NO_LOGO=0
 PRESET="full"  # Default preset
 
 while [[ $# -gt 0 ]]; do
@@ -73,6 +74,10 @@ while [[ $# -gt 0 ]]; do
             ;;
         --check-only)
             CHECK_ONLY=1
+            shift
+            ;;
+        --no-logo)
+            NO_LOGO=1
             shift
             ;;
         -h|--help)
@@ -123,7 +128,7 @@ export DOTFILES_PRESET="$PRESET"
 # Initialise rollback state
 init_rollback_state
 
-print_logo
+[[ $NO_LOGO -eq 0 ]] && print_logo
 print_header "Dotfiles Installation"
 echo "Dotfiles directory: $DOTFILES_DIR"
 echo ""
@@ -424,7 +429,7 @@ if grep -q '^export PROJECTS_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
 fi
 
 # Done
-print_logo
+[[ $NO_LOGO -eq 0 ]] && print_logo
 print_header "Installation Complete!"
 
 echo "Preset: $PRESET"
