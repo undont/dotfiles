@@ -1,6 +1,6 @@
 # gh-dash configuration
-# Theme colours are managed by theme-switch — do not edit colour values directly.
-# To change theme: theme-switch <theme-name>
+# Theme colours are managed by dotfiles theme — do not edit colour values directly.
+# To change theme: dotfiles theme <theme-name>
 
 prSections:
     - title: My Pull Requests

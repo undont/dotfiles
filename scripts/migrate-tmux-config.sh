@@ -149,7 +149,7 @@ main() {
     echo ""
     
     success "All done! You can now change themes without git conflicts."
-    info "Try it: theme-switch catppuccin-mocha"
+    info "Try it: dotfiles theme catppuccin-mocha"
 }
 
 main "$@"

@@ -1,0 +1,217 @@
+#!/usr/bin/env bash
+# Remove generated theme files
+# Usage: theme-delete <theme-name>   Remove a specific generated theme
+#        theme-delete all            Remove all generated themes
+#        theme-delete list           List generated themes
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}")")" && pwd)"
+# shellcheck source=scripts/_lib/common.sh
+source "$SCRIPT_DIR/_lib/common.sh"
+
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+THEMES_GENERATED="$DOTFILES_DIR/themes/generated"
+NVIM_GENERATED="$DOTFILES_DIR/nvim/colors/generated"
+DEFAULT_THEME="dracula"
+
+# Get current active theme
+get_current_theme() {
+    local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+    if [[ -f "$config_dir/current-theme" ]]; then
+        cat "$config_dir/current-theme"
+    fi
+}
+
+# Switch to fallback theme if the deleted theme was active
+fallback_if_current() {
+    local deleted_name="$1"
+    local current_theme
+    current_theme=$(get_current_theme)
+
+    if [[ "$current_theme" != "$deleted_name" ]]; then
+        return 0
+    fi
+
+    # Pick first available generated theme that isn't the deleted one
+    local fallback=""
+    for f in "$THEMES_GENERATED"/*.theme; do
+        if [[ -f "$f" ]]; then
+            local name
+            name=$(basename "$f" .theme)
+            if [[ "$name" != "$deleted_name" ]]; then
+                fallback="$name"
+                break
+            fi
+        fi
+    done
+
+    # Fall back to default hand-crafted theme
+    [[ -z "$fallback" ]] && fallback="$DEFAULT_THEME"
+
+    info "Current theme was '$deleted_name', switching to '$fallback'"
+    "$SCRIPT_DIR/theme-switch" "$fallback"
+}
+
+# Remove a single generated theme
+remove_theme() {
+    local name="$1"
+
+    # Refuse to delete hand-crafted themes
+    if [[ -f "$DOTFILES_DIR/themes/$name.theme" ]]; then
+        error "'$name' is a custom theme — cannot delete"
+        return 1
+    fi
+
+    local theme_file="$THEMES_GENERATED/$name.theme"
+    local nvim_file="$NVIM_GENERATED/$name.lua"
+    local found=false
+
+    if [[ -f "$theme_file" ]]; then
+        rm "$theme_file"
+        success "Removed $theme_file"
+        found=true
+    fi
+
+    if [[ -f "$nvim_file" ]]; then
+        rm "$nvim_file"
+        success "Removed $nvim_file"
+        found=true
+    fi
+
+    if [[ "$found" == "false" ]]; then
+        error "No generated theme found: $name"
+        return 1
+    fi
+
+    fallback_if_current "$name"
+}
+
+# Remove all generated themes
+remove_all() {
+    local force="${1:-false}"
+    local theme_count=0
+    local nvim_count=0
+
+    for f in "$THEMES_GENERATED"/*.theme; do
+        [[ -f "$f" ]] && ((theme_count++)) || true
+    done
+    for f in "$NVIM_GENERATED"/*.lua; do
+        [[ -f "$f" ]] && ((nvim_count++)) || true
+    done
+
+    if [[ "$theme_count" -eq 0 ]] && [[ "$nvim_count" -eq 0 ]]; then
+        info "No generated themes to remove"
+        return 0
+    fi
+
+    info "Found $theme_count generated theme(s) and $nvim_count colourscheme(s)"
+
+    if [[ "$force" != "true" ]]; then
+        printf "Remove all generated themes? [y/N] "
+        read -r confirm
+        if [[ "$confirm" != "y" && "$confirm" != "Y" ]]; then
+            info "Cancelled"
+            return 0
+        fi
+    fi
+
+    # Remove theme files (preserve .gitkeep)
+    for f in "$THEMES_GENERATED"/*.theme; do
+        [[ -f "$f" ]] && rm "$f"
+    done
+    for f in "$NVIM_GENERATED"/*.lua; do
+        [[ -f "$f" ]] && rm "$f"
+    done
+
+    success "Removed all generated themes"
+
+    # If the current theme was a generated one, switch to default
+    local current_theme
+    current_theme=$(get_current_theme)
+    if [[ -n "$current_theme" ]] && [[ ! -f "$DOTFILES_DIR/themes/$current_theme.theme" ]]; then
+        info "Current theme '$current_theme' was generated, switching to '$DEFAULT_THEME'"
+        "$SCRIPT_DIR/theme-switch" "$DEFAULT_THEME"
+    fi
+}
+
+# List generated themes
+list_generated() {
+    local found=false
+    local current_theme
+    current_theme=$(get_current_theme)
+
+    # Pre-compute bright theme set
+    declare -A bright_set
+    while IFS= read -r b; do [[ -n "$b" ]] && bright_set["$b"]=1; done \
+        < <("$DOTFILES_DIR/scripts/generate-theme" bright-list 2>/dev/null)
+
+    for f in "$THEMES_GENERATED"/*.theme; do
+        if [[ -f "$f" ]]; then
+            if [[ "$found" == "false" ]]; then
+                printf "\n${CYAN}Generated themes:${NC}\n\n"
+                found=true
+            fi
+            local theme_name
+            theme_name=$(basename "$f" .theme)
+
+            # Source the theme to get THEME_NAME display name
+            local display_name="$theme_name"
+            local THEME_NAME=""
+            # shellcheck disable=SC1090
+            source "$f" 2>/dev/null
+            [[ -n "$THEME_NAME" ]] && display_name="$THEME_NAME"
+
+            local tags=""
+            if [[ "$theme_name" == "$current_theme" ]]; then
+                tags=" ${GREEN}#current${NC}"
+            fi
+            [[ -n "${bright_set[$theme_name]:-}" ]] && tags+=" ${RED}#bright${NC}"
+
+            printf "  ${CYAN}•${NC} %s - %s%b\n" "$theme_name" "$display_name" "$tags"
+        fi
+    done
+
+    if [[ "$found" == "false" ]]; then
+        printf "\n  No generated themes.\n"
+        printf "  Run ${CYAN}dotfiles theme <name>${NC} to create one.\n"
+    fi
+    printf "\n"
+}
+
+# Main
+main() {
+    local force=false
+    local command=""
+
+    # Parse flags
+    for arg in "$@"; do
+        case "$arg" in
+            --yes|-y) force=true ;;
+            *) [[ -z "$command" ]] && command="$arg" ;;
+        esac
+    done
+
+    case "$command" in
+        all|--all|-a)
+            remove_all "$force"
+            ;;
+        list|--list|-l)
+            list_generated
+            ;;
+        help|-h|--help|"")
+            cat << EOF
+Usage: $(basename "$0") <theme-name>    Remove a specific generated theme
+       $(basename "$0") all             Remove all generated themes
+       $(basename "$0") all --yes       Remove all (non-interactive)
+       $(basename "$0") list            List generated themes
+       $(basename "$0") help            Show this help
+EOF
+            ;;
+        *)
+            remove_theme "$command"
+            ;;
+    esac
+}
+
+main "$@"

@@ -2,7 +2,12 @@
 
 ## Overview
 
-The dotfiles theme system uses XDG Base Directory standard to prevent git conflicts when users change themes. This document explains the architecture and migration process.
+The dotfiles theme system uses XDG Base Directory standard to prevent git conflicts when users change themes. Themes come in two flavours:
+
+- **Hand-crafted themes** — curated `.theme` files in `themes/` (15 built-in)
+- **Generated themes** — auto-generated from any Ghostty built-in theme via `dotfiles theme generate`
+
+Both types produce identical `.theme` files and work seamlessly with `dotfiles theme`.
 
 ## Problem Solved
 
@@ -16,14 +21,23 @@ The dotfiles theme system uses XDG Base Directory standard to prevent git confli
 
 ```
 Repository (tracked in git):
-  themes/*.theme                   - Theme definitions (15+ themes)
+  themes/*.theme                   - Hand-crafted theme definitions (15 themes)
   tmux/tmux.conf.template          - Tmux config template with {{PLACEHOLDERS}}
   ghostty/config.template          - Ghostty config template with {{PLACEHOLDERS}}
   gh-dash/config.yml.template      - gh-dash config template with {{PLACEHOLDERS}}
+  scripts/_lib/colour-utils.lua    - Colour conversion, WCAG 2.1 contrast utilities
+  scripts/_lib/generate-theme.lua  - Theme generation engine (Lua)
+  scripts/generate-theme           - CLI wrapper for the Lua generator (bash)
+  scripts/theme-delete             - Remove generated themes
+  scripts/theme-switch             - Apply themes to all tools
 
-User Configuration (gitignored):
+Generated (gitignored, created by `dotfiles theme generate`):
+  themes/generated/*.theme         - Auto-generated themes from Ghostty
+  nvim/colors/generated/*.lua      - Auto-generated Neovim colourschemes
+
+User Configuration (outside repo, created by `dotfiles theme`):
   ~/.config/tmux/tmux.conf         - Generated tmux config (XDG standard)
-  ~/.tmux.conf                     - Compatibility symlink → ~/.config/tmux/tmux.conf
+  ~/.tmux.conf                     - Compatibility symlink -> ~/.config/tmux/tmux.conf
   ~/.config/ghostty/config         - Generated ghostty config (XDG, all platforms)
   ~/.config/gh-dash/config.yml     - Generated gh-dash config (XDG standard)
   ~/.config/dotfiles/current-theme - Current theme name
@@ -34,14 +48,43 @@ Local Overrides (user-owned, survive theme changes):
   ~/.config/nvim/local.lua    - Personal neovim settings
 ```
 
+### Theme Types
+
+#### Hand-Crafted Themes
+
+Located in `themes/*.theme`. These are curated theme files with carefully chosen colour mappings for each tool. Each file is a sourceable shell script exporting colour variables.
+
+#### Generated Themes
+
+Created by `scripts/generate-theme` from Ghostty's 438 built-in themes. The generator:
+
+1. Parses a Ghostty theme file (key-value format with ANSI palette)
+2. Extracts a semantic colour palette (bg, fg, accents mapped from ANSI roles)
+3. Applies WCAG 2.1 contrast corrections to ensure 4.5:1 minimum ratio
+4. Chooses the best active accent (highest contrast from purple/cyan/green)
+5. Derives plugin status indicator colours (CPU, RAM, battery blends)
+6. Outputs a `.theme` file to `themes/generated/`
+7. Outputs a Neovim colourscheme to `nvim/colors/generated/`
+
+Generated themes integrate transparently — `dotfiles theme` resolves themes with a tiered lookup: hand-crafted first, then generated.
+
 ### Theme Switching Flow
 
-1. User runs `theme-switch catppuccin-mocha`
+1. User runs `dotfiles theme catppuccin-mocha`
 2. Script sources `themes/catppuccin-mocha.theme` for colour variables
 3. Script processes templates, replacing `{{PLACEHOLDERS}}` with actual values
 4. Generated configs are written to XDG locations
 5. Current theme name is saved to `~/.config/dotfiles/current-theme`
 6. Running applications are reloaded (tmux, ghostty, fzf); gh-dash reads config at launch time
+
+### Neovim Theme Integration
+
+The Neovim theme loader (`nvim/lua/custom/core/theme.lua`) reads `~/.config/dotfiles/current-theme` and applies the corresponding colourscheme:
+
+1. **Hand-crafted themes** are mapped via a lookup table (e.g. `tokyo-night` -> `tokyonight-night`)
+2. **Generated themes** fall through to `nvim/colors/generated/<name>.lua` via `dofile()`
+3. A `vim.uv` file watcher monitors `current-theme` for live reload
+4. Scheme names are validated (`^[a-z0-9%-]+$`) before path construction to prevent traversal
 
 ## Benefits
 
@@ -50,6 +93,8 @@ Local Overrides (user-owned, survive theme changes):
 3. **Clean Templates**: Repository templates remain readable and portable
 4. **Backwards Compatible**: Symlink at `~/.tmux.conf` for legacy tools
 5. **Multi-User Friendly**: Each user can have different themes
+6. **438 Themes Available**: Any Ghostty built-in theme can be generated instantly
+7. **WCAG Accessible**: Generated themes auto-correct for 4.5:1 contrast ratio
 
 ## Migration for Existing Users
 
@@ -60,37 +105,65 @@ If you were using the old setup (symlink to `tmux/.tmux.conf` in the repo), run:
 ```
 
 This script will:
-1. Remove old symlink from `~/.tmux.conf` → `dotfiles/tmux/.tmux.conf`
+1. Remove old symlink from `~/.tmux.conf` -> `dotfiles/tmux/.tmux.conf`
 2. Generate themed config in XDG location (`~/.config/tmux/tmux.conf`)
-3. Create compatibility symlink `~/.tmux.conf` → `~/.config/tmux/tmux.conf`
+3. Create compatibility symlink `~/.tmux.conf` -> `~/.config/tmux/tmux.conf`
 4. Preserve your current theme
 
 ## Theme Commands
 
 ```bash
-# Switch to a theme
-theme-switch dracula
-theme-switch catppuccin-mocha
-theme-switch tokyo-night
-theme-switch nord
-theme-switch gruvbox-dark
-theme-switch rose-pine
-# ... and more (15 themes available)
+# Switch to a theme (hand-crafted or generated)
+dotfiles theme dracula
+dotfiles theme catppuccin-mocha
+dotfiles theme zenburn           # generated theme
 
 # List available themes
-theme-switch list
+dotfiles theme list
 
 # Show current theme
-theme-switch current
+dotfiles theme current
 
 # Switch without reloading (for scripting)
-theme-switch <theme> --no-reload
+dotfiles theme <theme> --no-reload
 
 # Switch quietly (for automation)
-theme-switch <theme> --quiet
+dotfiles theme <theme> --quiet
+```
+
+### Theme Generation
+
+```bash
+# Generate a theme from a Ghostty built-in theme
+dotfiles theme generate zenburn
+dotfiles theme generate "Tomorrow Night"
+
+# List all Ghostty themes
+dotfiles theme generate list
+
+# Generate quietly (for scripting)
+dotfiles theme generate zenburn --quiet
+```
+
+### Theme Deletion
+
+```bash
+# Remove a specific generated theme
+dotfiles theme delete zenburn
+
+# Remove all generated themes (interactive confirmation)
+dotfiles theme delete all
+
+# Remove all generated themes (non-interactive)
+dotfiles theme delete all --yes
+
+# List generated themes
+dotfiles theme delete list
 ```
 
 ## Creating New Themes
+
+### Hand-Crafted
 
 1. Create `themes/my-theme.theme`:
 
@@ -105,13 +178,72 @@ TMUX_FG_PRIMARY="#cdd6f4"
 ```
 
 2. Add all required colour variables (see existing themes for reference)
-3. Test: `theme-switch my-theme`
+3. Test: `dotfiles theme my-theme`
+
+### Generated from Ghostty
+
+```bash
+# Generate and immediately switch to it
+dotfiles theme generate zenburn && dotfiles theme zenburn
+```
+
+The generator handles everything: parsing, colour extraction, WCAG corrections, and file output. Generated `.theme` files follow the same format as hand-crafted ones.
 
 ## Technical Details
 
+### Theme Generation Pipeline
+
+```
+Ghostty theme file (key=value)
+        |
+        v
+parse_ghostty_theme()     -- Parse background, foreground, palette 0-15
+        |
+        v
+extract_colours()         -- Soften ANSI black on dark themes (darken bg 3%)
+        |                    Map ANSI palette to semantic roles
+        |                    (red, green, yellow, purple, pink, cyan)
+        |                    Derive bg_secondary, fg_secondary, selection
+        v
+apply_wcag_corrections()  -- Ensure 4.5:1 contrast against bg surfaces
+        |                    Lighten/darken in HSL space preserving hue
+        v
+choose_active_accent()    -- Pick highest-contrast accent for UI elements
+        |
+        v
+generate_theme_file()     -- Output themes/generated/<name>.theme
+generate_nvim_colourscheme()  -- Output nvim/colors/generated/<name>.lua
+```
+
+### Lua Libraries
+
+**`scripts/_lib/colour-utils.lua`**: Core colour manipulation
+- `hex_to_rgb` / `rgb_to_hex` — Hex string <-> RGB conversion (validates input)
+- `rgb_to_hsl` / `hsl_to_rgb` — HSL colour space conversion
+- `luminance()` — WCAG 2.1 relative luminance
+- `contrast_ratio()` — WCAG 2.1 contrast ratio between two colours
+- `ensure_contrast()` — Adjust lightness to meet minimum contrast ratio
+- `lighten()` / `darken()` — HSL lightness adjustment
+- `blend()` — Linear interpolation between two colours
+
+**`scripts/_lib/generate-theme.lua`**: Theme generation engine
+- `parse_ghostty_theme()` — Parse Ghostty theme files
+- `extract_colours()` — Soften ANSI black, map palette to semantic colour roles
+- `apply_wcag_corrections()` — Auto-correct for accessibility
+- `generate_theme_file()` — Produce `.theme` shell variable files
+- `generate_nvim_colourscheme()` — Produce Neovim `colors/*.lua` files
+- `display_name()` — Sanitise filenames for safe shell sourcing
+- `kebab_name()` — Convert filenames to kebab-case identifiers
+
+### Security
+
+- **Display name sanitisation**: `display_name()` strips shell metacharacters (`$`, backticks, quotes, pipes) from Ghostty filenames before embedding in `.theme` files
+- **Scheme name validation**: Neovim theme loader validates names against `^[a-z0-9%-]+$` before `dofile()` to prevent path traversal
+- **Hex input validation**: `hex_to_rgb()` rejects malformed hex strings
+
 ### Template Processing
 
-The `theme-switch` script uses `sed` for fast template processing:
+The theme switcher (`scripts/theme-switch`) uses `sed` for fast template processing:
 
 ```bash
 sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
@@ -132,7 +264,32 @@ This respects the `XDG_CONFIG_HOME` environment variable if set.
 
 ### Git Configuration
 
-`.gitignore` excludes generated configs and local overrides (they live in `~/.config/`, outside the repo).
+`.gitignore` excludes generated configs and local overrides (they live in `~/.config/`, outside the repo). Generated theme files in `themes/generated/` and `nvim/colors/generated/` are also gitignored.
+
+## Testing
+
+### Lua Unit Tests
+
+```bash
+# Run all Lua tests via the bash wrapper
+scripts/tests/test-lua-libs.sh
+
+# Run directly with luajit/lua
+luajit scripts/tests/test-colour-utils.lua
+luajit scripts/tests/test-generate-theme.lua
+```
+
+**colour-utils tests** (35 tests): hex parsing, RGB/HSL round-trips, WCAG luminance, contrast ratios, ensure_contrast adjustment, lighten/darken/blend.
+
+**generate-theme tests** (28 tests): kebab_name conversion, display_name sanitisation, Ghostty theme parsing (valid, missing fields, comments), colour extraction, WCAG corrections, accent selection, theme file generation.
+
+### Theme Delete Tests
+
+```bash
+scripts/tests/test-theme-delete.sh
+```
+
+Tests: script existence, shellcheck validation, help output, custom theme protection, non-existent theme handling, generation + deletion cycle, list output.
 
 ## Troubleshooting
 
@@ -141,6 +298,10 @@ This respects the `XDG_CONFIG_HOME` environment variable if set.
 1. Check if you're in tmux: `echo $TMUX`
 2. Manually reload: `tmux source ~/.config/tmux/tmux.conf`
 3. Check for errors: `tmux source ~/.config/tmux/tmux.conf` (will show errors)
+
+### Generated theme has low contrast
+
+The generator applies WCAG 4.5:1 corrections automatically. If a specific colour still feels low-contrast, the source Ghostty theme may have inherently similar foreground/background values. Try a different Ghostty theme or create a hand-crafted theme.
 
 ### Migration script fails
 
@@ -160,6 +321,11 @@ After migration, tmux config is generated to `~/.config/tmux/tmux.conf` and won'
 
 ## See Also
 
-- `CLAUDE.md` - Full architecture documentation
-- `themes/` - Available theme definitions
-- `scripts/theme-switch` - Theme switching implementation
+- `CLAUDE.md` — Full architecture documentation
+- `themes/` — Hand-crafted theme definitions
+- `themes/generated/` — Auto-generated themes (gitignored)
+- `scripts/generate-theme` — Theme generation CLI
+- `scripts/theme-switch` — Theme switching implementation
+- `scripts/theme-delete` — Generated theme removal
+- `scripts/_lib/colour-utils.lua` — Colour utility library
+- `scripts/_lib/generate-theme.lua` — Generation engine

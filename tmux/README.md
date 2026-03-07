@@ -29,18 +29,18 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 brew install tmux
 ```
 
-### 2. Copy configuration files
+### 2. Configuration files
 
-Copy the following to your home directory:
+The installer handles config generation. Key locations:
 
 ```
-~/.tmux.conf                    # Main configuration
+~/.config/tmux/tmux.conf        # Generated config (XDG location)
+~/.tmux.conf                    # Compatibility symlink → above
 ~/.tmux/
-├── scripts/
-│   ├── resurrect/restore.sh
-│   └── split-resurrect.sh
+├── scripts/                    # Symlinked to dotfiles/tmux/scripts
+└── resurrect/                  # Session backup storage
 ~/.local/launchers/
-└── dev                        # Dev session launcher
+└── dev                         # Dev session launcher
 ```
 
 ### 3. Install TPM (Tmux Plugin Manager)
@@ -121,7 +121,7 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Previous window  | `Opt+[` or `Ctrl+Shift+Enter` |
 | New window       | `Opt+t`                       |
 | Go to window 1-5 | `prefix + 1-5`                |
-| Rename window    | `Opt+Shift+n`                 |
+| Rename window    | `Opt+r`                       |
 | Swap window left | `Opt+Shift+[`                 |
 | Swap window right| `Opt+Shift+]`                 |
 | Kill window      | `Opt+x`                       |
@@ -148,12 +148,12 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Next layout       | `` `+] ``           |
 | Equalise sizes    | `Opt+Shift+0`       |
 
-**Note:** Closing the last pane in the last window or the last window in a session will prompt for confirmation.
-| Swap up/down      | `prefix + H/J/K/L`  |
 | Resize left       | `Opt+Shift+h`       |
 | Resize down       | `Opt+Shift+j`       |
 | Resize up         | `Opt+Shift+k`       |
 | Resize right      | `Opt+Shift+l`       |
+
+**Note:** Closing the last pane in the last window or the last window in a session will prompt for confirmation.
 
 ### URL Picker
 
@@ -273,7 +273,7 @@ History is recorded automatically via tmux hooks (`after-select-window`, `client
 
 ### Local Overrides
 
-`~/.config/tmux/local.conf` is your personal override file — sourced after the base config so your settings take priority. It is created from a template on first install and never overwritten by `theme-switch` or `dotfiles update`.
+`~/.config/tmux/local.conf` is your personal override file — sourced after the base config so your settings take priority. It is created from a template on first install and never overwritten by `dotfiles theme` or `dotfiles update`.
 
 Use it for cursor style, extra keybindings, plugin additions, or any other personal tweaks. After editing, reload with `prefix + r`.
 
@@ -301,14 +301,7 @@ Location: `~/.local/launchers/dev`
 
 ### Aliases
 
-| Alias             | Description                                                                                                                                    |
-| ----------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
-| `tls`             | List saved session backups with window/pane counts                                                                                             |
-| `trestore`        | Restore ALL saved sessions (skips already running)                                                                                             |
-| `trestore -s <n>` | Restore a specific saved session                                                                                                               |
-| `tkill <name>`    | Kill a specific session and remove its backup                                                                                                  |
-| `tattach <name>`  | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
-| `tcleanup`        | Clean up orphaned test servers and session backups. Use `tcleanup --dry-run` to preview what would be removed.                                |
+Shell aliases for tmux session management (`tls`, `trestore`, `tkill`, `tattach`, `tcleanup`) are defined in `zsh/dotfiles.zsh` and documented in the [Zsh README](../zsh/README.md#aliases).
 
 ---
 
@@ -388,7 +381,8 @@ Available session backups:
 ## File Structure
 
 ```
-~/.tmux.conf                              # Main configuration
+~/.config/tmux/tmux.conf                  # Generated config (XDG location)
+~/.tmux.conf                              # Compatibility symlink → above
 ~/.tmux/
 ├── plugins/
 │   ├── tpm/                              # Tmux Plugin Manager
@@ -406,12 +400,32 @@ Available session backups:
 │   │   ├── common.sh                     # Error handling, validation
 │   │   ├── paths.sh                      # Undo file path definitions
 │   │   ├── session.sh                    # Session management utilities
-│   │   ├── test.sh                       # Test suite for libraries
+│   │   ├── test-tmux-libs.sh              # Test suite for libraries
 │   │   └── ui.sh                         # Terminal UI (dialogs, prompts)
 │   ├── tests/                            # Test suites
+│   │   ├── _test-helpers.sh              # Shared test framework helpers
 │   │   ├── cleanup-tests.sh              # Clean up orphaned test resources
-
-│   │   └── test-show-dotfiles-status.sh  # Tests for dotfiles sync indicator
+│   │   ├── test-agent-alert-hooks.sh     # Agent alert hook tests
+│   │   ├── test-cmd-alert-hooks.sh       # Command exit alert tests
+│   │   ├── test-dotfiles-status.sh       # Dotfiles sync indicator tests
+│   │   ├── test-kill-confirm-patterns.sh # Kill confirmation pattern tests
+│   │   ├── test-kill-confirmations.sh    # Kill confirmation flow tests
+│   │   ├── test-launchers.sh             # Launcher system tests
+│   │   ├── test-list-claude.sh           # Claude instance listing tests
+│   │   ├── test-nav-history.sh           # Navigation history tests
+│   │   ├── test-nvim-sync.sh             # Nvim buffer sync tests
+│   │   ├── test-pick-theme.sh            # Theme picker tests
+│   │   ├── test-pick-url.sh              # URL picker tests
+│   │   ├── test-reload-ghostty.sh        # Ghostty reload tests
+│   │   ├── test-rename-session.sh        # Session rename tests
+│   │   ├── test-resurrect.sh             # Resurrect backup/restore tests
+│   │   ├── test-session-find-logic.sh    # Session find logic tests
+│   │   ├── test-session-kill-logic.sh    # Session kill logic tests
+│   │   ├── test-session-management.sh    # Session management tests
+│   │   ├── test-theme-reload.sh          # Theme reload tests
+│   │   ├── test-undo-dispatch.sh         # Undo dispatcher tests
+│   │   ├── test-undo-operations.sh       # Undo operation tests
+│   │   └── test-window-kill.sh           # Window kill tests
 │   ├── instances/                        # Process instance management (list, create, kill)
 │   │   ├── claude.sh                     # List Claude Code instances
 │   │   ├── opencode.sh                   # List OpenCode instances
@@ -430,6 +444,9 @@ Available session backups:
 │   │   ├── picker.sh                     # Launcher picker loop (prefix + p)
 │   │   ├── run.sh                        # Run selected launcher (instance/dir picker)
 │   │   ├── prompt.sh                     # Prompt for launcher name (from picker)
+│   │   ├── new.sh                        # New launcher wizard (create/edit)
+│   │   ├── new-dir.sh                    # New directory picker
+│   │   ├── settings.sh                   # Launcher settings (configure roots)
 │   │   └── delete.sh                     # Delete user launcher (with confirm)
 │   ├── sessions/                         # Session management
 │   │   ├── list.sh                       # Session listing with alert indicators
@@ -459,7 +476,6 @@ Available session backups:
 │       ├── nav.sh                        # Browser-style back/forward history
 │       ├── undo-dispatch.sh              # Undo dispatcher (Opt+u)
 │       ├── pick-url.sh                   # URL picker (prefix + y)
-│       ├── confirm.sh                    # FZF confirmation dialog helper
 │       └── dotfiles-status.sh            # Status bar: sync indicator (↓↑↕)
 └── README.md                             # This file
 
@@ -534,12 +550,9 @@ System clipboard integration for copying text.
 
 Supports multiple coordinated colour schemes that apply across tmux, ghostty, and neovim:
 
-- **Dracula** (default): Purple accents, dark background (#282a36)
-- **Catppuccin Mocha**: Warm pastels with mauve accents
-- **Tokyo Night**: Cool blues with storm theme
-- **Nord**: Arctic-inspired blues and greys
+15 hand-crafted themes are available: Ayu Dark, Catppuccin Mocha, Dracula, Everforest, Gruvbox Dark, Kanagawa, Maple, Monokai, Nightfox, Nord, One Dark, Rosé Pine, Solarized Dark, Synthwave, and Tokyo Night.
 
-Switch themes with `prefix + t` (tmux picker) or `theme-switch <name>` (CLI). The current theme is saved to `~/.config/dotfiles/current-theme` and automatically applied on startup.
+Switch themes with `prefix + t` (tmux picker) or `dotfiles theme <name>` (CLI). The current theme is saved to `~/.config/dotfiles/current-theme` and automatically applied on startup. Run `dotfiles theme list` to see all available themes.
 
 ---
 

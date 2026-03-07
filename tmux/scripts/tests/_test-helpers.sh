@@ -13,6 +13,7 @@ source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
 # Test counters (can be used by test scripts)
 PASS=0
 FAIL=0
+SKIP=0
 
 pass() {
     PASS=$((PASS + 1))
@@ -25,6 +26,7 @@ fail() {
 }
 
 skip() {
+    SKIP=$((SKIP + 1))
     printf "${CYAN}⊘${NC} %s (skipped)\n" "$1"
 }
 
@@ -118,6 +120,17 @@ test_tmux() {
     command tmux -L "$TEST_TMUX_SOCKET" -f /dev/null "$@"
 }
 
+print_summary() {
+    echo ""
+    echo "==========================================="
+    printf "Test Results: ${GREEN}%d passed${NC}, ${RED}%d failed${NC}" "$PASS" "$FAIL"
+    if [[ $SKIP -gt 0 ]]; then
+        printf ", ${YELLOW}%d skipped${NC}" "$SKIP"
+    fi
+    echo ""
+    echo "==========================================="
+}
+
 # Export these for use in test scripts
 export -f setup_test_server
 export -f cleanup_test_server
@@ -126,3 +139,4 @@ export -f pass
 export -f fail
 export -f skip
 export -f section
+export -f print_summary

@@ -46,7 +46,7 @@ tmux/scripts/_lib/test-tmux-libs.sh
 # Individual tmux script tests
 tmux/scripts/tests/test-list-claude.sh
 tmux/scripts/tests/test-session-management.sh
-tmux/scripts/tests/test-kill-undo.sh
+tmux/scripts/tests/test-undo-operations.sh
 
 # Clean up orphaned test resources (if tests were interrupted)
 tmux/scripts/tests/cleanup-tests.sh
@@ -97,9 +97,13 @@ dotfiles update         # Pull latest and re-run installer (shorthand: dot updat
 dotfiles status         # Version, sync status, and local changes
 dotfiles health         # Run health check (symlinks, plugins, env vars)
 dotfiles notes          # Browse full changelog in a pager (shorthand: dot -n)
+dotfiles theme generate <ghostty-theme>  # Generate theme from Ghostty built-in
+dotfiles theme delete <theme-name>       # Delete a generated theme
 ./scripts/install/health-check.sh  # Verify installation
 ./scripts/install/uninstall.sh     # Remove symlinks
 ```
+
+Full CLI reference with tab completion details: [zsh/README.md](zsh/README.md#dotfiles-cli).
 
 ## Architecture
 
@@ -109,7 +113,10 @@ dotfiles notes          # Browse full changelog in a pager (shorthand: dot -n)
 dotfiles/
 ├── scripts/              # Installation and utilities
 │   ├── dotfiles          # CLI tool (update/status/health)
-│   ├── theme-switch      # Theme switching utility
+│   ├── theme-switch      # Theme switching (called by dotfiles CLI)
+│   ├── generate-theme    # Generate theme from Ghostty built-in themes
+│   ├── theme-delete      # Delete a generated theme
+│   ├── theme-contrast-check  # Theme contrast validation
 │   ├── install/          # Installer modules
 │   ├── _lib/             # Shared shell libraries (common.sh, brewfile.sh)
 │   ├── hooks/            # Agent alert hooks + command exit alerts
@@ -118,7 +125,7 @@ dotfiles/
 │   │   ├── cmd-alert-hook.zsh    # zsh preexec/precmd hooks (sourced by dotfiles.zsh)
 │   │   └── wrappers/     # Per-agent wrappers (claude, opencode)
 │   └── tests/            # Test suites
-├── themes/               # Theme definitions (dracula, catppuccin, tokyo-night, nord)
+├── themes/               # Theme definitions (15 hand-crafted themes)
 ├── zsh/                  # Zsh configuration
 │   ├── dotfiles.zsh      # Shared framework (sourced by ~/.zshrc)
 │   ├── zshrc             # Backwards-compat wrapper (legacy symlinks)
@@ -127,7 +134,7 @@ dotfiles/
 │   ├── p10k.zsh          # Powerlevel10k theme config
 │   └── *.template        # Templates for user config (secrets)
 ├── tmux/                 # Tmux configuration (symlinked to ~/.tmux)
-│   ├── tmux.conf.template  # Theme template (processed by theme-switch)
+│   ├── tmux.conf.template  # Theme template (processed by dotfiles theme)
 │   └── scripts/          # Custom scripts organised by function (sessions/, windows/, instances/, etc.)
 ├── nvim/                 # Neovim configuration (kickstart.nvim based)
 │   ├── init.lua          # Entry point
@@ -136,6 +143,11 @@ dotfiles/
 ├── hammerspoon/          # macOS window automation
 ├── ghostty/              # Terminal emulator config (config.template for theming)
 ├── karabiner/            # Keyboard customisation
+├── lazygit/              # LazyGit configuration (symlinked + local override)
+├── lazydocker/           # LazyDocker configuration (copy-on-install)
+├── keyd/                 # Linux keyboard remapping (keyd daemon config)
+├── formatters/           # Code formatter configurations
+├── docs/                 # Documentation (installation guide, theme system, etc.)
 └── Makefile              # Convenience targets for testing, linting, installation
 ```
 
@@ -147,7 +159,7 @@ The installer uses presets to filter `Brewfile` packages and symlinks:
 - **core**: + nvim, ghostty, AI tools, launchers (marked with `# @preset: core`)
 - **full**: + Hammerspoon, Karabiner (marked with `# @preset: full`)
 
-Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`.
+Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`. See [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) for detailed walkthrough of each installation step.
 
 ### Shared Libraries
 
@@ -187,26 +199,14 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts:
 **Local Override Files (user-owned, survive theme changes):**
 - `~/.config/ghostty/local` — appended to Ghostty config via `config-file` include
 - `~/.config/tmux/local.conf` — sourced at end of tmux config via `source-file -q`
-- `~/.config/nvim/local.lua` — personal Neovim settings (cursor, options, keymaps)
+- `~/.config/nvim/local.lua` — personal Neovim settings via `dofile()` (cursor, options, keymaps)
 - `~/.config/gh-dash/local.yml` — deep-merged on top of generated config via `yq`
 - `~/.config/lazygit/local.yml` — loaded via `LG_CONFIG_FILE` env var
 - `~/.hammerspoon/local.lua` — loaded via `pcall(require, "local")` at end of init.lua
 
-These files are created from templates on first install and never overwritten by `theme-switch` or `dotfiles update`. Add cursor style, font overrides, extra keybindings, etc. here.
+These files are created from templates on first install and never overwritten by `dotfiles theme` or `dotfiles update`. Add cursor style, font overrides, extra keybindings, etc. here. The full layered config pattern is documented in [Config Ownership Patterns](#config-ownership-patterns) below.
 
-**Switching Themes:**
-```bash
-theme-switch catppuccin-mocha    # Apply theme
-theme-switch list                # Show available themes
-theme-switch current             # Show current theme
-```
-
-**Benefits:**
-- User theme changes don't create git conflicts
-- Templates stay clean in repository
-- Follows XDG standard (~/.config)
-- Backwards compatible via ~/.tmux.conf symlink
-- Personal overrides survive theme changes via local override files
+Theme commands are listed in the [Management](#management) section above. See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the full command reference, generation pipeline, and architecture details.
 
 **Migration:** Existing users should run `scripts/migrate-tmux-config.sh` once to move from the old setup to XDG.
 
@@ -243,10 +243,10 @@ hammerspoon, gh-dash.
 |---|---|---|---|
 | tmux | `~/.config/tmux/tmux.conf` (generated) | `~/.config/tmux/local.conf` | `source-file -q` at end of config |
 | ghostty | `~/.config/ghostty/config` (generated) | `~/.config/ghostty/local` | `config-file =` at end of config |
-| nvim | `~/.config/nvim/` (symlinked dir) | `~/.config/nvim/local.lua` | `pcall(require, "local")` in init.lua |
+| nvim | `~/.config/nvim/` (symlinked dir) | `~/.config/nvim/local.lua` | `dofile(local_config)` in init.lua |
 | lazygit | `~/.config/lazygit/config.yml` (symlinked) | `~/.config/lazygit/local.yml` | `LG_CONFIG_FILE="base,local"` env var |
 | hammerspoon | `~/.hammerspoon/init.lua` (symlinked) | `~/.hammerspoon/local.lua` | `pcall(require, "local")` at end of init.lua |
-| gh-dash | `~/.config/gh-dash/config.yml` (generated) | `~/.config/gh-dash/local.yml` | `yq` deep-merge after `theme-switch` generation |
+| gh-dash | `~/.config/gh-dash/config.yml` (generated) | `~/.config/gh-dash/local.yml` | `yq` deep-merge after `dotfiles theme` generation |
 
 Template files for local overrides live in the repo next to the base config:
 `lazygit/local.yml.template`, `hammerspoon/local.lua.template`, etc.
@@ -278,15 +278,15 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - **alerts/**: `show.sh`, `clear.sh`, `update-rename.sh`, `update-timestamp.sh` - Agent alert system for status bar
 - **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions
 - **themes/**: `pick.sh`, `reload-fzf.sh`, `reload-ghostty.sh` - Runtime theme switching
-- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `confirm.sh`, `dotfiles-status.sh`, `nav.sh` - Shared utilities
+- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `dotfiles-status.sh`, `nav.sh` - Shared utilities
 - **_lib/**: `common.sh`, `paths.sh`, `session.sh`, `alerts.sh`, `ui.sh` - Shared libraries
 - **tests/**: `test-*.sh` - Test suites
 
 ### Neovim Structure
 
 Based on kickstart.nvim with modular organisation:
-- `lua/custom/core/`: options.lua, keymaps.lua, autocmds.lua
-- `lua/custom/plugins/`: ui.lua, lsp.lua, completion.lua, telescope.lua, editor.lua, copilot.lua, git.lua
+- `lua/custom/core/`: autocmds.lua, build.lua, diff-highlights.lua, keymaps.lua, options.lua, theme.lua
+- `lua/custom/plugins/`: init.lua, ui.lua, lsp.lua, completion.lua, telescope.lua, editor.lua, copilot.lua, git.lua, pr-review.lua, dotnet.lua, test.lua, markdown-ui.lua, codecompanion.lua, claude-prompt.lua, discord.lua
 - `lua/kickstart/plugins/`: neo-tree.lua, gitsigns.lua, autopairs.lua, debug.lua, lint.lua, indent_line.lua
 
 ## Shell Script Conventions

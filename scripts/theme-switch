@@ -15,9 +15,11 @@ set -euo pipefail
 #   theme-switch tokyo-night
 #   theme-switch nord
 
-SCRIPT_DIR="${BASH_SOURCE%/*}"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}")")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
+# shellcheck source=scripts/_lib/common.sh
+source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 # shellcheck source=scripts/_lib/ghdash.sh
 source "$DOTFILES_ROOT/scripts/_lib/ghdash.sh"
 
@@ -36,56 +38,72 @@ GHOSTTY_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 GH_DASH_TEMPLATE="$DOTFILES_ROOT/gh-dash/config.yml.template"
 GH_DASH_OUTPUT="$GHDASH_BASE"
 
-# Colours for output
-RED='\033[0;31m'
-GREEN='\033[0;32m'
-YELLOW='\033[1;33m'
-CYAN='\033[0;36m'
-NC='\033[0m' # No Colour
-
 # ══════════════════════════════════════════════════════════════
-# Helper Functions
+# Theme Output Functions (different style from common.sh)
 # ══════════════════════════════════════════════════════════════
 
-error() {
-    printf "${RED}✗${NC} %s\n" "$1" >&2
-}
+theme_error()   { printf "${RED}✗${NC} %s\n" "$1" >&2; }
+theme_success() { printf "${GREEN}✓${NC} %s\n" "$1"; }
+theme_info()    { printf "${CYAN}•${NC} %s\n" "$1"; }
+theme_warn()    { printf "${YELLOW}!${NC} %s\n" "$1"; }
 
-success() {
-    printf "${GREEN}✓${NC} %s\n" "$1"
-}
-
-print_info() {
-    printf "${CYAN}•${NC} %s\n" "$1"
-}
-
-warn() {
-    printf "${YELLOW}!${NC} %s\n" "$1"
-}
-
-# List available themes
+# List installed themes (hand-crafted + generated on disk)
 list_themes() {
-    printf "\n${CYAN}Available themes:${NC}\n\n"
+    local current_theme=""
+    if [[ -f "$CURRENT_THEME_FILE" ]]; then
+        current_theme=$(cat "$CURRENT_THEME_FILE")
+    fi
+
+    printf "\n${CYAN}Custom themes:${NC}\n\n"
 
     for theme_file in "$THEMES_DIR"/*.theme; do
         if [[ -f "$theme_file" ]]; then
+            local theme_name
             theme_name=$(basename "$theme_file" .theme)
-            # Source theme to get display name
             # shellcheck disable=SC1090
             source "$theme_file"
 
-            # Check if this is the current theme
-            current_marker=""
-            if [[ -f "$CURRENT_THEME_FILE" ]]; then
-                current_theme=$(cat "$CURRENT_THEME_FILE")
-                if [[ "$current_theme" == "$theme_name" ]]; then
-                    current_marker=" ${GREEN}(current)${NC}"
-                fi
+            local tags=""
+            if [[ "$current_theme" == "$theme_name" ]]; then
+                tags=" ${GREEN}#current${NC}"
             fi
 
-            printf "  ${CYAN}•${NC} %s - %s%b\n" "$theme_name" "$THEME_NAME" "$current_marker"
+            printf "  ${CYAN}•${NC} %s - %s${YELLOW} #custom${NC}%b\n" "$theme_name" "$THEME_NAME" "$tags"
         fi
     done
+
+    # Show generated themes
+    local has_generated=false
+    for theme_file in "$THEMES_DIR/generated/"*.theme; do
+        if [[ -f "$theme_file" ]]; then
+            if [[ "$has_generated" == "false" ]]; then
+                printf "\n${CYAN}Generated themes:${NC}\n\n"
+                has_generated=true
+            fi
+
+            local theme_name
+            theme_name=$(basename "$theme_file" .theme)
+            # shellcheck disable=SC1090
+            source "$theme_file"
+
+            local tags=""
+            if [[ "$current_theme" == "$theme_name" ]]; then
+                tags=" ${GREEN}#current${NC}"
+            fi
+
+            printf "  ${CYAN}•${NC} %s - %s%b\n" "$theme_name" "$THEME_NAME" "$tags"
+        fi
+    done
+
+    # Hint about Ghostty themes
+    if [[ -x "$SCRIPT_DIR/generate-theme" ]]; then
+        local available_count
+        available_count=$("$SCRIPT_DIR/generate-theme" list 2>/dev/null | wc -l | tr -d ' ' || true)
+        if [[ "$available_count" -gt 0 ]]; then
+            printf "\n  ${CYAN}%s Ghostty themes available.${NC} Use 'dotfiles theme <name>' to auto-generate.\n" "$available_count"
+            printf "  Run 'dotfiles theme generate list' for the full list.\n"
+        fi
+    fi
 
     printf "\n"
 }
@@ -106,11 +124,25 @@ apply_theme() {
     local quiet="${3:-false}"
     local theme_file="$THEMES_DIR/$theme_name.theme"
 
-    # Validate theme exists
-    if [[ ! -f "$theme_file" ]]; then
-        [[ "$quiet" != "true" ]] && error "Theme '$theme_name' not found"
-        [[ "$quiet" != "true" ]] && print_info "Run 'theme-switch list' to see available themes"
-        return 1
+    # Tier 1: Hand-crafted theme
+    if [[ -f "$theme_file" ]]; then
+        : # Use hand-crafted theme
+    # Tier 2: Previously generated theme
+    elif [[ -f "$THEMES_DIR/generated/$theme_name.theme" ]]; then
+        theme_file="$THEMES_DIR/generated/$theme_name.theme"
+    # Tier 3: Auto-generate from Ghostty
+    else
+        if [[ "$quiet" != "true" ]]; then
+            theme_info "Theme '$theme_name' not found locally, checking Ghostty themes..."
+        fi
+        local generated_name
+        if generated_name=$("$SCRIPT_DIR/generate-theme" "$theme_name" ${quiet:+--quiet}); then
+            theme_file="$THEMES_DIR/generated/$generated_name.theme"
+        else
+            [[ "$quiet" != "true" ]] && theme_error "Theme '$theme_name' not found"
+            [[ "$quiet" != "true" ]] && theme_info "Run 'dotfiles theme list' to see available themes"
+            return 1
+        fi
     fi
 
     # Source theme variables
@@ -129,12 +161,12 @@ apply_theme() {
     )
     for var in "${required_vars[@]}"; do
         if [[ -z "${!var:-}" ]]; then
-            error "Theme '$theme_name' is missing required variable: $var"
+            theme_error "Theme '$theme_name' is missing required variable: $var"
             return 1
         fi
     done
 
-    [[ "$quiet" != "true" ]] && print_info "Applying theme: $THEME_NAME"
+    [[ "$quiet" != "true" ]] && theme_info "Applying theme: $THEME_NAME"
 
     # Process tmux template using sed (much faster than bash string replacement)
     if [[ -f "$TMUX_TEMPLATE" ]]; then
@@ -175,9 +207,9 @@ apply_theme() {
             -e "s|{{TMUX_BATTERY_LOW_BG}}|$TMUX_BATTERY_LOW_BG|g" \
             "$TMUX_TEMPLATE" > "$tmux_tmp" || { rm -f "$tmux_tmp"; return 1; }
         mv "$tmux_tmp" "$TMUX_OUTPUT"
-        [[ "$quiet" != "true" ]] && success "Generated tmux configuration"
+        [[ "$quiet" != "true" ]] && theme_success "Generated tmux configuration"
     else
-        [[ "$quiet" != "true" ]] && warn "Tmux template not found, skipping"
+        [[ "$quiet" != "true" ]] && theme_warn "Tmux template not found, skipping"
     fi
 
     # Process ghostty template using sed
@@ -210,7 +242,7 @@ apply_theme() {
             -e "s|{{GHOSTTY_PALETTE_15}}|$GHOSTTY_PALETTE_15|g" \
             "$GHOSTTY_TEMPLATE" > "$ghostty_tmp" || { rm -f "$ghostty_tmp"; return 1; }
         mv "$ghostty_tmp" "$GHOSTTY_OUTPUT"
-        [[ "$quiet" != "true" ]] && success "Generated ghostty configuration"
+        [[ "$quiet" != "true" ]] && theme_success "Generated ghostty configuration"
 
         # Ensure local override file exists (Ghostty errors on missing config-file includes)
         local ghostty_local="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/local"
@@ -218,7 +250,7 @@ apply_theme() {
             touch "$ghostty_local"
         fi
     else
-        [[ "$quiet" != "true" ]] && warn "Ghostty template not found, skipping"
+        [[ "$quiet" != "true" ]] && theme_warn "Ghostty template not found, skipping"
     fi
 
     # Process gh-dash template using sed
@@ -245,48 +277,58 @@ apply_theme() {
             ghdash_merge_local
         fi
 
-        [[ "$quiet" != "true" ]] && success "Generated gh-dash configuration"
+        [[ "$quiet" != "true" ]] && theme_success "Generated gh-dash configuration"
     fi
 
     # Save current theme preference
     mkdir -p "$CONFIG_DIR"
     echo "$theme_name" > "$CURRENT_THEME_FILE"
 
+    # Append to theme history for MRU sorting in picker
+    local theme_history="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-history"
+    mkdir -p "$(dirname "$theme_history")"
+    printf '%s\n' "$theme_name" >> "$theme_history"
+    # Trim history to last 100 entries
+    if [[ $(wc -l < "$theme_history") -gt 100 ]]; then
+        tail -100 "$theme_history" > "$theme_history.tmp" && mv "$theme_history.tmp" "$theme_history"
+    fi
+
     # Reload tmux if running (unless --no-reload was specified)
     if [[ "$no_reload" != "true" ]]; then
+        # shellcheck disable=SC2033
         if command -v tmux >/dev/null 2>&1 && tmux info &>/dev/null; then
             # Try XDG location first, fallback to ~/.tmux.conf
             if tmux source-file "$TMUX_OUTPUT" 2>/dev/null; then
-                [[ "$quiet" != "true" ]] && success "Reloaded tmux configuration"
+                [[ "$quiet" != "true" ]] && theme_success "Reloaded tmux configuration"
             elif [[ -f "$HOME/.tmux.conf" ]] && tmux source-file "$HOME/.tmux.conf" 2>/dev/null; then
-                [[ "$quiet" != "true" ]] && success "Reloaded tmux configuration (legacy path)"
+                [[ "$quiet" != "true" ]] && theme_success "Reloaded tmux configuration (legacy path)"
             else
-                [[ "$quiet" != "true" ]] && warn "Failed to reload tmux"
+                [[ "$quiet" != "true" ]] && theme_warn "Failed to reload tmux"
             fi
         else
             # Not in tmux - inform user that files are ready
-            [[ "$quiet" != "true" ]] && success "Theme files generated (start tmux to see changes)"
+            [[ "$quiet" != "true" ]] && theme_success "Theme files generated (start tmux to see changes)"
         fi
 
         # Reload Ghostty config (script handles detection internally)
         if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh" ]]; then
             "$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh"
-            [[ "$quiet" != "true" ]] && success "Reloaded ghostty configuration"
+            [[ "$quiet" != "true" ]] && theme_success "Reloaded ghostty configuration"
         fi
 
         # Reload FZF theme colours
         if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh" ]]; then
             "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh"
-            [[ "$quiet" != "true" ]] && success "Reloaded FZF theme colours"
+            [[ "$quiet" != "true" ]] && theme_success "Reloaded FZF theme colours"
         fi
     fi
 
     if [[ "$quiet" != "true" ]]; then
         printf "\n"
-        success "Theme applied: $THEME_NAME"
+        theme_success "Theme applied: $THEME_NAME"
         if [[ "$no_reload" == "true" ]]; then
-            print_info "Run 'tmux source ~/.config/tmux/tmux.conf' to apply tmux changes"
-            print_info "Restart ghostty to see changes"
+            theme_info "Run 'tmux source ~/.config/tmux/tmux.conf' to apply tmux changes"
+            theme_info "Restart ghostty to see changes"
         fi
     fi
 }
@@ -326,12 +368,18 @@ main() {
         current)
             current=$(get_current_theme)
             # shellcheck disable=SC1090
-            source "$THEMES_DIR/$current.theme" 2>/dev/null || THEME_NAME="Unknown"
+            if [[ -f "$THEMES_DIR/$current.theme" ]]; then
+                source "$THEMES_DIR/$current.theme"
+            elif [[ -f "$THEMES_DIR/generated/$current.theme" ]]; then
+                source "$THEMES_DIR/generated/$current.theme"
+            else
+                THEME_NAME="Unknown"
+            fi
             printf "\n${CYAN}Current theme:${NC} %s (%s)\n\n" "$THEME_NAME" "$current"
             ;;
         "")
-            error "No theme specified"
-            print_info "Usage: theme-switch <theme-name|list|current> [--no-reload]"
+            theme_error "No theme specified"
+            theme_info "Usage: dotfiles theme <theme-name|list|current> [--no-reload]"
             exit 1
             ;;
         *)

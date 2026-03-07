@@ -9,7 +9,7 @@ A modern zsh setup with Powerlevel10k prompt, fuzzy finding, autosuggestions, an
 | **Prompt**          | Powerlevel10k with git status                         |
 | **Fuzzy finder**    | `Ctrl+R` history, `Ctrl+T` files, `Opt+C` directories |
 | **Autosuggestions** | Right arrow to accept                                 |
-| **MCP sync**        | `mcp-sync` to sync server configs                     |
+| **Dotfiles CLI**    | `dot` / `dotfiles` for management commands            |
 
 ---
 
@@ -229,13 +229,15 @@ direnv allow
 | Alias      | Command                         | Description                        |
 | ---------- | ------------------------------- | ---------------------------------- |
 | `oc`       | `opencode`                      | Launch OpenCode editor             |
-| `mcp-sync` | `~/.config/sync-mcp-servers.sh` | Sync MCP server configs            |
-| `tls`      | `trestore --list`               | List saved tmux session backups    |
+| `dot`      | `dotfiles`                      | Shorthand for dotfiles CLI         |
+| `drs`      | `dash-repo-sync`                | Sync local repo paths into gh-dash config |
+| `ta`       | `tattach`                       | Shorthand for `tattach` (see functions below) |
+| `tls`      | `~/.tmux/scripts/resurrect/restore.sh --list` | List saved tmux session backups |
 | `tcleanup` | `~/.tmux/scripts/tests/cleanup-tests.sh` | Clean up orphaned test resources (servers/backups) |
 | `alerts-clear` | `rm -rf ~/.config/tmux-alerts` | Clear all tmux alerts (agent + command exit) |
 | `gols`     | `ls ~/go/bin`                   | List installed Go binaries         |
-| `dot`      | `cd ~/dotfiles`                 | Navigate to dotfiles directory     |
-| `claudeconfig` | `cd ~/claude-config`        | Navigate to claude-config directory |
+| `brewup`   | `brew update && brew upgrade`   | Update and upgrade Homebrew        |
+| `nvim-clear` | `rm -rf ~/.cache/nvim/luac/`  | Clear Neovim bytecode cache        |
 
 ### Dotfiles CLI
 
@@ -247,6 +249,8 @@ direnv allow
 | `dotfiles links` | Show all managed symlinks and their status          |
 | `dotfiles notes` | Browse full changelog in a pager                    |
 | `dotfiles version` | Show current dotfiles version, preset, and theme |
+| `dotfiles theme <name>` | Switch to a theme (list, current, generate, delete) |
+| `dotfiles aliases` | Show all shell aliases, functions, and utilities |
 | `dotfiles edit`  | Open dotfiles directory in $EDITOR                 |
 | `dotfiles cd`    | Print dotfiles path (use: `cd "$(dotfiles cd)"`)  |
 
@@ -260,7 +264,9 @@ Tab completion is available for all dotfiles commands.
 | `tattach <name>` | `tattach myproject`        | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tkill <name>` | `tkill myproject`            | Kills the specified tmux session and removes its backup file from `~/.tmux/resurrect/sessions/`. |
 | `trestore`     | `trestore [options]`         | Restore tmux sessions. No args = restore ALL; `--session <name>` = specific session; `--delete <name>` = delete backup. |
-| `brewup`       | `brewup`                     | Runs `brew update && brew upgrade`. |
+| `mkcd <dir>`   | `mkcd mydir`                 | Create a directory and cd into it. |
+| `nvim-sync`    | `nvim-sync`                  | Sync all Lazy.nvim plugins (headless). |
+| `brewup`       | `brewup`                     | Alias for `brew update && brew upgrade`. |
 
 ### Tab Completion
 
@@ -292,66 +298,6 @@ $HOME/.local/launchers              # Session launchers (from .zprofile)
 JetBrains Toolbox scripts           # (from .zprofile)
 Google Cloud SDK                    # (lazy loaded)
 fnm-managed Node.js                 # (~5ms init, auto-switches on cd)
-```
-
----
-
-## MCP (Model Context Protocol) Setup
-
-MCP servers provide AI tools with access to external services (Jira, Confluence, GitHub, etc.).
-
-### Configuration Files
-
-| File                               | Purpose                           |
-| ---------------------------------- | --------------------------------- |
-| `~/.config/mcp-servers.json`       | Source of truth (OpenCode format) |
-| `~/.config/opencode/opencode.json` | OpenCode editor config            |
-| `~/.claude.json`                   | Claude Code CLI config            |
-
-### Sync Script
-
-The `mcp-sync` alias runs `~/.config/sync-mcp-servers.sh` to keep configs in sync:
-
-```bash
-# Sync source → both tools (default)
-mcp-sync
-
-# Check sync status
-mcp-sync check
-
-# Pull from Claude, sync to OpenCode
-mcp-sync --claude
-
-# Pull from OpenCode, sync to Claude
-mcp-sync --opencode
-```
-
-### Format Conversion
-
-The script handles format differences between tools:
-
-**OpenCode format:**
-
-```json
-{
-  "mcp-server": {
-    "type": "local",
-    "command": ["npx", "-y", "@company/server"],
-    "environment": { "API_KEY": "..." }
-  }
-}
-```
-
-**Claude format:**
-
-```json
-{
-  "mcp-server": {
-    "command": "npx",
-    "args": ["-y", "@company/server"],
-    "env": { "API_KEY": "..." }
-  }
-}
 ```
 
 ---
@@ -519,24 +465,6 @@ which fzf
 # Reload shell
 source ~/.zshrc
 ```
-
-### MCP sync fails
-
-Check that jq is installed:
-
-```bash
-brew install jq
-```
-
-Verify config files exist:
-
-```bash
-ls -la ~/.config/mcp-servers.json
-ls -la ~/.config/opencode/opencode.json
-ls -la ~/.claude.json
-```
-
----
 
 ## Performance Optimisations
 

@@ -46,7 +46,7 @@ if ! _acquire_alerts_lock; then
 fi
 
 # Perform the update with error handling
-tmp_file="${ALERTS_FILE}.tmp.$$"
+tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
 update_success=0
 
 if sed "s|^${SESSION}:${OLD_WINDOW}:|${SESSION}:${NEW_WINDOW}:|" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then

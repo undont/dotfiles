@@ -30,18 +30,7 @@ export -f tmux
 
 # Helpers
 # ---------------------------------------------------------
-PASS=0
-FAIL=0
-
-pass() {
-    echo "✓ $1"
-    PASS=$((PASS + 1))
-}
-
-fail() {
-    echo "✗ $1"
-    FAIL=$((FAIL + 1))
-}
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 # Setup
 # ---------------------------------------------------------
@@ -88,13 +77,6 @@ else
     fail "Multiple sessions: Function exited with code $exit_code"
 fi
 
-# Summary
-# ---------------------------------------------------------
-echo "-------------------------------------------"
-if [[ $FAIL -eq 0 ]]; then
-    echo "All $PASS tests passed."
-    exit 0
-else
-    echo "$FAIL tests failed."
-    exit 1
-fi
+print_summary
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0

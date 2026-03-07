@@ -1,11 +1,11 @@
 # ══════════════════════════════════════════════════════════════
 # TMUX CONFIGURATION TEMPLATE (Theme: {{THEME_NAME}})
 # ══════════════════════════════════════════════════════════════
-# This template is processed by theme-switch and written to:
+# This template is processed by dotfiles theme and written to:
 #   ~/.config/tmux/tmux.conf (XDG standard location)
 #
 # A compatibility symlink exists at ~/.tmux.conf for backwards compatibility.
-# Change themes with: theme-switch <theme-name>
+# Change themes with: dotfiles theme <theme-name>
 #
 # See ~/.tmux/README.md for full documentation and setup guide.
 #
@@ -77,7 +77,7 @@ setw -g pane-base-index 1
 # Auto-renumber windows when one is closed (no gaps in numbering)
 set -g renumber-windows on
 
-# Command exit alert colours (theme-aware, set by theme-switch)
+# Command exit alert colours (theme-aware, set by dotfiles theme)
 set -g @exit_pass_colour "{{TMUX_EXIT_PASS_COLOUR}}"
 set -g @exit_fail_colour "{{TMUX_EXIT_FAIL_COLOUR}}"
 
@@ -346,30 +346,37 @@ bind h display-popup -w 74 -h 44 "cat ~/.tmux/tmux-help.txt; read -sk1"    # pre
 
 # ─────────────────────────────────────────
 # Theme picker (prefix + t)
-# Navigation: j/k (up/down), g/G (first/last)
+# Navigation: j/k (up/down), d/u (half-page), g/G (first/last), f (fav), r (random)
 # Press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
 bind t display-popup -w 70 -h 24 -E "\
   source \$HOME/dotfiles/scripts/fzf-theme.sh 2>/dev/null || true; \
-  THEME_POS=\$(~/.tmux/scripts/themes/pick.sh --pos); \
-  ~/.tmux/scripts/themes/pick.sh | \
+  THEME_LIST=\$(~/.tmux/scripts/themes/pick.sh); \
+  THEME_POS=\$(echo \"\$THEME_LIST\" | ~/.tmux/scripts/themes/pick.sh --pos); \
+  echo \"\$THEME_LIST\" | \
   fzf --ansi --reverse --disabled --cycle \
+      --with-nth=2.. \
+      --info=inline-right \
+      --bind \"start:clear-query+execute-silent(rm -f /tmp/.fzf-theme-pos)\" \
       --bind \"load:pos(\$THEME_POS)\" \
+      --bind 'result:transform:[[ -f /tmp/.fzf-theme-pos ]] && { echo \"clear-query+\$(cat /tmp/.fzf-theme-pos)\"; rm -f /tmp/.fzf-theme-pos; } || true' \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --header-lines=5 \
       --padding=0,0,1,0 \
       --prompt ': ' \
       --border=rounded \
-      --border-label=' j/k · g/G · spc/⏎ sel · / srch · q/esc ' \
+      --border-label=' j/k · d/u · g/G · f fav · r rand · spc/⏎ sel · / srch · q/esc ' \
       --border-label-pos=bottom \
-      --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
+      --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space)\" || echo \"abort\"' \
+      --bind 'f:execute-silent(~/.tmux/scripts/themes/pick.sh --toggle-fav {1})+reload-sync(~/.tmux/scripts/themes/pick.sh --reload {1})' \
+      --bind 'r:become(~/.tmux/scripts/themes/pick.sh --random)' \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space,f,r)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space,f,r)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' | \
   awk '{print \$1}' | \
-  xargs -r -I {} sh -c '\$HOME/dotfiles/scripts/theme-switch {} --no-reload --quiet && tmux source-file \$HOME/.tmux.conf && ~/.tmux/scripts/themes/reload-ghostty.sh && ~/.tmux/scripts/themes/reload-fzf.sh && tmux display-message \"Theme: {}\"'"
+  xargs -r sh -c '\$HOME/dotfiles/scripts/theme-switch \"\$1\" --no-reload --quiet && tmux source-file \$HOME/.tmux.conf && ~/.tmux/scripts/themes/reload-ghostty.sh && ~/.tmux/scripts/themes/reload-fzf.sh && tmux display-message \"Theme: \$1\"' _"
 
 # ─────────────────────────────────────────
 # Launcher picker (prefix + p)
@@ -658,5 +665,5 @@ bind I run-shell "~/.tmux/plugins/tpm/bin/install_plugins > /dev/null 2>&1" \; d
 # Reload all local overrides (tmux + Ghostty + nvim)
 bind r run-shell "~/dotfiles/scripts/reload-locals.sh > /dev/null 2>&1"    # prefix + r
 
-# User overrides (not managed by dotfiles — survives theme-switch)
+# User overrides (not managed by dotfiles — survives theme changes)
 source-file -q ~/.config/tmux/local.conf

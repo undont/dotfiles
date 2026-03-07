@@ -386,10 +386,10 @@ section "Theme Command - Basic Functionality"
 
 # Test theme list
 theme_list_output=$("$DOTFILES_CLI" theme list 2>&1) || true
-if [[ "$theme_list_output" == *"Available themes"* ]]; then
-    pass "theme list shows available themes header"
+if [[ "$theme_list_output" == *"themes:"* ]]; then
+    pass "theme list shows themes header"
 else
-    fail "theme list should show available themes header"
+    fail "theme list should show themes header"
 fi
 
 if [[ "$theme_list_output" == *"dracula"* ]]; then
@@ -400,10 +400,10 @@ fi
 
 # Test theme current
 theme_current_output=$("$DOTFILES_CLI" theme current 2>&1) || true
-if [[ "$theme_current_output" == *"Current theme"* ]]; then
-    pass "theme current shows current theme"
+if [[ "$theme_current_output" == *"Current theme"* ]] || [[ "$theme_current_output" == *"No theme set"* ]]; then
+    pass "theme current shows current theme or no-theme message"
 else
-    fail "theme current should show current theme"
+    fail "theme current should show current theme or no-theme message"
 fi
 
 # Test theme command in help output
@@ -429,6 +429,19 @@ else
     fail "theme command should use theme-switch script"
 fi
 
+# Check that theme command delegates to generate-theme and theme-delete
+if [[ "$script_content" == *'generate-theme'* ]]; then
+    pass "theme command delegates to generate-theme"
+else
+    fail "theme command should delegate to generate-theme"
+fi
+
+if [[ "$script_content" == *'theme-delete'* ]]; then
+    pass "theme command delegates to theme-delete"
+else
+    fail "theme command should delegate to theme-delete"
+fi
+
 # Check that theme command is routed in main case statement
 if [[ "$script_content" == *'theme|'* ]]; then
     pass "theme command is handled in main case statement"
@@ -450,6 +463,51 @@ if [[ -x "$theme_switch_script" ]]; then
     pass "theme-switch script is executable"
 else
     fail "theme-switch script should be executable"
+fi
+
+# Verify generate-theme and theme-delete scripts exist
+generate_theme_script="$DOTFILES_DIR/scripts/generate-theme"
+theme_delete_script="$DOTFILES_DIR/scripts/theme-delete"
+
+if [[ -x "$generate_theme_script" ]]; then
+    pass "generate-theme script exists and is executable"
+else
+    fail "generate-theme script should exist and be executable"
+fi
+
+if [[ -x "$theme_delete_script" ]]; then
+    pass "theme-delete script exists and is executable"
+else
+    fail "theme-delete script should exist and be executable"
+fi
+
+# Test generate help via dotfiles theme
+gen_help_output=$("$DOTFILES_CLI" theme generate help 2>&1) || true
+if [[ "$gen_help_output" == *"generate-theme"* ]]; then
+    pass "dotfiles theme generate help works"
+else
+    fail "dotfiles theme generate help should show generate-theme usage"
+fi
+
+# Test delete help via dotfiles theme
+del_help_output=$("$DOTFILES_CLI" theme delete help 2>&1) || true
+if [[ "$del_help_output" == *"theme-delete"* ]]; then
+    pass "dotfiles theme delete help works"
+else
+    fail "dotfiles theme delete help should show theme-delete usage"
+fi
+
+# Test help mentions generate and delete subcommands
+if [[ "$help_output" == *"generate"* ]]; then
+    pass "help documents generate subcommand"
+else
+    fail "help should document generate subcommand"
+fi
+
+if [[ "$help_output" == *"delete"* ]]; then
+    pass "help documents delete subcommand"
+else
+    fail "help should document delete subcommand"
 fi
 
 # Verify themes directory exists

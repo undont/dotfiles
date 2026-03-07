@@ -321,6 +321,12 @@ cmd_theme() {
         current)
             "$DOTFILES_DIR/scripts/theme-switch" current
             ;;
+        generate)
+            "$DOTFILES_DIR/scripts/generate-theme" "$@"
+            ;;
+        delete)
+            "$DOTFILES_DIR/scripts/theme-delete" "$@"
+            ;;
         *)
             "$DOTFILES_DIR/scripts/theme-switch" "$theme_cmd"
             ;;
@@ -400,6 +406,9 @@ Commands:
                 dotfiles theme list          - List available themes
                 dotfiles theme current       - Show current theme
                 dotfiles theme <name>        - Switch to theme
+                dotfiles theme generate <n>  - Generate from Ghostty theme
+                dotfiles theme generate list - List Ghostty themes
+                dotfiles theme delete <n>    - Delete a generated theme
   links   -l    Show all managed symlinks and their status
   aliases -a    Show all shell aliases, functions, and utilities
   notes   -n    Browse the full changelog in a pager
@@ -409,14 +418,16 @@ Commands:
   help          Show this help message
 
 Examples:
-  dotfiles status          # Check if updates are available
-  dotfiles update          # Pull and re-install
-  dotfiles notes           # Browse full changelog
-  dotfiles aliases         # Browse available aliases and shortcuts
-  dotfiles set dev ~/src   # Set DEV_ROOT for launcher picker
-  dotfiles theme list      # Show available themes
-  dotfiles theme dracula   # Switch to Dracula theme
-  cd "$(dotfiles cd)"      # Navigate to dotfiles directory
+  dotfiles status                    # Check if updates are available
+  dotfiles update                    # Pull and re-install
+  dotfiles notes                     # Browse full changelog
+  dotfiles aliases                   # Browse available aliases and shortcuts
+  dotfiles set dev ~/src             # Set DEV_ROOT for launcher picker
+  dotfiles theme list                # Show available themes
+  dotfiles theme dracula             # Switch to Dracula theme
+  dotfiles theme generate zenburn    # Generate from Ghostty theme
+  dotfiles theme delete zenburn      # Remove generated theme
+  cd "$(dotfiles cd)"                # Navigate to dotfiles directory
 
 Configuration:
   Preset is saved to ~/.config/dotfiles/preset during installation.

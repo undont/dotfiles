@@ -30,6 +30,12 @@ nvim/init.lua.backup
 # Neovim local override (user-owned, not tracked)
 nvim/local.lua
 
+# Generated themes (auto-generated from Ghostty, local cache)
+themes/generated/
+!themes/generated/.gitkeep
+nvim/colors/generated/
+!nvim/colors/generated/.gitkeep
+
 # AI Code Assistants
 .claude/*
 !.claude/commands/

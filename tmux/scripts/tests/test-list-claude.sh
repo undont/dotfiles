@@ -7,36 +7,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIST_CLAUDE_SCRIPT="$SCRIPT_DIR/../instances/claude.sh"
 
-# Test counters
-PASS=0
-FAIL=0
-
-# Colours
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
-
-pass() {
-    PASS=$((PASS + 1))
-    printf "${GREEN}✓${NC} %s\n" "$1"
-}
-
-fail() {
-    FAIL=$((FAIL + 1))
-    printf "${RED}✗${NC} %s\n" "$1"
-}
-
-skip() {
-    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
-}
-
-section() {
-    echo ""
-    echo "─────────────────────────────────────────"
-    echo "$1"
-    echo "─────────────────────────────────────────"
-}
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ===========================================================================
 # Tests
@@ -253,11 +224,6 @@ fi
 # Summary
 # ===========================================================================
 
-echo ""
-echo "==========================================="
-echo "Test Results: ${GREEN}${PASS} passed${NC}, ${RED}${FAIL} failed${NC}"
-echo "==========================================="
-
-if [[ $FAIL -gt 0 ]]; then
-    exit 1
-fi
+print_summary
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0

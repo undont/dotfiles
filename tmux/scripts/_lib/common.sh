@@ -51,6 +51,8 @@ print_dotfiles_logo() {
 DOTFILES_LAUNCHERS="$DOTFILES_ROOT/launchers"
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 LAUNCHER_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/launcher-history"
+THEME_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-history"
+THEME_FAVOURITES="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-favourites"
 
 # Wrapper for tmux command that respects test socket
 # When TMUX_TEST_SOCKET is set, all tmux commands use that socket.
@@ -120,6 +122,22 @@ require_tmux() {
         error "Not running inside tmux"
         exit 1
     fi
+}
+
+# Sanitise a launcher name for use as a filename
+# - Lowercase, replace invalid chars with hyphen, strip leading dots/dashes
+# - Truncate to 64 characters
+# - Suffix reserved words to avoid shadowing shell builtins
+# Usage: sanitised=$(sanitise_launcher_name "My Launcher!")
+sanitise_launcher_name() {
+    local raw="$1"
+    raw=$(printf '%s' "$raw" | tr -c '[:alnum:]_.-' '-' | tr '[:upper:]' '[:lower:]')
+    raw="${raw#"${raw%%[[:alnum:]_]*}"}"
+    raw="${raw:0:64}"
+    case "$raw" in
+        test|cd|ls|rm|cp|mv|cat|echo|printf|export|source|exec|eval|exit) raw="${raw}_launcher" ;;
+    esac
+    printf '%s' "$raw"
 }
 
 # Sanitise session name (convert spaces and invalid chars to dashes, then trim trailing dashes)

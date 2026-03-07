@@ -109,7 +109,7 @@ nvim/
 
 | Plugin | Purpose |
 |--------|---------|
-| Custom colourschemes (`nvim/colors/`) | 16 themes matching dotfiles theme system |
+| Custom colourschemes (`nvim/colors/`) | 15 themes matching dotfiles theme system |
 | [auto-dark-mode.nvim](https://github.com/f-person/auto-dark-mode.nvim) | Follows system theme |
 | [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects, notify, bracketed navigation, splitjoin, pairs, hipatterns |
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
@@ -212,6 +212,7 @@ Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 | Normal | `gm` | Set mark (original `m`) |
 | Normal | `Space e` | Toggle file explorer (Neo-tree) |
 | Normal | `Space g` | Open LazyGit |
+| Normal | `Space z` | Zoom toggle (tab split/close) |
 | Normal | `Space f` | Format buffer |
 | Insert | `Ctrl+Space` | Trigger completion |
 | Insert | `Tab` | Accept Copilot suggestion |
@@ -269,7 +270,7 @@ Use it for cursor style, personal keymaps, option overrides, or any other local 
 
 ### Changing Colourscheme
 
-Themes are managed by the dotfiles theme system. Run `theme-switch <theme>` to change — Neovim picks up the colourscheme automatically from `nvim/colors/`. No plugin installation needed.
+Themes are managed by the dotfiles theme system. Run `dotfiles theme <theme>` to change — Neovim picks up the colourscheme automatically from `nvim/colors/`. No plugin installation needed.
 
 ### Adding Keybindings
 
@@ -300,7 +301,7 @@ Restart Neovim and lazy.nvim will automatically install the new plugin.
 
 ### Required
 
-- **Neovim >= 0.9** - Earlier versions not supported
+- **Neovim >= 0.11** - Earlier versions not supported
 - **Git** - For lazy.nvim plugin management
 - **Node.js** - For Copilot and some LSP servers
 - **Ripgrep** - For Telescope live grep (`brew install ripgrep`)
