@@ -16,26 +16,6 @@ TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/tmux.conf.template"
 # Use XDG path where theme-switch actually writes the config
 TMUX_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 
-# Test counters
-PASS_COUNT=0
-FAIL_COUNT=0
-SKIP_COUNT=0
-
-# Override pass/fail to track counts
-pass() {
-    PASS_COUNT=$((PASS_COUNT + 1))
-    echo "${GREEN}✓${NC} $1"
-}
-
-fail() {
-    FAIL_COUNT=$((FAIL_COUNT + 1))
-    echo "${RED}✗${NC} $1"
-}
-
-skip() {
-    SKIP_COUNT=$((SKIP_COUNT + 1))
-    echo "${YELLOW}○${NC} $1 (skipped)"
-}
 
 # ===========================================================================
 # Pre-flight Checks
@@ -46,10 +26,7 @@ section "Pre-flight Checks"
 # Check if tmux is available
 if ! command -v tmux &>/dev/null; then
     skip "tmux is not installed - skipping all reload tests"
-    echo ""
-    echo "==========================================="
-    echo "Test Results: ${GREEN}${PASS_COUNT} passed${NC}, ${RED}${FAIL_COUNT} failed${NC}, ${YELLOW}${SKIP_COUNT} skipped${NC}"
-    echo "==========================================="
+    print_summary
     exit 0
 fi
 
@@ -384,11 +361,6 @@ fi
 # Summary
 # ===========================================================================
 
-echo ""
-echo "==========================================="
-echo "Test Results: ${GREEN}${PASS_COUNT} passed${NC}, ${RED}${FAIL_COUNT} failed${NC}, ${YELLOW}${SKIP_COUNT} skipped${NC}"
-echo "==========================================="
-
-if [[ $FAIL_COUNT -gt 0 ]]; then
-    exit 1
-fi
+print_summary
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0

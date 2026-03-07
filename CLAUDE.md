@@ -97,9 +97,13 @@ dotfiles update         # Pull latest and re-run installer (shorthand: dot updat
 dotfiles status         # Version, sync status, and local changes
 dotfiles health         # Run health check (symlinks, plugins, env vars)
 dotfiles notes          # Browse full changelog in a pager (shorthand: dot -n)
+dotfiles theme generate <ghostty-theme>  # Generate theme from Ghostty built-in
+dotfiles theme delete <theme-name>       # Delete a generated theme
 ./scripts/install/health-check.sh  # Verify installation
 ./scripts/install/uninstall.sh     # Remove symlinks
 ```
+
+Full CLI reference with tab completion details: [zsh/README.md](zsh/README.md#dotfiles-cli).
 
 ## Architecture
 
@@ -110,6 +114,9 @@ dotfiles/
 ├── scripts/              # Installation and utilities
 │   ├── dotfiles          # CLI tool (update/status/health)
 │   ├── theme-switch      # Theme switching (called by dotfiles CLI)
+│   ├── generate-theme    # Generate theme from Ghostty built-in themes
+│   ├── theme-delete      # Delete a generated theme
+│   ├── theme-contrast-check  # Theme contrast validation
 │   ├── install/          # Installer modules
 │   ├── _lib/             # Shared shell libraries (common.sh, brewfile.sh)
 │   ├── hooks/            # Agent alert hooks + command exit alerts
@@ -152,7 +159,7 @@ The installer uses presets to filter `Brewfile` packages and symlinks:
 - **core**: + nvim, ghostty, AI tools, launchers (marked with `# @preset: core`)
 - **full**: + Hammerspoon, Karabiner (marked with `# @preset: full`)
 
-Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`.
+Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`. See [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) for detailed walkthrough of each installation step.
 
 ### Shared Libraries
 
@@ -197,21 +204,9 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts:
 - `~/.config/lazygit/local.yml` — loaded via `LG_CONFIG_FILE` env var
 - `~/.hammerspoon/local.lua` — loaded via `pcall(require, "local")` at end of init.lua
 
-These files are created from templates on first install and never overwritten by `dotfiles theme` or `dotfiles update`. Add cursor style, font overrides, extra keybindings, etc. here.
+These files are created from templates on first install and never overwritten by `dotfiles theme` or `dotfiles update`. Add cursor style, font overrides, extra keybindings, etc. here. The full layered config pattern is documented in [Config Ownership Patterns](#config-ownership-patterns) below.
 
-**Switching Themes:**
-```bash
-dotfiles theme catppuccin-mocha    # Apply theme
-dotfiles theme list                # Show available themes
-dotfiles theme current             # Show current theme
-```
-
-**Benefits:**
-- User theme changes don't create git conflicts
-- Templates stay clean in repository
-- Follows XDG standard (~/.config)
-- Backwards compatible via ~/.tmux.conf symlink
-- Personal overrides survive theme changes via local override files
+Theme commands are listed in the [Management](#management) section above. See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the full command reference, generation pipeline, and architecture details.
 
 **Migration:** Existing users should run `scripts/migrate-tmux-config.sh` once to move from the old setup to XDG.
 
@@ -283,7 +278,7 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - **alerts/**: `show.sh`, `clear.sh`, `update-rename.sh`, `update-timestamp.sh` - Agent alert system for status bar
 - **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions
 - **themes/**: `pick.sh`, `reload-fzf.sh`, `reload-ghostty.sh` - Runtime theme switching
-- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `confirm.sh`, `dotfiles-status.sh`, `nav.sh` - Shared utilities
+- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `dotfiles-status.sh`, `nav.sh` - Shared utilities
 - **_lib/**: `common.sh`, `paths.sh`, `session.sh`, `alerts.sh`, `ui.sh` - Shared libraries
 - **tests/**: `test-*.sh` - Test suites
 

@@ -158,10 +158,12 @@ random_theme() {
 }
 
 # Get 1-based position of current theme in the fzf item list
-# Reads pre-generated list from stdin (skipping 5 header lines) and finds the ● marker
+# Generates the list internally (skipping 5 header lines) and finds the ● marker
 get_current_position() {
+    local output
+    output=$(list_themes_for_fzf)
     local pos
-    pos=$(tail -n +6 | grep -n '● ' | head -1 | cut -d: -f1)
+    pos=$(printf '%s\n' "$output" | tail -n +6 | grep -n '● ' | head -1 | cut -d: -f1) || true
     echo "${pos:-1}"
 }
 

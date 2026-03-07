@@ -12,7 +12,7 @@
 [![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/seanhalberthal/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
 [![macOS](https://img.shields.io/badge/macOS-compatible-A2AAAD?logo=apple&logoColor=white)](https://www.apple.com/macos/)
 [![Linux](https://img.shields.io/badge/Linux-compatible-blue?logo=linux&logoColor=white)](https://www.linux.org/)
-[![Neovim](https://img.shields.io/badge/Neovim-0.9+-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
+[![Neovim](https://img.shields.io/badge/Neovim-0.11+-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
 [![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
 [![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
 
@@ -151,26 +151,36 @@ dotfiles edit      # Open dotfiles in $EDITOR
 ---
 
 ## 🎨 Themes
-
-One command changes **everything** — tmux status bar, terminal colours, neovim syntax highlighting, fzf popups, gh-dash, and lazygit all switch together. No restart, no manual config edits.
+One command changes **everything**. Switch tmux, terminal, neovim, fzf, gh-dash, and lazygit all at once — no restart, no manual config edits.
 
 ```bash
-dotfiles theme catppuccin-mocha       # Switch theme everywhere, instantly
-dotfiles theme list                   # Show all available themes
+dotfiles theme dracula                # Switch everything, instantly
+dotfiles theme generate zenburn       # Generate a new theme from Ghostty
 ```
 
-**15 hand-crafted themes** — each a complete colour system with a 16-colour terminal palette, 6 semantic accent colours, tmux status bar styling, and a self-contained neovim colourscheme (no plugins needed). All pass [WCAG 2.1 contrast checks](themes/README.md) for accessibility.
+### Theme Generator
+
+Turn any of Ghostty's **438 built-in themes** into a complete, coordinated colour system. The Lua pipeline:
+
+1. **Parses** a Ghostty palette (16 ANSI colours + foreground/background)
+2. **Derives** semantic roles — 6 accent colours, selection, secondary surfaces
+3. **Corrects** for [WCAG 2.1](https://www.w3.org/TR/WCAG21/) accessibility (4.5:1 minimum contrast ratio)
+4. **Outputs** a `.theme` file + a self-contained neovim colourscheme (no plugin deps)
+
+```bash
+dotfiles theme generate list          # Browse all 438 Ghostty themes
+dotfiles theme generate "Catppuccin Latte"  # Generate and switch to it
+```
+
+Press `` ` t `` inside tmux to browse **all** themes in an fzf popup. Selecting a Ghostty theme auto-generates and applies it on the fly — no separate generate step needed.
+
+See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the full architecture.
+
+### Hand-Crafted Themes
+
+**15 curated themes** with carefully tuned palettes, each passing WCAG 2.1 contrast checks:
 
 > Dracula · Catppuccin Mocha · Tokyo Night · Nord · Rosé Pine · Kanagawa · Gruvbox · Maple · Synthwave · One Dark · Monokai · Nightfox · Everforest · Ayu Dark · Solarized
-
-**438 more via the theme generator** — create a complete theme from any Ghostty built-in theme. The generator parses the palette, derives semantic colour roles, applies WCAG contrast corrections, and produces a `.theme` file plus a matching neovim colourscheme.
-
-```bash
-dotfiles theme generate zenburn       # Generate from a Ghostty theme
-dotfiles theme generate list          # Browse all 438 available themes
-```
-
-Press `` ` t `` inside tmux to browse themes in an fzf popup — hand-crafted first, then all Ghostty themes. Selecting one auto-generates and applies it on the fly.
 
 **Local overrides survive every theme switch** — cursor style, fonts, and extra keybindings persist in files that are never overwritten:
 

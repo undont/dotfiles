@@ -22,18 +22,20 @@ Both types produce identical `.theme` files and work seamlessly with `dotfiles t
 ```
 Repository (tracked in git):
   themes/*.theme                   - Hand-crafted theme definitions (15 themes)
-  themes/generated/*.theme         - Auto-generated themes from Ghostty (gitignored)
   tmux/tmux.conf.template          - Tmux config template with {{PLACEHOLDERS}}
   ghostty/config.template          - Ghostty config template with {{PLACEHOLDERS}}
   gh-dash/config.yml.template      - gh-dash config template with {{PLACEHOLDERS}}
-  nvim/colors/generated/*.lua      - Auto-generated Neovim colourschemes (gitignored)
   scripts/_lib/colour-utils.lua    - Colour conversion, WCAG 2.1 contrast utilities
   scripts/_lib/generate-theme.lua  - Theme generation engine (Lua)
   scripts/generate-theme           - CLI wrapper for the Lua generator (bash)
   scripts/theme-delete             - Remove generated themes
   scripts/theme-switch             - Apply themes to all tools
 
-User Configuration (gitignored):
+Generated (gitignored, created by `dotfiles theme generate`):
+  themes/generated/*.theme         - Auto-generated themes from Ghostty
+  nvim/colors/generated/*.lua      - Auto-generated Neovim colourschemes
+
+User Configuration (outside repo, created by `dotfiles theme`):
   ~/.config/tmux/tmux.conf         - Generated tmux config (XDG standard)
   ~/.tmux.conf                     - Compatibility symlink -> ~/.config/tmux/tmux.conf
   ~/.config/ghostty/config         - Generated ghostty config (XDG, all platforms)

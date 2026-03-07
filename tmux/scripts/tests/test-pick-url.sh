@@ -5,28 +5,7 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PICK_URL_SCRIPT="$SCRIPT_DIR/../utils/pick-url.sh"
 
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
-
-PASS=0
-FAIL=0
-
-pass() {
-    printf "  ${GREEN}✓${NC} %s\n" "$1"
-    PASS=$((PASS + 1))
-}
-
-fail() {
-    printf "  ${RED}✗${NC} %s\n" "$1"
-    FAIL=$((FAIL + 1))
-}
-
-section() {
-    echo ""
-    printf "${YELLOW}=== %s ===${NC}\n" "$1"
-}
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 # Source only the extract_urls function from pick-url.sh
 # We extract it to avoid sourcing the full script (which has side effects)
@@ -79,8 +58,6 @@ assert_no_urls() {
 # Tests
 # ===========================================================================
 
-echo "${GREEN}Testing pick-url.sh URL extraction${NC}"
-
 section "Script exists and is executable"
 
 if [[ -f "$PICK_URL_SCRIPT" ]]; then
@@ -105,7 +82,7 @@ if command -v shellcheck &>/dev/null; then
         fail "shellcheck reports issues"
     fi
 else
-    printf "  ${YELLOW}○${NC} %s (skipped)\n" "shellcheck not installed"
+    skip "shellcheck not installed"
 fi
 
 section "Basic URL extraction"
@@ -248,10 +225,6 @@ assert_extracts "GitHub URL with trailing comma (original bug)" \
     "1. Create a gist — go to https://gist.github.com, create one with any content" \
     "https://gist.github.com"
 
-# Summary
-echo ""
-echo "==========================================="
-printf "Test Results: ${GREEN}%d passed${NC}, ${RED}%d failed${NC}\n" "$PASS" "$FAIL"
-echo "==========================================="
-
-[[ $FAIL -eq 0 ]] && exit 0 || exit 1
+print_summary
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0

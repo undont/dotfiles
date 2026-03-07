@@ -229,11 +229,15 @@ direnv allow
 | Alias      | Command                         | Description                        |
 | ---------- | ------------------------------- | ---------------------------------- |
 | `oc`       | `opencode`                      | Launch OpenCode editor             |
-| `tls`      | `trestore --list`               | List saved tmux session backups    |
+| `dot`      | `dotfiles`                      | Shorthand for dotfiles CLI         |
+| `drs`      | `dash-repo-sync`                | Sync local repo paths into gh-dash config |
+| `ta`       | `tattach`                       | Shorthand for `tattach` (see functions below) |
+| `tls`      | `~/.tmux/scripts/resurrect/restore.sh --list` | List saved tmux session backups |
 | `tcleanup` | `~/.tmux/scripts/tests/cleanup-tests.sh` | Clean up orphaned test resources (servers/backups) |
 | `alerts-clear` | `rm -rf ~/.config/tmux-alerts` | Clear all tmux alerts (agent + command exit) |
 | `gols`     | `ls ~/go/bin`                   | List installed Go binaries         |
-| `dot`      | `dotfiles`                      | Shorthand for dotfiles CLI         |
+| `brewup`   | `brew update && brew upgrade`   | Update and upgrade Homebrew        |
+| `nvim-clear` | `rm -rf ~/.cache/nvim/luac/`  | Clear Neovim bytecode cache        |
 
 ### Dotfiles CLI
 
@@ -245,6 +249,8 @@ direnv allow
 | `dotfiles links` | Show all managed symlinks and their status          |
 | `dotfiles notes` | Browse full changelog in a pager                    |
 | `dotfiles version` | Show current dotfiles version, preset, and theme |
+| `dotfiles theme <name>` | Switch to a theme (list, current, generate, delete) |
+| `dotfiles aliases` | Show all shell aliases, functions, and utilities |
 | `dotfiles edit`  | Open dotfiles directory in $EDITOR                 |
 | `dotfiles cd`    | Print dotfiles path (use: `cd "$(dotfiles cd)"`)  |
 
@@ -258,6 +264,8 @@ Tab completion is available for all dotfiles commands.
 | `tattach <name>` | `tattach myproject`        | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tkill <name>` | `tkill myproject`            | Kills the specified tmux session and removes its backup file from `~/.tmux/resurrect/sessions/`. |
 | `trestore`     | `trestore [options]`         | Restore tmux sessions. No args = restore ALL; `--session <name>` = specific session; `--delete <name>` = delete backup. |
+| `mkcd <dir>`   | `mkcd mydir`                 | Create a directory and cd into it. |
+| `nvim-sync`    | `nvim-sync`                  | Sync all Lazy.nvim plugins (headless). |
 | `brewup`       | `brewup`                     | Alias for `brew update && brew upgrade`. |
 
 ### Tab Completion

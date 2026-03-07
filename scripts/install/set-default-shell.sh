@@ -24,7 +24,7 @@ echo "Changing default shell to zsh ($ZSH_PATH)..."
 # Ensure zsh is in /etc/shells (required by chsh on most systems)
 if [[ -f /etc/shells ]] && ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
     echo "Adding $ZSH_PATH to /etc/shells (may require sudo)..."
-    sudo bash -c "grep -qxF '$ZSH_PATH' /etc/shells || echo '$ZSH_PATH' >> /etc/shells" 2>/dev/null \
+    echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null 2>&1 \
         || warn "Could not add zsh to /etc/shells"
 fi
 

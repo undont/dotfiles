@@ -109,7 +109,7 @@ nvim/
 
 | Plugin | Purpose |
 |--------|---------|
-| Custom colourschemes (`nvim/colors/`) | 16 themes matching dotfiles theme system |
+| Custom colourschemes (`nvim/colors/`) | 15 themes matching dotfiles theme system |
 | [auto-dark-mode.nvim](https://github.com/f-person/auto-dark-mode.nvim) | Follows system theme |
 | [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects, notify, bracketed navigation, splitjoin, pairs, hipatterns |
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
@@ -212,6 +212,7 @@ Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 | Normal | `gm` | Set mark (original `m`) |
 | Normal | `Space e` | Toggle file explorer (Neo-tree) |
 | Normal | `Space g` | Open LazyGit |
+| Normal | `Space z` | Zoom toggle (tab split/close) |
 | Normal | `Space f` | Format buffer |
 | Insert | `Ctrl+Space` | Trigger completion |
 | Insert | `Tab` | Accept Copilot suggestion |

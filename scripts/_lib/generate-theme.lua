@@ -7,6 +7,17 @@ local colour = require('colour-utils')
 
 local M = {}
 
+--- Validate a hex colour string
+--- @param val string The value to validate
+--- @param field string Field name for error messages
+--- @return string The validated hex colour
+local function assert_hex(val, field)
+    if type(val) ~= 'string' or not val:match('^#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]$') then
+        error(string.format('Invalid colour for %s: %s', field, tostring(val)))
+    end
+    return val
+end
+
 -- ══════════════════════════════════════════════════════════════
 -- Ghostty Theme Parsing
 -- ══════════════════════════════════════════════════════════════
@@ -232,6 +243,27 @@ end
 ---@param adjustments table WCAG adjustments made
 ---@return string theme file content
 function M.generate_theme_file(name, display_name, colours, status, active_accent, adjustments)
+  -- Validate all colours before writing
+  assert_hex(colours.bg_primary, 'bg_primary')
+  assert_hex(colours.fg_primary, 'fg_primary')
+  assert_hex(colours.bg_secondary, 'bg_secondary')
+  assert_hex(colours.fg_secondary, 'fg_secondary')
+  assert_hex(colours.line_highlight, 'line_highlight')
+  assert_hex(colours.selection, 'selection')
+  assert_hex(colours.cursor_colour, 'cursor_colour')
+  assert_hex(colours.red, 'red')
+  assert_hex(colours.green, 'green')
+  assert_hex(colours.yellow, 'yellow')
+  assert_hex(colours.purple, 'purple')
+  assert_hex(colours.pink, 'pink')
+  assert_hex(colours.cyan, 'cyan')
+  -- Validate palette entries
+  for i = 0, 15 do
+    if colours.palette[i] then
+      assert_hex(colours.palette[i], string.format('palette_%d', i))
+    end
+  end
+
   local lines = {}
   local function add(line)
     table.insert(lines, line)
@@ -628,6 +660,8 @@ end
 function M.display_name(filename)
   -- Strip anything outside safe display characters
   local safe = filename:gsub('[^%w%s%-%_%(%)%.%,]', '')
+  -- Strip double quotes to prevent breaking out of shell assignment
+  safe = safe:gsub('"', '')
   if safe == '' then
     safe = 'Unknown Theme'
   end

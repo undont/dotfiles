@@ -338,7 +338,7 @@ alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"            # Sync local repo paths into gh-dash config
 
 # Tmux session management (see ~/.tmux/README.md)
-alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
+alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts"  # Clear all tmux alerts
 alias ta="tattach" # Attach to tmux session, restoring from backup if needed (see tattach function below)
@@ -548,7 +548,7 @@ tattach() {
   local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
   if [[ -f "$backup" ]]; then
     echo "Restoring '$1' from backup..."
-    if ~/.tmux/scripts/restore-resurrect.sh --session "$1" && tmux a -t "$1"; then
+    if ~/.tmux/scripts/resurrect/restore.sh --session "$1" && tmux a -t "$1"; then
       return 0
     fi
     # Restore failed - backup is stale

@@ -22,20 +22,6 @@ echo 'show_visual_confirm() { return 0; }' > "$MOCK_UI_LIB"
 echo 'show_centered_confirm() { return 0; }' >> "$MOCK_UI_LIB"
 echo 'show_centered_message() { :; }' >> "$MOCK_UI_LIB"
 
-# Helpers
-# ---------------------------------------------------------
-PASS=0
-FAIL=0
-
-pass() {
-    echo "✓ $1"
-    PASS=$((PASS + 1))
-}
-
-fail() {
-    echo "✗ $1"
-    FAIL=$((FAIL + 1))
-}
 
 # Setup
 # ---------------------------------------------------------
@@ -93,11 +79,6 @@ test_tmux kill-session -t "${TEST_SESSION_3:-}" 2>/dev/null || true
 # Cleanup isolated tmux server
 cleanup_test_server
 
-echo "-------------------------------------------"
-if [[ $FAIL -eq 0 ]]; then
-    echo "All $PASS tests passed."
-    exit 0
-else
-    echo "$FAIL tests failed."
-    exit 1
-fi
+print_summary
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0

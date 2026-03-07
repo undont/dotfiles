@@ -28,6 +28,11 @@ else
     CURRENT_THEME="dracula"
 fi
 
+# Validate theme name — only allow safe characters (prevents path traversal)
+if [[ ! "$CURRENT_THEME" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+    CURRENT_THEME="dracula"
+fi
+
 # Source theme file with validation (hand-crafted → generated → fallback)
 THEME_FILE="$THEMES_DIR/$CURRENT_THEME.theme"
 if [[ -f "$THEME_FILE" ]]; then

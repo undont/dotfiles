@@ -72,8 +72,8 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      - name: Install tmux
-        run: brew install tmux
+      - name: Install dependencies
+        run: brew install bash tmux
 
       - name: Run all tests with dynamic discovery
         run: |
@@ -108,14 +108,10 @@ jobs:
           sudo luarocks install luacheck
 
       - name: Run luacheck on Neovim config
-        run: |
-          luacheck nvim/lua/ --no-unused-args --no-max-line-length || true
-        continue-on-error: true  # Advisory only initially
+        run: luacheck nvim/lua/ --config nvim/.luacheckrc
 
       - name: Run luacheck on scripts Lua modules
-        run: |
-          luacheck scripts/_lib/*.lua --no-unused-args --no-max-line-length || true
-        continue-on-error: true
+        run: luacheck scripts/_lib/*.lua --config nvim/.luacheckrc
 
   startup-benchmark:
     name: Startup Benchmark

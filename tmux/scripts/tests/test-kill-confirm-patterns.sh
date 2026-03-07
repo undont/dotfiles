@@ -8,29 +8,9 @@ REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SCRIPTS_DIR="$REPO_ROOT/tmux/scripts"
 LIB_DIR="$SCRIPTS_DIR/_lib"
 
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
+source "$SCRIPT_DIR/_test-helpers.sh"
 
-PASS=0
-FAIL=0
-
-pass() {
-    echo "  ${GREEN}✓${NC} $1"
-    PASS=$((PASS + 1))
-}
-
-fail() {
-    echo "  ${RED}✗${NC} $1"
-    FAIL=$((FAIL + 1))
-}
-
-echo "${GREEN}Testing tmux kill/confirm patterns${NC}"
-echo ""
-
-# Test standardized confirmation functions
-echo "${YELLOW}=== Standardized confirmation functions ===${NC}"
+section "Standardized confirmation functions"
 if grep -q "^show_visual_confirm()" "$LIB_DIR/ui.sh"; then
     pass "show_visual_confirm defined in ui.sh"
 else
@@ -43,9 +23,7 @@ else
     fail "tmux_confirm_last_item not found in ui.sh"
 fi
 
-# Test agent alert functions
-echo ""
-echo "${YELLOW}=== Agent alert functions ===${NC}"
+section "Agent alert functions"
 if grep -q "^clear_window_alerts()" "$LIB_DIR/alerts.sh"; then
     pass "clear_window_alerts defined"
 else
@@ -64,9 +42,7 @@ else
     fail "get_agent_display not found"
 fi
 
-# Test kill scripts exist
-echo ""
-echo "${YELLOW}=== Kill script files ===${NC}"
+section "Kill script files"
 for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     if [[ -f "$SCRIPTS_DIR/$script" ]] && [[ -x "$SCRIPTS_DIR/$script" ]]; then
         pass "$script exists and is executable"
@@ -75,16 +51,7 @@ for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     fi
 done
 
-# Test helper scripts exist
-if [[ -f "$SCRIPTS_DIR/utils/confirm.sh" ]] && [[ -x "$SCRIPTS_DIR/utils/confirm.sh" ]]; then
-    pass "utils/confirm.sh helper exists and is executable"
-else
-    fail "utils/confirm.sh helper missing or not executable"
-fi
-
-# Test uses standardized visual confirmation
-echo ""
-echo "${YELLOW}=== Using standardized visual confirmation ===${NC}"
+section "Using standardized visual confirmation"
 for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     if grep -q "show_visual_confirm\|tmux_confirm_last_item" "$SCRIPTS_DIR/$script"; then
         pass "$script uses standardized confirmation"
@@ -93,9 +60,7 @@ for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     fi
 done
 
-# Test no old confirmation pattern
-echo ""
-echo "${YELLOW}=== No deprecated confirmation patterns ===${NC}"
+section "No deprecated confirmation patterns"
 for script in windows/kill.sh panes/kill.sh; do
     if ! grep -q "show_centered_confirm" "$SCRIPTS_DIR/$script"; then
         pass "$script doesn't use show_centered_confirm"
@@ -104,9 +69,7 @@ for script in windows/kill.sh panes/kill.sh; do
     fi
 done
 
-# Test agent terminology
-echo ""
-echo "${YELLOW}=== Agent-agnostic terminology ===${NC}"
+section "Agent-agnostic terminology"
 for file in sessions/kill.sh rename-session.sh rename-window.sh update-timestamp.sh; do
     if grep -i "claude.*alert" "$SCRIPTS_DIR/$file" | grep -qv "ALERTS_FILE\|^#"; then
         fail "$file has claude-specific alert references"
@@ -115,10 +78,6 @@ for file in sessions/kill.sh rename-session.sh rename-window.sh update-timestamp
     fi
 done
 
-# Summary
-echo ""
-echo "==========================================="
-echo "Test Results: ${GREEN}$PASS passed${NC}, ${RED}$FAIL failed${NC}"
-echo "==========================================="
-
-[[ $FAIL -eq 0 ]] && exit 0 || exit 1
+print_summary
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0

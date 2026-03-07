@@ -195,10 +195,10 @@ section "List Themes Command"
 
 list_output=$("$THEME_SWITCH" list 2>&1) || true
 
-if [[ "$list_output" == *"Installed themes"* ]]; then
+if [[ "$list_output" == *"Custom themes"* ]]; then
     pass "list command shows header"
 else
-    fail "list command should show 'Installed themes' header"
+    fail "list command should show 'Custom themes' header"
 fi
 
 if [[ "$list_output" == *"dracula"* ]]; then
@@ -213,9 +213,15 @@ else
     fail "list command should show theme display names"
 fi
 
-# Check for current theme marker (may not exist in fresh CI environment)
-if [[ "$list_output" == *"#current"* ]] || [[ ! -f ~/.config/dotfiles/current-theme ]]; then
-    pass "list command marks current theme (or no theme set)"
+# Check for current theme marker (may not exist if no theme is set or saved theme is missing from disk)
+saved_theme=""
+[[ -f ~/.config/dotfiles/current-theme ]] && saved_theme=$(cat ~/.config/dotfiles/current-theme)
+if [[ "$list_output" == *"#current"* ]]; then
+    pass "list command marks current theme"
+elif [[ -z "$saved_theme" ]]; then
+    pass "list command marks current theme (no theme set)"
+elif [[ ! -f "$THEMES_DIR/${saved_theme}.theme" && ! -f "$THEMES_DIR/generated/${saved_theme}.theme" ]]; then
+    pass "list command marks current theme (saved theme '$saved_theme' not on disk)"
 else
     fail "list command should mark current theme when theme is set"
 fi

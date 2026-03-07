@@ -9,38 +9,7 @@ THEME_PICKER="$SCRIPT_DIR/../themes/pick.sh"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 THEMES_DIR="$DOTFILES_ROOT/themes"
 
-# Test counters
-PASS=0
-FAIL=0
-SKIP=0
-
-# Colours
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
-
-pass() {
-    PASS=$((PASS + 1))
-    printf "${GREEN}✓${NC} %s\n" "$1"
-}
-
-fail() {
-    FAIL=$((FAIL + 1))
-    printf "${RED}✗${NC} %s\n" "$1"
-}
-
-skip() {
-    SKIP=$((SKIP + 1))
-    printf "${YELLOW}○${NC} %s (skipped)\n" "$1"
-}
-
-section() {
-    echo ""
-    echo "─────────────────────────────────────────"
-    echo "$1"
-    echo "─────────────────────────────────────────"
-}
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ===========================================================================
 # Tests
@@ -411,11 +380,6 @@ fi
 # Summary
 # ===========================================================================
 
-echo ""
-echo "==========================================="
-echo "Test Results: ${GREEN}${PASS} passed${NC}, ${RED}${FAIL} failed${NC}, ${YELLOW}${SKIP} skipped${NC}"
-echo "==========================================="
-
-if [[ $FAIL -gt 0 ]]; then
-    exit 1
-fi
+print_summary
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0

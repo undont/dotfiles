@@ -5,18 +5,7 @@
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$SCRIPT_DIR/.."
 
-# Test colours
-GREEN=$'\033[0;32m'
-RED=$'\033[0;31m'
-YELLOW=$'\033[0;33m'
-NC=$'\033[0m'
-
-pass() { echo "${GREEN}✓${NC} $1"; }
-fail() { echo "${RED}✗${NC} $1"; }
-section() { echo ""; echo "${YELLOW}=== $1 ===${NC}"; }
-
-PASSED=0
-FAILED=0
+source "$SCRIPT_DIR/_test-helpers.sh"
 
 section "Script existence and executability"
 
@@ -31,10 +20,10 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if [[ -f "$SCRIPTS_DIR/$script_path" && -x "$SCRIPTS_DIR/$script_path" ]]; then
         pass "$script exists and is executable"
-        ((PASSED++))
+
     else
         fail "$script missing or not executable"
-        ((FAILED++))
+
     fi
 done
 
@@ -44,26 +33,26 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "source.*_lib/common.sh" "$SCRIPTS_DIR/$script_path"; then
         pass "$script sources common.sh"
-        ((PASSED++))
+
     else
         fail "$script doesn't source common.sh"
-        ((FAILED++))
+
     fi
 
     if grep -q "source.*_lib/ui.sh" "$SCRIPTS_DIR/$script_path"; then
         pass "$script sources ui.sh"
-        ((PASSED++))
+
     else
         fail "$script doesn't source ui.sh"
-        ((FAILED++))
+
     fi
 
     if grep -q "source.*_lib/session.sh" "$SCRIPTS_DIR/$script_path"; then
         pass "$script sources session.sh"
-        ((PASSED++))
+
     else
         fail "$script doesn't source session.sh"
-        ((FAILED++))
+
     fi
 done
 
@@ -73,10 +62,10 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "show_visual_confirm" "$SCRIPTS_DIR/$script_path"; then
         pass "$script uses show_visual_confirm"
-        ((PASSED++))
+
     else
         fail "$script doesn't use show_visual_confirm"
-        ((FAILED++))
+
     fi
 done
 
@@ -131,18 +120,18 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "find_other_session" "$SCRIPTS_DIR/$script_path"; then
         pass "$script uses find_other_session"
-        ((PASSED++))
+
     else
         fail "$script doesn't use find_other_session"
-        ((FAILED++))
+
     fi
 
     if grep -q "switch-client" "$SCRIPTS_DIR/$script_path"; then
         pass "$script switches client before kill"
-        ((PASSED++))
+
     else
         fail "$script doesn't switch client"
-        ((FAILED++))
+
     fi
 done
 
@@ -153,10 +142,10 @@ for script in kill-pane.sh kill-window.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "\-\-force" "$SCRIPTS_DIR/$script_path"; then
         pass "$script supports --force flag"
-        ((PASSED++))
+
     else
         fail "$script doesn't support --force flag"
-        ((FAILED++))
+
     fi
 done
 
@@ -165,10 +154,10 @@ for script in kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "\-\-no-confirm" "$SCRIPTS_DIR/$script_path"; then
         pass "$script supports --no-confirm flag"
-        ((PASSED++))
+
     else
         fail "$script doesn't support --no-confirm flag"
-        ((FAILED++))
+
     fi
 done
 
@@ -206,10 +195,10 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
     # Check if script exits cleanly when user cancels (looks for exit 0 after show_visual_confirm check)
     if grep -A2 "show_visual_confirm" "$SCRIPTS_DIR/$script_path" | grep -q "exit 0"; then
         pass "$script exits cleanly on cancellation"
-        ((PASSED++))
+
     else
         fail "$script doesn't handle cancellation properly"
-        ((FAILED++))
+
     fi
 done
 
@@ -239,16 +228,13 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "UNDO_FILE\|undo state" "$SCRIPTS_DIR/$script_path"; then
         pass "$script saves undo state"
-        ((PASSED++))
+
     else
         fail "$script doesn't save undo state"
-        ((FAILED++))
+
     fi
 done
 
-echo ""
-echo "==========================================="
-echo "Test Results: ${GREEN}${PASSED} passed${NC}, ${RED}${FAILED} failed${NC}"
-echo "==========================================="
-
-[[ $FAILED -eq 0 ]]
+print_summary
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0

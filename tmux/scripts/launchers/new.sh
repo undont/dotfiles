@@ -14,8 +14,6 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
-# shellcheck source=scripts/_lib/common.sh
-source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 

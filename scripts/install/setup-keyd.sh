@@ -8,7 +8,7 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)}"
 KEYD_CONF="$DOTFILES_DIR/keyd/default.conf"
 
 if is_macos; then

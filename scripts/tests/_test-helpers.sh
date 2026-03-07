@@ -68,6 +68,34 @@ assert_equals() {
     fi
 }
 
+# Create a sandboxed test environment with isolated HOME
+# Usage: setup_sandbox
+# Sets: TEST_DIR, TEST_HOME, ORIGINAL_HOME
+setup_sandbox() {
+    TEST_DIR=$(mktemp -d)
+    TEST_HOME="$TEST_DIR/home"
+    mkdir -p "$TEST_HOME"
+    ORIGINAL_HOME="$HOME"
+    export HOME="$TEST_HOME"
+}
+
+# Clean up sandboxed test environment
+# Usage: cleanup_sandbox
+cleanup_sandbox() {
+    export HOME="$ORIGINAL_HOME"
+    rm -rf "$TEST_DIR"
+}
+
+# Create a minimal dotfiles structure in the sandbox for testing
+# Usage: setup_dotfiles_sandbox
+# Sets: TEST_DOTFILES_DIR (a copy/mock of the repo structure)
+setup_dotfiles_sandbox() {
+    setup_sandbox
+    TEST_DOTFILES_DIR="$TEST_DIR/dotfiles"
+    mkdir -p "$TEST_DOTFILES_DIR"
+    export DOTFILES_DIR="$TEST_DOTFILES_DIR"
+}
+
 print_summary() {
     echo ""
     echo "==========================================="
