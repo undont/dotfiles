@@ -3,16 +3,18 @@
 # Sources the current theme and exports FZF_DEFAULT_OPTS
 # Can be sourced by .zshrc or individual scripts
 
-# Determine dotfiles root
-if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
-    # Bash
-    DOTFILES_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
-elif [[ -n "${ZSH_VERSION:-}" ]]; then
-    # Zsh - use eval to avoid bash parse errors
-    DOTFILES_ROOT="$(cd "$(dirname "$(eval 'echo ${(%):-%x}')")/.." && pwd)"
-else
-    # Fallback
-    DOTFILES_ROOT="${HOME}/dotfiles"
+# Determine dotfiles root (skip subshell detection if already set by caller)
+if [[ -z "${DOTFILES_ROOT:-}" ]]; then
+    if [[ -n "${BASH_SOURCE[0]:-}" ]]; then
+        # Bash
+        DOTFILES_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+    elif [[ -n "${ZSH_VERSION:-}" ]]; then
+        # Zsh - use eval to avoid bash parse errors
+        DOTFILES_ROOT="$(cd "$(dirname "$(eval 'echo ${(%):-%x}')")/.." && pwd)"
+    else
+        # Fallback
+        DOTFILES_ROOT="${HOME}/dotfiles"
+    fi
 fi
 
 THEMES_DIR="$DOTFILES_ROOT/themes"
@@ -26,11 +28,14 @@ else
     CURRENT_THEME="dracula"
 fi
 
-# Source theme file with validation
+# Source theme file with validation (hand-crafted → generated → fallback)
 THEME_FILE="$THEMES_DIR/$CURRENT_THEME.theme"
 if [[ -f "$THEME_FILE" ]]; then
     # shellcheck disable=SC1090
     source "$THEME_FILE"
+elif [[ -f "$THEMES_DIR/generated/$CURRENT_THEME.theme" ]]; then
+    # shellcheck disable=SC1090
+    source "$THEMES_DIR/generated/$CURRENT_THEME.theme"
 elif [[ -f "$THEMES_DIR/dracula.theme" ]]; then
     # Fallback to dracula if current theme not found
     # shellcheck disable=SC1091

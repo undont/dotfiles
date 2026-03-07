@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.52] - 2026-03-07
+
+### Added
+- Theme generation: create dotfiles themes from Ghostty's 300+ built-in themes via `dotfiles theme generate <name>`
+- Theme deletion: remove generated themes via `dotfiles theme delete <name|all>`
+- Lua colour utilities library (`scripts/_lib/colour-utils.lua`) for HSL conversion and contrast calculations
+- Lua theme generator (`scripts/_lib/generate-theme.lua`) produces tmux, ghostty, nvim, and fzf configs
+- Nvim: generated colourscheme loader in `theme.lua` with path traversal validation
+- CI: shellcheck for theme tools, luacheck for Lua modules
+- Tests for colour utils, theme generation, and theme deletion
+
+### Changed
+- Theme picker (`tmux/scripts/themes/pick.sh`) shows both hand-crafted and generated themes
+- `theme-switch` extended to apply generated theme configs alongside hand-crafted ones
+- `fzf-theme.sh` updated for generated theme support
+- Zsh tab completion updated with `generate` and `delete` subcommands
+- Documentation updates across theme system, installation guide, troubleshooting, and component READMEs
+
 ## [0.2.51] - 2026-03-06
 
 ### Added

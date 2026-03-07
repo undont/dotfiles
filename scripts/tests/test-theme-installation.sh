@@ -297,24 +297,6 @@ else
     skip "install.sh check (file not found)"
 fi
 
-section "Theme Switch Accessibility"
-
-# Verify theme-switch is accessible in PATH after installation
-if [[ -L "$HOME/.local/bin/theme-switch" ]]; then
-    pass "theme-switch is symlinked to ~/.local/bin"
-
-    target=$(readlink "$HOME/.local/bin/theme-switch")
-    if [[ "$target" == *"theme-switch"* ]]; then
-        pass "theme-switch symlink points to correct script"
-    else
-        fail "theme-switch symlink should point to theme-switch script"
-    fi
-elif command -v theme-switch &>/dev/null; then
-    pass "theme-switch is accessible in PATH"
-else
-    skip "theme-switch accessibility check (not installed yet)"
-fi
-
 section "Documentation"
 
 # Check that README or installation docs mention themes

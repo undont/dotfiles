@@ -114,11 +114,11 @@ done
 
 section "Output Format - Theme Display Names"
 
-# Should show display names, not just file names
-if [[ "$output" == *"Dracula"* ]]; then
-    pass "output shows Dracula display name"
+# Should show theme names (kebab-case)
+if [[ "$output" == *"dracula"* ]]; then
+    pass "output shows dracula theme"
 else
-    fail "output should show theme display names"
+    fail "output should show theme names"
 fi
 
 section "Output Format - Current Theme Marker"
@@ -199,11 +199,11 @@ else
     fail "script should define list_themes_for_fzf function"
 fi
 
-# Should source theme files to get display names
-if [[ "$script_content" == *'source "$theme_file"'* ]]; then
-    pass "script sources theme files for display names"
+# Should use generate-theme list to get all themes
+if [[ "$script_content" == *'generate-theme'* ]]; then
+    pass "script uses generate-theme for theme listing"
 else
-    fail "script should source theme files to get THEME_NAME"
+    fail "script should use generate-theme for theme listing"
 fi
 
 # Should use THEMES_DIR variable
@@ -231,7 +231,7 @@ fi
 
 # Check that colours are actually used in output
 # Look for ANSI escape sequences using od to check raw bytes
-if echo "$output" | od -c | head -5 | grep -q "033"; then
+if echo "$output" | head -1 | od -c | grep -q "033"; then
     pass "output contains ANSI colour codes"
 else
     fail "output should contain ANSI colour codes for visual appeal"

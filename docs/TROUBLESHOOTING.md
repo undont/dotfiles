@@ -68,7 +68,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
 ./install.sh
 
 # Option 2: If rollback state doesn't exist, manually restore
-# (if you have backups in ~/dotfiles/.install-state/backups/)
+# (if you have backups in ~/.dotfiles-backup/)
 ```
 
 **Common Installation Failures**:
@@ -177,7 +177,7 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
 | Feature | macOS | Linux |
 |---------|-------|-------|
 | Homebrew path | `/opt/homebrew` | `/home/linuxbrew/.linuxbrew` |
-| Cask apps | Hammerspoon, Karabiner, Ghostty | Not available (macOS-only) |
+| Cask apps | Hammerspoon, Karabiner | Not available (macOS-only casks) |
 | Clipboard | `pbcopy` / `pbpaste` | `xclip` or `xsel` |
 | Package manager | `brew` | `brew` (Linuxbrew) or native (`apt`, `yum`) |
 

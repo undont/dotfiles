@@ -32,6 +32,8 @@ jobs:
           shellcheck -x $EXCLUDES scripts/install/*.sh
           shellcheck -x $EXCLUDES scripts/_lib/*.sh
           shellcheck -x $EXCLUDES scripts/hooks/*.sh
+          # Theme tools (no .sh extension)
+          shellcheck -x $EXCLUDES scripts/theme-switch scripts/theme-delete scripts/generate-theme
 
       - name: Run ShellCheck on tmux scripts
         run: |
@@ -109,6 +111,11 @@ jobs:
         run: |
           luacheck nvim/lua/ --no-unused-args --no-max-line-length || true
         continue-on-error: true  # Advisory only initially
+
+      - name: Run luacheck on scripts Lua modules
+        run: |
+          luacheck scripts/_lib/*.lua --no-unused-args --no-max-line-length || true
+        continue-on-error: true
 
   startup-benchmark:
     name: Startup Benchmark

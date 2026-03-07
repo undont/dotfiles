@@ -4,7 +4,7 @@ This directory contains theme definitions for the dotfiles environment. Themes a
 
 ## Available Themes
 
-Run `theme-switch list` to see all available themes.
+Run `dotfiles theme list` to see all available themes.
 
 ## Adding a New Theme
 
@@ -110,7 +110,7 @@ scripts/theme-contrast-check --fix themes/my-theme.theme
 - **FG_SECONDARY** is the most common failure — it needs to pass 4.5:1 on *both* BG_PRIMARY and BG_SECONDARY
 - **GHOSTTY_PALETTE_8** should match or be close to FG_SECONDARY
 - Use [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) for quick manual checks
-- Test visually with `theme-switch <name>` and open Neovim, LazyGit, and Neo-tree
+- Test visually with `dotfiles theme <name>` and open Neovim, LazyGit, and Neo-tree
 
 ## Theme Architecture
 
@@ -147,10 +147,10 @@ Both scripts source the `.theme` file, then `theme-defaults.sh`, then call `appl
 
 ```bash
 # Verify theme appears in list
-theme-switch list
+dotfiles theme list
 
 # Apply the theme
-theme-switch <theme-name>
+dotfiles theme <theme-name>
 
 # Run contrast checks
 scripts/theme-contrast-check themes/<theme-name>.theme

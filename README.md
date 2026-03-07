@@ -112,7 +112,7 @@ The installer detects what's already configured and only shows steps you still n
 - **Navigation** — flash.nvim (jump), grug-far (project-wide search & replace), oil.nvim (file ops), trouble.nvim (diagnostics)
 - **Multiple cursors** — vim-visual-multi (`Ctrl+n`, `Alt+↓/↑`)
 - **Markdown** — mkdnflow with list continuation, todo toggles, table formatting
-- **15 colourschemes** matching the theme system — self-contained Lua files, no plugin deps
+- **Colourschemes** — 15 hand-crafted + generatable from 438 Ghostty themes, self-contained Lua files with no plugin deps
 - **GitHub Copilot** with security (disabled for `.env`, credentials, secrets)
 - **Searchable cheatsheet** — `Space ?` opens a filterable keybinding reference
 - **Local overrides** — `~/.config/nvim/local.lua` survives updates
@@ -139,7 +139,7 @@ dotfiles update    # Pull latest + re-run installer with saved preset
 dotfiles status    # Version, sync status, and local changes
 dotfiles health    # Full health check (symlinks, plugins, env vars)
 dotfiles links     # Show all managed symlinks and their status
-dotfiles theme     # List / switch themes
+dotfiles theme     # List, switch, or generate themes
 dotfiles aliases   # Browse all shell aliases and shortcuts
 dotfiles notes     # Browse full changelog in a pager
 dotfiles version   # Show current version, preset, and theme
@@ -152,16 +152,27 @@ dotfiles edit      # Open dotfiles in $EDITOR
 
 ## 🎨 Themes
 
-**15 coordinated themes** applied atomically across tmux, ghostty, neovim, and fzf. Switch at runtime — no restart required.
+One command changes **everything** — tmux status bar, terminal colours, neovim syntax highlighting, fzf popups, gh-dash, and lazygit all switch together. No restart, no manual config edits.
 
 ```bash
-theme-switch catppuccin-mocha    # Apply a theme
-theme-switch list                # Show all themes
+dotfiles theme catppuccin-mocha       # Switch theme everywhere, instantly
+dotfiles theme list                   # Show all available themes
 ```
 
-> Dracula, Catppuccin Mocha, Tokyo Night, Nord, Rosé Pine, Kanagawa, Gruvbox, Maple, Synthwave, One Dark, Monokai, Nightfox, Everforest, Ayu Dark, and Solarized. Every theme includes a full 16-colour terminal palette, 6 accent colours, status bar styling, and a matching self-contained neovim colourscheme. All themes pass [WCAG 2.1 contrast checks](themes/README.md) for accessibility.
+**15 hand-crafted themes** — each a complete colour system with a 16-colour terminal palette, 6 semantic accent colours, tmux status bar styling, and a self-contained neovim colourscheme (no plugins needed). All pass [WCAG 2.1 contrast checks](themes/README.md) for accessibility.
 
-**Local overrides survive theme switches** — customise cursor, fonts, and keybindings in files that are never overwritten:
+> Dracula · Catppuccin Mocha · Tokyo Night · Nord · Rosé Pine · Kanagawa · Gruvbox · Maple · Synthwave · One Dark · Monokai · Nightfox · Everforest · Ayu Dark · Solarized
+
+**438 more via the theme generator** — create a complete theme from any Ghostty built-in theme. The generator parses the palette, derives semantic colour roles, applies WCAG contrast corrections, and produces a `.theme` file plus a matching neovim colourscheme.
+
+```bash
+dotfiles theme generate zenburn       # Generate from a Ghostty theme
+dotfiles theme generate list          # Browse all 438 available themes
+```
+
+Press `` ` t `` inside tmux to browse themes in an fzf popup — hand-crafted first, then all Ghostty themes. Selecting one auto-generates and applies it on the fly.
+
+**Local overrides survive every theme switch** — cursor style, fonts, and extra keybindings persist in files that are never overwritten:
 
 | App | Override File |
 |-----|--------------|
@@ -214,9 +225,9 @@ theme-switch list                # Show all themes
 | Git (LazyGit) | `Space g` |
 | Build (quickfix) | `Space q` |
 | Format | `Space f` |
-| Test nearest | `Space tn` |
+| Test nearest | `Space tt` |
 | Diagnostics | `Space xx` |
-| PR review | `Space op` |
+| PR diff review | `Space dp` |
 
 </td></tr>
 </table>
@@ -253,13 +264,13 @@ dotfiles/
 │   ├── zprofile      # Login shell config
 │   └── p10k.zsh      # Powerlevel10k theme
 ├── tmux/             # Tmux terminal multiplexer
-│   ├── tmux.conf.template # Config template (processed by theme-switch)
+│   ├── tmux.conf.template # Config template (processed by dotfiles theme)
 │   ├── scripts/      # 60+ custom scripts across 11 categories
 │   ├── plugins/      # TPM-managed plugins
 │   └── tmux-help.txt # Keybinding help popup content
 ├── nvim/             # Neovim configuration
 │   ├── init.lua      # Entry point
-│   ├── colors/       # 15 self-contained colourschemes (no plugin deps)
+│   ├── colors/       # Self-contained colourschemes (15 hand-crafted + generated)
 │   ├── cheatsheet.txt # Searchable keybinding reference (Space ?)
 │   ├── snippets/     # Custom LuaSnip snippets
 │   └── lua/custom/   # Modular config (14 plugin files)
@@ -274,16 +285,15 @@ dotfiles/
 │   └── btop          # System monitor session
 ├── hammerspoon/      # macOS automation (auto-centre windows)
 ├── gh-dash/          # GitHub dashboard (themed, keybindings, local overrides, dash-repo-sync)
-├── ghostty/          # Terminal emulator (themed via theme-switch)
+├── ghostty/          # Terminal emulator (themed via dotfiles theme)
 ├── karabiner/        # Keyboard customisation
 ├── scripts/          # Installation and utility scripts
-│   ├── dotfiles      # CLI for managing dotfiles
-│   ├── theme-switch  # Theme switching utility
+│   ├── dotfiles      # CLI for managing dotfiles (includes theme management)
 │   ├── install/      # Installer modules
 │   ├── hooks/        # Agent alert, command exit alert + buffer sync hooks
 │   ├── tests/        # Test suites
 │   └── _lib/         # Shared shell libraries
-├── themes/           # 15 theme definitions with WCAG contrast checks
+├── themes/           # 15 hand-crafted + generated theme definitions (WCAG checked)
 ├── docs/             # Documentation
 │   ├── AGENT-HOOKS.md
 │   ├── CMD-ALERTS.md
@@ -306,7 +316,7 @@ ln -sf ~/dotfiles/zsh/p10k.zsh ~/.p10k.zsh
 
 # Tmux (symlink entire directory, config is generated)
 ln -sf ~/dotfiles/tmux ~/.tmux
-# Config generated by: theme-switch dracula
+# Config generated by: dotfiles theme dracula
 
 # Neovim
 ln -sf ~/dotfiles/nvim ~/.config/nvim
@@ -329,7 +339,7 @@ cp -n ~/dotfiles/lazygit/local.yml.template ~/.config/lazygit/local.yml
 ln -sf ~/dotfiles/hammerspoon/init.lua ~/.hammerspoon/init.lua
 cp -n ~/dotfiles/hammerspoon/local.lua.template ~/.hammerspoon/local.lua
 
-# Ghostty (config generated by theme-switch to ~/.config/ghostty/config)
+# Ghostty (config generated by dotfiles theme to ~/.config/ghostty/config)
 mkdir -p ~/.config/ghostty
 
 # Karabiner Elements (copy-on-install — user-owned after first install)
@@ -344,5 +354,5 @@ cp -n ~/dotfiles/karabiner/karabiner.json ~/.config/karabiner/karabiner.json
 - [Agent Hooks](docs/AGENT-HOOKS.md) — Setup guide for agent alert hooks (Claude Code, OpenCode)
 - [Command Exit Alerts](docs/CMD-ALERTS.md) — Auto ✓/✗ alerts when commands finish in other windows
 - [Installation Guide](docs/INSTALLATION-GUIDE.md) — Detailed walkthrough of each installation step
-- [Theme System](docs/THEME-SYSTEM.md) — How themes work across tmux, ghostty, and neovim
+- [Theme System](docs/THEME-SYSTEM.md) — How themes work, the Ghostty theme generator, and WCAG contrast checks
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — Common issues and solutions

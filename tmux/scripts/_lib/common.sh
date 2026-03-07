@@ -51,6 +51,8 @@ print_dotfiles_logo() {
 DOTFILES_LAUNCHERS="$DOTFILES_ROOT/launchers"
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 LAUNCHER_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/launcher-history"
+THEME_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-history"
+THEME_FAVOURITES="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-favourites"
 
 # Wrapper for tmux command that respects test socket
 # When TMUX_TEST_SOCKET is set, all tmux commands use that socket.

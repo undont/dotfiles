@@ -148,12 +148,12 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Next layout       | `` `+] ``           |
 | Equalise sizes    | `Opt+Shift+0`       |
 
-**Note:** Closing the last pane in the last window or the last window in a session will prompt for confirmation.
-| Swap up/down      | `prefix + H/J/K/L`  |
 | Resize left       | `Opt+Shift+h`       |
 | Resize down       | `Opt+Shift+j`       |
 | Resize up         | `Opt+Shift+k`       |
 | Resize right      | `Opt+Shift+l`       |
+
+**Note:** Closing the last pane in the last window or the last window in a session will prompt for confirmation.
 
 ### URL Picker
 
@@ -273,7 +273,7 @@ History is recorded automatically via tmux hooks (`after-select-window`, `client
 
 ### Local Overrides
 
-`~/.config/tmux/local.conf` is your personal override file — sourced after the base config so your settings take priority. It is created from a template on first install and never overwritten by `theme-switch` or `dotfiles update`.
+`~/.config/tmux/local.conf` is your personal override file — sourced after the base config so your settings take priority. It is created from a template on first install and never overwritten by `dotfiles theme` or `dotfiles update`.
 
 Use it for cursor style, extra keybindings, plugin additions, or any other personal tweaks. After editing, reload with `prefix + r`.
 
@@ -534,12 +534,9 @@ System clipboard integration for copying text.
 
 Supports multiple coordinated colour schemes that apply across tmux, ghostty, and neovim:
 
-- **Dracula** (default): Purple accents, dark background (#282a36)
-- **Catppuccin Mocha**: Warm pastels with mauve accents
-- **Tokyo Night**: Cool blues with storm theme
-- **Nord**: Arctic-inspired blues and greys
+15 hand-crafted themes are available: Ayu Dark, Catppuccin Mocha, Dracula, Everforest, Gruvbox Dark, Kanagawa, Maple, Monokai, Nightfox, Nord, One Dark, Rosé Pine, Solarized Dark, Synthwave, and Tokyo Night.
 
-Switch themes with `prefix + t` (tmux picker) or `theme-switch <name>` (CLI). The current theme is saved to `~/.config/dotfiles/current-theme` and automatically applied on startup.
+Switch themes with `prefix + t` (tmux picker) or `dotfiles theme <name>` (CLI). The current theme is saved to `~/.config/dotfiles/current-theme` and automatically applied on startup. Run `dotfiles theme list` to see all available themes.
 
 ---
 

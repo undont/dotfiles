@@ -9,7 +9,7 @@ A modern zsh setup with Powerlevel10k prompt, fuzzy finding, autosuggestions, an
 | **Prompt**          | Powerlevel10k with git status                         |
 | **Fuzzy finder**    | `Ctrl+R` history, `Ctrl+T` files, `Opt+C` directories |
 | **Autosuggestions** | Right arrow to accept                                 |
-| **MCP sync**        | `mcp-sync` to sync server configs                     |
+| **Dotfiles CLI**    | `dot` / `dotfiles` for management commands            |
 
 ---
 
@@ -229,13 +229,11 @@ direnv allow
 | Alias      | Command                         | Description                        |
 | ---------- | ------------------------------- | ---------------------------------- |
 | `oc`       | `opencode`                      | Launch OpenCode editor             |
-| `mcp-sync` | `~/.config/sync-mcp-servers.sh` | Sync MCP server configs            |
 | `tls`      | `trestore --list`               | List saved tmux session backups    |
 | `tcleanup` | `~/.tmux/scripts/tests/cleanup-tests.sh` | Clean up orphaned test resources (servers/backups) |
 | `alerts-clear` | `rm -rf ~/.config/tmux-alerts` | Clear all tmux alerts (agent + command exit) |
 | `gols`     | `ls ~/go/bin`                   | List installed Go binaries         |
-| `dot`      | `cd ~/dotfiles`                 | Navigate to dotfiles directory     |
-| `claudeconfig` | `cd ~/claude-config`        | Navigate to claude-config directory |
+| `dot`      | `dotfiles`                      | Shorthand for dotfiles CLI         |
 
 ### Dotfiles CLI
 
@@ -260,7 +258,7 @@ Tab completion is available for all dotfiles commands.
 | `tattach <name>` | `tattach myproject`        | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tkill <name>` | `tkill myproject`            | Kills the specified tmux session and removes its backup file from `~/.tmux/resurrect/sessions/`. |
 | `trestore`     | `trestore [options]`         | Restore tmux sessions. No args = restore ALL; `--session <name>` = specific session; `--delete <name>` = delete backup. |
-| `brewup`       | `brewup`                     | Runs `brew update && brew upgrade`. |
+| `brewup`       | `brewup`                     | Alias for `brew update && brew upgrade`. |
 
 ### Tab Completion
 
@@ -292,66 +290,6 @@ $HOME/.local/launchers              # Session launchers (from .zprofile)
 JetBrains Toolbox scripts           # (from .zprofile)
 Google Cloud SDK                    # (lazy loaded)
 fnm-managed Node.js                 # (~5ms init, auto-switches on cd)
-```
-
----
-
-## MCP (Model Context Protocol) Setup
-
-MCP servers provide AI tools with access to external services (Jira, Confluence, GitHub, etc.).
-
-### Configuration Files
-
-| File                               | Purpose                           |
-| ---------------------------------- | --------------------------------- |
-| `~/.config/mcp-servers.json`       | Source of truth (OpenCode format) |
-| `~/.config/opencode/opencode.json` | OpenCode editor config            |
-| `~/.claude.json`                   | Claude Code CLI config            |
-
-### Sync Script
-
-The `mcp-sync` alias runs `~/.config/sync-mcp-servers.sh` to keep configs in sync:
-
-```bash
-# Sync source → both tools (default)
-mcp-sync
-
-# Check sync status
-mcp-sync check
-
-# Pull from Claude, sync to OpenCode
-mcp-sync --claude
-
-# Pull from OpenCode, sync to Claude
-mcp-sync --opencode
-```
-
-### Format Conversion
-
-The script handles format differences between tools:
-
-**OpenCode format:**
-
-```json
-{
-  "mcp-server": {
-    "type": "local",
-    "command": ["npx", "-y", "@company/server"],
-    "environment": { "API_KEY": "..." }
-  }
-}
-```
-
-**Claude format:**
-
-```json
-{
-  "mcp-server": {
-    "command": "npx",
-    "args": ["-y", "@company/server"],
-    "env": { "API_KEY": "..." }
-  }
-}
 ```
 
 ---
@@ -519,24 +457,6 @@ which fzf
 # Reload shell
 source ~/.zshrc
 ```
-
-### MCP sync fails
-
-Check that jq is installed:
-
-```bash
-brew install jq
-```
-
-Verify config files exist:
-
-```bash
-ls -la ~/.config/mcp-servers.json
-ls -la ~/.config/opencode/opencode.json
-ls -la ~/.claude.json
-```
-
----
 
 ## Performance Optimisations
 

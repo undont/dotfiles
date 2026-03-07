@@ -269,7 +269,7 @@ Use it for cursor style, personal keymaps, option overrides, or any other local 
 
 ### Changing Colourscheme
 
-Themes are managed by the dotfiles theme system. Run `theme-switch <theme>` to change — Neovim picks up the colourscheme automatically from `nvim/colors/`. No plugin installation needed.
+Themes are managed by the dotfiles theme system. Run `dotfiles theme <theme>` to change — Neovim picks up the colourscheme automatically from `nvim/colors/`. No plugin installation needed.
 
 ### Adding Keybindings
 
@@ -300,7 +300,7 @@ Restart Neovim and lazy.nvim will automatically install the new plugin.
 
 ### Required
 
-- **Neovim >= 0.9** - Earlier versions not supported
+- **Neovim >= 0.11** - Earlier versions not supported
 - **Git** - For lazy.nvim plugin management
 - **Node.js** - For Copilot and some LSP servers
 - **Ripgrep** - For Telescope live grep (`brew install ripgrep`)

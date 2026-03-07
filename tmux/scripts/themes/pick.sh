@@ -28,68 +28,177 @@ get_current_theme() {
     fi
 }
 
-# List themes in fzf-compatible format
+# Check if a hand-crafted theme exists for a given name
+is_custom_theme() {
+    [[ -f "$THEMES_DIR/$1.theme" ]]
+}
+
+# List themes in fzf-compatible format, sorted by most recently used
 list_themes_for_fzf() {
     local current_theme
     current_theme=$(get_current_theme)
 
-    # Header
+    # Header (consumed by fzf --header-lines)
     printf "${CYAN}╭─────────────────────────────────────────────────────────────╮${NC}\n"
     printf "${CYAN}│${NC}  ${GREEN}Theme Switcher${NC}                                            ${CYAN}│${NC}\n"
     printf "${CYAN}│${NC}  Select a theme to apply to tmux and ghostty               ${CYAN}│${NC}\n"
     printf "${CYAN}╰─────────────────────────────────────────────────────────────╯${NC}\n"
     printf "\n"
 
-    # List themes
-    for theme_file in "$THEMES_DIR"/*.theme; do
-        if [[ -f "$theme_file" ]]; then
-            local theme_id
-            theme_id=$(basename "$theme_file" .theme)
+    # Collect all themes into temp files
+    tmpdir=$(mktemp -d)
+    trap 'rm -rf "${tmpdir:-}"' EXIT
 
-            # Source theme to get display name
-            # shellcheck disable=SC1090
-            source "$theme_file"
-
-            # Mark current theme
-            local marker=""
-            if [[ "$theme_id" == "$current_theme" ]]; then
-                marker="${GREEN}● ${NC}"
-            else
-                marker="${GREY}○ ${NC}"
+    local all_themes="$tmpdir/all"
+    {
+        "$DOTFILES_ROOT/scripts/generate-theme" list 2>/dev/null || true
+        for theme_file in "$THEMES_DIR"/*.theme; do
+            if [[ -f "$theme_file" ]]; then
+                basename "$theme_file" .theme
             fi
+        done
+    } | sort -u > "$all_themes"
 
-            # Format: theme-id first (for easy parsing), then marker and display name
-            printf "%-20s %b${CYAN}%s${NC}\n" "$theme_id" "$marker" "$THEME_NAME"
-        fi
+    # Build MRU list from history (most recent first, deduplicated)
+    local mru_file="$tmpdir/mru"
+    touch "$mru_file"
+    if [[ -f "$THEME_HISTORY" ]]; then
+        awk '{ lines[NR] = $0; count = NR } END { for (i = count; i >= 1; i--) print lines[i] }' "$THEME_HISTORY" \
+            | awk '!seen[$0]++' > "$mru_file"
+    fi
+
+    # Build lookup sets using associative arrays (O(1) vs per-line grep)
+    declare -A valid_set fav_set custom_set bright_set emitted
+
+    while IFS= read -r t; do valid_set["$t"]=1; done < "$all_themes"
+    if [[ -f "$THEME_FAVOURITES" ]]; then
+        while IFS= read -r t; do [[ -n "$t" ]] && fav_set["$t"]=1; done < "$THEME_FAVOURITES"
+    fi
+    for theme_file in "$THEMES_DIR"/*.theme; do
+        [[ -f "$theme_file" ]] && custom_set["$(basename "$theme_file" .theme)"]=1
     done
+    while IFS= read -r t; do [[ -n "$t" ]] && bright_set["$t"]=1; done \
+        < <("$DOTFILES_ROOT/scripts/generate-theme" bright-list 2>/dev/null)
+
+    local -a mru_list=()
+    while IFS= read -r t; do [[ -n "$t" ]] && mru_list+=("$t"); done < "$mru_file"
+
+    # Format a single theme line for fzf
+    _format_line() {
+        local id="$1"
+        local marker
+        if [[ "$id" == "$current_theme" ]]; then
+            marker="${GREEN}● ${NC}"
+        else
+            marker="${GREY}○ ${NC}"
+        fi
+        local tag=""
+        [[ -n "${custom_set[$id]:-}" ]] && tag+=" ${YELLOW}#custom${NC}"
+        [[ -n "${bright_set[$id]:-}" ]] && tag+=" ${RED}#bright${NC}"
+        [[ -n "${fav_set[$id]:-}" ]] && tag+=" ${CYAN}★${NC}"
+        printf "%s %b%s%b\n" "$id" "$marker" "$id" "$tag"
+    }
+
+    # Order: favourites (MRU then alpha) → non-fav MRU → remaining alpha
+
+    # Pass 1: Fav MRU
+    for t in "${mru_list[@]}"; do
+        [[ -n "${valid_set[$t]:-}" && -n "${fav_set[$t]:-}" && -z "${emitted[$t]:-}" ]] || continue
+        emitted["$t"]=1; _format_line "$t"
+    done
+    # Pass 2: Fav non-MRU (alpha — all_themes is pre-sorted)
+    while IFS= read -r t; do
+        [[ -n "${fav_set[$t]:-}" && -z "${emitted[$t]:-}" ]] || continue
+        emitted["$t"]=1; _format_line "$t"
+    done < "$all_themes"
+    # Pass 3: Non-fav MRU
+    for t in "${mru_list[@]}"; do
+        [[ -n "${valid_set[$t]:-}" && -z "${emitted[$t]:-}" ]] || continue
+        emitted["$t"]=1; _format_line "$t"
+    done
+    # Pass 4: Remaining alpha
+    while IFS= read -r t; do
+        [[ -z "${emitted[$t]:-}" ]] || continue
+        emitted["$t"]=1; _format_line "$t"
+    done < "$all_themes"
+
 }
 
-# Get 1-based position of current theme in the list
+# Toggle a theme's favourite status
+toggle_favourite() {
+    local theme_id="$1"
+    local fav_dir
+    fav_dir="$(dirname "$THEME_FAVOURITES")"
+    mkdir -p "$fav_dir"
+
+    if [[ -f "$THEME_FAVOURITES" ]] && grep -qxF "$theme_id" "$THEME_FAVOURITES" 2>/dev/null; then
+        # Remove from favourites
+        grep -vxF "$theme_id" "$THEME_FAVOURITES" > "$THEME_FAVOURITES.tmp" || true
+        mv "$THEME_FAVOURITES.tmp" "$THEME_FAVOURITES"
+    else
+        # Add to favourites
+        printf '%s\n' "$theme_id" >> "$THEME_FAVOURITES"
+    fi
+}
+
+# Pick a random non-bright theme and apply it
+random_theme() {
+    local all_themes bright_themes
+    all_themes=$("$DOTFILES_ROOT/scripts/generate-theme" list 2>/dev/null)
+    bright_themes=$("$DOTFILES_ROOT/scripts/generate-theme" bright-list 2>/dev/null)
+
+    # Filter out bright themes, pick one at random
+    local pick
+    pick=$(comm -23 <(echo "$all_themes" | sort) <(echo "$bright_themes" | sort) \
+        | awk -v seed="$RANDOM" 'BEGIN{srand(seed)} {a[NR]=$0} END{print a[int(rand()*NR)+1]}')
+
+    if [[ -n "$pick" ]]; then
+        echo "$pick"
+    fi
+}
+
+# Get 1-based position of current theme in the fzf item list
+# Reads pre-generated list from stdin (skipping 5 header lines) and finds the ● marker
 get_current_position() {
-    local current_theme
-    current_theme=$(get_current_theme)
-    local pos=1
-    for theme_file in "$THEMES_DIR"/*.theme; do
-        if [[ -f "$theme_file" ]]; then
-            local theme_id
-            theme_id=$(basename "$theme_file" .theme)
-            if [[ "$theme_id" == "$current_theme" ]]; then
-                echo "$pos"
-                return
-            fi
-            ((pos++))
-        fi
-    done
-    echo "1"
+    local pos
+    pos=$(tail -n +6 | grep -n '● ' | head -1 | cut -d: -f1)
+    echo "${pos:-1}"
+}
+
+# Generate theme list for fzf reload and stash the target theme's position
+# Usage: pick.sh --reload [theme-id]
+# Outputs the full list to stdout (for fzf reload-sync)
+# Writes "pos(N)" to /tmp/.fzf-theme-pos (for fzf transform)
+reload_with_position() {
+    local target="${1:-$(get_current_theme)}"
+    local pos_file="/tmp/.fzf-theme-pos"
+    local output
+    output=$(list_themes_for_fzf)
+    local pos
+    pos=$(printf '%s\n' "$output" | tail -n +6 | grep -n "^${target} " | head -1 | cut -d: -f1)
+    printf 'pos(%s)\n' "${pos:-1}" > "$pos_file"
+    printf '%s\n' "$output"
 }
 
 # Main
 main() {
-    if [[ "${1:-}" == "--pos" ]]; then
-        get_current_position
-    else
-        list_themes_for_fzf
-    fi
+    case "${1:-}" in
+        --pos)
+            get_current_position
+            ;;
+        --reload)
+            reload_with_position "${2:-}"
+            ;;
+        --toggle-fav)
+            toggle_favourite "${2:?theme name required}"
+            ;;
+        --random)
+            random_theme
+            ;;
+        *)
+            list_themes_for_fzf
+            ;;
+    esac
 }
 
 main "$@"

@@ -15,7 +15,7 @@ set -euo pipefail
 #   theme-switch tokyo-night
 #   theme-switch nord
 
-SCRIPT_DIR="${BASH_SOURCE%/*}"
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}")")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 
 # shellcheck source=scripts/_lib/ghdash.sh
@@ -63,29 +63,63 @@ warn() {
     printf "${YELLOW}!${NC} %s\n" "$1"
 }
 
-# List available themes
+# List installed themes (hand-crafted + generated on disk)
 list_themes() {
-    printf "\n${CYAN}Available themes:${NC}\n\n"
+    local current_theme=""
+    if [[ -f "$CURRENT_THEME_FILE" ]]; then
+        current_theme=$(cat "$CURRENT_THEME_FILE")
+    fi
+
+    printf "\n${CYAN}Custom themes:${NC}\n\n"
 
     for theme_file in "$THEMES_DIR"/*.theme; do
         if [[ -f "$theme_file" ]]; then
+            local theme_name
             theme_name=$(basename "$theme_file" .theme)
-            # Source theme to get display name
             # shellcheck disable=SC1090
             source "$theme_file"
 
-            # Check if this is the current theme
-            current_marker=""
-            if [[ -f "$CURRENT_THEME_FILE" ]]; then
-                current_theme=$(cat "$CURRENT_THEME_FILE")
-                if [[ "$current_theme" == "$theme_name" ]]; then
-                    current_marker=" ${GREEN}(current)${NC}"
-                fi
+            local tags=""
+            if [[ "$current_theme" == "$theme_name" ]]; then
+                tags=" ${GREEN}#current${NC}"
             fi
 
-            printf "  ${CYAN}•${NC} %s - %s%b\n" "$theme_name" "$THEME_NAME" "$current_marker"
+            printf "  ${CYAN}•${NC} %s - %s${YELLOW} #custom${NC}%b\n" "$theme_name" "$THEME_NAME" "$tags"
         fi
     done
+
+    # Show generated themes
+    local has_generated=false
+    for theme_file in "$THEMES_DIR/generated/"*.theme; do
+        if [[ -f "$theme_file" ]]; then
+            if [[ "$has_generated" == "false" ]]; then
+                printf "\n${CYAN}Generated themes:${NC}\n\n"
+                has_generated=true
+            fi
+
+            local theme_name
+            theme_name=$(basename "$theme_file" .theme)
+            # shellcheck disable=SC1090
+            source "$theme_file"
+
+            local tags=""
+            if [[ "$current_theme" == "$theme_name" ]]; then
+                tags=" ${GREEN}#current${NC}"
+            fi
+
+            printf "  ${CYAN}•${NC} %s - %s%b\n" "$theme_name" "$THEME_NAME" "$tags"
+        fi
+    done
+
+    # Hint about Ghostty themes
+    if [[ -x "$SCRIPT_DIR/generate-theme" ]]; then
+        local available_count
+        available_count=$("$SCRIPT_DIR/generate-theme" list 2>/dev/null | wc -l | tr -d ' ' || true)
+        if [[ "$available_count" -gt 0 ]]; then
+            printf "\n  ${CYAN}%s Ghostty themes available.${NC} Use 'dotfiles theme <name>' to auto-generate.\n" "$available_count"
+            printf "  Run 'dotfiles theme generate list' for the full list.\n"
+        fi
+    fi
 
     printf "\n"
 }
@@ -106,11 +140,25 @@ apply_theme() {
     local quiet="${3:-false}"
     local theme_file="$THEMES_DIR/$theme_name.theme"
 
-    # Validate theme exists
-    if [[ ! -f "$theme_file" ]]; then
-        [[ "$quiet" != "true" ]] && error "Theme '$theme_name' not found"
-        [[ "$quiet" != "true" ]] && print_info "Run 'theme-switch list' to see available themes"
-        return 1
+    # Tier 1: Hand-crafted theme
+    if [[ -f "$theme_file" ]]; then
+        : # Use hand-crafted theme
+    # Tier 2: Previously generated theme
+    elif [[ -f "$THEMES_DIR/generated/$theme_name.theme" ]]; then
+        theme_file="$THEMES_DIR/generated/$theme_name.theme"
+    # Tier 3: Auto-generate from Ghostty
+    else
+        if [[ "$quiet" != "true" ]]; then
+            print_info "Theme '$theme_name' not found locally, checking Ghostty themes..."
+        fi
+        local generated_name
+        if generated_name=$("$SCRIPT_DIR/generate-theme" "$theme_name" ${quiet:+--quiet}); then
+            theme_file="$THEMES_DIR/generated/$generated_name.theme"
+        else
+            [[ "$quiet" != "true" ]] && error "Theme '$theme_name' not found"
+            [[ "$quiet" != "true" ]] && print_info "Run 'dotfiles theme list' to see available themes"
+            return 1
+        fi
     fi
 
     # Source theme variables
@@ -252,6 +300,15 @@ apply_theme() {
     mkdir -p "$CONFIG_DIR"
     echo "$theme_name" > "$CURRENT_THEME_FILE"
 
+    # Append to theme history for MRU sorting in picker
+    local theme_history="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-history"
+    mkdir -p "$(dirname "$theme_history")"
+    printf '%s\n' "$theme_name" >> "$theme_history"
+    # Trim history to last 100 entries
+    if [[ $(wc -l < "$theme_history") -gt 100 ]]; then
+        tail -100 "$theme_history" > "$theme_history.tmp" && mv "$theme_history.tmp" "$theme_history"
+    fi
+
     # Reload tmux if running (unless --no-reload was specified)
     if [[ "$no_reload" != "true" ]]; then
         if command -v tmux >/dev/null 2>&1 && tmux info &>/dev/null; then
@@ -326,12 +383,18 @@ main() {
         current)
             current=$(get_current_theme)
             # shellcheck disable=SC1090
-            source "$THEMES_DIR/$current.theme" 2>/dev/null || THEME_NAME="Unknown"
+            if [[ -f "$THEMES_DIR/$current.theme" ]]; then
+                source "$THEMES_DIR/$current.theme"
+            elif [[ -f "$THEMES_DIR/generated/$current.theme" ]]; then
+                source "$THEMES_DIR/generated/$current.theme"
+            else
+                THEME_NAME="Unknown"
+            fi
             printf "\n${CYAN}Current theme:${NC} %s (%s)\n\n" "$THEME_NAME" "$current"
             ;;
         "")
             error "No theme specified"
-            print_info "Usage: theme-switch <theme-name|list|current> [--no-reload]"
+            print_info "Usage: dotfiles theme <theme-name|list|current> [--no-reload]"
             exit 1
             ;;
         *)

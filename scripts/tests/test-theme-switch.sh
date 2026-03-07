@@ -195,10 +195,10 @@ section "List Themes Command"
 
 list_output=$("$THEME_SWITCH" list 2>&1) || true
 
-if [[ "$list_output" == *"Available themes"* ]]; then
+if [[ "$list_output" == *"Installed themes"* ]]; then
     pass "list command shows header"
 else
-    fail "list command should show 'Available themes' header"
+    fail "list command should show 'Installed themes' header"
 fi
 
 if [[ "$list_output" == *"dracula"* ]]; then
@@ -210,11 +210,11 @@ fi
 if [[ "$list_output" == *"Dracula"* ]]; then
     pass "list command shows theme display name"
 else
-    fail "list command should show theme display name"
+    fail "list command should show theme display names"
 fi
 
 # Check for current theme marker (may not exist in fresh CI environment)
-if [[ "$list_output" == *"(current)"* ]] || [[ ! -f ~/.config/dotfiles/current-theme ]]; then
+if [[ "$list_output" == *"#current"* ]] || [[ ! -f ~/.config/dotfiles/current-theme ]]; then
     pass "list command marks current theme (or no theme set)"
 else
     fail "list command should mark current theme when theme is set"
@@ -276,7 +276,7 @@ else
     fail "should show error message for invalid theme"
 fi
 
-if [[ "$invalid_output" == *"theme-switch list"* ]]; then
+if [[ "$invalid_output" == *"dotfiles theme list"* ]]; then
     pass "suggests listing available themes"
 else
     fail "should suggest listing available themes"
