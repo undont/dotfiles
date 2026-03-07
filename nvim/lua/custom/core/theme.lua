@@ -60,12 +60,30 @@ end
 ---@param scheme string colourscheme name
 ---@return boolean success
 local function apply_colourscheme(scheme)
-  local ok, err = pcall(vim.cmd.colorscheme, scheme)
-  if not ok then
-    vim.notify(string.format('Failed to load colourscheme "%s": %s', scheme, err), vim.log.levels.WARN)
+  local ok = pcall(vim.cmd.colorscheme, scheme)
+  if ok then
+    return true
+  end
+
+  -- Validate scheme name to prevent path traversal
+  if not scheme:match '^[a-z0-9%-]+$' then
+    vim.notify(string.format('Invalid colourscheme name: "%s"', scheme), vim.log.levels.WARN)
     return false
   end
-  return true
+
+  -- Try generated colourscheme
+  local generated = vim.fn.stdpath 'config' .. '/colors/generated/' .. scheme .. '.lua'
+  if vim.fn.filereadable(generated) == 1 then
+    local load_ok, load_err = pcall(dofile, generated)
+    if load_ok then
+      return true
+    end
+    vim.notify(string.format('Failed to load generated colourscheme "%s": %s', scheme, load_err), vim.log.levels.WARN)
+    return false
+  end
+
+  vim.notify(string.format('Colourscheme "%s" not found', scheme), vim.log.levels.WARN)
+  return false
 end
 
 --- Reload theme from config file
@@ -78,7 +96,8 @@ function M.reload(force)
     return
   end
 
-  local scheme = theme_map[theme] or default_scheme
+  -- Use theme_map for hand-crafted themes, fall through to raw name for generated
+  local scheme = theme_map[theme] or theme or default_scheme
 
   if apply_colourscheme(scheme) then
     current_theme = theme

@@ -1,0 +1,280 @@
+#!/usr/bin/env bash
+# Generate a dotfiles theme from a Ghostty built-in theme
+# Usage: generate-theme <ghostty-theme-name> [--quiet]
+
+set -euo pipefail
+
+SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}")")" && pwd)"
+# shellcheck source=scripts/_lib/common.sh
+source "$SCRIPT_DIR/_lib/common.sh"
+
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
+THEMES_GENERATED="$DOTFILES_DIR/themes/generated"
+NVIM_GENERATED="$DOTFILES_DIR/nvim/colors/generated"
+
+# Ghostty theme locations (platform-dependent)
+if is_macos; then
+    GHOSTTY_THEMES="/Applications/Ghostty.app/Contents/Resources/ghostty/themes"
+else
+    GHOSTTY_THEMES="/usr/share/ghostty/themes"
+fi
+
+# Find lua interpreter (prefer luajit for speed, fall back to lua)
+find_lua() {
+    if command -v luajit >/dev/null 2>&1; then
+        echo "luajit"
+    elif command -v lua >/dev/null 2>&1; then
+        echo "lua"
+    else
+        error "No Lua interpreter found. Install lua or luajit."
+        exit 1
+    fi
+}
+
+# Convert filenames to kebab-case using a single awk process
+# Accepts filenames on stdin (one per line), outputs kebab-case names
+_to_kebab() {
+    awk '{
+        name = $0
+        # lowercase
+        name = tolower(name)
+        # replace non-alphanumeric runs with hyphen
+        gsub(/[^a-z0-9]+/, "-", name)
+        # trim leading/trailing hyphens
+        sub(/^-/, "", name)
+        sub(/-$/, "", name)
+        print name
+    }'
+}
+
+# Resolve a theme name to a Ghostty theme file path
+resolve_ghostty_theme() {
+    local name="$1"
+
+    # Direct match (exact filename)
+    if [[ -f "$GHOSTTY_THEMES/$name" ]]; then
+        echo "$GHOSTTY_THEMES/$name"
+        return 0
+    fi
+
+    # Build kebab->filepath mapping in a single awk pass
+    local match
+    match=$(printf '%s\n' "$GHOSTTY_THEMES"/* | awk -v target="$name" '
+    {
+        filepath = $0
+        # Extract filename from path
+        n = split(filepath, parts, "/")
+        filename = parts[n]
+        # Convert to kebab-case
+        kebab = tolower(filename)
+        gsub(/[^a-z0-9]+/, "-", kebab)
+        sub(/^-/, "", kebab)
+        sub(/-$/, "", kebab)
+        if (kebab == target) {
+            print filepath
+            exit
+        }
+    }')
+
+    if [[ -n "$match" ]]; then
+        echo "$match"
+        return 0
+    fi
+
+    return 1
+}
+
+# List bright/garish Ghostty themes (kebab-case names)
+# Detects light backgrounds (luminance > 0.3) and saturated backgrounds (sat > 0.7)
+list_bright_themes() {
+    if [[ ! -d "$GHOSTTY_THEMES" ]]; then
+        return 0
+    fi
+
+    local LUA
+    LUA=$(find_lua)
+
+    export LUA_PATH="$SCRIPT_DIR/_lib/?.lua;;"
+    export GHOSTTY_THEMES
+    "$LUA" -e '
+        local c = require("colour-utils")
+        local dir = os.getenv("GHOSTTY_THEMES") or ""
+        local to_kebab = function(s)
+            return (s:lower():gsub("[^a-z0-9]+", "-"):gsub("^-", ""):gsub("-$", ""))
+        end
+        local p = io.popen("ls \"" .. dir .. "\"")
+        if not p then return end
+        for file in p:lines() do
+            local f = io.open(dir .. "/" .. file, "r")
+            if f then
+                local bg
+                for line in f:lines() do
+                    local k, v = line:match("^(%S+)%s*=%s*(.+)$")
+                    if k == "background" then bg = v; break end
+                end
+                f:close()
+                if bg and bg:match("^#%x%x%x%x%x%x$") then
+                    local lum = c.luminance(bg)
+                    local _, s = c.hex_to_hsl(bg)
+                    if lum > 0.3 or (lum > 0.08 and s > 0.7) then
+                        print(to_kebab(file))
+                    end
+                end
+            end
+        end
+        p:close()
+    ' 2>/dev/null
+}
+
+# List ALL Ghostty themes (kebab-case names), raw output
+_list_all_raw() {
+    printf '%s\n' "$GHOSTTY_THEMES"/* \
+        | awk -F'/' '{ print $NF }' \
+        | _to_kebab \
+        | sort
+}
+
+# List Ghostty themes (pretty when terminal, raw when piped)
+list_themes() {
+    if [[ ! -d "$GHOSTTY_THEMES" ]]; then
+        error "Ghostty themes directory not found: $GHOSTTY_THEMES"
+        return 1
+    fi
+
+    if [[ -t 1 ]]; then
+        local current_theme hand_crafted_dir
+        local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+        current_theme=$(cat "$config_dir/current-theme" 2>/dev/null || true)
+        hand_crafted_dir="$DOTFILES_DIR/themes"
+
+        local themes=()
+        while IFS= read -r name; do
+            themes+=("$name")
+        done < <(_list_all_raw)
+        local count=${#themes[@]}
+
+        # Pre-compute bright theme set
+        declare -A bright_set
+        while IFS= read -r b; do [[ -n "$b" ]] && bright_set["$b"]=1; done \
+            < <(list_bright_themes)
+
+        printf "\n${CYAN}Ghostty themes${NC} ${GREY}(%d themes)${NC}\n\n" "$count"
+
+        for name in "${themes[@]}"; do
+            local tags=""
+
+            if [[ "$name" == "$current_theme" ]]; then
+                tags=" ${GREEN}#current${NC}"
+            fi
+
+            if [[ -f "$hand_crafted_dir/$name.theme" ]]; then
+                tags+=" ${YELLOW}#custom${NC}"
+            elif [[ -f "$THEMES_GENERATED/$name.theme" ]]; then
+                tags+=" ${GREY}#generated${NC}"
+            fi
+
+            [[ -n "${bright_set[$name]:-}" ]] && tags+=" ${RED}#bright${NC}"
+
+            printf "  ${CYAN}•${NC} %s%b\n" "$name" "$tags"
+        done
+        printf "\n"
+    else
+        _list_all_raw
+    fi
+}
+
+# Main
+main() {
+    local quiet=false
+    local theme_name=""
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --quiet|-q)
+                quiet=true
+                shift
+                ;;
+            list|list-all|list-available|--list-all|--list-available)
+                list_themes
+                exit 0
+                ;;
+            bright-list)
+                list_bright_themes
+                exit 0
+                ;;
+            help|-h|--help)
+                cat << EOF
+Usage: $(basename "$0") <ghostty-theme-name> [--quiet]
+       $(basename "$0") list
+       $(basename "$0") help
+
+Generate dotfiles theme files from a Ghostty built-in theme.
+
+COMMANDS:
+    list                List all Ghostty themes
+    help                Show this help
+
+OPTIONS:
+    --quiet, -q         Suppress output
+
+EXAMPLES:
+    $(basename "$0") zenburn
+    $(basename "$0") "Tomorrow Night"
+    $(basename "$0") list
+EOF
+                exit 0
+                ;;
+            *)
+                theme_name="$1"
+                shift
+                ;;
+        esac
+    done
+
+    # Validate Ghostty themes directory exists
+    if [[ ! -d "$GHOSTTY_THEMES" ]]; then
+        error "Ghostty themes directory not found: $GHOSTTY_THEMES"
+        info "Is Ghostty installed?"
+        exit 1
+    fi
+
+    # Ensure output directories exist
+    mkdir -p "$THEMES_GENERATED" "$NVIM_GENERATED"
+
+    local LUA
+    LUA=$(find_lua)
+
+    # Normal generation: resolve Ghostty theme and generate
+    if [[ -z "$theme_name" ]]; then
+        error "No theme name specified"
+        info "Usage: $(basename "$0") <ghostty-theme-name>"
+        exit 1
+    fi
+
+    local ghostty_path
+    if ! ghostty_path=$(resolve_ghostty_theme "$theme_name"); then
+        error "Ghostty theme not found: $theme_name"
+        info "Run '$(basename "$0") list-available' to see available themes"
+        exit 1
+    fi
+
+    local quiet_flag=""
+    [[ "$quiet" == "true" ]] && quiet_flag="--quiet"
+
+    # Run the Lua generator
+    export LUA_PATH="$SCRIPT_DIR/_lib/?.lua;;"
+    local generated_name
+    if ! generated_name=$("$LUA" "$SCRIPT_DIR/_lib/generate-theme.lua" "$ghostty_path" "$THEMES_GENERATED" "$NVIM_GENERATED" $quiet_flag); then
+        error "Generation failed"
+        exit 1
+    fi
+
+    # Run contrast check on the generated theme
+    if [[ "$quiet" != "true" ]] && [[ -f "$THEMES_GENERATED/$generated_name.theme" ]]; then
+        "$SCRIPT_DIR/theme-contrast-check" "$THEMES_GENERATED/$generated_name.theme" || true
+    fi
+
+    echo "$generated_name"
+}
+
+main "$@"

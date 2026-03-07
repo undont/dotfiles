@@ -176,22 +176,6 @@ confirm() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
-# Sanitise a launcher name for use as a filename
-# - Lowercase, replace invalid chars with underscore, strip leading dots/dashes
-# - Truncate to 64 characters
-# - Suffix reserved words to avoid shadowing shell builtins
-# Usage: sanitised=$(sanitise_launcher_name "My Launcher!")
-sanitise_launcher_name() {
-    local raw="$1"
-    raw=$(printf '%s' "$raw" | tr -c '[:alnum:]_.-' '-' | tr '[:upper:]' '[:lower:]')
-    raw="${raw#"${raw%%[[:alnum:]_]*}"}"
-    raw="${raw:0:64}"
-    case "$raw" in
-        test|cd|ls|rm|cp|mv|cat|echo|printf|export|source|exec|eval|exit) raw="${raw}_launcher" ;;
-    esac
-    printf '%s' "$raw"
-}
-
 # Update or add an export line in ~/.zshrc
 # Usage: update_zshrc_export "VAR_NAME" "value"
 # - Replaces existing `export VAR_NAME=...` line
@@ -207,10 +191,20 @@ update_zshrc_export() {
         return 1
     fi
 
+    # Validate variable name — only allow standard shell variable names
+    if [[ ! "$var_name" =~ ^[A-Z_][A-Z0-9_]*$ ]]; then
+        error "Invalid variable name: $var_name"
+        return 1
+    fi
+
+    # Escape sed-special characters in value (& | \ /)
+    local escaped_value
+    escaped_value=$(printf '%s' "$value" | sed 's/[&|\\\/]/\\&/g')
+
     # Check if the export line already exists
     if grep -q "^export ${var_name}=" "$zshrc"; then
         # Replace existing line
-        sed -i '' "s|^export ${var_name}=.*|export ${var_name}=\"${value}\"|" "$zshrc"
+        sed -i '' "s|^export ${var_name}=.*|export ${var_name}=\"${escaped_value}\"|" "$zshrc"
     else
         # Append after the "YOUR PERSONAL CONFIGURATION" section marker
         local marker="YOUR PERSONAL CONFIGURATION"

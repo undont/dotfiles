@@ -2,14 +2,14 @@
 # GH-DASH LOCAL OVERRIDES
 # =============================================================================
 # Your personal gh-dash settings. This file is yours — add anything you want.
-# It is deep-merged ON TOP of the generated config after every theme-switch,
+# It is deep-merged ON TOP of the generated config after every dotfiles theme,
 # so your values always win.
 #
-# This file survives theme-switch and dotfiles update.
-# After making changes, run: theme-switch current   (re-applies current theme + merge)
+# This file survives dotfiles theme and dotfiles update.
+# After making changes, run: dotfiles theme current   (re-applies current theme + merge)
 #
 # File structure:
-#   ~/.config/gh-dash/config.yml  — Generated config (managed by theme-switch)
+#   ~/.config/gh-dash/config.yml  — Generated config (managed by dotfiles theme)
 #   ~/.config/gh-dash/local.yml   — This file (your personal overrides)
 #
 # gh-dash also supports per-repo overrides: create a .gh-dash.yml in any

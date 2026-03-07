@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/brewfile.sh"
 
-DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
+DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)}"
 PRESET="${DOTFILES_PRESET:-full}"
 
 print_section "Installing Homebrew Packages"

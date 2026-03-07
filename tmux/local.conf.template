@@ -5,11 +5,11 @@
 # It is sourced AFTER the base config and plugins, so your values override
 # the defaults.
 #
-# This file survives theme-switch and dotfiles update.
+# This file survives dotfiles theme and dotfiles update.
 # After making changes, reload with: prefix + r
 #
 # File structure:
-#   ~/.config/tmux/tmux.conf   - Generated config (managed by theme-switch)
+#   ~/.config/tmux/tmux.conf   - Generated config (managed by dotfiles theme)
 #   ~/.config/tmux/local.conf  - This file (your personal overrides)
 #
 

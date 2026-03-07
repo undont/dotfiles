@@ -6,6 +6,41 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.52] - 2026-03-07
+
+### Added
+- Theme generation: create dotfiles themes from Ghostty's 300+ built-in themes via `dotfiles theme generate <name>`
+- Theme deletion: remove generated themes via `dotfiles theme delete <name|all>`
+- Lua colour utilities library (`scripts/_lib/colour-utils.lua`) for HSL conversion and contrast calculations
+- Lua theme generator (`scripts/_lib/generate-theme.lua`) produces tmux, ghostty, nvim, and fzf configs
+- Nvim: generated colourscheme loader in `theme.lua` with path traversal validation
+- CI: shellcheck for theme tools, luacheck for Lua modules (now enforced, not advisory)
+- Tests for colour utils, theme generation, theme deletion, symlinks, ghdash merge, health check, and uninstall
+- Sandbox helpers in test framework for isolated test environments
+
+### Changed
+- Theme picker (`tmux/scripts/themes/pick.sh`) shows both hand-crafted and generated themes
+- `theme-switch` sources `common.sh` instead of duplicating colour definitions; extended for generated themes
+- `fzf-theme.sh` updated for generated theme support with path traversal guard
+- Zsh tab completion updated with `generate` and `delete` subcommands
+- Hardened input validation: hex colour checks in theme generator, variable name and sed escaping in `update_zshrc_export`, shell-escaped launcher names
+- Temp files use `mktemp` instead of predictable PID-based names in alerts
+- Deduplicated test boilerplate across tmux tests via shared `_test-helpers.sh`
+- Collapsed `paths.sh` undo migration functions into single `_migrate_flat_undo_file()` helper
+- Moved `sanitise_launcher_name` to `tmux/scripts/_lib/common.sh` (where it's used)
+- Install scripts derive `DOTFILES_DIR` from script location instead of assuming `$HOME/dotfiles`
+- Platform-aware `stat` in `paths.sh` for Linux compatibility
+- `set-default-shell.sh` uses `tee -a` instead of `sudo bash -c`
+- Documentation updates across theme system, installation guide, and component READMEs
+
+### Fixed
+- `tls` alias and `tattach` function path corrected to `resurrect/restore.sh`
+- Theme picker `get_current_position()` generates list internally instead of reading from stdin
+- `sessions/kill.sh` uses `$DOTFILES_ROOT` paths and guards resurrect plugin existence
+
+### Removed
+- `tmux/scripts/utils/confirm.sh` (unused)
+
 ## [0.2.51] - 2026-03-06
 
 ### Added

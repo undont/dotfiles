@@ -46,7 +46,7 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
 
         # User confirmed - now save undo state
         UNDO_FILE=$(get_session_undo_file)
-        BACKUP_SRC="${HOME}/.tmux/resurrect/sessions/${SESSION_NAME}.txt"
+        BACKUP_SRC="$(get_resurrect_sessions_dir)/${SESSION_NAME}.txt"
         UNDO_BACKUP=$(get_session_undo_backup)
 
         # Clear previous undo data
@@ -70,8 +70,9 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
             clear_session_alerts "$SESSION_NAME"
             # Skip resurrect operations during test runs (TMUX_TEST_SOCKET is set by tests)
             if [[ -z "${TMUX_TEST_SOCKET:-}" ]]; then
-                ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
-                ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1 || true
+                resurrect_plugin="${HOME}/.tmux/plugins/tmux-resurrect"
+                [[ -x "$resurrect_plugin/scripts/save.sh" ]] && "$resurrect_plugin/scripts/save.sh" >/dev/null 2>&1 || true
+                "$DOTFILES_ROOT/tmux/scripts/resurrect/split.sh" >/dev/null 2>&1 || true
             fi
         ) &
         exit 0
@@ -93,7 +94,7 @@ else
 
     # User confirmed - now save undo state
     UNDO_FILE=$(get_session_undo_file)
-    BACKUP_SRC="${HOME}/.tmux/resurrect/sessions/${SESSION_NAME}.txt"
+    BACKUP_SRC="$(get_resurrect_sessions_dir)/${SESSION_NAME}.txt"
     UNDO_BACKUP=$(get_session_undo_backup)
 
     # Clear previous undo data
@@ -117,8 +118,9 @@ else
         clear_session_alerts "$SESSION_NAME"
         # Skip resurrect operations during test runs (TMUX_TEST_SOCKET is set by tests)
         if [[ -z "${TMUX_TEST_SOCKET:-}" ]]; then
-            ~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 || true
-            ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1 || true
+            resurrect_plugin="${HOME}/.tmux/plugins/tmux-resurrect"
+            [[ -x "$resurrect_plugin/scripts/save.sh" ]] && "$resurrect_plugin/scripts/save.sh" >/dev/null 2>&1 || true
+            "$DOTFILES_ROOT/tmux/scripts/resurrect/split.sh" >/dev/null 2>&1 || true
         fi
     ) &
 fi

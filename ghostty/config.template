@@ -78,5 +78,5 @@ keybind = super+right=text:\x1b[F
 keybind = shift+backspace=text:\x7f
 keybind = shift+space=text:\x20
 
-# User overrides (not managed by dotfiles — survives theme-switch)
+# User overrides (not managed by dotfiles — survives theme changes)
 config-file = ~/.config/ghostty/local

@@ -14,10 +14,12 @@ A detailed explanation of what each step of the installation process does and wh
   - [Step 4: Backup Existing Configuration](#step-4-backup-existing-configuration)
   - [Step 5: Create Symlinks](#step-5-create-symlinks)
   - [Step 6: Install Plugin Managers](#step-6-install-plugin-managers)
-  - [Step 7: Setup Secrets File](#step-7-setup-secrets-file)
-  - [Step 8: Run Health Check](#step-8-run-health-check)
-  - [Step 9: Save Preset Configuration](#step-9-save-preset-configuration)
-  - [Step 10: Configure Project Directories](#step-10-configure-project-directories)
+  - [Step 7: Setup keyd (Linux)](#step-7-setup-keyd-linux)
+  - [Step 8: Set Default Shell](#step-8-set-default-shell)
+  - [Step 9: Setup Secrets File](#step-9-setup-secrets-file)
+  - [Step 10: Run Health Check](#step-10-run-health-check)
+  - [Step 11: Save Preset Configuration](#step-11-save-preset-configuration)
+  - [Step 12: Configure Project Directories](#step-12-configure-project-directories)
 - [Command-Line Options](#command-line-options)
 - [Post-Installation](#post-installation)
 - [What Gets Installed](#what-gets-installed)
@@ -67,7 +69,7 @@ The installer supports three presets to customise what gets installed:
 |--------|------|------------|----------|
 | **Minimal** | `--minimal` | zsh, tmux | Servers, remote machines, SSH environments |
 | **Core** | `--core` | + nvim, ghostty, AI/CLI tools, session launch scripts | Linux desktop, cross-platform development |
-| **Full** | `--full` | + Hammerspoon, Karabiner | macOS power user (default) |
+| **Full** | `--full` | + Hammerspoon, Karabiner (macOS) / keyd (Linux) | Power user (default) |
 
 ### Preset Details
 
@@ -86,9 +88,9 @@ The installer supports three presets to customise what gets installed:
 
 **Full** (`--full`, default):
 - Everything in Core, plus:
-- Hammerspoon: macOS window automation
-- Karabiner Elements: keyboard customisation
-- Ideal for: macOS primary workstations
+- macOS: Hammerspoon (window automation), Karabiner Elements (keyboard customisation)
+- Linux: keyd (keyboard remapping daemon — Karabiner equivalent)
+- Ideal for: Primary workstations (macOS or Linux)
 
 ### How Presets Work
 
@@ -141,7 +143,7 @@ Homebrew is the package manager used to install all other tools. Without it, you
 
 **What you'll see**:
 ```
-[1/10] Installing/updating Homebrew...
+[1/12] Installing/updating Homebrew...
   ✓ Homebrew already installed
   ✓ Updated Homebrew
   ✓ Analytics disabled
@@ -158,8 +160,9 @@ Homebrew is the package manager used to install all other tools. Without it, you
 - Installs all formulae (command-line tools) and casks (GUI applications)
 - Runs post-installation setup for specific tools:
   - **fzf**: Installs shell keybindings (Ctrl+R for history, Ctrl+T for files)
-  - **fnm**: Reminds you to install Node.js
+  - **fnm**: Reminds you to install Node.js (macOS via brew; Linux via manual install)
   - **pipx**: Ensures Python package manager is configured
+- On Linux: fixes gcc/cc symlinks for native builds, installs Ghostty and fnm via system package manager or manual install
 
 **Why this matters**:
 The Brewfile is a declarative list of all tools needed for the development environment. Using `brew bundle` ensures consistent installations across machines and makes it easy to keep environments in sync.
@@ -180,7 +183,7 @@ The Brewfile is a declarative list of all tools needed for the development envir
 
 **What you'll see**:
 ```
-[2/10] Installing packages from Brewfile...
+[2/12] Installing packages from Brewfile...
   Installing neovim...
   Installing ripgrep...
   Installing tmux...
@@ -209,15 +212,16 @@ This step catches configuration issues early. If a required tool isn't properly 
 | Category | Preset | Required | Optional |
 |----------|--------|----------|----------|
 | Shell & Terminal | minimal | git, zsh, tmux, fzf, direnv | - |
-| Editor & Dev Tools | core | nvim, tree-sitter, ghostty, bun, go, rg, lazygit, gh, jq, tree, shellcheck, luacheck | fd, bat |
+| Editor & Dev Tools | core | nvim, tree-sitter, bun, go, rg, lazygit, gh, jq, tree, shellcheck, luacheck | fd, bat, ghostty (Linux) |
 | AI & Dev Tools | core | claude, act, cmake, staticcheck, swift-format (macOS), golang-migrate | - |
 | Databases | core | psql, mongosh, sqld | - |
 | Utilities | core | fastfetch, speedtest, glow | fnm, python3, gcloud |
 | macOS Apps | full | Karabiner Elements | Hammerspoon |
+| Linux Keyboard | full | keyd | - |
 
 **What you'll see**:
 ```
-[3/10] Checking prerequisites...
+[3/12] Checking prerequisites...
   ✓ git
   ✓ zsh
   ✓ tmux
@@ -253,7 +257,7 @@ If you have existing configurations (especially customised ones), this step ensu
 
 **What you'll see**:
 ```
-[4/10] Backing up existing configuration...
+[4/12] Backing up existing configuration...
   Created backup directory: ~/.dotfiles-backup/20260111-143022-12345/
   ✓ Backed up .zshrc
   ✓ Backed up .tmux.conf
@@ -293,7 +297,7 @@ Zsh (minimal):
 
 Tmux (minimal):
   ~/.tmux                  -> ~/dotfiles/tmux
-  ~/.tmux.conf             -> ~/.config/tmux/tmux.conf  (generated by theme-switch)
+  ~/.tmux.conf             -> ~/.config/tmux/tmux.conf  (generated by dotfiles theme)
   ~/.config/tmux/local.conf   Created from template (local overrides)
 
 Dotfiles CLI (minimal):
@@ -304,15 +308,19 @@ Neovim (core):
   ~/.config/nvim/local.lua    Created from template (local overrides)
 
 Ghostty (core):
-  ~/.config/ghostty/          Directory created (config generated by theme-switch)
+  ~/.config/ghostty/          Directory created (config generated by dotfiles theme)
   ~/.config/ghostty/local     Created from template (local overrides)
 
 btop (core):
   ~/.config/btop/btop.conf -> ~/dotfiles/btop/btop.conf
 
-LazyGit/LazyDocker (core):
-  ~/Library/Application Support/lazygit/config.yml  -> ~/dotfiles/lazygit/config.yml   (macOS)
-  ~/Library/Application Support/lazydocker/config.yml -> ~/dotfiles/lazydocker/config.yml (macOS)
+LazyGit (core):
+  ~/.config/lazygit/config.yml  -> ~/dotfiles/lazygit/config.yml   (all platforms)
+  ~/.config/lazygit/local.yml      Created from template (local overrides)
+
+LazyDocker (core):
+  ~/Library/Application Support/lazydocker/config.yml  Copy from ~/dotfiles/lazydocker/config.yml (macOS)
+  ~/.config/lazydocker/config.yml                      Copy from ~/dotfiles/lazydocker/config.yml (Linux)
 
 Session Launchers (core):
   ~/.local/launchers/dev  -> ~/dotfiles/launchers/dev
@@ -326,7 +334,7 @@ Karabiner (full):
 
 **What you'll see**:
 ```
-[5/10] Creating symlinks...
+[5/12] Creating symlinks...
   ✓ Created personal ~/.zshrc (sources dotfiles framework)
   ✓ ~/.zprofile -> ~/dotfiles/zsh/zprofile
   ✓ ~/.tmux -> ~/dotfiles/tmux
@@ -358,14 +366,73 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 
 **What you'll see**:
 ```
-[6/10] Installing plugin managers...
+[6/12] Installing plugin managers...
   ✓ TPM installed to ~/.tmux/plugins/tpm
   ✓ lazy.nvim will auto-install on first Neovim launch
 ```
 
 ---
 
-### Step 7: Setup Secrets File
+### Step 7: Setup keyd (Linux)
+
+**Script**: `scripts/install/setup-keyd.sh`
+
+**What it does**:
+- Skipped on macOS (uses Karabiner Elements instead)
+- Installs keyd via the system package manager if not present
+- Deploys the keyd config from `keyd/default.conf` to `/etc/keyd/default.conf`
+- Enables and starts the keyd systemd service
+- Reloads the config if the service was already running
+
+**Why this matters**:
+keyd is a Linux keyboard remapping daemon — the equivalent of Karabiner Elements on macOS. It provides system-level key remapping that works across all applications, including:
+- Caps Lock → Escape
+- Right Alt → Control
+- Grave/Tilde ↔ Non-US Backslash (Apple keyboard layout fix)
+
+**What you'll see**:
+```
+[7/12] Setting up keyd (keyboard remapping)...
+  ✓ Deployed keyd config to /etc/keyd/default.conf
+  ✓ keyd service enabled and started
+  ✓ keyd setup complete
+```
+
+On macOS, or if the full preset isn't selected:
+```
+  ⊘ Skipping keyd setup (macOS)
+```
+
+---
+
+### Step 8: Set Default Shell
+
+**Script**: `scripts/install/set-default-shell.sh`
+
+**What it does**:
+- Checks if zsh is already the default login shell
+- If not, adds zsh to `/etc/shells` (if missing) and runs `chsh` to set it
+- May require sudo for adding to `/etc/shells`
+
+**Why this matters**:
+The dotfiles expect zsh as the login shell. On some Linux distributions, bash is the default. This step ensures zsh is set as the default so the shell configuration loads automatically on login.
+
+**What you'll see**:
+```
+[8/12] Setting default shell...
+  Default shell is already zsh.
+```
+
+Or, if the shell needs changing:
+```
+[8/12] Setting default shell...
+  Changing default shell to zsh (/usr/bin/zsh)...
+  ✓ Default shell changed to zsh
+```
+
+---
+
+### Step 9: Setup Secrets File
 
 **What it does**:
 - Creates `~/.config/zsh/secrets.zsh` if it doesn't exist
@@ -396,7 +463,7 @@ export AWS_SECRET_ACCESS_KEY="..."
 
 **What you'll see**:
 ```
-[7/10] Setting up secrets file...
+[9/12] Setting up secrets file...
   ✓ Created secrets file from template
   ✓ Set permissions to 600
   ! Edit ~/.config/zsh/secrets.zsh to add your API keys
@@ -404,7 +471,7 @@ export AWS_SECRET_ACCESS_KEY="..."
 
 ---
 
-### Step 8: Run Health Check
+### Step 10: Run Health Check
 
 **Script**: `scripts/install/health-check.sh`
 
@@ -431,7 +498,7 @@ The health check confirms the installation completed successfully. It catches is
 
 **What you'll see**:
 ```
-[8/10] Running health check...
+[10/12] Running health check...
   ✓ All symlinks verified
   ✓ TPM installed
   ✓ Secrets file configured
@@ -440,7 +507,7 @@ The health check confirms the installation completed successfully. It catches is
 
 ---
 
-### Step 9: Save Preset Configuration
+### Step 11: Save Preset Configuration
 
 **What it does**:
 - Saves your selected preset to `~/.config/dotfiles/preset`
@@ -451,7 +518,7 @@ When you run `dotfiles update` later, it reads the saved preset so it can run th
 
 **What you'll see**:
 ```
-[9/10] Saving preset configuration...
+[11/12] Saving preset configuration...
   ✓ Saved preset: core
 
 Installation complete!
@@ -459,7 +526,7 @@ Installation complete!
 
 ---
 
-### Step 10: Configure Project Directories
+### Step 12: Configure Project Directories
 
 **What it does**:
 - Prompts you to set `DEV_ROOT` — your main development directory (default: `~/src`)
@@ -473,7 +540,7 @@ The launcher picker (`` ` p ``) and `dotfiles set` command use these paths for d
 
 **What you'll see**:
 ```
-[10/10] Project directories (optional)...
+[12/12] Project directories (optional)...
   DEV_ROOT sets your main development directory for the launcher picker.
   Default: /Users/you/src
   Enter path (or press Enter for default, "skip" to skip):
@@ -500,7 +567,7 @@ dotfiles set projects ~/playground
 |--------|-------------|
 | `--minimal` | Install zsh + tmux only (servers, remote machines) |
 | `--core` | Install zsh, tmux, nvim, ghostty, AI/CLI tools |
-| `--full` | Install everything including macOS apps (default) |
+| `--full` | Install everything including platform-specific apps (default) |
 
 ### Other Options
 
@@ -594,7 +661,7 @@ nvim ~/.config/zsh/secrets.zsh
 
 ### 6. Configure Project Directories
 
-Shown only if `DEV_ROOT` or `PROJECTS_ROOT` aren't set in `~/.zshrc`. If you skipped the interactive prompt during Step 10, configure them now:
+Shown only if `DEV_ROOT` or `PROJECTS_ROOT` aren't set in `~/.zshrc`. If you skipped the interactive prompt during Step 12, configure them now:
 
 ```bash
 dotfiles set dev ~/src
@@ -628,11 +695,16 @@ dotfiles set projects ~/playground
 - **Telescope**: Fuzzy finder for files, grep, buffers
 - **GitHub Copilot**: AI code completion (requires authentication)
 
-### macOS Applications (Casks)
+### Desktop Applications
 
+**macOS (Casks)**:
 - **Ghostty**: Fast, GPU-accelerated terminal emulator
 - **Hammerspoon**: Lua-based automation (window management, etc.)
 - **Karabiner Elements**: Keyboard customisation
+
+**Linux**:
+- **Ghostty**: Installed via system package manager (not brew)
+- **keyd**: Keyboard remapping daemon (Caps Lock → Escape, Right Alt → Control)
 
 ### Fonts
 

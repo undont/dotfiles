@@ -284,15 +284,16 @@ clear_window_alerts() {
 
     # Remove from alerts file (any agent) with file locking
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
-        local tmp_file="${ALERTS_FILE}.tmp.$$"
+        local tmp_file
+        tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
         local grep_exit=0
         grep -vF "${session}:${window}:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
 
         # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
         if [[ $grep_exit -le 1 ]]; then
-            mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file"
+            mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
         else
-            rm -f "$tmp_file"
+            rm -f "$tmp_file" 2>/dev/null
         fi
 
         _release_alerts_lock
@@ -323,7 +324,8 @@ cleanup_stale_alerts() {
 
     _acquire_alerts_lock || return 1
 
-    local tmp_file="${ALERTS_FILE}.tmp.$$"
+    local tmp_file
+    tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
     local cleaned=0
 
     # Read each alert and verify the session:window exists
@@ -374,15 +376,16 @@ clear_session_alerts() {
 
     # Remove all entries for this session from alerts file with locking
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
-        local tmp_file="${ALERTS_FILE}.tmp.$$"
+        local tmp_file
+        tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
         local grep_exit=0
         grep -vF "${session}:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
 
         # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
         if [[ $grep_exit -le 1 ]]; then
-            mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file"
+            mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
         else
-            rm -f "$tmp_file"
+            rm -f "$tmp_file" 2>/dev/null
         fi
 
         _release_alerts_lock

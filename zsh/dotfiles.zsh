@@ -140,13 +140,17 @@ fi
 fpath=("$HOME/.docker/completions" $fpath)
 
 # Cached compinit - only regenerate completion dump once per day (~50-100ms savings)
+# The (#q...) glob qualifier requires EXTENDED_GLOB; anonymous function scopes it
+# so it doesn't leak globally (local_options only works inside functions).
 autoload -Uz compinit
 # shellcheck disable=SC1009,SC1036,SC1072,SC1073
-if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
-  compinit
-else
-  compinit -C
-fi
+(){ setopt local_options EXTENDED_GLOB
+  if [[ -n ~/.zcompdump(#qN.mh+24) ]]; then
+    compinit
+  else
+    compinit -C
+  fi
+}
 
 # =============================================================================
 # CACHED EVAL HELPER
@@ -190,8 +194,10 @@ fi
 _cached_eval fzf fzf --zsh
 
 # Apply theme colours to fzf (and auto-refresh on theme-switch)
-if [[ -f "$HOME/dotfiles/scripts/fzf-theme.sh" ]]; then
-  source "$HOME/dotfiles/scripts/fzf-theme.sh"
+# Export DOTFILES_ROOT so fzf-theme.sh skips its subshell-based path detection
+export DOTFILES_ROOT="${DOTFILES_DIR:-$HOME/dotfiles}"
+if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
+  source "$DOTFILES_ROOT/scripts/fzf-theme.sh"
   _fzf_theme_cached="${CURRENT_THEME:-}"
 
   # Re-source fzf-theme.sh if the active theme has changed since last check
@@ -234,8 +240,12 @@ _update_git_branch() {
 # Refresh branch cache when changing directories
 chpwd_functions+=(_update_git_branch)
 
-# Initialise cache for the first prompt
-_update_git_branch
+# Defer initial cache population to the first prompt (saves ~14ms at source time)
+_update_git_branch_once() {
+  _update_git_branch
+  precmd_functions=(${precmd_functions:#_update_git_branch_once})
+}
+precmd_functions+=(_update_git_branch_once)
 
 _dotfiles_precmd() {
   if [[ -n "$_git_branch" ]]; then
@@ -328,7 +338,7 @@ alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"            # Sync local repo paths into gh-dash config
 
 # Tmux session management (see ~/.tmux/README.md)
-alias tls="~/.tmux/scripts/restore-resurrect.sh --list"
+alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts"  # Clear all tmux alerts
 alias ta="tattach" # Attach to tmux session, restoring from backup if needed (see tattach function below)
@@ -538,7 +548,7 @@ tattach() {
   local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
   if [[ -f "$backup" ]]; then
     echo "Restoring '$1' from backup..."
-    if ~/.tmux/scripts/restore-resurrect.sh --session "$1" && tmux a -t "$1"; then
+    if ~/.tmux/scripts/resurrect/restore.sh --session "$1" && tmux a -t "$1"; then
       return 0
     fi
     # Restore failed - backup is stale
@@ -663,6 +673,8 @@ _dotfiles() {
         theme_opts=(
           'list:List available themes'
           'current:Show current theme'
+          'generate:Generate theme from Ghostty'
+          'delete:Delete a generated theme'
         )
         # Add available theme names from themes/ directory
         local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
@@ -679,7 +691,49 @@ _dotfiles() {
       set)
         _files -/
         ;;
+      theme|-t)
+        case "${words[3]}" in
+          generate)
+            local -a gen_opts
+            gen_opts=(
+              'list:List all Ghostty themes'
+              'help:Show help'
+            )
+            local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
+            if [[ -x "$dotfiles_dir/scripts/generate-theme" ]]; then
+              local -a themes
+              themes=(${(f)"$("$dotfiles_dir/scripts/generate-theme" list 2>/dev/null)"})
+              for t in "${themes[@]}"; do
+                [[ -n "$t" ]] && gen_opts+=("$t")
+              done
+            fi
+            _describe 'generate-theme' gen_opts
+            ;;
+          delete)
+            local -a del_opts
+            del_opts=(
+              'all:Remove all generated themes'
+              'list:List generated themes'
+              'help:Show help'
+            )
+            local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
+            for theme_file in "$dotfiles_dir"/themes/generated/*.theme(N); do
+              local name="${theme_file:t:r}"
+              del_opts+=("${name}:Delete generated theme")
+            done
+            _describe 'theme-delete' del_opts
+            ;;
+        esac
+        ;;
     esac
+  elif (( CURRENT == 5 )); then
+    # dotfiles theme delete all --yes
+    if [[ "${words[2]}" == "theme" || "${words[2]}" == "-t" ]] && \
+       [[ "${words[3]}" == "delete" ]] && [[ "${words[4]}" == "all" ]]; then
+      local -a flags
+      flags=('--yes:Skip confirmation prompt')
+      _describe 'flags' flags
+    fi
   fi
 }
 compdef _dotfiles dotfiles

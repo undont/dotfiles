@@ -91,82 +91,34 @@ find_undo_file() {
     return 1
 }
 
-# Pane undo paths (with automatic migration from legacy location)
-get_pane_undo_file() {
-    local xdg_file="${UNDO_BASE_DIR}/pane"
-    local legacy_file="${LEGACY_UNDO_DIR}/pane"
+# Migrate a flat undo file from legacy to XDG location
+# Usage: _migrate_flat_undo_file "pane-state.txt"
+# Returns: XDG path to the file
+_migrate_flat_undo_file() {
+    local filename="$1"
+    local xdg_file="${UNDO_BASE_DIR}/${filename}"
+    local legacy_file="${LEGACY_UNDO_DIR}/${filename}"
 
-    # Migrate from legacy location if needed
     if [[ -f "$legacy_file" && ! -f "$xdg_file" ]]; then
         mkdir -p "$(dirname "$xdg_file")" 2>/dev/null || true
         mv "$legacy_file" "$xdg_file" 2>/dev/null || true
-        # Try to clean up legacy directory
-        rmdir "${LEGACY_UNDO_DIR}/pane" 2>/dev/null || true
         rmdir "$LEGACY_UNDO_DIR" 2>/dev/null || true
     fi
 
     echo "$xdg_file"
 }
 
-get_pane_undo_state() {
-    local xdg_file="${UNDO_BASE_DIR}/pane-state.txt"
-    local legacy_file="${LEGACY_UNDO_DIR}/pane-state.txt"
+# Pane undo paths
+get_pane_undo_file()    { _migrate_flat_undo_file "pane"; }
+get_pane_undo_state()   { _migrate_flat_undo_file "pane-state.txt"; }
+get_pane_undo_content() { _migrate_flat_undo_file "pane-content.txt"; }
 
-    # Migrate from legacy location if needed
-    if [[ -f "$legacy_file" && ! -f "$xdg_file" ]]; then
-        mkdir -p "$(dirname "$xdg_file")" 2>/dev/null || true
-        mv "$legacy_file" "$xdg_file" 2>/dev/null || true
-    fi
-
-    echo "$xdg_file"
-}
-
-get_pane_undo_content() {
-    local xdg_file="${UNDO_BASE_DIR}/pane-content.txt"
-    local legacy_file="${LEGACY_UNDO_DIR}/pane-content.txt"
-
-    # Migrate from legacy location if needed
-    if [[ -f "$legacy_file" && ! -f "$xdg_file" ]]; then
-        mkdir -p "$(dirname "$xdg_file")" 2>/dev/null || true
-        mv "$legacy_file" "$xdg_file" 2>/dev/null || true
-    fi
-
-    echo "$xdg_file"
-}
-
-# Window undo paths (with automatic migration from legacy location)
-get_window_undo_file() {
-    local xdg_file="${UNDO_BASE_DIR}/window"
-    local legacy_file="${LEGACY_UNDO_DIR}/window"
-
-    # Migrate from legacy location if needed
-    if [[ -f "$legacy_file" && ! -f "$xdg_file" ]]; then
-        mkdir -p "$(dirname "$xdg_file")" 2>/dev/null || true
-        mv "$legacy_file" "$xdg_file" 2>/dev/null || true
-        # Try to clean up legacy directory
-        rmdir "${LEGACY_UNDO_DIR}/window" 2>/dev/null || true
-        rmdir "$LEGACY_UNDO_DIR" 2>/dev/null || true
-    fi
-
-    echo "$xdg_file"
-}
-
-get_window_undo_state() {
-    local xdg_file="${UNDO_BASE_DIR}/window-state.txt"
-    local legacy_file="${LEGACY_UNDO_DIR}/window-state.txt"
-
-    # Migrate from legacy location if needed
-    if [[ -f "$legacy_file" && ! -f "$xdg_file" ]]; then
-        mkdir -p "$(dirname "$xdg_file")" 2>/dev/null || true
-        mv "$legacy_file" "$xdg_file" 2>/dev/null || true
-    fi
-
-    echo "$xdg_file"
-}
+# Window undo paths
+get_window_undo_file()  { _migrate_flat_undo_file "window"; }
+get_window_undo_state() { _migrate_flat_undo_file "window-state.txt"; }
 
 get_window_undo_contents_dir() {
-    local dir
-    dir="${UNDO_BASE_DIR}/window-contents"
+    local dir="${UNDO_BASE_DIR}/window-contents"
     mkdir -p "$dir"
     chmod 700 "$dir"
 
@@ -179,41 +131,15 @@ get_window_undo_contents_dir() {
     echo "$dir"
 }
 
-# Session undo paths (with automatic migration from legacy location)
-get_session_undo_file() {
-    local xdg_file="${UNDO_BASE_DIR}/session"
-    local legacy_file="${LEGACY_UNDO_DIR}/session"
-
-    # Migrate from legacy location if needed
-    if [[ -f "$legacy_file" && ! -f "$xdg_file" ]]; then
-        mkdir -p "$(dirname "$xdg_file")" 2>/dev/null || true
-        mv "$legacy_file" "$xdg_file" 2>/dev/null || true
-        # Try to clean up legacy directory
-        rmdir "${LEGACY_UNDO_DIR}/session" 2>/dev/null || true
-        rmdir "$LEGACY_UNDO_DIR" 2>/dev/null || true
-    fi
-
-    echo "$xdg_file"
-}
-
-get_session_undo_state() {
-    local xdg_file="${UNDO_BASE_DIR}/session-state.txt"
-    local legacy_file="${LEGACY_UNDO_DIR}/session-state.txt"
-
-    # Migrate from legacy location if needed
-    if [[ -f "$legacy_file" && ! -f "$xdg_file" ]]; then
-        mkdir -p "$(dirname "$xdg_file")" 2>/dev/null || true
-        mv "$legacy_file" "$xdg_file" 2>/dev/null || true
-    fi
-
-    echo "$xdg_file"
-}
+# Session undo paths
+get_session_undo_file()  { _migrate_flat_undo_file "session"; }
+get_session_undo_state() { _migrate_flat_undo_file "session-state.txt"; }
 
 get_session_undo_backup() {
     local xdg_file="${UNDO_BASE_DIR}/session-backup"
     local legacy_file="${LEGACY_UNDO_DIR}/session-backup"
 
-    # Migrate from legacy location if needed
+    # Directory migration (not file)
     if [[ -d "$legacy_file" && ! -d "$xdg_file" ]]; then
         mkdir -p "$(dirname "$xdg_file")" 2>/dev/null || true
         mv "$legacy_file" "$xdg_file" 2>/dev/null || true
@@ -257,9 +183,17 @@ get_most_recent_undo_type() {
 
     local pane_time=0 window_time=0 session_time=0
 
-    [[ -f "$base_dir/pane" ]] && pane_time=$(stat -f %m "$base_dir/pane" 2>/dev/null || echo 0)
-    [[ -f "$base_dir/window" ]] && window_time=$(stat -f %m "$base_dir/window" 2>/dev/null || echo 0)
-    [[ -f "$base_dir/session" ]] && session_time=$(stat -f %m "$base_dir/session" 2>/dev/null || echo 0)
+    # Platform-aware stat for modification time
+    local stat_cmd
+    if [[ "$(uname)" == "Darwin" ]]; then
+        stat_cmd=(stat -f %m)
+    else
+        stat_cmd=(stat -c %Y)
+    fi
+
+    [[ -f "$base_dir/pane" ]] && pane_time=$("${stat_cmd[@]}" "$base_dir/pane" 2>/dev/null || echo 0)
+    [[ -f "$base_dir/window" ]] && window_time=$("${stat_cmd[@]}" "$base_dir/window" 2>/dev/null || echo 0)
+    [[ -f "$base_dir/session" ]] && session_time=$("${stat_cmd[@]}" "$base_dir/session" 2>/dev/null || echo 0)
 
     if [[ $pane_time -ge $window_time && $pane_time -ge $session_time && $pane_time -gt 0 ]]; then
         echo "pane"
