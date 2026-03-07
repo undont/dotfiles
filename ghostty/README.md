@@ -33,6 +33,8 @@ Use it for font overrides, custom keybindings, opacity, or any other personal tw
 
 ## Keybindings
 
+> **Note:** These keybindings map `Opt` (macOS) / `Alt` (Linux) key combos to escape sequences. On Linux, Alt typically sends escape sequences natively, so most of these are only active on macOS.
+
 | Keybind | Action |
 |---------|--------|
 | `Shift+Enter` | Send escape + return (for tmux) |

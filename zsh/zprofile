@@ -10,6 +10,16 @@
 #
 # Load order: .zshenv → .zprofile (login) → .zshrc (interactive) → .zlogin
 
+# Homebrew environment (PATH, MANPATH, INFOPATH, FPATH for completions)
+# Sets HOMEBREW_PREFIX and adds site-functions to fpath (needed by compinit).
+if [[ -f /opt/homebrew/bin/brew ]]; then
+  eval "$(/opt/homebrew/bin/brew shellenv)"
+elif [[ -f /usr/local/bin/brew ]]; then
+  eval "$(/usr/local/bin/brew shellenv)"
+elif [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
+  eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+fi
+
 # JetBrains Toolbox CLI tools (added by Toolbox App installer)
 export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 

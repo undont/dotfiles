@@ -80,7 +80,7 @@ The installer detects what's already configured and only shows steps you still n
 
 - **Powerlevel10k** prompt with instant prompt and git status
 - **Framework architecture** — `~/.zshrc` is your personal file, sourcing `dotfiles.zsh` as a shared framework (no git conflicts)
-- **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt+C` directories
+- **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt/Alt+C` directories
 - **Performance** — lazy-loaded completions, fnm (~5ms) over nvm (~300ms), cached eval for direnv/fzf
 - **Tab completion** for `dotfiles` / `dot`, `trestore`, `tkill`, `tattach`
 - **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `tattach` (attach or restore from backup), `cdb`/`cdf`/`cdl` (browser-style directory back/forward/history), `cl` (full terminal reset), `drs` (sync repo paths to gh-dash), `brewup`, `nvim-sync`, `mkcd`, and more — run `dot aliases` for the full list
@@ -89,7 +89,7 @@ The installer detects what's already configured and only shows steps you still n
 
 > Backtick (`` ` ``) prefix with vim-style navigation, 11 script categories, and 6 TPM plugins.
 
-- **Undo system** (`Opt+u`) — accidentally closed a pane or window? Restore it with full directory, scrollback, and layout
+- **Undo system** (`Opt/Alt+u`) — accidentally closed a pane or window? Restore it with full directory, scrollback, and layout
 - **Session save/restore** — tmux-resurrect + continuum with **per-session backups** (custom extension splits combined saves into individual files)
 - **Launcher picker** (`` ` p ``) — create, run, and manage session launchers with an interactive wizard
 - **Multi-agent alerts** — coloured indicators in session lists when AI agents need attention (⚡ Claude, 🔮 OpenCode) with auto-clearing
@@ -215,10 +215,10 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the full architecture.
 | URL picker | `` ` y `` |
 | Navigate back | `` ` - `` |
 | Navigate forward | `` ` = `` |
-| Rename window | `Opt+r` |
-| Close pane | `Opt+s` |
-| Close window | `Opt+x` |
-| Undo pane/window | `Opt+u` |
+| Rename window | `Opt/Alt+r` |
+| Close pane | `Opt/Alt+s` |
+| Close window | `Opt/Alt+x` |
+| Undo pane/window | `Opt/Alt+u` |
 | Reload local overrides | `` ` r `` |
 
 </td><td>
@@ -277,7 +277,7 @@ dotfiles/
 │   ├── tmux.conf.template # Config template (processed by dotfiles theme)
 │   ├── scripts/      # 60+ custom scripts across 11 categories
 │   ├── plugins/      # TPM-managed plugins
-│   └── tmux-help.txt # Keybinding help popup content
+│   └── tmux-help.template # Keybinding help (renders Opt/Alt per platform)
 ├── nvim/             # Neovim configuration
 │   ├── init.lua      # Entry point
 │   ├── colors/       # Self-contained colourschemes (15 hand-crafted + generated)

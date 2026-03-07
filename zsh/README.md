@@ -7,7 +7,7 @@ A modern zsh setup with Powerlevel10k prompt, fuzzy finding, autosuggestions, an
 | Feature             | Description                                           |
 | ------------------- | ----------------------------------------------------- |
 | **Prompt**          | Powerlevel10k with git status                         |
-| **Fuzzy finder**    | `Ctrl+R` history, `Ctrl+T` files, `Opt+C` directories |
+| **Fuzzy finder**    | `Ctrl+R` history, `Ctrl+T` files, `Opt/Alt+C` directories |
 | **Autosuggestions** | Right arrow to accept                                 |
 | **Dotfiles CLI**    | `dot` / `dotfiles` for management commands            |
 
@@ -202,7 +202,7 @@ Suggests commands as you type based on history.
 | ---------- | ---------------------------------- |
 | `Ctrl+R`   | Search command history             |
 | `Ctrl+T`   | Search files in current directory  |
-| `Opt+C`    | cd into a directory (fuzzy search) |
+| `Opt/Alt+C`    | cd into a directory (fuzzy search) |
 
 ### direnv
 
@@ -417,7 +417,7 @@ Zsh uses **emacs mode** (not vi mode) for command line editing.
 | `Ctrl+A`           | Move to beginning of line         |
 | `Ctrl+E`           | Move to end of line               |
 | `Ctrl+W`           | Delete word backwards             |
-| `Option+Backspace` | Delete word backwards             |
+| `Opt/Alt+Backspace` | Delete word backwards             |
 | `Ctrl+K`           | Delete from cursor to end of line |
 | `Ctrl+U`           | Delete entire line                |
 | `Ctrl+Left/Right`  | Move by word                      |

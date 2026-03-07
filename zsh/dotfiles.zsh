@@ -73,9 +73,6 @@ fi
 # Deduplicate PATH entries (zsh built-in — removes duplicates automatically)
 typeset -U path
 
-# Homebrew (detected location)
-export PATH="$HOMEBREW_PREFIX/bin:$HOMEBREW_PREFIX/sbin:$PATH"
-
 # Go workspace (GOPATH is where go install puts binaries)
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
@@ -151,6 +148,11 @@ autoload -Uz compinit
     compinit -C
   fi
 }
+
+# gh CLI completions: gh generates a compdef line inside its completion file that
+# conflicts with zsh autoload. Re-register after compinit so it resolves correctly.
+# See: https://github.com/cli/cli/issues/8462
+(( $+commands[gh] )) && compdef _gh gh 2>/dev/null
 
 # =============================================================================
 # CACHED EVAL HELPER

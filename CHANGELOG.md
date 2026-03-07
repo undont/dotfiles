@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.54] - 2026-03-07
+
+### Added
+- Tmux: cross-platform helpers (`mod_key`, `clipboard_copy_cmd`) in tmux common.sh
+- Tmux: dynamic help renderer (`show-help.sh`) replaces static `tmux-help.txt` with platform-aware modifier keys
+- Tests for cross-platform helpers and show-help template rendering
+
+### Changed
+- Tmux: URL picker rebound from `prefix+y` to `prefix+u`; "no URLs" notification reduced to 1s
+- Zsh: moved Homebrew environment setup to `zprofile` (login shell) for correct load order
+- Zsh: added `gh` CLI completion fix for compdef conflict
+- Tmux: `reverse_lines` removed broken `tail -r` fallback (now `tac` → `awk`)
+
 ## [0.2.53] - 2026-03-07
 
 ### Added

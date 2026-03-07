@@ -117,15 +117,15 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 
 | Action           | Keybinding                    |
 | ---------------- | ----------------------------- |
-| Next window      | `Opt+]` or `Ctrl+Enter`       |
-| Previous window  | `Opt+[` or `Ctrl+Shift+Enter` |
-| New window       | `Opt+t`                       |
+| Next window      | `Opt/Alt+]` or `Ctrl+Enter`       |
+| Previous window  | `Opt/Alt+[` or `Ctrl+Shift+Enter` |
+| New window       | `Opt/Alt+t`                       |
 | Go to window 1-5 | `prefix + 1-5`                |
-| Rename window    | `Opt+r`                       |
-| Swap window left | `Opt+Shift+[`                 |
-| Swap window right| `Opt+Shift+]`                 |
-| Kill window      | `Opt+x`                       |
-| Undo kill        | `Opt+u`                       |
+| Rename window    | `Opt/Alt+r`                       |
+| Swap window left | `Opt/Alt+Shift+[`                 |
+| Swap window right| `Opt/Alt+Shift+]`                 |
+| Kill window      | `Opt/Alt+x`                       |
+| Undo kill        | `Opt/Alt+u`                       |
 
 **Note:** Killing the last window in a session will prompt for confirmation.
 
@@ -133,25 +133,25 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 
 | Action            | Keybinding          |
 | ----------------- | ------------------- |
-| Navigate left     | `Opt+h` or `Ctrl+,` |
-| Navigate down     | `Opt+j` or `Ctrl+.` |
-| Navigate up       | `Opt+k`             |
-| Navigate right    | `Opt+l`             |
-| Split left        | `Opt+'`             |
-| Split right       | `Opt+\`             |
-| Split down        | `Opt+-`             |
-| Split up          | `Opt+=`             |
-| Close pane        | `Opt+s`             |
-| Undo close        | `Opt+u`             |
-| Zoom (fullscreen) | `Opt+z`             |
+| Navigate left     | `Opt/Alt+h` or `Ctrl+,` |
+| Navigate down     | `Opt/Alt+j` or `Ctrl+.` |
+| Navigate up       | `Opt/Alt+k`             |
+| Navigate right    | `Opt/Alt+l`             |
+| Split left        | `Opt/Alt+'`             |
+| Split right       | `Opt/Alt+\`             |
+| Split down        | `Opt/Alt+-`             |
+| Split up          | `Opt/Alt+=`             |
+| Close pane        | `Opt/Alt+s`             |
+| Undo close        | `Opt/Alt+u`             |
+| Zoom (fullscreen) | `Opt/Alt+z`             |
 | Previous layout   | `` `+[ ``           |
 | Next layout       | `` `+] ``           |
-| Equalise sizes    | `Opt+Shift+0`       |
+| Equalise sizes    | `Opt/Alt+Shift+0`       |
 
-| Resize left       | `Opt+Shift+h`       |
-| Resize down       | `Opt+Shift+j`       |
-| Resize up         | `Opt+Shift+k`       |
-| Resize right      | `Opt+Shift+l`       |
+| Resize left       | `Opt/Alt+Shift+h`       |
+| Resize down       | `Opt/Alt+Shift+j`       |
+| Resize up         | `Opt/Alt+Shift+k`       |
+| Resize right      | `Opt/Alt+Shift+l`       |
 
 **Note:** Closing the last pane in the last window or the last window in a session will prompt for confirmation.
 
@@ -159,7 +159,7 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 
 | Action    | Keybinding   |
 | --------- | ------------ |
-| Open URLs | `prefix + y` |
+| Open URLs | `prefix + u` |
 
 Opens a fzf popup with all URLs from the current pane's scrollback. Uses the same vim-style navigation as other switchers (j/k, g/G, f/b, d/u). Press `o`, `Space`, or `Enter` to open, `y` to yank to clipboard.
 
@@ -167,15 +167,15 @@ Opens a fzf popup with all URLs from the current pane's scrollback. Uses the sam
 
 | Action              | Keybinding |
 | ------------------- | ---------- |
-| Undo last kill      | `Opt+u`    |
+| Undo last kill      | `Opt/Alt+u`    |
 
-Restores the last closed pane or window (whichever was killed most recently). Restores directory, layout, and scrollback contents. Works with both `Opt+s` (close pane) and `Opt+x` (kill window).
+Restores the last closed pane or window (whichever was killed most recently). Restores directory, layout, and scrollback contents. Works with both `Opt/Alt+s` (close pane) and `Opt/Alt+x` (kill window).
 
 ### Scroll Mode (Copy Mode)
 
 | Action            | Keybinding            |
 | ----------------- | --------------------- |
-| Enter scroll mode | `Opt+v` or `prefix+v` |
+| Enter scroll mode | `Opt/Alt+v` or `prefix+v` |
 | Navigate          | `h` / `j` / `k` / `l` |
 | First non-blank   | `m`                   |
 | End of line       | `M`                   |
@@ -316,7 +316,7 @@ This setup extends tmux-resurrect with custom per-session backup and restore.
 3. The post-save hook (`split-resurrect.sh`) automatically splits this into individual per-session files
 4. Each session gets its own backup file in `sessions/` directory
 
-**Auto-cleanup:** When you kill a session (e.g., with `Opt+x` in the session switcher), a save is automatically triggered to update the backup files. The killed session is removed from `tls` listings.
+**Auto-cleanup:** When you kill a session (e.g., with `Opt/Alt+x` in the session switcher), a save is automatically triggered to update the backup files. The killed session is removed from `tls` listings.
 
 ### How Restoring Works
 
@@ -475,7 +475,7 @@ Available session backups:
 │   └── utils/                            # Shared utilities
 │       ├── nav.sh                        # Browser-style back/forward history
 │       ├── undo-dispatch.sh              # Undo dispatcher (Opt+u)
-│       ├── pick-url.sh                   # URL picker (prefix + y)
+│       ├── pick-url.sh                   # URL picker (prefix + u)
 │       └── dotfiles-status.sh            # Status bar: sync indicator (↓↑↕)
 └── README.md                             # This file
 
