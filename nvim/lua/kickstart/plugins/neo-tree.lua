@@ -97,6 +97,7 @@ return {
     { '|', ':Neotree reveal<CR>', desc = 'NeoTree reveal', silent = true },
   },
   opts = {
+    popup_border_style = 'rounded',
     filesystem = {
       filtered_items = {
         visible = true,

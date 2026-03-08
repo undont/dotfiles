@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.55] - 2026-03-08
+
+### Changed
+- Ghostty (Linux): replaced `curl | bash` install with deferred next-steps message (pinned commit SHA for review)
+- Ghostty (Linux): removed `--nogpgcheck` from dnf Terra install; imports GPG key explicitly
+- Ghostty (Linux): removed stderr suppression from pacman/dnf installs so errors are visible
+- Ghostty keybindings: deduplicated macOS/Linux blocks using `${mod}` variable (opt vs alt)
+- Ghostty config: platform-specific settings now injected via `{{PLATFORM_CONFIG}}` template placeholder
+- Tmux config: clipboard command injected via `{{CLIPBOARD_CMD}}` template placeholder
+
+### Fixed
+- Temp file handling in theme-switch Ghostty block (uses `mktemp` instead of PID-suffixed files)
+- Backup-file check in `test-linux-compat.sh` (was testing empty string, now uses `find`)
+- Neo-tree filter popup border cutoff (`popup_border_style = 'rounded'`)
+- Theme validation test now skips runtime placeholders (`CLIPBOARD_CMD`, `PLATFORM_CONFIG`)
+- `update_zshrc_export` rejects values containing newlines (prevents sed injection)
+
+### Removed
+- Speculative snap path from `find_ghostty_themes` (no snap Ghostty packages exist)
+
 ## [0.2.54] - 2026-03-07
 
 ### Added

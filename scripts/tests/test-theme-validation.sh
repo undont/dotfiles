@@ -320,11 +320,16 @@ done
 
 section "Template Placeholder Alignment"
 
+# Placeholders substituted at runtime by theme-switch (not theme variables)
+runtime_placeholders="CLIPBOARD_CMD PLATFORM_CONFIG"
+
 # Check that template placeholders match theme variables
 if [[ -f "$TMUX_TEMPLATE" ]]; then
     # Extract placeholders from template (use while read for compatibility)
     template_placeholders=()
     while IFS= read -r placeholder; do
+        # Skip runtime-substituted placeholders
+        echo "$runtime_placeholders" | grep -qw "$placeholder" && continue
         template_placeholders+=("$placeholder")
     done < <(grep -oE '\{\{[A-Z_]+\}\}' "$TMUX_TEMPLATE" | sed 's/[{}]//g' | sort -u)
 
@@ -361,6 +366,8 @@ if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
     # Extract placeholders from template (use while read for compatibility)
     template_placeholders=()
     while IFS= read -r placeholder; do
+        # Skip runtime-substituted placeholders
+        echo "$runtime_placeholders" | grep -qw "$placeholder" && continue
         template_placeholders+=("$placeholder")
     done < <(grep -oE '\{\{[A-Z_]+\}\}' "$GHOSTTY_TEMPLATE" | sed 's/[{}]//g' | sort -u)
 
