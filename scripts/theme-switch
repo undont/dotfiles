@@ -173,6 +173,19 @@ apply_theme() {
         # Ensure XDG config directory exists
         mkdir -p "$(dirname "$TMUX_OUTPUT")"
         local tmux_tmp="${TMUX_OUTPUT}.tmp.$$"
+
+        # Determine platform clipboard command
+        local clipboard_cmd="pbcopy"
+        if is_linux; then
+            if command_exists wl-copy; then
+                clipboard_cmd="wl-copy"
+            elif command_exists xclip; then
+                clipboard_cmd="xclip -selection clipboard"
+            elif command_exists xsel; then
+                clipboard_cmd="xsel --clipboard --input"
+            fi
+        fi
+
         sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
             -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
             -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
@@ -205,6 +218,7 @@ apply_theme() {
             -e "s|{{TMUX_RAM_HIGH_BG}}|$TMUX_RAM_HIGH_BG|g" \
             -e "s|{{TMUX_BATTERY_NORMAL_BG}}|$TMUX_BATTERY_NORMAL_BG|g" \
             -e "s|{{TMUX_BATTERY_LOW_BG}}|$TMUX_BATTERY_LOW_BG|g" \
+            -e "s|{{CLIPBOARD_CMD}}|$clipboard_cmd|g" \
             "$TMUX_TEMPLATE" > "$tmux_tmp" || { rm -f "$tmux_tmp"; return 1; }
         mv "$tmux_tmp" "$TMUX_OUTPUT"
         [[ "$quiet" != "true" ]] && theme_success "Generated tmux configuration"
@@ -216,7 +230,47 @@ apply_theme() {
     if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
         # Ensure ghostty config directory exists
         mkdir -p "$(dirname "$GHOSTTY_OUTPUT")"
-        local ghostty_tmp="${GHOSTTY_OUTPUT}.tmp.$$"
+        local ghostty_tmp platform_tmp
+        ghostty_tmp=$(mktemp)
+        platform_tmp=$(mktemp)
+
+        # Build platform-specific config (macOS uses opt+, Linux uses alt+)
+        if is_macos; then
+            local mod="opt"
+            cat > "$platform_tmp" <<PLATFORM
+# macOS
+macos-icon = glass
+macos-icon-frame = chrome
+macos-option-as-alt = left
+
+PLATFORM
+        else
+            local mod="alt"
+            printf "# Linux\n" > "$platform_tmp"
+        fi
+
+        cat >> "$platform_tmp" <<PLATFORM
+keybind = shift+enter=text:\x1b\r
+keybind = ctrl+enter=text:\x1b[13;5u
+keybind = ctrl+shift+enter=text:\x1b[13;6u
+keybind = ${mod}+c=text:\x1bc
+keybind = ${mod}+shift+[=text:\x1b{
+keybind = ${mod}+shift+]=text:\x1b}
+keybind = ${mod}+shift+h=text:\x1bH
+keybind = ${mod}+shift+j=text:\x1bJ
+keybind = ${mod}+shift+k=text:\x1bK
+keybind = ${mod}+shift+l=text:\x1bL
+keybind = ${mod}+shift+d=text:\x1bD
+keybind = ${mod}+shift+0=text:\x1b)
+keybind = ${mod}+up=text:\x1b[1;3A
+keybind = ${mod}+down=text:\x1b[1;3B
+keybind = ${mod}+3=text:#
+keybind = super+left=text:\x1b[H
+keybind = super+right=text:\x1b[F
+keybind = shift+backspace=text:\x7f
+keybind = shift+space=text:\x20
+PLATFORM
+
         sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
             -e "s|{{GHOSTTY_BACKGROUND}}|$GHOSTTY_BACKGROUND|g" \
             -e "s|{{GHOSTTY_FOREGROUND}}|$GHOSTTY_FOREGROUND|g" \
@@ -240,7 +294,12 @@ apply_theme() {
             -e "s|{{GHOSTTY_PALETTE_13}}|$GHOSTTY_PALETTE_13|g" \
             -e "s|{{GHOSTTY_PALETTE_14}}|$GHOSTTY_PALETTE_14|g" \
             -e "s|{{GHOSTTY_PALETTE_15}}|$GHOSTTY_PALETTE_15|g" \
-            "$GHOSTTY_TEMPLATE" > "$ghostty_tmp" || { rm -f "$ghostty_tmp"; return 1; }
+            -e "/{{PLATFORM_CONFIG}}/{
+                r $platform_tmp
+                d
+            }" \
+            "$GHOSTTY_TEMPLATE" > "$ghostty_tmp" || { rm -f "$ghostty_tmp" "$platform_tmp"; return 1; }
+        rm -f "$platform_tmp"
         mv "$ghostty_tmp" "$GHOSTTY_OUTPUT"
         [[ "$quiet" != "true" ]] && theme_success "Generated ghostty configuration"
 
