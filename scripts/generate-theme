@@ -13,11 +13,27 @@ THEMES_GENERATED="$DOTFILES_DIR/themes/generated"
 NVIM_GENERATED="$DOTFILES_DIR/nvim/colors/generated"
 
 # Ghostty theme locations (platform-dependent)
-if is_macos; then
-    GHOSTTY_THEMES="/Applications/Ghostty.app/Contents/Resources/ghostty/themes"
-else
-    GHOSTTY_THEMES="/usr/share/ghostty/themes"
-fi
+# Search multiple paths since Ghostty can be installed via different methods on Linux
+find_ghostty_themes() {
+    if is_macos; then
+        echo "/Applications/Ghostty.app/Contents/Resources/ghostty/themes"
+        return
+    fi
+    local paths=(
+        "/usr/share/ghostty/themes"
+        "/usr/local/share/ghostty/themes"
+        "$HOME/.local/share/ghostty/themes"
+    )
+    for p in "${paths[@]}"; do
+        if [[ -d "$p" ]]; then
+            echo "$p"
+            return
+        fi
+    done
+    # Fallback to default even if missing (will be caught later)
+    echo "/usr/share/ghostty/themes"
+}
+GHOSTTY_THEMES="$(find_ghostty_themes)"
 
 # Find lua interpreter (prefer luajit for speed, fall back to lua)
 find_lua() {

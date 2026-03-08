@@ -121,9 +121,31 @@ if should_install "core" && is_linux; then
         if grep -qi steamos /etc/os-release 2>/dev/null; then
             info "Ghostty not available on SteamOS (read-only filesystem)."
             echo "  Install manually: sudo steamos-readonly disable && sudo pacman -S ghostty"
+        elif command_exists pacman; then
+            # Arch Linux: ghostty is in the [extra] repo
+            echo "Installing Ghostty (pacman)..."
+            sudo pacman -S --noconfirm ghostty || warn "Ghostty install failed — see https://ghostty.org/docs/install/binary"
+        elif command_exists apt-get; then
+            # Ubuntu/Debian: not in default repos — handled in post-install next steps
+            :
+        elif command_exists dnf; then
+            # Fedora: available via Terra repository
+            echo "Installing Ghostty (dnf)..."
+            if ! sudo dnf install -y ghostty; then
+                echo "  Ghostty not found in default repos. Trying Terra repository..."
+                if sudo rpm --import https://repos.fyralabs.com/terra/gpg.key \
+                    && sudo dnf install -y --repofrompath 'terra,https://repos.fyralabs.com/terra$releasever' terra-release \
+                    && sudo dnf install -y ghostty; then
+                    success "Ghostty installed via Terra"
+                else
+                    warn "Ghostty install failed."
+                    echo "  Try: sudo dnf copr enable pgdev/ghostty && sudo dnf install ghostty"
+                    echo "  Or build from source: https://ghostty.org/docs/install/build"
+                fi
+            fi
         else
-            echo "Installing Ghostty..."
-            install_system_package "ghostty" || warn "See https://ghostty.org/docs/install/binary"
+            warn "No supported package manager found for Ghostty."
+            echo "  See https://ghostty.org/docs/install/binary"
         fi
     fi
 
@@ -183,6 +205,20 @@ fi
 # pipx path setup
 if command_exists pipx; then
     pipx ensurepath 2>/dev/null || true
+fi
+
+# Ghostty next steps (Ubuntu/Debian — no official apt package)
+if should_install "core" && is_linux && ! command_exists ghostty; then
+    if command_exists apt-get; then
+        ghostty_commit="655c77ad73ff1a6c38d1141e30d4c53eccb5a054"
+        echo ""
+        info "Ghostty not installed. Install options:"
+        echo "  Community .deb (pinned to ${ghostty_commit:0:7}):"
+        echo "    curl -fsSL https://raw.githubusercontent.com/mkasberg/ghostty-ubuntu/${ghostty_commit}/install.sh -o /tmp/ghostty-install.sh"
+        echo "    less /tmp/ghostty-install.sh  # review first"
+        echo "    bash /tmp/ghostty-install.sh"
+        echo "  Or build from source: https://ghostty.org/docs/install/build"
+    fi
 fi
 
 echo ""

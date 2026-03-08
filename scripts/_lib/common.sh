@@ -133,6 +133,16 @@ is_linux() {
     [[ "$(uname)" == "Linux" ]]
 }
 
+# Portable in-place sed (macOS BSD sed vs GNU sed)
+# Usage: sed_inplace 'sed-expression' file
+sed_inplace() {
+    if is_macos; then
+        sed -i '' "$@"
+    else
+        sed -i "$@"
+    fi
+}
+
 # Check if running on Apple Silicon
 is_apple_silicon() {
     [[ "$(uname -m)" == "arm64" ]]
@@ -197,6 +207,12 @@ update_zshrc_export() {
         return 1
     fi
 
+    # Validate value doesn't contain newlines (would break sed append)
+    if [[ "$value" == *$'\n'* ]]; then
+        error "Value for $var_name contains newlines"
+        return 1
+    fi
+
     # Escape sed-special characters in value (& | \ /)
     local escaped_value
     escaped_value=$(printf '%s' "$value" | sed 's/[&|\\\/]/\\&/g')
@@ -204,7 +220,7 @@ update_zshrc_export() {
     # Check if the export line already exists
     if grep -q "^export ${var_name}=" "$zshrc"; then
         # Replace existing line
-        sed -i '' "s|^export ${var_name}=.*|export ${var_name}=\"${escaped_value}\"|" "$zshrc"
+        sed_inplace "s|^export ${var_name}=.*|export ${var_name}=\"${escaped_value}\"|" "$zshrc"
     else
         # Append after the "YOUR PERSONAL CONFIGURATION" section marker
         local marker="YOUR PERSONAL CONFIGURATION"
@@ -225,7 +241,7 @@ update_zshrc_export() {
                     break
                 fi
             done
-            sed -i '' "${insert_after}a\\
+            sed_inplace "${insert_after}a\\
 export ${var_name}=\"${value}\"
 " "$zshrc"
         else
@@ -239,13 +255,13 @@ export ${var_name}=\"${value}\"
         # shellcheck disable=SC2016
         local project_dirs_line='export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT"'
         if grep -q '^export PROJECT_DIRS=' "$zshrc"; then
-            sed -i '' "s|^export PROJECT_DIRS=.*|${project_dirs_line}|" "$zshrc"
+            sed_inplace "s|^export PROJECT_DIRS=.*|${project_dirs_line}|" "$zshrc"
         else
             # Add PROJECT_DIRS after the last of DEV_ROOT/PROJECTS_ROOT
             local last_root_line
             last_root_line=$(grep -n '^export \(DEV_ROOT\|PROJECTS_ROOT\)=' "$zshrc" | tail -1 | cut -d: -f1)
             if [[ -n "$last_root_line" ]]; then
-                sed -i '' "${last_root_line}a\\
+                sed_inplace "${last_root_line}a\\
 ${project_dirs_line}
 " "$zshrc"
             fi
