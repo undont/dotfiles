@@ -780,7 +780,7 @@ cmd_aliases() {
         "mkcd <dir>"  "mkdir + cd" \
         "cdb"         "cd back (browser)" \
         "cdf"         "cd forward (after cdb)" \
-        "cdl"         "cd from history (fzf)"
+        "Opt+A"       "cd from history (fzf)"
 
     printf "\n${CYAN}FILES${NC}\n"
     _2col \

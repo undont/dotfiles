@@ -134,7 +134,6 @@ dotfiles/
 │   ├── zshrc             # Backwards-compat wrapper (legacy symlinks)
 │   ├── zshrc.template    # Template for user's ~/.zshrc
 │   ├── zprofile          # Login shell config
-│   ├── p10k.zsh          # Powerlevel10k theme config
 │   └── *.template        # Templates for user config (secrets)
 ├── tmux/                 # Tmux configuration (symlinked to ~/.tmux)
 │   ├── tmux.conf.template  # Theme template (processed by dotfiles theme)
@@ -223,10 +222,10 @@ dotfiles directory. Changes committed to the repo propagate to all users on the
 next `dotfiles update`.
 
 **Used for:** configs shared exactly as-is with no per-user variation (zprofile,
-p10k.zsh, tmux scripts, nvim plugins, launchers).
+tmux scripts, nvim plugins, launchers).
 
 ```
-dotfiles/zsh/p10k.zsh  ←──symlink──  ~/.p10k.zsh
+dotfiles/zsh/zprofile  ←──symlink──  ~/.zprofile
 ```
 
 #### 2. Layered (symlink + local override)
@@ -355,3 +354,19 @@ After completing any code change, check whether relevant documentation needs upd
 ### Versioning
 
 The version is read at runtime from `CHANGELOG.md` — there is **no hardcoded version string** anywhere in the codebase. When bumping the version, only update `CHANGELOG.md`. Do not search for or try to update a version constant in scripts.
+
+### Migrations
+
+Version-gated scripts in `scripts/migrations/` run automatically during `dotfiles update`. They handle one-off changes that can't be done by the normal installer (e.g. converting a symlink to a user-owned copy, moving files to new locations).
+
+**Naming convention:** `<version>-<description>.sh` — the version prefix determines when the migration runs. It executes for users upgrading through that version (range: `(old_version, new_version]`).
+
+**How to create a migration:**
+1. Create `scripts/migrations/<version>-<description>.sh` (use the CHANGELOG version being released)
+2. Use `set -euo pipefail`, keep it idempotent (safe to run twice)
+3. Use `echo` for status messages (indented with 4 spaces to align with the migration runner output)
+4. Make it executable (`chmod +x`)
+
+**Example:** `0.2.57-unlink-p10k.sh` — converts `~/.p10k.zsh` from a symlink pointing into the repo to a standalone user-owned copy.
+
+**Tracking:** Applied migrations are recorded in `~/.config/dotfiles/.state/applied-migrations` so they only run once.

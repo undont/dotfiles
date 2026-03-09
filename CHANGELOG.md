@@ -6,7 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.56] - 2026-03-08
+## [0.2.57] - 2026-03-09
+
+### Added
+- Neovim: built-in spellcheck with en_gb, camelCase support, Telescope suggestions, and custom dictionary (`nvim/spell/en.utf-8.add`)
+- Neovim: spell keymaps under `Space S` — toggle, suggest, add/remove words
+- Neovim: which-key Spell group
+- Zsh: `Opt+A` keybinding for directory history picker (replaces `cdl` command)
+
+## [0.2.56] - 2026-03-09
 
 ### Added
 - Incremental updates: `dotfiles update` now skips unchanged installer steps (use `--force` to re-run all)

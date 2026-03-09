@@ -26,6 +26,7 @@ return {
         { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' } },
         { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' } },
         { '<leader>s', group = '[S]earch', icon = { icon = ' ', color = 'green' } },
+        { '<leader>S', group = '[S]pell', icon = { icon = '󰓆 ', color = 'yellow' } },
         { '<leader>t', group = '[T]est / Toggle', icon = { cat = 'filetype', name = 'neotest-summary' } },
         { '<leader>w', group = '[W]indow', icon = { icon = ' ', color = 'blue' } },
         { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' } },

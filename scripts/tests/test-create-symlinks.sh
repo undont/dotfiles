@@ -66,10 +66,10 @@ else
     fail "Should link .zprofile"
 fi
 
-if [[ "$script_content" == *'copy_config'*'.p10k.zsh'* ]]; then
-    pass "Copies .p10k.zsh (copy-on-install)"
+if [[ "$script_content" != *'copy_config'*'.p10k.zsh'* ]]; then
+    pass "Does not manage .p10k.zsh (user-owned via p10k configure)"
 else
-    fail "Should copy .p10k.zsh via copy_config"
+    fail "Should not manage .p10k.zsh"
 fi
 
 if [[ "$script_content" == *'$HOME/.tmux'* ]]; then
@@ -353,7 +353,6 @@ section "Source Files Exist"
 # Verify key source files that create-symlinks references exist in the repo
 declare -a SOURCE_FILES=(
     "zsh/zprofile"
-    "zsh/p10k.zsh"
     "zsh/zshrc.template"
     "tmux/local.conf.template"
     "gh-dash/config.yml.template"

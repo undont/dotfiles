@@ -289,6 +289,15 @@ function M.setup()
     vim.api.nvim_win_set_cursor(0, { math.min(new_line, line_count), 0 })
   end, { desc = '[D]elete comment block' })
 
+  -- Spelling
+  vim.keymap.set('n', '<leader>St', '<cmd>set spell!<CR>', { desc = '[T]oggle spellcheck' })
+  vim.keymap.set('n', '<leader>Ss', function()
+    require('telescope.builtin').spell_suggest(require('telescope.themes').get_cursor())
+  end, { desc = '[S]uggest corrections' })
+  vim.keymap.set('n', '<leader>Sa', 'zg', { desc = '[A]dd word to dictionary' })
+  vim.keymap.set('n', '<leader>Sr', 'zw', { desc = '[R]emove word from dictionary' })
+  vim.keymap.set('n', '<leader>S?', 'z=', { desc = 'Full suggestion list' })
+
   -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()
     local cur_file = vim.fn.expand '%:p'
