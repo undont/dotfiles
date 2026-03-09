@@ -96,20 +96,6 @@ The Neovim theme loader (`nvim/lua/custom/core/theme.lua`) reads `~/.config/dotf
 6. **438 Themes Available**: Any Ghostty built-in theme can be generated instantly
 7. **WCAG Accessible**: Generated themes auto-correct for 4.5:1 contrast ratio
 
-## Migration for Existing Users
-
-If you were using the old setup (symlink to `tmux/.tmux.conf` in the repo), run:
-
-```bash
-./scripts/migrate-tmux-config.sh
-```
-
-This script will:
-1. Remove old symlink from `~/.tmux.conf` -> `dotfiles/tmux/.tmux.conf`
-2. Generate themed config in XDG location (`~/.config/tmux/tmux.conf`)
-3. Create compatibility symlink `~/.tmux.conf` -> `~/.config/tmux/tmux.conf`
-4. Preserve your current theme
-
 ## Theme Commands
 
 ```bash
@@ -311,13 +297,7 @@ The generator applies WCAG 4.5:1 corrections automatically. If a specific colour
 
 ### Git shows tmux config as modified
 
-If you're on the old setup (pre-XDG), run the migration script:
-
-```bash
-./scripts/migrate-tmux-config.sh
-```
-
-After migration, tmux config is generated to `~/.config/tmux/tmux.conf` and won't affect the repository.
+Tmux config is generated to `~/.config/tmux/tmux.conf` and should not affect the repository. If you see git changes, check that `~/.tmux.conf` is a symlink to the XDG location.
 
 ## See Also
 

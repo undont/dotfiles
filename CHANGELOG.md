@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.56] - 2026-03-08
+
+### Added
+- Incremental updates: `dotfiles update` now skips unchanged installer steps (use `--force` to re-run all)
+- Version-gated migration system: scripts in `scripts/migrations/` run automatically during updates
+- `--skip-steps` validation in installer (rejects unknown step names)
+- Installer remembers whether project directory prompts have been asked (won't re-ask on updates)
+- Brewfile: `monolith`, `gotermsql`, `lazyssh`, `cronboard`, `snitch`
+- Installer: `posting` (HTTP client TUI via pipx) and `openapi-tui` (OpenAPI spec browser via GitHub releases)
+- Zsh: `$HOME/.cargo/bin` added to PATH for Rust/Cargo binaries
+
+### Changed
+- `dotfiles update --dry-run`/`-n` renamed to `--preview`/`-p`
+- Installer step labels extracted into variables (shorter verbs in update mode)
+- Internal state files moved to `~/.config/dotfiles/.state/` (migrations, prompted)
+- Brewfile: replaced `lazysql` with `gotermsql` (database TUI)
+
 ## [0.2.55] - 2026-03-08
 
 ### Changed

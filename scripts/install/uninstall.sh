@@ -72,7 +72,6 @@ print_header "Dotfiles Uninstall"
 # Note: ~/.zshrc is handled separately (may be personal file, not symlink)
 SYMLINKS=(
     "$HOME/.zprofile"
-    "$HOME/.p10k.zsh"
     "$HOME/.tmux.conf"
     "$HOME/.tmux"
     "$HOME/.local/bin/dotfiles"
@@ -234,6 +233,11 @@ fi
 
 # Handle user-owned config files (copy-on-install pattern)
 # These are personal configs — warn and preserve, like ~/.zshrc
+
+p10k_conf="$HOME/.p10k.zsh"
+if [[ -f "$p10k_conf" ]]; then
+    warn "Kept $p10k_conf (personal config — remove manually if desired)"
+fi
 
 btop_conf="$HOME/.config/btop/btop.conf"
 if [[ -f "$btop_conf" ]]; then

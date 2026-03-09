@@ -66,8 +66,7 @@ create_link() {
 }
 
 # Copy config file from repo to destination (copy-on-install pattern).
-# If destination is a symlink (old setup), migrates to a personal file.
-# If destination already exists as a regular file, keeps it untouched.
+# If destination already exists, keeps it untouched (user-owned).
 copy_config() {
     local source="$1"
     local dest="$2"
@@ -75,13 +74,7 @@ copy_config() {
     # Ensure parent directory exists
     mkdir -p "$(dirname "$dest")"
 
-    # Migrate from symlink to owned file
-    if [[ -L "$dest" ]]; then
-        rm "$dest"
-        cp "$source" "$dest"
-        success "Migrated to personal config: $dest"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
-    elif [[ ! -e "$dest" ]]; then
+    if [[ ! -e "$dest" ]]; then
         cp "$source" "$dest"
         success "Created $dest from dotfiles"
         printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
@@ -105,115 +98,20 @@ install_local() {
     fi
 }
 
-# Migrate a personal config file back to a symlink.
-# Removes the personal copy (if any) and creates a symlink to the repo file.
-migrate_to_symlink() {
-    local name="$1"
-    local source="$2"
-    local dest="$3"
-
-    if [[ -f "$dest" && ! -L "$dest" ]]; then
-        rm "$dest"
-        success "Removed personal $name config (migrating to symlink)"
-    fi
-    create_link "$source" "$dest"
-}
 
 print_section "Creating symlinks"
 echo "Source: $DOTFILES_DIR"
 echo "Preset: $PRESET"
 echo ""
 
-# Zsh migration: handle transition from old symlink-based setup to personal ~/.zshrc.
-# Four possible states:
-#   1. ~/.zshrc is a symlink to dotfiles/zsh/zshrc → offer migration to personal file
-#   2. ~/.zshrc is a symlink elsewhere → leave it alone (user's custom setup)
-#   3. ~/.zshrc is a regular file sourcing dotfiles.zsh → already migrated, check for unmigrated local-aliases
-#   4. ~/.zshrc doesn't exist → create from template
-#
-# Migration also consolidates local-aliases.zsh (deprecated) into ~/.zshrc directly,
-# since the new model sources dotfiles.zsh from a personal .zshrc rather than symlinking.
-
 # Zsh (minimal)
+# ~/.zshrc is a personal file that sources the dotfiles framework.
+# Two states: exists (leave it) or doesn't exist (create from template).
 echo "Zsh configuration:"
 
-# Check if ~/.zshrc needs migration from symlink to personal file
-if [[ -L "$HOME/.zshrc" ]]; then
-  # Currently a symlink (old setup) — offer migration
-  symlink_target="$(readlink "$HOME/.zshrc")"
-
-  if [[ "$symlink_target" == *"dotfiles/zsh/zshrc"* ]]; then
-    info "Found ~/.zshrc symlinked to dotfiles (old setup)"
-    if [[ -t 0 ]]; then
-      printf '  %s⚠%s  Migrate to personal ~/.zshrc? Your config will be preserved. [Y/n] ' "${YELLOW}" "${NC}"
-      read -r -t 60 response || response="y"
-    else
-      response="y"
-    fi
-
-    if [[ ! "$response" =~ ^[Nn]$ ]]; then
-      # Remove symlink
-      rm "$HOME/.zshrc"
-
-      # Create personal .zshrc from template
-      cp "$DOTFILES_DIR/zsh/zshrc.template" "$HOME/.zshrc"
-
-      # Migrate local-aliases.zsh content into the new .zshrc
-      ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-      if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" && -s "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
-        {
-          printf "\n# =============================================================================\n"
-          printf "# MIGRATED FROM local-aliases.zsh\n"
-          printf "# =============================================================================\n"
-          cat "$ZSH_CONFIG_DIR/local-aliases.zsh"
-        } >> "$HOME/.zshrc"
-
-        # Keep a backup, remove original
-        mv "$ZSH_CONFIG_DIR/local-aliases.zsh" "$ZSH_CONFIG_DIR/local-aliases.zsh.bak"
-        success "Migrated local-aliases.zsh content into ~/.zshrc"
-        info "Backup saved: $ZSH_CONFIG_DIR/local-aliases.zsh.bak"
-      fi
-
-      success "Created personal ~/.zshrc (sources dotfiles framework)"
-      printf '  %s→%s Edit with: nvim ~/.zshrc\n' "${CYAN}" "${NC}"
-    else
-      info "Keeping symlink (still supported via backwards-compat wrapper)"
-    fi
-  else
-    # Symlink points somewhere else — leave it alone
-    warn "$HOME/.zshrc is a symlink to $symlink_target (not dotfiles). Skipping."
-  fi
-elif [[ -f "$HOME/.zshrc" ]]; then
-  # Regular file exists — check if it already sources dotfiles.zsh
+if [[ -f "$HOME/.zshrc" ]]; then
   if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
     success "Personal ~/.zshrc exists (sources dotfiles framework)"
-
-    # Check for unmigrated local-aliases.zsh
-    ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-    if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" && -s "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
-      if ! grep -q "local-aliases" "$HOME/.zshrc" 2>/dev/null; then
-        info "Found unmigrated local-aliases.zsh"
-        if [[ -t 0 ]]; then
-          printf '  %s⚠%s  Append local-aliases.zsh content into ~/.zshrc? [Y/n] ' "${YELLOW}" "${NC}"
-          read -r -t 60 response || response="y"
-        else
-          response="y"
-        fi
-
-        if [[ ! "$response" =~ ^[Nn]$ ]]; then
-          {
-            printf "\n# =============================================================================\n"
-            printf "# MIGRATED FROM local-aliases.zsh\n"
-            printf "# =============================================================================\n"
-            cat "$ZSH_CONFIG_DIR/local-aliases.zsh"
-          } >> "$HOME/.zshrc"
-
-          mv "$ZSH_CONFIG_DIR/local-aliases.zsh" "$ZSH_CONFIG_DIR/local-aliases.zsh.bak"
-          success "Migrated local-aliases.zsh content into ~/.zshrc"
-          info "Backup saved: $ZSH_CONFIG_DIR/local-aliases.zsh.bak"
-        fi
-      fi
-    fi
   else
     warn "$HOME/.zshrc exists but doesn't source dotfiles.zsh"
     info "Add this line to source the framework: source ~/dotfiles/zsh/dotfiles.zsh"
@@ -227,7 +125,7 @@ fi
 
 # These are still symlinked (shared config, not personal)
 create_link "$DOTFILES_DIR/zsh/zprofile" "$HOME/.zprofile"
-create_link "$DOTFILES_DIR/zsh/p10k.zsh" "$HOME/.p10k.zsh"
+copy_config "$DOTFILES_DIR/zsh/p10k.zsh" "$HOME/.p10k.zsh"
 
 # User config files go to XDG location
 ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
@@ -266,13 +164,8 @@ fi
 if should_install "full"; then
     echo ""
     echo "Hammerspoon configuration:"
-    # Migrate from directory symlink (old setup) to owned directory with file symlinks
-    if [[ -L "$HOME/.hammerspoon" ]]; then
-        rm "$HOME/.hammerspoon"
-        success "Removed directory symlink ~/.hammerspoon (migrating to layered config)"
-    fi
     mkdir -p "$HOME/.hammerspoon"
-    migrate_to_symlink "hammerspoon" "$DOTFILES_DIR/hammerspoon/init.lua" "$HOME/.hammerspoon/init.lua"
+    create_link "$DOTFILES_DIR/hammerspoon/init.lua" "$HOME/.hammerspoon/init.lua"
     install_local "$DOTFILES_DIR/hammerspoon/local.lua.template" "$HOME/.hammerspoon/local.lua"
 fi
 
@@ -331,16 +224,7 @@ if should_install "core"; then
     lazygit_dir="$HOME/.config/lazygit"
     mkdir -p "$lazygit_dir"
 
-    # Migrate from old macOS location if needed
-    if [[ "$(uname)" == "Darwin" ]]; then
-        old_lazygit="$HOME/Library/Application Support/lazygit/config.yml"
-        if [[ -e "$old_lazygit" ]]; then
-            rm -f "$old_lazygit"
-            success "Cleaned up old lazygit config from Application Support"
-        fi
-    fi
-
-    migrate_to_symlink "lazygit" "$DOTFILES_DIR/lazygit/config.yml" "$lazygit_dir/config.yml"
+    create_link "$DOTFILES_DIR/lazygit/config.yml" "$lazygit_dir/config.yml"
     install_local "$DOTFILES_DIR/lazygit/local.yml.template" "$lazygit_dir/local.yml"
 
     # Lazydocker: keep as copy-on-install (no include mechanism)

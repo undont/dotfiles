@@ -34,9 +34,10 @@ description: Commit staged changes and create a PR, push on top if PR already ex
         fi
       done
       ```
-    - **Bash syntax check** (for any .sh files changed):
+    - **Syntax check** (for changed shell files):
       ```bash
-      bash -n <file.sh>
+      bash -n <file.sh>   # for .sh files
+      zsh -n <file.zsh>   # for .zsh files
       ```
     - **Tmux script tests**: Run `tmux/.tmux/scripts/_lib/test.sh` to verify library functions
       - Tests gracefully skip tmux-dependent tests when not in tmux
