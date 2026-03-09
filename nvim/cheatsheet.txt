@@ -243,6 +243,7 @@ Toggle spellcheck | <leader>St
 Suggest corrections (Telescope) | <leader>Ss
 Add word to dictionary | <leader>Sa
 Remove word from dictionary | <leader>Sr
+Edit personal dictionary | <leader>Sd
 Full suggestion list | <leader>S?
 Next misspelling | ]s
 Previous misspelling | [s

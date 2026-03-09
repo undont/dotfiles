@@ -4,7 +4,7 @@
 #
 # Runs hyperfine against `zsh -i -c exit` using the dotfiles framework,
 # outputs results for benchmark-action, writes a summary to $GITHUB_STEP_SUMMARY,
-# and exits non-zero if the min exceeds the threshold.
+# and exits non-zero if the median exceeds the threshold.
 
 set -euo pipefail
 
@@ -41,7 +41,7 @@ cp "$TEMP_ZSHRC" "$ZDOTDIR_DIR/.zshrc"
 
 hyperfine \
     --warmup 3 \
-    --runs 10 \
+    --runs 30 \
     --export-json "$RESULTS_FILE" \
     --shell=none \
     "env ZDOTDIR=$ZDOTDIR_DIR zsh -i -c exit"
@@ -86,6 +86,7 @@ echo ""
 # Export for downstream steps (e.g. badge update)
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     echo "min_ms=${MIN_MS}" >> "$GITHUB_OUTPUT"
+    echo "median_ms=${MEDIAN_MS}" >> "$GITHUB_OUTPUT"
 fi
 
 # ─────────────────────────────────────────
@@ -109,12 +110,12 @@ fi
 # ─────────────────────────────────────────
 # Check threshold
 # ─────────────────────────────────────────
-EXCEEDED=$(python3 -c "print('yes' if $MIN_MS > $THRESHOLD else 'no')")
+EXCEEDED=$(python3 -c "print('yes' if $MEDIAN_MS > $THRESHOLD else 'no')")
 
 if [[ "$EXCEEDED" == "yes" ]]; then
-    echo "FAIL: Min startup time (${MIN_MS}ms) exceeds threshold (${THRESHOLD}ms)"
+    echo "FAIL: Median startup time (${MEDIAN_MS}ms) exceeds threshold (${THRESHOLD}ms)"
     exit 1
 else
-    echo "PASS: Min startup time (${MIN_MS}ms) is within threshold (${THRESHOLD}ms)"
+    echo "PASS: Median startup time (${MEDIAN_MS}ms) is within threshold (${THRESHOLD}ms)"
     exit 0
 fi

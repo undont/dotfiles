@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.58] - 2026-03-09
+
+### Added
+- Neovim: layered spell dictionaries — personal (`~/.local/share/nvim/spell/`) and repo-shared (`nvim/spell/`); `zg` adds to personal dictionary
+- Neovim: `Space Sd` keymap to edit personal dictionary
+- `dotfiles update`: confirmation prompt before applying changes
+
+### Changed
+- CI benchmark: uses median instead of min for startup badge, increased to 30 runs for stability
+- Cleaned repo spell dictionary — moved personal words to user dictionary
+
 ## [0.2.57] - 2026-03-09
 
 ### Added

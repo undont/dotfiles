@@ -158,6 +158,14 @@ if should_install "core"; then
     create_link "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
 
     install_local "$DOTFILES_DIR/nvim/local.lua.template" "$HOME/.config/nvim/local.lua"
+
+    # User spell dictionary (zg adds words here, repo dictionary has shared terms)
+    user_spell_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/spell"
+    mkdir -p "$user_spell_dir"
+    if [[ ! -f "$user_spell_dir/en.utf-8.add" ]]; then
+        touch "$user_spell_dir/en.utf-8.add"
+        success "Created user spell dictionary at $user_spell_dir/en.utf-8.add"
+    fi
 fi
 
 # Hammerspoon (full)
