@@ -3,6 +3,10 @@
 return {
   {
     'github/copilot.vim',
+    init = function()
+      -- Disable default Tab mapping — handled by blink.cmp's smart Tab
+      vim.g.copilot_no_tab_map = true
+    end,
     config = function()
       -- Disable Copilot for sensitive files
       vim.api.nvim_create_autocmd({ 'BufEnter', 'BufNew' }, {

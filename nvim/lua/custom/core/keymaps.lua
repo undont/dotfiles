@@ -297,6 +297,9 @@ function M.setup()
   vim.keymap.set('n', '<leader>Sa', 'zg', { desc = '[A]dd word to dictionary' })
   vim.keymap.set('n', '<leader>Sr', 'zw', { desc = '[R]emove word from dictionary' })
   vim.keymap.set('n', '<leader>S?', 'z=', { desc = 'Full suggestion list' })
+  vim.keymap.set('n', '<leader>Sd', function()
+    vim.cmd('edit ' .. vim.fn.stdpath 'data' .. '/spell/en.utf-8.add')
+  end, { desc = '[D]ictionary (personal)' })
 
   -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()

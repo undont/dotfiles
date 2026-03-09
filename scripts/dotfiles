@@ -439,6 +439,15 @@ cmd_update() {
         return 0
     fi
 
+    # ── Confirm before applying ──
+    echo ""
+    local response
+    read -r -p "  Apply update? [Y/n] " response
+    if [[ "$response" =~ ^[Nn]$ ]]; then
+        printf "  ${GREY}Update cancelled.${NC}\n"
+        return 0
+    fi
+
     # ── Pull changes ──
     echo ""
     local old_head
