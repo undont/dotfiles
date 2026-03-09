@@ -477,6 +477,7 @@ has_node=false
 has_secrets_content=false
 has_dev_root=false
 has_projects_root=false
+has_p10k=false
 
 # Tmux plugins already installed?
 if [[ -d "$HOME/.tmux/plugins/tmux-resurrect" ]]; then
@@ -500,6 +501,11 @@ fi
 secrets_file="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/secrets.zsh"
 if [[ -f "$secrets_file" ]] && grep -q '^export ' "$secrets_file" 2>/dev/null; then
     has_secrets_content=true
+fi
+
+# Powerlevel10k configured?
+if [[ -f "$HOME/.p10k.zsh" ]]; then
+    has_p10k=true
 fi
 
 # Project directories configured?
@@ -539,6 +545,10 @@ fi
 
 if [[ "$PRESET" == "core" || "$PRESET" == "full" ]] && [[ "$has_node" == false ]]; then
     STEPS+=("Install Node.js: fnm install --lts && fnm default lts-latest")
+fi
+
+if [[ "$has_p10k" == false ]]; then
+    STEPS+=("Configure your prompt: p10k configure")
 fi
 
 if [[ "$has_secrets_content" == false ]]; then
