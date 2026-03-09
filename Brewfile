@@ -11,6 +11,7 @@ tap "Adembc/homebrew-tap"
 tap "libsql/sqld"
 tap "morantron/tmux-fingers"
 tap "oven-sh/bun"
+tap "seanhalberthal/tap"
 tap "teamookla/speedtest"
 
 # =============================================================================

@@ -68,7 +68,7 @@ check() {
 }
 
 check_optional() {
-    check_command "$1" "$2" "$3" "true"
+    check_command "$1" "$2" "$3" "true" || true
 }
 
 print_section "Dotfiles Prerequisites Check"
