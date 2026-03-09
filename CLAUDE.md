@@ -93,7 +93,9 @@ make clean        # Clean orphaned test resources
 ### Management
 
 ```bash
-dotfiles update         # Pull latest and re-run installer (shorthand: dot update)
+dotfiles update         # Smart incremental update (shorthand: dot update)
+dotfiles update -f      # Force re-run all steps (--force)
+dotfiles update -p      # Preview changes without applying (--preview)
 dotfiles status         # Version, sync status, and local changes
 dotfiles health         # Run health check (symlinks, plugins, env vars)
 dotfiles notes          # Browse full changelog in a pager (shorthand: dot -n)
@@ -118,6 +120,7 @@ dotfiles/
 │   ├── theme-delete      # Delete a generated theme
 │   ├── theme-contrast-check  # Theme contrast validation
 │   ├── install/          # Installer modules
+│   ├── migrations/       # Version-gated migration scripts (run during update)
 │   ├── _lib/             # Shared shell libraries (common.sh, brewfile.sh)
 │   ├── hooks/            # Agent alert hooks + command exit alerts
 │   │   ├── agent-alert.sh, agent-alert-clear.sh
@@ -159,7 +162,7 @@ The installer uses presets to filter `Brewfile` packages and symlinks:
 - **core**: + nvim, ghostty, AI tools, launchers (marked with `# @preset: core`)
 - **full**: + Hammerspoon, Karabiner (marked with `# @preset: full`)
 
-Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`. See [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) for detailed walkthrough of each installation step.
+Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`. Updates are incremental by default — only installer steps relevant to changed files are re-run. Use `--force` to re-run all steps. See [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) for detailed walkthrough of each installation step.
 
 ### Shared Libraries
 
@@ -207,8 +210,6 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts:
 These files are created from templates on first install and never overwritten by `dotfiles theme` or `dotfiles update`. Add cursor style, font overrides, extra keybindings, etc. here. The full layered config pattern is documented in [Config Ownership Patterns](#config-ownership-patterns) below.
 
 Theme commands are listed in the [Management](#management) section above. See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the full command reference, generation pipeline, and architecture details.
-
-**Migration:** Existing users should run `scripts/migrate-tmux-config.sh` once to move from the old setup to XDG.
 
 ### Config Ownership Patterns
 

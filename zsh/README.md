@@ -61,7 +61,7 @@ This creates:
 ```
 ~/.zshrc              # Your personal config (from template, sources the framework)
 ~/.zprofile           # Login shell config (symlink)
-~/.p10k.zsh           # Powerlevel10k theme settings (symlink)
+~/.p10k.zsh           # Powerlevel10k theme settings (copy-on-install, customise freely)
 ```
 
 ### 5. Create Secrets File
@@ -112,14 +112,13 @@ source ~/.zshrc
 ~/
 ├── .zshrc              # Your personal config (sources the dotfiles framework)
 ├── .zprofile           # Login shell config (symlink to ~/dotfiles/zsh/zprofile)
-├── .p10k.zsh           # Powerlevel10k theme (symlink to ~/dotfiles/zsh/p10k.zsh)
+├── .p10k.zsh           # Powerlevel10k theme (copy-on-install, user-owned)
 └── .config/
     └── zsh/
         └── secrets.zsh       # API keys and credentials (not versioned)
 
 ~/dotfiles/zsh/
 ├── dotfiles.zsh        # Shared framework (sourced by ~/.zshrc)
-├── zshrc               # Backwards-compat wrapper (for legacy symlinks)
 ├── zshrc.template      # Template for creating ~/.zshrc
 ├── zprofile            # Login shell config
 ├── p10k.zsh            # Powerlevel10k theme settings
@@ -243,7 +242,7 @@ direnv allow
 
 | Command          | Description                                        |
 | ---------------- | -------------------------------------------------- |
-| `dotfiles update` | Pull latest changes and re-run installer          |
+| `dotfiles update` | Smart incremental update (`-f` force, `-p` preview) |
 | `dotfiles status` | Show version, sync status, and local changes      |
 | `dotfiles health` | Run full health check (incl. env var checks)      |
 | `dotfiles links` | Show all managed symlinks and their status          |

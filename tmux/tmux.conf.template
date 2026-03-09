@@ -306,12 +306,14 @@ bind -T copy-mode-vi C-f send-keys -X page-down       # Ctrl+f = page down
 bind -T copy-mode-vi C-b send-keys -X page-up         # Ctrl+b = page up
 
 # Half-page navigation
-bind -T copy-mode-vi C-d send-keys -X halfpage-down   # Ctrl+d = half page down
-bind -T copy-mode-vi C-u send-keys -X halfpage-up     # Ctrl+u = half page up
+bind -T copy-mode-vi C-d send-keys -X bottom-line     # Ctrl+d = cursor to bottom of visible page
+bind -T copy-mode-vi C-u send-keys -X top-line        # Ctrl+u = cursor to top of visible page
 bind -T copy-mode-vi d send-keys -X halfpage-down \; send-keys -X bottom-line   # d = half page down + cursor to bottom
 bind -T copy-mode-vi u send-keys -X halfpage-up \; send-keys -X top-line   # u = half page up + cursor to top
+bind -T copy-mode-vi D send-keys -X halfpage-down \; send-keys -X bottom-line   # D = alias for d
+bind -T copy-mode-vi U send-keys -X halfpage-up \; send-keys -X top-line   # U = alias for u
 
-# Jump to top/bottom
+# Jump to top/bottom of history
 bind -T copy-mode-vi g send-keys -X history-top       # g = top of history
 bind -T copy-mode-vi G send-keys -X history-bottom    # G = bottom of history
 
@@ -425,7 +427,7 @@ bind f display-popup -w 95% -h 95% -E "\
 set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
 set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
-set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ☰ #{ram_percentage} #[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] %a %h-%d %H:%M '
+set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ≡ #{ram_percentage} #[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] %a %h-%d %H:%M '
 set -g status-left-length 30
 set -g status-right-length 150
 

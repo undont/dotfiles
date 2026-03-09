@@ -229,10 +229,20 @@ fi
 
 # Test full filtering
 full_output=$(filter_brewfile "full" "$TEST_BREWFILE")
-if [[ "$full_output" == *'cask "hammerspoon"'* ]]; then
-    pass "full preset includes hammerspoon"
+if [[ "$(uname)" == "Darwin" ]]; then
+    # On macOS, cask lines should be included
+    if [[ "$full_output" == *'cask "hammerspoon"'* ]]; then
+        pass "full preset includes hammerspoon"
+    else
+        fail "full preset should include hammerspoon"
+    fi
 else
-    fail "full preset should include hammerspoon"
+    # On Linux, cask lines are filtered out (macOS-only packages)
+    if [[ "$full_output" != *'cask "hammerspoon"'* ]]; then
+        pass "full preset excludes hammerspoon cask on Linux"
+    else
+        fail "full preset should exclude hammerspoon cask on Linux"
+    fi
 fi
 
 # TEST_BREWFILE cleanup is handled by trap
@@ -302,8 +312,101 @@ if [[ -f "$INSTALL_SCRIPT" ]]; then
     else
         fail "Help missing --full flag"
     fi
+
+    if [[ "$help_output" == *"--update"* ]]; then
+        pass "Help shows --update flag"
+    else
+        fail "Help missing --update flag"
+    fi
+
+    if [[ "$help_output" == *"--yes"* ]]; then
+        pass "Help shows --yes flag"
+    else
+        fail "Help missing --yes flag"
+    fi
+
+    if [[ "$help_output" == *"--skip-steps"* ]]; then
+        pass "Help shows --skip-steps flag"
+    else
+        fail "Help missing --skip-steps flag"
+    fi
 else
     fail "install.sh not found"
+fi
+
+section "is_step_skipped Helper"
+
+# Define is_step_skipped for isolated testing
+is_step_skipped() {
+    local step_name="$1"
+    [[ ",$SKIP_STEPS," == *",$step_name,"* ]]
+}
+
+SKIP_STEPS=""
+if ! is_step_skipped "homebrew"; then
+    pass "empty skip list: homebrew not skipped"
+else
+    fail "empty skip list should not skip homebrew"
+fi
+
+SKIP_STEPS="homebrew"
+if is_step_skipped "homebrew"; then
+    pass "single item: homebrew skipped"
+else
+    fail "single item should skip homebrew"
+fi
+
+SKIP_STEPS="homebrew,packages,symlinks"
+if is_step_skipped "homebrew"; then
+    pass "multi-item: homebrew skipped"
+else
+    fail "multi-item should skip homebrew"
+fi
+if is_step_skipped "packages"; then
+    pass "multi-item: packages skipped"
+else
+    fail "multi-item should skip packages"
+fi
+if is_step_skipped "symlinks"; then
+    pass "multi-item: symlinks skipped"
+else
+    fail "multi-item should skip symlinks"
+fi
+if ! is_step_skipped "keyd"; then
+    pass "multi-item: keyd not skipped"
+else
+    fail "multi-item should not skip keyd"
+fi
+
+# Partial name must not match
+SKIP_STEPS="homebrew"
+if ! is_step_skipped "home"; then
+    pass "partial name 'home' does not match 'homebrew'"
+else
+    fail "partial name 'home' should not match 'homebrew'"
+fi
+
+SKIP_STEPS=""  # Reset
+
+section "Tab Completion - Update Sub-flags"
+
+FRAMEWORK_FILE="$DOTFILES_DIR/zsh/dotfiles.zsh"
+if [[ -f "$FRAMEWORK_FILE" ]]; then
+    framework_content=$(cat "$FRAMEWORK_FILE")
+
+    if [[ "$framework_content" == *"'--force:"* ]]; then
+        pass "completion includes --force option"
+    else
+        fail "completion should include --force option"
+    fi
+
+    if [[ "$framework_content" == *"'--preview:"* ]]; then
+        pass "completion includes --preview option"
+    else
+        fail "completion should include --preview option"
+    fi
+else
+    skip "dotfiles.zsh not found"
 fi
 
 section "Sub-script Preset Awareness"
@@ -325,15 +428,6 @@ check_reads_preset "$SCRIPT_DIR/../install/create-symlinks.sh" "create-symlinks.
 check_reads_preset "$SCRIPT_DIR/../install/backup-existing.sh" "backup-existing.sh"
 check_reads_preset "$SCRIPT_DIR/../install/health-check.sh" "health-check.sh"
 check_reads_preset "$SCRIPT_DIR/../install/check-prerequisites.sh" "check-prerequisites.sh"
-
-section "Common Library should_install"
-
-# These tests were previously failing due to bash 3.2 issues with readonly variables
-# when sourcing common.sh in subshells. Since the test-only should_install helper
-# above validates the core logic works, we skip the integration test.
-# The real test is that the scripts actually use should_install correctly (validated
-# in the "Sub-script Preset Awareness" section above).
-skip "Preset helper integration tests (validated by sub-script awareness tests)"
 
 # ===========================================================================
 # Zshrc Quick Wins Tests

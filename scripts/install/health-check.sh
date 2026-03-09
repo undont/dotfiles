@@ -166,13 +166,8 @@ echo "Symlinks:"
 echo "---------"
 
 # Zsh (minimal)
-# ~/.zshrc may be a personal file (new) or symlink (legacy)
 printf "Checking %-30s" ".zshrc..."
-if [[ -L "$HOME/.zshrc" ]]; then
-    printf '%sSYMLINK (legacy)%s\n' "${YELLOW}" "${NC}"
-    echo "  Run 'dotfiles update' to migrate to personal ~/.zshrc"
-    ISSUES=1
-elif [[ -f "$HOME/.zshrc" ]]; then
+if [[ -f "$HOME/.zshrc" ]]; then
     if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
         printf '%sOK%s\n' "${GREEN}" "${NC}"
     else

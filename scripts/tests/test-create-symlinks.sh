@@ -66,10 +66,10 @@ else
     fail "Should link .zprofile"
 fi
 
-if [[ "$script_content" == *'.p10k.zsh'* ]]; then
-    pass "Links .p10k.zsh"
+if [[ "$script_content" == *'copy_config'*'.p10k.zsh'* ]]; then
+    pass "Copies .p10k.zsh (copy-on-install)"
 else
-    fail "Should link .p10k.zsh"
+    fail "Should copy .p10k.zsh via copy_config"
 fi
 
 if [[ "$script_content" == *'$HOME/.tmux'* ]]; then
@@ -280,7 +280,7 @@ fi
 section "Copy-on-Install Configs"
 
 # These configs should use copy_config, NOT create_link
-for config in "btop.conf" "karabiner.json" "lazygit/config.yml" "lazydocker/config.yml"; do
+for config in "btop.conf" "karabiner.json" "lazydocker/config.yml"; do
     config_name=$(basename "$config")
     # Check the config appears in a copy_config call, not create_link
     if echo "$script_content" | grep -q "copy_config.*$config_name"; then
@@ -290,11 +290,11 @@ for config in "btop.conf" "karabiner.json" "lazygit/config.yml" "lazydocker/conf
     fi
 done
 
-# Hammerspoon uses layered pattern (symlink + local override via migrate_to_symlink)
-if echo "$script_content" | grep -q 'migrate_to_symlink.*hammerspoon'; then
-    pass "Hammerspoon uses migrate_to_symlink (layered config)"
+# Hammerspoon uses layered pattern (symlink + local override)
+if echo "$script_content" | grep -q 'create_link.*hammerspoon.*init\.lua'; then
+    pass "Hammerspoon uses create_link for init.lua (layered config)"
 else
-    fail "Hammerspoon should use migrate_to_symlink"
+    fail "Hammerspoon should use create_link for init.lua"
 fi
 
 # Hammerspoon should have a local override template
@@ -330,13 +330,13 @@ else
 fi
 assert_equals "copy_config copies content correctly" "test content" "$(cat "$TEST_DIR/dest/config.conf")"
 
-# Test 2: Migrates from symlink
+# Test 2: Skips existing file (any type)
 ln -sf "$TEST_DIR/source.conf" "$TEST_DIR/symlinked.conf"
 copy_config "$TEST_DIR/source.conf" "$TEST_DIR/symlinked.conf"
-if [[ -f "$TEST_DIR/symlinked.conf" ]] && [[ ! -L "$TEST_DIR/symlinked.conf" ]]; then
-    pass "copy_config migrates symlink to regular file"
+if [[ -L "$TEST_DIR/symlinked.conf" ]]; then
+    pass "copy_config leaves existing symlink untouched"
 else
-    fail "copy_config should replace symlink with regular file"
+    fail "copy_config should leave existing symlink untouched"
 fi
 
 # Test 3: Preserves existing regular file

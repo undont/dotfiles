@@ -108,6 +108,25 @@ else
     fail "--help flag should show usage"
 fi
 
+if [[ "$help_output" == *"--force"* ]]; then
+    pass "help mentions --force flag"
+else
+    fail "help should mention --force flag"
+fi
+
+if [[ "$help_output" == *"--preview"* ]]; then
+    pass "help mentions --preview flag"
+else
+    fail "help should mention --preview flag"
+fi
+
+# Ensure stale --dry-run reference has been removed
+if [[ "$help_output" != *"--dry-run"* ]]; then
+    pass "help does not reference stale --dry-run flag"
+else
+    fail "help still references --dry-run (should be --preview)"
+fi
+
 section "CD Command"
 
 cd_output=$("$DOTFILES_CLI" cd 2>&1) || true
@@ -205,6 +224,50 @@ else
     fail "get_remote_branch function not found"
 fi
 
+# Incremental update helpers
+if [[ "$script_content" == *"_compute_skip_steps()"* ]]; then
+    pass "_compute_skip_steps helper defined"
+else
+    fail "_compute_skip_steps helper not found"
+fi
+
+if [[ "$script_content" == *"_version_gt()"* ]]; then
+    pass "_version_gt helper defined"
+else
+    fail "_version_gt helper not found"
+fi
+
+if [[ "$script_content" == *"_changelog_version_at_ref()"* ]]; then
+    pass "_changelog_version_at_ref helper defined"
+else
+    fail "_changelog_version_at_ref helper not found"
+fi
+
+if [[ "$script_content" == *"_run_pending_migrations()"* ]]; then
+    pass "_run_pending_migrations helper defined"
+else
+    fail "_run_pending_migrations helper not found"
+fi
+
+if [[ "$script_content" == *"_show_pending_migrations()"* ]]; then
+    pass "_show_pending_migrations helper defined"
+else
+    fail "_show_pending_migrations helper not found"
+fi
+
+if [[ "$script_content" == *"_show_step_plan()"* ]]; then
+    pass "_show_step_plan helper defined"
+else
+    fail "_show_step_plan helper not found"
+fi
+
+# State directory pattern — internal files live under .state/
+if [[ "$script_content" == *'$CONFIG_DIR/.state'* ]] || [[ "$script_content" == *'state_dir/migrations'* ]]; then
+    pass "migrations file uses .state directory"
+else
+    fail "migrations file should use .state directory"
+fi
+
 section "Preset Configuration"
 
 # Check that preset file path uses XDG
@@ -245,6 +308,12 @@ if [[ -f "$install_script" ]]; then
         pass "install.sh has Step 9 for saving preset"
     else
         fail "install.sh should have Step 9 for saving preset"
+    fi
+
+    if [[ "$install_content" == *'$state_dir/'* ]] || [[ "$install_content" == *'PRESET_CONFIG_DIR/.state'* ]]; then
+        pass "install.sh uses .state directory for internal files"
+    else
+        fail "install.sh should use .state directory for internal files"
     fi
 else
     skip "install.sh not found"
@@ -1431,6 +1500,51 @@ if [[ "$dotfiles_content" == *'tmux new-session'* ]]; then
     pass "dotfiles launcher creates tmux session"
 else
     fail "dotfiles launcher should create tmux session"
+fi
+
+# ===========================================================================
+# Incremental Update Unit Tests
+# ===========================================================================
+
+section "Version Comparison - _version_gt"
+
+# Extract _version_gt from the dotfiles CLI for isolated testing
+eval "$(sed -n '/_version_gt()/,/^}/p' "$DOTFILES_CLI")"
+
+if _version_gt "1.1.0" "1.0.0"; then
+    pass "1.1.0 > 1.0.0"
+else
+    fail "1.1.0 should be greater than 1.0.0"
+fi
+
+if ! _version_gt "1.0.0" "1.1.0"; then
+    pass "1.0.0 is not > 1.1.0"
+else
+    fail "1.0.0 should not be greater than 1.1.0"
+fi
+
+if ! _version_gt "1.0.0" "1.0.0"; then
+    pass "equal versions return false"
+else
+    fail "equal versions should return false"
+fi
+
+if _version_gt "1.10.0" "1.9.0"; then
+    pass "1.10.0 > 1.9.0 (sort -V edge case)"
+else
+    fail "1.10.0 should be greater than 1.9.0"
+fi
+
+if _version_gt "2.0.0" "1.99.0"; then
+    pass "2.0.0 > 1.99.0"
+else
+    fail "2.0.0 should be greater than 1.99.0"
+fi
+
+if _version_gt "1.0.1" "1.0.0"; then
+    pass "1.0.1 > 1.0.0 (patch version)"
+else
+    fail "1.0.1 should be greater than 1.0.0"
 fi
 
 # ===========================================================================
