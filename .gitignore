@@ -43,3 +43,4 @@ nvim/colors/generated/
 
 # Local markdown files
 scratch/*
+/zsh/p10k.zsh

@@ -3,6 +3,8 @@
 --   themes/generated/<name>.theme
 --   nvim/colors/generated/<name>.lua
 
+---@diagnostic disable: redundant-return-value
+
 local colour = require('colour-utils')
 
 local M = {}

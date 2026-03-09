@@ -181,7 +181,7 @@ else
     ISSUES=1
 fi
 check_symlink "$HOME/.zprofile" "$DOTFILES_DIR/zsh/zprofile" ".zprofile"
-check_symlink "$HOME/.p10k.zsh" "$DOTFILES_DIR/zsh/p10k.zsh" ".p10k.zsh"
+check_file "$HOME/.p10k.zsh" ".p10k.zsh"
 
 # Prettier (minimal)
 check_symlink "$HOME/.prettierrc" "$DOTFILES_DIR/formatters/prettierrc.json" ".prettierrc"

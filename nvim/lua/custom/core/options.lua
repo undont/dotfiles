@@ -69,6 +69,13 @@ function M.setup()
   -- Auto-reload files changed outside nvim
   vim.o.autoread = true
 
+  -- Spellcheck
+  vim.o.spell = true
+  vim.opt.spelllang = { 'en_gb' }
+  vim.opt.spellfile = { vim.fn.stdpath 'config' .. '/spell/en.utf-8.add' }
+  vim.opt.spelloptions = { 'camel' }
+  vim.opt.spellcapcheck = ''
+
   -- Cursor style (block in all modes, blinking in insert)
   vim.opt.guicursor = 'n-v-c:block,i-ci-ve:block-blinkwait700-blinkon400-blinkoff250'
 end
