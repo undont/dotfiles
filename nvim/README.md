@@ -20,6 +20,7 @@ Customised Neovim setup based on [kickstart.nvim](https://github.com/nvim-lua/ki
 - **UI Enhancements** - Auto dark/light mode (Dracula/Catppuccin), statusline, indent guides
 - **Debugging** - DAP integration for debugging support
 - **Formatting & Linting** - Conform for formatting, nvim-lint for linting
+- **Spellcheck** - Built-in spell with en_gb, camelCase support, Telescope suggestions, and custom dictionary
 
 ## Installation
 
@@ -221,6 +222,10 @@ Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 | Normal | `Space ai` | AI inline assist |
 | Normal | `Space aa` | AI action palette |
 | Normal | `Space mp` | Markdown preview in browser |
+| Normal | `Space St` | Toggle spellcheck |
+| Normal | `Space Ss` | Spell suggest corrections (Telescope) |
+| Normal | `Space Sa` | Add word to dictionary |
+| Normal | `Space Sr` | Remove word from dictionary |
 
 **Full keybinding reference**: Press `Space ?` or see `lua/custom/core/keymaps.lua`
 

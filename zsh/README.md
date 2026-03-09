@@ -202,6 +202,7 @@ Suggests commands as you type based on history.
 | `Ctrl+R`   | Search command history             |
 | `Ctrl+T`   | Search files in current directory  |
 | `Opt/Alt+C`    | cd into a directory (fuzzy search) |
+| `Opt/Alt+A`    | Pick from directory history (back stack) |
 
 ### direnv
 
@@ -259,7 +260,7 @@ Tab completion is available for all dotfiles commands.
 | -------------- | ---------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
 | `cdb`          | `cdb`                        | Go back to previous directory (browser-style history). |
 | `cdf`          | `cdf`                        | Go forward after `cdb` (browser-style history). Normal `cd` clears the forward stack. |
-| `cdl`          | `cdl`                        | Pick from directory history with fzf (most recent first, deduplicated). Falls back to numbered list without fzf. |
+| `Opt/Alt+A`    | (keybinding)                 | Pick from directory history with fzf (most recent first, deduplicated). Falls back to numbered list without fzf. |
 | `tattach <name>` | `tattach myproject`        | Smart attach: connects to running session, or restores from backup if not running. Automatically cleans up stale backups that fail to restore. |
 | `tkill <name>` | `tkill myproject`            | Kills the specified tmux session and removes its backup file from `~/.tmux/resurrect/sessions/`. |
 | `trestore`     | `trestore [options]`         | Restore tmux sessions. No args = restore ALL; `--session <name>` = specific session; `--delete <name>` = delete backup. |

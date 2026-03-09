@@ -238,5 +238,14 @@ Decrement (sequential) | g Ctrl+x
 Tailwind: cycle class up | Ctrl+a (on tailwind class)
 Tailwind: cycle class down | Ctrl+x (on tailwind class)
 
+## spell @spell
+Toggle spellcheck | <leader>St
+Suggest corrections (Telescope) | <leader>Ss
+Add word to dictionary | <leader>Sa
+Remove word from dictionary | <leader>Sr
+Full suggestion list | <leader>S?
+Next misspelling | ]s
+Previous misspelling | [s
+
 ## theme @theme
 Theme reload | <leader>tr

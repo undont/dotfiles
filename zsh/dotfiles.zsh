@@ -222,6 +222,14 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
     zle -N "$_w" "_wrapped-${_w}"
   done
   unset _w
+
+  # Opt+A: directory history picker (cdl as a ZLE widget)
+  _cdl-widget() {
+    _cdl < /dev/tty
+    zle reset-prompt
+  }
+  zle -N _cdl-widget
+  bindkey '\ea' _cdl-widget
 fi
 
 # =============================================================================
@@ -494,8 +502,8 @@ cdf() {
   _dir_nav_active=0
 }
 
-# Directory history picker (fzf-powered)
-cdl() {
+# Directory history picker (fzf-powered, bound to Opt+A via ZLE widget)
+_cdl() {
   if (( ${#_dir_back_stack} == 0 )); then
     echo "No directory history" >&2
     return 1

@@ -392,10 +392,10 @@ else
     fail "create-symlinks should link .zprofile"
 fi
 
-if [[ "$symlinks_content" == *'.p10k.zsh'* ]]; then
-    pass "create-symlinks links .p10k.zsh"
+if [[ "$symlinks_content" != *'.p10k.zsh'* ]]; then
+    pass "create-symlinks does not manage .p10k.zsh (user-owned)"
 else
-    fail "create-symlinks should link .p10k.zsh"
+    fail "create-symlinks should not manage .p10k.zsh"
 fi
 
 if [[ "$symlinks_content" == *'.tmux.conf'* ]]; then
@@ -677,9 +677,9 @@ else
 fi
 
 if [[ "$uninstall_content" == *'.p10k.zsh'* ]]; then
-    pass "uninstall includes .p10k.zsh"
+    pass "uninstall mentions .p10k.zsh (preserve warning)"
 else
-    fail "uninstall should include .p10k.zsh"
+    fail "uninstall should mention .p10k.zsh"
 fi
 
 if [[ "$uninstall_content" == *'ghostty/config'* ]]; then
