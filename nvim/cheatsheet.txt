@@ -108,7 +108,7 @@ Resize up | <leader>wk
 Trigger completion | Ctrl+Space
 Hide completion | Ctrl+e
 Accept completion | Enter
-Accept Copilot suggestion | Tab
+Smart accept (Copilot or completion) | Tab
 Expand snippet | Tab (in snippet)
 Next snippet placeholder | Tab
 Previous snippet placeholder | Shift+Tab

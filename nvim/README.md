@@ -217,7 +217,7 @@ Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 | Normal | `Space z` | Zoom toggle (tab split/close) |
 | Normal | `Space f` | Format buffer |
 | Insert | `Ctrl+Space` | Trigger completion |
-| Insert | `Tab` | Accept Copilot suggestion |
+| Insert | `Tab` | Smart accept (Copilot suggestion if visible, else completion) |
 | Normal | `Space ac` | AI chat toggle (CodeCompanion) |
 | Normal | `Space ai` | AI inline assist |
 | Normal | `Space aa` | AI action palette |

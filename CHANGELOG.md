@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - `dotfiles update`: confirmation prompt before applying changes
 
 ### Changed
+- Neovim: smart Tab in insert mode — accepts Copilot ghost text when visible, falls through to blink.cmp completion otherwise
 - CI benchmark: uses median instead of min for startup badge, increased to 30 runs for stability
 - Cleaned repo spell dictionary — moved personal words to user dictionary
 
