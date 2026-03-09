@@ -48,6 +48,9 @@ SKIP_BACKUP=0
 SKIP_BREW=0
 CHECK_ONLY=0
 NO_LOGO=0
+UPDATE_MODE=0
+AUTO_YES=0
+SKIP_STEPS=""
 PRESET="full"  # Default preset
 
 while [[ $# -gt 0 ]]; do
@@ -72,12 +75,25 @@ while [[ $# -gt 0 ]]; do
             SKIP_BREW=1
             shift
             ;;
+        --skip-steps)
+            SKIP_STEPS="$2"
+            shift 2
+            ;;
         --check-only)
             CHECK_ONLY=1
             shift
             ;;
         --no-logo)
             NO_LOGO=1
+            shift
+            ;;
+        --update)
+            UPDATE_MODE=1
+            NO_LOGO=1
+            shift
+            ;;
+        --yes|-y)
+            AUTO_YES=1
             shift
             ;;
         -h|--help)
@@ -91,7 +107,10 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --skip-backup    Skip backing up existing config files"
             echo "  --skip-brew      Skip Homebrew installation and packages"
+            echo "  --skip-steps L   Skip comma-separated list of steps (homebrew,packages,symlinks,keyd)"
             echo "  --check-only     Only run prerequisite and health checks"
+            echo "  --update         Update mode (skips logo, uses update terminology)"
+            echo "  --yes, -y        Skip confirmation prompt"
             echo "  -h, --help       Show this help message"
             echo ""
             echo "Examples:"
@@ -110,6 +129,26 @@ while [[ $# -gt 0 ]]; do
     esac
 done
 
+# Validate --skip-steps against known step names
+if [[ -n "$SKIP_STEPS" ]]; then
+    VALID_STEPS="homebrew,packages,symlinks,keyd"
+    IFS=',' read -ra _skip_arr <<< "$SKIP_STEPS"
+    for _step in "${_skip_arr[@]}"; do
+        if [[ ",$VALID_STEPS," != *",$_step,"* ]]; then
+            error "Unknown step name in --skip-steps: $_step"
+            echo "Valid steps: $VALID_STEPS"
+            exit 1
+        fi
+    done
+    unset _skip_arr _step
+fi
+
+# Check if a step should be skipped (by name)
+is_step_skipped() {
+    local step_name="$1"
+    [[ ",$SKIP_STEPS," == *",$step_name,"* ]]
+}
+
 # Validate preset value
 case "$PRESET" in
     minimal|core|full)
@@ -125,56 +164,78 @@ esac
 # Export preset for sub-scripts
 export DOTFILES_PRESET="$PRESET"
 
+# Step labels — update mode uses shorter verbs since the header already says "Applying Updates"
+if [[ $UPDATE_MODE -eq 1 ]]; then
+    STEP1_LABEL="Checking Homebrew..."
+    STEP2_LABEL="Updating packages..."
+    STEP5_LABEL="Updating symlinks..."
+    STEP7_LABEL="Updating keyd configuration..."
+else
+    STEP1_LABEL="Setting up Homebrew..."
+    STEP2_LABEL="Installing packages from Brewfile..."
+    STEP5_LABEL="Creating symlinks..."
+    STEP7_LABEL="Setting up keyd (keyboard remapping)..."
+fi
+
 # Initialise rollback state
 init_rollback_state
 
 [[ $NO_LOGO -eq 0 ]] && print_logo
-print_header "Dotfiles Installation"
-echo "Dotfiles directory: $DOTFILES_DIR"
-echo ""
+
+if [[ $UPDATE_MODE -eq 1 ]]; then
+    print_header "Applying Updates"
+else
+    print_header "Dotfiles Installation"
+    echo "Dotfiles directory: $DOTFILES_DIR"
+    echo ""
+fi
 
 # Display preset info and confirmation
 echo "Selected preset: ${CYAN}${PRESET}${NC}"
-case "$PRESET" in
-    minimal)
-        echo "Components: zsh, tmux"
-        ;;
-    core)
-        echo "Components: zsh, tmux, nvim, ghostty, AI/CLI tools, session launch scripts"
-        ;;
-    full)
-        if is_macos; then
-            echo "Components: Everything (core + Hammerspoon, Karabiner)"
-        else
-            echo "Components: Everything (core + keyd keyboard remapping)"
-        fi
-        ;;
-esac
+if [[ $UPDATE_MODE -eq 0 ]]; then
+    case "$PRESET" in
+        minimal)
+            echo "Components: zsh, tmux"
+            ;;
+        core)
+            echo "Components: zsh, tmux, nvim, ghostty, AI/CLI tools, session launch scripts"
+            ;;
+        full)
+            if is_macos; then
+                echo "Components: Everything (core + Hammerspoon, Karabiner)"
+            else
+                echo "Components: Everything (core + keyd keyboard remapping)"
+            fi
+            ;;
+    esac
+fi
 echo ""
 
-# Confirmation prompt
-if [[ -t 0 ]]; then
-    printf 'Proceed with %s%s%s installation? [y/N] ' "${CYAN}" "${PRESET}" "${NC}"
-    read -r response
-else
-    error "Non-interactive shell detected. Cannot prompt for confirmation."
-    info "Re-run with a TTY or pipe 'yes' to confirm."
-    exit 1
+# Confirmation prompt (skipped in update mode or with --yes)
+if [[ $AUTO_YES -eq 0 ]]; then
+    if [[ -t 0 ]]; then
+        printf 'Proceed with %s%s%s installation? [y/N] ' "${CYAN}" "${PRESET}" "${NC}"
+        read -r response
+    else
+        error "Non-interactive shell detected. Cannot prompt for confirmation."
+        info "Re-run with a TTY or pipe 'yes' to confirm."
+        exit 1
+    fi
+    case "$response" in
+        [yY][eE][sS]|[yY])
+            echo ""
+            ;;
+        *)
+            echo ""
+            info "Installation cancelled."
+            exit 0
+            ;;
+    esac
 fi
-case "$response" in
-    [yY][eE][sS]|[yY])
-        echo ""
-        ;;
-    *)
-        echo ""
-        info "Installation cancelled."
-        exit 0
-        ;;
-esac
 
 # Step 1: Install/Update Homebrew
-if [[ $SKIP_BREW -eq 0 ]]; then
-    print_step 1 "Setting up Homebrew..."
+if [[ $SKIP_BREW -eq 0 ]] && ! is_step_skipped "homebrew"; then
+    print_step 1 "$STEP1_LABEL"
     "$DOTFILES_DIR/scripts/install/install-homebrew.sh"
     record_step "homebrew"
 
@@ -186,17 +247,25 @@ if [[ $SKIP_BREW -eq 0 ]]; then
     fi
     echo ""
 else
-    print_skip 1 "Homebrew setup" "--skip-brew flag"
+    if is_step_skipped "homebrew"; then
+        print_skip 1 "Homebrew" "unchanged"
+    else
+        print_skip 1 "Homebrew setup" "--skip-brew flag"
+    fi
 fi
 
 # Step 2: Install packages from Brewfile
-if [[ $SKIP_BREW -eq 0 ]]; then
-    print_step 2 "Installing packages from Brewfile..."
+if [[ $SKIP_BREW -eq 0 ]] && ! is_step_skipped "packages"; then
+    print_step 2 "$STEP2_LABEL"
     "$DOTFILES_DIR/scripts/install/install-packages.sh"
     record_step "packages"
     echo ""
 else
-    print_skip 2 "package installation" "--skip-brew flag"
+    if is_step_skipped "packages"; then
+        print_skip 2 "packages" "unchanged"
+    else
+        print_skip 2 "package installation" "--skip-brew flag"
+    fi
 fi
 
 # Step 3: Check prerequisites
@@ -232,15 +301,19 @@ fi
 
 # Step 5: Create symlinks
 echo ""
-print_step 5 "Creating symlinks..."
-if ! "$DOTFILES_DIR/scripts/install/create-symlinks.sh"; then
-    echo ""
-    error "Some symlinks failed. Check the output above."
-    echo ""
-    echo "To rollback, run: ./scripts/install/rollback.sh"
-    exit 1
+if ! is_step_skipped "symlinks"; then
+    print_step 5 "$STEP5_LABEL"
+    if ! "$DOTFILES_DIR/scripts/install/create-symlinks.sh"; then
+        echo ""
+        error "Some symlinks failed. Check the output above."
+        echo ""
+        echo "To rollback, run: ./scripts/install/rollback.sh"
+        exit 1
+    fi
+    record_step "symlinks"
+else
+    print_skip 5 "symlinks" "unchanged"
 fi
-record_step "symlinks"
 
 # Step 6: Install plugin managers
 echo ""
@@ -266,13 +339,15 @@ if [[ "$PRESET" == "core" || "$PRESET" == "full" ]]; then
 fi
 
 # Step 7: Setup keyd (Linux keyboard remapping - equivalent of Karabiner)
-if is_linux && should_install "full"; then
+if is_linux && should_install "full" && ! is_step_skipped "keyd"; then
     echo ""
-    print_step 7 "Setting up keyd (keyboard remapping)..."
+    print_step 7 "$STEP7_LABEL"
     "$DOTFILES_DIR/scripts/install/setup-keyd.sh"
     record_step "keyd"
 else
-    if is_macos; then
+    if is_step_skipped "keyd"; then
+        print_skip 7 "keyd" "unchanged"
+    elif is_macos; then
         print_skip 7 "keyd setup" "macOS (using Karabiner)"
     else
         print_skip 7 "keyd setup" "not included in $PRESET preset"
@@ -334,54 +409,61 @@ record_step "save-preset"
 echo ""
 print_step 12 "Project directories (optional)..."
 
-if ! grep -q '^export DEV_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
-    if [[ -t 0 ]]; then
-        info "DEV_ROOT sets your main development directory for the launcher picker."
-        printf '  Default: %s\n' "$HOME/src"
-        printf '  Enter path (or press Enter for default, "skip" to skip): '
-        read -r dev_root_input
-        case "$dev_root_input" in
-            skip|s)
-                info "Skipped. Set later with: dotfiles set dev <path>"
-                ;;
-            "")
-                dev_root_input="$HOME/src"
-                update_zshrc_export "DEV_ROOT" "$dev_root_input"
-                mkdir -p "$dev_root_input"
-                success "DEV_ROOT set to $dev_root_input"
-                ;;
-            *)
-                dev_root_input="${dev_root_input/#\~/$HOME}"
-                update_zshrc_export "DEV_ROOT" "$dev_root_input"
-                mkdir -p "$dev_root_input"
-                success "DEV_ROOT set to $dev_root_input"
-                ;;
-        esac
-    fi
-else
+state_dir="$PRESET_CONFIG_DIR/.state"
+dirs_asked_file="$state_dir/prompted"
+
+if grep -q '^export DEV_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
     success "DEV_ROOT already configured"
+elif [[ -f "$dirs_asked_file" ]]; then
+    success "DEV_ROOT skipped (set later with: dotfiles set dev <path>)"
+elif [[ -t 0 ]]; then
+    info "DEV_ROOT sets your main development directory for the launcher picker."
+    printf '  Default: %s\n' "$HOME/src"
+    printf '  Enter path (or press Enter for default, "skip" to skip): '
+    read -r dev_root_input
+    case "$dev_root_input" in
+        skip|s)
+            info "Skipped. Set later with: dotfiles set dev <path>"
+            ;;
+        "")
+            dev_root_input="$HOME/src"
+            update_zshrc_export "DEV_ROOT" "$dev_root_input"
+            mkdir -p "$dev_root_input"
+            success "DEV_ROOT set to $dev_root_input"
+            ;;
+        *)
+            dev_root_input="${dev_root_input/#\~/$HOME}"
+            update_zshrc_export "DEV_ROOT" "$dev_root_input"
+            mkdir -p "$dev_root_input"
+            success "DEV_ROOT set to $dev_root_input"
+            ;;
+    esac
 fi
 
-if ! grep -q '^export PROJECTS_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
-    if [[ -t 0 ]]; then
-        info "PROJECTS_ROOT sets a secondary directory (side projects, playground, etc.)."
-        printf '  Enter path (or press Enter to skip): '
-        read -r projects_root_input
-        case "$projects_root_input" in
-            ""|skip|s)
-                info "Skipped. Set later with: dotfiles set projects <path>"
-                ;;
-            *)
-                projects_root_input="${projects_root_input/#\~/$HOME}"
-                update_zshrc_export "PROJECTS_ROOT" "$projects_root_input"
-                mkdir -p "$projects_root_input"
-                success "PROJECTS_ROOT set to $projects_root_input"
-                ;;
-        esac
-    fi
-else
+if grep -q '^export PROJECTS_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
     success "PROJECTS_ROOT already configured"
+elif [[ -f "$dirs_asked_file" ]]; then
+    success "PROJECTS_ROOT skipped (set later with: dotfiles set projects <path>)"
+elif [[ -t 0 ]]; then
+    info "PROJECTS_ROOT sets a secondary directory (side projects, playground, etc.)."
+    printf '  Enter path (or press Enter to skip): '
+    read -r projects_root_input
+    case "$projects_root_input" in
+        ""|skip|s)
+            info "Skipped. Set later with: dotfiles set projects <path>"
+            ;;
+        *)
+            projects_root_input="${projects_root_input/#\~/$HOME}"
+            update_zshrc_export "PROJECTS_ROOT" "$projects_root_input"
+            mkdir -p "$projects_root_input"
+            success "PROJECTS_ROOT set to $projects_root_input"
+            ;;
+    esac
 fi
+
+# Mark that we've asked about project directories
+mkdir -p "$(dirname "$dirs_asked_file")"
+touch "$dirs_asked_file"
 
 record_step "project-dirs"
 
@@ -430,7 +512,12 @@ fi
 
 # Done
 [[ $NO_LOGO -eq 0 ]] && print_logo
-print_header "Installation Complete!"
+
+if [[ $UPDATE_MODE -eq 1 ]]; then
+    print_header "Update Complete!"
+else
+    print_header "Installation Complete!"
+fi
 
 echo "Preset: $PRESET"
 echo ""
@@ -438,7 +525,9 @@ echo ""
 # Collect next steps into an array, only including relevant ones
 STEPS=()
 
-STEPS+=("Restart your terminal or run: source ~/.zshrc")
+if [[ $UPDATE_MODE -eq 0 ]]; then
+    STEPS+=("Restart your terminal or run: source ~/.zshrc")
+fi
 
 if [[ "$has_tmux_plugins" == false ]]; then
     STEPS+=("Open tmux and press \` + I to install plugins")
@@ -485,5 +574,9 @@ fi
 
 # When nearly everything is already done, show a positive message
 if [[ ${#STEPS[@]} -le 2 ]]; then
-    success "Everything looks good — you're all set!"
+    if [[ $UPDATE_MODE -eq 1 ]]; then
+        success "Update applied successfully!"
+    else
+        success "Everything looks good — you're all set!"
+    fi
 fi

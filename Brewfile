@@ -7,6 +7,7 @@
 #   @preset: full    - included in full only
 
 # Taps
+tap "Adembc/homebrew-tap"
 tap "libsql/sqld"
 tap "morantron/tmux-fingers"
 tap "oven-sh/bun"
@@ -52,6 +53,7 @@ brew "yq"                    # YAML processor (used by gh-dash local merge)
 brew "wget"
 brew "bat"                    # Cat with syntax highlighting
 brew "diffnav"               # Diff navigator for GitHub PRs
+brew "monolith"              # Save complete web pages as single HTML files
 
 # Build Tools
 brew "binutils"              # GNU binary utilities
@@ -78,6 +80,7 @@ brew "go"
 brew "python@3.13"
 brew "pipx"
 
+
 # Java
 brew "openjdk"
 cask "zulu@17"
@@ -100,12 +103,13 @@ brew "sonar-scanner"
 brew "postgresql@14"
 brew "mongosh"
 brew "libsql/sqld/sqld"
-brew "lazysql"               # Database TUI
+brew "gotermsql"             # Database TUI
 
 # Containers & Infrastructure
 brew "act"                    # GitHub Actions locally
 brew "cloudflared"           # Cloudflare Tunnel client
 brew "lazydocker"            # Docker TUI
+brew "Adembc/homebrew-tap/lazyssh"  # SSH host manager TUI
 
 # Misc Dev Tools
 brew "cmake"
@@ -122,6 +126,8 @@ brew "golang-migrate"
 brew "ffmpeg"
 brew "imagemagick"
 brew "btop"                   # System monitor (htop replacement)
+brew "cronboard"             # TUI cron job manager
+brew "snitch"                # Network connections TUI (netstat replacement)
 brew "fastfetch"              # neofetch replacement (faster, maintained)
 brew "teamookla/speedtest/speedtest"
 brew "glow"                   # Markdown renderer

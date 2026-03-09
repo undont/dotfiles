@@ -3,7 +3,7 @@
 # Usage: dotfiles <command> [options]
 #
 # Commands:
-#   update  -u    Pull latest changes and re-run installer
+#   update  -u    Pull latest changes and apply (smart incremental update)
 #   status  -s    Show version, sync status, and local changes
 #   health        Run full health check
 #   set           Configure project directories (DEV_ROOT, PROJECTS_ROOT)
@@ -53,6 +53,12 @@ get_preset() {
 # Get the latest non-Unreleased version from the local changelog
 _changelog_local_version() {
     sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' "$DOTFILES_DIR/CHANGELOG.md" | head -1
+}
+
+# Get the latest non-Unreleased version from CHANGELOG.md at a given git ref
+_changelog_version_at_ref() {
+    local ref="$1"
+    git show "$ref:CHANGELOG.md" 2>/dev/null | sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' | head -1
 }
 
 # Show changelog entries from the remote that are newer than the local version
@@ -110,8 +116,259 @@ get_remote_branch() {
     echo "${ref#refs/remotes/}"
 }
 
+# ─────────────────────────────────────────
+# Update helpers
+# ─────────────────────────────────────────
+
+# Compute which installer steps can be skipped based on changed files between two refs.
+# Returns a comma-separated list of step names (homebrew,packages,symlinks,keyd).
+_compute_skip_steps() {
+    local ref_from="$1" ref_to="$2"
+    local changed_files
+    changed_files=$(git diff --name-only "$ref_from" "$ref_to" 2>/dev/null) || return 0
+
+    local skippable=()
+
+    # Brewfile not changed → skip homebrew + packages
+    if ! printf '%s\n' "$changed_files" | grep -q '^Brewfile'; then
+        skippable+=(homebrew packages)
+    fi
+
+    # No config/symlink-related files changed → skip symlinks
+    local symlink_patterns='^scripts/install/create-symlinks\.sh|\.template$|^zsh/|^tmux/|^nvim/|^ghostty/|^hammerspoon/|^karabiner/|^launchers/|^lazygit/|^lazydocker/|^formatters/|^gh-dash/|^btop/|^themes/|^keyd/'
+    if ! printf '%s\n' "$changed_files" | grep -qE "$symlink_patterns"; then
+        skippable+=(symlinks)
+    fi
+
+    # keyd/ not changed → skip keyd
+    if ! printf '%s\n' "$changed_files" | grep -q '^keyd/'; then
+        skippable+=(keyd)
+    fi
+
+    local IFS=','
+    printf '%s' "${skippable[*]}"
+}
+
+# Show changed files grouped by category for dry-run preview
+_preview_changed_files() {
+    local ref_from="$1" ref_to="$2"
+    local changed_files
+    changed_files=$(git diff --name-only "$ref_from" "$ref_to" 2>/dev/null) || return 0
+
+    [[ -z "$changed_files" ]] && return 0
+
+    local -A categories=(
+        [Brewfile/packages]="^Brewfile"
+        [Zsh config]="^zsh/"
+        [Tmux config]="^tmux/"
+        [Neovim config]="^nvim/"
+        [Ghostty config]="^ghostty/"
+        [Theme definitions]="^themes/"
+        [Installer/scripts]="^scripts/|^install\.sh"
+        [Launchers]="^launchers/"
+        [Hammerspoon]="^hammerspoon/"
+        [Karabiner]="^karabiner/"
+        [Keyd]="^keyd/"
+        [LazyGit]="^lazygit/"
+        [Documentation]="^docs/|^README|^CLAUDE|^CHANGELOG"
+    )
+
+    # Ordered display
+    local -a order=(
+        "Brewfile/packages" "Zsh config" "Tmux config" "Neovim config"
+        "Ghostty config" "Theme definitions" "Launchers" "Hammerspoon"
+        "Karabiner" "Keyd" "LazyGit" "Installer/scripts" "Documentation"
+    )
+
+    local shown_files=""
+    for cat_name in "${order[@]}"; do
+        local pattern="${categories[$cat_name]}"
+        local matches
+        matches=$(printf '%s\n' "$changed_files" | grep -E "$pattern" || true)
+        if [[ -n "$matches" ]]; then
+            printf "  ${CYAN}%s:${NC}\n" "$cat_name"
+            printf '%s\n' "$matches" | sed 's/^/    /'
+            shown_files+="$matches"$'\n'
+        fi
+    done
+
+    # Show any uncategorised files
+    local other
+    other=$(printf '%s\n' "$changed_files" | grep -vE "$(IFS='|'; printf '%s' "${categories[*]}")" || true)
+    if [[ -n "$other" ]]; then
+        printf "  ${CYAN}Other:${NC}\n"
+        printf '%s\n' "$other" | sed 's/^/    /'
+    fi
+}
+
+# Show which update steps would run vs be skipped
+_show_step_plan() {
+    local skipped="$1"
+    # Only skippable steps are listed. Omitted steps always run:
+    #   4 (backup) — controlled by --skip-backup, not --skip-steps
+    #   9 (secrets), 11 (save preset), 12 (project dirs) — always run, non-skippable
+    local -a all_steps=(
+        "1:homebrew:Check Homebrew"
+        "2:packages:Update packages"
+        "3:prerequisites:Check prerequisites"
+        "5:symlinks:Update symlinks"
+        "6:plugins:Check plugin managers"
+        "7:keyd:Update keyd config"
+        "8:shell:Check default shell"
+        "10:health:Run health check"
+    )
+
+    for step_info in "${all_steps[@]}"; do
+        local num="${step_info%%:*}"
+        local rest="${step_info#*:}"
+        local name="${rest%%:*}"
+        local label="${rest#*:}"
+
+        if [[ ",$skipped," == *",$name,"* ]]; then
+            printf "    ${GREY}%2s. %s (unchanged — skip)${NC}\n" "$num" "$label"
+        else
+            printf "    ${GREEN}%2s. %s${NC}\n" "$num" "$label"
+        fi
+    done
+}
+
+# ─────────────────────────────────────────
+# Version comparison helpers (for migrations)
+# ─────────────────────────────────────────
+
+# Returns 0 if $1 > $2 (version comparison)
+_version_gt() {
+    [[ "$1" != "$2" ]] && [[ "$(printf '%s\n%s' "$1" "$2" | sort -V | head -1)" == "$2" ]]
+}
+
+# Run pending migration scripts between two versions
+_run_pending_migrations() {
+    local old_head="$1" new_head="$2"
+    local migrations_dir="$DOTFILES_DIR/scripts/migrations"
+    local state_dir="$CONFIG_DIR/.state"
+    local applied_file="$state_dir/migrations"
+
+    # Directory is guaranteed to exist post-pull by scripts/migrations/.gitkeep
+    [[ -d "$migrations_dir" ]] || return 0
+
+    # Get versions at old and new HEAD
+    local old_version new_version
+    old_version=$(_changelog_version_at_ref "$old_head") || {
+        # Fresh clone or detached HEAD — no changelog at this ref is expected
+        if git rev-parse --verify "$old_head" &>/dev/null; then
+            warn "Could not extract version from CHANGELOG.md at $old_head — skipping migrations"
+        fi
+        return 0
+    }
+    new_version=$(_changelog_version_at_ref "$new_head") || {
+        if git rev-parse --verify "$new_head" &>/dev/null; then
+            warn "Could not extract version from CHANGELOG.md at $new_head — skipping migrations"
+        fi
+        return 0
+    }
+
+    [[ -z "$old_version" || -z "$new_version" ]] && return 0
+
+    mkdir -p "$state_dir"
+    touch "$applied_file"
+
+    local found_any=false
+    local migration
+    for migration in "$migrations_dir"/*.sh; do
+        [[ -f "$migration" ]] || continue
+        local basename="${migration##*/}"
+        local migration_version="${basename%%-*}"
+
+        # Skip if already applied
+        grep -qxF "$basename" "$applied_file" && continue
+
+        # Skip if version is not in range (old_version, new_version]
+        if ! _version_gt "$migration_version" "$old_version"; then
+            continue
+        fi
+        if _version_gt "$migration_version" "$new_version"; then
+            continue
+        fi
+
+        if [[ "$found_any" == false ]]; then
+            printf "  ${CYAN}→${NC} Running migrations...\n"
+            found_any=true
+        fi
+
+        printf "    ${CYAN}•${NC} %s\n" "$basename"
+        if bash "$migration"; then
+            echo "$basename" >> "$applied_file"
+        else
+            warn "Migration $basename failed (continuing)"
+        fi
+    done
+}
+
+# Show pending migrations for dry-run preview
+_show_pending_migrations() {
+    local ref_from="$1" ref_to="$2"
+    local migrations_dir="$DOTFILES_DIR/scripts/migrations"
+    local state_dir="$CONFIG_DIR/.state"
+    local applied_file="$state_dir/migrations"
+
+    [[ -d "$migrations_dir" ]] || return 0
+
+    local old_version new_version
+    old_version=$(_changelog_version_at_ref "$ref_from") || return 0
+    new_version=$(_changelog_version_at_ref "$ref_to") || return 0
+
+    [[ -z "$old_version" || -z "$new_version" ]] && return 0
+
+    # Check remote for migration scripts (they may not exist locally yet)
+    local remote_migrations
+    remote_migrations=$(git ls-tree --name-only "$ref_to" scripts/migrations/ 2>/dev/null | grep '\.sh$' || true)
+
+    [[ -z "$remote_migrations" ]] && return 0
+
+    touch "$applied_file" 2>/dev/null || true
+
+    local pending=()
+    while IFS= read -r path; do
+        [[ -z "$path" ]] && continue
+        local basename="${path##*/}"
+        local migration_version="${basename%%-*}"
+
+        grep -qxF "$basename" "$applied_file" 2>/dev/null && continue
+
+        if _version_gt "$migration_version" "$old_version" && ! _version_gt "$migration_version" "$new_version"; then
+            pending+=("$basename")
+        fi
+    done <<< "$remote_migrations"
+
+    if [[ ${#pending[@]} -gt 0 ]]; then
+        echo ""
+        printf "  ${CYAN}Pending migrations:${NC}\n"
+        for m in "${pending[@]}"; do
+            printf "    ${CYAN}•${NC} %s\n" "$m"
+        done
+    fi
+}
+
+# ─────────────────────────────────────────
+# Update command
+# ─────────────────────────────────────────
+
 cmd_update() {
-    local preset remote_branch
+    local force=0 dry_run=0
+
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force|-f) force=1; shift ;;
+            --preview|-p) dry_run=1; shift ;;
+            *)
+                error "Unknown option: $1"
+                echo "Usage: dotfiles update [--force|-f] [--preview|-p]"
+                return 1
+                ;;
+        esac
+    done
+
+    local preset remote_branch local_branch
 
     cd "$DOTFILES_DIR"
 
@@ -144,31 +401,79 @@ cmd_update() {
         printf "  ${YELLOW}!${NC} You have %d unpushed commit(s)\n" "$ahead"
     fi
 
-    if [[ $behind -gt 0 ]]; then
-        printf "  ${CYAN}→${NC} Pulling %d new commit(s)...\n" "$behind"
-
-        # Show incoming changelog entries
-        local incoming
-        incoming=$(_changelog_incoming "$remote_branch") || true
-        if [[ -n "$incoming" ]]; then
-            echo ""
-            printf "  ${CYAN}What's new:${NC}\n"
-            printf '%s\n' "$incoming" | _changelog_colorise | sed 's/^/  /'
-        fi
-
+    if [[ $behind -eq 0 ]]; then
         echo ""
-        git pull --ff-only --quiet origin "$local_branch" || {
-            error "Pull failed. You may have local changes that conflict."
-            echo "Try: cd $DOTFILES_DIR && git status"
-            return 1
-        }
-        echo ""
-
-        # Re-run installer with saved preset
-        printf "  ${CYAN}→${NC} Re-running installer with --%s preset...\n" "$preset"
-        echo ""
-        "$DOTFILES_DIR/install.sh" "--$preset" --skip-backup --no-logo
+        return 0
     fi
+
+    printf "  ${CYAN}→${NC} %d new commit(s) available\n" "$behind"
+
+    # Show incoming changelog entries
+    local incoming
+    incoming=$(_changelog_incoming "$remote_branch") || true
+    if [[ -n "$incoming" ]]; then
+        echo ""
+        printf "  ${CYAN}What's new:${NC}\n"
+        printf '%s\n' "$incoming" | _changelog_colorise | sed 's/^/  /'
+    fi
+
+    # ── Dry-run mode: show preview and exit ──
+    if [[ $dry_run -eq 1 ]]; then
+        echo ""
+        printf "  ${CYAN}Changed files:${NC}\n"
+        _preview_changed_files HEAD "$remote_branch"
+
+        echo ""
+        local would_skip=""
+        if [[ $force -eq 0 ]]; then
+            would_skip=$(_compute_skip_steps HEAD "$remote_branch")
+        fi
+        printf "  ${CYAN}Update steps:${NC}\n"
+        _show_step_plan "$would_skip"
+
+        _show_pending_migrations HEAD "$remote_branch"
+
+        echo ""
+        printf "  ${GREY}Run 'dotfiles update' to apply these changes.${NC}\n"
+        echo ""
+        return 0
+    fi
+
+    # ── Pull changes ──
+    echo ""
+    local old_head
+    old_head=$(git rev-parse HEAD)
+
+    printf "  ${CYAN}→${NC} Pulling changes...\n"
+    git pull --ff-only --quiet origin "$local_branch" || {
+        error "Pull failed. You may have local changes that conflict."
+        echo "Try: cd $DOTFILES_DIR && git status"
+        return 1
+    }
+
+    local new_head
+    new_head=$(git rev-parse HEAD)
+
+    # ── Run migrations ──
+    _run_pending_migrations "$old_head" "$new_head"
+
+    # ── Compute skip steps (unless --force) ──
+    local skip_steps=""
+    if [[ $force -eq 0 ]]; then
+        skip_steps=$(_compute_skip_steps "$old_head" "$new_head")
+    fi
+
+    if [[ -n "$skip_steps" ]]; then
+        printf "  ${GREY}Skipping unchanged: %s${NC}\n" "$skip_steps"
+    fi
+
+    echo ""
+
+    # ── Run installer in update mode ──
+    local install_args=("--$preset" --skip-backup --update --yes)
+    [[ -n "$skip_steps" ]] && install_args+=(--skip-steps "$skip_steps")
+
+    "$DOTFILES_DIR/install.sh" "${install_args[@]}"
 }
 
 cmd_status() {
@@ -396,7 +701,10 @@ Dotfiles CLI - manage your dotfiles installation
 Usage: dotfiles <command> [options]    (shorthand: dot <command>)
 
 Commands:
-  update  -u    Pull latest changes and re-run installer with saved preset
+  update  -u    Pull latest and apply updates (smart incremental)
+                dotfiles update                - Incremental update (skip unchanged steps)
+                dotfiles update --force, -f    - Re-run all steps regardless of changes
+                dotfiles update --preview, -p  - Preview changes without applying
   status  -s    Show version, sync status, and local changes
   health        Run full health check (symlinks, plugins, secrets)
   set           Configure project directories
@@ -419,7 +727,9 @@ Commands:
 
 Examples:
   dotfiles status                    # Check if updates are available
-  dotfiles update                    # Pull and re-install
+  dotfiles update                    # Smart incremental update
+  dotfiles update --preview           # Preview what would change
+  dotfiles update --force            # Force full re-run of all steps
   dotfiles notes                     # Browse full changelog
   dotfiles aliases                   # Browse available aliases and shortcuts
   dotfiles set dev ~/src             # Set DEV_ROOT for launcher picker
@@ -432,6 +742,8 @@ Examples:
 Configuration:
   Preset is saved to ~/.config/dotfiles/preset during installation.
   The 'update' command re-uses your saved preset (minimal/core/full).
+  Updates are incremental by default — only changed steps are re-run.
+  Use --force to re-run all steps, or --preview to preview changes.
 EOF
 }
 
@@ -539,7 +851,7 @@ cmd_aliases() {
 
     printf "\n${CYAN}DOTFILES CLI${NC}\n"
     _2col \
-        "update  -u"  "pull + re-install" \
+        "update  -u"  "smart incremental update" \
         "status  -s"  "version + sync + changes" \
         "health"      "full health check" \
         "links   -l"  "managed symlinks" \
@@ -689,7 +1001,8 @@ main() {
 
     case "$cmd" in
         update|-u)
-            cmd_update
+            shift
+            cmd_update "$@"
             ;;
         status|-s)
             cmd_status

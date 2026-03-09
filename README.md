@@ -135,7 +135,7 @@ Press `` ` p `` to open the launcher picker — shell scripts that create pre-co
 ### Dotfiles CLI 
 
 ```bash
-dotfiles update    # Pull latest + re-run installer with saved preset
+dotfiles update    # Smart incremental update (only re-runs changed steps)
 dotfiles status    # Version, sync status, and local changes
 dotfiles health    # Full health check (symlinks, plugins, env vars)
 dotfiles links     # Show all managed symlinks and their status

@@ -92,9 +92,6 @@ jobs:
             bash -n "$file" || exit 1
           done
 
-      - name: Check zsh syntax
-        run: |
-          zsh -n zsh/zshrc || true  # May fail without zsh plugins
 
   lua-check:
     name: Lua Check

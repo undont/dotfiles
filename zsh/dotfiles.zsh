@@ -77,6 +77,9 @@ typeset -U path
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
+# Rust/Cargo binaries (cargo install, rustup toolchains)
+export PATH="$PATH:$HOME/.cargo/bin"
+
 # Java (OpenJDK via Homebrew)
 export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
 
@@ -344,6 +347,9 @@ alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts"  # Clear all tmux alerts
 alias ta="tattach" # Attach to tmux session, restoring from backup if needed (see tattach function below)
+
+# Asciinema demo recording
+alias demo-rec='asciinema rec --idle-time-limit 2 --cols 120 --rows 35'
 
 # Navigation
 alias c="clear"
@@ -643,7 +649,7 @@ bindkey -s '\e[27;5;61~' ''            # Ctrl+= (swallow)
 _dotfiles() {
   local -a commands
   commands=(
-    'update:Pull latest changes and re-run installer'
+    'update:Pull latest and apply updates (incremental)'
     'status:Show version, sync status, and local changes'
     'health:Run full health check'
     'links:Show all managed symlinks and their status'
@@ -662,6 +668,16 @@ _dotfiles() {
     _describe 'dotfiles command' commands
   elif (( CURRENT == 3 )); then
     case "${words[2]}" in
+      update|-u)
+        local -a update_opts
+        update_opts=(
+          '--force:Re-run all steps regardless of changes'
+          '-f:Re-run all steps regardless of changes'
+          '--preview:Preview changes without applying'
+          '-p:Preview changes without applying'
+        )
+        _describe 'update option' update_opts
+        ;;
       set)
         local -a targets
         targets=(

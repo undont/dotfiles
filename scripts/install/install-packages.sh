@@ -207,6 +207,49 @@ if command_exists pipx; then
     pipx ensurepath 2>/dev/null || true
 fi
 
+# posting - HTTP/API client TUI (not in Homebrew)
+if should_install "core"; then
+    if ! command_exists posting; then
+        if command_exists pipx; then
+            echo "Installing posting (HTTP client TUI)..."
+            pipx install posting 2>/dev/null || warn "posting install failed. Retry with: pipx install posting"
+        else
+            warn "posting requires pipx (not found). Install pipx first, then: pipx install posting"
+        fi
+    else
+        echo "posting already installed"
+    fi
+fi
+
+# openapi-tui - OpenAPI spec browser (pre-built binary from GitHub releases)
+if should_install "core"; then
+    if ! command_exists openapi-tui; then
+        echo "Installing openapi-tui (OpenAPI spec browser)..."
+        OPENAPI_TUI_VERSION="0.10.2"
+        OPENAPI_TUI_ARCH=$(uname -m)
+        if is_macos; then
+            OPENAPI_TUI_OS="macos"
+            [[ "$OPENAPI_TUI_ARCH" == "arm64" ]] || OPENAPI_TUI_ARCH="x86_64"
+        else
+            OPENAPI_TUI_OS="linux"
+            [[ "$OPENAPI_TUI_ARCH" == "aarch64" ]] && OPENAPI_TUI_ARCH="arm64"
+        fi
+        OPENAPI_TUI_TAR="openapi-tui-${OPENAPI_TUI_VERSION}-${OPENAPI_TUI_OS}-${OPENAPI_TUI_ARCH}.tar.gz"
+        OPENAPI_TUI_URL="https://github.com/zaghaghi/openapi-tui/releases/download/${OPENAPI_TUI_VERSION}/${OPENAPI_TUI_TAR}"
+        OPENAPI_TUI_DEST="$HOME/.cargo/bin"
+        mkdir -p "$OPENAPI_TUI_DEST"
+        if curl -fsSL "$OPENAPI_TUI_URL" | tar xz -C /tmp openapi-tui; then
+            mv /tmp/openapi-tui "$OPENAPI_TUI_DEST/openapi-tui"
+            chmod +x "$OPENAPI_TUI_DEST/openapi-tui"
+            success "openapi-tui ${OPENAPI_TUI_VERSION} installed to ${OPENAPI_TUI_DEST}"
+        else
+            warn "openapi-tui install failed. Download manually from: https://github.com/zaghaghi/openapi-tui/releases"
+        fi
+    else
+        echo "openapi-tui already installed"
+    fi
+fi
+
 # Ghostty next steps (Ubuntu/Debian — no official apt package)
 if should_install "core" && is_linux && ! command_exists ghostty; then
     if command_exists apt-get; then
