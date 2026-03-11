@@ -202,25 +202,6 @@ if command_exists fnm; then
     echo "  fnm default lts-latest"
 fi
 
-# pipx path setup
-if command_exists pipx; then
-    pipx ensurepath 2>/dev/null || true
-fi
-
-# posting - HTTP/API client TUI (not in Homebrew)
-if should_install "core"; then
-    if ! command_exists posting; then
-        if command_exists pipx; then
-            echo "Installing posting (HTTP client TUI)..."
-            pipx install posting 2>/dev/null || warn "posting install failed. Retry with: pipx install posting"
-        else
-            warn "posting requires pipx (not found). Install pipx first, then: pipx install posting"
-        fi
-    else
-        echo "posting already installed"
-    fi
-fi
-
 # openapi-tui - OpenAPI spec browser (pre-built binary from GitHub releases)
 if should_install "core"; then
     if ! command_exists openapi-tui; then

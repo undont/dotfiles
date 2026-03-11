@@ -11,6 +11,7 @@ tap "Adembc/homebrew-tap"
 tap "libsql/sqld"
 tap "morantron/tmux-fingers"
 tap "oven-sh/bun"
+tap "seanhalberthal/tap"
 tap "teamookla/speedtest"
 
 # =============================================================================
@@ -53,7 +54,7 @@ brew "yq"                    # YAML processor (used by gh-dash local merge)
 brew "wget"
 brew "bat"                    # Cat with syntax highlighting
 brew "diffnav"               # Diff navigator for GitHub PRs
-brew "monolith"              # Save complete web pages as single HTML files
+brew "monolith" unless OS.linux? && Hardware::CPU.arm?  # No Linux ARM bottle
 
 # Build Tools
 brew "binutils"              # GNU binary utilities
@@ -103,7 +104,7 @@ brew "sonar-scanner"
 brew "postgresql@14"
 brew "mongosh"
 brew "libsql/sqld/sqld"
-brew "gotermsql"             # Database TUI
+brew "gotermsql" unless OS.linux? && Hardware::CPU.arm?  # No Linux ARM formula
 
 # Containers & Infrastructure
 brew "act"                    # GitHub Actions locally
@@ -126,8 +127,7 @@ brew "golang-migrate"
 brew "ffmpeg"
 brew "imagemagick"
 brew "btop"                   # System monitor (htop replacement)
-brew "cronboard"             # TUI cron job manager
-brew "snitch"                # Network connections TUI (netstat replacement)
+brew "snitch" unless OS.linux? && Hardware::CPU.arm?     # No Linux ARM bottle
 brew "fastfetch"              # neofetch replacement (faster, maintained)
 brew "teamookla/speedtest/speedtest"
 brew "glow"                   # Markdown renderer

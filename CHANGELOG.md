@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.59] - 2026-03-11
+
+### Added
+- Neovim: `Space ba` keymap to delete all other buffers (keep current)
+- Neovim: disable completion popup in grug-far search buffers
+
+### Changed
+- Zsh: `v` alias now clears the terminal before opening nvim
+- Zsh: gcloud SDK path uses Homebrew prefix (supports `brew install google-cloud-sdk`)
+
+### Fixed
+- Neovim: conform.nvim csharpier formatter mapped to correct `cs` filetype
+
+### Removed
+- cronboard and posting — replaced by other tools; migration auto-uninstalls them
+
 ## [0.2.58] - 2026-03-09
 
 ### Added

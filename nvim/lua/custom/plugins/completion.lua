@@ -20,6 +20,10 @@ return {
     ---@module 'blink.cmp'
     ---@type blink.cmp.Config
     opts = {
+      enabled = function()
+        local disabled_filetypes = { ['grug-far'] = true }
+        return not disabled_filetypes[vim.bo.filetype]
+      end,
       keymap = {
         preset = 'default',
         ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' },

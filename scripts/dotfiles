@@ -840,7 +840,7 @@ cmd_aliases() {
         "myip"    "curl ifconfig.me" \
         "h"       "cd ~" \
         "j"       "jobs" \
-        "v"       "nvim" \
+        "v"       "clear + nvim" \
         "o"       "open file/dir" \
         "finder"  "open in Finder (macOS)"
 
