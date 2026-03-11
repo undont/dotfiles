@@ -251,7 +251,6 @@ return {
           'ts_ls',
           'yamlls',
           -- Formatters
-          'csharpier',
           'goimports',
           'prettier',
           'stylua',
@@ -290,7 +289,6 @@ return {
         }
       end,
       formatters_by_ft = {
-        cs = { 'csharpier' },
         go = { 'goimports', 'gofmt' },
         javascript = { 'prettier' },
         javascriptreact = { 'prettier' },
@@ -301,9 +299,6 @@ return {
         yaml = { 'prettier' },
       },
       formatters = {
-        csharpier = {
-          command = vim.fn.stdpath 'data' .. '/mason/packages/csharpier/csharpier',
-        },
         goimports = {
           command = vim.fn.stdpath 'data' .. '/mason/bin/goimports',
         },

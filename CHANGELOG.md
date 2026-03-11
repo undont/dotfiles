@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.60] - 2026-03-11
+
+### Changed
+- Neovim: C# formatting now uses Roslyn LSP instead of CSharpier — respects `.editorconfig` rules with no extra tooling
+- Install: global `.editorconfig` symlinked from `formatters/editorconfig` to `~/.editorconfig`
+- Install: formatter symlinks grouped under "Formatters" section (was "Prettier")
+
+### Fixed
+- Install: `uninstall.sh` missing symlinks for `.prettierrc`, `.editorconfig`, `dash-repo-sync`, `lazygit/config.yml`, and `hammerspoon/init.lua`
+- Neovim: vim-visual-multi motion conflicts with markdown keymaps and blink.cmp
+
+### Removed
+- CSharpier — no longer installed via Mason; migration auto-removes it
+
 ## [0.2.59] - 2026-03-11
 
 ### Added

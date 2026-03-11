@@ -253,7 +253,7 @@ The following formatters and linters are automatically installed:
 - stylua (Lua)
 - prettier (JS/TS/JSON/YAML)
 - goimports + gofmt (Go)
-- csharpier (C#)
+- Roslyn LSP (C# — uses `.editorconfig` rules via `lsp_format = 'fallback'`)
 
 **Linters:**
 - ESLint via LSP (JavaScript/TypeScript)
