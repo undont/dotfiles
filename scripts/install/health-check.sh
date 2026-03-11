@@ -183,8 +183,9 @@ fi
 check_symlink "$HOME/.zprofile" "$DOTFILES_DIR/zsh/zprofile" ".zprofile"
 check_file "$HOME/.p10k.zsh" ".p10k.zsh"
 
-# Prettier (minimal)
+# Formatters
 check_symlink "$HOME/.prettierrc" "$DOTFILES_DIR/formatters/prettierrc.json" ".prettierrc"
+check_symlink "$HOME/.editorconfig" "$DOTFILES_DIR/formatters/editorconfig" ".editorconfig"
 
 # Dotfiles CLI (minimal)
 check_symlink "$HOME/.local/bin/dotfiles" "$DOTFILES_DIR/scripts/dotfiles" "dotfiles CLI"
