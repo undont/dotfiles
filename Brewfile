@@ -127,7 +127,6 @@ brew "golang-migrate"
 brew "ffmpeg"
 brew "imagemagick"
 brew "btop"                   # System monitor (htop replacement)
-brew "cronboard" unless OS.linux? && Hardware::CPU.arm?  # No Linux ARM bottle
 brew "snitch" unless OS.linux? && Hardware::CPU.arm?     # No Linux ARM bottle
 brew "fastfetch"              # neofetch replacement (faster, maintained)
 brew "teamookla/speedtest/speedtest"

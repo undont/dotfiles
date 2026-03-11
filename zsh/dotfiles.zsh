@@ -111,7 +111,7 @@ export INCLUDE="$HOMEBREW_PREFIX/arm-none-eabi/include"
 # Only loads when you actually use gcloud/gsutil/bq
 _load_gcloud() {
   unset -f gcloud gsutil bq
-  local gcloud_dir="$HOME/google-cloud-sdk"
+  local gcloud_dir="$HOMEBREW_PREFIX/share/google-cloud-sdk"
   if [[ -f "$gcloud_dir/path.zsh.inc" ]]; then
     source "$gcloud_dir/path.zsh.inc"
   fi
@@ -381,7 +381,7 @@ alias grep="grep --color=auto"
 # Shell shortcuts
 alias h="cd ~"
 alias j="jobs"
-alias v="nvim"
+alias v="cl && nvim"
 
 # Clipboard — Linux only (macOS has pbcopy/pbpaste natively)
 if [[ "$IS_MACOS" != "1" ]]; then
