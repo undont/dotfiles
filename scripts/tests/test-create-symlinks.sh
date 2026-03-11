@@ -402,10 +402,11 @@ else
     pass "Uninstall SYMLINKS does not contain karabiner"
 fi
 
+# Hammerspoon uses layered pattern (init.lua symlinked, local.lua user-owned)
 if echo "$uninstall_content" | grep -A 20 '^SYMLINKS=(' | grep -q 'hammerspoon'; then
-    fail "Uninstall SYMLINKS should not contain hammerspoon (now copy-on-install)"
+    pass "Uninstall SYMLINKS contains hammerspoon init.lua (layered pattern)"
 else
-    pass "Uninstall SYMLINKS does not contain hammerspoon"
+    fail "Uninstall SYMLINKS should contain hammerspoon init.lua symlink"
 fi
 
 # Should have preservation warnings for user-owned configs
