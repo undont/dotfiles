@@ -71,12 +71,20 @@ print_header "Dotfiles Uninstall"
 # Must match create-symlinks.sh exactly
 # Note: ~/.zshrc is handled separately (may be personal file, not symlink)
 SYMLINKS=(
+    # Minimal
     "$HOME/.zprofile"
     "$HOME/.tmux.conf"
     "$HOME/.tmux"
     "$HOME/.local/bin/dotfiles"
+    "$HOME/.prettierrc"
+    "$HOME/.editorconfig"
+    # Core
     "$HOME/.config/nvim"
+    "$HOME/.local/bin/dash-repo-sync"
     "$HOME/.local/launchers/dev"
+    "$HOME/.config/lazygit/config.yml"
+    # Full
+    "$HOME/.hammerspoon/init.lua"
 )
 
 # Legacy macOS ghostty symlink (no longer created — Ghostty reads XDG natively)

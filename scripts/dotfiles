@@ -958,9 +958,10 @@ cmd_links() {
     printf "\n${CYAN}CLI${NC}\n"
     _check_link "$HOME/.local/bin/dotfiles"
 
-    # Prettier (minimal)
-    printf "\n${CYAN}Prettier${NC}\n"
+    # Formatters
+    printf "\n${CYAN}Formatters${NC}\n"
     _check_link "$HOME/.prettierrc"
+    _check_link "$HOME/.editorconfig"
 
     # Neovim (core)
     if should_install "core"; then
