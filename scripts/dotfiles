@@ -3,7 +3,7 @@
 # Usage: dotfiles <command> [options]
 #
 # Commands:
-#   update  -u    Pull latest changes and apply (smart incremental update)
+#   update  -u    Pull latest changes and apply (smart update)
 #   status  -s    Show version, sync status, and local changes
 #   health        Run full health check
 #   set           Configure project directories (DEV_ROOT, PROJECTS_ROOT)
@@ -736,7 +736,7 @@ Commands:
 
 Examples:
   dotfiles status                    # Check if updates are available
-  dotfiles update                    # Smart incremental update
+  dotfiles update                    # Smart update
   dotfiles update --preview           # Preview what would change
   dotfiles update --force            # Force full re-run of all steps
   dotfiles notes                     # Browse full changelog
@@ -822,7 +822,9 @@ cmd_aliases() {
         "gpl"  "git pull" \
         "gst"  "git stash" \
         "gfp"  "git fetch --prune" \
-        "gpr"  "prune local branches"
+        "gpr"  "prune local branches" \
+        "grmc" "git rm --cached" \
+        "gca"  "git commit --amend"
 
     printf "\n${CYAN}TMUX${NC}\n"
     _2col \
@@ -846,12 +848,16 @@ cmd_aliases() {
 
     printf "\n${CYAN}DEVELOPMENT${NC}\n"
     _2col \
-        "oc"         "opencode" \
-        "drs"        "sync repo paths to gh-dash" \
+        "opencode"   "cl + opencode" \
+        "oc"         "opencode (shorthand)" \
+        "claude"     "cl + claude" \
+        "gemini"     "cl + gemini" \
+        "drs"        "sync repo paths" \
         "gols"       "list Go binaries" \
         "nvim-clear" "clear nvim cache" \
         "nvim-sync"  "sync Lazy.nvim plugins" \
-        "brewup"     "brew update + upgrade"
+        "brewup"     "brew update + upgrade" \
+        "demo-rec"   "asciinema recording"
 
     printf "\n${CYAN}PROFILING${NC}\n"
     printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%s${NC} ${GREY}%s${NC}\n" \
@@ -860,7 +866,7 @@ cmd_aliases() {
 
     printf "\n${CYAN}DOTFILES CLI${NC}\n"
     _2col \
-        "update  -u"  "smart incremental update" \
+        "update  -u"  "smart update" \
         "status  -s"  "version + sync + changes" \
         "health"      "full health check" \
         "links   -l"  "managed symlinks" \

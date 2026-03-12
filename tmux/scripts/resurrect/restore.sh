@@ -195,6 +195,7 @@ REPLACE=false
 DELETE=false
 RESTORE_ALL=false
 SESSION_NAME=""
+SESSION_FILE_OVERRIDE=""
 NO_SWITCH=false
 
 while [[ $# -gt 0 ]]; do
@@ -214,6 +215,19 @@ while [[ $# -gt 0 ]]; do
         --no-switch)
             NO_SWITCH=true
             shift
+            ;;
+        --file)
+            if [[ -z "${2:-}" ]]; then
+                echo -e "${RED}Error: --file requires a path${NC}" >&2
+                usage
+            fi
+            # Validate: must be an absolute path to a regular file
+            if [[ "$2" != /* ]]; then
+                echo -e "${RED}Error: --file path must be absolute${NC}" >&2
+                exit 1
+            fi
+            SESSION_FILE_OVERRIDE="$2"
+            shift 2
             ;;
         --delete|-d)
             if [[ -z "${2:-}" ]]; then
@@ -257,7 +271,16 @@ if [[ "$SESSION_NAME" =~ \.\. ]] || [[ "$SESSION_NAME" =~ / ]]; then
     exit 1
 fi
 
-SESSION_FILE="${SESSIONS_DIR}/${SESSION_NAME}.txt"
+if [[ -n "$SESSION_FILE_OVERRIDE" ]]; then
+    # Validate file is a regular file (not symlink, directory, or device)
+    if [[ -L "$SESSION_FILE_OVERRIDE" ]] || [[ ! -f "$SESSION_FILE_OVERRIDE" ]]; then
+        echo -e "${RED}Error: --file must point to a regular file${NC}" >&2
+        exit 1
+    fi
+    SESSION_FILE="$SESSION_FILE_OVERRIDE"
+else
+    SESSION_FILE="${SESSIONS_DIR}/${SESSION_NAME}.txt"
+fi
 
 if [[ ! -f "${SESSION_FILE}" ]]; then
     echo -e "${RED}Error: Session file not found: ${SESSION_FILE}${NC}" >&2
@@ -558,7 +581,7 @@ restore_pane_command() {
         # Wait for pane to be ready before sending command
         if wait_for_pane "$session_name" "$window_number" "$pane_index"; then
             # Send the command to the pane
-            tmux send-keys -t "${session_name}:${window_number}.${pane_index}" "$cmd_to_run" C-m
+            tmux send-keys -t "${session_name}:${window_number}.${pane_index}" "$cmd_to_run" C-m 2>/dev/null || true
         else
             echo -e "${YELLOW}Warning: Pane ${session_name}:${window_number}.${pane_index} not ready, skipping command restoration${NC}" >&2
         fi

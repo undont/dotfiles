@@ -1,6 +1,6 @@
 -- Dynamic diff highlights
 -- Computes tinted backgrounds from the active Normal bg so diff colours
--- stay consistent across fugitive, diffview, and octo for every theme.
+-- stay consistent across diffview and octo for every theme.
 
 local M = {}
 
@@ -21,13 +21,18 @@ end
 function M.apply()
   local tint = M.tint_bg
 
-  -- Diff* highlights need higher blend to be visible in fugitive/diffview
-  local add_bg = tint(0x00ff00, 0.12)
-  local change_bg = tint(0xffff00, 0.12)
-  local del_bg = tint(0xff0000, 0.14)
-  local text_bg = tint(0xffff00, 0.22)
+  -- Use the theme's palette colours as tint sources (fall back to sensible defaults)
+  local green_fg = get_fg('GitSignsAdd', 0xa6e3a1)
+  local yellow_fg = get_fg('GitSignsChange', 0xf9e2af)
+  local red_fg = get_fg('GitSignsDelete', 0xf38ba8)
 
-  -- Core Vim diff groups (used by fugitive, diffview, octo)
+  -- Diff* line backgrounds — blend theme colours towards Normal bg
+  local add_bg = tint(green_fg, 0.18)
+  local change_bg = tint(yellow_fg, 0.18)
+  local del_bg = tint(red_fg, 0.18)
+  local text_bg = tint(yellow_fg, 0.30)
+
+  -- Core Vim diff groups (used by diffview, octo)
   vim.api.nvim_set_hl(0, 'DiffAdd', { bg = add_bg })
   vim.api.nvim_set_hl(0, 'DiffChange', { bg = change_bg })
   vim.api.nvim_set_hl(0, 'DiffDelete', { bg = del_bg })
@@ -38,11 +43,7 @@ function M.apply()
   vim.api.nvim_set_hl(0, 'GitSignsChangeLn', { bg = change_bg })
   vim.api.nvim_set_hl(0, 'GitSignsDeleteLn', { bg = del_bg })
 
-  -- GitSigns number column highlights (fg from sign column groups)
-  local green_fg = get_fg('GitSignsAdd', 0xa6e3a1)
-  local yellow_fg = get_fg('GitSignsChange', 0xf9e2af)
-  local red_fg = get_fg('GitSignsDelete', 0xf38ba8)
-
+  -- GitSigns number column highlights
   vim.api.nvim_set_hl(0, 'GitSignsAddNr', { fg = green_fg, bg = add_bg })
   vim.api.nvim_set_hl(0, 'GitSignsChangeNr', { fg = yellow_fg, bg = change_bg })
   vim.api.nvim_set_hl(0, 'GitSignsDeleteNr', { fg = red_fg, bg = del_bg })

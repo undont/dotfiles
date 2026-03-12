@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.61] - 2026-03-12
+
+### Added
+- Zsh: `claude`, `gemini`, `opencode` aliases clear scrollback before launch; `grmc` (`git rm --cached`) and `gca` (`git commit --amend`) aliases
+- Tmux: session kill now captures live state for undo (no longer relies on stale auto-save)
+- Tmux: resurrect restore `--file` flag for direct file path
+- Nvim: diffview guard prevents opening multiple views simultaneously
+- Theme generator: CopilotSuggestion, indent-blankline, neotest, flash, and fidget highlight groups in generated themes
+
+### Changed
+- Nvim: diff highlights use theme palette colours (from GitSigns) instead of hardcoded values
+- Nvim: Copilot suggestion highlight blends Comment fg towards Normal bg; skips if theme already defines it
+- Tmux: fzf picker scroll keys changed from `Ctrl+d`/`Ctrl+u` to `d`/`u`
+- Tmux: fzf session/window popups unbind `u` key in search mode (undo key conflict)
+
+### Fixed
+- Nvim: BufEnter empty-buffer cleanup deferred via `vim.schedule` to avoid interfering with diffview layout
+- Nvim: JSON sort pipeline now uses `set -o pipefail` for proper error detection
+- Tmux: session undo race condition — undo backup no longer deleted by split.sh orphan cleanup
+- Tmux: undo cleanup only runs on successful restore (preserves backup for retry on failure)
+- Tmux: undo cache directory created with mode 700
+- Tmux: suppress send-keys errors during restore when pane is already gone
+
 ## [0.2.60] - 2026-03-11
 
 ### Changed

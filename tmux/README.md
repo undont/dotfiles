@@ -102,7 +102,7 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Action              | Key                      |
 | ------------------- | ------------------------ |
 | Move down/up        | `j` / `k`                |
-| Half-page down/up   | `Ctrl+d` / `Ctrl+u`     |
+| Half-page down/up   | `d` / `u`                |
 | First/last item     | `g` / `G`                |
 | Select              | `Space` or `Enter`       |
 | Start searching     | `/`                      |
@@ -191,7 +191,7 @@ Restores the last closed pane or window (whichever was killed most recently). Re
 | Yank line         | `Y`                   |
 | Exit scroll mode  | `q` or `Esc`          |
 
-**Note:** `Ctrl+f`/`Ctrl+b` and `Ctrl+d`/`Ctrl+u` also work for page and half-page navigation.
+**Note:** `Ctrl+f`/`Ctrl+b` also work for page navigation.
 
 **Vim-style yank:** To yank from cursor to top/bottom of history, use visual mode: `v` → `g` (or `G`) → `y`.
 

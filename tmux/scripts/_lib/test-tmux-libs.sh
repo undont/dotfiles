@@ -216,7 +216,7 @@ echo "  get_undo_base_dir:"
 UNDO_DIR=$(get_undo_base_dir)
 assert_matches "  returns correct path format" "^${HOME}/.cache/tmux/undo$" "$UNDO_DIR"
 assert_dir_exists "  creates directory" "$UNDO_DIR"
-assert_permissions "  has correct permissions (755)" "$UNDO_DIR" "755"
+assert_permissions "  has correct permissions (700)" "$UNDO_DIR" "700"
 
 # Test idempotency - calling again shouldn't fail
 UNDO_DIR2=$(get_undo_base_dir)

@@ -1,5 +1,15 @@
 -- PR review plugins: diffview, octo
 
+--- Run a diffview command, blocking if one is already open.
+local function diffview_open(cmd)
+  local lib = require 'diffview.lib'
+  if lib.get_current_view() then
+    vim.notify('Diffview already open — close it first with <leader>dc', vim.log.levels.WARN)
+    return
+  end
+  vim.cmd(cmd)
+end
+
 return {
   -- Diffview: side-by-side diffs and file history
   {
@@ -7,21 +17,33 @@ return {
     cmd = { 'DiffviewOpen', 'DiffviewClose', 'DiffviewFileHistory', 'DiffviewToggleFiles' },
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     keys = {
-      { '<leader>do', '<cmd>DiffviewOpen<CR>', desc = '[D]iff [O]pen (vs index)' },
+      {
+        '<leader>do',
+        function()
+          diffview_open 'DiffviewOpen'
+        end,
+        desc = '[D]iff [O]pen (vs index)',
+      },
       { '<leader>dc', '<cmd>DiffviewClose<CR>', desc = '[D]iff [C]lose' },
       {
         '<leader>dh',
         function()
           local file = vim.fn.expand '%'
           if file ~= '' and vim.fn.filereadable(file) == 1 then
-            vim.cmd 'DiffviewFileHistory %'
+            diffview_open 'DiffviewFileHistory %'
           else
-            vim.cmd 'DiffviewFileHistory'
+            diffview_open 'DiffviewFileHistory'
           end
         end,
         desc = '[D]iff file [H]istory',
       },
-      { '<leader>dp', '<cmd>DiffviewFileHistory --range=origin/HEAD...HEAD --right-only --no-merges<CR>', desc = '[D]iff [P]R review' },
+      {
+        '<leader>dp',
+        function()
+          diffview_open 'DiffviewFileHistory --range=origin/HEAD...HEAD --right-only --no-merges'
+        end,
+        desc = '[D]iff [P]R review',
+      },
     },
     config = function(_, opts)
       require('diffview').setup(opts)
@@ -67,8 +89,6 @@ return {
       -- Patch diffview upstream bugs (nil guards for async race conditions)
       -- See: https://github.com/sindrets/diffview.nvim/issues/550
       local api = vim.api
-
-      -- Patch init_layout: curwin may already be closed after layout:create()
 
       -- Patch init_layout: curwin may already be closed after layout:create()
       local SV = require('diffview.scene.views.standard.standard_view').StandardView
