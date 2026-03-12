@@ -228,7 +228,10 @@ direnv allow
 
 | Alias      | Command                         | Description                        |
 | ---------- | ------------------------------- | ---------------------------------- |
-| `oc`       | `opencode`                      | Launch OpenCode editor             |
+| `opencode` | `cl && opencode`                | Clear scrollback + launch OpenCode |
+| `oc`       | `opencode`                      | Shorthand for OpenCode editor      |
+| `claude`   | `cl && claude`                  | Clear scrollback + launch Claude CLI |
+| `gemini`   | `cl && gemini`                  | Clear scrollback + launch Gemini CLI |
 | `dot`      | `dotfiles`                      | Shorthand for dotfiles CLI         |
 | `drs`      | `dash-repo-sync`                | Sync local repo paths into gh-dash config |
 | `ta`       | `tattach`                       | Shorthand for `tattach` (see functions below) |
@@ -237,6 +240,8 @@ direnv allow
 | `alerts-clear` | `rm -rf ~/.config/tmux-alerts` | Clear all tmux alerts (agent + command exit) |
 | `gols`     | `ls ~/go/bin`                   | List installed Go binaries         |
 | `brewup`   | `brew update && brew upgrade`   | Update and upgrade Homebrew        |
+| `grmc`     | `git rm --cached`               | Untrack file(s) without deleting from disk |
+| `gca`      | `git commit --amend`            | Amend the last commit              |
 | `nvim-clear` | `rm -rf ~/.cache/nvim/luac/`  | Clear Neovim bytecode cache        |
 
 ### Dotfiles CLI

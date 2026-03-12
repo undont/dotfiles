@@ -24,35 +24,45 @@ return {
         end,
       })
 
-      -- Set distinct highlight for Copilot suggestions
-      -- The highlight needs to be set AFTER copilot.vim's own ColorScheme autocmd
+      -- Set Copilot suggestion highlight for non-generated colourschemes
+      -- Generated themes set CopilotSuggestion directly; this is a fallback
       local function set_copilot_hl()
-        -- Get the Comment highlight as a base (designed to be subdued)
-        local comment_hl = vim.api.nvim_get_hl(0, { name = 'Comment' })
-        local fg = comment_hl.fg
+        -- Skip if the colourscheme already defined CopilotSuggestion (generated themes)
+        local existing = vim.api.nvim_get_hl(0, { name = 'CopilotSuggestion' })
+        if existing.fg then
+          return
+        end
 
-        -- Fallback colors if Comment highlight isn't available
-        if not fg then
-          fg = 0x5c6370 -- grey
+        -- Blend Comment fg towards Normal bg for a ghost-text effect
+        local comment_hl = vim.api.nvim_get_hl(0, { name = 'Comment' })
+        local normal_hl = vim.api.nvim_get_hl(0, { name = 'Normal' })
+        local cfg = comment_hl.fg or 0x5c6370
+        local nbg = normal_hl.bg or 0x1e1e2e
+
+        -- Blend 40% towards background
+        local function blend(fg_c, bg_c, ratio)
+          local function ch(hex, shift)
+            return bit.band(bit.rshift(hex, shift), 0xff)
+          end
+          local r = ch(fg_c, 16) + (ch(bg_c, 16) - ch(fg_c, 16)) * ratio
+          local g = ch(fg_c, 8) + (ch(bg_c, 8) - ch(fg_c, 8)) * ratio
+          local b = ch(fg_c, 0) + (ch(bg_c, 0) - ch(fg_c, 0)) * ratio
+          return bit.bor(bit.lshift(math.floor(r), 16), bit.lshift(math.floor(g), 8), math.floor(b))
         end
 
         vim.api.nvim_set_hl(0, 'CopilotSuggestion', {
-          fg = fg,
-          ctermfg = 8,
+          fg = blend(cfg, nbg, 0.40),
           italic = true,
         })
       end
 
-      -- Set on ColorScheme event (without pattern to catch all themes)
       vim.api.nvim_create_autocmd('ColorScheme', {
         group = vim.api.nvim_create_augroup('CopilotHighlights', { clear = true }),
         callback = function()
-          -- Delay slightly to run after copilot's own autocmd
           vim.defer_fn(set_copilot_hl, 10)
         end,
       })
 
-      -- Also set on VimEnter to catch initial load
       vim.api.nvim_create_autocmd('VimEnter', {
         group = 'CopilotHighlights',
         callback = function()
@@ -60,7 +70,6 @@ return {
         end,
       })
 
-      -- Create a command to manually fix it if needed
       vim.api.nvim_create_user_command('CopilotHighlightFix', set_copilot_hl, {
         desc = 'Fix Copilot suggestion highlighting',
       })

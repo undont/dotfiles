@@ -146,13 +146,13 @@ handle_fixed_session() {
         --padding=0,0,1,0 \
         --prompt=': ' \
         --border=rounded \
-        --border-label=' j/k · ^d/^u · g/G · spc/⏎ sel · / srch · n new · q/esc ' \
+        --border-label=' j/k · d/u · g/G · spc/⏎ sel · / srch · n new · q/esc ' \
         --border-label-pos=bottom \
-        --bind 'j:down,k:up,g:first,G:last,ctrl-d:half-page-down,ctrl-u:half-page-up,q:abort' \
+        --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort' \
         --bind 'space:accept,enter:accept' \
         --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
-        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,ctrl-d,ctrl-u,q,space,n)' \
-        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,ctrl-d,ctrl-u,q,space,n)" || echo "abort"' \
+        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space,n)' \
+        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space,n)" || echo "abort"' \
         --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
         --bind "n:become($new_cmd)" \
         2>/dev/null) || exit 130
@@ -196,13 +196,13 @@ handle_parameterised() {
         --padding=0,0,1,0 \
         --prompt=': ' \
         --border=rounded \
-        --border-label=' j/k · ^d/^u · g/G · spc/⏎ sel · / srch · n new · q/esc ' \
+        --border-label=' j/k · d/u · g/G · spc/⏎ sel · / srch · n new · q/esc ' \
         --border-label-pos=bottom \
-        --bind 'j:down,k:up,g:first,G:last,ctrl-d:half-page-down,ctrl-u:half-page-up,q:abort' \
+        --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort' \
         --bind 'space:accept,enter:accept' \
         --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
-        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,ctrl-d,ctrl-u,q,space,n)' \
-        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,ctrl-d,ctrl-u,q,space,n)" || echo "abort"' \
+        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space,n)' \
+        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space,n)" || echo "abort"' \
         --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
         --bind "n:become($SCRIPT_DIR/new-dir.sh '${LAUNCHER}')" \
         2>/dev/null) || exit 130

@@ -346,9 +346,12 @@ ssh() {
 # =============================================================================
 # Editor
 export EDITOR="nvim"                   # Default editor for git, etc.
-alias oc="opencode"                    # Launch OpenCode editor
+alias opencode="cl && opencode"        # Clear scrollback + launch OpenCode editor
+alias oc="opencode"                    # Shorthand for OpenCode editor
+alias claude="cl && claude"            # Clear scrollback + launch Claude AI CLI
+alias gemini="cl && gemini"            # Clear scrollback + launch Gemini AI CLI
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI
-alias drs="dash-repo-sync"            # Sync local repo paths into gh-dash config
+alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash config
 
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
@@ -591,6 +594,8 @@ alias gpl="git pull"
 alias gst="git stash"
 alias gfp="git fetch -pf"             # Fetch and prune remote-tracking branches
 alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
+alias grmc="git rm --cached"           # Untrack file(s) without deleting from disk
+alias gca="git commit --amend"         # Amend the last commit
 
 # Development tools
 alias gols="ls ~/go/bin"               # List installed Go binaries
