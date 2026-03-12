@@ -61,8 +61,8 @@ bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,r,x)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,r,x)\" || echo \"abort\"' \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,r,x,u)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,r,x,u)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
       --bind 'x:execute(~/.tmux/scripts/sessions/kill.sh \$(echo {} | cut -d\" \" -f1))+reload-sync(~/.tmux/scripts/sessions/list.sh)' \
       --bind 'u:execute(~/.tmux/scripts/sessions/undo.sh --quick)+reload-sync(~/.tmux/scripts/sessions/list.sh)' \
@@ -410,8 +410,8 @@ bind f display-popup -w 95% -h 95% -E "\
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" || \$FZF_PROMPT == \"* \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,a,m,r,x)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,a,m,r,x)\" || echo \"abort\"' \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,a,m,r,x,u)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,a,m,r,x,u)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
       --bind 'a:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"change-prompt(* )+reload(~/.tmux/scripts/windows/list.sh --all)\" || echo \"change-prompt(: )+reload(~/.tmux/scripts/windows/list.sh)\"' \
       --bind 'm:execute(~/.tmux/scripts/windows/move.sh \$(echo {} | cut -d\" \" -f1))+transform:[[ \$FZF_PROMPT == \"* \" ]] && echo \"reload(~/.tmux/scripts/windows/list.sh --all)\" || echo \"reload(~/.tmux/scripts/windows/list.sh)\"' \
@@ -608,8 +608,8 @@ bind s display-popup -w 95% -h 95% -E "\
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,r,x)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,r,x)\" || echo \"abort\"' \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,r,x,u)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,r,x,u)\" || echo \"abort\"' \
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
       --bind 'x:execute(~/.tmux/scripts/sessions/kill.sh \$(echo {} | cut -d\" \" -f1))+reload-sync(~/.tmux/scripts/sessions/list.sh)' \
       --bind 'u:execute(~/.tmux/scripts/sessions/undo.sh --quick)+reload-sync(~/.tmux/scripts/sessions/list.sh)' \

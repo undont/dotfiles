@@ -30,6 +30,16 @@ LAST_FILE="${RESURRECT_DIR}/last"
 # Ensure sessions directory exists
 mkdir -p "${SESSIONS_DIR}"
 
+# Get file modification time (cross-platform)
+get_file_mtime() {
+    local file="$1"
+    if [[ "$(uname)" == "Darwin" ]]; then
+        stat -f %m "$file" 2>/dev/null || echo 0
+    else
+        stat -c %Y "$file" 2>/dev/null || echo 0
+    fi
+}
+
 # Get the actual save file (resolve symlink)
 if [[ ! -L "${LAST_FILE}" ]] && [[ ! -f "${LAST_FILE}" ]]; then
     exit 0  # No save file yet, nothing to do
@@ -86,12 +96,21 @@ done
 # ─────────────────────────────────────────
 # Cleanup: remove orphaned session files
 # ─────────────────────────────────────────
-# Delete backup files for sessions that no longer exist
+# Delete backup files for sessions that no longer exist,
+# but skip files that are newer than the save file we just processed
+# (these may have been restored by undo and shouldn't be deleted)
+SAVE_FILE_TIME=$(get_file_mtime "${SAVE_FILE}")
+
 for existing_file in "${SESSIONS_DIR}"/*.txt; do
     [[ -e "${existing_file}" ]] || continue
     session_name=$(basename "${existing_file}" .txt)
     # Check if session is in current sessions list (Bash 3.2 compatible)
     if [[ " $CURRENT_SESSIONS_LIST " != *" $session_name "* ]]; then
+        # Skip files newer than the save file (likely restored by undo)
+        local_file_time=$(get_file_mtime "${existing_file}")
+        if [[ $local_file_time -gt $SAVE_FILE_TIME ]]; then
+            continue
+        fi
         rm -f "${existing_file}"
     fi
 done

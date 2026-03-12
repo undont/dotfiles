@@ -20,7 +20,6 @@ fi
 # Get undo file paths
 UNDO_FILE=$(get_session_undo_file)
 UNDO_BACKUP=$(get_session_undo_backup)
-SESSIONS_DIR="${HOME}/.tmux/resurrect/sessions"
 
 # Check if there's something to undo
 if [[ ! -f "$UNDO_FILE" ]]; then
@@ -43,18 +42,14 @@ if [[ ! -f "$UNDO_BACKUP" ]]; then
     exit 0
 fi
 
-# Ensure sessions directory exists
-mkdir -p "$SESSIONS_DIR"
-
-# Restore the backup to proper location
-cp "$UNDO_BACKUP" "${SESSIONS_DIR}/${SESSION_NAME}.txt"
-chmod 600 "${SESSIONS_DIR}/${SESSION_NAME}.txt"
-
-# Restore the session using existing script
-declare -a restore_args=("--session" "$SESSION_NAME")
+# Restore the session using existing script, passing the undo backup directly
+# (avoids race with split.sh orphan cleanup deleting from sessions/)
+declare -a restore_args=("--session" "$SESSION_NAME" "--file" "$UNDO_BACKUP")
 [[ "$QUICK_MODE" == true ]] && restore_args+=("--no-switch")
 
 if "$SCRIPT_DIR/../resurrect/restore.sh" "${restore_args[@]}" 2>&1; then
+    # Only cleanup undo data on success (preserve for retry on failure)
+    cleanup_undo_files "session"
     if [[ "$QUICK_MODE" == false ]]; then
         show_centered_message "Session restored" "" "Restored: $SESSION_NAME"
         sleep 1
@@ -65,6 +60,3 @@ else
         sleep 2
     fi
 fi
-
-# Cleanup undo data
-cleanup_undo_files "session"

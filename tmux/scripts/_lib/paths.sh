@@ -9,6 +9,7 @@
 get_undo_base_dir() {
     local xdg_undo_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tmux/undo"
     mkdir -p "$xdg_undo_dir" 2>/dev/null || true
+    chmod 700 "$xdg_undo_dir" 2>/dev/null || true
     echo "$xdg_undo_dir"
 }
 

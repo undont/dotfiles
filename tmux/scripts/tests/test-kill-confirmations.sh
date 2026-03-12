@@ -74,44 +74,34 @@ section "Context-aware messages"
 # kill-pane.sh should have context-aware messages for last pane
 if grep -q "Last pane in" "$SCRIPTS_DIR/panes/kill.sh"; then
     pass "kill-pane.sh has context-aware message for last pane"
-    ((PASSED++))
 else
     fail "kill-pane.sh missing context-aware message"
-    ((FAILED++))
 fi
 
 if grep -q "Switch to.*and kill" "$SCRIPTS_DIR/panes/kill.sh"; then
     pass "kill-pane.sh mentions session switching"
-    ((PASSED++))
 else
     fail "kill-pane.sh doesn't mention session switching"
-    ((FAILED++))
 fi
 
 # kill-window.sh should have context-aware messages for last window
 if grep -q "Last window" "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh has context-aware message for last window"
-    ((PASSED++))
 else
     fail "kill-window.sh missing context-aware message"
-    ((FAILED++))
 fi
 
 if grep -q "Switch to.*and kill" "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh mentions session switching"
-    ((PASSED++))
 else
     fail "kill-window.sh doesn't mention session switching"
-    ((FAILED++))
 fi
 
 # kill-session.sh should ask about switching to another session
 if grep -q "Kill session.*and switch to" "$SCRIPTS_DIR/sessions/kill.sh"; then
     pass "kill-session.sh has context-aware message for session switching"
-    ((PASSED++))
 else
     fail "kill-session.sh missing session switching message"
-    ((FAILED++))
 fi
 
 section "Session switching logic"
@@ -166,26 +156,20 @@ section "Confirmation can be skipped"
 # Verify scripts skip confirmation when flags are set
 if grep -q "if ! \$FORCE_KILL" "$SCRIPTS_DIR/panes/kill.sh"; then
     pass "kill-pane.sh skips confirmation with --force"
-    ((PASSED++))
 else
     fail "kill-pane.sh doesn't check FORCE_KILL flag"
-    ((FAILED++))
 fi
 
 if grep -q 'if \[\[ "\$NO_CONFIRM" != "--no-confirm" \]\]' "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh skips confirmation with --no-confirm"
-    ((PASSED++))
 else
     fail "kill-window.sh doesn't check NO_CONFIRM flag"
-    ((FAILED++))
 fi
 
 if grep -q 'if \[\[ "\$NO_CONFIRM" != "--no-confirm" \]\]' "$SCRIPTS_DIR/sessions/kill.sh"; then
     pass "kill-session.sh skips confirmation with --no-confirm"
-    ((PASSED++))
 else
     fail "kill-session.sh doesn't check NO_CONFIRM flag"
-    ((FAILED++))
 fi
 
 section "Exit codes and cancellation handling"
@@ -207,18 +191,14 @@ section "Alert cleanup integration"
 # kill-window.sh and kill-session.sh should clear alerts
 if grep -q "clear_window_alerts" "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh clears window alerts"
-    ((PASSED++))
 else
     fail "kill-window.sh doesn't clear alerts"
-    ((FAILED++))
 fi
 
 if grep -q "clear_session_alerts" "$SCRIPTS_DIR/sessions/kill.sh"; then
     pass "kill-session.sh clears session alerts"
-    ((PASSED++))
 else
     fail "kill-session.sh doesn't clear alerts"
-    ((FAILED++))
 fi
 
 section "Undo state preservation"
@@ -226,7 +206,7 @@ section "Undo state preservation"
 # All kill scripts should save undo state
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
-    if grep -q "UNDO_FILE\|undo state" "$SCRIPTS_DIR/$script_path"; then
+    if grep -q "UNDO_FILE\|undo_file\|save_undo_state" "$SCRIPTS_DIR/$script_path"; then
         pass "$script saves undo state"
 
     else
@@ -234,6 +214,34 @@ for script in kill-pane.sh kill-window.sh kill-session.sh; do
 
     fi
 done
+
+section "save_undo_state resilience"
+
+# Regression: save_undo_state must return 0 even when no backup exists,
+# otherwise set -e kills the script before the session gets killed.
+# This happens when a session is created, killed, recreated, and killed
+# again before the auto-save cycle captures it.
+if bash -c '
+    set -euo pipefail
+    # Minimal stubs for save_undo_state dependencies
+    get_session_undo_file()    { echo "/tmp/test-kill-undo-$$"; }
+    get_session_undo_backup()  { echo "/tmp/test-kill-backup-$$"; }
+    cleanup_undo_files()       { rm -f "/tmp/test-kill-undo-$$" "/tmp/test-kill-backup-$$"; }
+    # Stub tmux to simulate a session with no windows/panes (empty output)
+    tmux() { return 1; }
+    export -f tmux
+    # Source kill.sh safely — the guard prevents the main script from running
+    SOURCING_FOR_TEST=1 source "'"$SCRIPTS_DIR/sessions/kill.sh"'"
+    # Call with a session that has no backup anywhere
+    save_undo_state "nonexistent_session_$$"
+    # If we reach here, set -e did not kill us
+    cleanup_undo_files "session"
+    exit 0
+' 2>/dev/null; then
+    pass "save_undo_state returns 0 when no backup exists"
+else
+    fail "save_undo_state exits non-zero when no backup exists (set -e regression)"
+fi
 
 print_summary
 [[ $FAIL -gt 0 ]] && exit 1

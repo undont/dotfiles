@@ -63,7 +63,7 @@ function M.setup()
     end,
   })
 
-  -- Dynamic diff highlights (fugitive, diffview, octo)
+  -- Dynamic diff highlights (diffview, octo)
   require('custom.core.diff-highlights').setup()
 
   -- Disable swap file for Octo buffers (not needed and causes warnings)
@@ -78,7 +78,7 @@ function M.setup()
   local function sort_json_keys(buf)
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
     local content = table.concat(lines, '\n')
-    local result = vim.fn.system([[perl -0777 -pe 's/,(\s*[\]}])/$1/g' | jq -S . | prettier --parser json]], content)
+    local result = vim.fn.system([[set -o pipefail; perl -0777 -pe 's/,(\s*[\]}])/$1/g' | jq -S . | prettier --parser json]], content)
     if vim.v.shell_error == 0 then
       local new_lines = vim.split(result, '\n', { trimempty = true })
       vim.api.nvim_buf_set_lines(buf, 0, -1, false, new_lines)
@@ -97,26 +97,28 @@ function M.setup()
 
   -- Clean up unnamed empty buffers when opening a file
   -- Removes the default [No Name] buffer that nvim creates at startup
+  -- Deferred via vim.schedule to avoid interfering with plugin layout creation
+  -- (e.g. diffview's find_pivot triggers BufEnter mid-layout via 1windo)
   local cleanup_group = vim.api.nvim_create_augroup('cleanup-empty-buffers', { clear = true })
   vim.api.nvim_create_autocmd('BufEnter', {
     desc = 'Delete unnamed empty buffers',
     group = cleanup_group,
     callback = function()
-      -- Get all buffers
-      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        -- Check if buffer is: unnamed, empty, not modified, not the current buffer, and a normal buffer
-        if
-          vim.api.nvim_buf_is_valid(buf)
-          and vim.fn.bufname(buf) == ''
-          and vim.api.nvim_buf_line_count(buf) == 1
-          and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ''
-          and not vim.bo[buf].modified
-          and buf ~= vim.api.nvim_get_current_buf()
-          and vim.bo[buf].buftype == ''
-        then
-          vim.api.nvim_buf_delete(buf, { force = true })
+      vim.schedule(function()
+        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+          if
+            vim.api.nvim_buf_is_valid(buf)
+            and vim.fn.bufname(buf) == ''
+            and vim.api.nvim_buf_line_count(buf) == 1
+            and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ''
+            and not vim.bo[buf].modified
+            and buf ~= vim.api.nvim_get_current_buf()
+            and vim.bo[buf].buftype == ''
+          then
+            vim.api.nvim_buf_delete(buf, { force = true })
+          end
         end
-      end
+      end)
     end,
   })
 end
