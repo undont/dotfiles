@@ -8,8 +8,8 @@
 # Get the undo base directory (XDG-compliant)
 get_undo_base_dir() {
     local xdg_undo_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tmux/undo"
-    # shellcheck disable=SC2174  # Intentional: -m 700 applies to leaf dir only
-    mkdir -p -m 700 "$xdg_undo_dir" 2>/dev/null || true
+    mkdir -p "$xdg_undo_dir" 2>/dev/null || true
+    chmod 700 "$xdg_undo_dir" 2>/dev/null || true
     echo "$xdg_undo_dir"
 }
 
