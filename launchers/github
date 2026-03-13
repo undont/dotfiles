@@ -41,7 +41,7 @@ fi
 
 # Window 1: dash
 tmux new-session -d -s "$SESSION" -n "dash" -c "$PROJECT_DIR"
-tmux send-keys -t "$SESSION:dash" 'gh dash' Enter
+tmux send-keys -t "$SESSION:dash" 'dash' Enter
 
 # Select first window
 tmux select-window -t "$SESSION:1"

@@ -261,10 +261,10 @@ fi
 section "launchers/run.sh: Input Sanitisation"
 
 # Check that fzf become() commands sanitise user input
-if [[ "$run_content" == *"tr -c '[:alnum:]_.-' '-'"* ]]; then
-    pass "sanitises suffix input in become() command"
+if [[ "$run_content" == *"tr -c '[:alnum:]_-' '-'"* ]]; then
+    pass "sanitises suffix input in become() command (dots excluded)"
 else
-    fail "should sanitise suffix with tr in become() command"
+    fail "should sanitise suffix with tr in become() command (dots excluded)"
 fi
 
 if [[ "$run_content" == *"new-dir.sh"* ]]; then
@@ -396,7 +396,7 @@ else
 fi
 
 # Should sanitise special characters
-if [[ "$common_lib_content" == *"tr -c '[:alnum:]_.-' '-'"* ]]; then
+if [[ "$common_lib_content" == *"tr -c '[:alnum:]_.-' '-'"* ]] || [[ "$common_lib_content" == *"tr -c '[:alnum:]_-' '-'"* ]]; then
     pass "sanitises special characters in launcher names"
 else
     fail "should sanitise special characters in launcher names"

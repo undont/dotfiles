@@ -30,7 +30,7 @@ OPTIONS:
 
 NOTES:
     • If a session with the same name exists, attaches to it instead
-    • Session names are sanitised (alphanumeric, underscore, dot, dash only)
+    • Session names are sanitised (alphanumeric, underscore, dash only)
     • Works both inside and outside of tmux (uses switch-client vs attach-session)
     • Claude Code is launched via the 'claude' CLI command
 EOF
@@ -68,7 +68,8 @@ fi
 dir=$(cd "$dir" && pwd)
 
 # Use directory basename as session name (sanitised)
-session=$(basename "$dir" | tr -c '[:alnum:]_.\-\n' '_')
+# Dots are replaced because tmux uses '.' as a separator in target syntax (session:window.pane)
+session=$(basename "$dir" | tr -c '[:alnum:]_\-\n' '-' | sed 's/-*$//')
 
 # Check if session already exists
 if tmux has-session -t "$session" 2>/dev/null; then
