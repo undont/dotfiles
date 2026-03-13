@@ -133,7 +133,7 @@ handle_fixed_session() {
     local new_cmd
     if [[ "$instance_mode" == "prompt" ]]; then
         # Prompt for a suffix (e.g. ticket number) → dana-1234
-        new_cmd="suffix=\$(printf '' | fzf --print-query --query='' --prompt=${safe_base_name}- --height=100% --layout=reverse --border=rounded --border-label=' ⏎ create · esc cancel ' --border-label-pos=bottom --no-info --pointer=' ' --bind 'enter:print-query' --bind 'esc:abort' 2>/dev/null | head -1) && [ -n \"\$suffix\" ] && suffix=\$(printf '%s' \"\$suffix\" | tr -c '[:alnum:]_.-' '-') && SESSION_NAME=${safe_base_name}-\$suffix exec ${safe_launcher}"
+        new_cmd="suffix=\$(printf '' | fzf --print-query --query='' --prompt=${safe_base_name}- --height=100% --layout=reverse --border=rounded --border-label=' ⏎ create · esc cancel ' --border-label-pos=bottom --no-info --pointer=' ' --bind 'enter:print-query' --bind 'esc:abort' 2>/dev/null | head -1) && [ -n \"\$suffix\" ] && suffix=\$(printf '%s' \"\$suffix\" | tr -c '[:alnum:]_-' '-') && SESSION_NAME=${safe_base_name}-\$suffix exec ${safe_launcher}"
     else
         # Auto-increment → dana-2, dana-3, etc.
         new_cmd="num=2; while tmux has-session -t ${safe_base_name}-\$num 2>/dev/null; do num=\$((num+1)); done; SESSION_NAME=${safe_base_name}-\$num exec ${safe_launcher}"

@@ -140,10 +140,11 @@ sanitise_launcher_name() {
     printf '%s' "$raw"
 }
 
-# Sanitise session name (convert spaces and invalid chars to dashes, then trim trailing dashes)
+# Sanitise session name (convert spaces, dots, and invalid chars to dashes, then trim trailing dashes)
+# Note: dots are replaced because tmux uses '.' as a separator in target syntax (session:window.pane)
 sanitise_session_name() {
     local name="$1"
-    echo "$name" | tr -c '[:alnum:]_.-' '-' | sed 's/-*$//'
+    echo "$name" | tr -c '[:alnum:]_-' '-' | sed 's/-*$//'
 }
 
 # ═════════════════════════════════════════════════════════════════
@@ -151,7 +152,8 @@ sanitise_session_name() {
 # ═════════════════════════════════════════════════════════════════
 
 # Validate a tmux session name
-# Session names must be alphanumeric with dots, underscores, and hyphens allowed.
+# Session names must be alphanumeric with underscores and hyphens allowed.
+# Dots are NOT allowed because tmux uses '.' as a separator in target syntax.
 #
 # Usage:
 #   if ! validate_session_name "$name"; then
@@ -176,9 +178,9 @@ validate_session_name() {
         return 1
     fi
 
-    # Session names should be alphanumeric with _ - . allowed
-    if [[ ! "$name" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-        error "Invalid session name: '$name'. Use only letters, numbers, dots, underscores, hyphens."
+    # Session names should be alphanumeric with _ - allowed (no dots — tmux uses '.' as pane separator)
+    if [[ ! "$name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
+        error "Invalid session name: '$name'. Use only letters, numbers, underscores, hyphens."
         return 1
     fi
 

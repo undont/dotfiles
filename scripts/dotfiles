@@ -853,6 +853,8 @@ cmd_aliases() {
         "claude"     "cl + claude" \
         "gemini"     "cl + gemini" \
         "drs"        "sync repo paths" \
+        "ff"         "fastfetch system info" \
+        "dash"       "cl + gh dash" \
         "gols"       "list Go binaries" \
         "nvim-clear" "clear nvim cache" \
         "nvim-sync"  "sync Lazy.nvim plugins" \
