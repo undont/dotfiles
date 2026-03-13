@@ -664,7 +664,9 @@ if [[ -n "$edit_source" ]]; then
     fi
 fi
 
-session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '-' '_')
+# Session name: strip dots (tmux uses '.' as pane separator in target syntax)
+session_name=$(printf '%s' "$name" | tr '.' '-' | sed 's/-*$//')
+session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '-.' '_')
 
 {
     instance_tag=""
@@ -701,7 +703,7 @@ PREAMBLE
     if [[ "$worktree_aware" == "y" ]]; then
         worktree_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
         cat << WTBLOCK
-SESSION="\${SESSION_NAME:-$name}"
+SESSION="\${SESSION_NAME:-$session_name}"
 WORKTREES_DIR="\${${session_var}_WORKTREES:-$worktrees_dir}"
 BASE_DIR="\${${session_var}_ROOT:-$project_dir}"
 
@@ -719,7 +721,7 @@ fi
 WTBLOCK
     else
         cat << SIMPLE
-SESSION="\${SESSION_NAME:-$name}"
+SESSION="\${SESSION_NAME:-$session_name}"
 PROJECT_DIR="\${${session_var}_ROOT:-$project_dir}"
 SIMPLE
     fi

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.62] - 2026-03-13
+
+### Added
+- Zsh: `ff` alias for `fastfetch` (system info); `dash` alias clears scrollback and opens `gh dash`
+- Nvim: `<leader>sG` fixed-string grep, `<leader>lR` refresh Neovim, `<leader>Nn`/`<leader>Na` filtered/all notification history, `<leader>c]`/`<leader>c[` next/prev comment block, `<leader>psm` squash-merge PR, `<leader>mp` markdown preview in browser, `<leader>ni` add missing imports, `<leader>ba` delete all other buffers (cheatsheet updated)
+
+### Fixed
+- Tmux/Launchers: session names now disallow dots — tmux uses `.` as pane separator in target syntax (`session:window.pane`), causing ambiguous targeting with dotted names (e.g. `music.nvim`)
+
 ## [0.2.61] - 2026-03-12
 
 ### Added

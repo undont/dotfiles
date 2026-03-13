@@ -108,6 +108,10 @@ assert_equals "Trailing dashes removed" "test" "$result"
 result=$(sanitise_session_name "valid-name_123")
 assert_equals "Valid name unchanged" "valid-name_123" "$result"
 
+# Test dot replacement (tmux uses '.' as pane separator)
+result=$(sanitise_session_name "music.nvim")
+assert_equals "Dots converted to dashes" "music-nvim" "$result"
+
 # ═══════════════════════════════════════════════════════════════════════════
 # Test: Validate session names
 # ═══════════════════════════════════════════════════════════════════════════
@@ -120,10 +124,16 @@ else
     fail "Simple name should be valid"
 fi
 
-if validate_session_name "test-session_123.name" 2>/dev/null; then
+if validate_session_name "test-session_123" 2>/dev/null; then
     pass "Complex valid name accepted"
 else
     fail "Complex valid name should be accepted"
+fi
+
+if validate_session_name "music.nvim" 2>/dev/null; then
+    fail "Name with dot should be invalid (tmux pane separator)"
+else
+    pass "Name with dot rejected"
 fi
 
 # Invalid names

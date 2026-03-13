@@ -68,7 +68,7 @@ assert_invalid_name() {
 assert_valid_name "myproject"
 assert_valid_name "my-project"
 assert_valid_name "my_project"
-assert_valid_name "my.project"
+assert_invalid_name "my.project"
 assert_valid_name "project123"
 assert_valid_name "123"
 

@@ -27,6 +27,7 @@ Search in open files | <leader>s/
 Search Neovim config | <leader>sn
 Go to line number | <leader>sl
 Select Telescope picker | <leader>ss
+Grep (literal/fixed-strings) | <leader>sG
 Search & replace (grug-far) | <leader>sR
 Open cheatsheet | <leader>?
 
@@ -78,6 +79,7 @@ Hover documentation | K
 Toggle inlay hints | <leader>th
 Format buffer | <leader>f
 LSP restart | <leader>lr
+Refresh Neovim | <leader>lR
 
 ## tools @tools
 Toggle file tree | <leader>e
@@ -86,7 +88,8 @@ Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
 Quickfix picker | <leader>q
-Notification history | <leader>N
+Notification history (filtered) | <leader>Nn
+Notification history (all) | <leader>Na
 
 ## diagnostics @diagnostics
 All diagnostics (Trouble) | <leader>xx
@@ -119,6 +122,8 @@ Claude comment template | <leader>cc
 Claude user/exchange | <leader>cu
 Toggle comment resolved | <leader>cr
 Delete comment block | <leader>cd
+Next comment block | <leader>c]
+Previous comment block | <leader>c[
 @ file reference (prompt files) | @ (insert mode)
 Literal @ (prompt files) | @@ (insert mode)
 Expand/jump next placeholder | Ctrl+k
@@ -147,6 +152,7 @@ Diffview PR review | <leader>dp
 ## pr-review @pr-review
 List PRs | <leader>pl
 Search PRs | <leader>pf
+Squash merge PR | <leader>psm
 Open PR by number | <leader>po
 Start review | <leader>pr
 Resume review | <leader>pe
@@ -186,6 +192,7 @@ Table align centre | <leader>mAc
 Table align left | <leader>mAl
 Table align right | <leader>mAr
 Table align default | <leader>mAx
+Preview in browser | <leader>mp
 Next/prev heading | ]] / [[
 
 ## test @test
@@ -209,10 +216,12 @@ Manage secrets | <leader>ns
 Watch project | <leader>nw
 New item | <leader>nn
 Outdated packages | <leader>no
+Add missing imports | <leader>ni
 
 ## buffers @buffers
 Delete buffer | <leader>bd
 Force delete buffer | <leader>bD
+Delete all other buffers | <leader>ba
 
 ## bracketed @bracketed
 Next/prev buffer | ]b / [b

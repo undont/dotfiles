@@ -234,6 +234,8 @@ direnv allow
 | `gemini`   | `cl && gemini`                  | Clear scrollback + launch Gemini CLI |
 | `dot`      | `dotfiles`                      | Shorthand for dotfiles CLI         |
 | `drs`      | `dash-repo-sync`                | Sync local repo paths into gh-dash config |
+| `ff`       | `fastfetch`                     | System info (fastfetch)                    |
+| `dash`     | `cl && gh dash`                 | Clear scrollback + open GitHub Dash        |
 | `ta`       | `tattach`                       | Shorthand for `tattach` (see functions below) |
 | `tls`      | `~/.tmux/scripts/resurrect/restore.sh --list` | List saved tmux session backups |
 | `tcleanup` | `~/.tmux/scripts/tests/cleanup-tests.sh` | Clean up orphaned test resources (servers/backups) |
