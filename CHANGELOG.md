@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.63] - 2026-03-14
+
+### Added
+- Tmux: GitHub Copilot instance management — `prefix + a` opens fzf picker to list, create (`n`), and kill (`x`) Copilot CLI instances with alert integration
+- Tmux: Copilot agent alerts (✦ blue icon) in status bar and session lists, with hook wrappers for auto-alerting
+- Zsh: `copilot` alias clears scrollback before launch
+- Nvim: music.nvim plugin for now playing indicator (Apple Music, Spotify)
+- Brewfile: `chafa` terminal image renderer (used by music.nvim)
+
+### Changed
+- Zsh: `gds` alias changed from `git diff --staged` to `git diff --stat`
+- gh-dash: `gh enhance` action uses `--repo` flag for cross-repo support
+
+### Removed
+- Zsh: `demo-rec` alias (asciinema recording)
+
 ## [0.2.62] - 2026-03-13
 
 ### Added

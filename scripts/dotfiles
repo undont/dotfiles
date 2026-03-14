@@ -9,6 +9,7 @@
 #   set           Configure project directories (DEV_ROOT, PROJECTS_ROOT)
 #   theme   -t    Manage colour themes
 #   links   -l    Show all managed symlinks and their status
+#   diff    -d    Show changes in copy-on-install files vs repo
 #   aliases -a    Show all shell aliases, functions, and utilities
 #   notes   -n    Browse the full changelog in a pager
 #   version -v    Show current dotfiles version, preset, and theme
@@ -482,7 +483,10 @@ cmd_update() {
     local install_args=("--$preset" --skip-backup --update --yes)
     [[ -n "$skip_steps" ]] && install_args+=(--skip-steps "$skip_steps")
 
-    "$DOTFILES_DIR/install.sh" "${install_args[@]}"
+    if ! "$DOTFILES_DIR/install.sh" "${install_args[@]}"; then
+        error "Update failed — check output above"
+        return 1
+    fi
 }
 
 cmd_status() {
@@ -702,6 +706,51 @@ cmd_set() {
     info "Run 'source ~/.zshrc' or open a new shell to apply."
 }
 
+cmd_diff() {
+    local found=0
+
+    # Copy-on-install file pairs: "repo_path|installed_path"
+    local -a pairs=(
+        "btop/btop.conf|$HOME/.config/btop/btop.conf"
+        "karabiner/karabiner.json|$HOME/.config/karabiner/karabiner.json"
+    )
+    # lazydocker uses platform-specific path
+    if is_macos; then
+        pairs+=("lazydocker/config.yml|$HOME/Library/Application Support/lazydocker/config.yml")
+    else
+        pairs+=("lazydocker/config.yml|$HOME/.config/lazydocker/config.yml")
+    fi
+
+    for pair in "${pairs[@]}"; do
+        local repo="${pair%%|*}" installed="${pair#*|}"
+        [[ ! -f "$installed" ]] && continue
+        local repo_path="$DOTFILES_DIR/$repo"
+        [[ ! -f "$repo_path" ]] && continue
+        if ! diff -q "$repo_path" "$installed" &>/dev/null; then
+            found=1
+            echo ""
+            printf "${CYAN}%s${NC} vs ${YELLOW}%s${NC}\n" "$repo" "$installed"
+            diff --color=auto -u "$repo_path" "$installed" || true
+        fi
+    done
+
+    # zshrc.template is special — it's the reference for ~/.zshrc
+    local zshrc_template="$DOTFILES_DIR/zsh/zshrc.template"
+    if [[ -f "$HOME/.zshrc" ]] && [[ -f "$zshrc_template" ]]; then
+        if ! diff -q "$zshrc_template" "$HOME/.zshrc" &>/dev/null; then
+            found=1
+            echo ""
+            printf "${CYAN}%s${NC} vs ${YELLOW}%s${NC}\n" "zsh/zshrc.template" "$HOME/.zshrc"
+            printf "${GREY}(~/.zshrc is user-owned — differences are expected)${NC}\n"
+            diff --color=auto -u "$zshrc_template" "$HOME/.zshrc" || true
+        fi
+    fi
+
+    if [[ $found -eq 0 ]]; then
+        success "All copy-on-install files match repo versions"
+    fi
+}
+
 cmd_help() {
     print_logo
     cat << 'EOF'
@@ -727,6 +776,7 @@ Commands:
                 dotfiles theme generate list - List Ghostty themes
                 dotfiles theme delete <n>    - Delete a generated theme
   links   -l    Show all managed symlinks and their status
+  diff    -d    Show changes in copy-on-install files vs repo
   aliases -a    Show all shell aliases, functions, and utilities
   notes   -n    Browse the full changelog in a pager
   version -v    Show current dotfiles version, preset, and theme
@@ -812,7 +862,7 @@ cmd_aliases() {
         "gs"   "git status -sb" \
         "gd"   "git diff" \
         "gdn"  "git diff (diffnav)" \
-        "gds"  "git diff --staged" \
+        "gds"  "git diff --stat" \
         "gl"   "git log (last 20)" \
         "glf"  "git log (full)" \
         "gco"  "git checkout" \
@@ -852,14 +902,14 @@ cmd_aliases() {
         "oc"         "opencode (shorthand)" \
         "claude"     "cl + claude" \
         "gemini"     "cl + gemini" \
+        "copilot"    "cl + copilot" \
         "drs"        "sync repo paths" \
         "ff"         "fastfetch system info" \
         "dash"       "cl + gh dash" \
         "gols"       "list Go binaries" \
         "nvim-clear" "clear nvim cache" \
         "nvim-sync"  "sync Lazy.nvim plugins" \
-        "brewup"     "brew update + upgrade" \
-        "demo-rec"   "asciinema recording"
+        "brewup"     "brew update + upgrade"
 
     printf "\n${CYAN}PROFILING${NC}\n"
     printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%s${NC} ${GREY}%s${NC}\n" \
@@ -1047,6 +1097,9 @@ main() {
             ;;
         cd)
             cmd_cd
+            ;;
+        diff|-d)
+            cmd_diff
             ;;
         notes|-n)
             cmd_notes

@@ -2,6 +2,10 @@
 # Brewfile filtering utilities
 # Source this file: source "${BASH_SOURCE%/*}/_lib/brewfile.sh"
 
+# Guard against multiple sourcing
+[[ -n "${_DOTFILES_BREWFILE_SH_LOADED:-}" ]] && return 0
+_DOTFILES_BREWFILE_SH_LOADED=1
+
 # Filter Brewfile based on preset
 # The Brewfile uses section markers like "# @preset: minimal"
 # We include sections based on hierarchy: minimal < core < full

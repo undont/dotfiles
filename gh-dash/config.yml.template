@@ -91,7 +91,7 @@ keybindings:
           command: cd {{.RepoPath}} && gh pr diff {{.PrNumber}} | diffnav
         - key: A
           name: actions
-          command: cd {{.RepoPath}} && gh enhance {{.PrNumber}}
+          command: gh enhance --repo {{.RepoName}} {{.PrNumber}}
     issues: {}
 repoPaths: {}
 theme:

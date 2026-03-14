@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
@@ -22,6 +22,17 @@ DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 # shellcheck source=scripts/_lib/ghdash.sh
 source "$DOTFILES_ROOT/scripts/_lib/ghdash.sh"
+
+# Build sed -e arguments from an associative array of placeholder→value mappings.
+# Usage: _build_sed_args vars_assoc_array_name
+# Populates the caller's `sed_args` array with -e flags.
+_build_sed_args() {
+    local -n _vars=$1
+    sed_args=()
+    for key in "${!_vars[@]}"; do
+        sed_args+=(-e "s|{{${key}}}|${_vars[$key]}|g")
+    done
+}
 
 # Directories
 THEMES_DIR="$DOTFILES_ROOT/themes"
@@ -186,40 +197,46 @@ apply_theme() {
             fi
         fi
 
-        sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
-            -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
-            -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
-            -e "s|{{TMUX_STATUS_BG}}|$TMUX_STATUS_BG|g" \
-            -e "s|{{TMUX_STATUS_FG}}|$TMUX_STATUS_FG|g" \
-            -e "s|{{TMUX_STATUS_ACTIVE_BG}}|$TMUX_STATUS_ACTIVE_BG|g" \
-            -e "s|{{TMUX_STATUS_ACTIVE_FG}}|$TMUX_STATUS_ACTIVE_FG|g" \
-            -e "s|{{TMUX_STATUS_INACTIVE_FG}}|$TMUX_STATUS_INACTIVE_FG|g" \
-            -e "s|{{TMUX_STATUS_BELL_FG}}|$TMUX_STATUS_BELL_FG|g" \
-            -e "s|{{TMUX_EXIT_PASS_COLOUR}}|$TMUX_EXIT_PASS_COLOUR|g" \
-            -e "s|{{TMUX_EXIT_FAIL_COLOUR}}|$TMUX_EXIT_FAIL_COLOUR|g" \
-            -e "s|{{TMUX_ACCENT_CYAN}}|$TMUX_ACCENT_CYAN|g" \
-            -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
-            -e "s|{{TMUX_ACCENT_PURPLE}}|$TMUX_ACCENT_PURPLE|g" \
-            -e "s|{{TMUX_ACCENT_YELLOW}}|$TMUX_ACCENT_YELLOW|g" \
-            -e "s|{{TMUX_ACCENT_GREEN}}|$TMUX_ACCENT_GREEN|g" \
-            -e "s|{{TMUX_BG_SECONDARY}}|$TMUX_BG_SECONDARY|g" \
-            -e "s|{{TMUX_FG_SECONDARY}}|$TMUX_FG_SECONDARY|g" \
-            -e "s|{{TMUX_PANE_BORDER_INACTIVE}}|$TMUX_PANE_BORDER_INACTIVE|g" \
-            -e "s|{{TMUX_PANE_BORDER_ACTIVE}}|$TMUX_PANE_BORDER_ACTIVE|g" \
-            -e "s|{{TMUX_MESSAGE_BG}}|$TMUX_MESSAGE_BG|g" \
-            -e "s|{{TMUX_MESSAGE_FG}}|$TMUX_MESSAGE_FG|g" \
-            -e "s|{{TMUX_MESSAGE_COMMAND_BG}}|$TMUX_MESSAGE_COMMAND_BG|g" \
-            -e "s|{{TMUX_MESSAGE_COMMAND_FG}}|$TMUX_MESSAGE_COMMAND_FG|g" \
-            -e "s|{{TMUX_CPU_LOW_BG}}|$TMUX_CPU_LOW_BG|g" \
-            -e "s|{{TMUX_CPU_MEDIUM_BG}}|$TMUX_CPU_MEDIUM_BG|g" \
-            -e "s|{{TMUX_CPU_HIGH_BG}}|$TMUX_CPU_HIGH_BG|g" \
-            -e "s|{{TMUX_RAM_LOW_BG}}|$TMUX_RAM_LOW_BG|g" \
-            -e "s|{{TMUX_RAM_MEDIUM_BG}}|$TMUX_RAM_MEDIUM_BG|g" \
-            -e "s|{{TMUX_RAM_HIGH_BG}}|$TMUX_RAM_HIGH_BG|g" \
-            -e "s|{{TMUX_BATTERY_NORMAL_BG}}|$TMUX_BATTERY_NORMAL_BG|g" \
-            -e "s|{{TMUX_BATTERY_LOW_BG}}|$TMUX_BATTERY_LOW_BG|g" \
-            -e "s|{{CLIPBOARD_CMD}}|$clipboard_cmd|g" \
-            "$TMUX_TEMPLATE" > "$tmux_tmp" || { rm -f "$tmux_tmp"; return 1; }
+        # Build sed arguments from theme variables (adding new vars only requires a new entry)
+        declare -A tmux_vars=(
+            [THEME_NAME]="$THEME_NAME"
+            [TMUX_BG_PRIMARY]="$TMUX_BG_PRIMARY"
+            [TMUX_FG_PRIMARY]="$TMUX_FG_PRIMARY"
+            [TMUX_STATUS_BG]="$TMUX_STATUS_BG"
+            [TMUX_STATUS_FG]="$TMUX_STATUS_FG"
+            [TMUX_STATUS_ACTIVE_BG]="$TMUX_STATUS_ACTIVE_BG"
+            [TMUX_STATUS_ACTIVE_FG]="$TMUX_STATUS_ACTIVE_FG"
+            [TMUX_STATUS_INACTIVE_FG]="$TMUX_STATUS_INACTIVE_FG"
+            [TMUX_STATUS_BELL_FG]="$TMUX_STATUS_BELL_FG"
+            [TMUX_EXIT_PASS_COLOUR]="$TMUX_EXIT_PASS_COLOUR"
+            [TMUX_EXIT_FAIL_COLOUR]="$TMUX_EXIT_FAIL_COLOUR"
+            [TMUX_ACCENT_CYAN]="$TMUX_ACCENT_CYAN"
+            [TMUX_ACCENT_PINK]="$TMUX_ACCENT_PINK"
+            [TMUX_ACCENT_PURPLE]="$TMUX_ACCENT_PURPLE"
+            [TMUX_ACCENT_YELLOW]="$TMUX_ACCENT_YELLOW"
+            [TMUX_ACCENT_GREEN]="$TMUX_ACCENT_GREEN"
+            [TMUX_BG_SECONDARY]="$TMUX_BG_SECONDARY"
+            [TMUX_FG_SECONDARY]="$TMUX_FG_SECONDARY"
+            [TMUX_PANE_BORDER_INACTIVE]="$TMUX_PANE_BORDER_INACTIVE"
+            [TMUX_PANE_BORDER_ACTIVE]="$TMUX_PANE_BORDER_ACTIVE"
+            [TMUX_MESSAGE_BG]="$TMUX_MESSAGE_BG"
+            [TMUX_MESSAGE_FG]="$TMUX_MESSAGE_FG"
+            [TMUX_MESSAGE_COMMAND_BG]="$TMUX_MESSAGE_COMMAND_BG"
+            [TMUX_MESSAGE_COMMAND_FG]="$TMUX_MESSAGE_COMMAND_FG"
+            [TMUX_CPU_LOW_BG]="$TMUX_CPU_LOW_BG"
+            [TMUX_CPU_MEDIUM_BG]="$TMUX_CPU_MEDIUM_BG"
+            [TMUX_CPU_HIGH_BG]="$TMUX_CPU_HIGH_BG"
+            [TMUX_RAM_LOW_BG]="$TMUX_RAM_LOW_BG"
+            [TMUX_RAM_MEDIUM_BG]="$TMUX_RAM_MEDIUM_BG"
+            [TMUX_RAM_HIGH_BG]="$TMUX_RAM_HIGH_BG"
+            [TMUX_BATTERY_NORMAL_BG]="$TMUX_BATTERY_NORMAL_BG"
+            [TMUX_BATTERY_LOW_BG]="$TMUX_BATTERY_LOW_BG"
+            [CLIPBOARD_CMD]="$clipboard_cmd"
+            [DOTFILES_ROOT]="$DOTFILES_ROOT"
+        )
+        local -a sed_args
+        _build_sed_args tmux_vars
+        sed "${sed_args[@]}" "$TMUX_TEMPLATE" > "$tmux_tmp" || { rm -f "$tmux_tmp"; return 1; }
         mv "$tmux_tmp" "$TMUX_OUTPUT"
         [[ "$quiet" != "true" ]] && theme_success "Generated tmux configuration"
     else
@@ -271,34 +288,39 @@ keybind = shift+backspace=text:\x7f
 keybind = shift+space=text:\x20
 PLATFORM
 
-        sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
-            -e "s|{{GHOSTTY_BACKGROUND}}|$GHOSTTY_BACKGROUND|g" \
-            -e "s|{{GHOSTTY_FOREGROUND}}|$GHOSTTY_FOREGROUND|g" \
-            -e "s|{{GHOSTTY_CURSOR_COLOR}}|$GHOSTTY_CURSOR_COLOR|g" \
-            -e "s|{{GHOSTTY_CURSOR_TEXT}}|$GHOSTTY_CURSOR_TEXT|g" \
-            -e "s|{{GHOSTTY_SELECTION_BG}}|$GHOSTTY_SELECTION_BG|g" \
-            -e "s|{{GHOSTTY_SELECTION_FG}}|$GHOSTTY_SELECTION_FG|g" \
-            -e "s|{{GHOSTTY_PALETTE_0}}|$GHOSTTY_PALETTE_0|g" \
-            -e "s|{{GHOSTTY_PALETTE_1}}|$GHOSTTY_PALETTE_1|g" \
-            -e "s|{{GHOSTTY_PALETTE_2}}|$GHOSTTY_PALETTE_2|g" \
-            -e "s|{{GHOSTTY_PALETTE_3}}|$GHOSTTY_PALETTE_3|g" \
-            -e "s|{{GHOSTTY_PALETTE_4}}|$GHOSTTY_PALETTE_4|g" \
-            -e "s|{{GHOSTTY_PALETTE_5}}|$GHOSTTY_PALETTE_5|g" \
-            -e "s|{{GHOSTTY_PALETTE_6}}|$GHOSTTY_PALETTE_6|g" \
-            -e "s|{{GHOSTTY_PALETTE_7}}|$GHOSTTY_PALETTE_7|g" \
-            -e "s|{{GHOSTTY_PALETTE_8}}|$GHOSTTY_PALETTE_8|g" \
-            -e "s|{{GHOSTTY_PALETTE_9}}|$GHOSTTY_PALETTE_9|g" \
-            -e "s|{{GHOSTTY_PALETTE_10}}|$GHOSTTY_PALETTE_10|g" \
-            -e "s|{{GHOSTTY_PALETTE_11}}|$GHOSTTY_PALETTE_11|g" \
-            -e "s|{{GHOSTTY_PALETTE_12}}|$GHOSTTY_PALETTE_12|g" \
-            -e "s|{{GHOSTTY_PALETTE_13}}|$GHOSTTY_PALETTE_13|g" \
-            -e "s|{{GHOSTTY_PALETTE_14}}|$GHOSTTY_PALETTE_14|g" \
-            -e "s|{{GHOSTTY_PALETTE_15}}|$GHOSTTY_PALETTE_15|g" \
-            -e "/{{PLATFORM_CONFIG}}/{
+        declare -A ghostty_vars=(
+            [THEME_NAME]="$THEME_NAME"
+            [GHOSTTY_BACKGROUND]="$GHOSTTY_BACKGROUND"
+            [GHOSTTY_FOREGROUND]="$GHOSTTY_FOREGROUND"
+            [GHOSTTY_CURSOR_COLOR]="$GHOSTTY_CURSOR_COLOR"
+            [GHOSTTY_CURSOR_TEXT]="$GHOSTTY_CURSOR_TEXT"
+            [GHOSTTY_SELECTION_BG]="$GHOSTTY_SELECTION_BG"
+            [GHOSTTY_SELECTION_FG]="$GHOSTTY_SELECTION_FG"
+            [GHOSTTY_PALETTE_0]="$GHOSTTY_PALETTE_0"
+            [GHOSTTY_PALETTE_1]="$GHOSTTY_PALETTE_1"
+            [GHOSTTY_PALETTE_2]="$GHOSTTY_PALETTE_2"
+            [GHOSTTY_PALETTE_3]="$GHOSTTY_PALETTE_3"
+            [GHOSTTY_PALETTE_4]="$GHOSTTY_PALETTE_4"
+            [GHOSTTY_PALETTE_5]="$GHOSTTY_PALETTE_5"
+            [GHOSTTY_PALETTE_6]="$GHOSTTY_PALETTE_6"
+            [GHOSTTY_PALETTE_7]="$GHOSTTY_PALETTE_7"
+            [GHOSTTY_PALETTE_8]="$GHOSTTY_PALETTE_8"
+            [GHOSTTY_PALETTE_9]="$GHOSTTY_PALETTE_9"
+            [GHOSTTY_PALETTE_10]="$GHOSTTY_PALETTE_10"
+            [GHOSTTY_PALETTE_11]="$GHOSTTY_PALETTE_11"
+            [GHOSTTY_PALETTE_12]="$GHOSTTY_PALETTE_12"
+            [GHOSTTY_PALETTE_13]="$GHOSTTY_PALETTE_13"
+            [GHOSTTY_PALETTE_14]="$GHOSTTY_PALETTE_14"
+            [GHOSTTY_PALETTE_15]="$GHOSTTY_PALETTE_15"
+        )
+        local -a sed_args
+        _build_sed_args ghostty_vars
+        # Platform config uses sed's r/d commands (can't go through _build_sed_args)
+        sed_args+=(-e "/{{PLATFORM_CONFIG}}/{
                 r $platform_tmp
                 d
-            }" \
-            "$GHOSTTY_TEMPLATE" > "$ghostty_tmp" || { rm -f "$ghostty_tmp" "$platform_tmp"; return 1; }
+            }")
+        sed "${sed_args[@]}" "$GHOSTTY_TEMPLATE" > "$ghostty_tmp" || { rm -f "$ghostty_tmp" "$platform_tmp"; return 1; }
         rm -f "$platform_tmp"
         mv "$ghostty_tmp" "$GHOSTTY_OUTPUT"
         [[ "$quiet" != "true" ]] && theme_success "Generated ghostty configuration"

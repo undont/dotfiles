@@ -14,6 +14,10 @@
 # Rollback is two-phase: (1) remove created symlinks, (2) restore backed-up files.
 # Path traversal sanitisation prevents restoring files outside $HOME.
 
+# Guard against multiple sourcing
+[[ -n "${_DOTFILES_ROLLBACK_SH_LOADED:-}" ]] && return 0
+_DOTFILES_ROLLBACK_SH_LOADED=1
+
 # State file location
 ROLLBACK_STATE_DIR="${DOTFILES_DIR:-.}/.install-state"
 ROLLBACK_STATE_FILE="$ROLLBACK_STATE_DIR/state.txt"

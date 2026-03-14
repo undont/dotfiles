@@ -2,6 +2,10 @@
 # Common utilities for tmux scripts
 # Source this file: source "${BASH_SOURCE%/*}/_lib/common.sh"
 
+# Guard against multiple sourcing
+[[ -n "${_TMUX_COMMON_SH_LOADED:-}" ]] && return 0
+_TMUX_COMMON_SH_LOADED=1
+
 # Strict mode - scripts should set this themselves for clarity
 # set -euo pipefail
 

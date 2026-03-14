@@ -2,6 +2,10 @@
 # Shared helpers for gh-dash configuration management.
 # Sourced by theme-switch and dash-repo-sync.
 
+# Guard against multiple sourcing
+[[ -n "${_DOTFILES_GHDASH_SH_LOADED:-}" ]] && return 0
+_DOTFILES_GHDASH_SH_LOADED=1
+
 GHDASH_BASE="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/config.base.yml"
 GHDASH_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/config.yml"
 GHDASH_LOCAL="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/local.yml"

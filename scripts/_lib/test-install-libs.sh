@@ -391,16 +391,22 @@ SKIP_STEPS=""  # Reset
 section "Tab Completion - Update Sub-flags"
 
 FRAMEWORK_FILE="$DOTFILES_DIR/zsh/dotfiles.zsh"
+COMPLETION_FILE="$DOTFILES_DIR/zsh/functions/_dotfiles"
 if [[ -f "$FRAMEWORK_FILE" ]]; then
     framework_content=$(cat "$FRAMEWORK_FILE")
+    # Completion may be inline or in autoload file
+    comp_content="$framework_content"
+    if [[ -f "$COMPLETION_FILE" ]]; then
+        comp_content+=$(cat "$COMPLETION_FILE")
+    fi
 
-    if [[ "$framework_content" == *"'--force:"* ]]; then
+    if [[ "$comp_content" == *"'--force:"* ]]; then
         pass "completion includes --force option"
     else
         fail "completion should include --force option"
     fi
 
-    if [[ "$framework_content" == *"'--preview:"* ]]; then
+    if [[ "$comp_content" == *"'--preview:"* ]]; then
         pass "completion includes --preview option"
     else
         fail "completion should include --preview option"
@@ -474,11 +480,14 @@ fi
 section "Zsh Framework Dotfiles CLI Completion"
 
 if [[ -f "$FRAMEWORK_FILE" ]]; then
-    # Check for _dotfiles completion function
-    if [[ "$framework_content" == *'_dotfiles()'* ]]; then
-        pass "dotfiles.zsh has _dotfiles completion function"
+    # Check for _dotfiles autoload (moved from inline to zsh/functions/_dotfiles)
+    completion_file="$DOTFILES_ROOT/zsh/functions/_dotfiles"
+    if [[ "$framework_content" == *'autoload -Uz _dotfiles'* ]]; then
+        pass "dotfiles.zsh autoloads _dotfiles completion"
+    elif [[ "$framework_content" == *'_dotfiles()'* ]]; then
+        pass "dotfiles.zsh has _dotfiles completion function (inline)"
     else
-        fail "dotfiles.zsh missing _dotfiles completion function"
+        fail "dotfiles.zsh missing _dotfiles completion (autoload or inline)"
     fi
 
     # Check for compdef registration
@@ -488,13 +497,18 @@ if [[ -f "$FRAMEWORK_FILE" ]]; then
         fail "dotfiles.zsh missing dotfiles completion registration"
     fi
 
-    # Check completion includes expected commands
-    if [[ "$framework_content" == *"'update:"* ]] && \
-       [[ "$framework_content" == *"'status:"* ]] && \
-       [[ "$framework_content" == *"'health:"* ]]; then
-        pass "dotfiles.zsh completion includes expected commands"
+    # Check completion includes expected commands (in autoload file or inline)
+    completion_content=""
+    if [[ -f "$completion_file" ]]; then
+        completion_content=$(<"$completion_file")
+    fi
+    check_content="${framework_content}${completion_content}"
+    if [[ "$check_content" == *"'update:"* ]] && \
+       [[ "$check_content" == *"'status:"* ]] && \
+       [[ "$check_content" == *"'health:"* ]]; then
+        pass "dotfiles completion includes expected commands"
     else
-        fail "dotfiles.zsh completion missing expected commands"
+        fail "dotfiles completion missing expected commands"
     fi
 fi
 

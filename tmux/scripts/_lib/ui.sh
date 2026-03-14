@@ -2,6 +2,10 @@
 # Terminal UI utilities for tmux scripts
 # Source this file after common.sh
 
+# Guard against multiple sourcing
+[[ -n "${_TMUX_UI_SH_LOADED:-}" ]] && return 0
+_TMUX_UI_SH_LOADED=1
+
 # Convert hex colour (#rrggbb) to truecolour ANSI foreground escape
 # Returns empty string if input is empty (caller should use fallback)
 _hex_fg() {

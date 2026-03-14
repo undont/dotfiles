@@ -2,6 +2,10 @@
 # Session management utilities for tmux scripts
 # Source this file after common.sh
 
+# Guard against multiple sourcing
+[[ -n "${_TMUX_SESSION_SH_LOADED:-}" ]] && return 0
+_TMUX_SESSION_SH_LOADED=1
+
 # Find another session to switch to (excluding specified session)
 # Returns the session name via stdout, empty if none found
 # Usage: other=$(find_other_session "$current_session")

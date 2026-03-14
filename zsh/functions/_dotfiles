@@ -1,0 +1,110 @@
+#compdef dotfiles dot
+# Tab completion for dotfiles command
+
+local -a commands
+commands=(
+  'update:Pull latest and apply updates (incremental)'
+  'status:Show version, sync status, and local changes'
+  'health:Run full health check'
+  'links:Show all managed symlinks and their status'
+  'aliases:Show all shell aliases, functions, and utilities'
+  'theme:Manage colour themes'
+  'set:Configure project directories (dev, projects)'
+  'diff:Show changes in copy-on-install files vs repo'
+  'notes:Browse the full changelog in a pager'
+  'version:Show current dotfiles version, preset, and theme'
+  'edit:Open dotfiles directory in $EDITOR'
+  'cd:Print dotfiles path'
+  'help:Show help message'
+)
+
+# Handle subcommand completions
+if (( CURRENT == 2 )); then
+  _describe 'dotfiles command' commands
+elif (( CURRENT == 3 )); then
+  case "${words[2]}" in
+    update|-u)
+      local -a update_opts
+      update_opts=(
+        '--force:Re-run all steps regardless of changes'
+        '-f:Re-run all steps regardless of changes'
+        '--preview:Preview changes without applying'
+        '-p:Preview changes without applying'
+      )
+      _describe 'update option' update_opts
+      ;;
+    set)
+      local -a targets
+      targets=(
+        'dev:Set DEV_ROOT directory'
+        'projects:Set PROJECTS_ROOT directory'
+      )
+      _describe 'set target' targets
+      ;;
+    theme|-t)
+      local -a theme_opts
+      theme_opts=(
+        'list:List available themes'
+        'current:Show current theme'
+        'generate:Generate theme from Ghostty'
+        'delete:Delete a generated theme'
+      )
+      # Add available theme names from themes/ directory
+      local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
+      local theme_file
+      for theme_file in "$dotfiles_dir"/themes/*.theme(N); do
+        local name="${theme_file:t:r}"
+        theme_opts+=("${name}:Switch to ${name} theme")
+      done
+      _describe 'theme' theme_opts
+      ;;
+  esac
+elif (( CURRENT == 4 )); then
+  case "${words[2]}" in
+    set)
+      _files -/
+      ;;
+    theme|-t)
+      case "${words[3]}" in
+        generate)
+          local -a gen_opts
+          gen_opts=(
+            'list:List all Ghostty themes'
+            'help:Show help'
+          )
+          local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
+          if [[ -x "$dotfiles_dir/scripts/generate-theme" ]]; then
+            local -a themes
+            themes=(${(f)"$("$dotfiles_dir/scripts/generate-theme" list 2>/dev/null)"})
+            for t in "${themes[@]}"; do
+              [[ -n "$t" ]] && gen_opts+=("$t")
+            done
+          fi
+          _describe 'generate-theme' gen_opts
+          ;;
+        delete)
+          local -a del_opts
+          del_opts=(
+            'all:Remove all generated themes'
+            'list:List generated themes'
+            'help:Show help'
+          )
+          local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
+          for theme_file in "$dotfiles_dir"/themes/generated/*.theme(N); do
+            local name="${theme_file:t:r}"
+            del_opts+=("${name}:Delete generated theme")
+          done
+          _describe 'theme-delete' del_opts
+          ;;
+      esac
+      ;;
+  esac
+elif (( CURRENT == 5 )); then
+  # dotfiles theme delete all --yes
+  if [[ "${words[2]}" == "theme" || "${words[2]}" == "-t" ]] && \
+     [[ "${words[3]}" == "delete" ]] && [[ "${words[4]}" == "all" ]]; then
+    local -a flags
+    flags=('--yes:Skip confirmation prompt')
+    _describe 'flags' flags
+  fi
+fi
