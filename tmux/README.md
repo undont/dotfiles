@@ -17,7 +17,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | Restore one session   | `trestore -s <name>`              |
 | List Claude instances | `prefix + c`                      |
 | List OpenCode instances | `prefix + o`                    |
-
+| List Copilot instances | `prefix + a`                    |
 | List nvim instances   | `prefix + n`                      |
 | Reload local overrides | `prefix + r`                     |
 
@@ -242,11 +242,11 @@ Navigation keys (`j`, `k`, `g`, `G`) are automatically unbound in search mode so
 
 **Undo:** When you kill a session or window with `x`, press `u` to restore it. Sessions are restored with all windows and panes; windows are restored with layout and scrollback contents.
 
-**Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for OpenCode). Press `prefix + c` to open an fzf picker showing all running agent instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
+**Agent Alerts:** Sessions and windows with pending agent alerts display coloured icons (⚡ yellow for Claude, 🔮 purple for OpenCode, ✦ blue for Copilot). Press `prefix + c` to open an fzf picker showing all running agent instances across all sessions, with alerts highlighted. Alerts are automatically cleared when you switch to that window via the picker. Window renames automatically update alert tracking to prevent stale alerts.
 
 **Command Exit Alerts:** When you run a command and switch away, a ✓ (green) or ✗ (red) alert appears automatically when it finishes — no wrapping needed. The window tab highlights in the pass/fail colour, and the status bar shows `session:command` for commands in other sessions. Alerts clear automatically when you switch back to the window. Only fires if you switched away before the command finished, and the command ran for at least 1 second. See [docs/CMD-ALERTS.md](../docs/CMD-ALERTS.md) for details.
 
-**Instance Management:** The Claude (`prefix + c`), OpenCode (`prefix + o`), and nvim (`prefix + n`) pickers support inline instance management:
+**Instance Management:** The Claude (`prefix + c`), OpenCode (`prefix + o`), Copilot (`prefix + a`), and nvim (`prefix + n`) pickers support inline instance management:
 - Press `n` to create a new instance (opens a new window in the current session and launches the process)
 - Press `x` to kill the selected instance (sends SIGTERM with graceful shutdown, confirms before killing)
 
@@ -429,13 +429,13 @@ Available session backups:
 │   ├── instances/                        # Process instance management (list, create, kill)
 │   │   ├── claude.sh                     # List Claude Code instances
 │   │   ├── opencode.sh                   # List OpenCode instances
-
+│   │   ├── copilot.sh                    # List GitHub Copilot instances
 │   │   ├── nvim.sh                       # List nvim instances for buffer sync
 │   │   ├── new.sh                        # Create new process window
 │   │   ├── kill.sh                       # Kill process instance (with confirm)
 │   │   └── connect-nvim.sh               # Connect nvim to Claude pane
 │   ├── alerts/                           # Agent + command exit alert system
-│   │   ├── show.sh                       # Status bar: agent alerts (⚡ 🔮) + exit alerts (✓ ✗)
+│   │   ├── show.sh                       # Status bar: agent alerts (⚡ 🔮 ✦) + exit alerts (✓ ✗)
 │   │   ├── clear.sh                      # Clear alerts for window
 │   │   ├── update-rename.sh              # Update alerts on window rename
 │   │   └── update-timestamp.sh           # Window access tracking hook

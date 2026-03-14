@@ -175,6 +175,12 @@ nvim/
 | [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (gotestsum runner, pinned to v1.15.1) |
 | [neotest-vitest](https://github.com/marilari88/neotest-vitest) | Vitest/Bun adapter (`bun run test`) |
 
+### Media
+
+| Plugin | Purpose |
+|--------|---------|
+| [music.nvim](https://github.com/seanhalberthal/music.nvim) | Now playing indicator (Apple Music, Spotify) |
+
 ### Social
 
 | Plugin | Purpose |

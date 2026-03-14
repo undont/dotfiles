@@ -1,39 +1,33 @@
 ╔══════════════════════════════════════════════════════════════════════╗
 ║                        TMUX KEYBOARD SHORTCUTS                       ║
-║                                                                      ║
 ╠═ TABS ════════════════════════╦═ PANES ══════════════════════════════╣
-║                               ║                                      ║
 ║  {{M}}+[ / {{M}}+]    prev / next ║  {{M}}+hjkl         navigate           ║
 ║  ` 1-5            go to tab   ║  Ctrl+, / Ctrl+.  left / down        ║
-║                               ║  {{M}}+Shift+hjkl   resize             ║
-║  {{M}}+t            new tab     ║                                      ║
+║  {{M}}+t            new tab     ║  {{M}}+Shift+hjkl   resize             ║
 ║  {{M}}+r            rename tab  ║  {{M}}+'            split left         ║
-║                               ║  {{M}}+\            split right        ║
-║  {{M}}+Shift+[ / ]  swap left/  ║  {{M}}+-            split down         ║
-║                   right       ║  {{M}}+=            split up           ║
-║  {{M}}+Shift+d      duplicate   ║  {{M}}+s            close pane         ║
-║  {{M}}+x            kill tab    ║  {{M}}+z            zoom pane          ║
+║  {{M}}+Shift+[/]    swap l/r    ║  {{M}}+\            split right        ║
+║  {{M}}+Shift+d      duplicate   ║  {{M}}+-            split down         ║
+║  {{M}}+x            kill tab    ║  {{M}}+=            split up           ║
+║                               ║  {{M}}+s            close pane         ║
+║                               ║  {{M}}+z            zoom pane          ║
 ║                               ║  {{M}}+Shift+0      equalise sizes     ║
 ║                               ║  ` [ / ` ]        prev/next layout   ║
 ╠═ SCROLL MODE ═════════════════╬═ SESSION ════════════════════════════╣
-║                               ║                                      ║
 ║  {{M}}+v / ` v      enter mode  ║  ` s              switch session     ║
-║                               ║  ` f              switch window      ║
-║  hjkl             navigate    ║  ` w              save all           ║
-║  f / b            page down/  ║  ` d              detach             ║
-║                   up          ║  ` h              this help          ║
-║  d / u            half-page   ║  ` r              reload locals      ║
-║  g / G            top/bottom  ║  ` t              theme picker       ║
-║                               ║  ` p              launchers          ║
-║  / / ?            search ↓/↑  ║  ` c              Claude picker      ║
-║  n / N            next / prev ║  ` o              OpenCode picker    ║
-║                               ║  ` n              nvim picker        ║
-║  v / V            select /    ║  ` y              open URL picker    ║
-║                   line        ║  {{M}}+u            undo pane/win      ║
-║  y / Y            yank /      ║  ` I              install plugins    ║
-║                   yank ln     ║  ` Space          fingers (copy)     ║
-║  q / Esc          exit mode   ║  ` - / ` =        back / forward     ║
-║                               ║                                      ║
-╚═══════════════════════════════╩══════════════════════════════════════╝
+║  hjkl             navigate    ║  ` f              switch window      ║
+║  f / b            page dn/up  ║  ` w              save all           ║
+║  d / u            half-page   ║  ` d              detach             ║
+║  ^d / ^u          top/bot ln  ║  ` h              this help          ║
+║  g / G            top/bottom  ║  ` r              reload locals      ║
+║  / / ?            search ↓/↑  ║  {{M}}+u            undo pane/win      ║
+║  n / N            next / prev ║  {{M}}+Shift+x      kill session       ║
+║  v / V            select/line ║  ` - / ` =        back / forward     ║
+║  y / Y            yank/ln     ║                                      ║
+║  m / M            bol/eol     ║                                      ║
+║  q / Esc          exit mode   ║                                      ║
+╠═ PICKERS / TOOLS ═════════════╩══════════════════════════════════════╣
+║  ` c Claude · ` o OpenCode · ` a Copilot · ` n nvim · ` u URL        ║
+║  ` t theme · ` p launchers · ` Space fingers · ` I install           ║
+╚══════════════════════════════════════════════════════════════════════╝
 
                     Press Esc to close this help

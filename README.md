@@ -92,9 +92,9 @@ The installer detects what's already configured and only shows steps you still n
 - **Undo system** (`Opt/Alt+u`) — accidentally closed a pane or window? Restore it with full directory, scrollback, and layout
 - **Session save/restore** — tmux-resurrect + continuum with **per-session backups** (custom extension splits combined saves into individual files)
 - **Launcher picker** (`` ` p ``) — create, run, and manage session launchers with an interactive wizard
-- **Multi-agent alerts** — coloured indicators in session lists when AI agents need attention (⚡ Claude, 🔮 OpenCode) with auto-clearing
+- **Multi-agent alerts** — coloured indicators in session lists when AI agents need attention (⚡ Claude, 🔮 OpenCode, ✦ Copilot) with auto-clearing
 - **Command exit alerts** — switch away from any command and get a ✓/✗ alert when it finishes automatically
-- **Instance management** — list, create, and kill running instances of Claude, OpenCode, and nvim from fzf pickers
+- **Instance management** — list, create, and kill running instances of Claude, OpenCode, Copilot, and nvim from fzf pickers
 - **Navigation history** (`` ` - `` / `` ` = ``) — browser-style back/forward across windows and sessions
 - **URL picker** (`` ` y ``) — grab URLs from scrollback via fzf popup
 - **Dotfiles sync indicator** — status bar shows `↓` `↑` `↕` when updates are available

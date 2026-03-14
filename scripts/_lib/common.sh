@@ -2,6 +2,10 @@
 # Common utilities for installation scripts
 # Source this file: source "${BASH_SOURCE%/*}/_lib/common.sh"
 
+# Guard against multiple sourcing
+[[ -n "${_DOTFILES_COMMON_SH_LOADED:-}" ]] && return 0
+_DOTFILES_COMMON_SH_LOADED=1
+
 # Source colour definitions
 # shellcheck source=scripts/_lib/colours.sh
 source "${BASH_SOURCE%/*}/colours.sh"
@@ -134,12 +138,19 @@ is_linux() {
 }
 
 # Portable in-place sed (macOS BSD sed vs GNU sed)
+# Writes to a temp file first to prevent corruption on sed errors.
 # Usage: sed_inplace 'sed-expression' file
 sed_inplace() {
-    if is_macos; then
-        sed -i '' "$@"
+    local args=("$@")
+    local file="${args[-1]}"
+    local sed_args=("${args[@]:0:${#args[@]}-1}")
+    local tmp
+    tmp=$(mktemp "${file}.XXXXXX") || return 1
+    if sed "${sed_args[@]}" "$file" > "$tmp"; then
+        mv "$tmp" "$file"
     else
-        sed -i "$@"
+        rm -f "$tmp"
+        return 1
     fi
 }
 
@@ -310,22 +321,37 @@ print_logo() {
     local logo_file="${BASH_SOURCE%/*}/logo.txt"
 
     if [[ -f "$logo_file" ]]; then
-        # Cyan to Purple gradient using RGB colours
-        local gradient_colours
-        gradient_colours=(
-            $'\033[38;2;139;233;253m'  # Cyan
-            $'\033[38;2;158;206;253m'  # Cyan-Blue
-            $'\033[38;2;177;179;253m'  # Blue-Purple
-            $'\033[38;2;189;147;249m'  # Purple
-            $'\033[38;2;189;147;249m'  # Purple
-        )
-
         echo ""
-        local i=0
-        while IFS= read -r line || [[ -n "$line" ]]; do
-            printf "${gradient_colours[$i]}%s${NC}\n" "$line"
-            i=$((i + 1))
-        done < "$logo_file"
+
+        # Respect NO_COLOR convention (https://no-color.org)
+        if [[ -n "${NO_COLOR:-}" ]]; then
+            cat "$logo_file"
+            echo ""
+            return
+        fi
+
+        # Use truecolor gradient when terminal supports it, otherwise basic ANSI
+        if [[ "${COLORTERM:-}" == "truecolor" || "${COLORTERM:-}" == "24bit" ]]; then
+            local gradient_colours
+            gradient_colours=(
+                $'\033[38;2;139;233;253m'  # Cyan
+                $'\033[38;2;158;206;253m'  # Cyan-Blue
+                $'\033[38;2;177;179;253m'  # Blue-Purple
+                $'\033[38;2;189;147;249m'  # Purple
+                $'\033[38;2;189;147;249m'  # Purple
+            )
+
+            local i=0
+            while IFS= read -r line || [[ -n "$line" ]]; do
+                printf "${gradient_colours[$i]}%s${NC}\n" "$line"
+                i=$((i + 1))
+            done < "$logo_file"
+        else
+            # Fallback: basic ANSI cyan
+            while IFS= read -r line || [[ -n "$line" ]]; do
+                printf "${CYAN}%s${NC}\n" "$line"
+            done < "$logo_file"
+        fi
         echo ""
     fi
 }

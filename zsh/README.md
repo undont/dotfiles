@@ -232,6 +232,7 @@ direnv allow
 | `oc`       | `opencode`                      | Shorthand for OpenCode editor      |
 | `claude`   | `cl && claude`                  | Clear scrollback + launch Claude CLI |
 | `gemini`   | `cl && gemini`                  | Clear scrollback + launch Gemini CLI |
+| `copilot`  | `cl && copilot`                 | Clear scrollback + launch Copilot CLI |
 | `dot`      | `dotfiles`                      | Shorthand for dotfiles CLI         |
 | `drs`      | `dash-repo-sync`                | Sync local repo paths into gh-dash config |
 | `ff`       | `fastfetch`                     | System info (fastfetch)                    |

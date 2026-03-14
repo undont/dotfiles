@@ -20,7 +20,7 @@ PROCESS="$1"
 
 # Validate process name
 case "$PROCESS" in
-    claude|opencode|nvim) ;;
+    claude|opencode|copilot|nvim) ;;
     *)
         show_error "Unknown process: $PROCESS"
         exit 1
