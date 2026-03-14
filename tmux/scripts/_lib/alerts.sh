@@ -6,8 +6,10 @@
 [[ -n "${_TMUX_ALERTS_SH_LOADED:-}" ]] && return 0
 _TMUX_ALERTS_SH_LOADED=1
 
-# Alerts file location
-readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
+# Alerts file location (only set if not already defined, allowing tests to override)
+if [[ -z "${ALERTS_FILE:-}" ]]; then
+    readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
+fi
 
 # Alert file format: session:window:agent
 # Future enhancement: Add timestamp field for age-based sorting and auto-expiry
