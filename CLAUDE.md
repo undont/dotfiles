@@ -301,24 +301,34 @@ Based on kickstart.nvim with modular organisation:
 
 Use consistent patterns for setting `SCRIPT_DIR` across all shell scripts:
 
-**Production scripts** (launchers, installers, tmux scripts):
+**Entry-point / standalone scripts** (`install.sh`, `scripts/dotfiles`, `scripts/theme-switch`, `scripts/generate-theme`):
+```bash
+SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+```
+These scripts need absolute paths because they export `DOTFILES_DIR`, resolve symlinks, or are invoked directly from arbitrary working directories.
+
+**Module scripts** (tmux scripts, installer modules, launchers):
 ```bash
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 ```
+These are invoked from known paths and source libraries via relative paths, so the simpler pattern is sufficient.
 
 **Test scripts** (test-*.sh, test-*-libs.sh):
 ```bash
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ```
+Full `cd` + `pwd` ensures absolute paths when tests are invoked from different directories.
 
 **Rationale**:
-- Production scripts: Simpler `${BASH_SOURCE%/*}` is faster and sufficient for scripts invoked from standard paths
-- Test scripts: Full `cd` + `pwd` ensures absolute paths when tests are invoked from different directories
+- Entry-point scripts: Need absolute paths for `DOTFILES_DIR` export and symlink resolution
+- Module scripts: Simpler `${BASH_SOURCE%/*}` is faster and sufficient for scripts invoked from standard paths
+- Test scripts: Absolute paths needed when tests are invoked from different directories
 - Resurrect scripts: Use test pattern for consistency (invoked in various contexts)
 
 **Examples**:
-- ✓ `tmux/scripts/sessions/list.sh` - Uses `${BASH_SOURCE%/*}`
-- ✓ `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)`
+- ✓ `install.sh` - Uses `$(cd "$(dirname ...)" && pwd)` (entry point, exports DOTFILES_DIR)
+- ✓ `tmux/scripts/sessions/list.sh` - Uses `${BASH_SOURCE%/*}` (module script)
+- ✓ `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname ...)" && pwd)` (test script)
 - ✗ Don't mix patterns within the same category of scripts
 
 ## Test Patterns

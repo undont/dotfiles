@@ -784,3 +784,6 @@ Fastfetch
 fastfetch
 realtime
 postgres
+ctrl
+esc
+jira

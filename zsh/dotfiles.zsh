@@ -136,6 +136,9 @@ fi
 # =============================================================================
 # DOCKER & COMPLETIONS
 # =============================================================================
+# Dotfiles autoloaded functions and completions
+fpath=("$DOTFILES_ROOT/zsh/functions" $fpath)
+
 # Docker CLI completions (docker, docker-compose commands)
 fpath=("$HOME/.docker/completions" $fpath)
 
@@ -210,7 +213,7 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
     local live
     live=$(<"${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme" 2>/dev/null) || return
     if [[ "$live" != "$_fzf_theme_cached" ]]; then
-      source "$HOME/dotfiles/scripts/fzf-theme.sh"
+      source "$DOTFILES_ROOT/scripts/fzf-theme.sh"
       _fzf_theme_cached="$live"
     fi
   }
@@ -325,8 +328,8 @@ unset _lg_base _lg_local
 # OPENCODE
 # =============================================================================
 # Point opencode-tmux-alert plugin to dotfiles hook scripts
-export OPENCODE_ALERT_SCRIPT="$HOME/dotfiles/scripts/hooks/wrappers/opencode-alert.sh"
-export OPENCODE_CLEAR_SCRIPT="$HOME/dotfiles/scripts/hooks/agent-alert-clear.sh"
+export OPENCODE_ALERT_SCRIPT="$DOTFILES_ROOT/scripts/hooks/wrappers/opencode-alert.sh"
+export OPENCODE_CLEAR_SCRIPT="$DOTFILES_ROOT/scripts/hooks/agent-alert-clear.sh"
 
 # =============================================================================
 # SSH WRAPPER
@@ -350,6 +353,7 @@ alias opencode="cl && opencode"        # Clear scrollback + launch OpenCode edit
 alias oc="opencode"                    # Shorthand for OpenCode editor
 alias claude="cl && claude"            # Clear scrollback + launch Claude AI CLI
 alias gemini="cl && gemini"            # Clear scrollback + launch Gemini AI CLI
+alias copilot="cl && copilot"          # Clear scrollback + launch GitHub Copilot CLI
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash config
 alias ff="fastfetch"                   # Fastfetch system info
@@ -506,58 +510,8 @@ cdf() {
   _dir_nav_active=0
 }
 
-# Directory history picker (fzf-powered, bound to Opt+A via ZLE widget)
-_cdl() {
-  if (( ${#_dir_back_stack} == 0 )); then
-    echo "No directory history" >&2
-    return 1
-  fi
-
-  # Reverse stack (most recent first) and deduplicate consecutive entries
-  local -a reversed=()
-  local prev=""
-  local i
-  for (( i=${#_dir_back_stack}; i>=1; i-- )); do
-    local entry="${_dir_back_stack[$i]}"
-    if [[ "$entry" != "$prev" ]]; then
-      reversed+=("$entry")
-      prev="$entry"
-    fi
-  done
-
-  local count=${#reversed[@]}
-  local dest
-
-  if command -v fzf &>/dev/null; then
-    _fzf_theme_refresh 2>/dev/null
-    dest=$(printf '%s\n' "${reversed[@]}" | fzf \
-      --height=40% --reverse \
-      --header="$count entries" \
-      --preview='ls -CF {}' \
-    ) || return 0
-  else
-    # Fallback: numbered list
-    local n=1
-    for entry in "${reversed[@]}"; do
-      printf "  %2d  %s\n" "$n" "$entry"
-      (( n++ ))
-    done
-    printf "\nSelect [1-%d]: " "$count"
-    read -r n
-    if [[ -z "$n" || "$n" -lt 1 || "$n" -gt "$count" ]] 2>/dev/null; then
-      return 0
-    fi
-    dest="${reversed[$n]}"
-  fi
-
-  if [[ -n "$dest" && -d "$dest" ]]; then
-    _dir_back_stack+=("$PWD")
-    _dir_forward_stack=()
-    _dir_nav_active=1
-    cd "$dest"
-    _dir_nav_active=0
-  fi
-}
+# Directory history picker (autoloaded from zsh/functions/_cdl, bound to Opt+A via ZLE widget)
+autoload -Uz _cdl
 
 # Attach to tmux session, restoring from backup if needed
 tattach() {
@@ -584,7 +538,7 @@ tattach() {
 alias gs="git status -sb"
 alias gd="git diff"
 alias gdn="git diff | diffnav" # View git diffs in diffnav
-alias gds="git diff --staged"
+alias gds="git diff --stat"
 alias gl="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ar, %an)%C(reset)' -20"
 alias glf="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ad, %an)%C(reset)' --date=format:'%d %B %Y %H:%M'"
 alias gco="git checkout"
@@ -660,115 +614,8 @@ bindkey -s '\e[27;5;61~' ''            # Ctrl+= (swallow)
 # =============================================================================
 # DOTFILES CLI
 # =============================================================================
-# Tab completion for dotfiles command
-_dotfiles() {
-  local -a commands
-  commands=(
-    'update:Pull latest and apply updates (incremental)'
-    'status:Show version, sync status, and local changes'
-    'health:Run full health check'
-    'links:Show all managed symlinks and their status'
-    'aliases:Show all shell aliases, functions, and utilities'
-    'theme:Manage colour themes'
-    'set:Configure project directories (dev, projects)'
-    'notes:Browse the full changelog in a pager'
-    'version:Show current dotfiles version, preset, and theme'
-    'edit:Open dotfiles directory in $EDITOR'
-    'cd:Print dotfiles path'
-    'help:Show help message'
-  )
-
-  # Handle subcommand completions
-  if (( CURRENT == 2 )); then
-    _describe 'dotfiles command' commands
-  elif (( CURRENT == 3 )); then
-    case "${words[2]}" in
-      update|-u)
-        local -a update_opts
-        update_opts=(
-          '--force:Re-run all steps regardless of changes'
-          '-f:Re-run all steps regardless of changes'
-          '--preview:Preview changes without applying'
-          '-p:Preview changes without applying'
-        )
-        _describe 'update option' update_opts
-        ;;
-      set)
-        local -a targets
-        targets=(
-          'dev:Set DEV_ROOT directory'
-          'projects:Set PROJECTS_ROOT directory'
-        )
-        _describe 'set target' targets
-        ;;
-      theme|-t)
-        local -a theme_opts
-        theme_opts=(
-          'list:List available themes'
-          'current:Show current theme'
-          'generate:Generate theme from Ghostty'
-          'delete:Delete a generated theme'
-        )
-        # Add available theme names from themes/ directory
-        local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
-        local theme_file
-        for theme_file in "$dotfiles_dir"/themes/*.theme(N); do
-          local name="${theme_file:t:r}"
-          theme_opts+=("${name}:Switch to ${name} theme")
-        done
-        _describe 'theme' theme_opts
-        ;;
-    esac
-  elif (( CURRENT == 4 )); then
-    case "${words[2]}" in
-      set)
-        _files -/
-        ;;
-      theme|-t)
-        case "${words[3]}" in
-          generate)
-            local -a gen_opts
-            gen_opts=(
-              'list:List all Ghostty themes'
-              'help:Show help'
-            )
-            local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
-            if [[ -x "$dotfiles_dir/scripts/generate-theme" ]]; then
-              local -a themes
-              themes=(${(f)"$("$dotfiles_dir/scripts/generate-theme" list 2>/dev/null)"})
-              for t in "${themes[@]}"; do
-                [[ -n "$t" ]] && gen_opts+=("$t")
-              done
-            fi
-            _describe 'generate-theme' gen_opts
-            ;;
-          delete)
-            local -a del_opts
-            del_opts=(
-              'all:Remove all generated themes'
-              'list:List generated themes'
-              'help:Show help'
-            )
-            local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
-            for theme_file in "$dotfiles_dir"/themes/generated/*.theme(N); do
-              local name="${theme_file:t:r}"
-              del_opts+=("${name}:Delete generated theme")
-            done
-            _describe 'theme-delete' del_opts
-            ;;
-        esac
-        ;;
-    esac
-  elif (( CURRENT == 5 )); then
-    # dotfiles theme delete all --yes
-    if [[ "${words[2]}" == "theme" || "${words[2]}" == "-t" ]] && \
-       [[ "${words[3]}" == "delete" ]] && [[ "${words[4]}" == "all" ]]; then
-      local -a flags
-      flags=('--yes:Skip confirmation prompt')
-      _describe 'flags' flags
-    fi
-  fi
-}
+# Tab completion for dotfiles command (autoloaded from zsh/functions/_dotfiles)
+autoload -Uz _dotfiles
 compdef _dotfiles dotfiles
 compdef _dotfiles dot
 
@@ -777,7 +624,7 @@ compdef _dotfiles dot
 # =============================================================================
 # Automatically sends a tmux alert when a command finishes after ≥10 seconds
 # and you've switched away from the window while it was running.
-[[ -f "$HOME/dotfiles/scripts/hooks/cmd-alert-hook.zsh" ]] && source "$HOME/dotfiles/scripts/hooks/cmd-alert-hook.zsh"
+[[ -f "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh" ]] && source "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh"
 
 # =============================================================================
 # SHELL STARTUP PROFILING

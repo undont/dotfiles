@@ -27,7 +27,7 @@ PROCESS="$2"
 
 # Validate process name
 case "$PROCESS" in
-    claude|opencode|nvim) ;;
+    claude|opencode|copilot|nvim) ;;
     *)
         show_error "Unknown process: $PROCESS"
         exit 1
@@ -84,8 +84,8 @@ done
 # Force kill if still alive
 kill -0 "$CHILD_PID" 2>/dev/null && kill -KILL "$CHILD_PID" 2>/dev/null || true
 
-# Clear alerts for claude/opencode (nvim doesn't use alerts)
-if [[ "$PROCESS" == "claude" || "$PROCESS" == "opencode" ]]; then
+# Clear alerts for claude/opencode/copilot (nvim doesn't use alerts)
+if [[ "$PROCESS" == "claude" || "$PROCESS" == "opencode" || "$PROCESS" == "copilot" ]]; then
     SESSION=$(echo "$TARGET" | cut -d: -f1)
     WINDOW_IDX=$(echo "$TARGET" | cut -d: -f2 | cut -d. -f1)
     WINDOW_ID=$(tmux display-message -t "${SESSION}:${WINDOW_IDX}" -p '#{window_id}' 2>/dev/null || echo "")

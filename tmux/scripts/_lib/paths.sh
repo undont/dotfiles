@@ -2,6 +2,10 @@
 # Undo file path definitions for tmux scripts
 # Source this file after common.sh
 
+# Guard against multiple sourcing
+[[ -n "${_TMUX_PATHS_SH_LOADED:-}" ]] && return 0
+_TMUX_PATHS_SH_LOADED=1
+
 # Undo path constants (XDG-compliant)
 # Stores kill/undo state in XDG cache directory
 

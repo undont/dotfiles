@@ -34,6 +34,7 @@ brew "direnv"
 # Editors
 brew "neovim"                 # >= 0.11 required for nvim-treesitter
 brew "tree-sitter-cli"        # Required by nvim-treesitter for parser compilation
+brew "chafa"                   # Terminal image renderer (used by music.nvim)
 cask "visual-studio-code"
 
 # AI Coding Assistants

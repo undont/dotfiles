@@ -2,7 +2,11 @@
 # Agent alert utilities for tmux scripts
 # Source this file after common.sh
 
-# Alerts file location (only set if not already defined)
+# Guard against multiple sourcing
+[[ -n "${_TMUX_ALERTS_SH_LOADED:-}" ]] && return 0
+_TMUX_ALERTS_SH_LOADED=1
+
+# Alerts file location (only set if not already defined, allowing tests to override)
 if [[ -z "${ALERTS_FILE:-}" ]]; then
     readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 fi
@@ -19,6 +23,7 @@ get_agent_icon() {
     case "$agent" in
         claude) echo "⚡" ;;
         opencode) echo "🔮" ;;
+        copilot) echo "✦" ;;
         *) echo "🤖" ;;
     esac
 }
@@ -31,6 +36,7 @@ get_agent_colour() {
     case "$agent" in
         claude) echo "#f1fa8c" ;;      # Yellow
         opencode) echo "#bd93f9" ;;    # Dracula purple
+        copilot) echo "#58a6ff" ;;     # GitHub blue
         *) echo "#6272a4" ;;           # Dracula blue
     esac
 }
@@ -42,6 +48,7 @@ get_agent_display() {
     case "$1" in
         claude)   echo "⚡|#f1fa8c" ;;
         opencode) echo "🔮|#bd93f9" ;;
+        copilot)  echo "✦|#58a6ff" ;;
         *)        echo "🤖|#6272a4" ;;
     esac
 }
@@ -100,11 +107,20 @@ get_window_alert_icons() {
 
     # Agent alerts
     local agent
-    for agent in claude opencode; do
+    for agent in claude opencode copilot; do
         if printf '%s\n' "$opts" | grep -q "^@${agent}_alert "; then
             display=$(get_agent_display "$agent")
             icon="${display%%|*}"
-            icons="${icons}${icon} "
+            colour="${display##*|}"
+            # Apply colour only for non-emoji icons (emojis are self-coloured)
+            case "$agent" in
+                copilot)
+                    icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon}\033[0m "
+                    ;;
+                *)
+                    icons="${icons}${icon} "
+                    ;;
+            esac
         fi
     done
 
@@ -182,7 +198,7 @@ set_window_alert() {
 
     # Validate agent name against whitelist
     case "$agent" in
-        claude|opencode) ;;
+        claude|opencode|copilot) ;;
         *) return 1 ;;
     esac
 
