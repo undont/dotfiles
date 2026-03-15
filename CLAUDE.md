@@ -289,6 +289,11 @@ Based on kickstart.nvim with modular organisation:
 - `lua/custom/plugins/`: init.lua, ui.lua, lsp.lua, completion.lua, telescope.lua, editor.lua, copilot.lua, git.lua, pr-review.lua, dotnet.lua, test.lua, markdown-ui.lua, codecompanion.lua, claude-prompt.lua, discord.lua
 - `lua/kickstart/plugins/`: neo-tree.lua, gitsigns.lua, autopairs.lua, debug.lua, lint.lua, indent_line.lua
 
+## Change Guidelines
+
+- **Don't change aliases or keybindings without asking.** They reflect personal preference, not bugs. An alias that looks "wrong" (e.g. `gds="git diff --stat"` instead of `--staged`) is intentional.
+- **ZLE widgets and tmux keybindings are interactive code.** Don't extract or refactor them mechanically — they have specific requirements around terminal I/O, fzf integration, and prompt redrawing that can't be verified by reading alone.
+
 ## Shell Script Conventions
 
 - Use `set -euo pipefail` at script start

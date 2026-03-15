@@ -7,7 +7,7 @@ A modern zsh setup with Powerlevel10k prompt, fuzzy finding, autosuggestions, an
 | Feature             | Description                                           |
 | ------------------- | ----------------------------------------------------- |
 | **Prompt**          | Powerlevel10k with git status                         |
-| **Fuzzy finder**    | `Ctrl+R` history, `Ctrl+T` files, `Opt/Alt+C` directories |
+| **Fuzzy finder**    | `Ctrl+R` history, `Ctrl+T` files, `Opt+A` directory history |
 | **Autosuggestions** | Right arrow to accept                                 |
 | **Dotfiles CLI**    | `dot` / `dotfiles` for management commands            |
 
@@ -201,8 +201,7 @@ Suggests commands as you type based on history.
 | ---------- | ---------------------------------- |
 | `Ctrl+R`   | Search command history             |
 | `Ctrl+T`   | Search files in current directory  |
-| `Opt/Alt+C`    | cd into a directory (fuzzy search) |
-| `Opt/Alt+A`    | Pick from directory history (back stack) |
+| `Opt+A`    | Pick from directory history (back stack) |
 
 ### direnv
 
@@ -240,7 +239,7 @@ direnv allow
 | `ta`       | `tattach`                       | Shorthand for `tattach` (see functions below) |
 | `tls`      | `~/.tmux/scripts/resurrect/restore.sh --list` | List saved tmux session backups |
 | `tcleanup` | `~/.tmux/scripts/tests/cleanup-tests.sh` | Clean up orphaned test resources (servers/backups) |
-| `alerts-clear` | `rm -rf ~/.config/tmux-alerts` | Clear all tmux alerts (agent + command exit) |
+| `ac` / `alerts-clear` | `rm -rf ~/.config/tmux-alerts` | Clear all tmux alerts (agent + command exit) |
 | `gols`     | `ls ~/go/bin`                   | List installed Go binaries         |
 | `brewup`   | `brew update && brew upgrade`   | Update and upgrade Homebrew        |
 | `grmc`     | `git rm --cached`               | Untrack file(s) without deleting from disk |

@@ -218,13 +218,18 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
     fi
   }
 
-  # Wrap fzf ZLE widgets so Ctrl+R/T and Alt+C pick up theme changes immediately
-  for _w in fzf-file-widget fzf-history-widget fzf-cd-widget; do
+  # Wrap fzf ZLE widgets so Ctrl+R/T pick up theme changes immediately
+  for _w in fzf-file-widget fzf-history-widget; do
     zle -A "$_w" "_orig-$_w"
     eval "_wrapped-${_w}() { _fzf_theme_refresh; zle _orig-${_w}; }"
     zle -N "$_w" "_wrapped-${_w}"
   done
   unset _w
+
+  # Unbind Alt+C (fzf-cd-widget) — terminals send the same escape sequence for
+  # Esc+c and Alt+C, causing accidental triggers when pressing Esc then "c".
+  # The Opt+A cdl-widget is the preferred directory picker.
+  bindkey -r '\ec'
 
   # Opt+A: directory history picker (inline fzf selection + BUFFER cd)
   # Follows fzf's own Alt-C pattern: run fzf directly in the widget,
@@ -392,6 +397,7 @@ alias copilot="cl && copilot"          # Clear scrollback + launch GitHub Copilo
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash config
 alias ff="fastfetch"                   # Fastfetch system info
+alias ac="alerts-clear"                # Clear tmux alerts (see alias below)
 
 # Tmux session management (see ~/.tmux/README.md)
 alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
