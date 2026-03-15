@@ -47,7 +47,6 @@ bind -n WheelDownPane if -F '#{alternate_on}' 'send-keys -M' 'send-keys -M'
 # Click session name in status bar to open session switcher
 bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/alerts/clear.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
   ~/.tmux/scripts/sessions/list.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --header-lines=7 \
@@ -177,8 +176,7 @@ bind c display-popup -w 95% -h 95% -E "\
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
       --bind 'n:become(~/.tmux/scripts/instances/new.sh claude)' \
       --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) claude)+reload-sync(~/.tmux/scripts/instances/claude.sh)' | \
-  cut -d' ' -f1 | \
-  xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/alerts/clear.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
+  cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────
 # OpenCode instance switcher (prefix + o)
@@ -205,8 +203,7 @@ bind o display-popup -w 95% -h 95% -E "\
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
       --bind 'n:become(~/.tmux/scripts/instances/new.sh opencode)' \
       --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) opencode)+reload-sync(~/.tmux/scripts/instances/opencode.sh)' | \
-  cut -d' ' -f1 | \
-  xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/alerts/clear.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
+  cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────
 # GitHub Copilot instance switcher (prefix + a)
@@ -233,8 +230,7 @@ bind a display-popup -w 95% -h 95% -E "\
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
       --bind 'n:become(~/.tmux/scripts/instances/new.sh copilot)' \
       --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) copilot)+reload-sync(~/.tmux/scripts/instances/copilot.sh)' | \
-  cut -d' ' -f1 | \
-  xargs -r sh -c 'SESSION=\$(echo \$1 | cut -d: -f1); WINDOW=\$(echo \$1 | cut -d: -f2 | cut -d. -f1); ~/.tmux/scripts/alerts/clear.sh \"\$SESSION\" \"\$(tmux list-windows -t \$SESSION -F \"#{window_index} #{window_name}\" | grep \"^\$WINDOW \" | cut -d\" \" -f2-)\" \"\"; tmux switch-client -t \$1' _"
+  cut -d' ' -f1 | xargs -r tmux switch-client -t"
 # ─────────────────────────────────────────
 # Vim-style navigation (Opt+hjkl)
 bind -n M-h select-pane -L           # Opt+h = left
@@ -420,7 +416,6 @@ bind p display-popup -w 60% -h 60% -E "~/.tmux/scripts/launchers/picker.sh"
 # ─────────────────────────────────────────
 bind f display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/alerts/clear.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
   ~/.tmux/scripts/windows/list.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --header-lines=7 \
@@ -618,7 +613,6 @@ bind w run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh
 # Ctrl+x kills session, Ctrl+u undoes the last kill
 bind s display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/alerts/clear.sh '#{session_name}' '#{window_name}' '#{window_id}'; \
   ~/.tmux/scripts/sessions/list.sh | \
   fzf --ansi --reverse --disabled --cycle \
       --header-lines=7 \

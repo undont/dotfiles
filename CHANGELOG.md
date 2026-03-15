@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.65] - 2026-03-15
+
+### Fixed
+- Tmux: fzf picker performance regression — session/window list scripts now read alerts file instead of per-window `tmux show-options` calls (O(1) file read vs O(sessions × windows) tmux round-trips)
+- Tmux: removed blocking `clear.sh` calls from all picker pipelines — alert clearing now handled exclusively by the `after-select-window` hook
+- Tmux: removed redundant `clear_window_alerts` from `update-timestamp.sh` and `update-timestamp.sh` subprocess from `clear.sh` — eliminated duplicate work on every window switch
+- Tmux: simplified instance picker (claude/opencode/copilot) post-selection to direct `tmux switch-client` instead of inline shell with extra tmux lookups
+
+### Added
+- Tmux: `build_alert_icons` shared function in alerts library for file-based alert icon rendering
+- Tmux: `test-list-performance.sh` regression test to guard against per-window tmux call patterns in list scripts
+
+### Changed
+- Nvim: set `tabstop = 4` for consistent indentation display
+- Nvim: indent-blankline scope guides brightened relative to base whitespace colour for visual distinction
+
 ## [0.2.64] - 2026-03-15
 
 ### Added

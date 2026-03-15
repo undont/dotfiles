@@ -35,14 +35,3 @@ PANE_ID=$(tmux display-message -t "$WINDOW_ID" -p '#{pane_id}' 2>/dev/null) || t
 if [[ -n "$PANE_ID" ]]; then
     tmux set-option -pt "$PANE_ID" @pane-viewed "$TIMESTAMP" 2>/dev/null || true
 fi
-
-# Clear any agent alerts for this window (safety net)
-SESSION=$(tmux display-message -t "$WINDOW_ID" -p '#S' 2>/dev/null)
-WINDOW=$(tmux display-message -t "$WINDOW_ID" -p '#W' 2>/dev/null)
-
-# Validate session/window names before using
-if [[ -n "$SESSION" && -n "$WINDOW" ]] && \
-   [[ "$SESSION" =~ ^[a-zA-Z0-9._-]+$ ]] && \
-   [[ "$WINDOW" =~ ^[a-zA-Z0-9._-]+$ ]]; then
-    clear_window_alerts "$SESSION" "$WINDOW" "$WINDOW_ID"
-fi
