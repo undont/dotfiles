@@ -127,6 +127,57 @@ get_window_alert_icons() {
     printf '%s' "$icons"
 }
 
+# Build alert icons from pre-read alerts file content
+# Avoids per-window tmux calls by reading the flat file once
+# Usage: icons=$(build_alert_icons "$alerts_content" "^session_name:" [dedupe])
+#   $1 - Full alerts file content (pre-read)
+#   $2 - Grep pattern to filter entries (e.g. "^mysession:" or "^mysession:mywindow:")
+#   $3 - Optional: pass "dedupe" to deduplicate agent icons across entries
+# Returns: ANSI-coloured icon string (empty if no alerts match)
+build_alert_icons() {
+    local alerts_content="$1"
+    local pattern="$2"
+    local dedupe="${3:-}"
+
+    [[ -z "$alerts_content" ]] && return
+
+    local icons="" seen_agents="" display icon colour
+
+    while IFS=: read -r _sess _win field3 rest; do
+        if [[ "$field3" == "exit" ]]; then
+            # Exit alert: rest is "code:label"
+            local code="${rest%%:*}"
+            local label="${rest#*:}"
+            # Escape '#' to prevent tmux format injection
+            label="${label//\#/##}"
+            display=$(get_exit_code_display "$code")
+            icon="${display%%|*}"
+            colour="${display##*|}"
+            icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon} ${label}\033[0m "
+        else
+            # Agent alert: field3 is agent name
+            local agent="$field3"
+            if [[ "$dedupe" == "dedupe" ]]; then
+                case "$seen_agents" in *"|${agent}|"*) continue ;; esac
+                seen_agents="${seen_agents}|${agent}|"
+            fi
+            display=$(get_agent_display "$agent")
+            icon="${display%%|*}"
+            colour="${display##*|}"
+            case "$agent" in
+                copilot)
+                    icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon}\033[0m "
+                    ;;
+                *)
+                    icons="${icons}${icon} "
+                    ;;
+            esac
+        fi
+    done < <(printf '%s\n' "$alerts_content" | grep "$pattern" 2>/dev/null || true)
+
+    printf '%s' "$icons"
+}
+
 # Set an exit code alert for the current window
 # Usage: set_exit_alert "exit_code" "label" [ring_bell]
 # Sets @exit_alert and @exit_alert_colour window options and adds 5-field entry to alerts file

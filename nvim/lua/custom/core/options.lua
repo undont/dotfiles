@@ -28,6 +28,7 @@ function M.setup()
   end)
 
   -- Indentation
+  vim.o.tabstop = 4
   vim.o.breakindent = true
 
   -- Persistent undo

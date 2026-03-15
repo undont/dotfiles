@@ -14,16 +14,13 @@ source "$SCRIPT_DIR/../_lib/alerts.sh"
 load_fzf_theme
 print_dotfiles_logo
 
+# Pre-read alerts file once (avoids per-session/per-window tmux calls)
+_all_alerts=""
+[[ -f "$ALERTS_FILE" ]] && _all_alerts=$(< "$ALERTS_FILE")
+
 # Get sessions sorted by activity
 while read -r session; do
-    # Check all windows in this session for alert options
-    icons=""
-    while read -r win_id; do
-        [[ -z "$win_id" ]] && continue
-        opts=$(tmux show-options -wt "$win_id" 2>/dev/null || true)
-        [[ -z "$opts" ]] && continue
-        icons="${icons}$(get_window_alert_icons "$opts")"
-    done < <(tmux list-windows -t "$session" -F '#{window_id}' 2>/dev/null)
+    icons=$(build_alert_icons "$_all_alerts" "^${session}:" "dedupe")
 
     if [[ -n "$icons" ]]; then
         printf "%s %b\n" "${session}" "${icons}"
