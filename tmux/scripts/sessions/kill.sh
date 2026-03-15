@@ -73,7 +73,7 @@ require_tmux
 # Load current theme colours for fzf
 load_fzf_theme
 
-SESSION_NAME="${1:-}"
+SESSION_NAME="${1:-$(get_current_session)}"
 NO_CONFIRM="${2:-}"
 [[ -z "$SESSION_NAME" ]] && exit 1
 

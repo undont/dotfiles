@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.64] - 2026-03-15
+
+### Added
+- Zsh: `font-preview` function — fzf-powered figlet/toilet font browser with live preview
+- Brewfile: `figlet` and `toilet` packages for ASCII art text banners
+
+### Changed
+- Tmux: kill session keybinding changed from `Opt+Shift+x` to `Opt+q` for easier access
+- Tmux: `kill.sh` defaults to current session when no argument provided
+- Zsh: `Opt+A` directory history widget rewritten inline (follows fzf's Alt-C pattern) for better reliability
+- Nvim: disable additional which-key mappings for cleaner popup; update markview.nvim `cmp` → `completion` module key
+
 ## [0.2.63] - 2026-03-14
 
 ### Added
