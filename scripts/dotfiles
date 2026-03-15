@@ -883,7 +883,7 @@ cmd_aliases() {
         "trestore"     "restore from backup" \
         "tkill"        "delete session backup" \
         "tcleanup"     "clean test resources" \
-        "alerts-clear" "clear all tmux alerts"
+        "ac/alerts-clear" "clear all tmux alerts"
 
     printf "\n${CYAN}SYSTEM & NETWORK${NC}\n"
     _2col \

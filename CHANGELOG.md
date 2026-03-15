@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.66] - 2026-03-15
+
+### Fixed
+- Tmux: alerts not clearing when switching sessions via fzf picker — `client-session-changed` hook was missing `clear.sh` call (regression from 0.2.65 performance fix)
+
+### Added
+- Tmux: regression test ensuring both `after-select-window` and `client-session-changed` hooks call `clear.sh`
+- Zsh: `ac` shorthand alias for `alerts-clear`
+
+### Changed
+- Zsh: unbind `Alt+C` (`fzf-cd-widget`) — terminals send the same escape sequence for Esc+c and Alt+C, causing accidental triggers; `Opt+A` directory history picker is the replacement
+- Zsh: `font-preview` now passes terminal width to figlet/toilet for proper column wrapping, disables fzf mouse mode
+
 ## [0.2.65] - 2026-03-15
 
 ### Fixed

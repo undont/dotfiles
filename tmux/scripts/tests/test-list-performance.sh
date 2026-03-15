@@ -55,6 +55,16 @@ else
     pass "update-timestamp.sh doesn't call clear_window_alerts"
 fi
 
+section "Tmux hooks call clear.sh on session and window switch"
+TMUX_CONF="$REPO_ROOT/tmux/tmux.conf.template"
+for hook in after-select-window client-session-changed; do
+    if grep "$hook" "$TMUX_CONF" | grep -q "clear.sh"; then
+        pass "$hook hook calls clear.sh"
+    else
+        fail "$hook hook missing clear.sh (alerts won't clear on switch)"
+    fi
+done
+
 section "clear.sh doesn't spawn update-timestamp.sh"
 if grep -q "update-timestamp" "$SCRIPTS_DIR/alerts/clear.sh"; then
     fail "clear.sh spawns update-timestamp.sh (should be called independently by hooks)"
