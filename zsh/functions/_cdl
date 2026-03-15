@@ -1,4 +1,6 @@
-# Directory history picker (fzf-powered, bound to Opt+A via ZLE widget)
+# Directory history picker (fzf-powered)
+# Called directly from the command line to pick and cd to a previous directory.
+# The ZLE widget (Opt+A) uses its own inline version for reliability.
 if (( ${#_dir_back_stack} == 0 )); then
   echo "No directory history" >&2
   return 1

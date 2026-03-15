@@ -148,7 +148,7 @@ bind -n M-r display-popup -w 55 -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-th
 bind -n "M-{" swap-window -t -1 \; select-window -t -1                  # Opt+Shift+[ = swap left
 bind -n "M-}" swap-window -t +1 \; select-window -t +1                  # Opt+Shift+] = swap right
 bind -n M-x display-popup -E -w 60 -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"           # Opt+x = kill window (saves state for undo)
-bind -n M-X display-popup -E -w 60 -h 10 "~/.tmux/scripts/sessions/kill.sh #{session_name}"    # Opt+Shift+x = kill session (saves state for undo)
+bind -n M-q display-popup -E -w 60 -h 10 "~/.tmux/scripts/sessions/kill.sh"    # Opt+q = kill session (saves state for undo)
 bind -n M-u run-shell '~/.tmux/scripts/utils/undo-dispatch.sh'                  # Opt+u = undo last closed pane/window
 bind -n M-D run-shell '~/.tmux/scripts/windows/duplicate.sh'               # Opt+Shift+d = duplicate window
 

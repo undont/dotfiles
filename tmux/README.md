@@ -169,7 +169,7 @@ Opens a fzf popup with all URLs from the current pane's scrollback. Uses the sam
 | ------------------- | ---------- |
 | Undo last kill      | `Opt/Alt+u`    |
 
-Restores the last closed pane or window (whichever was killed most recently). Restores directory, layout, and scrollback contents. Works with both `Opt/Alt+s` (close pane) and `Opt/Alt+x` (kill window).
+Restores the last closed pane or window (whichever was killed most recently). Restores directory, layout, and scrollback contents. Works with both `Opt/Alt+s` (close pane) and `Opt/Alt+x` (kill window). Session kill (`Opt/Alt+q`) also supports undo.
 
 ### Scroll Mode (Copy Mode)
 
@@ -205,6 +205,7 @@ Restores the last closed pane or window (whichever was killed most recently). Re
 | Restore all sessions     | `prefix + Ctrl+r`              |
 | List saved backups       | `prefix + S`                   |
 | Restore specific session | `prefix + R`                   |
+| Kill session             | `Opt/Alt+q`                    |
 
 ### Session/Window Switchers (Vim-Style Navigation)
 
@@ -316,7 +317,7 @@ This setup extends tmux-resurrect with custom per-session backup and restore.
 3. The post-save hook (`split-resurrect.sh`) automatically splits this into individual per-session files
 4. Each session gets its own backup file in `sessions/` directory
 
-**Auto-cleanup:** When you kill a session (e.g., with `Opt/Alt+x` in the session switcher), a save is automatically triggered to update the backup files. The killed session is removed from `tls` listings.
+**Auto-cleanup:** When you kill a session (e.g., with `Opt/Alt+q` or `x` in the session switcher), a save is automatically triggered to update the backup files. The killed session is removed from `tls` listings.
 
 ### How Restoring Works
 

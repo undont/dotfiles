@@ -10,7 +10,7 @@ return {
         modules = {
           bib = false,
           yaml = false,
-          cmp = false,
+          completion = false,
         },
         to_do = {
           statuses = {
