@@ -667,7 +667,7 @@ set-hook -g after-select-pane 'run-shell -b "tmux set-option -pt \"#{pane_id}\" 
 
 # Update alerts when window is renamed to prevent stale alerts
 set-hook -g after-rename-window 'run-shell "~/.tmux/scripts/alerts/update-rename.sh \"#{session_name}\" \"#{window_name_old}\" \"#{window_name}\""'
-set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}"'
+set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 set-hook -g after-new-session 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}"'
 
 # ══════════════════════════════════════════════════════════════
