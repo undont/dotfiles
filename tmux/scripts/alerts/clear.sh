@@ -25,6 +25,3 @@ fi
 
 # Clear all agent alerts for this window
 clear_window_alerts "$SESSION" "$WINDOW" "$WINDOW_ID"
-
-# Update timestamp for window sorting
-"$SCRIPT_DIR/update-timestamp.sh" "$WINDOW_ID"

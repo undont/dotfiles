@@ -15,26 +15,28 @@ source "$SCRIPT_DIR/../_lib/alerts.sh"
 load_fzf_theme
 print_dotfiles_logo
 
+# Pre-read alerts file once (avoids per-window tmux calls)
+_all_alerts=""
+[[ -f "$ALERTS_FILE" ]] && _all_alerts=$(< "$ALERTS_FILE")
+
 # Get windows sorted by last-viewed, then add alert indicator
-# Format includes window_id (tab-separated) for direct tmux option queries
 if [[ "$1" == "--all" ]]; then
     # All sessions: session_name:window_index window_name
-    FORMAT='#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index} #{window_name}'$'\t''#{window_id}'
+    FORMAT='#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index} #{window_name}'
     tmux list-windows -a -F "$FORMAT"
 else
     # Current session only
     SESSION=$(tmux display-message -p '#S')
-    FORMAT="#{?#{@last-viewed},#{@last-viewed},0} ${SESSION}:#{window_index} #{window_name}"$'\t''#{window_id}'
+    FORMAT="#{?#{@last-viewed},#{@last-viewed},0} ${SESSION}:#{window_index} #{window_name}"
     tmux list-windows -F "$FORMAT"
-fi | sort -rn | cut -d' ' -f2- | while IFS=$'\t' read -r display_line window_id; do
-    # display_line: "session:window_index window_name", window_id: "@N"
+fi | sort -rn | cut -d' ' -f2- | while read -r display_line; do
+    # display_line: "session:window_index window_name"
+    # Extract session and window_name for alerts file lookup
+    local_target="${display_line%% *}"          # session:window_index
+    local_session="${local_target%%:*}"         # session
+    local_window="${display_line#* }"           # window_name
 
-    # Query tmux window options once for all alert checks
-    icons=""
-    if [[ -n "$window_id" ]]; then
-        opts=$(tmux show-options -wt "$window_id" 2>/dev/null || true)
-        icons=$(get_window_alert_icons "$opts")
-    fi
+    icons=$(build_alert_icons "$_all_alerts" "^${local_session}:${local_window}:")
 
     if [[ -n "$icons" ]]; then
         printf "%s %b\n" "$display_line" "${icons}"
