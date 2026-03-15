@@ -133,6 +133,8 @@ brew "fastfetch"              # neofetch replacement (faster, maintained)
 brew "teamookla/speedtest/speedtest"
 brew "glow"                   # Markdown renderer
 brew "asciinema"              # Terminal session recorder
+brew "figlet"                 # ASCII art text banners
+brew "toilet"                 # Unicode/colour text banners (figlet-compatible)
 
 # =============================================================================
 # @preset: core

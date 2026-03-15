@@ -20,7 +20,7 @@
 ║  ^d / ^u          top/bot ln  ║  ` h              this help          ║
 ║  g / G            top/bottom  ║  ` r              reload locals      ║
 ║  / / ?            search ↓/↑  ║  {{M}}+u            undo pane/win      ║
-║  n / N            next / prev ║  {{M}}+Shift+x      kill session       ║
+║  n / N            next / prev ║  {{M}}+q            kill session       ║
 ║  v / V            select/line ║  ` - / ` =        back / forward     ║
 ║  y / Y            yank/ln     ║                                      ║
 ║  m / M            bol/eol     ║                                      ║

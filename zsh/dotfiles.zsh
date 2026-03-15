@@ -226,10 +226,45 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
   done
   unset _w
 
-  # Opt+A: directory history picker (cdl as a ZLE widget)
+  # Opt+A: directory history picker (inline fzf selection + BUFFER cd)
+  # Follows fzf's own Alt-C pattern: run fzf directly in the widget,
+  # then set BUFFER to the cd command and accept-line to execute it.
   _cdl-widget() {
-    _cdl < /dev/tty
-    zle reset-prompt
+    if (( ${#_dir_back_stack} == 0 )); then
+      zle redisplay
+      return 0
+    fi
+    setopt localoptions pipefail 2>/dev/null
+    local -a reversed=()
+    local prev="" i
+    for (( i=${#_dir_back_stack}; i>=1; i-- )); do
+      local entry="${_dir_back_stack[$i]}"
+      if [[ "$entry" != "$prev" ]]; then
+        reversed+=("$entry")
+        prev="$entry"
+      fi
+    done
+    local count=${#reversed[@]}
+    _fzf_theme_refresh 2>/dev/null
+    local dir
+    dir="$(printf '%s\n' "${reversed[@]}" | fzf \
+      --height=40% --reverse \
+      --header="$count entries" \
+      --preview='ls -CF {}' \
+    )"
+    if [[ -z "$dir" ]]; then
+      zle redisplay
+      return 0
+    fi
+    if [[ -d "$dir" ]]; then
+      builtin cd -- "$dir"
+      # Re-run precmd hooks so P10k regenerates the prompt string with the
+      # new directory, then reset-prompt to display it.
+      local f; for f in $precmd_functions; do "$f" 2>/dev/null; done
+      zle reset-prompt
+    else
+      zle redisplay
+    fi
   }
   zle -N _cdl-widget
   bindkey '\ea' _cdl-widget
@@ -512,6 +547,9 @@ cdf() {
 
 # Directory history picker (autoloaded from zsh/functions/_cdl, bound to Opt+A via ZLE widget)
 autoload -Uz _cdl
+
+# Font preview (figlet/toilet font browser with fzf)
+autoload -Uz font-preview
 
 # Attach to tmux session, restoring from backup if needed
 tattach() {
