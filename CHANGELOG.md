@@ -13,6 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Brewfile: `figlet` and `toilet` packages for ASCII art text banners
 
 ### Changed
+- gh-dash: `m` keybinding defaults to squash & merge with branch deletion (`--squash --delete-branch`)
 - Tmux: kill session keybinding changed from `Opt+Shift+x` to `Opt+q` for easier access
 - Tmux: `kill.sh` defaults to current session when no argument provided
 - Zsh: `Opt+A` directory history widget rewritten inline (follows fzf's Alt-C pattern) for better reliability
