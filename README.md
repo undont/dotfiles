@@ -80,7 +80,7 @@ The installer detects what's already configured and only shows steps you still n
 
 - **Powerlevel10k** prompt with instant prompt and git status
 - **Framework architecture** — `~/.zshrc` is your personal file, sourcing `dotfiles.zsh` as a shared framework (no git conflicts)
-- **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt/Alt+C` directories
+- **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt+A` directory history
 - **Performance** — lazy-loaded completions, fnm (~5ms) over nvm (~300ms), cached eval for direnv/fzf
 - **Tab completion** for `dotfiles` / `dot`, `trestore`, `tkill`, `tattach`
 - **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `grmc` (untrack files), `tattach` (attach or restore from backup), `cdb`/`cdf` (browser-style directory back/forward), `Opt+A` (directory history picker), `cl` (full terminal reset), `drs` (sync repo paths to gh-dash), `brewup`, `nvim-sync`, `mkcd`, `font-preview` (figlet/toilet font browser), and more — run `dot aliases` for the full list
