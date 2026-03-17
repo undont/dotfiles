@@ -666,7 +666,7 @@ fi
 
 # Session name: strip dots (tmux uses '.' as pane separator in target syntax)
 session_name=$(printf '%s' "$name" | tr '.' '-' | sed 's/-*$//')
-session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '-.' '_')
+session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '.-' '_')
 
 {
     instance_tag=""
