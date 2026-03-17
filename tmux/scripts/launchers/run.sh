@@ -133,7 +133,7 @@ handle_fixed_session() {
     local new_cmd
     if [[ "$instance_mode" == "prompt" ]]; then
         # Prompt for a suffix (e.g. ticket number) → dana-1234
-        new_cmd="suffix=\$(printf '' | fzf --print-query --query='' --prompt=${safe_base_name}- --height=100% --layout=reverse --border=rounded --border-label=' ⏎ create · esc cancel ' --border-label-pos=bottom --no-info --pointer=' ' --bind 'enter:print-query' --bind 'esc:abort' 2>/dev/null | head -1) && [ -n \"\$suffix\" ] && suffix=\$(printf '%s' \"\$suffix\" | tr -c '[:alnum:]_-' '-') && SESSION_NAME=${safe_base_name}-\$suffix exec ${safe_launcher}"
+        new_cmd="suffix=\$(printf '' | fzf --query='' --prompt=${safe_base_name}- --height=100% --layout=reverse --border=rounded --border-label=' ⏎ create · esc cancel ' --border-label-pos=bottom --no-info --pointer=' ' --bind 'enter:print-query' --bind 'esc:abort' 2>/dev/null) && [ -n \"\$suffix\" ] && suffix=\$(printf '%s' \"\$suffix\" | tr -c '[:alnum:]_-' '-') && SESSION_NAME=${safe_base_name}-\$suffix exec ${safe_launcher}"
     else
         # Auto-increment → dana-2, dana-3, etc.
         new_cmd="num=2; while tmux has-session -t ${safe_base_name}-\$num 2>/dev/null; do num=\$((num+1)); done; SESSION_NAME=${safe_base_name}-\$num exec ${safe_launcher}"
@@ -162,6 +162,64 @@ handle_fixed_session() {
     target=$(printf '%s' "$selection" | sed 's/.*● *//' | awk '{print $1}')
     if [[ -n "$target" ]]; then
         tmux switch-client -t "$target"
+    fi
+}
+
+# ─────────────────────────────────────────
+# Session collision handler (parameterised)
+# ─────────────────────────────────────────
+handle_session_collision() {
+    local session="$1"
+    local dir="$2"
+
+    # Get existing session's working directory for context
+    local existing_path
+    existing_path=$(tmux display-message -t "${session}:1" -p '#{pane_current_path}' 2>/dev/null || true)
+    existing_path="${existing_path/#$HOME/\~}"
+
+    # Find next available auto-increment suffix
+    local num=2
+    while session_exists "${session}-${num}"; do
+        num=$((num + 1))
+    done
+
+    # Build become() command for 'n' — suffix prompt with auto-number as default
+    # User can type a custom suffix or press enter to accept the default
+    local safe_session safe_launcher safe_dir
+    safe_session=$(printf '%q' "$session")
+    safe_launcher=$(printf '%q' "$LAUNCHER")
+    safe_dir=$(printf '%q' "$dir")
+
+    local new_cmd
+    new_cmd="suffix=\$(printf '' | fzf --query='${num}' --prompt=${safe_session}- --height=100% --layout=reverse --border=rounded --border-label=' ⏎ create · esc cancel ' --border-label-pos=bottom --no-info --pointer=' ' --bind 'enter:print-query' --bind 'esc:abort' 2>/dev/null) && { [ -n \"\$suffix\" ] || suffix=${num}; } && suffix=\$(printf '%s' \"\$suffix\" | tr -c '[:alnum:]_-' '-') && SESSION_NAME=${safe_session}-\$suffix exec ${safe_launcher} ${safe_dir}"
+
+    local content=""
+    content+=$'\n'
+    content+="  ${GREEN}${name}${NC}"$'\n'
+    content+="  ${GREY}${description}${NC}"$'\n'
+    content+="  ${YELLOW}Session '${session}' exists${NC} ${GREY}· ${existing_path}${NC}"$'\n'
+    content+=$'\n'
+
+    content+="    ${GREEN}●${NC} $(printf '%-20s' "$session") ${GREY}attach${NC}"$'\n'
+
+    local selection
+    selection=$(printf '%s' "$content" | fzf \
+        --ansi --reverse --disabled \
+        --header-lines=5 \
+        --padding=0,0,1,0 \
+        --prompt=': ' \
+        --border=rounded \
+        --border-label=' ⏎ attach · n new · esc cancel ' \
+        --border-label-pos=bottom \
+        --bind 'j:down,k:up,q:abort' \
+        --bind 'space:accept,enter:accept' \
+        --bind "n:become($new_cmd)" \
+        2>/dev/null) || exit 130
+
+    # Only reachable via enter/space — 'n' goes through become()
+    if [[ "$selection" == *"●"* ]]; then
+        tmux switch-client -t "$session"
+        exit 0
     fi
 }
 
@@ -222,6 +280,13 @@ handle_parameterised() {
     # Resolve to absolute path if relative
     if [[ -d "$dir" ]]; then
         dir=$(cd "$dir" && pwd)
+    fi
+
+    # Derive expected session name (parameterised launchers suffix the launcher name)
+    local expected_session
+    expected_session="$(sanitise_session_name "$(basename "$dir")")-${name}"
+    if [[ -n "$expected_session" ]] && session_exists "$expected_session"; then
+        handle_session_collision "$expected_session" "$dir"
     fi
 
     exec "$LAUNCHER" "$dir"

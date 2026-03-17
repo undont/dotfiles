@@ -24,6 +24,7 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/paths.sh"
 source "$SCRIPT_DIR/../_lib/session.sh"
 source "$SCRIPT_DIR/../_lib/ui.sh"
+source "$SCRIPT_DIR/../_lib/alerts.sh"
 
 require_tmux
 
@@ -103,6 +104,13 @@ chmod 600 "$UNDO_STATE"
 tmux capture-pane -t "$PANE_TARGET" -p -S -32768 > "$UNDO_CONTENT" 2>/dev/null || true
 chmod 600 "$UNDO_CONTENT"
 
+# Capture window name/ID before the kill for alert cleanup
+# (killing the last pane destroys the window, so we need these beforehand)
+if [[ "$IS_LAST_PANE" == "yes" ]]; then
+    WINDOW_NAME=$(tmux display-message -t "${CURRENT_SESSION}:${CURRENT_WINDOW}" -p '#{window_name}' 2>/dev/null || echo "")
+    WINDOW_ID=$(tmux display-message -t "${CURRENT_SESSION}:${CURRENT_WINDOW}" -p '#{window_id}' 2>/dev/null || echo "")
+fi
+
 # Determine if we need to check for session switching
 # We need the ACTUAL current client session (where the user is), not the target session
 ACTUAL_CLIENT_SESSION=$(tmux display-message -p '#{client_session}' 2>/dev/null || echo "")
@@ -115,8 +123,14 @@ if [[ "$IS_LAST_PANE" == "yes" && "$IS_LAST_WINDOW" == "yes" && "$ACTUAL_CLIENT_
     else
         tmux kill-pane -t "$PANE_TARGET" 2>/dev/null || exit 1
     fi
+    # Session is destroyed — clear all session alerts
+    clear_session_alerts "$CURRENT_SESSION" &
+elif [[ "$IS_LAST_PANE" == "yes" ]]; then
+    # Last pane but not last window — killing destroys the window
+    tmux kill-pane -t "$PANE_TARGET" 2>/dev/null || exit 1
+    # Window is destroyed — clear its alerts
+    clear_window_alerts "$CURRENT_SESSION" "$WINDOW_NAME" "$WINDOW_ID"
 else
-    # Kill the pane normally
-    # Note: Panes don't have individual alerts (they inherit from windows)
+    # Not the last pane — panes don't have individual alerts
     tmux kill-pane -t "$PANE_TARGET" 2>/dev/null || exit 1
 fi

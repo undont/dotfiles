@@ -60,29 +60,18 @@ fi
 # Move the window to the target session
 tmux move-window -s "${SOURCE_SESSION}:${WINDOW_INDEX}" -t "${TARGET_SESSION}:"
 
-# Update alert tracking if the window had an alert
-# Find agents that have alerts for this window and update the session name
-if [[ -f "$ALERTS_FILE" ]]; then
-    # Get list of agents with alerts for this window
-    agents=()
-    while IFS=: read -r sess win agent; do
-        if [[ "$sess" == "$SOURCE_SESSION" && "$win" == "$WINDOW_NAME" ]]; then
-            agents+=("$agent")
+# Update alert tracking: replace source session name with target in the alerts file.
+# Tmux window options (@*_alert) travel with the window automatically — only the
+# flat file needs updating. Handles both 3-field and 5-field alert formats.
+if [[ -f "$ALERTS_FILE" ]] && grep -qF "${SOURCE_SESSION}:${WINDOW_NAME}:" "$ALERTS_FILE" 2>/dev/null; then
+    if _acquire_alerts_lock; then
+        tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
+        if sed "s|^${SOURCE_SESSION}:${WINDOW_NAME}:|${TARGET_SESSION}:${WINDOW_NAME}:|" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
+            mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
+        else
+            rm -f "$tmp_file" 2>/dev/null
         fi
-    done < "$ALERTS_FILE"
-
-    # If we found any alerts, update them to the new session
-    if [[ ${#agents[@]} -gt 0 ]]; then
-        # Clear old alerts from source session (file only)
-        # Note: Intentionally NOT passing WINDOW_ID - the tmux window options
-        # move with the window and should stay set. We only need to update
-        # the alerts file to reflect the new session name.
-        clear_window_alerts "$SOURCE_SESSION" "$WINDOW_NAME"
-
-        # Re-add alerts with new session name (file only, options already set on window)
-        for agent in "${agents[@]}"; do
-            echo "${TARGET_SESSION}:${WINDOW_NAME}:${agent}" >> "$ALERTS_FILE"
-        done
+        _release_alerts_lock
     fi
 fi
 

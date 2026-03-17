@@ -436,6 +436,73 @@ cleanup_stale_alerts() {
     _release_alerts_lock
 }
 
+# Update window name in alerts file (for window renames)
+# Usage: update_window_name_in_alerts "session" "old_window" "new_window"
+update_window_name_in_alerts() {
+    local session="$1"
+    local old_window="$2"
+    local new_window="$3"
+
+    [[ ! -f "$ALERTS_FILE" ]] && return 0
+
+    # Check if there are any alerts for this window before locking
+    grep -qF "${session}:${old_window}:" "$ALERTS_FILE" 2>/dev/null || return 0
+
+    if ! _acquire_alerts_lock; then
+        return 0
+    fi
+
+    local tmp_file
+    tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
+    local update_success=0
+
+    if sed "s|^${session}:${old_window}:|${session}:${new_window}:|" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
+        if mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null; then
+            update_success=1
+        fi
+    fi
+
+    # Clean up temp file if update failed
+    if [[ $update_success -eq 0 ]]; then
+        rm -f "$tmp_file"
+    fi
+
+    _release_alerts_lock
+}
+
+# Update session name in alerts file (for session renames)
+# Usage: update_session_name_in_alerts "old_session" "new_session"
+update_session_name_in_alerts() {
+    local old_session="$1"
+    local new_session="$2"
+
+    [[ ! -f "$ALERTS_FILE" ]] && return 0
+
+    # Check if there are any alerts for the old session before locking
+    grep -qF "${old_session}:" "$ALERTS_FILE" 2>/dev/null || return 0
+
+    if ! _acquire_alerts_lock; then
+        return 0
+    fi
+
+    local tmp_file
+    tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
+    local update_success=0
+
+    if sed "s|^${old_session}:|${new_session}:|" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
+        if mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null; then
+            update_success=1
+        fi
+    fi
+
+    # Clean up temp file if update failed
+    if [[ $update_success -eq 0 ]]; then
+        rm -f "$tmp_file"
+    fi
+
+    _release_alerts_lock
+}
+
 # Clear all alerts for a session
 # Usage: clear_session_alerts "session"
 clear_session_alerts() {
