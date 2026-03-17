@@ -17,8 +17,10 @@ load_fzf_theme
 TARGET_WINDOW="${1:-}"
 if [[ -n "$TARGET_WINDOW" ]]; then
     CURRENT_NAME=$(tmux display-message -t "$TARGET_WINDOW" -p '#{window_name}')
+    SESSION_NAME=$(tmux display-message -t "$TARGET_WINDOW" -p '#{session_name}')
 else
     CURRENT_NAME=$(get_window_name)
+    SESSION_NAME=$(get_current_session)
 fi
 
 # Prompt for new name with current name as default
@@ -51,16 +53,24 @@ if [[ "$newname" == "$CURRENT_NAME" ]]; then
     exit 0
 fi
 
+# Update alerts file BEFORE the rename — tmux rename-window triggers the
+# after-rename-window hook asynchronously (cleanup.sh), which would delete
+# entries for the old name if the file hasn't been updated yet.
+update_window_name_in_alerts "$SESSION_NAME" "$CURRENT_NAME" "$newname"
+
 # Rename the window and disable automatic-rename to preserve the name
-# Note: Alert updates are handled by the after-rename-window hook
 if [[ -n "$TARGET_WINDOW" ]]; then
     if ! tmux rename-window -t "$TARGET_WINDOW" "$newname" 2>/dev/null; then
+        # Revert alert file update on failure
+        update_window_name_in_alerts "$SESSION_NAME" "$newname" "$CURRENT_NAME"
         show_error "Failed to rename window to '$newname'"
         exit 1
     fi
     tmux set-window-option -t "$TARGET_WINDOW" automatic-rename off
 else
     if ! tmux rename-window "$newname" 2>/dev/null; then
+        # Revert alert file update on failure
+        update_window_name_in_alerts "$SESSION_NAME" "$newname" "$CURRENT_NAME"
         show_error "Failed to rename window to '$newname'"
         exit 1
     fi

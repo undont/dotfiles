@@ -656,7 +656,7 @@ bind § choose-buffer -Z                                     # ` § = paste buff
 # When a session is killed, trigger a save to update backups
 # This removes the killed session from tls listings
 # Note: kill-session.sh already handles saves, but this catches edge cases
-set-hook -g session-closed 'run-shell -b "~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 && ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1"'
+set-hook -g session-closed 'run-shell -b "~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 && ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1; ~/.tmux/scripts/alerts/cleanup.sh >/dev/null 2>&1"'
 
 # ─────────────────────────────────────────
 # Window & pane access tracking
@@ -669,10 +669,13 @@ set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/utils/nav.sh reco
 # Track pane switches within the same window (doesn't fire after-select-window)
 set-hook -g after-select-pane 'run-shell -b "tmux set-option -pt \"#{pane_id}\" @pane-viewed \"$(date +%%s)\" 2>/dev/null || true"'
 
-# Update alerts when window is renamed to prevent stale alerts
-set-hook -g after-rename-window 'run-shell "~/.tmux/scripts/alerts/update-rename.sh \"#{session_name}\" \"#{window_name_old}\" \"#{window_name}\""'
+# Clean up stale alerts when window is renamed (catches native tmux renames)
+# Note: Our rename script (windows/rename.sh) handles the update directly;
+# this hook is a fallback for automatic renames or prefix+, usage.
+set-hook -g after-rename-window 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh >/dev/null 2>&1"'
 set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 set-hook -g after-new-session 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}"'
+set-hook -g session-renamed 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh >/dev/null 2>&1"'
 
 # ══════════════════════════════════════════════════════════════
 # Plugin Manager Initialisation (must be at bottom)

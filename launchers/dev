@@ -67,9 +67,10 @@ fi
 # Resolve to absolute path
 dir=$(cd "$dir" && pwd)
 
-# Use directory basename as session name (sanitised)
+# Use SESSION_NAME if provided (e.g. from collision handler), otherwise derive from directory basename
+# Suffixed with -dev to avoid collisions with fixed-session launchers (e.g. jiru vs jiru-dev)
 # Dots are replaced because tmux uses '.' as a separator in target syntax (session:window.pane)
-session=$(basename "$dir" | tr -c '[:alnum:]_\-\n' '-' | sed 's/-*$//')
+session="${SESSION_NAME:-$(basename "$dir" | tr -c '[:alnum:]_\-\n' '-' | sed 's/-*$//')-dev}"
 
 # Check if session already exists
 if tmux has-session -t "$session" 2>/dev/null; then

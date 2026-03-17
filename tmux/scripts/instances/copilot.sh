@@ -69,7 +69,10 @@ while IFS= read -r line; do
     window_name="${window_names["${session}:${window_idx}"]:-}"
 
     # Check if this window has an alert for copilot
-    if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${session}:${window_name}:copilot$" 2>/dev/null; then
+    # Escape '.' — valid in tmux names but a regex wildcard
+    _session_pat="${session//./\\.}"
+    _window_pat="${window_name//./\\.}"
+    if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${_session_pat}:${_window_pat}:copilot$" 2>/dev/null; then
         display=$(get_agent_display "copilot")
         icon="${display%%|*}"
         colour="${display##*|}"

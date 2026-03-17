@@ -56,11 +56,15 @@ if session_exists "$newname"; then
     exit 1
 fi
 
-# Clear any existing alerts for the old session name before renaming
-clear_session_alerts "$current_session"
+# Update alerts file BEFORE the rename — tmux rename-session triggers the
+# session-renamed hook asynchronously (cleanup.sh), which would delete entries
+# for the old name if the file hasn't been updated yet.
+update_session_name_in_alerts "$current_session" "$newname"
 
 # Rename the session
 if ! tmux rename-session -t "$current_session" "$newname" 2>/dev/null; then
+    # Revert alert file update on failure
+    update_session_name_in_alerts "$newname" "$current_session"
     show_error "Failed to rename '$current_session' to '$newname'"
     exit 1
 fi

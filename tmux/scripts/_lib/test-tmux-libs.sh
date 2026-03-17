@@ -565,6 +565,74 @@ else
     fail "  get_agent_display should return 'icon|colour', got: $DISPLAY"
 fi
 
+# Test build_alert_icons
+echo ""
+echo "  build_alert_icons:"
+
+# Basic: agent alert matched by session pattern
+_BAI_CONTENT="mysession:mywindow:claude"
+_BAI_RESULT=$(build_alert_icons "$_BAI_CONTENT" "^mysession:")
+if [[ -n "$_BAI_RESULT" ]]; then
+    pass "  returns icons for matching agent alert"
+else
+    fail "  should return icons for matching alert"
+fi
+
+# Pattern anchor: different session should not match
+_BAI_RESULT2=$(build_alert_icons "$_BAI_CONTENT" "^other:")
+if [[ -z "$_BAI_RESULT2" ]]; then
+    pass "  non-matching session pattern returns empty"
+else
+    fail "  non-matching pattern should return empty"
+fi
+
+# Dot in session name: 'v0.2.67' must NOT match 'v0X2X67'
+_BAI_DOT_CONTENT="v0X2X67:main:claude"
+_BAI_DOT_PAT="^v0\\.2\\.67:"
+_BAI_DOT_RESULT=$(build_alert_icons "$_BAI_DOT_CONTENT" "$_BAI_DOT_PAT")
+if [[ -z "$_BAI_DOT_RESULT" ]]; then
+    pass "  escaped dot pattern does not match non-dot session name"
+else
+    fail "  escaped dot should not match 'v0X2X67' (got: $_BAI_DOT_RESULT)"
+fi
+
+# Dot in session name: 'v0.2.67' DOES match with escaped pattern
+_BAI_DOT_CONTENT2="v0.2.67:main:claude"
+_BAI_DOT_RESULT2=$(build_alert_icons "$_BAI_DOT_CONTENT2" "$_BAI_DOT_PAT")
+if [[ -n "$_BAI_DOT_RESULT2" ]]; then
+    pass "  escaped dot pattern correctly matches dotted session name"
+else
+    fail "  escaped dot should match 'v0.2.67'"
+fi
+
+# Unescaped dot regression: 'v0.2.67' raw pattern would match 'v0X2X67'
+_BAI_UNESCAPED_PAT="^v0.2.67:"
+_BAI_REGRESSION=$(build_alert_icons "$_BAI_DOT_CONTENT" "$_BAI_UNESCAPED_PAT")
+if [[ -n "$_BAI_REGRESSION" ]]; then
+    pass "  (confirms regression: unescaped dot DOES match v0X2X67 — fix is in callers)"
+else
+    pass "  unescaped dot does not match in this scenario"
+fi
+
+# dedupe: same agent across multiple windows only produces one icon
+_BAI_MULTI="sess:win1:claude
+sess:win2:claude"
+_BAI_DEDUPED=$(build_alert_icons "$_BAI_MULTI" "^sess:" "dedupe")
+_BAI_COUNT=$(printf '%s' "$_BAI_DEDUPED" | grep -o '⚡' | wc -l | tr -d ' ')
+if [[ "$_BAI_COUNT" == "1" ]]; then
+    pass "  dedupe collapses duplicate agent icons"
+else
+    fail "  dedupe should produce 1 icon, got: $_BAI_COUNT"
+fi
+
+# Empty content returns empty
+_BAI_EMPTY=$(build_alert_icons "" "^any:")
+if [[ -z "$_BAI_EMPTY" ]]; then
+    pass "  empty content returns empty string"
+else
+    fail "  empty content should return empty"
+fi
+
 # ─────────────────────────────────────────
 # Test state file parsing (undo-pane.sh logic)
 # ─────────────────────────────────────────
