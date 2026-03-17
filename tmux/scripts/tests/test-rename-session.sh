@@ -179,10 +179,8 @@ if session_exists "$newname"; then
     fail "Target session should not exist yet"
 fi
 
-# Clear alerts (should succeed even with no alerts)
-if ! clear_session_alerts "$current_session"; then
-    fail "Clear alerts failed in rename workflow"
-fi
+# Update alerts file (no-op when no alerts) then rename
+update_session_name_in_alerts "$current_session" "$newname"
 
 # Rename
 if tmux rename-session -t "$current_session" "$newname" 2>/dev/null; then
@@ -208,9 +206,9 @@ fi
 cleanup_test_server
 
 # ═══════════════════════════════════════════════════════════════════════════
-# Test: Rename session workflow (with alerts)
+# Test: Rename session workflow (with alerts — alerts preserved)
 # ═══════════════════════════════════════════════════════════════════════════
-section "Rename workflow - with alerts"
+section "Rename workflow - alerts preserved"
 
 setup_test_server "rename-workflow-2"
 
@@ -223,34 +221,43 @@ tmux set-option -wt alert-session:window1 "@claude_alert" 1
 # Create alerts file entry
 echo "alert-session:window1:claude" > "$ALERTS_FILE"
 
-# Simulate rename
+# Simulate the rename script: update alerts file BEFORE renaming
 current_session="alert-session"
 newname="renamed-session"
 
-# Clear alerts (should succeed and remove options)
-if ! clear_session_alerts "$current_session"; then
-    fail "Clear alerts failed with alerts present"
-fi
+update_session_name_in_alerts "$current_session" "$newname"
 
-# Verify alerts were cleared from file
+# Verify alerts file was updated (old name gone, new name present)
 if grep -q "^${current_session}:" "$ALERTS_FILE" 2>/dev/null; then
-    fail "Alerts not removed from file"
+    fail "Old session name still in alerts file after update"
 else
-    pass "Alerts removed from file"
+    pass "Old session name removed from alerts file"
 fi
 
-# Rename
+if grep -q "^${newname}:window1:claude$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "Alert updated to new session name"
+else
+    fail "Alert not updated to new session name"
+fi
+
+# Now rename
 if tmux rename-session -t "$current_session" "$newname" 2>/dev/null; then
     pass "Session with alerts renamed successfully"
 else
     fail "Session with alerts rename failed"
 fi
 
-# Verify
+# Verify session exists and alert entry survived
 if session_exists "$newname"; then
     pass "Renamed session exists"
 else
     fail "Renamed session does not exist"
+fi
+
+if grep -q "^${newname}:window1:claude$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "Alert persists after rename"
+else
+    fail "Alert lost after rename"
 fi
 
 cleanup_test_server
@@ -303,6 +310,139 @@ win_id=$(tmux list-windows -t pipefail-test -F '#D' | head -1)
         echo "FAIL"
     fi
 ) | grep -q "PASS" && pass "Clear window alerts is pipefail-safe" || fail "Clear window alerts failed with pipefail"
+
+cleanup_test_server
+
+# ═══════════════════════════════════════════════════════════════════════════
+# Regression tests: Rename must update alerts file BEFORE the tmux rename
+# command, otherwise the async cleanup hook races and deletes alert entries.
+# See: race condition fix in sessions/rename.sh and windows/rename.sh
+# ═══════════════════════════════════════════════════════════════════════════
+
+section "Regression: session rename preserves alerts through cleanup"
+
+setup_test_server "rename-regression-sess"
+
+tmux new-session -d -s reg-sess -n work
+echo "reg-sess:work:claude" > "$ALERTS_FILE"
+
+# Simulate the correct order: update file, then rename, then cleanup
+# (cleanup.sh is what the session-renamed hook runs asynchronously)
+update_session_name_in_alerts "reg-sess" "reg-new"
+tmux rename-session -t "reg-sess" "reg-new" 2>/dev/null
+
+# Now simulate the async cleanup hook firing after both operations
+cleanup_stale_alerts
+
+# The alert should survive — file says "reg-new:work:claude" and session "reg-new" exists
+if grep -q "^reg-new:work:claude$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "Alert survives session rename + cleanup"
+else
+    fail "Alert lost after session rename + cleanup (race regression)"
+fi
+
+cleanup_test_server
+
+section "Regression: window rename preserves alerts through cleanup"
+
+setup_test_server "rename-regression-win"
+
+tmux new-session -d -s reg-wsess -n oldwin
+echo "reg-wsess:oldwin:opencode" > "$ALERTS_FILE"
+
+# Correct order: update file, then rename, then cleanup
+update_window_name_in_alerts "reg-wsess" "oldwin" "newwin"
+tmux rename-window -t "reg-wsess:oldwin" "newwin" 2>/dev/null
+
+# Simulate the async cleanup hook
+cleanup_stale_alerts
+
+if grep -q "^reg-wsess:newwin:opencode$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "Alert survives window rename + cleanup"
+else
+    fail "Alert lost after window rename + cleanup (race regression)"
+fi
+
+cleanup_test_server
+
+section "Regression: wrong order loses alerts (documents the bug)"
+
+setup_test_server "rename-regression-wrong"
+
+tmux new-session -d -s wrong-sess -n work
+echo "wrong-sess:work:claude" > "$ALERTS_FILE"
+
+# WRONG order: rename first, THEN cleanup runs before update.
+# This simulates what happens if update_session_name_in_alerts is called
+# AFTER tmux rename-session — the async cleanup deletes the stale entry.
+tmux rename-session -t "wrong-sess" "wrong-new" 2>/dev/null
+cleanup_stale_alerts
+# Now the late update finds nothing to sed-replace
+update_session_name_in_alerts "wrong-sess" "wrong-new"
+
+if grep -q "wrong" "$ALERTS_FILE" 2>/dev/null; then
+    fail "Stale or mismatched entry found (unexpected)"
+else
+    pass "Wrong order correctly loses alerts (confirms the bug pattern)"
+fi
+
+cleanup_test_server
+
+section "Regression: exit alerts preserved through session rename"
+
+setup_test_server "rename-regression-exit"
+
+tmux new-session -d -s exit-sess -n build
+echo "exit-sess:build:exit:1:make test" > "$ALERTS_FILE"
+
+update_session_name_in_alerts "exit-sess" "exit-new"
+tmux rename-session -t "exit-sess" "exit-new" 2>/dev/null
+cleanup_stale_alerts
+
+if grep -q "^exit-new:build:exit:1:make test$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "Exit alert survives session rename + cleanup"
+else
+    fail "Exit alert lost after session rename + cleanup"
+fi
+
+cleanup_test_server
+
+section "Regression: multiple alerts preserved through window rename"
+
+setup_test_server "rename-regression-multi"
+
+tmux new-session -d -s multi-sess -n codew
+cat > "$ALERTS_FILE" <<'ALERTS'
+multi-sess:codew:claude
+multi-sess:codew:opencode
+multi-sess:other:copilot
+ALERTS
+# Create the "other" window so cleanup doesn't remove its entry
+tmux new-window -t multi-sess -n other
+
+update_window_name_in_alerts "multi-sess" "codew" "editor"
+tmux rename-window -t "multi-sess:codew" "editor" 2>/dev/null
+cleanup_stale_alerts
+
+# Both alerts for the renamed window should be updated
+if grep -q "^multi-sess:editor:claude$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "Claude alert updated to new window name"
+else
+    fail "Claude alert lost after window rename"
+fi
+
+if grep -q "^multi-sess:editor:opencode$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "OpenCode alert updated to new window name"
+else
+    fail "OpenCode alert lost after window rename"
+fi
+
+# Unrelated window alert should be untouched
+if grep -q "^multi-sess:other:copilot$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "Unrelated window alert preserved"
+else
+    fail "Unrelated window alert was incorrectly modified"
+fi
 
 cleanup_test_server
 

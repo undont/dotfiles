@@ -20,7 +20,9 @@ _all_alerts=""
 
 # Get sessions sorted by activity
 while read -r session; do
-    icons=$(build_alert_icons "$_all_alerts" "^${session}:" "dedupe")
+    # Escape '.' in session name — it's a valid tmux char but a regex wildcard
+    _escaped_session="${session//./\\.}"
+    icons=$(build_alert_icons "$_all_alerts" "^${_escaped_session}:" "dedupe")
 
     if [[ -n "$icons" ]]; then
         printf "%s %b\n" "${session}" "${icons}"

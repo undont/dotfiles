@@ -189,6 +189,20 @@ _cached_eval() {
 _cached_eval direnv direnv hook zsh
 
 # =============================================================================
+# ZSH LINE EDITOR (ZLE) BASE KEYMAP
+# =============================================================================
+# Set emacs mode BEFORE plugins and custom bindings so they layer on top
+# rather than being wiped. Must precede fzf, zsh-autosuggestions, and any
+# custom ZLE widgets (e.g. _cdl-widget bound to Opt+A).
+bindkey -e                             # Force emacs mode (Ctrl+A, Ctrl+E, etc.)
+
+# Prevent accidental vi-mode activation from Option+key combinations
+# Option+key sends ESC followed by another character. Setting KEYTIMEOUT to 1
+# (10ms) means ESC alone won't trigger vi-mode, but ESC sequences from Option+key
+# will be processed correctly, and tools like fzf can still use ESC to exit.
+export KEYTIMEOUT=1                    # Wait 10ms for more chars after ESC
+
+# =============================================================================
 # ZSH PLUGINS
 # =============================================================================
 # zsh-autosuggestions: suggests commands as you type based on history
@@ -614,14 +628,8 @@ alias brewup="brew update && brew upgrade"
 # =============================================================================
 # ZSH LINE EDITOR (ZLE) KEYBINDINGS
 # =============================================================================
-# Disable vi-mode completely - use emacs keybindings (default)
-bindkey -e                             # Force emacs mode (Ctrl+A, Ctrl+E, etc.)
-
-# Prevent accidental vi-mode activation from Option+key combinations
-# Option+key sends ESC followed by another character. Setting KEYTIMEOUT to 1
-# (10ms) means ESC alone won't trigger vi-mode, but ESC sequences from Option+key
-# will be processed correctly, and tools like fzf can still use ESC to exit.
-export KEYTIMEOUT=1                    # Wait 10ms for more chars after ESC
+# Note: bindkey -e (emacs mode) and KEYTIMEOUT are set earlier, before plugins,
+# so custom bindings from fzf and ZLE widgets aren't wiped.
 
 # Ensure common word deletion shortcuts work correctly
 bindkey '^[^?' backward-kill-word      # Option+Backspace: delete word backwards

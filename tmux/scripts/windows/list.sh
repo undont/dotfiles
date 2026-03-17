@@ -35,8 +35,11 @@ fi | sort -rn | cut -d' ' -f2- | while read -r display_line; do
     local_target="${display_line%% *}"          # session:window_index
     local_session="${local_target%%:*}"         # session
     local_window="${display_line#* }"           # window_name
+    # Escape '.' — valid in tmux names but a regex wildcard
+    local_session_pat="${local_session//./\\.}"
+    local_window_pat="${local_window//./\\.}"
 
-    icons=$(build_alert_icons "$_all_alerts" "^${local_session}:${local_window}:")
+    icons=$(build_alert_icons "$_all_alerts" "^${local_session_pat}:${local_window_pat}:")
 
     if [[ -n "$icons" ]]; then
         printf "%s %b\n" "$display_line" "${icons}"

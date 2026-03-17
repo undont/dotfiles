@@ -438,7 +438,7 @@ Available session backups:
 │   ├── alerts/                           # Agent + command exit alert system
 │   │   ├── show.sh                       # Status bar: agent alerts (⚡ 🔮 ✦) + exit alerts (✓ ✗)
 │   │   ├── clear.sh                      # Clear alerts for window
-│   │   ├── update-rename.sh              # Update alerts on window rename
+│   │   ├── cleanup.sh                    # Clean up stale alerts (dead sessions/windows)
 │   │   └── update-timestamp.sh           # Window access tracking hook
 │   ├── launchers/                        # Session launcher system
 │   │   ├── list.sh                       # List session launchers (for picker)
