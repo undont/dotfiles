@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.69] - 2026-03-17
+
+### Fixed
+- Tmux: session/pane kill not clearing alerts — backgrounded `clear_session_alerts` was SIGHUP-killed when popup exited; now runs synchronously
+- Tmux: instance picker "n" (new) key silently failing — fzf `become()` is unreliable in pipelines; replaced with `execute-silent()+abort` across all instance pickers
+
+### Added
+- Nvim: `grf` keymap — fix all diagnostics in current file (applies quickfix code actions bottom-up, supports `codeAction/resolve`)
+- Nvim: `q` keymap to close oil.nvim file explorer
+- Tmux: regression tests for synchronous alert cleanup and no-`become()`-in-pipeline guards
+
+### Changed
+- Nvim: comment block navigation (`[c`/`]c`) skips closed blocks correctly
+
 ## [0.2.68] - 2026-03-17
 
 ### Fixed

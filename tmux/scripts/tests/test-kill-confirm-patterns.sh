@@ -69,6 +69,32 @@ for script in windows/kill.sh panes/kill.sh; do
     fi
 done
 
+section "Alert cleanup must be synchronous (not backgrounded)"
+# Regression: backgrounded alert cleanup gets SIGHUP-killed when
+# the display-popup exits, leaving stale alerts in the file.
+for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
+    if grep -qE 'clear_(session|window)_alerts.*&\s*$' "$SCRIPTS_DIR/$script"; then
+        fail "$script backgrounds alert cleanup (will be killed by popup teardown)"
+    else
+        pass "$script runs alert cleanup synchronously"
+    fi
+done
+
+section "Instance pickers must not use fzf become() in pipelines"
+# Regression: fzf become() is unreliable when fzf is piped to another
+# process (cut | xargs). Use execute-silent()+abort instead.
+TMUX_TEMPLATE="$REPO_ROOT/tmux/tmux.conf.template"
+if [[ -f "$TMUX_TEMPLATE" ]]; then
+    # Find lines with both 'become(' and a pipe to another process on instance pickers
+    if grep -A2 'instances/.*\.sh |' "$TMUX_TEMPLATE" | grep -q 'become('; then
+        fail "Instance picker uses become() in pipeline (use execute-silent+abort)"
+    else
+        pass "Instance pickers avoid become() in pipeline context"
+    fi
+else
+    skip "tmux.conf.template not found"
+fi
+
 section "Agent-agnostic terminology"
 for file in sessions/kill.sh rename-session.sh rename-window.sh update-timestamp.sh; do
     if grep -i "claude.*alert" "$SCRIPTS_DIR/$file" | grep -qv "ALERTS_FILE\|^#"; then

@@ -231,8 +231,18 @@ function M.setup()
     local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
     for i = cursor_line - 1, 1, -1 do
       if lines[i]:match '<comment%s+state=' then
-        vim.api.nvim_win_set_cursor(0, { i, 0 })
-        return
+        -- Skip if cursor is inside this block (no </comment> between tag and cursor)
+        local closed = false
+        for j = i + 1, cursor_line do
+          if lines[j]:match '</comment>' then
+            closed = true
+            break
+          end
+        end
+        if closed then
+          vim.api.nvim_win_set_cursor(0, { i, 0 })
+          return
+        end
       end
     end
     vim.notify('No previous comment block', vim.log.levels.INFO)

@@ -58,6 +58,123 @@ return {
         end
       end
 
+      -- Apply all quickfix code actions for every diagnostic in the current buffer.
+      -- Processes bottom-up so line shifts from earlier fixes don't break later ones.
+      -- Handles servers that need codeAction/resolve (e.g. Roslyn).
+      local function fix_all_in_file()
+        local bufnr = vim.api.nvim_get_current_buf()
+        local diagnostics = vim.diagnostic.get(bufnr)
+        if #diagnostics == 0 then
+          vim.notify('No diagnostics in file', vim.log.levels.INFO)
+          return
+        end
+
+        -- Deduplicate and convert to LSP format
+        local seen = {}
+        local items = {}
+        for _, d in ipairs(diagnostics) do
+          local key = d.lnum .. ':' .. d.col .. ':' .. (d.message or '')
+          if not seen[key] then
+            seen[key] = true
+            -- Use original LSP diagnostic if available (preserves data/code fields servers need)
+            local lsp_diag = d.user_data and d.user_data.lsp
+              or {
+                range = {
+                  start = { line = d.lnum, character = d.col },
+                  ['end'] = { line = d.end_lnum or d.lnum, character = d.end_col or d.col },
+                },
+                message = d.message,
+                severity = d.severity,
+                source = d.source,
+                code = d.code,
+              }
+            table.insert(items, { lnum = d.lnum, col = d.col, lsp = lsp_diag })
+          end
+        end
+
+        -- Sort bottom-up so line shifts don't affect earlier fixes
+        table.sort(items, function(a, b)
+          if a.lnum == b.lnum then
+            return a.col > b.col
+          end
+          return a.lnum > b.lnum
+        end)
+
+        local applied = 0
+        local function apply_next(idx)
+          if idx > #items then
+            vim.notify(string.format('Applied %d fix%s', applied, applied == 1 and '' or 'es'), vim.log.levels.INFO)
+            return
+          end
+
+          local item = items[idx]
+          local range = item.lsp.range
+            or {
+              start = { line = item.lnum, character = item.col },
+              ['end'] = { line = item.lnum, character = item.col },
+            }
+          local params = {
+            textDocument = vim.lsp.util.make_text_document_params(bufnr),
+            range = range,
+            context = { diagnostics = { item.lsp } },
+          }
+
+          local function next_item()
+            vim.defer_fn(function()
+              apply_next(idx + 1)
+            end, 50)
+          end
+
+          local function apply_action(a)
+            if a.edit then
+              vim.lsp.util.apply_workspace_edit(a.edit, 'utf-8')
+              applied = applied + 1
+            elseif a.command then
+              vim.lsp.buf.execute_command(a.command)
+              applied = applied + 1
+            end
+            next_item()
+          end
+
+          local handled = false
+          vim.lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(err, result)
+            if handled then
+              return
+            end
+            handled = true
+
+            if not err and result and #result > 0 then
+              -- Prefer quickfix kind, fall back to first action
+              local action
+              for _, a in ipairs(result) do
+                if a.kind and a.kind:find '^quickfix' then
+                  action = a
+                  break
+                end
+              end
+              action = action or result[1]
+
+              -- Some servers (Roslyn) need codeAction/resolve to get the edit
+              if not action.edit and not action.command then
+                vim.lsp.buf_request(bufnr, 'codeAction/resolve', action, function(resolve_err, resolved)
+                  if not resolve_err and resolved then
+                    apply_action(resolved)
+                  else
+                    next_item()
+                  end
+                end)
+              else
+                apply_action(action)
+              end
+            else
+              next_item()
+            end
+          end)
+        end
+
+        apply_next(1)
+      end
+
       -- LSP attach autocmd
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
@@ -70,6 +187,7 @@ return {
           -- LSP keymaps
           map('grn', vim.lsp.buf.rename, 'Re[n]ame')
           map('gra', vim.lsp.buf.code_action, 'Code [A]ction', { 'n', 'x' })
+          map('grf', fix_all_in_file, '[F]ix all in file')
           map('grr', lsp_dedup 'references', '[R]eferences')
           map('gri', lsp_dedup 'implementation', '[I]mplementation')
           map('grd', lsp_dedup 'definition', '[D]efinition')
