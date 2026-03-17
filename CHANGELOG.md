@@ -6,6 +6,25 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.68] - 2026-03-17
+
+### Fixed
+- Tmux: alerts lost on session/window rename — rename scripts now update the alerts file in-place (`update_session_name_in_alerts`, `update_window_name_in_alerts`) instead of clearing, with rollback on rename failure
+- Tmux: dots in session/window names matched as regex wildcards in grep patterns — `my.project` could match `myXproject`; names are now escaped in list scripts and copilot picker
+- Tmux: killing the last pane in a window/session now correctly clears alerts for the destroyed resource (previously leaked stale entries)
+
+### Added
+- Tmux: `update_window_name_in_alerts` and `update_session_name_in_alerts` functions in alerts library for rename tracking
+- Tmux: `alerts/cleanup.sh` — stale alert cleanup script called by `session-closed`, `session-renamed`, and `after-rename-window` hooks
+- Tmux: `build_alert_icons` tests including dot-in-name regression coverage
+- Tmux: parameterised launcher collision handler — attach/new prompt when target session already exists (fzf picker with suffix input)
+- Tmux: `session-renamed` hook for alert cleanup on native tmux renames
+
+### Changed
+- Zsh: `bindkey -e` (emacs mode) and `KEYTIMEOUT=1` moved before plugin loading to prevent fzf and ZLE widget bindings from being wiped
+- Tmux: dev launcher appends `-dev` suffix to session names and supports `SESSION_NAME` override for collision handler
+- Tmux: window move alert tracking simplified to single sed pass (was read-clear-rewrite loop)
+
 ## [0.2.67] - 2026-03-17
 
 ### Fixed
