@@ -800,3 +800,7 @@ YAGNI
 specs
 BSB
 Specs
+wildcards
+Deserialization
+appsettings
+foreach

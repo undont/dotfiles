@@ -107,8 +107,9 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
         # Switch and kill
         tmux switch-client -t "$OTHER_SESSION" \; kill-session -t "$SESSION_NAME"
 
-        # Background: clear alerts (session-closed hook handles save+split)
-        clear_session_alerts "$SESSION_NAME" &
+        # Clear alerts synchronously — backgrounding risks SIGHUP killing the
+        # process when the popup exits before cleanup completes
+        clear_session_alerts "$SESSION_NAME"
         exit 0
     else
         error "Failed to find another session to switch to"
@@ -132,6 +133,7 @@ else
     # Kill the session
     tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 
-    # Background: clear alerts (session-closed hook handles save+split)
-    clear_session_alerts "$SESSION_NAME" &
+    # Clear alerts synchronously — backgrounding risks SIGHUP killing the
+    # process when the popup exits before cleanup completes
+    clear_session_alerts "$SESSION_NAME"
 fi
