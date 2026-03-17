@@ -118,6 +118,9 @@ unbind x
 # Unbind default clock (use prefix+t for theme picker instead)
 unbind t
 
+# Unbind default last-window (prefix+l conflicts with pane navigation)
+unbind l
+
 # Unbind default paste (use prefix+p for launcher picker instead)
 unbind p
 
@@ -252,6 +255,7 @@ bind -n M-= split-window -v -b -c "#{pane_current_path}"  # Opt+= = split up
 bind -n M-s display-popup -E -w 60 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"    # Opt+s = close pane (saves state for undo)
 bind -n M-z resize-pane -Z           # Opt+z = toggle zoom (fullscreen)
 bind -n "M-)" select-layout -E       # Opt+Shift+0 = equalise pane sizes
+bind E break-pane                      # `+Shift+e = break pane to new window
 bind [ previous-layout                # `+[ = previous layout
 bind ] next-layout                    # `+] = next layout
 
@@ -364,7 +368,7 @@ bind -T copy-mode-vi Escape send-keys -X cancel       # Esc = quit scroll mode
 # Help
 # ─────────────────────────────────────────
 # Display keybinding reference popup (press Esc to close)
-bind h display-popup -w 74 -h 36 "~/.tmux/scripts/utils/show-help.sh; read -sk1"    # prefix + h
+bind h display-popup -w 74 -h 38 "~/.tmux/scripts/utils/show-help.sh; read -sk1"    # prefix + h
 
 # ─────────────────────────────────────────
 # Theme picker (prefix + t)

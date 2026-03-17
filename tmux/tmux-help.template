@@ -11,6 +11,7 @@
 ║                               ║  {{M}}+s            close pane         ║
 ║                               ║  {{M}}+z            zoom pane          ║
 ║                               ║  {{M}}+Shift+0      equalise sizes     ║
+║                               ║  ` Shift+e        break to window    ║
 ║                               ║  ` [ / ` ]        prev/next layout   ║
 ╠═ SCROLL MODE ═════════════════╬═ SESSION ════════════════════════════╣
 ║  {{M}}+v / ` v      enter mode  ║  ` s              switch session     ║

@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.67] - 2026-03-17
+
+### Fixed
+- Tmux: launcher wizard `tr` error when generating session variable name — `tr '-.'` was interpreted as option flags, silently crashing the wizard (regression from 0.2.64)
+
 ## [0.2.66] - 2026-03-15
 
 ### Fixed
