@@ -123,8 +123,9 @@ if [[ "$IS_LAST_PANE" == "yes" && "$IS_LAST_WINDOW" == "yes" && "$ACTUAL_CLIENT_
     else
         tmux kill-pane -t "$PANE_TARGET" 2>/dev/null || exit 1
     fi
-    # Session is destroyed — clear all session alerts
-    clear_session_alerts "$CURRENT_SESSION" &
+    # Session is destroyed — clear all session alerts synchronously
+    # (backgrounding risks SIGHUP killing the process when popup exits)
+    clear_session_alerts "$CURRENT_SESSION"
 elif [[ "$IS_LAST_PANE" == "yes" ]]; then
     # Last pane but not last window — killing destroys the window
     tmux kill-pane -t "$PANE_TARGET" 2>/dev/null || exit 1

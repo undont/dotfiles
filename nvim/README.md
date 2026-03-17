@@ -215,6 +215,7 @@ Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 | Normal | `grr` | Go to references (LSP) |
 | Normal | `grn` | Rename symbol (LSP) |
 | Normal | `gra` | Code action (LSP) |
+| Normal | `grf` | Fix all diagnostics in file (LSP) |
 | Normal | `K` | Hover documentation (LSP) |
 | Normal | `m` / `M` | First non-blank / end of line (`^`/`$`) |
 | Normal | `gm` | Set mark (original `m`) |
