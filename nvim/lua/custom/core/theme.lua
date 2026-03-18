@@ -76,6 +76,9 @@ local function apply_colourscheme(scheme)
   if vim.fn.filereadable(generated) == 1 then
     local load_ok, load_err = pcall(dofile, generated)
     if load_ok then
+      -- dofile() doesn't trigger ColorScheme autocmd (unlike :colorscheme),
+      -- so fire it manually so diff-highlights and other autocmds respond.
+      vim.api.nvim_exec_autocmds('ColorScheme', { pattern = scheme })
       return true
     end
     vim.notify(string.format('Failed to load generated colourscheme "%s": %s', scheme, load_err), vim.log.levels.WARN)
