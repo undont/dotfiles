@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.70] - 2026-03-18
+
+### Fixed
+- Nvim: diffview/octo diff buffers missing treesitter syntax highlighting — generated colourschemes loaded via `dofile()` didn't fire `ColorScheme` autocmd, so `diff-highlights` never applied bg-only overrides
+
+### Added
+- Launchers: `docker` session launcher for lazydocker
+
 ## [0.2.69] - 2026-03-17
 
 ### Fixed
