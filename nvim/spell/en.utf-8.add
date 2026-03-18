@@ -804,3 +804,6 @@ wildcards
 Deserialization
 appsettings
 foreach
+lowercase
+deserialised
+hardcoding
