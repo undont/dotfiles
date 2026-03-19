@@ -38,6 +38,7 @@ Delete/yank line | dd / yy
 Paste after/before | p / P
 Undo / redo | u / Ctrl+r
 Repeat last action | .
+Insert space at cursor | <leader>i
 
 ## multi-cursor @multi-cursor
 Select word / find next | Ctrl+n
@@ -55,9 +56,9 @@ Inner/around word | iw / aw
 Inside quotes/parens/braces | i" / i( / i{
 Around/inside method/function | am / im
 Around/inside class | aC / iC
-Surround add (word with ") | saiw"
-Surround delete | sd'
-Surround replace | sr("
+Surround add (word with ") | gsaiw"
+Surround delete | gsd'
+Surround replace | gsr("
 Next function start | ]m
 Previous function start | [m
 Next function end | ]M
