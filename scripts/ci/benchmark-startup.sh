@@ -40,8 +40,8 @@ ZDOTDIR_DIR="$(mktemp -d)"
 cp "$TEMP_ZSHRC" "$ZDOTDIR_DIR/.zshrc"
 
 hyperfine \
-    --warmup 3 \
-    --runs 30 \
+    --warmup 5 \
+    --runs 100 \
     --export-json "$RESULTS_FILE" \
     --shell=none \
     "env ZDOTDIR=$ZDOTDIR_DIR zsh -i -c exit"

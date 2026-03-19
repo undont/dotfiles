@@ -92,7 +92,18 @@ return {
       require('mini.ai').setup { n_lines = 500 }
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
-      require('mini.surround').setup()
+      -- Prefix remapped from 's' to 'gs' to avoid clash with flash.nvim
+      require('mini.surround').setup {
+        mappings = {
+          add = 'gsa',
+          delete = 'gsd',
+          find = 'gsf',
+          find_left = 'gsF',
+          highlight = 'gsh',
+          replace = 'gsr',
+          update_n_lines = 'gsn',
+        },
+      }
 
       -- Auto-close brackets, quotes, etc. (replaces nvim-autopairs)
       require('mini.pairs').setup()

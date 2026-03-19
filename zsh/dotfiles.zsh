@@ -649,6 +649,8 @@ bindkey '\e[1;2C' forward-word         # Shift+Right
 bindkey '\e[1;2D' backward-word        # Shift+Left
 bindkey '\e[1;3A' up-line-or-history   # Opt+Up
 bindkey '\e[1;3B' down-line-or-history # Opt+Down
+bindkey '\e[1;5H' beginning-of-line   # Cmd+Up (via Ghostty: super+up → Ctrl+Home)
+bindkey '\e[1;5F' end-of-line         # Cmd+Down (via Ghostty: super+down → Ctrl+End)
 
 # Ghostty sends these sequences for modifier+enter combos; bind them to
 # accept-line so they act as Enter in zsh instead of printing garbage.

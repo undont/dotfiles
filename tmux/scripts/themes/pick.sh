@@ -147,9 +147,11 @@ random_theme() {
     all_themes=$("$DOTFILES_ROOT/scripts/generate-theme" list 2>/dev/null)
     bright_themes=$("$DOTFILES_ROOT/scripts/generate-theme" bright-list 2>/dev/null)
 
-    # Filter out bright themes, pick one at random
-    local pick
+    # Filter out bright themes and current theme, pick one at random
+    local current_theme pick
+    current_theme=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme" 2>/dev/null || true)
     pick=$(comm -23 <(echo "$all_themes" | sort) <(echo "$bright_themes" | sort) \
+        | grep -vxF "$current_theme" \
         | awk -v seed="$RANDOM" 'BEGIN{srand(seed)} {a[NR]=$0} END{print a[int(rand()*NR)+1]}')
 
     if [[ -n "$pick" ]]; then
