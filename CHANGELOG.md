@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.71] - 2026-03-19
+
+### Fixed
+- CI: stabilise zsh startup benchmark — increase hyperfine runs (30→100), warmup (3→5), pin runner to `macos-15`
+- Tmux: random theme picker no longer re-picks the current theme
+
+### Changed
+- Nvim: mini.surround keybindings remapped from `s` to `gs` prefix to avoid clash with flash.nvim (`gsa`, `gsd`, `gsr`, etc.)
+
+### Added
+- Nvim: `<leader>i` to insert space at cursor without leaving normal mode
+- Zsh: `Cmd+Up` / `Cmd+Down` keybindings for beginning/end of line (via Ghostty `super+up/down → Ctrl+Home/End`)
+
 ## [0.2.70] - 2026-03-18
 
 ### Fixed

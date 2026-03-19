@@ -26,6 +26,9 @@ function M.setup()
   -- Shift+Enter → Enter (Ghostty sends Alt+Enter / \x1b\r)
   vim.keymap.set({ 'i', 'n', 'v', 'c' }, '<M-CR>', '<CR>')
 
+  -- Insert space at cursor without leaving normal mode
+  vim.keymap.set('n', '<leader>i', 'i<Space><Esc>', { desc = '[I]nsert space' })
+
   -- Terminal mode escape
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
