@@ -406,6 +406,8 @@ export EDITOR="nvim"                   # Default editor for git, etc.
 alias opencode="cl && opencode"        # Clear scrollback + launch OpenCode editor
 alias oc="opencode"                    # Shorthand for OpenCode editor
 alias claude="cl && claude"            # Clear scrollback + launch Claude AI CLI
+alias ralph="cl && ralph"              # Clear scrollback + launch Ralph => Claude Code
+alias ralf="cl && ralf"                # Clear scrollback + launch Ralf => Claude Code
 alias gemini="cl && gemini"            # Clear scrollback + launch Gemini AI CLI
 alias copilot="cl && copilot"          # Clear scrollback + launch GitHub Copilot CLI
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI

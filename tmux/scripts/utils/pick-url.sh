@@ -40,6 +40,7 @@ fi
 
 selected=$(echo "$urls" | fzf \
     --reverse \
+    --exact \
     --no-sort \
     --disabled \
     --cycle \

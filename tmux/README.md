@@ -108,6 +108,7 @@ Press `prefix + p` to open the session launcher picker. Lists available launcher
 | Start searching     | `/`                      |
 | New launcher        | `n` (opens wizard)       |
 | Edit launcher       | `e` (opens wizard with current values) |
+| Duplicate launcher  | `D` (copies to user launchers) |
 | Delete launcher     | `x` (user launchers only)|
 | Quit                | `q` or `Esc`             |
 
@@ -448,6 +449,7 @@ Available session backups:
 │   │   ├── new.sh                        # New launcher wizard (create/edit)
 │   │   ├── new-dir.sh                    # New directory picker
 │   │   ├── settings.sh                   # Launcher settings (configure roots)
+│   │   ├── duplicate.sh                  # Duplicate launcher to user dir
 │   │   └── delete.sh                     # Delete user launcher (with confirm)
 │   ├── sessions/                         # Session management
 │   │   ├── list.sh                       # Session listing with alert indicators
