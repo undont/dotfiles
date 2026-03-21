@@ -41,7 +41,7 @@ if [[ -z "$pane_list" ]]; then
 fi
 
 # Let user pick a pane
-TARGET_PANE=$(echo "$pane_list" | fzf --ansi --reverse --disabled --cycle \
+TARGET_PANE=$(echo "$pane_list" | fzf --ansi --reverse --exact --disabled --cycle \
     --delimiter=$'\t' \
     --with-nth=2 \
     --prompt ': ' \

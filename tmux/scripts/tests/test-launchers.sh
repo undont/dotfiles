@@ -481,6 +481,227 @@ else
 fi
 
 # ===========================================================================
+# launchers/list.sh: Tab-delimited format (name weighting for fzf)
+# ===========================================================================
+
+section "launchers/list.sh: Tab-Delimited Output Format"
+
+list_output=$("$LIST_LAUNCHERS" 2>&1) || true
+
+# Strip header lines (7 logo lines), then check data lines
+data_lines=$(printf '%s\n' "$list_output" | tail -n +8)
+
+if [[ -n "$data_lines" ]]; then
+    # Every data line should contain a tab separator
+    bad_lines=0
+    while IFS= read -r line; do
+        [[ -z "$line" ]] && continue
+        if [[ "$line" != *$'\t'* ]]; then
+            bad_lines=$((bad_lines + 1))
+        fi
+    done <<< "$data_lines"
+
+    if [[ $bad_lines -eq 0 ]]; then
+        pass "all data lines contain tab delimiter"
+    else
+        fail "$bad_lines data line(s) missing tab delimiter"
+    fi
+
+    # Field 1 (before tab) should be the launcher name, field 2 should also contain it
+    first_line=$(printf '%s\n' "$data_lines" | head -1)
+    field1=$(printf '%s' "$first_line" | cut -d$'\t' -f1)
+    field2=$(printf '%s' "$first_line" | cut -d$'\t' -f2-)
+
+    if [[ -n "$field1" ]] && [[ "$field2" == *"$field1"* ]]; then
+        pass "hidden field 1 name appears in display field 2"
+    else
+        fail "field 1 ('$field1') should appear in field 2 for name weighting"
+    fi
+else
+    fail "no data lines found in list output"
+fi
+
+# Header lines should also have tab prefix (for --with-nth=2 compatibility)
+header_lines=$(printf '%s\n' "$list_output" | head -7)
+header_has_tabs=true
+while IFS= read -r line; do
+    [[ -z "$line" ]] && continue
+    if [[ "$line" != $'\t'* ]]; then
+        header_has_tabs=false
+        break
+    fi
+done <<< "$header_lines"
+
+if [[ "$header_has_tabs" == true ]]; then
+    pass "header lines have tab prefix for --with-nth=2 compatibility"
+else
+    fail "header lines should have tab prefix for --with-nth=2"
+fi
+
+section "launchers/picker.sh: Name Weighting Configuration"
+
+picker_content=$(cat "$SCRIPT_DIR/../launchers/picker.sh")
+
+if [[ "$picker_content" == *"--with-nth=2"* ]]; then
+    pass "picker uses --with-nth=2 to hide name weight field"
+else
+    fail "picker should use --with-nth=2 to hide name weight field"
+fi
+
+if [[ "$picker_content" == *"--tiebreak=begin"* ]]; then
+    pass "picker uses --tiebreak=begin to prefer name matches"
+else
+    fail "picker should use --tiebreak=begin to prefer name matches"
+fi
+
+# ===========================================================================
+# launchers/duplicate.sh tests
+# ===========================================================================
+
+DUPLICATE_LAUNCHER="$SCRIPT_DIR/../launchers/duplicate.sh"
+
+section "launchers/duplicate.sh: Script Exists and Is Executable"
+
+if [[ -f "$DUPLICATE_LAUNCHER" ]]; then
+    pass "launchers/duplicate.sh exists"
+else
+    fail "launchers/duplicate.sh not found"
+fi
+
+if [[ -x "$DUPLICATE_LAUNCHER" ]]; then
+    pass "launchers/duplicate.sh is executable"
+else
+    fail "launchers/duplicate.sh is not executable"
+fi
+
+section "launchers/duplicate.sh: ShellCheck Validation"
+
+if command -v shellcheck &>/dev/null; then
+    if shellcheck -x -e SC1091 -e SC2059 -e SC2155 -e SC2015 -e SC2016 -e SC2034 "$DUPLICATE_LAUNCHER" 2>/dev/null; then
+        pass "launchers/duplicate.sh passes shellcheck"
+    else
+        fail "launchers/duplicate.sh has shellcheck warnings"
+    fi
+else
+    skip "shellcheck not installed"
+fi
+
+section "launchers/duplicate.sh: Path Traversal Protection"
+
+dup_content=$(cat "$DUPLICATE_LAUNCHER")
+
+if [[ "$dup_content" == *"basename"* ]]; then
+    pass "uses basename to strip path separators"
+else
+    fail "should use basename to prevent path traversal"
+fi
+
+if [[ "$dup_content" == *'".."'* ]] || [[ "$dup_content" == *'"."'* ]]; then
+    pass "rejects . and .. as launcher names"
+else
+    fail "should reject . and .. as launcher names"
+fi
+
+section "launchers/duplicate.sh: Copy Naming Logic"
+
+if [[ "$dup_content" == *"-copy"* ]]; then
+    pass "uses -copy suffix for duplicates"
+else
+    fail "should use -copy suffix for duplicates"
+fi
+
+# Should handle successive copies (-copy-2, -copy-3, ...)
+if [[ "$dup_content" == *"-copy-\${n}"* ]] || [[ "$dup_content" == *'copy-${n}'* ]]; then
+    pass "auto-increments copy suffix (-copy-2, -copy-3, ...)"
+else
+    fail "should auto-increment copy suffix"
+fi
+
+# Should strip existing -copy suffix before generating new one
+if [[ "$dup_content" == *"-copy"*"sed"* ]] || [[ "$dup_content" == *"s/-copy"* ]]; then
+    pass "strips existing -copy suffix before renumbering"
+else
+    fail "should strip existing -copy suffix to avoid name-copy-copy"
+fi
+
+section "launchers/duplicate.sh: Description Update"
+
+if [[ "$dup_content" == *"Copy of"* ]]; then
+    pass "updates @description to indicate copy"
+else
+    fail "should update @description to 'Copy of <name>'"
+fi
+
+section "launchers/duplicate.sh: Functional Test"
+
+# Create a temporary launcher to duplicate
+TEST_XDG=$(mktemp -d)
+TEST_USER_DIR="$TEST_XDG/dotfiles/launchers"
+mkdir -p "$TEST_USER_DIR"
+cat > "$TEST_USER_DIR/test-dup" << 'TESTEOF'
+#!/usr/bin/env bash
+# @description: Test launcher
+echo "test"
+TESTEOF
+chmod +x "$TEST_USER_DIR/test-dup"
+
+# Duplicate it
+copy_name=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "test-dup" 2>/dev/null) || true
+
+if [[ "$copy_name" == "test-dup-copy" ]]; then
+    pass "first copy gets -copy suffix"
+else
+    fail "first copy should be 'test-dup-copy', got '$copy_name'"
+fi
+
+if [[ -f "$TEST_USER_DIR/test-dup-copy" ]]; then
+    pass "copy file was created"
+else
+    fail "copy file should exist at $TEST_USER_DIR/test-dup-copy"
+fi
+
+if [[ -x "$TEST_USER_DIR/test-dup-copy" ]]; then
+    pass "copy file is executable"
+else
+    fail "copy file should be executable"
+fi
+
+# Check description was updated
+if grep -q "Copy of test-dup" "$TEST_USER_DIR/test-dup-copy" 2>/dev/null; then
+    pass "copy has updated @description"
+else
+    fail "copy should have '@description: Copy of test-dup'"
+fi
+
+# Duplicate again — should get -copy-2
+copy_name2=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "test-dup" 2>/dev/null) || true
+
+if [[ "$copy_name2" == "test-dup-copy-2" ]]; then
+    pass "second copy gets -copy-2 suffix"
+else
+    fail "second copy should be 'test-dup-copy-2', got '$copy_name2'"
+fi
+
+# Duplicate the copy itself — should still base on original name
+copy_name3=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "test-dup-copy" 2>/dev/null) || true
+
+if [[ "$copy_name3" == "test-dup-copy-3" ]]; then
+    pass "duplicating a copy bases numbering on original name"
+else
+    fail "duplicating a copy should produce 'test-dup-copy-3', got '$copy_name3'"
+fi
+
+# Empty name should exit cleanly
+empty_result=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "" 2>/dev/null; echo "exit:$?") || true
+if [[ "$empty_result" == *"exit:0"* ]]; then
+    pass "empty name exits cleanly"
+else
+    fail "empty name should exit 0"
+fi
+
+rm -rf "$TEST_XDG"
+
+# ===========================================================================
 # Summary
 # ===========================================================================
 

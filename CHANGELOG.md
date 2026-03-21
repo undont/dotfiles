@@ -6,6 +6,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.72] - 2026-03-20
+
+### Added
+- Launchers: duplicate launcher action (`D`) in picker — copies launcher to user directory with `-copy` suffix
+- Zsh: `ralph` and `ralf` aliases (clear scrollback + launch)
+- Ghostty: `Super+Up` / `Super+Down` keybindings mapped to Home/End
+- Brewfile: `lazycron` (cron job manager TUI), `jiru` (Jira TUI)
+
+### Changed
+- Fzf pickers: use exact substring matching (`--exact`) across all tmux fzf pickers for better search results
+- Launcher picker: name matches now rank above description matches via hidden search field and `--tiebreak=begin`
+- Brewfile: alignment cleanup, added supplyscan comment
+- Nvim: Discord presence uses repo URL from opts instead of hardcoded fallback
+
 ## [0.2.71] - 2026-03-19
 
 ### Fixed

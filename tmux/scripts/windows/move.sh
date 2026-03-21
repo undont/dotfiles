@@ -40,7 +40,7 @@ fi
 # Get list of sessions excluding the source session
 TARGET_SESSION=$(tmux list-sessions -F '#{session_name}' | \
     grep -v "^${SOURCE_SESSION}$" | \
-    fzf --height=100% --layout=reverse --cycle --disabled \
+    fzf --height=100% --layout=reverse --exact --cycle --disabled \
         --prompt ': ' \
         --border=rounded \
         --border-label=" Move window '${WINDOW_NAME}' from '${SOURCE_SESSION}' to: " \

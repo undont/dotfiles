@@ -141,7 +141,7 @@ handle_fixed_session() {
 
     local selection
     selection=$(printf '%s' "$content" | fzf \
-        --ansi --reverse --disabled --cycle \
+        --ansi --reverse --exact --disabled --cycle \
         --header-lines=5 \
         --padding=0,0,1,0 \
         --prompt=': ' \
@@ -248,7 +248,7 @@ handle_parameterised() {
 
     local result
     result=$(printf '%s' "$content" | fzf \
-        --ansi --reverse --disabled --cycle \
+        --ansi --reverse --exact --disabled --cycle \
         --print-query \
         --header-lines=5 \
         --padding=0,0,1,0 \

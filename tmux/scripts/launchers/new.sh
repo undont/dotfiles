@@ -147,7 +147,7 @@ load_existing_launcher() {
 
     # Recalculate total steps with pre-loaded window count
     if [[ -n "$num_windows" ]]; then
-        total_steps=$((5 + num_windows))
+        total_steps=$((4 + num_windows))
     fi
 }
 
@@ -310,6 +310,38 @@ ask_yn() {
 }
 
 # ─────────────────────────────────────────
+# Worktree directory suggestions
+# ─────────────────────────────────────────
+
+# List worktree directory suggestions based on project directory
+# Combines smart suggestions with existing directories and general project dirs
+list_worktree_suggestions() {
+    local proj_dir="$1"
+    # Expand $HOME and ~ for filesystem operations
+    local expanded="${proj_dir//\$HOME/$HOME}"
+    expanded="${expanded/#\~/$HOME}"
+    local proj_parent proj_basename
+    proj_parent=$(dirname "$expanded")
+    proj_basename=$(basename "$expanded")
+
+    # Smart suggestions based on project location
+    printf '%s\n' "${proj_parent/#$HOME/\~}/${proj_basename}-worktrees"
+    printf '%s\n' "${proj_parent/#$HOME/\~}/worktrees"
+
+    # Existing worktree-like directories near the project
+    if [[ -d "$proj_parent" ]]; then
+        for d in "$proj_parent"/*worktree*/; do
+            [[ -d "$d" ]] || continue
+            d="${d%/}"
+            printf '%s\n' "${d/#$HOME/\~}"
+        done
+    fi
+
+    # General project directories for flexibility
+    list_project_dirs
+}
+
+# ─────────────────────────────────────────
 # State variables
 # ─────────────────────────────────────────
 description=""
@@ -324,8 +356,8 @@ worktree_aware=""
 worktrees_dir=""
 default_names=("dev" "edit" "shell")
 
-# Calculate total steps (recalculated after step 5)
-total_steps=5
+# Calculate total steps (recalculated after step 4)
+total_steps=4
 step=1
 
 # Handle edit mode: resolve source and load existing values
@@ -401,31 +433,9 @@ while true; do
             ;;
 
         2)
-            # Step 2: Instance mode
-            draw_header 2 "$total_steps"
-            printf "  ${GREEN}Prompt for name when creating instances?${NC}\n"
-            printf "  ${DIM}e.g. ticket numbers: %s-1234${NC}\n\n" "$name"
-            show_context "Name" "$name"
-            show_context "Desc" "$description"
-            draw_footer "true"
-
-            local_instance=""
-            if ask_yn "Prompt for instance name?" "${instance_mode:-n}" local_instance; then
-                if [[ "$local_instance" =~ ^[Yy] ]]; then
-                    instance_mode="y"
-                else
-                    instance_mode="n"
-                fi
-                step=3
-            else
-                step=1
-            fi
-            ;;
-
-        3)
-            # Step 3: Project directory (inline fzf picker)
+            # Step 2: Project directory (inline fzf picker)
             load_fzf_theme
-            draw_header 3 "$total_steps"
+            draw_header 2 "$total_steps"
             printf "  ${GREEN}Where is the project?${NC}\n\n"
             show_context "Name" "$name"
             show_context "Desc" "$description"
@@ -436,6 +446,7 @@ while true; do
             local_fzf_result=""
             local_fzf_exit=0
             local_fzf_result=$(list_project_dirs | fzf \
+                --exact \
                 --print-query \
                 --query="$local_default_dir" \
                 --prompt='  Directory: ' \
@@ -453,7 +464,7 @@ while true; do
             # exit 1 = no match → use the typed query
             # alt-enter uses become() so exits 0 with just the query (no line 2)
             if [[ $local_fzf_exit -gt 1 ]]; then
-                step=2
+                step=1
                 continue
             fi
 
@@ -477,7 +488,7 @@ while true; do
                         mkdir -p "$local_expanded"
                     fi
                 else
-                    # ctrl+b → stay on step 3
+                    # ctrl+b → stay on step 2
                     continue
                 fi
             fi
@@ -489,54 +500,149 @@ while true; do
             else
                 project_dir="${project_dir/#\~\//\$HOME/}"
             fi
-            step=4
+            step=3
+            ;;
+
+        3)
+            # Step 3: Instance mode + worktree awareness
+            # Sub-steps: instance y/n → worktree y/n → worktree dir (fzf picker)
+            # Worktree is only offered when instances are enabled, since worktree
+            # resolution depends on the instance suffix in the session name.
+            local_sub=1
+            while true; do
+                case $local_sub in
+                    1)
+                        # Instance mode question
+                        draw_header 3 "$total_steps"
+                        printf "  ${GREEN}Instance configuration${NC}\n"
+                        printf "  ${DIM}e.g. ticket numbers: %s-1234${NC}\n\n" "$name"
+                        show_context "Name" "$name"
+                        show_context "Desc" "$description"
+                        show_context "Dir" "$project_dir"
+                        draw_footer "true"
+
+                        local_instance=""
+                        if ask_yn "Prompt for instance name?" "${instance_mode:-n}" local_instance; then
+                            if [[ "$local_instance" =~ ^[Yy] ]]; then
+                                instance_mode="y"
+                                local_sub=2
+                            else
+                                instance_mode="n"
+                                worktree_aware="n"
+                                worktrees_dir=""
+                                step=4
+                                break
+                            fi
+                        else
+                            step=2
+                            break
+                        fi
+                        ;;
+
+                    2)
+                        # Worktree awareness (only when instances are enabled)
+                        draw_header 3 "$total_steps"
+                        printf "  ${GREEN}Resolve worktree directories for instances?${NC}\n"
+                        printf "  ${DIM}e.g. %s-1252 → %s-1252-*${NC}\n\n" "$name" "$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
+                        show_context "Name" "$name"
+                        show_context "Desc" "$description"
+                        show_context "Dir" "$project_dir"
+                        show_context "Instances" "yes"
+                        draw_footer "true"
+
+                        local_wt=""
+                        if ask_yn "Worktree aware?" "${worktree_aware:-n}" local_wt; then
+                            if [[ "$local_wt" =~ ^[Yy] ]]; then
+                                worktree_aware="y"
+                                local_sub=3
+                            else
+                                worktree_aware="n"
+                                worktrees_dir=""
+                                step=4
+                                break
+                            fi
+                        else
+                            local_sub=1
+                        fi
+                        ;;
+
+                    3)
+                        # Worktree directory picker (fzf with smart suggestions)
+                        load_fzf_theme
+                        draw_header 3 "$total_steps"
+                        printf "  ${GREEN}Where are the worktrees?${NC}\n\n"
+                        show_context "Name" "$name"
+                        show_context "Desc" "$description"
+                        show_context "Dir" "$project_dir"
+                        show_context "Instances" "yes (worktree aware)"
+                        printf "\n"
+
+                        # Derive default from project dir if not already set
+                        local_wt_default="${worktrees_dir:-}"
+                        local_wt_default="${local_wt_default/#\$HOME/\~}"
+                        if [[ -z "$local_wt_default" ]]; then
+                            local_proj_display="${project_dir/#\$HOME/\~}"
+                            local_proj_parent=$(dirname "$local_proj_display")
+                            local_proj_basename=$(basename "$local_proj_display")
+                            local_wt_default="${local_proj_parent}/${local_proj_basename}-worktrees"
+                        fi
+
+                        local_fzf_result=""
+                        local_fzf_exit=0
+                        local_fzf_result=$(list_worktree_suggestions "$project_dir" | sort -u | fzf \
+                            --exact \
+                            --print-query \
+                            --query="$local_wt_default" \
+                            --prompt='  Worktrees dir: ' \
+                            --header='  opt-enter: use typed path' \
+                            --height=~60% \
+                            --layout=reverse \
+                            --no-info \
+                            --pointer='▸' \
+                            --bind 'enter:accept' \
+                            --bind 'alt-enter:become(echo {q})' \
+                            --bind 'esc:abort' \
+                            2>/dev/null) || local_fzf_exit=$?
+
+                        if [[ $local_fzf_exit -gt 1 ]]; then
+                            local_sub=2
+                            continue
+                        fi
+
+                        local_query=$(printf '%s' "$local_fzf_result" | sed -n '1p' | sed 's/^[[:space:]]*//')
+                        local_selected=$(printf '%s' "$local_fzf_result" | sed -n '2p' | sed 's/^[[:space:]]*//')
+                        local_wtdir="${local_selected:-$local_query}"
+
+                        if [[ -z "$local_wtdir" ]]; then
+                            local_wtdir="$local_wt_default"
+                        fi
+
+                        worktrees_dir="$local_wtdir"
+                        if [[ "$worktrees_dir" == "~" ]]; then
+                            worktrees_dir="\$HOME"
+                        else
+                            worktrees_dir="${worktrees_dir/#\~\//\$HOME/}"
+                        fi
+                        step=4
+                        break
+                        ;;
+                esac
+            done
             ;;
 
         4)
-            # Step 4: Worktree awareness
+            # Step 4: Number of windows
             draw_header 4 "$total_steps"
-            printf "  ${GREEN}Resolve worktree directories for instances?${NC}\n"
-            printf "  ${DIM}e.g. %s-1252 → worktrees/%s-1252-*${NC}\n\n" "$name" "$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
-            show_context "Name" "$name"
-            show_context "Desc" "$description"
-            show_context "Dir" "$project_dir"
-            draw_footer "true"
-
-            local_wt=""
-            if ! ask_yn "Worktree aware?" "${worktree_aware:-n}" local_wt; then
-                step=3
-                continue
-            fi
-
-            if [[ "$local_wt" =~ ^[Yy] ]]; then
-                worktree_aware="y"
-                local_wtdir=""
-                if ! ask "Worktrees directory" "${worktrees_dir:-\$HOME/src/$name-worktrees}" local_wtdir; then
-                    step=3
-                    continue
-                fi
-                worktrees_dir="$local_wtdir"
-                if [[ "$worktrees_dir" == "~" ]]; then
-                    worktrees_dir="\$HOME"
-                else
-                    worktrees_dir="${worktrees_dir/#\~\//\$HOME/}"
-                fi
-            else
-                worktree_aware="n"
-                worktrees_dir=""
-            fi
-            step=5
-            ;;
-
-        5)
-            # Step 5: Number of windows
-            draw_header 5 "$total_steps"
             printf "  ${GREEN}How many windows?${NC}\n\n"
             show_context "Name" "$name"
             show_context "Desc" "$description"
             show_context "Dir" "$project_dir"
-            if [[ "$worktree_aware" == "y" ]]; then
-                show_context "Worktrees" "$worktrees_dir"
+            if [[ "$instance_mode" == "y" ]]; then
+                if [[ "$worktree_aware" == "y" ]]; then
+                    show_context "Instances" "yes (worktree: $worktrees_dir)"
+                else
+                    show_context "Instances" "yes"
+                fi
             fi
             draw_footer "true"
 
@@ -556,16 +662,16 @@ while true; do
                     win_split_cmds=()
                 fi
                 num_windows="$local_num"
-                total_steps=$((5 + num_windows))
-                step=6
+                total_steps=$((4 + num_windows))
+                step=5
             else
-                step=4
+                step=3
             fi
             ;;
 
         *)
-            # Steps 6+: Window configuration
-            local_win_idx=$((step - 5))  # 1-based window index
+            # Steps 5+: Window configuration
+            local_win_idx=$((step - 4))  # 1-based window index
 
             if [[ $local_win_idx -gt $num_windows ]]; then
                 # Past last window — done
@@ -577,8 +683,12 @@ while true; do
             show_context "Name" "$name"
             show_context "Desc" "$description"
             show_context "Dir" "$project_dir"
-            if [[ "$worktree_aware" == "y" ]]; then
-                show_context "Worktrees" "$worktrees_dir"
+            if [[ "$instance_mode" == "y" ]]; then
+                if [[ "$worktree_aware" == "y" ]]; then
+                    show_context "Instances" "yes (worktree: $worktrees_dir)"
+                else
+                    show_context "Instances" "yes"
+                fi
             fi
 
             # Show previously configured windows
