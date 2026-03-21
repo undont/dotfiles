@@ -273,7 +273,7 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - **sessions/**: `list.sh`, `new.sh`, `rename.sh`, `kill.sh`, `undo.sh` - Session management with fzf integration
 - **windows/**: `list.sh`, `rename.sh`, `kill.sh`, `undo.sh`, `duplicate.sh`, `move.sh` - Window operations
 - **panes/**: `kill.sh`, `undo.sh` - Pane management
-- **launchers/**: `list.sh`, `picker.sh`, `run.sh`, `prompt.sh`, `new.sh`, `new-dir.sh`, `settings.sh`, `delete.sh` - Session launcher system
+- **launchers/**: `list.sh`, `picker.sh`, `run.sh`, `prompt.sh`, `new.sh`, `new-dir.sh`, `settings.sh`, `duplicate.sh`, `delete.sh` - Session launcher system
 - **instances/**: `claude.sh`, `opencode.sh`, `nvim.sh`, `new.sh`, `kill.sh`, `connect-nvim.sh` - Process instance management (list, create, kill)
 - **alerts/**: `show.sh`, `clear.sh`, `cleanup.sh`, `update-timestamp.sh` - Agent alert system for status bar
 - **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions

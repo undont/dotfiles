@@ -19,7 +19,8 @@ load_fzf_theme
 # List launchers in fzf-compatible format, sorted by most recently used
 list_launchers_for_fzf() {
     # Header (consumed by fzf --header-lines)
-    print_dotfiles_logo
+    # Prefix with tab so --with-nth=2 in picker.sh still displays the logo
+    print_dotfiles_logo | sed $'s/^/\t/'
 
     # Collect all launchers into temporary files (Bash 3.2 compatible)
     # Format: name|description|source
@@ -103,7 +104,7 @@ list_launchers_for_fzf() {
             suffix=" ${GREY}(system)${NC}"
         fi
 
-        printf "    %-16s ${GREY}%s${NC}%s\n" "$name" "$desc" "$suffix"
+        printf "%s\t    %-16s ${GREY}%s${NC}%s\n" "$name" "$name" "$desc" "$suffix"
         printf '%s\n' "$name" >> "$outputted"
     done < "$mru_file"
 
@@ -128,7 +129,7 @@ list_launchers_for_fzf() {
             suffix=" ${GREY}(system)${NC}"
         fi
 
-        printf "    %-16s ${GREY}%s${NC}%s\n" "$name" "$desc" "$suffix"
+        printf "%s\t    %-16s ${GREY}%s${NC}%s\n" "$name" "$name" "$desc" "$suffix"
     done < <(sort "$remaining")
 
     # Cleanup
