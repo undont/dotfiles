@@ -8,13 +8,14 @@
 
 **Personal configuration files for zsh, tmux, neovim, ghostty, git and much more.**
 
-[![CI](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml/badge.svg)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
+[![Release](https://img.shields.io/github/v/release/seanhalberthal/dotfiles?style=flat&logo=github&logoColor=white&label=Release)](https://github.com/seanhalberthal/dotfiles/releases/latest)
+[![CI](https://img.shields.io/github/actions/workflow/status/seanhalberthal/dotfiles/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/seanhalberthal/dotfiles/actions)
 [![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/seanhalberthal/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
-[![macOS](https://img.shields.io/badge/macOS-compatible-A2AAAD?logo=apple&logoColor=white)](https://www.apple.com/macos/)
-[![Linux](https://img.shields.io/badge/Linux-compatible-blue?logo=linux&logoColor=white)](https://www.linux.org/)
-[![Neovim](https://img.shields.io/badge/Neovim-0.11+-57A143?logo=neovim&logoColor=white)](https://neovim.io/)
-[![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
-[![License](https://img.shields.io/badge/License-MIT-yellow)](LICENSE)
+[![macOS](https://img.shields.io/badge/macOS-supported-000000?style=flat&logo=apple&logoColor=white)]()
+[![Linux](https://img.shields.io/badge/Linux-supported-FCC624?style=flat&logo=linux&logoColor=black)]()
+[![Neovim](https://img.shields.io/badge/Neovim-0.11+-57A143?style=flat&logo=neovim&logoColor=white)](https://neovim.io/)
+[![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?style=flat&logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
+[![Licence](https://img.shields.io/github/license/seanhalberthal/dotfiles?style=flat&label=licence)](LICENCE)
 
 [Quick Start](#quick-start) · [Features](#-whats-inside) · [Themes](#-themes) · [Keybindings](#-keybindings) · [Docs](#documentation)
 
@@ -366,3 +367,9 @@ cp -n ~/dotfiles/karabiner/karabiner.json ~/.config/karabiner/karabiner.json
 - [Installation Guide](docs/INSTALLATION-GUIDE.md) — Detailed walkthrough of each installation step
 - [Theme System](docs/THEME-SYSTEM.md) — How themes work, the Ghostty theme generator, and WCAG contrast checks
 - [Troubleshooting](docs/TROUBLESHOOTING.md) — Common issues and solutions
+
+---
+
+## Licence
+
+[MIT](LICENCE)
