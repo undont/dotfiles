@@ -101,19 +101,33 @@ return {
   },
   config = function()
     local dotnet_adapter = require 'neotest-dotnet' {
-      discovery_root = 'solution',
+      discovery_root = 'project',
+      dap = { adapter_name = 'coreclr' },
     }
 
-    -- Override root function to support .slnx files
-    local original_root = dotnet_adapter.root
-    dotnet_adapter.root = function(path)
+    -- Monkey-patch: force main-process parsing for dotnet tests.
+    -- neotest-dotnet's NUnit build_position calls get_node_text(node, string_source)
+    -- which crashes in Neovim 0.11 subprocess with ":start() nil". The subprocess
+    -- error propagates through nio as a throw (not a return), so neotest's built-in
+    -- fallback never runs. We disable subprocess for dotnet discovery only.
+    local orig_discover = dotnet_adapter.discover_positions
+    dotnet_adapter.discover_positions = function(path)
       local lib = require 'neotest.lib'
-      -- Try .slnx first (new format), then fall back to .sln
-      local slnx_root = lib.files.match_root_pattern '*.slnx'(path)
-      if slnx_root then
-        return slnx_root
+      local orig_enabled = lib.subprocess.enabled
+      lib.subprocess.enabled = function()
+        return false
       end
-      return original_root(path)
+      local ok, result = pcall(orig_discover, path)
+      lib.subprocess.enabled = orig_enabled
+      if not ok then
+        local logger = require 'neotest.logging'
+        logger.warn('neotest-dotnet: discovery failed for ' .. path .. ': ' .. tostring(result))
+        local Tree = require 'neotest.types.tree'
+        return Tree.from_list({ { id = path, path = path, name = vim.fn.fnamemodify(path, ':t'), type = 'file' } }, function(pos)
+          return pos.id
+        end)
+      end
+      return result
     end
 
     require('neotest').setup {

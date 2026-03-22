@@ -467,6 +467,11 @@ alias ports="lsof -i -P -n | grep LISTEN"
 # Networking
 alias myip="curl -s ifconfig.me"
 
+# Quick access to config files
+alias secrets="v ~/.config/zsh/secrets.zsh"  # Edit API keys and credentials
+alias config="v ~/.config"                   # Edit general config files
+alias zshrc="v ~/.zshrc"                     # Edit personal shell config
+
 # Open — platform-aware (macOS: open, Linux: xdg-open)
 if [[ "$IS_MACOS" == "1" ]]; then
   alias o="open"
@@ -612,6 +617,19 @@ alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branc
 alias grmc="git rm --cached"           # Untrack file(s) without deleting from disk
 alias gca="git commit --amend"         # Amend the last commit
 alias dash="cl && gh dash"             # Open GitHub Dash, after clearing scrollback
+
+# Make: forward to repo root when no Makefile in current directory
+make() {
+  if [[ ! -f Makefile && ! -f makefile && ! -f GNUmakefile ]]; then
+    local root
+    root=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$root" && -f "$root/Makefile" ]]; then
+      command make -C "$root" "$@"
+      return
+    fi
+  fi
+  command make "$@"
+}
 
 # Development tools
 alias gols="ls ~/go/bin"               # List installed Go binaries

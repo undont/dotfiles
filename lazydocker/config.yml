@@ -9,3 +9,5 @@ gui:
       - reverse
     selectedRangeBgColor:
       - reverse
+    returnImmediately:
+      - true

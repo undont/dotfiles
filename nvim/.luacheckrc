@@ -1,5 +1,5 @@
 -- Neovim Lua configuration
-read_globals = { 'vim', 'bit' }
+read_globals = { 'vim', 'bit', 'Snacks' }
 globals = { 'vim' }
 max_line_length = false
 unused_args = false

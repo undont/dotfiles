@@ -10,11 +10,11 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/seanhalberthal/dotfiles/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/seanhalberthal/dotfiles/actions)
 [![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/seanhalberthal/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
+[![Licence](https://img.shields.io/github/license/seanhalberthal/dotfiles?style=flat&label=licence)](LICENCE)
 [![macOS](https://img.shields.io/badge/macOS-supported-000000?style=flat&logo=apple&logoColor=white)]()
 [![Linux](https://img.shields.io/badge/Linux-supported-FCC624?style=flat&logo=linux&logoColor=black)]()
 [![Neovim](https://img.shields.io/badge/Neovim-0.11+-57A143?style=flat&logo=neovim&logoColor=white)](https://neovim.io/)
 [![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?style=flat&logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
-[![Licence](https://img.shields.io/github/license/seanhalberthal/dotfiles?style=flat&label=licence)](LICENCE)
 
 [Quick Start](#quick-start) · [Features](#-whats-inside) · [Themes](#-themes) · [Keybindings](#-keybindings) · [Docs](#documentation)
 
@@ -80,10 +80,10 @@ The installer detects what's already configured and only shows steps you still n
 
 - **Powerlevel10k** prompt with instant prompt and git status
 - **Framework architecture** — `~/.zshrc` is your personal file, sourcing `dotfiles.zsh` as a shared framework (no git conflicts)
-- **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt+A` directory history
+- **fzf everywhere** — `Ctrl+R` history, `Ctrl+T` files, `Opt/Alt+A` directory history
 - **Performance** — lazy-loaded completions, fnm (~5ms) over nvm (~300ms), cached eval for direnv/fzf
 - **Tab completion** for `dotfiles` / `dot`, `trestore`, `tkill`, `tattach`
-- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `grmc` (untrack files), `tattach` (attach or restore from backup), `cdb`/`cdf` (browser-style directory back/forward), `Opt+A` (directory history picker), `cl` (full terminal reset), `drs` (sync repo paths to gh-dash), `brewup`, `nvim-sync`, `mkcd`, `font-preview` (figlet/toilet font browser), and more — run `dot aliases` for the full list
+- **Handy aliases** — `gs` (git status), `gl` (git log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `grmc` (untrack files), `tattach` (attach or restore from backup), `cdb`/`cdf` (browser-style directory back/forward), `Opt/Alt+A` (directory history picker), `cl` (full terminal reset), `drs` (sync repo paths to gh-dash), `brewup`, `nvim-sync`, `mkcd`, `font-preview` (figlet/toilet font browser), and more — run `dot aliases` for the full list
 
 ### Tmux — 60+ Custom Scripts, One Cohesive Workflow
 

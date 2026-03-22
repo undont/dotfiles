@@ -10,6 +10,7 @@
 #   theme   -t    Manage colour themes
 #   links   -l    Show all managed symlinks and their status
 #   diff    -d    Show changes in copy-on-install files vs repo
+#   sync          Copy repo versions of copy-on-install files to their destinations
 #   aliases -a    Show all shell aliases, functions, and utilities
 #   notes   -n    Browse the full changelog in a pager
 #   version -v    Show current dotfiles version, preset, and theme
@@ -709,19 +710,9 @@ cmd_set() {
 cmd_diff() {
     local found=0
 
-    # Copy-on-install file pairs: "repo_path|installed_path"
-    local -a pairs=(
-        "btop/btop.conf|$HOME/.config/btop/btop.conf"
-        "karabiner/karabiner.json|$HOME/.config/karabiner/karabiner.json"
-    )
-    # lazydocker uses platform-specific path
-    if is_macos; then
-        pairs+=("lazydocker/config.yml|$HOME/Library/Application Support/lazydocker/config.yml")
-    else
-        pairs+=("lazydocker/config.yml|$HOME/.config/lazydocker/config.yml")
-    fi
+    _copy_pairs
 
-    for pair in "${pairs[@]}"; do
+    for pair in "${COPY_PAIRS[@]}"; do
         local repo="${pair%%|*}" installed="${pair#*|}"
         [[ ! -f "$installed" ]] && continue
         local repo_path="$DOTFILES_DIR/$repo"
@@ -734,20 +725,81 @@ cmd_diff() {
         fi
     done
 
-    # zshrc.template is special — it's the reference for ~/.zshrc
-    local zshrc_template="$DOTFILES_DIR/zsh/zshrc.template"
-    if [[ -f "$HOME/.zshrc" ]] && [[ -f "$zshrc_template" ]]; then
-        if ! diff -q "$zshrc_template" "$HOME/.zshrc" &>/dev/null; then
-            found=1
-            echo ""
-            printf "${CYAN}%s${NC} vs ${YELLOW}%s${NC}\n" "zsh/zshrc.template" "$HOME/.zshrc"
-            printf "${GREY}(~/.zshrc is user-owned — differences are expected)${NC}\n"
-            diff --color=auto -u "$zshrc_template" "$HOME/.zshrc" || true
-        fi
-    fi
-
     if [[ $found -eq 0 ]]; then
         success "All copy-on-install files match repo versions"
+    fi
+}
+
+# Build the copy-on-install pairs array (shared by diff and sync)
+_copy_pairs() {
+    COPY_PAIRS=(
+        "btop/btop.conf|$HOME/.config/btop/btop.conf"
+        "karabiner/karabiner.json|$HOME/.config/karabiner/karabiner.json"
+    )
+    if is_macos; then
+        COPY_PAIRS+=("lazydocker/config.yml|$HOME/Library/Application Support/lazydocker/config.yml")
+    else
+        COPY_PAIRS+=("lazydocker/config.yml|$HOME/.config/lazydocker/config.yml")
+    fi
+}
+
+cmd_sync() {
+    local force=0
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            --force|-f) force=1; shift ;;
+            *) error "Unknown option: $1"; return 1 ;;
+        esac
+    done
+
+    _copy_pairs
+    local synced=0 skipped=0 missing=0
+
+    for pair in "${COPY_PAIRS[@]}"; do
+        local repo="${pair%%|*}" installed="${pair#*|}"
+        local repo_path="$DOTFILES_DIR/$repo"
+
+        if [[ ! -f "$repo_path" ]]; then
+            continue
+        fi
+
+        if [[ ! -f "$installed" ]]; then
+            mkdir -p "$(dirname "$installed")"
+            /bin/cp "$repo_path" "$installed"
+            success "Created $installed"
+            synced=$((synced + 1))
+            continue
+        fi
+
+        if diff -q "$repo_path" "$installed" &>/dev/null; then
+            skipped=$((skipped + 1))
+            continue
+        fi
+
+        if [[ $force -eq 1 ]]; then
+            /bin/cp "$repo_path" "$installed"
+            success "Updated $installed"
+            synced=$((synced + 1))
+        else
+            printf "  ${YELLOW}differs${NC}  %s\n" "$repo"
+            missing=$((missing + 1))
+        fi
+    done
+
+    echo ""
+    if [[ $synced -gt 0 ]]; then
+        success "$synced file(s) synced"
+    fi
+    if [[ $skipped -gt 0 ]]; then
+        printf "  ${GREY}%d file(s) already up to date${NC}\n" "$skipped"
+    fi
+    if [[ $missing -gt 0 ]]; then
+        echo ""
+        info "$missing file(s) differ — run 'dotfiles sync --force' to overwrite"
+        info "Use 'dotfiles diff' to inspect changes"
+    fi
+    if [[ $synced -eq 0 ]] && [[ $missing -eq 0 ]]; then
+        success "All copy-on-install files are in sync"
     fi
 }
 
@@ -777,6 +829,9 @@ Commands:
                 dotfiles theme delete <n>    - Delete a generated theme
   links   -l    Show all managed symlinks and their status
   diff    -d    Show changes in copy-on-install files vs repo
+  sync          Sync copy-on-install files from repo to system
+                dotfiles sync                - Show which files differ
+                dotfiles sync --force, -f    - Overwrite with repo versions
   aliases -a    Show all shell aliases, functions, and utilities
   notes   -n    Browse the full changelog in a pager
   version -v    Show current dotfiles version, preset, and theme
@@ -894,7 +949,11 @@ cmd_aliases() {
         "j"       "jobs" \
         "v"       "clear + nvim" \
         "o"       "open file/dir" \
-        "finder"  "open in Finder (macOS)"
+        "finder"  "open in Finder (macOS)" \
+        "secrets" "edit secrets.zsh" \
+        "config"  "edit ~/.config" \
+        "zshrc"   "edit ~/.zshrc" \
+        "font-preview" "font browser (fzf)"
 
     printf "\n${CYAN}DEVELOPMENT${NC}\n"
     _2col \
@@ -926,6 +985,8 @@ cmd_aliases() {
         "links   -l"  "managed symlinks" \
         "theme   -t"  "colour themes" \
         "set dev <d>" "set DEV_ROOT" \
+        "diff    -d"  "copy-on-install diffs" \
+        "sync"        "sync copy-on-install" \
         "notes   -n"  "browse changelog" \
         "version -v"  "version, preset, theme" \
         "edit    -e"  "open in \$EDITOR" \
@@ -957,6 +1018,9 @@ cmd_aliases() {
                 local value="${line#*=}"
                 # Strip inline comment (everything from whitespace+# onwards)
                 value="${value%%[[:space:]]# *}"
+                # Trim trailing whitespace left after comment stripping
+                local trailing="${value##*[^[:space:]]}"
+                value="${value%"$trailing"}"
                 # Strip surrounding quotes
                 value="${value#[\"\']}"
                 value="${value%[\"\']}"
@@ -1102,6 +1166,10 @@ main() {
             ;;
         diff|-d)
             cmd_diff
+            ;;
+        sync)
+            shift
+            cmd_sync "$@"
             ;;
         notes|-n)
             cmd_notes

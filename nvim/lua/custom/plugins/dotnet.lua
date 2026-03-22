@@ -6,6 +6,7 @@ return {
   dependencies = {
     'nvim-lua/plenary.nvim',
     'nvim-telescope/telescope.nvim',
+    'mfussenegger/nvim-dap',
   },
   ft = { 'cs', 'fsharp', 'vb' },
   config = function()
@@ -75,6 +76,11 @@ return {
     local add_missing_imports_solution = require 'custom.plugins.dotnet.add_missing_imports'
 
     require('easy-dotnet').setup {
+      -- Debugger: auto-registers coreclr adapter with nvim-dap
+      debugger = {
+        auto_register_dap = true,
+        console = 'integratedTerminal',
+      },
       -- Use built-in Roslyn LSP (replaces OmniSharp)
       -- Requires Neovim 0.11+
       lsp = {
@@ -115,6 +121,7 @@ return {
     }
 
     -- Project commands only (tests handled by neotest)
+    vim.keymap.set('n', '<leader>nd', '<cmd>Dotnet debug<cr>', { desc = '[D]ebug project' })
     vim.keymap.set('n', '<leader>nr', '<cmd>Dotnet run<cr>', { desc = '[R]un project' })
     vim.keymap.set('n', '<leader>nb', '<cmd>Dotnet build<cr>', { desc = '[B]uild project' })
     vim.keymap.set('n', '<leader>nc', '<cmd>Dotnet clean<cr>', { desc = '[C]lean project' })

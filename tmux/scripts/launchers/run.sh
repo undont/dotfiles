@@ -146,7 +146,7 @@ handle_fixed_session() {
         --padding=0,0,1,0 \
         --prompt=': ' \
         --border=rounded \
-        --border-label=' j/k · d/u · g/G · spc/⏎ sel · / srch · n new · q/esc ' \
+        --border-label=' j/k · d/u · g/G · spc/⏎ sel · / search · n new · q/esc ' \
         --border-label-pos=bottom \
         --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort' \
         --bind 'space:accept,enter:accept' \
@@ -254,7 +254,7 @@ handle_parameterised() {
         --padding=0,0,1,0 \
         --prompt=': ' \
         --border=rounded \
-        --border-label=' j/k · d/u · g/G · spc/⏎ sel · / srch · n new · q/esc ' \
+        --border-label=' j/k · d/u · g/G · spc/⏎ sel · / search · n new · q/esc ' \
         --border-label-pos=bottom \
         --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort' \
         --bind 'space:accept,enter:accept' \

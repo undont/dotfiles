@@ -11,6 +11,7 @@ commands=(
   'theme:Manage colour themes'
   'set:Configure project directories (dev, projects)'
   'diff:Show changes in copy-on-install files vs repo'
+  'sync:Sync copy-on-install files from repo to system'
   'notes:Browse the full changelog in a pager'
   'version:Show current dotfiles version, preset, and theme'
   'edit:Open dotfiles directory in $EDITOR'
@@ -32,6 +33,14 @@ elif (( CURRENT == 3 )); then
         '-p:Preview changes without applying'
       )
       _describe 'update option' update_opts
+      ;;
+    sync)
+      local -a sync_opts
+      sync_opts=(
+        '--force:Overwrite installed files with repo versions'
+        '-f:Overwrite installed files with repo versions'
+      )
+      _describe 'sync option' sync_opts
       ;;
     set)
       local -a targets
