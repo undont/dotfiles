@@ -2,6 +2,7 @@
 -- Each file returns a table of plugin specs
 
 return {
+  { import = 'custom.plugins.dashboard' },
   { import = 'custom.plugins.ui' },
   { import = 'custom.plugins.editor' },
   { import = 'custom.plugins.telescope' },

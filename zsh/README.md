@@ -260,6 +260,7 @@ direnv allow
 | `dotfiles version` | Show current dotfiles version, preset, and theme |
 | `dotfiles theme <name>` | Switch to a theme (list, current, generate, delete) |
 | `dotfiles aliases` | Show all shell aliases, functions, and utilities |
+| `dotfiles sync`  | Sync copy-on-install files from repo (--force to overwrite) |
 | `dotfiles edit`  | Open dotfiles directory in $EDITOR                 |
 | `dotfiles cd`    | Print dotfiles path (use: `cd "$(dotfiles cd)"`)  |
 

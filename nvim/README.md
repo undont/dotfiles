@@ -175,6 +175,16 @@ nvim/
 | [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (gotestsum runner, pinned to v1.15.1) |
 | [neotest-vitest](https://github.com/marilari88/neotest-vitest) | Vitest/Bun adapter (`bun run test`) |
 
+### Debugging
+
+| Plugin | Purpose |
+|--------|---------|
+| [nvim-dap](https://github.com/mfussenegger/nvim-dap) | Debug Adapter Protocol client |
+| [nvim-dap-ui](https://github.com/rcarriga/nvim-dap-ui) | Debugger UI (scopes, stacks, watches, REPL, console) |
+| [nvim-dap-virtual-text](https://github.com/theHamsta/nvim-dap-virtual-text) | Inline variable values next to code |
+| [nvim-dap-go](https://github.com/leoluz/nvim-dap-go) | Go debug configs via Delve |
+| [mason-nvim-dap](https://github.com/jay-babu/mason-nvim-dap.nvim) | Auto-installs debug adapters (Delve, netcoredbg) |
+
 ### Media
 
 | Plugin | Purpose |
@@ -236,6 +246,99 @@ Press **`Space ?`** in normal mode to open the searchable cheatsheet.
 | Normal | `Space Sd` | Edit personal dictionary |
 
 **Full keybinding reference**: Press `Space ?` or see `lua/custom/core/keymaps.lua`
+
+## Testing & Debugging
+
+### Running Tests (neotest)
+
+All languages use the same keybindings via neotest:
+
+| Keybinding | Action |
+|------------|--------|
+| `Space tt` | Run nearest test |
+| `Space tf` | Run all tests in file |
+| `Space ta` | Run entire test suite |
+| `Space tl` | Re-run last test |
+| `Space ts` | Toggle test summary panel |
+| `Space to` | Show test output |
+| `Space tO` | Toggle output panel |
+| `Space tS` | Stop running test |
+| `Space tw` | Toggle file watch (re-runs on save) |
+| `]t` / `[t` | Jump to next/prev failed test |
+
+### Debugging
+
+#### Breakpoints
+
+Set breakpoints before starting a debug session. They appear as icons in the sign column.
+
+| Keybinding | Action |
+|------------|--------|
+| `Space Bt` | Toggle breakpoint |
+| `Space Bc` | Conditional breakpoint (prompts for expression) |
+| `Space Bl` | Logpoint (logs message without stopping) |
+| `Space BB` | List all breakpoints (quickfix list) |
+
+#### Stepping
+
+| Keybinding | Action |
+|------------|--------|
+| `F5` | Start debug session / Continue to next breakpoint |
+| `F1` | Step into |
+| `F2` | Step over |
+| `F3` | Step out |
+| `F7` | Toggle debug UI panels |
+
+#### Debug UI Layout
+
+When a debug session starts, the UI opens automatically:
+
+- **Left sidebar** — Scopes (variable inspection), Stacks (call stack), Breakpoints, Watches
+- **Bottom panel** — REPL (evaluate expressions) and Console (debugger output)
+- **Inline virtual text** — Variable values displayed next to code as comments
+
+Expand variables in the Scopes panel with `Enter`. Type expressions in the REPL panel to evaluate them at the current breakpoint.
+
+#### Go
+
+1. Set breakpoints in your code (`Space Bt`)
+2. Navigate to a `main.go` or test file
+3. `F5` → select "Debug" (for main) or "Debug test" (for nearest test)
+4. `Space td` also works for debugging the nearest test via neotest
+
+#### C# / .NET
+
+**Debugging a project:**
+
+1. Set breakpoints in your code (`Space Bt`)
+2. `Space nd` (`:Dotnet debug`) → pick the project to debug
+3. easy-dotnet builds, finds the DLL, and launches netcoredbg
+
+**Debugging tests:**
+
+1. Set breakpoints in the code under test (`Space Bt`)
+2. `Space nd` → pick the **test project**
+3. The debugger attaches and hits your breakpoints
+
+> **Note:** `Space td` (neotest DAP strategy) does not work for .NET —
+> neotest-dotnet is abandoned and has multiple Neovim 0.11 incompatibilities.
+> Use `Space nd` on the test project instead. This runs all tests in the
+> project under the debugger (not a single test), but reliably hits breakpoints.
+> Use `Space tt` to run individual tests without debugging.
+
+#### .NET Keybindings
+
+| Keybinding | Action |
+|------------|--------|
+| `Space nd` | Debug project |
+| `Space nr` | Run project |
+| `Space nb` | Build project |
+| `Space nc` | Clean project |
+| `Space ns` | Manage secrets |
+| `Space nw` | Watch project |
+| `Space nn` | New item |
+| `Space no` | Outdated packages |
+| `Space ni` | Add missing imports (solution) |
 
 ## LSP Servers
 

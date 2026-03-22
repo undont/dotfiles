@@ -98,6 +98,8 @@ dotfiles update -f      # Force re-run all steps (--force)
 dotfiles update -p      # Preview changes without applying (--preview)
 dotfiles status         # Version, sync status, and local changes
 dotfiles health         # Run health check (symlinks, plugins, env vars)
+dotfiles sync           # Show which copy-on-install files differ from repo
+dotfiles sync -f        # Overwrite installed files with repo versions (--force)
 dotfiles notes          # Browse full changelog in a pager (shorthand: dot -n)
 dotfiles theme generate <ghostty-theme>  # Generate theme from Ghostty built-in
 dotfiles theme delete <theme-name>       # Delete a generated theme
@@ -293,6 +295,14 @@ Based on kickstart.nvim with modular organisation:
 
 - **Don't change aliases or keybindings without asking.** They reflect personal preference, not bugs. An alias that looks "wrong" (e.g. `gds="git diff --stat"` instead of `--staged`) is intentional.
 - **ZLE widgets and tmux keybindings are interactive code.** Don't extract or refactor them mechanically — they have specific requirements around terminal I/O, fzf integration, and prompt redrawing that can't be verified by reading alone.
+
+## Tmux Template Conventions
+
+**Navigation hint formatting** in `tmux/tmux.conf.template`:
+- **Comments** use brackets: `# Navigation: j/k (↓/↑), g/G (top/bottom)`
+- **Border labels** (fzf `--border-label`) omit brackets: `j/k ↓/↑ · g/G top/bottom · ...`
+- Use arrow icons (`↓/↑`) instead of words for up/down direction
+- Use `top/bottom` (not `first/last`) for `g/G` navigation
 
 ## Shell Script Conventions
 

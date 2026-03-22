@@ -100,6 +100,12 @@ else
     fail "help should mention links command"
 fi
 
+if [[ "$help_output" == *"sync"* ]]; then
+    pass "help mentions sync command"
+else
+    fail "help should mention sync command"
+fi
+
 # Test --help flag
 help_flag_output=$("$DOTFILES_CLI" --help 2>&1) || true
 if [[ "$help_flag_output" == *"Usage:"* ]]; then
@@ -192,6 +198,18 @@ if [[ "$script_content" == *"cmd_links()"* ]]; then
     pass "cmd_links function defined"
 else
     fail "cmd_links function not found"
+fi
+
+if [[ "$script_content" == *"cmd_sync()"* ]]; then
+    pass "cmd_sync function defined"
+else
+    fail "cmd_sync function not found"
+fi
+
+if [[ "$script_content" == *"_copy_pairs()"* ]]; then
+    pass "_copy_pairs helper defined"
+else
+    fail "_copy_pairs helper not found"
 fi
 
 if [[ "$script_content" == *"_changelog_local_version()"* ]]; then
@@ -1365,6 +1383,71 @@ done < <(grep '_2col "\${' "$DOTFILES_CLI" | sed 's/.*\${\([a-zA-Z_]*\)\[.*/\1/'
 
 if (( _2col_check_failed == 0 )); then
     pass "all _2col calls have even pair counts (consistent │ separators)"
+fi
+
+section "Aliases Command - User Alias Quote Stripping"
+
+# The user alias parser in cmd_aliases strips inline comments and surrounding
+# quotes. Verify the logic handles all quoting styles without leaving stray
+# characters. We extract the stripping logic and test it in isolation.
+
+_test_strip_alias_value() {
+    local value="$1"
+    # Mirror the logic from cmd_aliases
+    value="${value%%[[:space:]]# *}"
+    local trailing="${value##*[^[:space:]]}"
+    value="${value%"$trailing"}"
+    value="${value#[\"\']}"
+    value="${value%[\"\']}"
+    printf '%s' "$value"
+}
+
+# Double-quoted alias with inline comment (the original bug)
+result=$(_test_strip_alias_value '"cd $DANA_ROOT"  # Dana project')
+if [[ "$result" == 'cd $DANA_ROOT' ]]; then
+    pass "double-quoted alias with inline comment"
+else
+    fail "double-quoted alias with inline comment: got '$result'"
+fi
+
+# Double-quoted alias without comment
+result=$(_test_strip_alias_value '"cd $DEV_ROOT"')
+if [[ "$result" == 'cd $DEV_ROOT' ]]; then
+    pass "double-quoted alias without comment"
+else
+    fail "double-quoted alias without comment: got '$result'"
+fi
+
+# Single-quoted alias without comment
+result=$(_test_strip_alias_value "'cd \$DEV_ROOT'")
+if [[ "$result" == 'cd $DEV_ROOT' ]]; then
+    pass "single-quoted alias without comment"
+else
+    fail "single-quoted alias without comment: got '$result'"
+fi
+
+# Single-quoted alias with inline comment
+result=$(_test_strip_alias_value "'cd \$HOME'  # Home dir")
+if [[ "$result" == 'cd $HOME' ]]; then
+    pass "single-quoted alias with inline comment"
+else
+    fail "single-quoted alias with inline comment: got '$result'"
+fi
+
+# Double-quoted alias with escaped inner quotes and comment
+result=$(_test_strip_alias_value '"pkill -f \"vite\" 2>/dev/null"  # Kill vite')
+if [[ "$result" == 'pkill -f \"vite\" 2>/dev/null' ]]; then
+    pass "double-quoted alias with escaped inner quotes and comment"
+else
+    fail "double-quoted alias with escaped inner quotes and comment: got '$result'"
+fi
+
+# Unquoted alias (e.g. simple command without spaces in value)
+result=$(_test_strip_alias_value 'dotfiles')
+if [[ "$result" == 'dotfiles' ]]; then
+    pass "unquoted alias value"
+else
+    fail "unquoted alias value: got '$result'"
 fi
 
 # ===========================================================================

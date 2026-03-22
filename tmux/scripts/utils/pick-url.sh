@@ -46,7 +46,7 @@ selected=$(echo "$urls" | fzf \
     --cycle \
     --prompt ': ' \
     --border=rounded \
-    --border-label=' j/k · g/G · f/b · d/u · o/spc/⏎ open · y yank · / srch · q/esc quit ' \
+    --border-label=' j/k · g/G · f/b · d/u · o/spc/⏎ open · y yank · / search · q/esc quit ' \
     --border-label-pos=bottom \
     --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept,o:accept' \
     --bind 'f:page-down,b:page-up' \

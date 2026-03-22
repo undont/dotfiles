@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.73] - 2026-03-22
+
+### Added
+- CLI: `dotfiles sync` command — sync copy-on-install configs from repo on demand (`--force` to overwrite)
+- Nvim: snacks.nvim dashboard with two-pane layout (recent files, projects, git log, git status)
+- Nvim: .NET debugging support via easy-dotnet + nvim-dap (`<leader>nd`)
+- Nvim: testing & debugging documentation in nvim/README.md
+- Brewfile: Raycast cask
+- Zsh: `secrets`, `config`, `zshrc` quick-edit aliases
+- Zsh: `make` wrapper — auto-forwards to repo root Makefile when none in current directory
+- Installer: gpk (glazepkg) and gh-bench extension
+
+### Changed
+- Karabiner: Caps Lock → Escape is now global (was per-app), added Raycast to Right Option → Control
+- Nvim: `<leader>lR` refresh now opens the dashboard instead of reopening the previous file
+- CLI: `dotfiles diff` no longer shows zshrc.template (user-owned, differences always expected)
+- CLI: extracted shared `_copy_pairs()` helper for diff and sync commands
+- Tmux: navigation hint formatting — arrow icons (↓/↑) and top/bottom instead of words
+- Tmux: fzf border labels use "search" instead of "srch" abbreviation
+- btop: update interval 500ms → 200ms
+- lazydocker: `returnImmediately: true` for confirmations
+- Nvim: stylua formatting on debug.lua and test.lua
+
+### Removed
+- Installer: openapi-tui (removed from install, migration cleans up existing binary)
+
 ## [0.2.72] - 2026-03-20
 
 ### Added
