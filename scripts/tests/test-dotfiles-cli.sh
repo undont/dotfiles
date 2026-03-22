@@ -100,6 +100,12 @@ else
     fail "help should mention links command"
 fi
 
+if [[ "$help_output" == *"sync"* ]]; then
+    pass "help mentions sync command"
+else
+    fail "help should mention sync command"
+fi
+
 # Test --help flag
 help_flag_output=$("$DOTFILES_CLI" --help 2>&1) || true
 if [[ "$help_flag_output" == *"Usage:"* ]]; then
@@ -192,6 +198,18 @@ if [[ "$script_content" == *"cmd_links()"* ]]; then
     pass "cmd_links function defined"
 else
     fail "cmd_links function not found"
+fi
+
+if [[ "$script_content" == *"cmd_sync()"* ]]; then
+    pass "cmd_sync function defined"
+else
+    fail "cmd_sync function not found"
+fi
+
+if [[ "$script_content" == *"_copy_pairs()"* ]]; then
+    pass "_copy_pairs helper defined"
+else
+    fail "_copy_pairs helper not found"
 fi
 
 if [[ "$script_content" == *"_changelog_local_version()"* ]]; then

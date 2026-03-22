@@ -335,13 +335,9 @@ function M.setup()
     -- Re-source config
     vim.cmd 'source $MYVIMRC'
 
-    -- Reopen the file we were editing and let LSP re-attach
+    -- Open the dashboard for a clean start and let LSP re-attach on next file open
     vim.defer_fn(function()
-      if cur_file ~= '' and vim.fn.filereadable(cur_file) == 1 then
-        vim.cmd('edit ' .. vim.fn.fnameescape(cur_file))
-      end
-      -- Equalise any remaining splits to fill the full terminal
-      vim.cmd 'wincmd ='
+      Snacks.dashboard.open()
       vim.notify('Neovim refreshed', vim.log.levels.INFO)
     end, 200)
   end, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })

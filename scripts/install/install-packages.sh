@@ -178,6 +178,22 @@ if should_install "core"; then
     fi
 fi
 
+# glazepkg (gpk) - Go package manager tool
+if should_install "core"; then
+    if command_exists go; then
+        if ! command_exists gpk; then
+            echo "Installing gpk (glazepkg)..."
+            if ! go install github.com/neur0map/glazepkg/cmd/gpk@latest; then
+                warn "gpk install failed. You can retry manually: go install github.com/neur0map/glazepkg/cmd/gpk@latest"
+            fi
+        else
+            echo "gpk already installed"
+        fi
+    else
+        warn "Go not found — skipping gpk install"
+    fi
+fi
+
 # fzf keybindings and completion
 if command_exists fzf; then
     FZF_INSTALL="$(brew --prefix)/opt/fzf/install"
@@ -192,6 +208,7 @@ if command_exists gh; then
     echo "Installing gh extensions..."
     gh extension install dlvhdr/gh-dash    2>/dev/null || true
     gh extension install dlvhdr/gh-enhance 2>/dev/null || true
+    gh extension install seanhalberthal/gh-bench 2>/dev/null || true
 fi
 
 # fnm shell setup reminder
@@ -200,35 +217,6 @@ if command_exists fnm; then
     info "fnm installed. To install Node.js:"
     echo "  fnm install --lts"
     echo "  fnm default lts-latest"
-fi
-
-# openapi-tui - OpenAPI spec browser (pre-built binary from GitHub releases)
-if should_install "core"; then
-    if ! command_exists openapi-tui; then
-        echo "Installing openapi-tui (OpenAPI spec browser)..."
-        OPENAPI_TUI_VERSION="0.10.2"
-        OPENAPI_TUI_ARCH=$(uname -m)
-        if is_macos; then
-            OPENAPI_TUI_OS="macos"
-            [[ "$OPENAPI_TUI_ARCH" == "arm64" ]] || OPENAPI_TUI_ARCH="x86_64"
-        else
-            OPENAPI_TUI_OS="linux"
-            [[ "$OPENAPI_TUI_ARCH" == "aarch64" ]] && OPENAPI_TUI_ARCH="arm64"
-        fi
-        OPENAPI_TUI_TAR="openapi-tui-${OPENAPI_TUI_VERSION}-${OPENAPI_TUI_OS}-${OPENAPI_TUI_ARCH}.tar.gz"
-        OPENAPI_TUI_URL="https://github.com/zaghaghi/openapi-tui/releases/download/${OPENAPI_TUI_VERSION}/${OPENAPI_TUI_TAR}"
-        OPENAPI_TUI_DEST="$HOME/.cargo/bin"
-        mkdir -p "$OPENAPI_TUI_DEST"
-        if curl -fsSL "$OPENAPI_TUI_URL" | tar xz -C /tmp openapi-tui; then
-            mv /tmp/openapi-tui "$OPENAPI_TUI_DEST/openapi-tui"
-            chmod +x "$OPENAPI_TUI_DEST/openapi-tui"
-            success "openapi-tui ${OPENAPI_TUI_VERSION} installed to ${OPENAPI_TUI_DEST}"
-        else
-            warn "openapi-tui install failed. Download manually from: https://github.com/zaghaghi/openapi-tui/releases"
-        fi
-    else
-        echo "openapi-tui already installed"
-    fi
 fi
 
 # Ghostty next steps (Ubuntu/Debian — no official apt package)

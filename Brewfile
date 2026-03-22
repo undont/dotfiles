@@ -164,3 +164,6 @@ cask "karabiner-elements"  # Keyboard customisation
 
 # Music
 cask "music-presence"      # Discord Rich Presence for Apple Music
+
+# Utilities
+cask "raycast"             # Spotlight replacement

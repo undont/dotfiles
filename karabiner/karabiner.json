@@ -4,71 +4,9 @@
             "complex_modifications": {
                 "rules": [
                     {
-                        "description": "Caps Lock to Escape (Ghostty only)",
+                        "description": "Caps Lock to Escape",
                         "manipulators": [
                             {
-                                "conditions": [
-                                    {
-                                        "bundle_identifiers": [
-                                            "^com\\.mitchellh\\.ghostty$"
-                                        ],
-                                        "type": "frontmost_application_if"
-                                    }
-                                ],
-                                "from": { "key_code": "caps_lock" },
-                                "to": [{ "key_code": "escape" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Caps Lock to Escape (Rider only)",
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "bundle_identifiers": [
-                                            "^com\\.jetbrains\\.rider$"
-                                        ],
-                                        "type": "frontmost_application_if"
-                                    }
-                                ],
-                                "from": { "key_code": "caps_lock" },
-                                "to": [{ "key_code": "escape" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Caps Lock to Escape (WebStorm only)",
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "bundle_identifiers": [
-                                            "^com\\.jetbrains\\.WebStorm$"
-                                        ],
-                                        "type": "frontmost_application_if"
-                                    }
-                                ],
-                                "from": { "key_code": "caps_lock" },
-                                "to": [{ "key_code": "escape" }],
-                                "type": "basic"
-                            }
-                        ]
-                    },
-                    {
-                        "description": "Caps Lock to Escape (GoLand only)",
-                        "manipulators": [
-                            {
-                                "conditions": [
-                                    {
-                                        "bundle_identifiers": [
-                                            "^com\\.jetbrains\\.goland$"
-                                        ],
-                                        "type": "frontmost_application_if"
-                                    }
-                                ],
                                 "from": { "key_code": "caps_lock" },
                                 "to": [{ "key_code": "escape" }],
                                 "type": "basic"
@@ -85,7 +23,8 @@
                                             "^com\\.mitchellh\\.ghostty$",
                                             "^com\\.jetbrains\\.rider$",
                                             "^com\\.jetbrains\\.WebStorm$",
-                                            "^com\\.jetbrains\\.goland$"
+                                            "^com\\.jetbrains\\.goland$",
+                                            "^com\\.raycast\\.macos$"
                                         ],
                                         "type": "frontmost_application_if"
                                     }

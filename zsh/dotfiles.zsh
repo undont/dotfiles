@@ -467,6 +467,11 @@ alias ports="lsof -i -P -n | grep LISTEN"
 # Networking
 alias myip="curl -s ifconfig.me"
 
+# Quick access to config files
+alias secrets="v ~/.config/zsh/secrets.zsh"  # Edit API keys and credentials
+alias config="v ~/.config"                   # Edit general config files
+alias zshrc="v ~/.zshrc"                     # Edit personal shell config
+
 # Open — platform-aware (macOS: open, Linux: xdg-open)
 if [[ "$IS_MACOS" == "1" ]]; then
   alias o="open"
