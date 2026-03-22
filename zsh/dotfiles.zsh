@@ -618,6 +618,19 @@ alias grmc="git rm --cached"           # Untrack file(s) without deleting from d
 alias gca="git commit --amend"         # Amend the last commit
 alias dash="cl && gh dash"             # Open GitHub Dash, after clearing scrollback
 
+# Make: forward to repo root when no Makefile in current directory
+make() {
+  if [[ ! -f Makefile && ! -f makefile && ! -f GNUmakefile ]]; then
+    local root
+    root=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$root" && -f "$root/Makefile" ]]; then
+      command make -C "$root" "$@"
+      return
+    fi
+  fi
+  command make "$@"
+}
+
 # Development tools
 alias gols="ls ~/go/bin"               # List installed Go binaries
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"  # Fix stale plugin cache

@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: testing & debugging documentation in nvim/README.md
 - Brewfile: Raycast cask
 - Zsh: `secrets`, `config`, `zshrc` quick-edit aliases
+- Zsh: `make` wrapper — auto-forwards to repo root Makefile when none in current directory
 - Installer: gpk (glazepkg) and gh-bench extension
 
 ### Changed
