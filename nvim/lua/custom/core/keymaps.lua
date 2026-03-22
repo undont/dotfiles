@@ -316,8 +316,6 @@ function M.setup()
 
   -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()
-    local cur_file = vim.fn.expand '%:p'
-
     -- Close all splits so the window fills the terminal before wiping buffers
     vim.cmd 'only'
 
