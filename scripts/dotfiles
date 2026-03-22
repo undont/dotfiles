@@ -952,7 +952,8 @@ cmd_aliases() {
         "finder"  "open in Finder (macOS)" \
         "secrets" "edit secrets.zsh" \
         "config"  "edit ~/.config" \
-        "zshrc"   "edit ~/.zshrc"
+        "zshrc"   "edit ~/.zshrc" \
+        "font-preview" "font browser (fzf)"
 
     printf "\n${CYAN}DEVELOPMENT${NC}\n"
     _2col \
@@ -1017,6 +1018,9 @@ cmd_aliases() {
                 local value="${line#*=}"
                 # Strip inline comment (everything from whitespace+# onwards)
                 value="${value%%[[:space:]]# *}"
+                # Trim trailing whitespace left after comment stripping
+                local trailing="${value##*[^[:space:]]}"
+                value="${value%"$trailing"}"
                 # Strip surrounding quotes
                 value="${value#[\"\']}"
                 value="${value%[\"\']}"
