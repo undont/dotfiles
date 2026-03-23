@@ -10,6 +10,108 @@ local function diffview_open(cmd)
   vim.cmd(cmd)
 end
 
+--- Close the current diff context and open the viewed file for editing.
+--- Works for both diffview and octo review contexts.
+local function edit_diff_file()
+  -- Try diffview first
+  local dv_ok, dv_lib = pcall(require, 'diffview.lib')
+  if dv_ok then
+    local view = dv_lib.get_current_view()
+    if view then
+      local file = view:infer_cur_file()
+      if not file or not file.absolute_path then
+        vim.notify('No file under cursor', vim.log.levels.WARN)
+        return
+      end
+
+      -- Guard: file may have been deleted in this diff
+      if vim.fn.filereadable(file.absolute_path) ~= 1 then
+        vim.notify('File does not exist on disk: ' .. file.path, vim.log.levels.WARN)
+        return
+      end
+
+      -- Capture cursor from the diff view's main window
+      local cursor
+      if file == view.cur_entry and view.cur_layout then
+        local win = view.cur_layout:get_main_win()
+        if win and win.id and vim.api.nvim_win_is_valid(win.id) then
+          cursor = vim.api.nvim_win_get_cursor(win.id)
+        end
+      end
+
+      local path = file.absolute_path
+      view:close()
+      dv_lib.dispose_view(view)
+
+      vim.schedule(function()
+        vim.cmd('edit ' .. vim.fn.fnameescape(path))
+        if cursor then
+          pcall(vim.api.nvim_win_set_cursor, 0, cursor)
+        end
+      end)
+      return
+    end
+  end
+
+  -- Try octo review
+  local octo_ok, reviews = pcall(require, 'octo.reviews')
+  if octo_ok then
+    local review = reviews.get_current_review()
+    if review and review.layout then
+      local layout = review.layout
+      local file = layout:get_current_file()
+      if not file then
+        vim.notify('No file in review', vim.log.levels.WARN)
+        return
+      end
+
+      local path = file.path
+
+      -- Guard: file may not exist if the PR branch isn't checked out
+      if vim.fn.filereadable(path) ~= 1 then
+        vim.notify('File not on disk (PR branch not checked out?): ' .. path, vim.log.levels.WARN)
+        return
+      end
+
+      -- Warn if on a different branch — file exists but may be a different version
+      local octo_utils = require 'octo.utils'
+      if file.pull_request and not octo_utils.in_pr_branch(file.pull_request) then
+        local choice = vim.fn.confirm(
+          'Not on the PR branch — file may differ from the review. Edit anyway?',
+          '&Yes\n&No',
+          2
+        )
+        if choice ~= 1 then return end
+      end
+
+      -- Read cursor from the right (new) side — if the user is on the left
+      -- (old) side the line numbers won't match the current file
+      local right_win = layout.right_winid
+      local cursor
+      if right_win and vim.api.nvim_win_is_valid(right_win) then
+        cursor = vim.api.nvim_win_get_cursor(right_win)
+      end
+
+      -- Close review layout and remaining octo buffers
+      layout:close()
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
+          vim.api.nvim_buf_delete(buf, { force = true })
+        end
+      end
+
+      vim.schedule(function()
+        vim.cmd('edit ' .. vim.fn.fnameescape(path))
+        pcall(vim.api.nvim_win_set_cursor, 0, cursor)
+        vim.cmd 'doautocmd BufEnter'
+      end)
+      return
+    end
+  end
+
+  vim.notify('No diff context found', vim.log.levels.WARN)
+end
+
 return {
   -- Diffview: side-by-side diffs and file history
   {
@@ -20,11 +122,40 @@ return {
       {
         '<leader>do',
         function()
+          local current_file = vim.fn.expand '%:p'
+          local current_line = vim.fn.line '.'
+          local has_file = current_file ~= '' and vim.bo.buftype == ''
+
+          -- After diffview opens, restore cursor line if the same file is shown
+          if has_file and current_line > 1 then
+            vim.api.nvim_create_autocmd('User', {
+              pattern = 'DiffviewViewOpened',
+              once = true,
+              callback = function()
+                local view = require('diffview.lib').get_current_view()
+                if not view then return end
+                view.emitter:once('file_open_post', function(_, new_entry)
+                  if new_entry and new_entry.absolute_path == current_file then
+                    vim.schedule(function()
+                      if view.cur_layout then
+                        local win = view.cur_layout:get_main_win()
+                        if win and win.id and vim.api.nvim_win_is_valid(win.id) then
+                          pcall(vim.api.nvim_win_set_cursor, win.id, { current_line, 0 })
+                        end
+                      end
+                    end)
+                  end
+                end)
+              end,
+            })
+          end
+
           diffview_open 'DiffviewOpen'
         end,
         desc = '[D]iff [O]pen (vs index)',
       },
       { '<leader>dc', '<cmd>DiffviewClose<CR>', desc = '[D]iff [C]lose' },
+      { '<leader>de', edit_diff_file, desc = '[D]iff [E]dit file' },
       {
         '<leader>dh',
         function()

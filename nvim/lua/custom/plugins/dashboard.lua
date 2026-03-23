@@ -33,7 +33,7 @@ return {
       bigfile = { enabled = false },
       dashboard = {
         enabled = true,
-        width = 130,
+        width = 70,
         preset = {
           header = table.concat({
             '███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗',
@@ -45,38 +45,54 @@ return {
           }, '\n'),
           -- stylua: ignore
           keys = {
-            { icon = ' ', key = 'f', desc = 'Find File',    action = ":lua Snacks.dashboard.pick('files')" },
-            { icon = ' ', key = 'n', desc = 'New File',     action = ':ene | startinsert' },
-            { icon = ' ', key = 'g', desc = 'Find Text',    action = ":lua Snacks.dashboard.pick('live_grep')" },
-            { icon = ' ', key = 'r', desc = 'Recent Files', action = ":lua Snacks.dashboard.pick('oldfiles')" },
-            { icon = ' ', key = 'c', desc = 'Config',       action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
+            { icon = '', key = 'f', desc = 'Find File',    action = ":lua Snacks.dashboard.pick('files')" },
+            { icon = '', key = 'n', desc = 'New File',     action = ':ene | startinsert' },
+            { icon = '󰺯', key = 'g', desc = 'Find Text',    action = ":lua Snacks.dashboard.pick('live_grep')" },
+            { icon = '', key = 'r', desc = 'Recent Files', action = ":lua Snacks.dashboard.pick('oldfiles')" },
+            { icon = '', key = 'p', desc = 'PRs',          action = ":Octo pr list" },
+            { icon = '', key = 'c', desc = 'Config',       action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
             { icon = '󰒲 ', key = 'L', desc = 'Lazy',        action = ':Lazy' },
-            { icon = ' ', key = 'q', desc = 'Quit',         action = ':qa' },
+            { icon = '󰩈', key = 'q', desc = 'Quit',         action = ':qa' },
           },
         },
         sections = {
-          -- Left pane: header + keys + recent files
-          {
-            section = 'header',
-            padding = 1,
-          },
+          -- Header centred across both panes when space allows.
+          -- Prepends (width + pane_gap) spaces so the renderer's
+          -- wide-line adjustment places the text at the dashboard centre.
+          function(self)
+            local max_panes = math.max(1, math.floor((self._size.width + self.opts.pane_gap) / (self.opts.width + self.opts.pane_gap)))
+            if max_panes < 2 then
+              return { header = self.opts.preset.header, padding = 4 }
+            end
+            local pad = string.rep(' ', self.opts.width + self.opts.pane_gap)
+            local centred = self.opts.preset.header:gsub('([^\n]+)', pad .. '%1')
+            return { header = centred, padding = 4 }
+          end,
+          -- Left pane: keys + recent files
           {
             section = 'keys',
             gap = 1,
             padding = 1,
           },
           {
-            icon = ' ',
             title = 'Recent Files',
             section = 'recent_files',
             cwd = true,
             indent = 2,
             padding = 1,
           },
+          -- Pane 2 spacer — clears the 6 header text rows so the wide
+          -- header lines don't push right-pane content out of alignment.
+          function(self)
+            local max_panes = math.max(1, math.floor((self._size.width + self.opts.pane_gap) / (self.opts.width + self.opts.pane_gap)))
+            if max_panes < 2 then
+              return {}
+            end
+            return { pane = 2, text = '', padding = { 0, 9 } }
+          end,
           -- Right pane: projects + git log + git status
           {
             pane = 2,
-            icon = ' ',
             title = 'Projects',
             section = 'projects',
             indent = 2,
@@ -84,7 +100,6 @@ return {
           },
           {
             pane = 2,
-            icon = ' ',
             title = 'Git Log',
             section = 'terminal',
             enabled = function()
@@ -98,7 +113,6 @@ return {
           },
           {
             pane = 2,
-            icon = ' ',
             title = 'Git Status',
             section = 'terminal',
             enabled = function()
@@ -116,6 +130,14 @@ return {
       notifier = { enabled = false },
       quickfile = { enabled = false },
       statuscolumn = { enabled = false },
+      styles = {
+        dashboard = {
+          row = 0,
+          height = function()
+            return vim.o.lines - vim.o.cmdheight - (vim.o.laststatus >= 2 and 1 or 0)
+          end,
+        },
+      },
       words = { enabled = false },
     },
     config = function(_, opts)

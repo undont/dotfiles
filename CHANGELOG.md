@@ -10,7 +10,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - CLI: `dotfiles sync` command — sync copy-on-install configs from repo on demand (`--force` to overwrite)
-- Nvim: snacks.nvim dashboard with two-pane layout (recent files, projects, git log, git status)
+- Nvim: snacks.nvim dashboard with single-pane layout (recent files, projects, git log)
 - Nvim: .NET debugging support via easy-dotnet + nvim-dap (`<leader>nd`)
 - Nvim: testing & debugging documentation in nvim/README.md
 - Brewfile: Raycast cask
