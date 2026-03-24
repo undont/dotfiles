@@ -403,6 +403,7 @@ ssh() {
 # =============================================================================
 # Editor
 export EDITOR="nvim"                   # Default editor for git, etc.
+alias v="cl && nvim"                   # Clear scrollback + launch Neovim
 alias opencode="cl && opencode"        # Clear scrollback + launch OpenCode editor
 alias oc="opencode"                    # Shorthand for OpenCode editor
 alias claude="cl && claude"            # Clear scrollback + launch Claude AI CLI
@@ -426,7 +427,7 @@ alias demo-rec='asciinema rec --idle-time-limit 2 --cols 120 --rows 35'
 
 # Navigation
 alias c="clear"
-alias cl="printf '\033[2J\033[3J\033[H'; [[ -n \$TMUX ]] && tmux clear-history"  # clear screen + scrollback
+alias cl="printf '\033[2J\033[3J\033[H'; [[ -n \$TMUX ]] && tmux clear-history || true"  # clear screen + scrollback
 alias ..="cd .."
 alias ...="cd ../.."
 
@@ -446,7 +447,7 @@ alias grep="grep --color=auto"
 # Shell shortcuts
 alias h="cd ~"
 alias j="jobs"
-alias v="cl && nvim"
+alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'
 
 # Clipboard — Linux only (macOS has pbcopy/pbpaste natively)
 if [[ "$IS_MACOS" != "1" ]]; then
