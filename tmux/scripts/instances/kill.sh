@@ -11,6 +11,7 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/ui.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
+source "$SCRIPT_DIR/../_lib/process.sh"
 
 require_tmux
 
@@ -72,17 +73,8 @@ if ! show_visual_confirm "Kill Instance" "Kill ${PROCESS} in '${WINDOW_NAME}'?";
     exit 0
 fi
 
-# Send SIGTERM for graceful shutdown
-kill -TERM "$CHILD_PID" 2>/dev/null || true
-
-# Wait up to 2s for graceful exit
-for _ in {1..20}; do
-    kill -0 "$CHILD_PID" 2>/dev/null || break
-    sleep 0.1
-done
-
-# Force kill if still alive
-kill -0 "$CHILD_PID" 2>/dev/null && kill -KILL "$CHILD_PID" 2>/dev/null || true
+# Graceful shutdown: SIGTERM → wait 2s → SIGKILL
+graceful_kill_pids 2 "$CHILD_PID"
 
 # Clear alerts for claude/opencode/copilot (nvim doesn't use alerts)
 if [[ "$PROCESS" == "claude" || "$PROCESS" == "opencode" || "$PROCESS" == "copilot" ]]; then

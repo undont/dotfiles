@@ -14,6 +14,7 @@ source "$SCRIPT_DIR/../_lib/ui.sh"
 source "$SCRIPT_DIR/../_lib/paths.sh"
 source "$SCRIPT_DIR/../_lib/session.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
+source "$SCRIPT_DIR/../_lib/process.sh"
 
 require_tmux
 
@@ -128,6 +129,9 @@ while IFS='|' read -r pane_index pane_title pane_dir pane_active pane_cmd; do
         > "$UNDO_CONTENTS_DIR/pane-${pane_index}.txt" 2>/dev/null || true
     chmod 600 "$UNDO_CONTENTS_DIR/pane-${pane_index}.txt"
 done < <(tmux list-panes -t "$WINDOW_TARGET" -F '#{pane_index}|#{pane_title}|#{pane_current_path}|#{pane_active}|#{pane_current_command}')
+
+# Gracefully terminate running processes before killing the window
+terminate_window_processes "$WINDOW_TARGET"
 
 # If killing the last window in current session, switch to another session first
 # This prevents tmux from auto-exiting since killing the last window would kill the session
