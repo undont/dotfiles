@@ -36,12 +36,10 @@ return {
         width = 70,
         preset = {
           header = table.concat({
-            '███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗',
-            '████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║',
-            '██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║',
-            '██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║',
-            '██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║',
-            '╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝',
+            '            ▗     ',
+            '▛▀▖▞▀▖▞▀▖▌ ▌▄ ▛▚▀▖',
+            '▌ ▌▛▀ ▌ ▌▐▐ ▐ ▌▐ ▌',
+            '▘ ▘▝▀▘▝▀  ▘ ▀▘▘▝ ▘',
           }, '\n'),
           -- stylua: ignore
           keys = {
@@ -56,19 +54,7 @@ return {
           },
         },
         sections = {
-          -- Header centred across both panes when space allows.
-          -- Prepends (width + pane_gap) spaces so the renderer's
-          -- wide-line adjustment places the text at the dashboard centre.
-          function(self)
-            local max_panes = math.max(1, math.floor((self._size.width + self.opts.pane_gap) / (self.opts.width + self.opts.pane_gap)))
-            if max_panes < 2 then
-              return { header = self.opts.preset.header, padding = 4 }
-            end
-            local pad = string.rep(' ', self.opts.width + self.opts.pane_gap)
-            local centred = self.opts.preset.header:gsub('([^\n]+)', pad .. '%1')
-            return { header = centred, padding = 4 }
-          end,
-          -- Left pane: keys + recent files
+          { section = 'header', padding = 2 },
           {
             section = 'keys',
             gap = 1,
@@ -81,48 +67,11 @@ return {
             indent = 2,
             padding = 1,
           },
-          -- Pane 2 spacer — clears the 6 header text rows so the wide
-          -- header lines don't push right-pane content out of alignment.
-          function(self)
-            local max_panes = math.max(1, math.floor((self._size.width + self.opts.pane_gap) / (self.opts.width + self.opts.pane_gap)))
-            if max_panes < 2 then
-              return {}
-            end
-            return { pane = 2, text = '', padding = { 0, 9 } }
-          end,
-          -- Right pane: projects + git log + git status
           {
-            pane = 2,
             title = 'Projects',
             section = 'projects',
             indent = 2,
             padding = 1,
-          },
-          {
-            pane = 2,
-            title = 'Git Log',
-            section = 'terminal',
-            enabled = function()
-              return Snacks.git.get_root() ~= nil
-            end,
-            cmd = 'git log --oneline --graph --decorate --all -n 10',
-            height = 12,
-            padding = 1,
-            ttl = 5 * 60,
-            indent = 3,
-          },
-          {
-            pane = 2,
-            title = 'Git Status',
-            section = 'terminal',
-            enabled = function()
-              return Snacks.git.get_root() ~= nil
-            end,
-            cmd = 'git --no-pager diff --stat -B -M -C',
-            height = 8,
-            padding = 1,
-            ttl = 5 * 60,
-            indent = 3,
           },
           { section = 'startup' },
         },
