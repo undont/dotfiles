@@ -638,10 +638,6 @@ bind s display-popup -w 95% -h 95% -E "\
       --bind 'n:become(~/.tmux/scripts/sessions/new.sh)' \
       --bind 'r:execute(~/.tmux/scripts/sessions/rename.sh \$(echo {} | cut -d\" \" -f1) >/dev/null)+reload-sync(~/.tmux/scripts/sessions/list.sh)' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
-bind S display-popup -E -w 60 -h 20 "~/.tmux/scripts/resurrect/restore.sh --list; echo ''; read -n1 -p 'Press any key...'"
-bind R command-prompt -p "Restore session:" "run-shell '~/.tmux/scripts/resurrect/restore.sh %%'"
-# prefix + S = list saved session backups (popup)
-# prefix + R = restore specific session (prompts for name)
 
 # ─────────────────────────────────────────
 # Navigation history (browser-style back/forward)
