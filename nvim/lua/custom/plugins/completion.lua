@@ -6,6 +6,7 @@ return {
     dependencies = {
       'rafamadriz/friendly-snippets',
       { 'saghen/blink.compat', opts = {} },
+      'giuxtaposition/blink-cmp-copilot',
       {
         'L3MON4D3/LuaSnip',
         version = 'v2.*',
@@ -31,16 +32,12 @@ return {
         ['<CR>'] = { 'select_and_accept', 'fallback' },
         ['<Tab>'] = {
           function(cmp)
-            -- Prioritise Copilot ghost text over completion menu
-            if vim.g.loaded_copilot then
-              local suggestion = vim.fn['copilot#GetDisplayedSuggestion']()
-              if suggestion and suggestion.text ~= '' then
-                cmp.hide()
-                vim.api.nvim_feedkeys(vim.fn['copilot#Accept'] '', 'n', false)
-                return true
-              end
+            local ok, suggestion = pcall(require, 'copilot.suggestion')
+            if ok and suggestion.is_visible() then
+              cmp.hide()
+              suggestion.accept()
+              return true
             end
-
             if cmp.snippet_active() then
               return cmp.accept()
             else
@@ -84,8 +81,14 @@ return {
         },
       },
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'buffer' },
+        default = { 'lsp', 'path', 'snippets', 'buffer', 'copilot' },
         providers = {
+          copilot = {
+            name = 'copilot',
+            module = 'blink-cmp-copilot',
+            async = true,
+            score_offset = 100,
+          },
           snippets = { score_offset = -3 },
           buffer = { score_offset = -5 },
         },

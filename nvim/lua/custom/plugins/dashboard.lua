@@ -33,82 +33,45 @@ return {
       bigfile = { enabled = false },
       dashboard = {
         enabled = true,
-        width = 130,
+        width = 70,
         preset = {
           header = table.concat({
-            '███╗   ██╗███████╗ ██████╗ ██╗   ██╗██╗███╗   ███╗',
-            '████╗  ██║██╔════╝██╔═══██╗██║   ██║██║████╗ ████║',
-            '██╔██╗ ██║█████╗  ██║   ██║██║   ██║██║██╔████╔██║',
-            '██║╚██╗██║██╔══╝  ██║   ██║╚██╗ ██╔╝██║██║╚██╔╝██║',
-            '██║ ╚████║███████╗╚██████╔╝ ╚████╔╝ ██║██║ ╚═╝ ██║',
-            '╚═╝  ╚═══╝╚══════╝ ╚═════╝   ╚═══╝  ╚═╝╚═╝     ╚═╝',
+            '            ▗     ',
+            '▛▀▖▞▀▖▞▀▖▌ ▌▄ ▛▚▀▖',
+            '▌ ▌▛▀ ▌ ▌▐▐ ▐ ▌▐ ▌',
+            '▘ ▘▝▀▘▝▀  ▘ ▀▘▘▝ ▘',
           }, '\n'),
           -- stylua: ignore
           keys = {
-            { icon = ' ', key = 'f', desc = 'Find File',    action = ":lua Snacks.dashboard.pick('files')" },
-            { icon = ' ', key = 'n', desc = 'New File',     action = ':ene | startinsert' },
-            { icon = ' ', key = 'g', desc = 'Find Text',    action = ":lua Snacks.dashboard.pick('live_grep')" },
-            { icon = ' ', key = 'r', desc = 'Recent Files', action = ":lua Snacks.dashboard.pick('oldfiles')" },
-            { icon = ' ', key = 'c', desc = 'Config',       action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
+            { icon = '', key = 'f', desc = 'Find File',    action = ":lua Snacks.dashboard.pick('files')" },
+            { icon = '', key = 'n', desc = 'New File',     action = ':ene | startinsert' },
+            { icon = '󰺯', key = 'g', desc = 'Find Text',    action = ":lua Snacks.dashboard.pick('live_grep')" },
+            { icon = '', key = 'r', desc = 'Recent Files', action = ":lua Snacks.dashboard.pick('oldfiles')" },
+            { icon = '', key = 'p', desc = 'PRs',          action = ":Octo pr list" },
+            { icon = '', key = 'c', desc = 'Config',       action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
             { icon = '󰒲 ', key = 'L', desc = 'Lazy',        action = ':Lazy' },
-            { icon = ' ', key = 'q', desc = 'Quit',         action = ':qa' },
+            { icon = '󰩈', key = 'q', desc = 'Quit',         action = ':qa' },
           },
         },
         sections = {
-          -- Left pane: header + keys + recent files
-          {
-            section = 'header',
-            padding = 1,
-          },
+          { section = 'header', padding = 2 },
           {
             section = 'keys',
             gap = 1,
             padding = 1,
           },
           {
-            icon = ' ',
             title = 'Recent Files',
             section = 'recent_files',
             cwd = true,
             indent = 2,
             padding = 1,
           },
-          -- Right pane: projects + git log + git status
           {
-            pane = 2,
-            icon = ' ',
             title = 'Projects',
             section = 'projects',
             indent = 2,
             padding = 1,
-          },
-          {
-            pane = 2,
-            icon = ' ',
-            title = 'Git Log',
-            section = 'terminal',
-            enabled = function()
-              return Snacks.git.get_root() ~= nil
-            end,
-            cmd = 'git log --oneline --graph --decorate --all -n 10',
-            height = 12,
-            padding = 1,
-            ttl = 5 * 60,
-            indent = 3,
-          },
-          {
-            pane = 2,
-            icon = ' ',
-            title = 'Git Status',
-            section = 'terminal',
-            enabled = function()
-              return Snacks.git.get_root() ~= nil
-            end,
-            cmd = 'git --no-pager diff --stat -B -M -C',
-            height = 8,
-            padding = 1,
-            ttl = 5 * 60,
-            indent = 3,
           },
           { section = 'startup' },
         },
@@ -116,6 +79,14 @@ return {
       notifier = { enabled = false },
       quickfile = { enabled = false },
       statuscolumn = { enabled = false },
+      styles = {
+        dashboard = {
+          row = 0,
+          height = function()
+            return vim.o.lines - vim.o.cmdheight - (vim.o.laststatus >= 2 and 1 or 0)
+          end,
+        },
+      },
       words = { enabled = false },
     },
     config = function(_, opts)

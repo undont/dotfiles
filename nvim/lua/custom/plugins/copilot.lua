@@ -1,77 +1,72 @@
--- GitHub Copilot configuration
+-- GitHub Copilot configuration (copilot.lua + blink-cmp-copilot)
+-- Ghost text for inline suggestions, blink.cmp source for menu items.
+-- Ghost text auto-hides when blink menu is open to avoid visual clutter.
 
 return {
   {
-    'github/copilot.vim',
-    init = function()
-      -- Disable default Tab mapping — handled by blink.cmp's smart Tab
-      vim.g.copilot_no_tab_map = true
-    end,
-    config = function()
-      -- Disable Copilot for sensitive files
-      vim.api.nvim_create_autocmd({ 'BufEnter', 'BufNew' }, {
-        pattern = {
-          '.env*',
-          '*.env',
-          '*secret*',
-          '*credential*',
-          '*.key',
-          '*.pem',
-          '*.secrets.zsh',
+    'zbirenbaum/copilot.lua',
+    cmd = 'Copilot',
+    event = 'InsertEnter',
+    opts = {
+      suggestion = {
+        enabled = true,
+        auto_trigger = true,
+        keymap = {
+          accept = false, -- handled by Tab in blink.cmp config
+          dismiss = '<C-e>',
         },
-        callback = function()
-          vim.b.copilot_enabled = false
-        end,
-      })
-
-      -- Set Copilot suggestion highlight for non-generated colourschemes
-      -- Generated themes set CopilotSuggestion directly; this is a fallback
-      local function set_copilot_hl()
-        -- Skip if the colourscheme already defined CopilotSuggestion (generated themes)
-        local existing = vim.api.nvim_get_hl(0, { name = 'CopilotSuggestion' })
-        if existing.fg then
-          return
+      },
+      panel = { enabled = false },
+      filetypes = {
+        markdown = true,
+        yaml = true,
+        help = false,
+        gitcommit = false,
+        gitrebase = false,
+        TelescopePrompt = false,
+        ['grug-far'] = false,
+        ['grug-far-help'] = false,
+        ['neo-tree'] = false,
+        ['neo-tree-popup'] = false,
+        DressingInput = false,
+        codecompanion = false,
+        ['copilot-chat'] = false,
+        snacks_input = false,
+        snacks_notif = false,
+        octo = false,
+        hgcommit = false,
+        svn = false,
+        cvs = false,
+      },
+      should_attach = function(bufnr, bufname)
+        -- Preserve default checks: skip unlisted and special buffers (e.g. Telescope prompts)
+        if not vim.bo[bufnr].buflisted or vim.bo[bufnr].buftype ~= '' then
+          return false
         end
-
-        -- Blend Comment fg towards Normal bg for a ghost-text effect
-        local comment_hl = vim.api.nvim_get_hl(0, { name = 'Comment' })
-        local normal_hl = vim.api.nvim_get_hl(0, { name = 'Normal' })
-        local cfg = comment_hl.fg or 0x5c6370
-        local nbg = normal_hl.bg or 0x1e1e2e
-
-        -- Blend 40% towards background
-        local function blend(fg_c, bg_c, ratio)
-          local function ch(hex, shift)
-            return bit.band(bit.rshift(hex, shift), 0xff)
+        local patterns = { '%.env', 'secret', 'credential', '%.key$', '%.pem$', '%.secrets%.zsh' }
+        for _, pat in ipairs(patterns) do
+          if bufname:match(pat) then
+            return false
           end
-          local r = ch(fg_c, 16) + (ch(bg_c, 16) - ch(fg_c, 16)) * ratio
-          local g = ch(fg_c, 8) + (ch(bg_c, 8) - ch(fg_c, 8)) * ratio
-          local b = ch(fg_c, 0) + (ch(bg_c, 0) - ch(fg_c, 0)) * ratio
-          return bit.bor(bit.lshift(math.floor(r), 16), bit.lshift(math.floor(g), 8), math.floor(b))
         end
+        return true
+      end,
+    },
+    config = function(_, opts)
+      require('copilot').setup(opts)
 
-        vim.api.nvim_set_hl(0, 'CopilotSuggestion', {
-          fg = blend(cfg, nbg, 0.40),
-          italic = true,
-        })
-      end
-
-      vim.api.nvim_create_autocmd('ColorScheme', {
-        group = vim.api.nvim_create_augroup('CopilotHighlights', { clear = true }),
+      -- Hide ghost text when blink menu opens, restore when it closes
+      vim.api.nvim_create_autocmd('User', {
+        pattern = 'BlinkCmpMenuOpen',
         callback = function()
-          vim.defer_fn(set_copilot_hl, 10)
+          vim.b.copilot_suggestion_hidden = true
         end,
       })
-
-      vim.api.nvim_create_autocmd('VimEnter', {
-        group = 'CopilotHighlights',
+      vim.api.nvim_create_autocmd('User', {
+        pattern = 'BlinkCmpMenuClose',
         callback = function()
-          vim.defer_fn(set_copilot_hl, 100)
+          vim.b.copilot_suggestion_hidden = false
         end,
-      })
-
-      vim.api.nvim_create_user_command('CopilotHighlightFix', set_copilot_hl, {
-        desc = 'Fix Copilot suggestion highlighting',
       })
     end,
   },

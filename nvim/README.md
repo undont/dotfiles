@@ -201,7 +201,7 @@ nvim/
 
 | Plugin | Purpose |
 |--------|---------|
-| [copilot.vim](https://github.com/github/copilot.vim) | GitHub Copilot inline suggestions |
+| [copilot.lua](https://github.com/zbirenbaum/copilot.lua) | GitHub Copilot completion via blink.cmp |
 | [codecompanion.nvim](https://github.com/olimorris/codecompanion.nvim) | AI chat, inline editing, actions (Anthropic/Copilot) |
 | [nvim-lint](https://github.com/mfussenegger/nvim-lint) | Linting framework |
 | [nvim-dap](https://github.com/mfussenegger/nvim-dap) | Debug Adapter Protocol |

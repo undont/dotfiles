@@ -6,11 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.74] - 2026-03-25
+
+### Added
+- Nvim: PR review enhancements — "diff edit" and smart "diff open" actions in `pr-review.lua`
+- Tmux: `_lib/process.sh` — shared graceful process termination utilities (recursive PID tree walker, SIGTERM → 2s wait → SIGKILL)
+- Zsh: `nuke-node` alias for force-stopping leaked node processes
+
+### Changed
+- Nvim: migrated from copilot.vim to copilot.lua (zbirenbaum/copilot.lua) with blink-cmp integration — ghost text with auto-trigger, `blink-cmp-copilot` completion source (score_offset 100), Tab priority, filetype filtering via opts, sensitive file detection via `should_attach` callback
+- Nvim: dashboard simplified to single-pane layout with compact smblock font header (removed git log/status terminal sections)
+- Tmux: pane, window, and session kill scripts now use graceful process termination via `_lib/process.sh` (previously relied on SIGHUP only)
+- Tmux: instances `kill.sh` consolidated to reuse `graceful_kill_pids` instead of inlining signal sequence
+- Zsh: `v` alias moved to Editor section; `cl` alias fixed with `|| true` to not fail outside tmux
+
+### Fixed
+- Nvim: NVIM logo block character alignment corrected in instance listing (6-row fix)
+- Nvim: opencode instance listing now shows full "OPEN CODE" text instead of truncated "O CODE"
+
+### Removed
+- Tmux: `prefix+S` (list saved backups) and `prefix+R` (restore session) resurrect keybindings — resurrect is accessed via the session picker
+
 ## [0.2.73] - 2026-03-22
 
 ### Added
 - CLI: `dotfiles sync` command — sync copy-on-install configs from repo on demand (`--force` to overwrite)
-- Nvim: snacks.nvim dashboard with two-pane layout (recent files, projects, git log, git status)
+- Nvim: snacks.nvim dashboard with single-pane layout (recent files, projects, git log)
 - Nvim: .NET debugging support via easy-dotnet + nvim-dap (`<leader>nd`)
 - Nvim: testing & debugging documentation in nvim/README.md
 - Brewfile: Raycast cask

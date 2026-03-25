@@ -142,8 +142,8 @@ _compute_skip_steps() {
         skippable+=(symlinks)
     fi
 
-    # keyd/ not changed → skip keyd
-    if ! printf '%s\n' "$changed_files" | grep -q '^keyd/'; then
+    # keyd/ not changed → skip keyd (Linux only; macOS uses Karabiner)
+    if is_linux && ! printf '%s\n' "$changed_files" | grep -q '^keyd/'; then
         skippable+=(keyd)
     fi
 

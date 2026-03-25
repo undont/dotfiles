@@ -25,6 +25,7 @@ source "$SCRIPT_DIR/../_lib/paths.sh"
 source "$SCRIPT_DIR/../_lib/session.sh"
 source "$SCRIPT_DIR/../_lib/ui.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
+source "$SCRIPT_DIR/../_lib/process.sh"
 
 require_tmux
 
@@ -110,6 +111,9 @@ if [[ "$IS_LAST_PANE" == "yes" ]]; then
     WINDOW_NAME=$(tmux display-message -t "${CURRENT_SESSION}:${CURRENT_WINDOW}" -p '#{window_name}' 2>/dev/null || echo "")
     WINDOW_ID=$(tmux display-message -t "${CURRENT_SESSION}:${CURRENT_WINDOW}" -p '#{window_id}' 2>/dev/null || echo "")
 fi
+
+# Gracefully terminate running processes before killing the pane
+terminate_pane_processes "$PANE_TARGET"
 
 # Determine if we need to check for session switching
 # We need the ACTUAL current client session (where the user is), not the target session

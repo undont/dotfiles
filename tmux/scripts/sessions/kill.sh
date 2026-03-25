@@ -10,6 +10,7 @@ source "$SCRIPT_DIR/../_lib/ui.sh"
 source "$SCRIPT_DIR/../_lib/paths.sh"
 source "$SCRIPT_DIR/../_lib/session.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
+source "$SCRIPT_DIR/../_lib/process.sh"
 
 # Capture a session's state directly from tmux and save as undo backup.
 # Produces the same tab-separated format as tmux-resurrect so restore.sh
@@ -104,6 +105,9 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
         # User confirmed - save a fresh backup before killing
         save_undo_state "$SESSION_NAME"
 
+        # Gracefully terminate running processes before killing the session
+        terminate_session_processes "$SESSION_NAME"
+
         # Switch and kill
         tmux switch-client -t "$OTHER_SESSION" \; kill-session -t "$SESSION_NAME"
 
@@ -129,6 +133,9 @@ else
 
     # User confirmed - save a fresh backup before killing
     save_undo_state "$SESSION_NAME"
+
+    # Gracefully terminate running processes before killing the session
+    terminate_session_processes "$SESSION_NAME"
 
     # Kill the session
     tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
