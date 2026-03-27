@@ -76,12 +76,10 @@ local function edit_diff_file()
       -- Warn if on a different branch — file exists but may be a different version
       local octo_utils = require 'octo.utils'
       if file.pull_request and not octo_utils.in_pr_branch(file.pull_request) then
-        local choice = vim.fn.confirm(
-          'Not on the PR branch — file may differ from the review. Edit anyway?',
-          '&Yes\n&No',
-          2
-        )
-        if choice ~= 1 then return end
+        local choice = vim.fn.confirm('Not on the PR branch — file may differ from the review. Edit anyway?', '&Yes\n&No', 2)
+        if choice ~= 1 then
+          return
+        end
       end
 
       -- Read cursor from the right (new) side — if the user is on the left
@@ -133,7 +131,9 @@ return {
               once = true,
               callback = function()
                 local view = require('diffview.lib').get_current_view()
-                if not view then return end
+                if not view then
+                  return
+                end
                 view.emitter:once('file_open_post', function(_, new_entry)
                   if new_entry and new_entry.absolute_path == current_file then
                     vim.schedule(function()

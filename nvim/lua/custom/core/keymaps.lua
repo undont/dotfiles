@@ -316,6 +316,11 @@ function M.setup()
 
   -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()
+    -- Close stateful plugins cleanly before wiping buffers
+    pcall(vim.cmd, 'Neotree close')
+    pcall(vim.cmd, 'DiffviewClose')
+    pcall(vim.cmd, 'Trouble close')
+
     -- Close all splits so the window fills the terminal before wiping buffers
     vim.cmd 'only'
 
@@ -333,9 +338,9 @@ function M.setup()
     -- Re-source config
     vim.cmd 'source $MYVIMRC'
 
-    -- Open the dashboard for a clean start and let LSP re-attach on next file open
+    -- Open the dashboard in the current window (not as a float) for a clean start
     vim.defer_fn(function()
-      Snacks.dashboard.open()
+      Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
       vim.notify('Neovim refreshed', vim.log.levels.INFO)
     end, 200)
   end, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })

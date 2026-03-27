@@ -18,6 +18,22 @@ DOTFILES_ROOT="$(cd "$_LIB_DIR/../../.." && pwd)"
 # shellcheck source=scripts/_lib/colours.sh
 source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
 
+# Convert hex colour (#RRGGBB) to ANSI truecolour foreground escape
+# Usage: local c; c=$(hex_fg "#ff0000"); printf "${c}text${NC}\n"
+hex_fg() {
+    printf '\033[38;2;%d;%d;%dm' "0x${1:1:2}" "0x${1:3:2}" "0x${1:5:2}"
+}
+
+# Dim a hex colour by a percentage (0–100, where 100 = full brightness)
+# Usage: dimmed=$(hex_dim "#8be9fd" 65)
+hex_dim() {
+    local hex="$1" pct="${2:-65}"
+    printf '#%02x%02x%02x' \
+        "$(( 16#${hex:1:2} * pct / 100 ))" \
+        "$(( 16#${hex:3:2} * pct / 100 ))" \
+        "$(( 16#${hex:5:2} * pct / 100 ))"
+}
+
 # Print the dotfiles ASCII art logo with theme-aware gradient
 # Uses TMUX_ACCENT_CYAN → TMUX_ACCENT_PURPLE from the active theme
 # Call load_fzf_theme before this to ensure theme colours are available

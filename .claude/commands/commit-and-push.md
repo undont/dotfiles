@@ -117,7 +117,11 @@ description: Commit staged changes and create a PR, push on top if PR already ex
 
 ### Generate Commit Message
 
-**Commit Convention**: Use lowercase prefixes with colon:
+**Commit Convention**: Prefixes are **REQUIRED** — omitting one will break auto-release.
+
+> ⚠️ **Auto-release depends on this.** The CI `auto-tag` job runs on every push to `main` and creates a `vX.Y.Z` tag from the CHANGELOG version. If the commit lands on `main` without a proper prefix (e.g. a raw PR merge message), the auto-tag job may have already run against the old CHANGELOG and the new version will never get tagged.
+
+Use lowercase prefixes with colon:
 - `add:` - New configuration, scripts, or features
 - `update:` - Changes to existing configuration
 - `fix:` - Bug fixes or corrections
@@ -141,10 +145,12 @@ refactor: split zsh config into modular files
 ```
 
 **Rules**:
+- **Always use a prefix** — no exceptions, even for squash-merged PRs
 - Keep subject line under 72 characters
 - Use imperative mood ("add feature" not "added feature")
 - Do not include AI/Claude attribution in commit messages
 - Reference specific tools/files when helpful
+- CHANGELOG **must be included in the same commit** as the changes it documents — a separate `docs:` follow-up commit will miss the auto-tag window
 
 ### Execute Commit and Push
 

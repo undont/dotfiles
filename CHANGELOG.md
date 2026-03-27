@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.75] - 2026-03-27
+
+### Changed
+- Nvim: refresh command (`<leader>lR`) now closes Neo-tree, Diffview, and Trouble before wiping buffers; dashboard opens in current window instead of as a float
+- Tmux: nvim instance picker uses compact braille-font header with theme-aware colour (matches nvim Keyword highlight); opencode picker colours now derived from theme cyan accent
+- Tmux: `hex_fg` / `hex_dim` colour helpers added to tmux scripts library for truecolour theming
+- Zsh: `_cached_eval` now validates cache files are non-empty (`-s`) before sourcing; removes empty cache files to prevent stale blanks
+- Zsh: fzf ZLE widget wrapping guarded with `zle -l` check to avoid errors when widgets are not yet registered
+
+### Fixed
+- Agent alert hooks (`agent-alert.sh`, `agent-alert-clear.sh`) now exit early when not running inside tmux
+
 ## [0.2.74] - 2026-03-25
 
 ### Added

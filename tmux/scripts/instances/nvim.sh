@@ -107,15 +107,30 @@ while IFS= read -r line; do
     fi
 done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid} #{pane_current_command}' | sort -rn)
 
-# Add NVIM logo at top (green: 107)
-NVIM_GREEN="\033[38;5;107m"
+# Add NVIM logo at top — match the Keyword highlight from the active nvim colorscheme
+# (same colour the Snacks dashboard header displays)
+load_fzf_theme
+LOGO_COLOUR=""
+_nvim_colors="${XDG_CONFIG_HOME:-$HOME/.config}/nvim/colors"
+_scheme="${NVIM_COLORSCHEME:-dracula}"
+SCHEME_FILE="${_nvim_colors}/${_scheme}.lua"
+[[ -f "$SCHEME_FILE" ]] || SCHEME_FILE="${_nvim_colors}/generated/${_scheme}.lua"
+if [[ -f "$SCHEME_FILE" ]]; then
+    # Try direct hex: hl('Keyword', { fg = '#rrggbb' })
+    LOGO_COLOUR=$(grep "^hl('Keyword'" "$SCHEME_FILE" | grep -oE "'#[0-9a-fA-F]{6}'" | tr -d "'" | head -1 || true)
+    if [[ -z "$LOGO_COLOUR" ]]; then
+        # Named colour: hl('Keyword', { fg = colors.name })
+        _cname=$(grep "^hl('Keyword'" "$SCHEME_FILE" | grep -oE 'colors\.[a-z_]+' | head -1 | cut -d. -f2 || true)
+        [[ -n "$_cname" ]] && LOGO_COLOUR=$(grep "  ${_cname} = '#" "$SCHEME_FILE" | grep -oE "'#[0-9a-fA-F]{6}'" | tr -d "'" | head -1 || true)
+    fi
+fi
+[[ -z "$LOGO_COLOUR" ]] && LOGO_COLOUR="${TMUX_ACCENT_GREEN:-#50fa7b}"
+NVIM_GREEN=$(hex_fg "$LOGO_COLOUR")
 echo ""
-printf "${NVIM_GREEN}███╗   ██╗██╗   ██╗██╗███╗   ███╗${NC}\n"
-printf "${NVIM_GREEN}████╗  ██║██║   ██║██║████╗ ████║${NC}\n"
-printf "${NVIM_GREEN}██╔██╗ ██║██║   ██║██║██╔████╔██║${NC}\n"
-printf "${NVIM_GREEN}██║╚██╗██║╚██╗ ██╔╝██║██║╚██╔╝██║${NC}\n"
-printf "${NVIM_GREEN}██║ ╚████║ ╚████╔╝ ██║██║ ╚═╝ ██║${NC}\n"
-printf "${NVIM_GREEN}╚═╝  ╚═══╝  ╚═══╝  ╚═╝╚═╝     ╚═╝${NC}\n"
+printf "${NVIM_GREEN}            ▗${NC}\n"
+printf "${NVIM_GREEN}▛▀▖▞▀▖▞▀▖▌ ▌▄ ▛▚▀▖${NC}\n"
+printf "${NVIM_GREEN}▌ ▌▛▀ ▌ ▌▐▐ ▐ ▌▐ ▌${NC}\n"
+printf "${NVIM_GREEN}▘ ▘▝▀▘▝▀  ▘ ▀▘▘▝ ▘${NC}\n"
 echo ""
 
 # Display results (empty list shows just the logo)
