@@ -3,6 +3,8 @@
 # Usage: agent-alert.sh [agent_name]
 # Called by Claude Code PostToolCall hook
 
+[[ -z "$TMUX" ]] && exit 0
+
 AGENT="${1:-claude}"
 
 # Source the alerts library

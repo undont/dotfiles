@@ -172,12 +172,16 @@ _cached_eval() {
   local cache_file="$cache_dir/$name.zsh"
   local bin_path="${commands[$name]}"
 
-  if [[ -n "$bin_path" && -f "$cache_file" && "$cache_file" -nt "$bin_path" ]]; then
+  if [[ -n "$bin_path" && -s "$cache_file" && "$cache_file" -nt "$bin_path" ]]; then
     source "$cache_file"
   else
     [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
     "$@" > "$cache_file"
-    source "$cache_file"
+    if [[ -s "$cache_file" ]]; then
+      source "$cache_file"
+    else
+      rm -f "$cache_file"
+    fi
   fi
 }
 
@@ -234,9 +238,11 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
 
   # Wrap fzf ZLE widgets so Ctrl+R/T pick up theme changes immediately
   for _w in fzf-file-widget fzf-history-widget; do
-    zle -A "$_w" "_orig-$_w"
-    eval "_wrapped-${_w}() { _fzf_theme_refresh; zle _orig-${_w}; }"
-    zle -N "$_w" "_wrapped-${_w}"
+    if zle -l "$_w" &>/dev/null; then
+      zle -A "$_w" "_orig-$_w"
+      eval "_wrapped-${_w}() { _fzf_theme_refresh; zle _orig-${_w}; }"
+      zle -N "$_w" "_wrapped-${_w}"
+    fi
   done
   unset _w
 

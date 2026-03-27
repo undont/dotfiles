@@ -2,6 +2,8 @@
 # Agent alert clear hook: Clear alert when user interacts
 # Called by Claude Code PreToolCall hook
 
+[[ -z "$TMUX" ]] && exit 0
+
 CLEAR_SCRIPT="${HOME}/.tmux/scripts/alerts/clear.sh"
 
 # Validate script exists and is a regular file (not a symlink)
