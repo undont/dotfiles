@@ -72,10 +72,11 @@ while IFS= read -r line; do
     fi
 done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
 
-# Add OpenCode logo at top
-# "open" in dark slate (colour 60), "code" in light blue (colour 103)
-DARK="\033[38;5;60m"
-LIGHT="\033[38;5;103m"
+# Add OpenCode logo at top (theme-aware, two-tone blue from cyan accent)
+load_fzf_theme
+ACCENT_CYAN="${TMUX_ACCENT_CYAN:-#8be9fd}"
+DARK=$(hex_fg "$(hex_dim "$ACCENT_CYAN" 65)")
+LIGHT=$(hex_fg "$ACCENT_CYAN")
 echo ""
 printf "${DARK}█▀▀█ █▀▀█ █▀▀█ █▀▀▄${NC} ${LIGHT}█▀▀ █▀▀█ █▀▀▄ █▀▀█${NC}\n"
 printf "${DARK}█  █ █  █ █▀▀▀ █  █${NC} ${LIGHT}█   █  █ █  █ █▀▀▀${NC}\n"
