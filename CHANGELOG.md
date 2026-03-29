@@ -12,6 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tmux: `prefix + R` re-sources `~/.zshrc` in all zsh panes across all sessions (with skip count for non-zsh panes)
 
 ### Changed
+- CLI: `print_logo` gradient is now theme-aware — sources active theme accent colours and interpolates dynamically (sage → forest default fallback)
 - Tmux: responsive popup sizing for kill confirmations (Opt+q/s/x) and help (prefix+h) — fixed size on wide terminals, 95% width on narrow/mobile
 - Tmux: help template updated to show `prefix + r / R` (reload / re-source) instead of old reload-locals label
 
