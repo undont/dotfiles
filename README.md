@@ -9,12 +9,13 @@
 **Personal configuration files for zsh, tmux, neovim, ghostty, git and much more.**
 
 [![CI](https://img.shields.io/github/actions/workflow/status/seanhalberthal/dotfiles/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/seanhalberthal/dotfiles/actions)
-[![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/seanhalberthal/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
-[![Licence](https://img.shields.io/github/license/seanhalberthal/dotfiles?style=flat&label=licence)](LICENCE)
-[![macOS](https://img.shields.io/badge/macOS-supported-000000?style=flat&logo=apple&logoColor=white)]()
-[![Linux](https://img.shields.io/badge/Linux-supported-FCC624?style=flat&logo=linux&logoColor=black)]()
+[![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/seanhalberthal/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json&style=flat&logo=ghostty&logoColor=white)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
+[![Licence](https://img.shields.io/github/license/seanhalberthal/dotfiles?style=flat&label=licence&color=6A9462)](LICENCE)
 [![Neovim](https://img.shields.io/badge/Neovim-0.11+-57A143?style=flat&logo=neovim&logoColor=white)](https://neovim.io/)
 [![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?style=flat&logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
+[![macOS](https://img.shields.io/badge/macOS-supported-6e7681?style=flat&logo=apple&logoColor=white)]()
+[![Linux](https://img.shields.io/badge/Linux-supported-6e7681?style=flat&logo=linux&logoColor=white)]()
+
 
 [Quick Start](#quick-start) · [Features](#-whats-inside) · [Themes](#-themes) · [Keybindings](#-keybindings) · [Docs](#documentation)
 
@@ -87,8 +88,9 @@ The installer detects what's already configured and only shows steps you still n
 
 ### Tmux — 60+ Custom Scripts, One Cohesive Workflow
 
-> Backtick (`` ` ``) prefix with vim-style navigation, 11 script categories, and 6 TPM plugins.
+> Backtick (`` ` ``) prefix with vim-style navigation, 11 script categories, and 6 TPM plugins. `Ctrl+b` as secondary prefix.
 
+- **Responsive popups** — pickers auto-size: compact on narrow terminals, full-size on wide screens
 - **Undo system** (`Opt/Alt+u`) — accidentally closed a pane or window? Restore it with full directory, scrollback, and layout
 - **Session save/restore** — tmux-resurrect + continuum with **per-session backups** (custom extension splits combined saves into individual files)
 - **Launcher picker** (`` ` p ``) — create, run, and manage session launchers with an interactive wizard
@@ -98,6 +100,7 @@ The installer detects what's already configured and only shows steps you still n
 - **Navigation history** (`` ` - `` / `` ` = ``) — browser-style back/forward across windows and sessions
 - **URL picker** (`` ` y ``) — grab URLs from scrollback via fzf popup
 - **Dotfiles sync indicator** — status bar shows `↓` `↑` `↕` when updates are available
+- **Reload shells** (`` ` R ``) — restart all shell panes without losing your session layout
 - **Local overrides** — `~/.config/tmux/local.conf` survives theme changes and updates
 
 ### Neovim — Modular Config, Diverse Tooling
@@ -220,6 +223,7 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the full architecture.
 | Close window | `Opt/Alt+x` |
 | Undo pane/window | `Opt/Alt+u` |
 | Reload local overrides | `` ` r `` |
+| Reload all shells | `` ` R `` |
 
 </td><td>
 
@@ -283,16 +287,19 @@ dotfiles/
 │   ├── colors/       # Self-contained colourschemes (15 hand-crafted + generated)
 │   ├── cheatsheet.txt # Searchable keybinding reference (Space ?)
 │   ├── snippets/     # Custom LuaSnip snippets
-│   └── lua/custom/   # Modular config (14 plugin files)
+│   └── lua/custom/   # Modular config (17 plugin files)
 │       ├── core/     # Options, keymaps, autocmds, theme, quickfix
 │       └── plugins/  # Plugin configurations
 ├── lazygit/          # LazyGit configuration
 ├── lazydocker/       # LazyDocker configuration
 ├── btop/             # System monitor configuration
 ├── launchers/        # Session launch scripts (picker: prefix + p)
-│   ├── dev          # Dev session launcher (zsh + nvim + claude)
+│   ├── dev           # Dev session (zsh + nvim + claude)
 │   ├── github        # gh-dash session
-│   └── btop          # System monitor session
+│   ├── btop          # System monitor session
+│   ├── docker        # LazyDocker session
+│   ├── dotfiles      # Dotfiles management session
+│   └── config        # Config editor session
 ├── hammerspoon/      # macOS automation (auto-centre windows)
 ├── gh-dash/          # GitHub dashboard (themed, keybindings, local overrides, dash-repo-sync)
 ├── ghostty/          # Terminal emulator (themed via dotfiles theme)

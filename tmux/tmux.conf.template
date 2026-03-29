@@ -10,7 +10,7 @@
 # See ~/.tmux/README.md for full documentation and setup guide.
 #
 # Quick reference:
-#   Prefix: ` (backtick)
+#   Prefix: ` (backtick) or Ctrl+b (mobile-friendly)
 #   Help:   ` h (popup with keybindings)
 #   Save:   ` w (like vim :w)
 #   List:   prefix + S (or `tls` in shell)
@@ -20,9 +20,11 @@
 # ══════════════════════════════════════════════════════════════
 
 # Prefix key: ` (backtick - single key, double-tap for literal)
-unbind C-b
+# Secondary prefix: Ctrl+b (mobile-friendly, works alongside backtick)
 set -g prefix `
+set -g prefix2 C-b
 bind ` send-prefix
+bind C-b send-prefix -2
 
 # Terminal colours: enable 256-colour and true colour (RGB) support
 set -g default-terminal "tmux-256color"
@@ -56,7 +58,7 @@ bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
       --border-label=' j/k ↓/↑ · g/G top/bottom · spc/⏎ sel · / srch · q/esc · n new · r rename · x kill · u undo ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
-      --preview-window=right:70% \
+      --preview-window='right,70%,<80(bottom,40%)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
@@ -135,6 +137,10 @@ bind -n M-] next-window              # Opt+]
 bind -n C-Enter next-window          # Ctrl+Enter
 bind -n C-S-Enter previous-window    # Ctrl+Shift+Enter
 
+# Previous/next window (prefix variants for mobile)
+bind , next-window                    # prefix + ,
+bind . previous-window                # prefix + .
+
 # Jump to window by number (requires prefix)
 bind 1 select-window -t 1
 bind 2 select-window -t 2
@@ -146,11 +152,15 @@ bind 5 select-window -t 5
 bind -n M-t new-window -c "#{pane_current_path}"    # Opt+t
 
 # Window operations (right-click menu alternatives)
-bind -n M-r display-popup -w 55 -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"    # Opt+r = rename window
+bind -n M-r display-popup -w 80% -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"    # Opt+r = rename window
 bind -n "M-{" swap-window -t -1 \; select-window -t -1                  # Opt+Shift+[ = swap left
 bind -n "M-}" swap-window -t +1 \; select-window -t +1                  # Opt+Shift+] = swap right
-bind -n M-x display-popup -E -w 60 -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"           # Opt+x = kill window (saves state for undo)
-bind -n M-q display-popup -E -w 60 -h 10 "~/.tmux/scripts/sessions/kill.sh"    # Opt+q = kill session (saves state for undo)
+bind -n M-x if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -E -w 50 -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"' \
+  'display-popup -E -w 95% -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"'
+bind -n M-q if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -E -w 50 -h 10 "~/.tmux/scripts/sessions/kill.sh"' \
+  'display-popup -E -w 95% -h 10 "~/.tmux/scripts/sessions/kill.sh"'
 bind -n M-u run-shell '~/.tmux/scripts/utils/undo-dispatch.sh'                  # Opt+u = undo last closed pane/window
 bind -n M-D run-shell '~/.tmux/scripts/windows/duplicate.sh'               # Opt+Shift+d = duplicate window
 
@@ -170,7 +180,7 @@ bind c display-popup -w 95% -h 95% -E "\
       --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
-      --preview-window=right:70% \
+      --preview-window='right,70%,<80(bottom,40%)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
@@ -197,7 +207,7 @@ bind o display-popup -w 95% -h 95% -E "\
       --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
-      --preview-window=right:70% \
+      --preview-window='right,70%,<80(bottom,40%)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
@@ -224,7 +234,7 @@ bind a display-popup -w 95% -h 95% -E "\
       --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
-      --preview-window=right:70% \
+      --preview-window='right,70%,<80(bottom,40%)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
@@ -252,7 +262,9 @@ bind -n M-- split-window -v -c "#{pane_current_path}"     # Opt+- = split down
 bind -n M-= split-window -v -b -c "#{pane_current_path}"  # Opt+= = split up
 
 # Pane operations
-bind -n M-s display-popup -E -w 60 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"    # Opt+s = close pane (saves state for undo)
+bind -n M-s if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -E -w 50 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"' \
+  'display-popup -E -w 95% -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"'
 bind -n M-z resize-pane -Z           # Opt+z = toggle zoom (fullscreen)
 bind -n "M-)" select-layout -E       # Opt+Shift+0 = equalise pane sizes
 bind E break-pane                      # `+Shift+e = break pane to new window
@@ -276,7 +288,7 @@ bind -n M-L resize-pane -R 5           # Opt+Shift+l = grow right
 # ─────────────────────────────────────────
 # prefix+u = find all URLs in scrollback and open selected one
 unbind u
-bind u display-popup -w 60% -h 60% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
+bind u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
 
 # ─────────────────────────────────────────
 # Nvim instance switcher (prefix + n)
@@ -297,7 +309,7 @@ bind n display-popup -w 95% -h 95% -E "\
       --border-label=' j/k · g/G · spc/⏎ sel · n new · x kill · / srch · q/esc ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
-      --preview-window=right:70% \
+      --preview-window='right,70%,<80(bottom,40%)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh nvim)+abort' \
@@ -368,41 +380,18 @@ bind -T copy-mode-vi Escape send-keys -X cancel       # Esc = quit scroll mode
 # Help
 # ─────────────────────────────────────────
 # Display keybinding reference popup (press Esc to close)
-bind h display-popup -w 74 -h 38 "~/.tmux/scripts/utils/show-help.sh; read -sk1"    # prefix + h
+bind h if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 74 -h 38 "~/.tmux/scripts/utils/show-help.sh; read -sk1"' \
+  'display-popup -w 95% -h 95% "~/.tmux/scripts/utils/show-help.sh; read -sk1"'
 
 # ─────────────────────────────────────────
 # Theme picker (prefix + t)
 # Navigation: j/k (↓/↑), d/u (half-page), g/G (top/bottom), f (fav), r (random)
 # Press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
-bind t display-popup -w 70 -h 24 -E "\
-  source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  THEME_LIST=\$(~/.tmux/scripts/themes/pick.sh); \
-  THEME_POS=\$(echo \"\$THEME_LIST\" | ~/.tmux/scripts/themes/pick.sh --pos); \
-  echo \"\$THEME_LIST\" | \
-  fzf --ansi --reverse --exact --disabled --cycle \
-      --with-nth=2.. \
-      --info=inline-right \
-      --bind \"start:clear-query+execute-silent(rm -f /tmp/.fzf-theme-pos)\" \
-      --bind \"load:pos(\$THEME_POS)\" \
-      --bind 'result:transform:[[ -f /tmp/.fzf-theme-pos ]] && { echo \"clear-query+\$(cat /tmp/.fzf-theme-pos)\"; rm -f /tmp/.fzf-theme-pos; } || true' \
-      --color=label:{{TMUX_FG_PRIMARY}} \
-      --header-lines=5 \
-      --padding=0,0,1,0 \
-      --prompt ': ' \
-      --border=rounded \
-      --border-label=' j/k · d/u · g/G · f fav · r rand · spc/⏎ sel · / srch · q/esc ' \
-      --border-label-pos=bottom \
-      --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort,space:accept' \
-      --bind 'enter:accept' \
-      --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
-      --bind 'f:execute-silent(~/.tmux/scripts/themes/pick.sh --toggle-fav {1})+reload-sync(~/.tmux/scripts/themes/pick.sh --reload {1})' \
-      --bind 'r:become(~/.tmux/scripts/themes/pick.sh --random)' \
-      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space,f,r)' \
-      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space,f,r)\" || echo \"abort\"' \
-      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' | \
-  awk '{print \$1}' | \
-  xargs -r sh -c '{{DOTFILES_ROOT}}/scripts/theme-switch \"\$1\" --no-reload --quiet && tmux source-file \$HOME/.tmux.conf && ~/.tmux/scripts/themes/reload-ghostty.sh && ~/.tmux/scripts/themes/reload-fzf.sh && tmux display-message \"Theme: \$1\"' _"
+bind t if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 70 -h 24 -E "~/.tmux/scripts/themes/picker.sh"' \
+  'display-popup -w 95% -h 95% -E "~/.tmux/scripts/themes/picker.sh"'
 
 # ─────────────────────────────────────────
 # Launcher picker (prefix + p)
@@ -410,7 +399,9 @@ bind t display-popup -w 70 -h 24 -E "\
 # Press / to start searching, Esc to return to navigation mode
 # Press n to create a new launcher
 # ─────────────────────────────────────────
-bind p display-popup -w 60% -h 60% -E "~/.tmux/scripts/launchers/picker.sh"
+bind p if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 60% -h 60% -E "~/.tmux/scripts/launchers/picker.sh"' \
+  'display-popup -w 95% -h 95% -E "~/.tmux/scripts/launchers/picker.sh"'
 
 # ─────────────────────────────────────────
 # Window switcher with vim-style navigation (prefix + f)
@@ -429,7 +420,7 @@ bind f display-popup -w 95% -h 95% -E "\
       --border-label=' j/k ↓/↑ · g/G top/bottom · spc/⏎ sel · / srch · a all · m move · r rename · q/esc · x kill · u undo ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
-      --preview-window=right:70% \
+      --preview-window='right,70%,<80(bottom,40%)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" || \$FZF_PROMPT == \"* \" ]] && echo \"clear-query\"' \
@@ -450,7 +441,8 @@ bind f display-popup -w 95% -h 95% -E "\
 set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
 set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
-set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ≡ #{ram_percentage} #[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] %a %h-%d %H:%M '
+# Responsive: full stats on wide terminals (≥80 cols), compact on narrow (mobile)
+set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ≡ #{ram_percentage} ,}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M '
 set -g status-left-length 30
 set -g status-right-length 150
 
@@ -626,7 +618,7 @@ bind s display-popup -w 95% -h 95% -E "\
       --border-label=' j/k ↓/↑ · g/G top/bottom · spc/⏎ sel · / srch · q/esc · n new · r rename · x kill · u undo ' \
       --border-label-pos=bottom \
       --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
-      --preview-window=right:70% \
+      --preview-window='right,70%,<80(bottom,40%)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
@@ -680,13 +672,16 @@ run '~/.tmux/plugins/tpm/tpm'
 
 # Override tmux-yank bindings (must be after plugin load)
 bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"
-bind u display-popup -w 60% -h 60% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
+bind u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
 
 # Override TPM's prefix+I to show a completion message after installing plugins
 bind I run-shell "~/.tmux/plugins/tpm/bin/install_plugins > /dev/null 2>&1" \; display-message "All plugins installed successfully!"    # prefix + I
 
 # Reload all local overrides (tmux + Ghostty + nvim)
 bind r run-shell "{{DOTFILES_ROOT}}/scripts/reload-locals.sh > /dev/null 2>&1"    # prefix + r
+
+# Reload shell config: source ~/.zshrc in all zsh panes across all sessions
+bind R run-shell '~/.tmux/scripts/utils/reload-shells.sh'    # prefix + R
 
 # User overrides (not managed by dotfiles — survives theme changes)
 source-file -q ~/.config/tmux/local.conf

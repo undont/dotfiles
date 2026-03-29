@@ -6,9 +6,9 @@
       white-space: pre;
     }
   </style>
-  <text x="50%" y="28" text-anchor="middle" fill="#8BE9FD"><![CDATA[     _       _    __ _ _          ]]></text>
-  <text x="50%" y="52" text-anchor="middle" fill="#9ECEFD"><![CDATA[  __| | ___ | |_ / _(_) | ___  ___  ]]></text>
-  <text x="50%" y="76" text-anchor="middle" fill="#B1B3FD"><![CDATA[ / _` |/ _ \| __| |_| | |/ _ \/ __| ]]></text>
-  <text x="50%" y="100" text-anchor="middle" fill="#BD93F9"><![CDATA[| (_| | (_) | |_|  _| | |  __/\__ \ ]]></text>
-  <text x="50%" y="124" text-anchor="middle" fill="#BD93F9"><![CDATA[ \__,_|\___/ \__|_| |_|_|\___||___/ ]]></text>
+  <text x="50%" y="28" text-anchor="middle" fill="#95c089"><![CDATA[     _       _    __ _ _          ]]></text>
+  <text x="50%" y="52" text-anchor="middle" fill="#95c089"><![CDATA[  __| | ___ | |_ / _(_) | ___  ___  ]]></text>
+  <text x="50%" y="76" text-anchor="middle" fill="#83c092"><![CDATA[ / _` |/ _ \| __| |_| | |/ _ \/ __| ]]></text>
+  <text x="50%" y="100" text-anchor="middle" fill="#7fbbb3"><![CDATA[| (_| | (_) | |_|  _| | |  __/\__ \ ]]></text>
+  <text x="50%" y="124" text-anchor="middle" fill="#7fbbb3"><![CDATA[ \__,_|\___/ \__|_| |_|_|\___||___/ ]]></text>
 </svg>
