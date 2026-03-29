@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.77] - 2026-03-30
+
+### Changed
+- Nvim: compatibility updates for Neovim 0.12.0 — LSP `execute_command` migrated to `client:exec_cmd`, dropped `supports_method` nvim 0.10 compat shim, bundled treesitter parser cleanup now checks both site and Lazy plugin dirs
+- Nvim: LSP hover (`K`) now closes diagnostic float to prevent overlap; diagnostic float suppressed while hover is open
+- Nvim: `@` file reference in claude-prompt uses saved cursor position, fixing off-by-one after Telescope closes
+- Zsh: `WORDCHARS` set so Opt+Backspace/Ctrl+W deletes one segment at a time for kebab-case, paths, and dotted names
+- CLAUDE.md trimmed to essentials; detailed guidance moved to `.claude/rules/`
+
+### Fixed
+- Nvim: treesitter swap-parameter guard now checks for nil parser (not just pcall failure)
+- Nvim: codecompanion `build = false` to prevent unnecessary build step
+
 ## [0.2.76] - 2026-03-29
 
 ### Added

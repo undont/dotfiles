@@ -39,6 +39,7 @@ nvim/colors/generated/
 # AI Code Assistants
 .claude/*
 !.claude/commands/
+!.claude/rules/
 .opencode
 
 # Local markdown files
