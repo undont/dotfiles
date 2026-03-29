@@ -212,8 +212,8 @@ main() {
         fail "reload-fzf.sh is not executable"
     fi
 
-    # Test: tmux theme picker calls reload-fzf.sh
-    if grep -q "reload-fzf.sh" "$DOTFILES_ROOT/tmux/tmux.conf.template"; then
+    # Test: tmux theme picker calls reload-fzf.sh (via picker.sh, not inline template)
+    if grep -q "reload-fzf.sh" "$DOTFILES_ROOT/tmux/scripts/themes/picker.sh"; then
         pass "tmux theme picker calls reload-fzf.sh"
     else
         fail "tmux theme picker does not call reload-fzf.sh"

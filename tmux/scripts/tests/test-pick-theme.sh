@@ -266,20 +266,14 @@ if ! $theme_picker_bound; then
     skip "theme-picker tmux binding check (not configured yet)"
 fi
 
-# Check that tmux binding includes reload-ghostty.sh
-if [[ -f "$tmux_config" ]]; then
-    if grep -q "reload-ghostty.sh" "$tmux_config"; then
-        pass "tmux binding includes reload-ghostty.sh"
+# Check that theme picker script calls reload-ghostty.sh
+# (moved from inline tmux template to picker.sh)
+PICKER_SCRIPT="$SCRIPT_DIR/../themes/picker.sh"
+if [[ -f "$PICKER_SCRIPT" ]]; then
+    if grep -q "reload-ghostty.sh" "$PICKER_SCRIPT"; then
+        pass "theme picker calls reload-ghostty.sh"
     else
-        fail "tmux binding should call reload-ghostty.sh"
-    fi
-fi
-
-if [[ -f "$tmux_template" ]]; then
-    if grep -q "reload-ghostty.sh" "$tmux_template"; then
-        pass "tmux template includes reload-ghostty.sh"
-    else
-        fail "tmux template should call reload-ghostty.sh"
+        fail "theme picker should call reload-ghostty.sh"
     fi
 fi
 
