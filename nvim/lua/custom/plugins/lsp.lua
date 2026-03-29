@@ -125,23 +125,25 @@ return {
             end, 50)
           end
 
-          local function apply_action(a)
+          local function apply_action(a, client)
             if a.edit then
               vim.lsp.util.apply_workspace_edit(a.edit, 'utf-8')
               applied = applied + 1
-            elseif a.command then
-              vim.lsp.buf.execute_command(a.command)
+            elseif a.command and client then
+              client:exec_cmd(a.command)
               applied = applied + 1
             end
             next_item()
           end
 
           local handled = false
-          vim.lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(err, result)
+          vim.lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(err, result, ctx)
             if handled then
               return
             end
             handled = true
+
+            local client = vim.lsp.get_client_by_id(ctx.client_id)
 
             if not err and result and #result > 0 then
               -- Prefer quickfix kind, fall back to first action
@@ -158,13 +160,13 @@ return {
               if not action.edit and not action.command then
                 vim.lsp.buf_request(bufnr, 'codeAction/resolve', action, function(resolve_err, resolved)
                   if not resolve_err and resolved then
-                    apply_action(resolved)
+                    apply_action(resolved, client)
                   else
                     next_item()
                   end
                 end)
               else
-                apply_action(action)
+                apply_action(action, client)
               end
             else
               next_item()
@@ -185,6 +187,12 @@ return {
           end
 
           -- LSP keymaps
+          map('K', function()
+            -- Close any open diagnostic float and suppress it until cursor moves
+            pcall(vim.api.nvim_win_close, vim.b[event.buf]._diag_float_win or -1, true)
+            vim.b._hover_open = true
+            vim.lsp.buf.hover()
+          end, 'Hover')
           map('grn', vim.lsp.buf.rename, 'Re[n]ame')
           map('gra', vim.lsp.buf.code_action, 'Code [A]ction', { 'n', 'x' })
           map('grf', fix_all_in_file, '[F]ix all in file')
@@ -222,13 +230,7 @@ return {
           ---@param bufnr? integer
           ---@return boolean
           local function client_supports_method(client, method, bufnr)
-            if vim.fn.has 'nvim-0.11' == 1 then
-              ---@diagnostic disable-next-line: undefined-field
-              return client:supports_method(method, bufnr)
-            else
-              ---@diagnostic disable-next-line: undefined-field
-              return client.supports_method(method, { bufnr = bufnr })
-            end
+            return client:supports_method(method, bufnr)
           end
 
           -- Document highlight on cursor hold

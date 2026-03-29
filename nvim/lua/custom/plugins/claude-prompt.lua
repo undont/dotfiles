@@ -33,6 +33,9 @@ return {
 
           -- Map @ in insert mode to open file picker
           vim.keymap.set('i', '@', function()
+            -- Capture insert-mode cursor position before stopinsert shifts it left
+            local insert_row = vim.fn.line '.'
+            local insert_col = vim.fn.col '.' -- 1-indexed; where next char would be typed
             vim.cmd 'stopinsert'
 
             local actions = require 'telescope.actions'
@@ -42,26 +45,37 @@ return {
               prompt_title = '@ File Reference',
               cwd = cwd,
               attach_mappings = function(prompt_bufnr, map)
-                -- On file selection: insert relative path
+                -- On file selection: insert relative path at saved cursor position
                 actions.select_default:replace(function()
                   local selection = action_state.get_selected_entry()
                   actions.close(prompt_bufnr)
                   vim.schedule(function()
                     if selection then
                       local path = selection.value or selection[1]
+                      local line = vim.api.nvim_get_current_line()
+                      local byte_col = insert_col - 1 -- 0-indexed for API
                       -- Add leading space if cursor follows a non-space character
-                      local col = vim.fn.col '.'
                       local prefix = ''
-                      if col > 1 then
-                        local line = vim.api.nvim_get_current_line()
-                        local before = line:sub(col - 1, col - 1)
+                      if byte_col > 0 then
+                        local before = line:sub(insert_col - 1, insert_col - 1)
                         if before ~= ' ' and before ~= '' then
                           prefix = ' '
                         end
                       end
-                      vim.api.nvim_put({ prefix .. '@' .. path }, 'c', false, true)
+                      local text = prefix .. '@' .. path
+                      local row = insert_row - 1 -- 0-indexed
+                      vim.api.nvim_buf_set_text(0, row, byte_col, row, byte_col, { text })
+                      -- Resume insert mode after inserted text
+                      local end_col = byte_col + #text
+                      if end_col >= #vim.api.nvim_get_current_line() then
+                        vim.cmd 'startinsert!'
+                      else
+                        vim.api.nvim_win_set_cursor(0, { insert_row, end_col })
+                        vim.cmd 'startinsert'
+                      end
+                    else
+                      vim.cmd 'startinsert!'
                     end
-                    vim.cmd 'startinsert!'
                   end)
                 end)
 

@@ -73,13 +73,17 @@ return {
         end
       end
 
-      -- Remove any nvim-treesitter-managed copies of parsers bundled with Neovim 0.11+
+      -- Remove any nvim-treesitter-managed copies of parsers bundled with Neovim
       -- so that Neovim's own (always-compatible) versions take precedence.
+      -- Check both the site parser dir and the Lazy plugin parser dir.
       local nvim_bundled = { 'lua', 'luadoc', 'vim', 'vimdoc', 'query', 'markdown', 'markdown_inline' }
-      for _, lang in ipairs(nvim_bundled) do
-        local so = parser_dir .. '/' .. lang .. '.so'
-        if vim.uv.fs_stat(so) then
-          os.remove(so)
+      local bundled_dirs = { parser_dir, plugin_dir .. '/parser' }
+      for _, dir in ipairs(bundled_dirs) do
+        for _, lang in ipairs(nvim_bundled) do
+          local so = dir .. '/' .. lang .. '.so'
+          if vim.uv.fs_stat(so) then
+            os.remove(so)
+          end
         end
       end
 
@@ -194,14 +198,16 @@ return {
 
       -- Swap parameters
       vim.keymap.set('n', '>p', function()
-        if not pcall(vim.treesitter.get_parser) then
+        local ok, parser = pcall(vim.treesitter.get_parser)
+        if not ok or not parser then
           vim.notify('No treesitter parser for this buffer', vim.log.levels.WARN)
           return
         end
         ts_swap.swap_next '@parameter.inner'
       end, { desc = 'Swap parameter right' })
       vim.keymap.set('n', '<p', function()
-        if not pcall(vim.treesitter.get_parser) then
+        local ok, parser = pcall(vim.treesitter.get_parser)
+        if not ok or not parser then
           vim.notify('No treesitter parser for this buffer', vim.log.levels.WARN)
           return
         end
