@@ -36,12 +36,13 @@ hex_dim() {
 
 # Print the dotfiles ASCII art logo with theme-aware gradient
 # Uses TMUX_ACCENT_CYAN → TMUX_ACCENT_PURPLE from the active theme
+# Defaults to sage → forest gradient when no theme is loaded
 # Call load_fzf_theme before this to ensure theme colours are available
 # Usage: print_dotfiles_logo
 # shellcheck disable=SC1003
 print_dotfiles_logo() {
-    local from="${TMUX_ACCENT_CYAN:-#8be9fd}"
-    local to="${TMUX_ACCENT_PURPLE:-#bd93f9}"
+    local from="${TMUX_ACCENT_CYAN:-#8baf9e}"
+    local to="${TMUX_ACCENT_PURPLE:-#38604a}"
 
     # Convert hex to RGB components
     local r1=$((16#${from:1:2})) g1=$((16#${from:3:2})) b1=$((16#${from:5:2}))

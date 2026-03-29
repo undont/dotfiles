@@ -20,6 +20,7 @@ A modern tmux setup with ergonomic keybindings, Dracula theme, and per-session b
 | List Copilot instances | `prefix + a`                    |
 | List nvim instances   | `prefix + n`                      |
 | Reload local overrides | `prefix + r`                     |
+| Re-source zsh panes   | `prefix + R`                      |
 
 ## Setup Guide (New Machine)
 
@@ -205,7 +206,7 @@ Restores the last closed pane or window (whichever was killed most recently). Re
 | Save all sessions        | `prefix + w` or `prefix + Ctrl+s` |
 | Restore all sessions     | `prefix + Ctrl+r`              |
 | List saved backups       | `prefix + S`                   |
-| Restore specific session | `prefix + R`                   |
+| Re-source zsh panes      | `prefix + R`                   |
 | Kill session             | `Opt/Alt+q`                    |
 
 ### Session/Window Switchers (Vim-Style Navigation)
@@ -334,7 +335,6 @@ This setup extends tmux-resurrect with custom per-session backup and restore.
 
 **Restore a single session (custom):**
 
-- Press `prefix + R` and enter the session name, OR
 - Run `trestore --session <name>` from the shell
 - Only that specific session is restored
 
@@ -479,6 +479,7 @@ Available session backups:
 │       ├── nav.sh                        # Browser-style back/forward history
 │       ├── undo-dispatch.sh              # Undo dispatcher (Opt+u)
 │       ├── pick-url.sh                   # URL picker (prefix + u)
+│       ├── reload-shells.sh              # Re-source ~/.zshrc in all panes (prefix + R)
 │       └── dotfiles-status.sh            # Status bar: sync indicator (↓↑↕)
 └── README.md                             # This file
 

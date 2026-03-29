@@ -315,7 +315,8 @@ should_install() {
     esac
 }
 
-# Display ASCII logo from logo.txt with gradient
+# Display ASCII logo from logo.txt with theme-aware gradient
+# Uses active theme colours when available, red gradient as default
 # Usage: print_logo
 print_logo() {
     local logo_file="${BASH_SOURCE%/*}/logo.txt"
@@ -330,26 +331,37 @@ print_logo() {
             return
         fi
 
+        # Load theme colours if a theme is active (skip on first install)
+        if [[ -z "${TMUX_ACCENT_CYAN:-}" ]]; then
+            local fzf_theme="${BASH_SOURCE%/*}/../fzf-theme.sh"
+            local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+            if [[ -f "$config_dir/current-theme" && -f "$fzf_theme" ]]; then
+                # shellcheck disable=SC1090
+                source "$fzf_theme"
+            fi
+        fi
+
+        # Theme-aware: use accent colours if available, sage → forest gradient as default
+        local from="${TMUX_ACCENT_CYAN:-#8baf9e}"
+        local to="${TMUX_ACCENT_PURPLE:-#38604a}"
+
         # Use truecolor gradient when terminal supports it, otherwise basic ANSI
         if [[ "${COLORTERM:-}" == "truecolor" || "${COLORTERM:-}" == "24bit" ]]; then
-            local gradient_colours
-            gradient_colours=(
-                $'\033[38;2;139;233;253m'  # Cyan
-                $'\033[38;2;158;206;253m'  # Cyan-Blue
-                $'\033[38;2;177;179;253m'  # Blue-Purple
-                $'\033[38;2;189;147;249m'  # Purple
-                $'\033[38;2;189;147;249m'  # Purple
-            )
+            local r1=$((16#${from:1:2})) g1=$((16#${from:3:2})) b1=$((16#${from:5:2}))
+            local r2=$((16#${to:1:2})) g2=$((16#${to:3:2})) b2=$((16#${to:5:2}))
 
             local i=0
             while IFS= read -r line || [[ -n "$line" ]]; do
-                printf "${gradient_colours[$i]}%s${NC}\n" "$line"
+                local r=$(( r1 + (r2 - r1) * i / 4 ))
+                local g=$(( g1 + (g2 - g1) * i / 4 ))
+                local b=$(( b1 + (b2 - b1) * i / 4 ))
+                printf "\033[38;2;%d;%d;%dm%s${NC}\n" "$r" "$g" "$b" "$line"
                 i=$((i + 1))
             done < "$logo_file"
         else
-            # Fallback: basic ANSI cyan
+            # Fallback: basic ANSI green
             while IFS= read -r line || [[ -n "$line" ]]; do
-                printf "${CYAN}%s${NC}\n" "$line"
+                printf "${GREEN}%s${NC}\n" "$line"
             done < "$logo_file"
         fi
         echo ""
