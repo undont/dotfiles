@@ -206,6 +206,11 @@ bindkey -e                             # Force emacs mode (Ctrl+A, Ctrl+E, etc.)
 # will be processed correctly, and tools like fzf can still use ESC to exit.
 export KEYTIMEOUT=1                    # Wait 10ms for more chars after ESC
 
+# Treat hyphens, dots, underscores, and slashes as word separators so
+# Opt+Backspace and Ctrl+W delete one segment at a time for kebab-case,
+# snake_case, dotted.name, and file/paths.
+WORDCHARS='*?[]~=&;!#$%^(){}<>'
+
 # =============================================================================
 # ZSH PLUGINS
 # =============================================================================

@@ -44,8 +44,13 @@ function M.setup()
     desc = 'Show diagnostic float and suppress virtual text',
     group = diag_float_group,
     callback = function()
+      -- Skip diagnostic float while LSP hover is open
+      if vim.b._hover_open then
+        return
+      end
       local _, win = vim.diagnostic.open_float(nil, { focusable = false, scope = 'cursor' })
       if win then
+        vim.b._diag_float_win = win
         vtext_hidden = true
         vim.diagnostic.config { virtual_text = false }
       end
@@ -56,6 +61,7 @@ function M.setup()
     desc = 'Restore virtual text after diagnostic float closes',
     group = diag_float_group,
     callback = function()
+      vim.b._hover_open = nil
       if vtext_hidden then
         vtext_hidden = false
         vim.diagnostic.config { virtual_text = { source = 'if_many', spacing = 2 } }
