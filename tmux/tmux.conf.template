@@ -155,8 +155,12 @@ bind -n M-t new-window -c "#{pane_current_path}"    # Opt+t
 bind -n M-r display-popup -w 80% -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"    # Opt+r = rename window
 bind -n "M-{" swap-window -t -1 \; select-window -t -1                  # Opt+Shift+[ = swap left
 bind -n "M-}" swap-window -t +1 \; select-window -t +1                  # Opt+Shift+] = swap right
-bind -n M-x display-popup -E -w 80% -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"           # Opt+x = kill window (saves state for undo)
-bind -n M-q display-popup -E -w 80% -h 10 "~/.tmux/scripts/sessions/kill.sh"    # Opt+q = kill session (saves state for undo)
+bind -n M-x if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -E -w 50 -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"' \
+  'display-popup -E -w 95% -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"'
+bind -n M-q if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -E -w 50 -h 10 "~/.tmux/scripts/sessions/kill.sh"' \
+  'display-popup -E -w 95% -h 10 "~/.tmux/scripts/sessions/kill.sh"'
 bind -n M-u run-shell '~/.tmux/scripts/utils/undo-dispatch.sh'                  # Opt+u = undo last closed pane/window
 bind -n M-D run-shell '~/.tmux/scripts/windows/duplicate.sh'               # Opt+Shift+d = duplicate window
 
@@ -258,7 +262,9 @@ bind -n M-- split-window -v -c "#{pane_current_path}"     # Opt+- = split down
 bind -n M-= split-window -v -b -c "#{pane_current_path}"  # Opt+= = split up
 
 # Pane operations
-bind -n M-s display-popup -E -w 80% -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"    # Opt+s = close pane (saves state for undo)
+bind -n M-s if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -E -w 50 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"' \
+  'display-popup -E -w 95% -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"'
 bind -n M-z resize-pane -Z           # Opt+z = toggle zoom (fullscreen)
 bind -n "M-)" select-layout -E       # Opt+Shift+0 = equalise pane sizes
 bind E break-pane                      # `+Shift+e = break pane to new window
@@ -374,7 +380,9 @@ bind -T copy-mode-vi Escape send-keys -X cancel       # Esc = quit scroll mode
 # Help
 # ─────────────────────────────────────────
 # Display keybinding reference popup (press Esc to close)
-bind h display-popup -w 95% -h 95% "~/.tmux/scripts/utils/show-help.sh; read -sk1"    # prefix + h
+bind h if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 74 -h 38 "~/.tmux/scripts/utils/show-help.sh; read -sk1"' \
+  'display-popup -w 95% -h 95% "~/.tmux/scripts/utils/show-help.sh; read -sk1"'
 
 # ─────────────────────────────────────────
 # Theme picker (prefix + t)
@@ -671,6 +679,9 @@ bind I run-shell "~/.tmux/plugins/tpm/bin/install_plugins > /dev/null 2>&1" \; d
 
 # Reload all local overrides (tmux + Ghostty + nvim)
 bind r run-shell "{{DOTFILES_ROOT}}/scripts/reload-locals.sh > /dev/null 2>&1"    # prefix + r
+
+# Reload shell config: source ~/.zshrc in all zsh panes across all sessions
+bind R run-shell '~/.tmux/scripts/utils/reload-shells.sh'    # prefix + R
 
 # User overrides (not managed by dotfiles — survives theme changes)
 source-file -q ~/.config/tmux/local.conf

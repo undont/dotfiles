@@ -19,7 +19,7 @@
 ║  f / b            page dn/up  ║  ` w              save all           ║
 ║  d / u            half-page   ║  ` d              detach             ║
 ║  ^d / ^u          top/bot ln  ║  ` h              this help          ║
-║  g / G            top/bottom  ║  ` r              reload locals      ║
+║  g / G            top/bottom  ║  ` r / ` R        reload / re-source ║
 ║  / / ?            search ↓/↑  ║  {{M}}+u            undo pane/win      ║
 ║  n / N            next / prev ║  {{M}}+q            kill session       ║
 ║  v / V            select/line ║  ` - / ` =        back / forward     ║

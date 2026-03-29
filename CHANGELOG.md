@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.76] - 2026-03-29
+
+### Added
+- Tmux: `prefix + R` re-sources `~/.zshrc` in all zsh panes across all sessions (with skip count for non-zsh panes)
+
+### Changed
+- Tmux: responsive popup sizing for kill confirmations (Opt+q/s/x) and help (prefix+h) — fixed size on wide terminals, 95% width on narrow/mobile
+- Tmux: help template updated to show `prefix + r / R` (reload / re-source) instead of old reload-locals label
+
 ## [0.2.75] - 2026-03-27
 
 ### Changed
