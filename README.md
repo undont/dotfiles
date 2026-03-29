@@ -10,7 +10,7 @@
 
 [![CI](https://img.shields.io/github/actions/workflow/status/seanhalberthal/dotfiles/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/seanhalberthal/dotfiles/actions)
 [![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/seanhalberthal/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json&style=flat&logo=ghostty&logoColor=white)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
-[![Licence](https://img.shields.io/github/license/seanhalberthal/dotfiles?style=flat&label=licence&color=6366F1)](LICENCE)
+[![Licence](https://img.shields.io/github/license/seanhalberthal/dotfiles?style=flat&label=licence&color=6A9462)](LICENCE)
 [![Neovim](https://img.shields.io/badge/Neovim-0.11+-57A143?style=flat&logo=neovim&logoColor=white)](https://neovim.io/)
 [![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?style=flat&logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
 [![macOS](https://img.shields.io/badge/macOS-supported-6e7681?style=flat&logo=apple&logoColor=white)]()
