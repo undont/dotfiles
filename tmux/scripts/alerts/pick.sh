@@ -63,12 +63,12 @@ _extract_target() {
     printf '%s' "$1" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $2}'
 }
 
-entries=$(_load_entries)
-count=$(printf '%s\n' "$entries" | grep -c .)
+entry_list=$(_load_entries)
+count=$(printf '%s\n' "$entry_list" | grep -c .)
 
 # --list mode: just output entries for fzf reload (empty if none)
 if [[ $LIST_MODE -eq 1 ]]; then
-    printf '%s\n' "$entries"
+    printf '%s\n' "$entry_list"
     exit 0
 fi
 
@@ -87,7 +87,7 @@ if [[ $count -eq 0 ]]; then
 fi
 
 # Show fzf picker (handles single or multiple alerts)
-selected=$(printf '%s\n' "$entries" | fzf \
+selected=$(printf '%s\n' "$entry_list" | fzf \
     --ansi --reverse --exact --cycle \
     --no-info --no-header \
     --prompt ': ' \
