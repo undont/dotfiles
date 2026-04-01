@@ -163,7 +163,7 @@ Toggle show deleted | <leader>tD
 Diffview open (vs index) | <leader>do
 Diffview close | <leader>dc
 Diffview file history | <leader>dh
-Diffview by ticket | <leader>dt
+Diffview branch total (vs main) | <leader>dt
 Toggle inline blame | <leader>db
 Blame line popup | <leader>dB
 Diffview PR review | <leader>dp

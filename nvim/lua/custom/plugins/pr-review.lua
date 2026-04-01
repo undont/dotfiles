@@ -159,29 +159,16 @@ return {
       {
         '<leader>dt',
         function()
-          -- Extract ticket from branch name (e.g., feature/ACME-1234-description)
-          local branch = vim.fn.systemlist('git branch --show-current')[1] or ''
-          local ticket = branch:match('([A-Z]+-%d+)')
+          local base = vim.fn.systemlist('git merge-base main HEAD')[1]
 
-          if not ticket then
-            vim.notify('No ticket found in branch name: ' .. branch, vim.log.levels.WARN)
+          if not base or base == '' then
+            vim.notify('Could not find merge-base with main', vim.log.levels.WARN)
             return
           end
 
-          -- get matching commits (oldest first)
-          local commits = vim.fn.systemlist('git log --reverse --pretty=format:%H --grep=' .. vim.fn.shellescape(ticket))
-
-          if #commits == 0 then
-            vim.notify('No commits found for ' .. ticket, vim.log.levels.WARN)
-            return
-          end
-
-          local base = commits[1]
-          local head = commits[#commits]
-
-          diffview_open('DiffviewOpen ' .. base .. '^...' .. head)
+          diffview_open('DiffviewOpen ' .. base .. '...HEAD')
         end,
-        desc = '[D]iff by [T]icket',
+        desc = '[D]iff branch [T]otal (vs main)',
       },
       { '<leader>de', edit_diff_file, desc = '[D]iff [E]dit file' },
       {
