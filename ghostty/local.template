@@ -22,3 +22,9 @@
 #   window-padding-x = 4
 #   window-padding-y = 4
 #   mouse-hide-while-typing = false
+
+# Custom shaders (GPU post-processing effects):
+#   custom-shader = ~/dotfiles/ghostty/shaders/bloom.glsl
+#   custom-shader = ~/dotfiles/ghostty/shaders/starfield.glsl
+#   custom-shader = ~/dotfiles/ghostty/shaders/crt.glsl
+#   custom-shader-animation = true

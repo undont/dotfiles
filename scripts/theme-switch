@@ -251,48 +251,22 @@ apply_theme() {
         ghostty_tmp=$(mktemp)
         platform_tmp=$(mktemp)
 
-        # Build platform-specific config (macOS uses opt+, Linux uses alt+)
+        # Platform-specific settings (keybindings use {{PLATFORM_MOD}} in template)
+        local mod="alt"
         if is_macos; then
-            local mod="opt"
+            mod="opt"
             cat > "$platform_tmp" <<PLATFORM
-# macOS
 macos-icon = glass
 macos-icon-frame = chrome
 macos-option-as-alt = left
-
 PLATFORM
         else
-            local mod="alt"
             printf "# Linux\n" > "$platform_tmp"
         fi
 
-        cat >> "$platform_tmp" <<PLATFORM
-keybind = shift+enter=text:\x1b\r
-keybind = ctrl+enter=text:\x1b[13;5u
-keybind = ctrl+shift+enter=text:\x1b[13;6u
-keybind = ${mod}+c=text:\x1bc
-keybind = ${mod}+shift+[=text:\x1b{
-keybind = ${mod}+shift+]=text:\x1b}
-keybind = ${mod}+shift+h=text:\x1bH
-keybind = ${mod}+shift+j=text:\x1bJ
-keybind = ${mod}+shift+k=text:\x1bK
-keybind = ${mod}+shift+l=text:\x1bL
-keybind = ${mod}+shift+d=text:\x1bD
-keybind = ${mod}+shift+0=text:\x1b)
-keybind = ${mod}+up=text:\x1b[1;3A
-keybind = ${mod}+down=text:\x1b[1;3B
-keybind = ${mod}+3=text:#
-keybind = super+left=text:\x1b[H
-keybind = super+right=text:\x1b[F
-keybind = super+up=text:\x1b[1;5H
-keybind = super+down=text:\x1b[1;5F
-keybind = super+backspace=text:\x15
-keybind = shift+backspace=text:\x7f
-keybind = shift+space=text:\x20
-PLATFORM
-
         declare -A ghostty_vars=(
             [THEME_NAME]="$THEME_NAME"
+            [PLATFORM_MOD]="$mod"
             [GHOSTTY_BACKGROUND]="$GHOSTTY_BACKGROUND"
             [GHOSTTY_FOREGROUND]="$GHOSTTY_FOREGROUND"
             [GHOSTTY_CURSOR_COLOR]="$GHOSTTY_CURSOR_COLOR"
