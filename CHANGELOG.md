@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.78] - 2026-04-01
+
+### Added
+- Nvim: harpoon2 for quick file slot navigation (`<leader>1`–`4` to jump, `<leader>ha` to add, `<leader>hh` to toggle menu)
+- Nvim: `<leader>dt` diff-by-branch command — diffs all commits since branching from main using `git merge-base`
+- Tmux: alert picker (`prefix+A` / click status-right) with fzf integration — jump to alerting windows, `x` to clear individual alerts, search with `/`
+- Ghostty: custom shader collection (bloom, CRT, cursor-trail, galaxy, matrix, retro, starfield) with examples in local template
+
+### Changed
+- Nvim: LSP modernised — mason-lspconfig v2 `automatic_enable`, `vim.lsp.config` for global capabilities, cssls Tailwind v4 at-rules support
+- Nvim: switched from mini.notify to nvim-notify for notification handling
+- Nvim: .NET diagnostics — Roslyn pull diagnostic workaround with workspace diagnostics on save, csharpier/gofumpt formatters added
+- Nvim: `C-j`/`C-k` navigation added to Telescope results, completion menu, cmdline completion, and Neo-tree (file browser + fuzzy finder)
+- Nvim: git hunk prefix moved from `<leader>h` to `<leader>H` (freeing `h` for harpoon)
+- Nvim: pr-review diffview auto-closes existing view before opening a new one
+- Nvim: `<C-BS>` mapped to delete-word-back in command mode
+- Ghostty: keybindings moved from `theme-switch` into `config.template` using `{{PLATFORM_MOD}}` placeholder
+- Ghostty: added `super+backspace` keybind (kill line) and `window-theme = ghostty`
+- Tmux: responsive popup sizing for rename and kill windows (fixed size on wide terminals, 95% on narrow)
+- Tmux: Claude instance logo colour changed to pink (`#D78787`)
+- Lazydocker: fixed YAML structure — `returnImmediately` moved to correct nesting level, added `commandTemplates` with timestamps for log views, added `logs.timestamps` setting
+
+### Fixed
+- Lazydocker: migration script (`0.2.78`) to fix broken config nesting for existing installs
+
 ## [0.2.77] - 2026-03-30
 
 ### Changed
