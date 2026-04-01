@@ -212,7 +212,7 @@ return {
               -- Only restart clients that have server_capabilities (actual LSP servers)
               -- This filters out non-LSP clients like Copilot
               if client.server_capabilities then
-                vim.cmd('LspRestart ' .. client.name)
+                vim.cmd('lsp restart ' .. client.name)
                 restarted_count = restarted_count + 1
               end
             end
@@ -291,8 +291,10 @@ return {
 
       -- Hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
 
-      -- LSP capabilities with blink.cmp
-      local capabilities = require('blink.cmp').get_lsp_capabilities()
+      -- Apply blink.cmp capabilities to all LSP servers
+      vim.lsp.config('*', {
+        capabilities = require('blink.cmp').get_lsp_capabilities(),
+      })
 
       -- Override show_document to handle cursor position errors
       local show_document = vim.lsp.util.show_document
@@ -318,6 +320,24 @@ return {
         return ret
       end
 
+      -- Configure cssls to ignore Tailwind v4 at-rules (@theme, @apply, @custom-variant)
+      vim.lsp.config('cssls', {
+        settings = {
+          css = { lint = { unknownAtRules = 'ignore' } },
+        },
+      })
+
+      vim.lsp.config('lua_ls', {
+        settings = {
+          Lua = {
+            completion = { callSnippet = 'Replace' },
+            diagnostics = {
+              globals = { 'vim' },
+            },
+          },
+        },
+      })
+
       -- Server configurations
       local servers = {
         bashls = {},
@@ -326,35 +346,21 @@ return {
         eslint = {},
         gopls = {},
         html = {},
-        lua_ls = {
-          settings = {
-            Lua = {
-              completion = { callSnippet = 'Replace' },
-              diagnostics = {
-                globals = { 'vim' },
-              },
-            },
-          },
-        },
+        lua_ls = {},
         pyright = {},
+        tailwindcss = {},
         ts_ls = {},
         yamlls = {},
       }
 
       -- Setup LSP servers with mason-lspconfig
+      -- NOTE: handlers option was removed in mason-lspconfig v2.0.0
+      -- Servers are now auto-enabled via vim.lsp.enable() by automatic_enable (default)
       require('mason-lspconfig').setup {
         ensure_installed = vim.tbl_keys(servers or {}),
         automatic_installation = false,
-        handlers = {
-          function(server_name)
-            -- Skip omnisharp (using easy-dotnet's Roslyn LSP instead)
-            if server_name == 'omnisharp' then
-              return
-            end
-            local server = servers[server_name] or {}
-            server.capabilities = vim.tbl_deep_extend('force', {}, capabilities, server.capabilities or {})
-            require('lspconfig')[server_name].setup(server)
-          end,
+        automatic_enable = {
+          exclude = { 'omnisharp' }, -- Using easy-dotnet's Roslyn LSP instead
         },
       }
 
@@ -371,12 +377,15 @@ return {
           'html',
           'lua_ls',
           'pyright',
+          'tailwindcss',
           'ts_ls',
           'yamlls',
-          -- Formatters
-          'goimports',
-          'prettier',
-          'stylua',
+        -- Formatters
+        'csharpier',
+        'gofumpt',
+        'goimports',
+        'prettier',
+        'stylua',
           -- Linters
           'golangci-lint',
         },
@@ -393,7 +402,7 @@ return {
       {
         '<leader>f',
         function()
-          require('conform').format { async = true, lsp_format = 'fallback' }
+          require('conform').format({ async = true, lsp_format = 'fallback' })
         end,
         mode = '',
         desc = '[F]ormat buffer',
@@ -412,7 +421,8 @@ return {
         }
       end,
       formatters_by_ft = {
-        go = { 'goimports', 'gofmt' },
+        cs = { 'csharpier' },
+        go = { 'goimports', 'gofumpt' },
         javascript = { 'prettier' },
         javascriptreact = { 'prettier' },
         json = { 'prettier' },
