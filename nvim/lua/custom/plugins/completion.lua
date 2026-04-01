@@ -97,7 +97,7 @@ return {
       },
       cmdline = {
         enabled = true,
-        keymap = { 
+        keymap = {
           preset = 'inherit',
           ['<CR>'] = {
             function(cmp)
