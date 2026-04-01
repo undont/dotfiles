@@ -98,6 +98,16 @@ return {
   },
   opts = {
     popup_border_style = 'rounded',
+    window = {
+      mappings = {
+        ['<C-j>'] = function(state)
+          vim.api.nvim_feedkeys('j', 'n', false)
+        end,
+        ['<C-k>'] = function(state)
+          vim.api.nvim_feedkeys('k', 'n', false)
+        end,
+      },
+    },
     filesystem = {
       filtered_items = {
         visible = true,
@@ -107,6 +117,10 @@ return {
       window = {
         mappings = {
           ['|'] = 'close_window',
+        },
+        fuzzy_finder_mappings = {
+          ['<C-j>'] = 'move_cursor_down',
+          ['<C-k>'] = 'move_cursor_up',
         },
       },
     },

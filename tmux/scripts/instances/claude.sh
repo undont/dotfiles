@@ -78,11 +78,11 @@ while IFS= read -r line; do
     fi
 done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
 
-# Add Claude Code ghost at top (Anthropic orange: #d97757 ≈ 173)
+# Add Claude Code ghost at top (Anthropic pink: #D78787 ≈ 174)
 echo ""
-printf "\033[38;5;173m ▐▛███▜▌\033[0m\n"
-printf "\033[38;5;173m▝▜█████▛▘\033[0m\n"
-printf "\033[38;5;173m  ▘▘ ▝▝\033[0m\n"
+printf "\033[38;5;174m ▐▛███▜▌\033[0m\n"
+printf "\033[38;5;174m▝▜█████▛▘\033[0m\n"
+printf "\033[38;5;174m  ▘▘ ▝▝\033[0m\n"
 echo ""
 
 # Display results (empty list shows just the logo)

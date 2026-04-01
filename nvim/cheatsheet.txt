@@ -12,6 +12,17 @@ Remote flash | r (operator-pending)
 Treesitter search | R (operator-pending/visual)
 Toggle flash in search | Ctrl+s (command mode)
 
+## harpoon @harpoon
+Add file | <leader>ha
+List files | <leader>hl
+Go to file 1 | <leader>1
+Go to file 2 | <leader>2
+Go to file 3 | <leader>3
+Go to file 4 | <leader>4
+Remove current file | <leader>hd
+Clear all marks | <leader>hX
+Search in Telescope | <leader>hs
+
 ## search @search
 Find files | <leader>sf
 Live grep | <leader>sg
@@ -108,6 +119,11 @@ Resize left | <leader>wh
 Resize right | <leader>wl
 Resize down | <leader>wj
 Resize up | <leader>wk
+Maximise left | <leader>wH
+Maximise right | <leader>wL
+Maximise down | <leader>wJ
+Maximise up | <leader>wK
+Equalise windows | <leader>w=
 
 ## completion @completion
 Trigger completion | Ctrl+Space
@@ -133,23 +149,25 @@ Jump prev placeholder | Ctrl+j
 
 ## git @git
 Next/prev git change | ]c / [c
-Stage hunk | <leader>hs
-Reset hunk | <leader>hr
-Stage buffer | <leader>hS
-Undo stage hunk | <leader>hu
-Reset buffer | <leader>hR
-Preview hunk | <leader>hp
-Diff against index | <leader>hd
-Diff against last commit | <leader>hD
+Stage hunk | <leader>Hs
+Reset hunk | <leader>Hr
+Stage buffer | <leader>HS
+Undo stage hunk | <leader>Hu
+Reset buffer | <leader>HR
+Preview hunk | <leader>Hp
+Diff against index | <leader>Hd
+Diff against last commit | <leader>HD
 Toggle show deleted | <leader>tD
 
 ## diff @diff
 Diffview open (vs index) | <leader>do
 Diffview close | <leader>dc
 Diffview file history | <leader>dh
+Diffview branch total (vs main) | <leader>dt
 Toggle inline blame | <leader>db
 Blame line popup | <leader>dB
 Diffview PR review | <leader>dp
+Diffview edit file | <leader>de
 
 ## pr-review @pr-review
 List PRs | <leader>pl
@@ -219,6 +237,7 @@ Watch project | <leader>nw
 New item | <leader>nn
 Outdated packages | <leader>no
 Add missing imports | <leader>ni
+Debug project | <leader>nd
 
 ## buffers @buffers
 Delete buffer | <leader>bd
