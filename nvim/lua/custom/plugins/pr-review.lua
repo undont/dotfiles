@@ -1,11 +1,12 @@
 -- PR review plugins: diffview, octo
 
---- Run a diffview command, blocking if one is already open.
+--- Run a diffview command, closing any existing diffview first.
 local function diffview_open(cmd)
   local lib = require 'diffview.lib'
-  if lib.get_current_view() then
-    vim.notify('Diffview already open — close it first with <leader>dc', vim.log.levels.WARN)
-    return
+  local view = lib.get_current_view()
+  if view then
+    view:close()
+    lib.dispose_view(view)
   end
   vim.cmd(cmd)
 end
@@ -155,6 +156,33 @@ return {
         desc = '[D]iff [O]pen (vs index)',
       },
       { '<leader>dc', '<cmd>DiffviewClose<CR>', desc = '[D]iff [C]lose' },
+      {
+        '<leader>dt',
+        function()
+          -- Extract ticket from branch name (e.g., feature/ACME-1234-description)
+          local branch = vim.fn.systemlist('git branch --show-current')[1] or ''
+          local ticket = branch:match('([A-Z]+-%d+)')
+
+          if not ticket then
+            vim.notify('No ticket found in branch name: ' .. branch, vim.log.levels.WARN)
+            return
+          end
+
+          -- get matching commits (oldest first)
+          local commits = vim.fn.systemlist('git log --reverse --pretty=format:%H --grep=' .. vim.fn.shellescape(ticket))
+
+          if #commits == 0 then
+            vim.notify('No commits found for ' .. ticket, vim.log.levels.WARN)
+            return
+          end
+
+          local base = commits[1]
+          local head = commits[#commits]
+
+          diffview_open('DiffviewOpen ' .. base .. '^...' .. head)
+        end,
+        desc = '[D]iff by [T]icket',
+      },
       { '<leader>de', edit_diff_file, desc = '[D]iff [E]dit file' },
       {
         '<leader>dh',
