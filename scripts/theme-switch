@@ -286,6 +286,7 @@ keybind = super+left=text:\x1b[H
 keybind = super+right=text:\x1b[F
 keybind = super+up=text:\x1b[1;5H
 keybind = super+down=text:\x1b[1;5F
+keybind = super+backspace=text:\x15
 keybind = shift+backspace=text:\x7f
 keybind = shift+space=text:\x20
 PLATFORM
