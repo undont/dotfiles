@@ -34,3 +34,17 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - **Border labels** (fzf `--border-label`) omit brackets: `j/k ↓/↑ · g/G top/bottom · ...`
 - Use arrow icons (`↓/↑`) instead of words for up/down direction
 - Use `top/bottom` (not `first/last`) for `g/G` navigation
+
+## Responsive Popup Pattern
+
+Use `if-shell` with `#{client_width}` to show compact or full-width popups:
+
+```
+bind <key> if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 50 -h 10 -E "..."' \
+  'display-popup -w 95% -h 14 -E "..."'
+```
+
+- **Wide (≥80 cols)**: Fixed compact size (e.g., 50 wide, 10 tall)
+- **Narrow/mobile**: Percentage-based full width (95%), usually taller
+- Include `source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh` for theme colours

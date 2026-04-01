@@ -321,7 +321,7 @@ done
 section "Template Placeholder Alignment"
 
 # Placeholders substituted at runtime by theme-switch (not theme variables)
-runtime_placeholders="CLIPBOARD_CMD PLATFORM_CONFIG"
+runtime_placeholders="CLIPBOARD_CMD PLATFORM_CONFIG PLATFORM_MOD"
 
 # Check that template placeholders match theme variables
 if [[ -f "$TMUX_TEMPLATE" ]]; then

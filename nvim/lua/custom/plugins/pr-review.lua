@@ -1,11 +1,12 @@
 -- PR review plugins: diffview, octo
 
---- Run a diffview command, blocking if one is already open.
+--- Run a diffview command, closing any existing diffview first.
 local function diffview_open(cmd)
   local lib = require 'diffview.lib'
-  if lib.get_current_view() then
-    vim.notify('Diffview already open — close it first with <leader>dc', vim.log.levels.WARN)
-    return
+  local view = lib.get_current_view()
+  if view then
+    view:close()
+    lib.dispose_view(view)
   end
   vim.cmd(cmd)
 end
@@ -155,6 +156,20 @@ return {
         desc = '[D]iff [O]pen (vs index)',
       },
       { '<leader>dc', '<cmd>DiffviewClose<CR>', desc = '[D]iff [C]lose' },
+      {
+        '<leader>dt',
+        function()
+          local base = vim.fn.systemlist('git merge-base main HEAD')[1]
+
+          if not base or base == '' then
+            vim.notify('Could not find merge-base with main', vim.log.levels.WARN)
+            return
+          end
+
+          diffview_open('DiffviewOpen ' .. base .. '...HEAD')
+        end,
+        desc = '[D]iff branch [T]otal (vs main)',
+      },
       { '<leader>de', edit_diff_file, desc = '[D]iff [E]dit file' },
       {
         '<leader>dh',

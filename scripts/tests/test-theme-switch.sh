@@ -47,6 +47,7 @@ cursor-color={{GHOSTTY_CURSOR_COLOR}}
 selection-background={{GHOSTTY_SELECTION_BG}}
 palette=0={{GHOSTTY_PALETTE_0}}
 palette=1={{GHOSTTY_PALETTE_1}}
+keybind={{PLATFORM_MOD}}+c=text:\x1bc
 EOF
 
     # Create test theme (using new base variable format)
@@ -369,6 +370,7 @@ apply_theme() {
         ghostty_content="\${ghostty_content//\\{\\{GHOSTTY_SELECTION_BG\\}\\}/\$GHOSTTY_SELECTION_BG}"
         ghostty_content="\${ghostty_content//\\{\\{GHOSTTY_PALETTE_0\\}\\}/\$GHOSTTY_PALETTE_0}"
         ghostty_content="\${ghostty_content//\\{\\{GHOSTTY_PALETTE_1\\}\\}/\$GHOSTTY_PALETTE_1}"
+        ghostty_content="\${ghostty_content//\\{\\{PLATFORM_MOD\\}\\}/opt}"
 
         echo "\$ghostty_content" > "\$GHOSTTY_OUTPUT"
     fi
@@ -434,6 +436,13 @@ if [[ -f "$TEST_GHOSTTY_OUTPUT" ]]; then
         pass "ghostty template substitutes THEME_NAME correctly"
     else
         fail "ghostty template should substitute THEME_NAME"
+    fi
+
+    # Check PLATFORM_MOD substitution (keybindings moved to template in this branch)
+    if [[ "$ghostty_content" == *"opt+c"* ]]; then
+        pass "ghostty template substitutes PLATFORM_MOD correctly"
+    else
+        fail "ghostty template should substitute PLATFORM_MOD (expected 'opt+c')"
     fi
 else
     fail "ghostty output file not created"
@@ -600,6 +609,32 @@ for theme_file in "$THEMES_DIR"/*.theme; do
         fi
     fi
 done
+
+section "Ghostty Config Template PLATFORM_MOD Placeholder"
+
+# Verify the real config.template uses {{PLATFORM_MOD}} for keybindings
+GHOSTTY_REAL_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
+if [[ -f "$GHOSTTY_REAL_TEMPLATE" ]]; then
+    if grep -q '{{PLATFORM_MOD}}' "$GHOSTTY_REAL_TEMPLATE"; then
+        pass "config.template uses {{PLATFORM_MOD}} placeholder"
+    else
+        fail "config.template should use {{PLATFORM_MOD}} for platform keybindings"
+    fi
+
+    # Keybindings should no longer be generated in theme-switch itself
+    if ! grep -q 'keybind.*=text:' "$THEME_SWITCH"; then
+        pass "theme-switch no longer contains inline keybindings"
+    else
+        fail "keybindings should be in config.template, not theme-switch"
+    fi
+fi
+
+# Verify theme-switch substitutes PLATFORM_MOD in ghostty_vars
+if grep -q 'PLATFORM_MOD' "$THEME_SWITCH"; then
+    pass "theme-switch includes PLATFORM_MOD in ghostty variable map"
+else
+    fail "theme-switch should substitute PLATFORM_MOD in ghostty_vars"
+fi
 
 section "Ghostty Reload Integration"
 

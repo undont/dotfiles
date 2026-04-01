@@ -28,7 +28,8 @@
 ║  q / Esc          exit mode   ║                                      ║
 ╠═ PICKERS / TOOLS ═════════════╩══════════════════════════════════════╣
 ║  ` c Claude · ` o OpenCode · ` a Copilot · ` n nvim · ` u URL        ║
-║  ` t theme · ` p launchers · ` Space fingers · ` I install           ║
+║  ` A alerts · ` t theme · ` p launchers · ` Space fingers            ║
+║  ` I install                                                         ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
                     Press Esc to close this help

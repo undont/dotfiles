@@ -71,6 +71,16 @@ bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
       --bind 'r:execute(~/.tmux/scripts/sessions/rename.sh \$(echo {} | cut -d\" \" -f1) >/dev/null)+reload-sync(~/.tmux/scripts/sessions/list.sh)' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
+# Click alerts in status-right to jump to alert source (or pick if multiple)
+bind -n MouseDown1StatusRight if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 50 -h 10 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"' \
+  'display-popup -w 95% -h 14 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"'
+
+# Alert picker (prefix + A) - keyboard shortcut for alerts
+bind A if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 50 -h 10 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"' \
+  'display-popup -w 95% -h 14 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"'
+
 # Indexing: start windows and panes at 1 (matches keyboard layout)
 set -g base-index 1
 setw -g pane-base-index 1
@@ -152,7 +162,9 @@ bind 5 select-window -t 5
 bind -n M-t new-window -c "#{pane_current_path}"    # Opt+t
 
 # Window operations (right-click menu alternatives)
-bind -n M-r display-popup -w 80% -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"    # Opt+r = rename window
+bind -n M-r if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 50 -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"' \
+  'display-popup -w 95% -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"'
 bind -n "M-{" swap-window -t -1 \; select-window -t -1                  # Opt+Shift+[ = swap left
 bind -n "M-}" swap-window -t +1 \; select-window -t +1                  # Opt+Shift+] = swap right
 bind -n M-x if-shell '[ #{client_width} -ge 80 ]' \
@@ -655,7 +667,7 @@ set-hook -g session-closed 'run-shell -b "~/.tmux/plugins/tmux-resurrect/scripts
 set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 
 # Track pane switches within the same window (doesn't fire after-select-window)
-set-hook -g after-select-pane 'run-shell -b "tmux set-option -pt \"#{pane_id}\" @pane-viewed \"$(date +%%s)\" 2>/dev/null || true"'
+set-hook -g after-select-pane 'run-shell -b "tmux set-option -pt \"#{pane_id}\" @pane-viewed \"$(date +%s)\" 2>/dev/null || true"'
 
 # Clean up stale alerts when window is renamed (catches native tmux renames)
 # Note: Our rename script (windows/rename.sh) handles the update directly;

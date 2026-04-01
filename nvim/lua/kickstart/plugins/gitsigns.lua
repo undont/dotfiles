@@ -53,21 +53,21 @@ return {
 
         -- Actions
         -- visual mode
-        map('v', '<leader>hs', function()
+        map('v', '<leader>Hs', function()
           gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
         end, { desc = '[S]tage hunk' })
-        map('v', '<leader>hr', function()
+        map('v', '<leader>Hr', function()
           gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
         end, { desc = '[R]eset hunk' })
         -- normal mode
-        map('n', '<leader>hs', gitsigns.stage_hunk, { desc = '[S]tage hunk' })
-        map('n', '<leader>hr', gitsigns.reset_hunk, { desc = '[R]eset hunk' })
-        map('n', '<leader>hS', gitsigns.stage_buffer, { desc = '[S]tage buffer' })
-        map('n', '<leader>hu', gitsigns.undo_stage_hunk, { desc = '[U]ndo stage hunk' })
-        map('n', '<leader>hR', gitsigns.reset_buffer, { desc = '[R]eset buffer' })
-        map('n', '<leader>hp', gitsigns.preview_hunk, { desc = '[P]review hunk' })
-        map('n', '<leader>hd', gitsigns.diffthis, { desc = '[D]iff against index' })
-        map('n', '<leader>hD', function()
+        map('n', '<leader>Hs', gitsigns.stage_hunk, { desc = '[S]tage hunk' })
+        map('n', '<leader>Hr', gitsigns.reset_hunk, { desc = '[R]eset hunk' })
+        map('n', '<leader>HS', gitsigns.stage_buffer, { desc = '[S]tage buffer' })
+        map('n', '<leader>Hu', gitsigns.undo_stage_hunk, { desc = '[U]ndo stage hunk' })
+        map('n', '<leader>HR', gitsigns.reset_buffer, { desc = '[R]eset buffer' })
+        map('n', '<leader>Hp', gitsigns.preview_hunk, { desc = '[P]review hunk' })
+        map('n', '<leader>Hd', gitsigns.diffthis, { desc = '[D]iff against index' })
+        map('n', '<leader>HD', function()
           gitsigns.diffthis '@'
         end, { desc = '[D]iff against last commit' })
         -- Blame (under <leader>d with diffview)

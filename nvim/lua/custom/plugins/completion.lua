@@ -54,6 +54,8 @@ return {
         ['<C-n>'] = { 'select_next', 'fallback' },
         ['<C-b>'] = { 'scroll_documentation_up', 'fallback' },
         ['<C-f>'] = { 'scroll_documentation_down', 'fallback' },
+        ['<C-j>'] = { 'select_next', 'fallback' },
+        ['<C-k>'] = { 'select_prev', 'fallback' },
       },
       appearance = {
         use_nvim_cmp_as_default = true,
@@ -91,6 +93,31 @@ return {
           },
           snippets = { score_offset = -3 },
           buffer = { score_offset = -5 },
+        },
+      },
+      cmdline = {
+        enabled = true,
+        keymap = {
+          preset = 'inherit',
+          ['<CR>'] = {
+            function(cmp)
+              if cmp.is_visible() then
+                return cmp.accept()
+              end
+            end,
+            'fallback',
+          },
+          ['<Tab>'] = { 'show', 'accept' },
+          ['<C-j>'] = { 'select_next', 'fallback' },
+          ['<C-k>'] = { 'select_prev', 'fallback' },
+          ['<C-space>'] = { 'show' },
+        },
+        sources = { 'buffer', 'cmdline' },
+        completion = {
+          menu = { auto_show = false },
+          list = {
+            selection = { preselect = true, auto_insert = false },
+          },
         },
       },
     },

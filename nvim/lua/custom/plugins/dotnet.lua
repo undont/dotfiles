@@ -72,6 +72,60 @@ return {
       current_solution.clear_selected_solution()
     end
 
+    -- Workaround: Roslyn's pull diagnostics (DocumentCompilerSemantic) return
+    -- false CS0246 errors. Roslyn doesn't support push diagnostics either, so
+    -- drop pull responses and use easy-dotnet's workspace diagnostics on save.
+    -- TODO: report upstream — https://github.com/GustavEikaas/easy-dotnet.nvim
+    local orig_on_diagnostic = vim.lsp.diagnostic.on_diagnostic
+    vim.lsp.diagnostic.on_diagnostic = function(err, result, ctx, ...)
+      local client = vim.lsp.get_client_by_id(ctx.client_id)
+      if client and client.name == 'easy_dotnet' then
+        return
+      end
+      return orig_on_diagnostic(err, result, ctx, ...)
+    end
+
+    -- Trigger workspace diagnostics on save via easy-dotnet's RPC (same as
+    -- :Dotnet diagnostics but automatic and filtered to .cs files).
+    vim.api.nvim_create_autocmd('BufWritePost', {
+      pattern = '*.cs',
+      callback = function()
+        local rpc = require 'easy-dotnet.rpc.rpc'
+        local diag_mod = require 'easy-dotnet.diagnostics'
+        local sln_parser = require 'easy-dotnet.parsers.sln-parse'
+
+        local sln = sln_parser.try_get_selected_solution_file()
+        if not sln then
+          return
+        end
+
+        rpc.global_rpc_client:initialize(function()
+          rpc.global_rpc_client.roslyn:get_workspace_diagnostics(sln, true, function(response)
+            diag_mod.populate_diagnostics(response, function(filename)
+              return filename:match '%.cs$' and not filename:match '/obj/' and not filename:match '/bin/'
+            end)
+          end)
+        end)
+      end,
+    })
+
+    -- 2. Fix misclassified semantic tokens on using directives.
+    --    Roslyn marks unresolved identifiers (e.g. FastEndpoints) as "variable"
+    --    instead of "namespace", making them appear unstyled. Override to @type.
+    vim.api.nvim_create_autocmd('LspTokenUpdate', {
+      callback = function(ev)
+        local token = ev.data.token
+        if token.type ~= 'variable' then
+          return
+        end
+        local line = vim.api.nvim_buf_get_lines(ev.buf, token.line, token.line + 1, false)[1]
+        if not line or not line:match '^%s*using%s' or line:match '[%(=]' then
+          return
+        end
+        vim.lsp.semantic_tokens.highlight_token(token, ev.buf, ev.data.client_id, '@type')
+      end,
+    })
+
     -- Add missing imports across .cs files that have missing-type errors
     local add_missing_imports_solution = require 'custom.plugins.dotnet.add_missing_imports'
 
@@ -84,8 +138,8 @@ return {
       -- Use built-in Roslyn LSP (replaces OmniSharp)
       -- Requires Neovim 0.11+
       lsp = {
-        enabled = true,
-        roslynator_enabled = true,
+        enabled = true,  -- Re-enable easy-dotnet's Roslyn LSP
+        roslynator_enabled = false,
         auto_refresh_codelens = false,
       },
       -- Keep test_runner for buffer signs (test indicators in gutter)
