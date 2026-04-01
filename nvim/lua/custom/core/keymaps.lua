@@ -42,7 +42,7 @@ function M.setup()
   vim.keymap.set('n', '<leader>z', function()
     if vim.t.zoomed then
       vim.cmd 'tab close'
-    else
+    elseif vim.fn.winnr '$' > 1 then
       vim.cmd 'tab split'
       vim.t.zoomed = true
     end
@@ -60,13 +60,16 @@ function M.setup()
   vim.keymap.set('n', '<leader>wJ', '<cmd>resize 1<CR>', { desc = 'Maximise [J] down (shrink height)' })
   vim.keymap.set('n', '<leader>wK', '<cmd>resize 999<CR>', { desc = 'Maximise [K] up (expand height)' })
 
+  -- Window resize (equalise)
+  vim.keymap.set('n', '<leader>w=', '<C-w>=', { desc = '[=] Equalise window sizes' })
+
   -- Line navigation: m/M for beginning/end of line, gm for marks
   vim.keymap.set({ 'n', 'v', 'o' }, 'm', '^', { desc = 'First non-blank character' })
   vim.keymap.set({ 'n', 'v', 'o' }, 'M', '$', { desc = 'End of line' })
   vim.keymap.set('n', 'gm', 'm', { desc = 'Set mark' })
 
   -- macOS-style navigation (Opt+arrows = word, Cmd+arrows = line)
-  vim.keymap.set('i', '<M-BS>', '<C-w>', { desc = 'Delete word backward (Opt+Backspace)' })
+  vim.keymap.set({ 'i', 'c' }, '<M-BS>', '<C-w>', { desc = 'Delete word backward (Opt+Backspace)' })
   vim.keymap.set('i', '<D-BS>', '<C-u>', { desc = 'Delete to beginning of line (Cmd+Backspace)' })
   vim.keymap.set({ 'n', 'v' }, '<M-Right>', 'w', { desc = 'Move word right (Opt+Right)' })
   vim.keymap.set({ 'n', 'v' }, '<M-Left>', 'b', { desc = 'Move word left (Opt+Left)' })
@@ -325,7 +328,9 @@ function M.setup()
     vim.cmd 'only'
 
     -- Stop all LSP clients
-    vim.lsp.stop_client(vim.lsp.get_clients(), true)
+    for _, client in ipairs(vim.lsp.get_clients()) do
+      client:stop(true)
+    end
 
     -- Wipe all buffers (closes diffview, stale scratch buffers, etc.)
     local bufs = vim.api.nvim_list_bufs()

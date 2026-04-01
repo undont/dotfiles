@@ -31,6 +31,8 @@ return {
         return grandparent .. '/' .. parent .. '/' .. tail
       end
 
+      local actions = require 'telescope.actions'
+
       require('telescope').setup {
         defaults = {
           -- Results show full relative path (default behaviour)
@@ -38,6 +40,28 @@ return {
           file_ignore_patterns = {
             '%.git/',
             '%.DS_Store',
+          },
+          mappings = {
+            i = {
+              ['<C-j>'] = actions.move_selection_next,
+              ['<C-k>'] = actions.move_selection_previous,
+              ['<C-f>'] = function(bufnr)
+                for _ = 1, 10 do
+                  actions.move_selection_next(bufnr)
+                end
+              end,
+              ['<C-b>'] = function(bufnr)
+                for _ = 1, 10 do
+                  actions.move_selection_previous(bufnr)
+                end
+              end,
+              ['<M-BS>'] = function()
+                vim.api.nvim_input '<C-w>'
+              end,
+              ['<C-u>'] = function(prompt_bufnr)
+                require('telescope.actions.state').get_current_picker(prompt_bufnr):set_prompt ''
+              end,
+            },
           },
         },
         pickers = {
@@ -97,6 +121,7 @@ return {
 
       pcall(require('telescope').load_extension, 'fzf')
       pcall(require('telescope').load_extension, 'ui-select')
+      pcall(require('telescope').load_extension, 'harpoon')
 
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = 'Search [H]elp' })
