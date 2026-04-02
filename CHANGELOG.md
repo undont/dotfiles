@@ -9,14 +9,20 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.79] - 2026-04-02
 
 ### Added
-- Nvim: editable breakpoint list (`<leader>BB`) — float with `dd` to remove, `<CR>` to jump
+- Nvim: editable breakpoint list (`<leader>bl`) — float with `dd` to remove, `<CR>` to jump
 - Nvim: roslyn auto-suppression during Octo PR review — re-enables when opening a real .cs file
 - Nvim: Octo review keybindings for viewed file tracking (`<Tab>` toggle, `]u`/`[u` navigate unviewed)
 - Nvim: .NET test explorer cheatsheet section with all keybindings
+- Nvim: neotest-vitest monorepo support — resolves vitest binary from nearest `node_modules` with cached subdirectory fallback
 
 ### Changed
 - Nvim: replaced easy-dotnet LSP with roslyn.nvim for C# diagnostics — real-time inline diagnostics, proper pull diagnostic support, cross-namespace dedup, false positive filtering (IDE0005, IDE0079, CA1825)
 - Nvim: .NET tests now use easy-dotnet.nvim's built-in test runner instead of abandoned neotest-dotnet — gutter signs, run/debug from buffer (`<leader>tr`/`<leader>td`), test explorer (`<leader>te`), peek stacktrace (`<leader>tp`)
+- Nvim: replaced fidget.nvim with nvim-notify for LSP progress, build status, and refresh messages
+- Nvim: neotest output preview — rounded border, larger floating window, dismiss with `Esc`/`Enter`/`q`
+- Nvim: dial.nvim increment/decrement guarded against non-modifiable buffers
+- Nvim: neotest keymaps silently skip `.cs` files (easy-dotnet handles them)
+- Nvim: notification history viewer — dynamic height and line wrapping
 - Nvim: cmdline completion trigger changed from Tab to Ctrl+Space, Tab now cycles results; cmdline source prioritised over buffer
 - Nvim: Mason custom registry added (Crashdummyy) for Roslyn LSP server auto-install
 - Nvim: refactored lsp.lua and dotnet.lua — extracted complex functions to reduce cognitive complexity
@@ -29,6 +35,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Removed
 - Nvim: neotest-dotnet adapter and associated monkey-patch workaround
 - Nvim: `<leader>ni` add missing imports command (roslyn.nvim handles Fix All natively)
+- Nvim: fidget.nvim plugin (replaced by nvim-notify)
+- Nvim: Flash treesitter keybinding (`S`) and mini.ai textobject setup
 
 ## [0.2.78] - 2026-04-01
 

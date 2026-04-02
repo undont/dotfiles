@@ -7,7 +7,6 @@ Half-page down/up | Ctrl+d / Ctrl+u
 Jump back/forward | Ctrl+o / Ctrl+i
 Set mark | gm{a-z}
 Flash jump | s
-Flash treesitter | S
 Remote flash | r (operator-pending)
 Treesitter search | R (operator-pending/visual)
 Toggle flash in search | Ctrl+s (command mode)
@@ -192,6 +191,8 @@ Convert to draft | <leader>pD
 Discard review | <leader>pd
 Thread resolve | <leader>pt
 Thread unresolve | <leader>pT
+Toggle file viewed | <Tab>
+Next/prev unviewed file | ]u / [u
 Next/prev changed file | ]f / [f
 
 ## debug @debug

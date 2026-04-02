@@ -112,7 +112,8 @@ nvim/
 |--------|---------|
 | Custom colourschemes (`nvim/colors/`) | 15 themes matching dotfiles theme system |
 | [auto-dark-mode.nvim](https://github.com/f-person/auto-dark-mode.nvim) | Follows system theme |
-| [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects, notify, bracketed navigation, splitjoin, pairs, hipatterns |
+| [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, bracketed navigation, splitjoin, pairs, hipatterns |
+| [nvim-notify](https://github.com/rcarriga/nvim-notify) | Notification manager with LSP progress routing |
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
 | [neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File explorer sidebar |
 | [which-key.nvim](https://github.com/folke/which-key.nvim) | Keybinding popup hints |
