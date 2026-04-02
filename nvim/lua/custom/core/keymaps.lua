@@ -319,6 +319,15 @@ function M.setup()
 
   -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()
+    -- Collect all vim.notify calls during refresh into a single notification
+    local collected = {}
+    local original_notify = vim.notify
+    vim.notify = function(msg, level, opts)
+      if type(msg) == 'string' and msg ~= '' then
+        table.insert(collected, msg)
+      end
+    end
+
     -- Close stateful plugins cleanly before wiping buffers
     pcall(vim.cmd, 'Neotree close')
     pcall(vim.cmd, 'DiffviewClose')
@@ -345,8 +354,12 @@ function M.setup()
 
     -- Open the dashboard in the current window (not as a float) for a clean start
     vim.defer_fn(function()
+      -- Restore vim.notify and show bundled notification
+      vim.notify = original_notify
+      table.insert(collected, 'Neovim refreshed')
+      vim.notify(table.concat(collected, '\n'), vim.log.levels.INFO)
+
       Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
-      vim.notify('Neovim refreshed', vim.log.levels.INFO)
     end, 200)
   end, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })
 

@@ -56,7 +56,7 @@ return {
     opts = {},
   },
 
-  -- Noice: enhanced LSP hover and signature help rendering (progress handled by fidget.nvim)
+  -- Noice: enhanced LSP hover and signature help rendering (progress handled by nvim-notify)
   {
     'folke/noice.nvim',
     event = 'VeryLazy',
@@ -178,6 +178,69 @@ return {
         vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true })
         vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf, silent = true })
       end
+
+      -- LSP progress → nvim-notify (replaces fidget.nvim)
+      local progress_notifications = {} ---@type table<string, number|nil>
+      vim.api.nvim_create_autocmd('LspProgress', {
+        callback = function(ev)
+          local data = ev.data
+          if not data or not data.params then
+            return
+          end
+          local val = data.params.value
+          if not val then
+            return
+          end
+
+          -- Skip roslyn's stale Restore progress tokens (never complete)
+          if val.title and val.title:match '^Restore' then
+            return
+          end
+
+          local client = vim.lsp.get_client_by_id(data.client_id)
+          local client_name = client and client.name or 'lsp'
+          local token = data.params.token
+          local key = data.client_id .. ':' .. tostring(token)
+
+          if val.kind == 'begin' then
+            local msg = val.title or 'Working...'
+            if val.message then
+              msg = msg .. ': ' .. val.message
+            end
+            progress_notifications[key] = vim.notify(msg, vim.log.levels.INFO, {
+              title = client_name,
+              timeout = false,
+              hide_from_history = true,
+            })
+          elseif val.kind == 'report' then
+            local existing = progress_notifications[key]
+            if existing then
+              local msg = val.message or val.title or 'Working...'
+              if val.percentage then
+                msg = msg .. ' (' .. val.percentage .. '%)'
+              end
+              vim.notify(msg, vim.log.levels.INFO, {
+                title = client_name,
+                replace = existing,
+                timeout = false,
+                hide_from_history = true,
+              })
+            end
+          elseif val.kind == 'end' then
+            local existing = progress_notifications[key]
+            if existing then
+              local msg = val.message or 'Done'
+              vim.notify(msg, vim.log.levels.INFO, {
+                title = client_name,
+                replace = existing,
+                timeout = 2000,
+                hide_from_history = true,
+              })
+              progress_notifications[key] = nil
+            end
+          end
+        end,
+      })
 
       -- Notification history viewer (warnings/errors only)
       vim.keymap.set('n', '<leader>Nn', function()

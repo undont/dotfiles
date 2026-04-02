@@ -232,24 +232,7 @@ return {
       },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-      {
-        'j-hui/fidget.nvim',
-        event = 'LspAttach',
-        opts = {
-          progress = {
-            display = {
-              format_message = function(msg)
-                -- Hide roslyn's stale Restore progress tokens (never complete)
-                if msg.title and msg.title:match '^Restore' then
-                  return nil
-                end
-                return require('fidget.progress.display').default_format_message(msg)
-              end,
-            },
-          },
-        },
-      },
-      'saghen/blink.cmp',
+'saghen/blink.cmp',
     },
     config = function()
       -- LSP attach autocmd

@@ -137,7 +137,7 @@ nvim/
 | [guess-indent.nvim](https://github.com/NMAC427/guess-indent.nvim) | Auto-detect indentation |
 | [lazydev.nvim](https://github.com/folke/lazydev.nvim) | Lua development for Neovim |
 | [noice.nvim](https://github.com/folke/noice.nvim) | Enhanced LSP hover and signature help rendering |
-| [fidget.nvim](https://github.com/j-hui/fidget.nvim) | LSP progress indicator |
+
 
 ### Git Integration
 
