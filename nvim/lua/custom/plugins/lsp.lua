@@ -232,7 +232,7 @@ return {
       },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-'saghen/blink.cmp',
+      'saghen/blink.cmp',
     },
     config = function()
       -- LSP attach autocmd
@@ -295,8 +295,6 @@ return {
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, 'Inlay [H]ints')
           end
-
-
         end,
       })
 

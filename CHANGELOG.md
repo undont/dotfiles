@@ -23,6 +23,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `dot -v` shows `-dev` suffix when CHANGELOG version isn't tagged yet
 - Nvim: roslyn notification spam suppressed ("Multiple potential target files found")
 
+### Fixed
+- Nvim: neotest-golang test discovery — unpinned from v1.15.1 to v2+ (supports current Go treesitter parser), removed unnecessary gotestsum runner dependency
+
 ### Removed
 - Nvim: neotest-dotnet adapter and associated monkey-patch workaround
 - Nvim: `<leader>ni` add missing imports command (roslyn.nvim handles Fix All natively)
