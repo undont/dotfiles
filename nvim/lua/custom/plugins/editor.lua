@@ -331,6 +331,7 @@ return {
       {
         '<C-a>',
         function()
+          if not vim.bo.modifiable then return end
           require('dial.map').manipulate('increment', 'normal')
         end,
         desc = 'Increment',
@@ -338,6 +339,7 @@ return {
       {
         '<C-x>',
         function()
+          if not vim.bo.modifiable then return end
           require('dial.map').manipulate('decrement', 'normal')
         end,
         desc = 'Decrement',
@@ -345,6 +347,7 @@ return {
       {
         'g<C-a>',
         function()
+          if not vim.bo.modifiable then return end
           require('dial.map').manipulate('increment', 'gnormal')
         end,
         desc = 'Increment (sequential)',
@@ -352,6 +355,7 @@ return {
       {
         'g<C-x>',
         function()
+          if not vim.bo.modifiable then return end
           require('dial.map').manipulate('decrement', 'gnormal')
         end,
         desc = 'Decrement (sequential)',
@@ -360,6 +364,7 @@ return {
         '<C-a>',
         mode = 'v',
         function()
+          if not vim.bo.modifiable then return end
           require('dial.map').manipulate('increment', 'visual')
         end,
         desc = 'Increment',
@@ -368,6 +373,7 @@ return {
         '<C-x>',
         mode = 'v',
         function()
+          if not vim.bo.modifiable then return end
           require('dial.map').manipulate('decrement', 'visual')
         end,
         desc = 'Decrement',
@@ -376,6 +382,7 @@ return {
         'g<C-a>',
         mode = 'v',
         function()
+          if not vim.bo.modifiable then return end
           require('dial.map').manipulate('increment', 'gvisual')
         end,
         desc = 'Increment (sequential)',
@@ -384,6 +391,7 @@ return {
         'g<C-x>',
         mode = 'v',
         function()
+          if not vim.bo.modifiable then return end
           require('dial.map').manipulate('decrement', 'gvisual')
         end,
         desc = 'Decrement (sequential)',

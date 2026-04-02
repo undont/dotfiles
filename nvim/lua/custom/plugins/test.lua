@@ -121,6 +121,11 @@ return {
       output = {
         open_on_run = false,
       },
+      floating = {
+        border = 'rounded',
+        max_height = 0.7,
+        max_width = 0.7,
+      },
       status = {
         virtual_text = true,
         signs = true,
@@ -133,5 +138,18 @@ return {
         unknown = '?',
       },
     }
+
+    -- Close output preview on any keypress for a transient popup feel
+    vim.api.nvim_create_autocmd('FileType', {
+      pattern = 'neotest-output',
+      callback = function(args)
+        local function close()
+          pcall(vim.api.nvim_buf_delete, args.buf, { force = true })
+        end
+        for _, key in ipairs { '<Esc>', '<CR>', 'q' } do
+          vim.keymap.set('n', key, close, { buffer = args.buf, nowait = true })
+        end
+      end,
+    })
   end,
 }
