@@ -19,7 +19,7 @@ return {
     'antoinemadec/FixCursorHold.nvim',
     'nvim-treesitter/nvim-treesitter',
     -- Adapters
-    { 'fredrikaverpil/neotest-golang', tag = 'v1.15.1' }, -- Go (v2+ needs statement_list, not yet in nvim-treesitter's parser)
+    'fredrikaverpil/neotest-golang', -- Go
     'marilari88/neotest-vitest', -- Vitest/Bun test runner
   },
   keys = {
@@ -72,7 +72,6 @@ return {
     require('neotest').setup {
       adapters = {
         require 'neotest-golang' {
-          runner = 'gotestsum',
           go_test_args = { '-v', '-count=1' },
         },
         require 'neotest-vitest' {
