@@ -116,7 +116,7 @@ nvim/
 | [nvim-notify](https://github.com/rcarriga/nvim-notify) | Notification manager with LSP progress routing |
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
 | [neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File explorer sidebar |
-| [which-key.nvim](https://github.com/folke/which-key.nvim) | Keybinding popup hints |
+| [which-key.nvim](https://github.com/folke/which-key.nvim) | Tiered keybinding popup — context groups shown by filetype |
 | [cheatsheet.nvim](https://github.com/sudormrfbin/cheatsheet.nvim) | Searchable keybinding/command cheatsheet |
 | [todo-comments.nvim](https://github.com/folke/todo-comments.nvim) | Highlight TODO/FIXME comments |
 | [trouble.nvim](https://github.com/folke/trouble.nvim) | Better diagnostics list and quickfix |

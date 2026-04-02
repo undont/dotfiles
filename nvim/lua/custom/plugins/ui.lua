@@ -6,33 +6,115 @@ return {
   -- See kickstart/plugins/neo-tree.lua
 
   -- Which-key for keybinding hints
+  -- Tiered display: top-level shows category groups only; standalone keys and
+  -- context-specific groups are hidden unless the filetype is relevant.
   {
     'folke/which-key.nvim',
     lazy = false, -- Load immediately to ensure leader preview works reliably
-    opts = {
-      delay = 0, -- Show immediately for snappy feel
-      icons = {
-        mappings = vim.g.have_nerd_font,
-      },
-      spec = {
-        { '<leader>a', group = '[A]I', icon = { icon = '󰚩 ', color = 'purple' } },
-        { '<leader>b', group = '[B]uffer', icon = { icon = '󰈔 ', color = 'azure' } },
-        { '<leader>B', group = '[B]reakpoint', icon = { icon = '', color = 'red' } },
-        { '<leader>c', group = '[C]laude', icon = { icon = '', color = 'green' } },
-        { '<leader>d', group = '[D]iff', icon = { cat = 'filetype', name = 'git' } },
-        { '<leader>H', group = 'Git [H]unk', icon = { cat = 'filetype', name = 'git' } },
-        { '<leader>l', group = '[L]SP', icon = { icon = '', color = 'orange' } },
-        { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' } },
-        { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' } },
-        { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' } },
-        { '<leader>s', group = '[S]earch', icon = { icon = '', color = 'green' } },
-        { '<leader>S', group = '[S]pell', icon = { icon = '󰓆 ', color = 'yellow' } },
-        { '<leader>t', group = '[T]est / Toggle', icon = { cat = 'filetype', name = 'neotest-summary' } },
-        { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'blue' } },
-        { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' } },
-        { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' } },
-      },
-    },
+    config = function()
+      local wk = require 'which-key'
+
+      -- Filetype sets for context gating
+      local dotnet_fts = { cs = true, fsharp = true, razor = true, xml = true }
+
+      wk.setup {
+        delay = 0, -- Show immediately for snappy feel
+        icons = {
+          mappings = vim.g.have_nerd_font,
+        },
+        spec = {
+          -- ── Always-visible groups ──
+          { '<leader>a', group = '[A]I', icon = { icon = '󰚩 ', color = 'purple' } },
+          { '<leader>b', group = '[B]uffer', icon = { icon = '󰈔 ', color = 'azure' } },
+          { '<leader>d', group = '[D]iff', icon = { cat = 'filetype', name = 'git' } },
+          { '<leader>H', group = 'Git [H]unk', icon = { cat = 'filetype', name = 'git' } },
+          { '<leader>h', group = '[H]arpoon', icon = { icon = '󱡀 ', color = 'cyan' } },
+          { '<leader>s', group = '[S]earch', icon = { icon = '', color = 'green' } },
+          { '<leader>S', group = '[S]pell', icon = { icon = '󰓆 ', color = 'yellow' } },
+          { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' } },
+          { '<leader>t', group = '[T]est / Toggle', icon = { cat = 'filetype', name = 'neotest-summary' } },
+          { '<leader>l', group = '[L]SP', icon = { icon = '', color = 'orange' } },
+          { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'blue' } },
+
+          -- ── Filetype-gated groups (hidden by default, shown in code files via autocmd) ──
+          { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' }, hidden = true },
+          { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = true },
+          { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = true },
+
+          -- ── Filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
+          { '<leader>c', group = '[C]laude', icon = { icon = '', color = 'green' }, hidden = true },
+          { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = true },
+          { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' }, hidden = true },
+          { '<leader>N', group = '[N]otifications', icon = { icon = '󰈸 ', color = 'yellow' } },
+
+          -- ── Always-hidden standalone keys (muscle memory) ──
+          { '<leader>1', hidden = true },
+          { '<leader>2', hidden = true },
+          { '<leader>3', hidden = true },
+          { '<leader>4', hidden = true },
+          { '<leader>e', hidden = true },
+          { '<leader>g', hidden = true },
+          { '<leader>i', hidden = true },
+
+          { '<leader>?', icon = { icon = '', color = 'cyan' } },
+          { '<leader>/', icon = { icon = '', color = 'green' } },
+          { '<leader><leader>', icon = { icon = '', color = 'azure' } },
+          { '<leader>z', icon = { icon = '', color = 'blue' } },
+          -- ── Conditionally hidden (shown in code files via autocmd) ──
+          { '<leader>q', icon = { icon = '', color = 'orange' }, hidden = true },
+          { '<leader>f', hidden = true },
+          { '<leader>bb', hidden = true },
+          { '<leader>bc', hidden = true },
+          { '<leader>bL', hidden = true },
+          { '<leader>bl', hidden = true },
+        },
+      }
+
+      -- Show/hide context-specific groups based on current buffer filetype
+      local non_code_fts = {
+        [''] = true,
+        dashboard = true,
+        lazy = true,
+        mason = true,
+        oil = true,
+        gitcommit = true,
+        gitrebase = true,
+        DressingInput = true,
+        TelescopePrompt = true,
+        ['neotest-summary'] = true,
+        ['neotest-output-panel'] = true,
+      }
+
+      vim.api.nvim_create_autocmd('BufEnter', {
+        group = vim.api.nvim_create_augroup('which-key-filetype', { clear = true }),
+        callback = function()
+          local ft = vim.bo.filetype
+          local is_code = vim.bo.buftype == '' and not non_code_fts[ft]
+          local is_markdown = ft == 'markdown'
+          local is_dotnet = dotnet_fts[ft] or false
+
+          wk.add {
+            -- Code-file groups (LSP, diagnostics, format, breakpoints)
+            { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' }, hidden = not is_code },
+            { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = not is_code },
+            { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = not is_code },
+            { '<leader>f', hidden = not is_code },
+            { '<leader>q', hidden = not is_code },
+            { '<leader>bb', hidden = not is_code },
+            { '<leader>bc', hidden = not is_code },
+            { '<leader>bL', hidden = not is_code },
+            { '<leader>bl', hidden = not is_code },
+
+            -- Markdown-only groups
+            { '<leader>c', group = '[C]laude', icon = { icon = '', color = 'green' }, hidden = not is_markdown },
+            { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = not is_markdown },
+
+            -- .NET-only group
+            { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' }, hidden = not is_dotnet },
+          }
+        end,
+      })
+    end,
   },
 
   -- Todo comments highlighting
