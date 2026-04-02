@@ -117,6 +117,7 @@ return {
           ' loaded$',
           '^Client initialized',
           '^No matching notification',
+          '^Multiple potential target files found', -- roslyn.nvim on non-file buffers (Octo, etc.)
         }
         if type(msg) == 'string' then
           for _, pat in ipairs(spam_patterns) do

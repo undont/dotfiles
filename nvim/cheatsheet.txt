@@ -199,8 +199,10 @@ Start/Continue | F5
 Step into | F1
 Step over | F2
 Step out | F3
-Toggle breakpoint | <leader>Bt
-Conditional breakpoint | <leader>Bc
+Toggle breakpoint | <leader>bp
+Conditional breakpoint | <leader>bc
+Logpoint | <leader>bl
+List breakpoints | <leader>bb
 Toggle debug UI | F7
 
 ## markdown @markdown
@@ -227,10 +229,24 @@ Stop test | <leader>tS
 Toggle watch | <leader>tw
 Debug nearest test | <leader>td
 Next/prev failed test | ]t / [t
-.NET test explorer | <leader>te
 .NET run test (buffer) | <leader>tr
 .NET debug test (buffer) | <leader>td
-.NET peek stacktrace | <leader>tp
+.NET peek stacktrace (buffer) | <leader>tp
+.NET test explorer | <leader>te
+
+## dotnet-test-explorer @dotnet-test-explorer
+Run test | r
+Run all tests | R
+Debug test | d
+Peek stacktrace | p
+Go to file | gf
+Build errors | ge
+Expand/collapse | o
+Expand all | E
+Collapse all | W
+Refresh | <C-r>
+Cancel | <C-c>
+Close | q
 
 ## dotnet @dotnet
 Run project | <leader>nr
