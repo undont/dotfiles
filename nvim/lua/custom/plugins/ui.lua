@@ -107,25 +107,32 @@ return {
       }
       vim.notify = notify
 
-      -- Suppress easy-dotnet progress spam - let "workspace ready" tell us if something went wrong
+      -- Suppress noisy notifications selectively
       local _original_notify = vim.notify
       vim.notify = function(msg, level, opts)
-        -- Block easy-dotnet LSP spam patterns (keep "Opening solution" visible)
-        local spam_patterns = {
-          '^Initializing',
-          '^Loading ',
-          ' loaded$',
-          '^Client initialized',
-          '^No matching notification',
-          '^Multiple potential target files found', -- roslyn.nvim on non-file buffers (Octo, etc.)
-        }
-        if type(msg) == 'string' then
-          for _, pat in ipairs(spam_patterns) do
+        if type(msg) ~= 'string' then
+          return _original_notify(msg, level, opts)
+        end
+
+        -- Global noise (source-agnostic)
+        if msg:match '^No matching notification' then
+          return
+        end
+        if msg:match '^Multiple potential target files found' then
+          return
+        end
+
+        -- Dotnet startup spam — only filter untitled (direct easy-dotnet calls) or dotnet-sourced
+        local title = opts and opts.title
+        if not title or title == 'Progress' or title:match 'roslyn' or title:match 'easy%-dotnet' then
+          local dotnet_spam = { '^Initializing', '^Loading ', ' loaded$', '^Client initialized' }
+          for _, pat in ipairs(dotnet_spam) do
             if msg:match(pat) then
-              return -- drop spam message
+              return
             end
           end
         end
+
         return _original_notify(msg, level, opts)
       end
 
@@ -262,9 +269,6 @@ return {
   {
     'echasnovski/mini.nvim',
     config = function()
-      -- Better Around/Inside textobjects
-      require('mini.ai').setup { n_lines = 500 }
-
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
       -- Prefix remapped from 's' to 'gs' to avoid clash with flash.nvim
       require('mini.surround').setup {

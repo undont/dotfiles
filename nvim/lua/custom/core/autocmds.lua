@@ -17,7 +17,11 @@ function M.setup()
   vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
     desc = 'Check for external file changes',
     group = reload_group,
-    command = 'checktime',
+    callback = function()
+      if vim.fn.getcmdwintype() == '' then
+        vim.cmd.checktime()
+      end
+    end,
   })
 
   -- Auto-save: Write buffer on change (with debounce via CursorHold)
