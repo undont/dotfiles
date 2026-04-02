@@ -346,7 +346,7 @@ LSP servers are managed by Mason. The following are configured:
 
 - **Bash** - bashls
 - **C/C++** - clangd
-- **C#** - Roslyn via easy-dotnet.nvim (replaces OmniSharp)
+- **C#** - Roslyn via roslyn.nvim (replaces OmniSharp)
 - **CSS** - cssls
 - **Go** - gopls
 - **HTML** - html

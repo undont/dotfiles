@@ -16,7 +16,15 @@ return {
   {
     'neovim/nvim-lspconfig',
     dependencies = {
-      { 'mason-org/mason.nvim', opts = {} },
+      {
+        'mason-org/mason.nvim',
+        opts = {
+          registries = {
+            'github:mason-org/mason-registry',
+            'github:Crashdummyy/mason-registry', -- roslyn LSP server
+          },
+        },
+      },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       { 'j-hui/fidget.nvim', event = 'LspAttach', opts = {} },
@@ -360,7 +368,7 @@ return {
         ensure_installed = vim.tbl_keys(servers or {}),
         automatic_installation = false,
         automatic_enable = {
-          exclude = { 'omnisharp' }, -- Using easy-dotnet's Roslyn LSP instead
+          exclude = { 'omnisharp' }, -- Using roslyn.nvim instead
         },
       }
 
@@ -380,6 +388,8 @@ return {
           'tailwindcss',
           'ts_ls',
           'yamlls',
+          -- Roslyn (C# LSP, from Crashdummyy/mason-registry)
+          'roslyn',
         -- Formatters
         'csharpier',
         'gofumpt',

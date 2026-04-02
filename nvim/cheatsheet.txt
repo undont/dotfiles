@@ -236,7 +236,6 @@ Manage secrets | <leader>ns
 Watch project | <leader>nw
 New item | <leader>nn
 Outdated packages | <leader>no
-Add missing imports | <leader>ni
 Debug project | <leader>nd
 
 ## buffers @buffers
