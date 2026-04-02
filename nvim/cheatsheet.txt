@@ -227,6 +227,10 @@ Stop test | <leader>tS
 Toggle watch | <leader>tw
 Debug nearest test | <leader>td
 Next/prev failed test | ]t / [t
+.NET test explorer | <leader>te
+.NET run test (buffer) | <leader>tr
+.NET debug test (buffer) | <leader>td
+.NET peek stacktrace | <leader>tp
 
 ## dotnet @dotnet
 Run project | <leader>nr

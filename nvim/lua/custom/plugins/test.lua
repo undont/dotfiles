@@ -1,5 +1,6 @@
 -- Test runner with neotest
 -- https://github.com/nvim-neotest/neotest
+-- .NET tests handled by easy-dotnet.nvim (see dotnet.lua)
 
 return {
   'nvim-neotest/neotest',
@@ -9,7 +10,6 @@ return {
     'antoinemadec/FixCursorHold.nvim',
     'nvim-treesitter/nvim-treesitter',
     -- Adapters
-    'Issafalcon/neotest-dotnet', -- .NET (xUnit, NUnit, MSTest)
     { 'fredrikaverpil/neotest-golang', tag = 'v1.15.1' }, -- Go (v2+ needs statement_list, not yet in nvim-treesitter's parser)
     'marilari88/neotest-vitest', -- Vitest/Bun test runner
   },
@@ -100,39 +100,8 @@ return {
     },
   },
   config = function()
-    local dotnet_adapter = require 'neotest-dotnet' {
-      discovery_root = 'project',
-      dap = { adapter_name = 'coreclr' },
-    }
-
-    -- Monkey-patch: force main-process parsing for dotnet tests.
-    -- neotest-dotnet's NUnit build_position calls get_node_text(node, string_source)
-    -- which crashes in Neovim 0.11 subprocess with ":start() nil". The subprocess
-    -- error propagates through nio as a throw (not a return), so neotest's built-in
-    -- fallback never runs. We disable subprocess for dotnet discovery only.
-    local orig_discover = dotnet_adapter.discover_positions
-    dotnet_adapter.discover_positions = function(path)
-      local lib = require 'neotest.lib'
-      local orig_enabled = lib.subprocess.enabled
-      lib.subprocess.enabled = function()
-        return false
-      end
-      local ok, result = pcall(orig_discover, path)
-      lib.subprocess.enabled = orig_enabled
-      if not ok then
-        local logger = require 'neotest.logging'
-        logger.warn('neotest-dotnet: discovery failed for ' .. path .. ': ' .. tostring(result))
-        local Tree = require 'neotest.types.tree'
-        return Tree.from_list({ { id = path, path = path, name = vim.fn.fnamemodify(path, ':t'), type = 'file' } }, function(pos)
-          return pos.id
-        end)
-      end
-      return result
-    end
-
     require('neotest').setup {
       adapters = {
-        dotnet_adapter,
         require 'neotest-golang' {
           runner = 'gotestsum',
           go_test_args = { '-v', '-count=1' },

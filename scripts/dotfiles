@@ -57,6 +57,18 @@ _changelog_local_version() {
     sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' "$DOTFILES_DIR/CHANGELOG.md" | head -1
 }
 
+# Format version with -dev suffix if the tag doesn't exist yet
+_format_version() {
+    local version="$1"
+    [[ -z "$version" ]] && return
+    cd "$DOTFILES_DIR"
+    if ! git rev-parse "v${version}" &>/dev/null; then
+        printf '%s-dev' "$version"
+    else
+        printf '%s' "$version"
+    fi
+}
+
 # Get the latest non-Unreleased version from CHANGELOG.md at a given git ref
 _changelog_version_at_ref() {
     local ref="$1"
@@ -503,7 +515,7 @@ cmd_status() {
     print_header "Dotfiles Status"
 
     # Summary line: version, preset, theme, branch
-    [[ -n "$version" ]] && printf "${CYAN}Version:${NC}   %s\n" "$version"
+    [[ -n "$version" ]] && printf "${CYAN}Version:${NC}   %s\n" "$(_format_version "$version")"
     printf "${CYAN}Preset:${NC}    %s\n" "$preset"
     local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
     [[ -f "$theme_file" ]] && printf "${CYAN}Theme:${NC}     %s\n" "$(<"$theme_file")"
@@ -612,7 +624,7 @@ cmd_version() {
 
     print_logo
 
-    printf "${CYAN}Version:${NC}  %s\n" "$version"
+    printf "${CYAN}Version:${NC}  %s\n" "$(_format_version "$version")"
     printf "${CYAN}Preset:${NC}   %s\n" "$(get_preset)"
 
     local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"

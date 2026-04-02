@@ -171,7 +171,7 @@ nvim/
 | Plugin | Purpose |
 |--------|---------|
 | [neotest](https://github.com/nvim-neotest/neotest) | Test runner framework with summary panel and diagnostics |
-| [neotest-dotnet](https://github.com/Issafalcon/neotest-dotnet) | .NET adapter (xUnit, NUnit, MSTest) with `.slnx` support |
+| [easy-dotnet.nvim](https://github.com/GustavEikaas/easy-dotnet.nvim) | .NET test runner with gutter signs, debug, and explorer UI |
 | [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (gotestsum runner, pinned to v1.15.1) |
 | [neotest-vitest](https://github.com/marilari88/neotest-vitest) | Vitest/Bun adapter (`bun run test`) |
 
@@ -320,10 +320,9 @@ Expand variables in the Scopes panel with `Enter`. Type expressions in the REPL 
 2. `Space nd` → pick the **test project**
 3. The debugger attaches and hits your breakpoints
 
-> **Note:** `Space td` (neotest DAP strategy) does not work for .NET —
-> neotest-dotnet is abandoned and has multiple Neovim 0.11 incompatibilities.
-> Use `Space nd` on the test project instead. This runs all tests in the
-> project under the debugger (not a single test), but reliably hits breakpoints.
+> **Note:** .NET tests use easy-dotnet.nvim's built-in test runner (not neotest).
+> Use `Space tr` to run a test from the buffer, `Space td` to debug, and
+> `Space te` to open the test explorer. Gutter signs show pass/fail status.
 > Use `Space tt` to run individual tests without debugging.
 
 #### .NET Keybindings

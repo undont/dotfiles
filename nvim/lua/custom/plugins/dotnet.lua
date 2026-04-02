@@ -177,9 +177,28 @@ return {
         lsp = {
           enabled = false,
         },
-        -- Keep test_runner for buffer signs (test indicators in gutter)
+        -- Test runner: gutter signs, buffer test execution, explorer UI
         test_runner = {
           enable_buffer_test_execution = true,
+          auto_start_testrunner = true,
+          viewmode = 'float',
+          mappings = {
+            run_test_from_buffer = { lhs = '<leader>tr', desc = '[R]un test' },
+            debug_test_from_buffer = { lhs = '<leader>td', desc = '[D]ebug test' },
+            peek_stack_trace_from_buffer = { lhs = '<leader>tp', desc = '[P]eek stacktrace' },
+            run = { lhs = '<leader>r', desc = 'run test' },
+            run_all = { lhs = '<leader>R', desc = 'run all tests' },
+            debug_test = { lhs = '<leader>d', desc = 'debug test' },
+            peek_stacktrace = { lhs = '<leader>p', desc = 'peek stacktrace' },
+            go_to_file = { lhs = '<leader>g', desc = 'go to file' },
+            get_build_errors = { lhs = '<leader>e', desc = 'build errors' },
+            refresh_testrunner = { lhs = '<C-r>', desc = 'refresh' },
+            cancel = { lhs = '<C-c>', desc = 'cancel' },
+            close = { lhs = 'q', desc = 'close' },
+            expand = { lhs = 'o', desc = 'expand' },
+            expand_node = { lhs = 'E', desc = 'expand all' },
+            collapse_all = { lhs = 'W', desc = 'collapse all' },
+          },
         },
         -- Custom terminal: open on right side with 40 column width (same as fugitive)
         terminal = function(path, action, args)
@@ -209,7 +228,7 @@ return {
         end,
       }
 
-      -- Project commands only (tests handled by neotest)
+      -- Project commands
       vim.keymap.set('n', '<leader>nd', '<cmd>Dotnet debug<cr>', { desc = '[D]ebug project' })
       vim.keymap.set('n', '<leader>nr', '<cmd>Dotnet run<cr>', { desc = '[R]un project' })
       vim.keymap.set('n', '<leader>nb', '<cmd>Dotnet build<cr>', { desc = '[B]uild project' })
@@ -218,6 +237,11 @@ return {
       vim.keymap.set('n', '<leader>nw', '<cmd>Dotnet watch<cr>', { desc = '[W]atch project' })
       vim.keymap.set('n', '<leader>nn', '<cmd>Dotnet new<cr>', { desc = '[N]ew item' })
       vim.keymap.set('n', '<leader>no', '<cmd>Dotnet outdated<cr>', { desc = '[O]utdated packages' })
+
+      -- Test runner (easy-dotnet's built-in test explorer)
+      vim.keymap.set('n', '<leader>te', function()
+        require('easy-dotnet.test-runner').open()
+      end, { desc = 'Test [E]xplorer (.NET)' })
     end,
   },
 }

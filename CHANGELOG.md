@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.79] - 2026-04-01
+
+### Changed
+- Nvim: replaced easy-dotnet LSP with roslyn.nvim for C# diagnostics — real-time inline diagnostics, proper pull diagnostic support, cross-namespace dedup, false positive filtering (IDE0005, IDE0079, CA1825)
+- Nvim: .NET tests now use easy-dotnet.nvim's built-in test runner instead of abandoned neotest-dotnet — gutter signs, run/debug from buffer (`<leader>tr`/`<leader>td`), test explorer (`<leader>te`), peek stacktrace (`<leader>tp`)
+- Nvim: cmdline completion trigger changed from Tab to Ctrl+Space, Tab now cycles results; cmdline source prioritised over buffer
+- Nvim: Mason custom registry added (Crashdummyy) for Roslyn LSP server auto-install
+
+### Removed
+- Nvim: neotest-dotnet adapter and associated monkey-patch workaround
+- Nvim: `<leader>ni` add missing imports command (roslyn.nvim handles Fix All natively)
+
 ## [0.2.78] - 2026-04-01
 
 ### Added
