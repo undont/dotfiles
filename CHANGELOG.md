@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.79] - 2026-04-02
+## [0.2.79] - 2026-04-03
 
 ### Added
 - Nvim: editable breakpoint list (`<leader>bl`) — float with `dd` to remove, `<CR>` to jump
@@ -16,6 +16,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: neotest-vitest monorepo support — resolves vitest binary from nearest `node_modules` with cached subdirectory fallback
 
 ### Changed
+- Nvim: `<leader>lR` refresh — notification noise suppressed via timestamp-based filter (LSP shutdown, copilot, lazy.nvim messages no longer flash)
+- Nvim: smart-paste.nvim guarded against non-modifiable buffers (help, neotest output, etc.)
+- Nvim: neotest summary keymaps — `o` to expand (was `<CR>`), `p` for output (was `o`)
 - Nvim: which-key tiered display — leader popup shows only category groups; standalone muscle-memory keys hidden, context groups (Claude, Markdown, .NET, PR Review, Diagnostics) gated to relevant filetypes via BufEnter autocmd
 - Nvim: which-key icons added for all visible leader keys (cheatsheet, buffer search, buffers, build, zoom, music, harpoon, notifications)
 - Nvim: removed incorrect `<leader>B` breakpoint group (keymaps were already under lowercase `b`)
@@ -34,6 +37,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 - Nvim: neotest-golang test discovery — unpinned from v1.15.1 to v2+ (supports current Go treesitter parser), removed unnecessary gotestsum runner dependency
+- Tmux: alert picker same-session navigation — uses `select-window` instead of `switch-client` when target is in the current session
 
 ### Removed
 - Nvim: neotest-dotnet adapter and associated monkey-patch workaround

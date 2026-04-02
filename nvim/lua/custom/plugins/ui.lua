@@ -196,6 +196,13 @@ return {
           return _original_notify(msg, level, opts)
         end
 
+        -- Suppress INFO noise for 2s after <leader>lR refresh (async LSP shutdown
+        -- messages arrive well after the defer that shows "Neovim refreshed")
+        local refresh_at = vim.g.nvim_refresh_at
+        if refresh_at and (vim.uv.now() - refresh_at) < 2000 and (level == vim.log.levels.INFO or level == nil) then
+          return
+        end
+
         -- Global noise (source-agnostic)
         if msg:match '^No matching notification' then
           return

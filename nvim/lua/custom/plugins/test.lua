@@ -117,6 +117,10 @@ return {
       summary = {
         animated = true,
         open = 'botright vsplit | vertical resize 50',
+        mappings = {
+          expand = { 'o', '<2-LeftMouse>' },
+          output = 'p',
+        },
       },
       output = {
         open_on_run = false,
