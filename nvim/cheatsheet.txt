@@ -199,10 +199,10 @@ Start/Continue | F5
 Step into | F1
 Step over | F2
 Step out | F3
-Toggle breakpoint | <leader>bp
+Toggle breakpoint | <leader>bb
 Conditional breakpoint | <leader>bc
-Logpoint | <leader>bl
-List breakpoints | <leader>bb
+Logpoint | <leader>bL
+List breakpoints | <leader>bl
 Toggle debug UI | F7
 
 ## markdown @markdown

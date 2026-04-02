@@ -172,7 +172,7 @@ nvim/
 |--------|---------|
 | [neotest](https://github.com/nvim-neotest/neotest) | Test runner framework with summary panel and diagnostics |
 | [easy-dotnet.nvim](https://github.com/GustavEikaas/easy-dotnet.nvim) | .NET test runner with gutter signs, debug, and explorer UI |
-| [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (gotestsum runner, pinned to v1.15.1) |
+| [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (v2+) |
 | [neotest-vitest](https://github.com/marilari88/neotest-vitest) | Vitest/Bun adapter (`bun run test`) |
 
 ### Debugging
@@ -274,10 +274,10 @@ Set breakpoints before starting a debug session. They appear as icons in the sig
 
 | Keybinding | Action |
 |------------|--------|
-| `Space Bt` | Toggle breakpoint |
-| `Space Bc` | Conditional breakpoint (prompts for expression) |
-| `Space Bl` | Logpoint (logs message without stopping) |
-| `Space BB` | List all breakpoints (quickfix list) |
+| `Space bb` | Toggle breakpoint |
+| `Space bc` | Conditional breakpoint (prompts for expression) |
+| `Space bL` | Logpoint (logs message without stopping) |
+| `Space bl` | List all breakpoints (editable float) |
 
 #### Stepping
 
@@ -301,7 +301,7 @@ Expand variables in the Scopes panel with `Enter`. Type expressions in the REPL 
 
 #### Go
 
-1. Set breakpoints in your code (`Space Bt`)
+1. Set breakpoints in your code (`Space bb`)
 2. Navigate to a `main.go` or test file
 3. `F5` → select "Debug" (for main) or "Debug test" (for nearest test)
 4. `Space td` also works for debugging the nearest test via neotest
@@ -310,13 +310,13 @@ Expand variables in the Scopes panel with `Enter`. Type expressions in the REPL 
 
 **Debugging a project:**
 
-1. Set breakpoints in your code (`Space Bt`)
+1. Set breakpoints in your code (`Space bb`)
 2. `Space nd` (`:Dotnet debug`) → pick the project to debug
 3. easy-dotnet builds, finds the DLL, and launches netcoredbg
 
 **Debugging tests:**
 
-1. Set breakpoints in the code under test (`Space Bt`)
+1. Set breakpoints in the code under test (`Space bb`)
 2. `Space nd` → pick the **test project**
 3. The debugger attaches and hits your breakpoints
 

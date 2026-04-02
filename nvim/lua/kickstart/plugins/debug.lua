@@ -50,11 +50,11 @@ return {
       desc = 'Debug: Toggle UI',
     },
     {
-      '<leader>bp',
+      '<leader>bb',
       function()
         require('dap').toggle_breakpoint()
       end,
-      desc = 'Toggle break[P]oint',
+      desc = 'Toggle [B]reakpoint',
     },
     {
       '<leader>bc',
@@ -64,14 +64,14 @@ return {
       desc = '[C]onditional breakpoint',
     },
     {
-      '<leader>bl',
+      '<leader>bL',
       function()
         require('dap').set_breakpoint(nil, nil, vim.fn.input 'Log message: ')
       end,
       desc = 'Breakpoint [L]ogpoint',
     },
     {
-      '<leader>bb',
+      '<leader>bl',
       function()
         local bp_mod = require 'dap.breakpoints'
         local bps = bp_mod.get()
@@ -110,7 +110,7 @@ return {
           row = math.floor((vim.o.lines - height) / 2),
           style = 'minimal',
           border = 'rounded',
-          title = ' Breakpoints (dd to remove, q to save & close) ',
+          title = ' Breakpoints ',
           title_pos = 'center',
         })
 
@@ -148,7 +148,7 @@ return {
           end
         end, { buffer = buf })
       end,
-      desc = 'Debug: List all Breakpoints',
+      desc = '[B]reakpoint [L]ist',
     },
   },
   config = function()
