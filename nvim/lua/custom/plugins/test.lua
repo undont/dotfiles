@@ -2,6 +2,15 @@
 -- https://github.com/nvim-neotest/neotest
 -- .NET tests handled by easy-dotnet.nvim (see dotnet.lua)
 
+--- Wrap a neotest function to skip .cs files (handled by easy-dotnet).
+local function neotest_fn(fn)
+  return function()
+    if vim.bo.filetype ~= 'cs' then
+      fn()
+    end
+  end
+end
+
 return {
   'nvim-neotest/neotest',
   dependencies = {
@@ -14,76 +23,36 @@ return {
     'marilari88/neotest-vitest', -- Vitest/Bun test runner
   },
   keys = {
-    {
-      '<leader>tt',
-      function()
-        require('neotest').run.run()
-      end,
-      desc = 'Run neares[T]',
-    },
-    {
-      '<leader>tf',
-      function()
-        require('neotest').run.run(vim.fn.expand '%')
-      end,
-      desc = 'Run [F]ile',
-    },
-    {
-      '<leader>ta',
-      function()
-        require('neotest').run.run { suite = true }
-      end,
-      desc = 'Run [A]ll',
-    },
-    {
-      '<leader>tl',
-      function()
-        require('neotest').run.run_last()
-      end,
-      desc = 'Run [L]ast',
-    },
-    {
-      '<leader>ts',
-      function()
-        require('neotest').summary.toggle()
-      end,
-      desc = 'Toggle [S]ummary',
-    },
-    {
-      '<leader>to',
-      function()
-        require('neotest').output.open { enter = true, auto_close = true }
-      end,
-      desc = 'Show [O]utput',
-    },
-    {
-      '<leader>tO',
-      function()
-        require('neotest').output_panel.toggle()
-      end,
-      desc = 'Toggle [O]utput panel',
-    },
-    {
-      '<leader>tS',
-      function()
-        require('neotest').run.stop()
-      end,
-      desc = '[S]top',
-    },
-    {
-      '<leader>tw',
-      function()
-        require('neotest').watch.toggle(vim.fn.expand '%')
-      end,
-      desc = 'Toggle [W]atch',
-    },
-    {
-      '<leader>td',
-      function()
-        require('neotest').run.run { strategy = 'dap' }
-      end,
-      desc = '[D]ebug nearest',
-    },
+    { '<leader>tt', neotest_fn(function()
+      require('neotest').run.run()
+    end), desc = 'Run neares[T]' },
+    { '<leader>tf', neotest_fn(function()
+      require('neotest').run.run(vim.fn.expand '%')
+    end), desc = 'Run [F]ile' },
+    { '<leader>ta', neotest_fn(function()
+      require('neotest').run.run { suite = true }
+    end), desc = 'Run [A]ll' },
+    { '<leader>tl', neotest_fn(function()
+      require('neotest').run.run_last()
+    end), desc = 'Run [L]ast' },
+    { '<leader>ts', neotest_fn(function()
+      require('neotest').summary.toggle()
+    end), desc = 'Toggle [S]ummary' },
+    { '<leader>to', neotest_fn(function()
+      require('neotest').output.open { enter = true, auto_close = true }
+    end), desc = 'Show [O]utput' },
+    { '<leader>tO', neotest_fn(function()
+      require('neotest').output_panel.toggle()
+    end), desc = 'Toggle [O]utput panel' },
+    { '<leader>tS', neotest_fn(function()
+      require('neotest').run.stop()
+    end), desc = '[S]top' },
+    { '<leader>tw', neotest_fn(function()
+      require('neotest').watch.toggle(vim.fn.expand '%')
+    end), desc = 'Toggle [W]atch' },
+    { '<leader>td', neotest_fn(function()
+      require('neotest').run.run { strategy = 'dap' }
+    end), desc = '[D]ebug nearest' },
     {
       '[t',
       function()

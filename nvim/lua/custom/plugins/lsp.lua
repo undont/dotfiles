@@ -232,7 +232,23 @@ return {
       },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-      { 'j-hui/fidget.nvim', event = 'LspAttach', opts = {} },
+      {
+        'j-hui/fidget.nvim',
+        event = 'LspAttach',
+        opts = {
+          progress = {
+            display = {
+              format_message = function(msg)
+                -- Hide roslyn's stale Restore progress tokens (never complete)
+                if msg.title and msg.title:match '^Restore' then
+                  return nil
+                end
+                return require('fidget.progress.display').default_format_message(msg)
+              end,
+            },
+          },
+        },
+      },
       'saghen/blink.cmp',
     },
     config = function()
@@ -296,6 +312,8 @@ return {
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, 'Inlay [H]ints')
           end
+
+
         end,
       })
 
@@ -320,9 +338,10 @@ return {
 
       -- Hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
 
-      vim.lsp.config('*', {
-        capabilities = require('blink.cmp').get_lsp_capabilities(),
-      })
+      local caps = require('blink.cmp').get_lsp_capabilities()
+      -- Remove colorProvider to prevent nvim 0.12 document_color assertion bug
+      caps.textDocument.colorProvider = nil
+      vim.lsp.config('*', { capabilities = caps })
 
       patch_show_document()
 

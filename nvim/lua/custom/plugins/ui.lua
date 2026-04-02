@@ -129,38 +129,41 @@ return {
         return _original_notify(msg, level, opts)
       end
 
-      -- Notification history viewer
-      vim.keymap.set('n', '<leader>Nn', function()
-        local history = notify.history()
-        if #history == 0 then
+      --- Open a notification history float with dynamic height.
+      local function open_notify_float(title, entries)
+        if #entries == 0 then
           vim.notify('No notifications', vim.log.levels.INFO)
           return
         end
 
-        -- Filter: warnings/errors only
-        local filtered = vim.tbl_filter(function(n)
-          return n.level == vim.log.levels.WARN or n.level == vim.log.levels.ERROR
-        end, history)
-
-        if #filtered == 0 then
-          vim.notify('No warnings or errors', vim.log.levels.INFO)
-          return
-        end
-
+        local level_icons = {
+          [vim.log.levels.ERROR] = 'E',
+          [vim.log.levels.WARN] = 'W',
+          [vim.log.levels.INFO] = 'I',
+          [vim.log.levels.DEBUG] = 'D',
+          [vim.log.levels.TRACE] = 'T',
+        }
         local lines = vim.tbl_map(function(n)
           local t = os.date('%H:%M:%S', math.floor(n.time / 1000))
-          local icon = n.level == vim.log.levels.ERROR and ' ' or ' '
-          return string.format('%s %s %s', t, icon, (n.message or ''):gsub('\n', ' '))
-        end, filtered)
+          local icon = level_icons[n.level] or 'I'
+          local msg = type(n.message) == 'table' and table.concat(n.message, ' ') or tostring(n.message or '')
+          return string.format('%s [%s] %s', t, icon, msg:gsub('\n', ' '))
+        end, entries)
 
         local buf = vim.api.nvim_create_buf(false, true)
         vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
         vim.bo[buf].modifiable = false
         vim.bo[buf].bufhidden = 'wipe'
 
-        local w = math.min(math.floor(vim.o.columns * 0.7), 120)
-        local h = math.min(#lines, math.floor(vim.o.lines * 0.6))
-        vim.api.nvim_open_win(buf, true, {
+        local w = math.min(math.floor(vim.o.columns * 0.8), 120)
+        -- Count wrapped screen lines to size the window properly
+        local wrapped = 0
+        for _, line in ipairs(lines) do
+          wrapped = wrapped + math.max(1, math.ceil(#line / w))
+        end
+        local h = math.max(3, math.min(wrapped, math.floor(vim.o.lines * 0.6)))
+
+        local win = vim.api.nvim_open_win(buf, true, {
           relative = 'editor',
           width = w,
           height = h,
@@ -168,66 +171,26 @@ return {
           col = math.floor((vim.o.columns - w) / 2),
           style = 'minimal',
           border = 'rounded',
-          title = ' Notifications ',
+          title = ' ' .. title .. ' ',
           title_pos = 'center',
         })
+        vim.wo[win].wrap = true
         vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true })
         vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf, silent = true })
+      end
+
+      -- Notification history viewer (warnings/errors only)
+      vim.keymap.set('n', '<leader>Nn', function()
+        local history = notify.history()
+        local filtered = vim.tbl_filter(function(n)
+          return n.level == vim.log.levels.WARN or n.level == vim.log.levels.ERROR
+        end, history)
+        open_notify_float('Notifications', filtered)
       end, { desc = 'Notification history (filtered)' })
 
       -- Full unfiltered history
       vim.keymap.set('n', '<leader>Na', function()
-        local history = notify.history()
-        if #history == 0 then
-          vim.notify('No notifications', vim.log.levels.INFO)
-          return
-        end
-
-        local lines = vim.tbl_map(function(n)
-          local t = os.date('%H:%M:%S', math.floor(n.time / 1000))
-          -- n.level is a number, convert to letter: E/W/I/D/T
-          local level_letter = 'I'
-          if n.level == vim.log.levels.ERROR then
-            level_letter = 'E'
-          elseif n.level == vim.log.levels.WARN then
-            level_letter = 'W'
-          elseif n.level == vim.log.levels.INFO then
-            level_letter = 'I'
-          elseif n.level == vim.log.levels.DEBUG then
-            level_letter = 'D'
-          elseif n.level == vim.log.levels.TRACE then
-            level_letter = 'T'
-          end
-          -- Handle message as string or table (nvim-notify stores multi-line as table)
-          local msg
-          if type(n.message) == 'table' then
-            msg = table.concat(n.message, ' ')
-          else
-            msg = tostring(n.message or '')
-          end
-          return string.format('%s [%s] %s', t, level_letter, msg:gsub('\n', ' '))
-        end, history)
-
-        local buf = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-        vim.bo[buf].modifiable = false
-        vim.bo[buf].bufhidden = 'wipe'
-
-        local w = math.min(math.floor(vim.o.columns * 0.7), 120)
-        local h = math.min(#lines, math.floor(vim.o.lines * 0.6))
-        vim.api.nvim_open_win(buf, true, {
-          relative = 'editor',
-          width = w,
-          height = h,
-          row = math.floor((vim.o.lines - h) / 2),
-          col = math.floor((vim.o.columns - w) / 2),
-          style = 'minimal',
-          border = 'rounded',
-          title = ' All Notifications ',
-          title_pos = 'center',
-        })
-        vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true })
-        vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf, silent = true })
+        open_notify_float('All Notifications', notify.history())
       end, { desc = 'Notification history (all)' })
     end,
   },

@@ -104,12 +104,24 @@ local roslyn_suppressed = false
 --- it in init (vim.g.loaded_roslyn_plugin) to prevent vim.lsp.enable
 --- firing before lock_target + ignore_target are set.
 --- Skips enabling entirely if roslyn_suppressed is set (Octo PR review).
+local roslyn_plugin_sourced = false
+
 local function source_deferred_plugin()
   if roslyn_suppressed then
     vim.notify('Roslyn skipped (PR review active) — opens automatically after review', vim.log.levels.INFO)
     return
   end
 
+  if roslyn_plugin_sourced then
+    -- Plugin was already sourced before review — just re-enable.
+    -- Scheduled so the editor stays responsive during solution loading.
+    vim.schedule(function()
+      vim.lsp.enable 'roslyn'
+    end)
+    return
+  end
+
+  roslyn_plugin_sourced = true
   vim.g.loaded_roslyn_plugin = nil
   local plugin_file = vim.api.nvim_get_runtime_file('plugin/roslyn.lua', false)[1]
   if plugin_file then
@@ -117,24 +129,40 @@ local function source_deferred_plugin()
   end
 end
 
--- Suppress roslyn when Octo opens (before any .cs diff buffer loads).
--- Not once = true — user may leave review, edit a file (re-enables roslyn),
--- then resume review (needs to suppress again).
+-- Suppress roslyn when entering diff/review contexts (Octo, Diffview).
+-- Roslyn's solution analysis freezes navigation on large diffs.
+local function suppress_roslyn()
+  if roslyn_suppressed then
+    return
+  end
+  roslyn_suppressed = true
+  vim.lsp.enable('roslyn', false)
+  for _, client in ipairs(vim.lsp.get_clients { name = 'roslyn' }) do
+    client:stop(true)
+  end
+end
+
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'octo',
-  callback = function()
-    if roslyn_suppressed then
-      return
-    end
-    roslyn_suppressed = true
-    vim.lsp.enable('roslyn', false)
-    for _, client in ipairs(vim.lsp.get_clients { name = 'roslyn' }) do
-      client:stop(true)
-    end
-  end,
+  pattern = { 'octo' },
+  callback = suppress_roslyn,
 })
 
--- Re-enable roslyn when opening a real .cs project file after review.
+-- Re-enable roslyn after Octo review closes.
+local function try_restore_roslyn()
+  if not roslyn_suppressed then
+    return
+  end
+  -- Don't re-enable if any octo buffer still exists (review still open)
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
+      return
+    end
+  end
+  roslyn_suppressed = false
+  source_deferred_plugin()
+end
+
+-- Re-enable when opening a real .cs file after review closes
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'cs',
   callback = function(args)
@@ -142,9 +170,27 @@ vim.api.nvim_create_autocmd('FileType', {
       return
     end
     local name = vim.api.nvim_buf_get_name(args.buf)
-    if name ~= '' and vim.bo[args.buf].buftype == '' and not pcall(vim.api.nvim_buf_get_var, args.buf, 'octo_diff_props') then
-      roslyn_suppressed = false
-      source_deferred_plugin()
+    if name ~= '' and vim.bo[args.buf].buftype == '' then
+      try_restore_roslyn()
+    end
+  end,
+})
+
+-- Re-enable when returning to a buffer after diffview/octo closes
+-- (handles case where .cs buffer is already loaded — no FileType fires).
+-- Deferred so the buffer switch completes and editor stays responsive
+-- while roslyn loads the solution in the background.
+vim.api.nvim_create_autocmd('BufEnter', {
+  pattern = '*.cs',
+  callback = function()
+    if roslyn_suppressed then
+      vim.defer_fn(function()
+        -- Check again — might have re-entered a review context
+        if not roslyn_suppressed then
+          return
+        end
+        try_restore_roslyn()
+      end, 2000)
     end
   end,
 })
@@ -231,6 +277,7 @@ return {
           mappings = {
             -- Buffer keymaps (active in .cs files with tests)
             run_test_from_buffer = { lhs = '<leader>tr', desc = '[R]un test' },
+            -- run_all_tests_from_buffer overridden below (upstream runs whole project)
             debug_test_from_buffer = { lhs = '<leader>td', desc = '[D]ebug test' },
             peek_stack_trace_from_buffer = { lhs = '<leader>tp', desc = '[P]eek stacktrace' },
             -- Explorer window keymaps (single keys — non-editable buffer)
@@ -286,6 +333,48 @@ return {
       vim.keymap.set('n', '<leader>te', function()
         require('easy-dotnet.test-runner').open()
       end, { desc = 'Test [E]xplorer (.NET)' })
+
+      -- Run only tests in the current file (not the whole project).
+      -- Upstream run_all_tests_from_buffer runs by projectId which is too broad.
+      -- This finds TestClass nodes matching the current file and runs each one.
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'cs',
+        callback = function(args)
+          vim.keymap.set('n', '<leader>tf', function()
+            local state = require 'easy-dotnet.test-runner.state'
+            local client = require('easy-dotnet.rpc.rpc').global_rpc_client
+            local filepath = vim.fs.normalize(vim.api.nvim_buf_get_name(args.buf))
+            -- Collect test nodes belonging to this file. Run at class level
+            -- to avoid running individual methods separately.
+            local run_ids = {}
+            local seen_ids = {}
+            state.traverse_all(function(node)
+              if not node.filePath or vim.fs.normalize(node.filePath) ~= filepath then
+                return
+              end
+              -- Find the highest runnable ancestor for this file (class > method)
+              local target = node
+              if node.type and node.type.type and node.parentId then
+                local parent = state.nodes[node.parentId]
+                if parent and parent.filePath and vim.fs.normalize(parent.filePath) == filepath then
+                  target = parent
+                end
+              end
+              if not seen_ids[target.id] then
+                seen_ids[target.id] = true
+                table.insert(run_ids, target.id)
+              end
+            end)
+            if #run_ids == 0 then
+              vim.notify('No tests found in this file', vim.log.levels.INFO)
+              return
+            end
+            for _, id in ipairs(run_ids) do
+              client.testrunner:run(id, function() end, 'buffer')
+            end
+          end, { buffer = args.buf, desc = 'Run [F]ile tests (.NET)' })
+        end,
+      })
     end,
   },
 }

@@ -31,25 +31,26 @@ local function edit_diff_file()
         return
       end
 
-      -- Capture cursor from the diff view's main window
+      -- Capture cursor position before closing. Try the right-side (new)
+      -- diff pane first, fall back to current window.
       local cursor
-      if file == view.cur_entry and view.cur_layout then
+      if view.cur_layout then
         local win = view.cur_layout:get_main_win()
         if win and win.id and vim.api.nvim_win_is_valid(win.id) then
           cursor = vim.api.nvim_win_get_cursor(win.id)
         end
       end
+      if not cursor then
+        cursor = vim.api.nvim_win_get_cursor(0)
+      end
 
       local path = file.absolute_path
       view:close()
       dv_lib.dispose_view(view)
-
-      vim.schedule(function()
-        vim.cmd('edit ' .. vim.fn.fnameescape(path))
-        if cursor then
-          pcall(vim.api.nvim_win_set_cursor, 0, cursor)
-        end
-      end)
+      vim.cmd('edit ' .. vim.fn.fnameescape(path))
+      if cursor then
+        pcall(vim.api.nvim_win_set_cursor, 0, cursor)
+      end
       return
     end
   end
@@ -499,6 +500,25 @@ return {
           return
         end
         layout:select_prev_file()
+      end
+
+      mappings.select_next_unviewed_entry = function()
+        local layout = reviews.get_current_layout()
+        if not layout then
+          return
+        end
+        local file = layout:get_current_file()
+        if file and file.viewed_state ~= 'VIEWED' then
+          file:toggle_viewed()
+        end
+        layout:select_next_unviewed_file()
+      end
+      mappings.select_prev_unviewed_entry = function()
+        local layout = reviews.get_current_layout()
+        if not layout then
+          return
+        end
+        layout:select_prev_unviewed_file()
       end
     end,
   },
