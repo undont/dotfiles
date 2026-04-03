@@ -112,6 +112,32 @@ function M.setup()
     sort_json_keys(ctx.bufnr)
   end
 
+  -- Graceful process cleanup on exit
+  -- Explicitly stops LSP servers and terminal jobs so they don't orphan
+  -- (dotnet Roslyn, OmniSharp, EasyDotnet build servers, etc.)
+  vim.api.nvim_create_autocmd('VimLeavePre', {
+    desc = 'Stop LSP clients, DAP, and terminal jobs on exit',
+    group = vim.api.nvim_create_augroup('cleanup-on-exit', { clear = true }),
+    callback = function()
+      -- Stop all LSP clients (Roslyn, OmniSharp, etc.)
+      for _, client in ipairs(vim.lsp.get_clients()) do
+        client:stop(true)
+      end
+
+      -- Terminate debug adapter if running
+      pcall(function()
+        require('dap').terminate()
+      end)
+
+      -- Close all terminal buffers (forces child process termination)
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == 'terminal' then
+          pcall(vim.api.nvim_buf_delete, buf, { force = true })
+        end
+      end
+    end,
+  })
+
   -- Clean up unnamed empty buffers when opening a file
   -- Removes the default [No Name] buffer that nvim creates at startup
   -- Deferred via vim.schedule to avoid interfering with plugin layout creation

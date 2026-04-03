@@ -367,6 +367,8 @@ fi
 # =============================================================================
 # Disable Microsoft telemetry for .NET CLI
 export DOTNET_CLI_TELEMETRY_OPTOUT='true'
+# Prevent MSBuild from keeping worker nodes alive between builds
+export MSBUILDDISABLENODEREUSE=1
 
 # =============================================================================
 # SONARCLOUD
@@ -459,6 +461,8 @@ alias grep="grep --color=auto"
 alias h="cd ~"
 alias j="jobs"
 alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'
+alias nuke-nvim='ps -eo pid,ppid,args | awk "/nvim --embed/ && \$2 == 1 {print \$1}" | xargs kill 2>/dev/null && echo "done" || echo "no stale nvim processes"'
+alias nuke-dotnet='dotnet build-server shutdown 2>/dev/null; pkill -f "OmniSharp.dll" 2>/dev/null; pkill -f "EasyDotnet.BuildServer.dll" 2>/dev/null; pkill -f "dotnet-easydotnet" 2>/dev/null; pkill -f "VBCSCompiler" 2>/dev/null; pkill -f "vstest.console.dll" 2>/dev/null; echo "done"'
 
 # Clipboard — Linux only (macOS has pbcopy/pbpaste natively)
 if [[ "$IS_MACOS" != "1" ]]; then

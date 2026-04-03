@@ -9,6 +9,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.79] - 2026-04-03
 
 ### Added
+- Zsh: `nuke-nvim` alias — kill orphaned `nvim --embed` processes (PPID=1 only, safe for active sessions)
+- Zsh: `nuke-dotnet` alias — shut down MSBuild build server, kill stale OmniSharp, EasyDotnet, VBCSCompiler, vstest processes
+- Zsh: `MSBUILDDISABLENODEREUSE=1` env var — prevents MSBuild from keeping worker nodes alive between builds
+- Nvim: VimLeavePre cleanup — stops LSP clients, terminates DAP, closes terminal buffers to prevent orphaned processes
 - Nvim: `<leader>by` yank full buffer path to system clipboard
 - Nvim: Octo review thread navigation (`]C`/`[C`) for jumping between PR comments in review diffs
 - Nvim: editable breakpoint list (`<leader>bl`) — float with `dd` to remove, `<CR>` to jump

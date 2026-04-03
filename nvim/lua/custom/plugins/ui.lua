@@ -367,11 +367,11 @@ return {
       local template_icon = vim.fn.nr2char(0xf05c0) -- nf-md-file_code_outline
       require('mini.icons').setup {
         filetype = {
-          yaml = { glyph = '' },
+          yaml = { glyph = '' },
           template = { glyph = template_icon },
         },
         os = {
-          git = { glyph = '' }, -- nf-dev-git_branch
+          git = { glyph = '' }, -- nf-oct-git_branch
         },
         extension = {
           template = { glyph = template_icon },

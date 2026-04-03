@@ -975,14 +975,16 @@ cmd_aliases() {
         "gemini"     "cl + gemini" \
         "copilot"    "cl + copilot" \
         "ralph"      "cl + ralph" \
-        "ralf"       "cl + ralf" \
         "drs"        "sync repo paths" \
         "ff"         "fastfetch system info" \
         "dash"       "cl + gh dash" \
         "gols"       "list Go binaries" \
         "nvim-clear" "clear nvim cache" \
         "nvim-sync"  "sync Lazy.nvim plugins" \
-        "brewup"     "brew update + upgrade"
+        "brewup"     "brew update + upgrade" \
+        "nuke-node"  "kill all node procs" \
+        "nuke-nvim"  "kill stale nvim procs" \
+        "nuke-dotnet" "kill stale dotnet procs"
 
     printf "\n${CYAN}PROFILING${NC}\n"
     printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%s${NC} ${GREY}%s${NC}\n" \
