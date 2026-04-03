@@ -1,5 +1,12 @@
 -- Core autocommands
 
+-- Custom filetype detection
+vim.filetype.add {
+  extension = {
+    template = 'template',
+  },
+}
+
 local M = {}
 
 function M.setup()

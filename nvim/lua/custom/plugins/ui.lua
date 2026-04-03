@@ -359,6 +359,18 @@ return {
   {
     'echasnovski/mini.nvim',
     config = function()
+      -- Icons provider (used by mini.statusline for filetype icons)
+      local template_icon = vim.fn.nr2char(0xf05c0) -- nf-md-file_code_outline
+      require('mini.icons').setup {
+        filetype = {
+          yaml = { glyph = '' },
+          template = { glyph = template_icon },
+        },
+        extension = {
+          template = { glyph = template_icon },
+        },
+      }
+
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
       -- Prefix remapped from 's' to 'gs' to avoid clash with flash.nvim
       require('mini.surround').setup {

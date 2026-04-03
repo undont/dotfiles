@@ -21,7 +21,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `<leader>lR` refresh — notification noise suppressed via timestamp-based filter (LSP shutdown, copilot, lazy.nvim messages no longer flash)
 - Nvim: smart-paste.nvim guarded against non-modifiable buffers (help, neotest output, etc.)
 - Nvim: neotest summary keymaps — `o` to expand (was `<CR>`), `p` for output (was `o`)
-- Nvim: statusline — stripped `~/` prefix from filename, compact diff display (`+N -N` only), removed LSP server count
+- Nvim: statusline — stripped `~/` prefix from filename, compact diff display (`+N -N` only), removed LSP server count, mini.icons for filetype icons (fixes TypeScript icon)
+- Nvim: mini.icons setup with corrected YAML icon and custom `.template` filetype icon
+- Nvim: `.template` files detected as `template` filetype (was `conf`)
 - Nvim: which-key tiered display — leader popup shows only category groups; standalone muscle-memory keys hidden, context groups (Claude, Markdown, .NET, PR Review, Diagnostics) gated to relevant filetypes via BufEnter autocmd
 - Nvim: which-key icons added for all visible leader keys (cheatsheet, buffer search, buffers, build, zoom, music, harpoon, notifications)
 - Nvim: removed incorrect `<leader>B` breakpoint group (keymaps were already under lowercase `b`)
