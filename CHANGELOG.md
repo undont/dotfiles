@@ -12,7 +12,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `<leader>by` yank full buffer path to system clipboard
 - Nvim: Octo review thread navigation (`]C`/`[C`) for jumping between PR comments in review diffs
 - Nvim: editable breakpoint list (`<leader>bl`) — float with `dd` to remove, `<CR>` to jump
-- Nvim: roslyn auto-suppression during Octo PR review — re-enables when opening a real .cs file
+- Nvim: roslyn auto-suppression during Octo PR review and diffview — re-enables when opening a real .cs file
 - Nvim: Octo review keybindings for viewed file tracking (`<Tab>` toggle, `]u`/`[u` navigate unviewed)
 - Nvim: .NET test explorer cheatsheet section with all keybindings
 - Nvim: neotest-vitest monorepo support — resolves vitest binary from nearest `node_modules` with cached subdirectory fallback
@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: statusline — stripped `~/` prefix from filename, compact diff display (`+N -N` only), removed LSP server count, mini.icons for filetype icons (fixes TypeScript icon)
 - Nvim: mini.icons setup with corrected YAML icon and custom `.template` filetype icon
 - Nvim: `.template` files detected as `template` filetype (was `conf`)
-- Nvim: which-key tiered display — leader popup shows only category groups; standalone muscle-memory keys hidden, context groups (Claude, Markdown, .NET, PR Review, Diagnostics) gated to relevant filetypes via BufEnter autocmd
+- Nvim: which-key tiered display — leader popup shows only category groups; standalone muscle-memory keys hidden, context groups gated to relevant filetypes; PR Review group always visible; transient buffer guard prevents flicker in diffview
 - Nvim: which-key icons added for all visible leader keys (cheatsheet, buffer search, buffers, build, zoom, music, harpoon, notifications)
 - Nvim: removed incorrect `<leader>B` breakpoint group (keymaps were already under lowercase `b`)
 - Nvim: replaced easy-dotnet LSP with roslyn.nvim for C# diagnostics — real-time inline diagnostics, proper pull diagnostic support, cross-namespace dedup, false positive filtering (IDE0005, IDE0079, CA1825)

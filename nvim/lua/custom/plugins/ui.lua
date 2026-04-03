@@ -35,8 +35,10 @@ return {
           { '<leader>l', group = '[L]SP', icon = { icon = '', color = 'orange' } },
           { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'blue' } },
 
+          -- ── Always-visible (non-code contexts like Octo, diffview) ──
+          { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' } },
+
           -- ── Filetype-gated groups (hidden by default, shown in code files via autocmd) ──
-          { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' }, hidden = true },
           { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = true },
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = true },
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = true },
@@ -89,13 +91,15 @@ return {
         group = vim.api.nvim_create_augroup('which-key-filetype', { clear = true }),
         callback = function()
           local ft = vim.bo.filetype
-          local is_code = vim.bo.buftype == '' and not non_code_fts[ft]
+          if ft == '' then
+            return -- Skip transient buffers (e.g. diffview file transitions)
+          end
+          local is_code = not non_code_fts[ft]
           local is_markdown = ft == 'markdown'
           local is_dotnet = dotnet_fts[ft] or false
 
           wk.add {
             -- Code-file groups (LSP, diagnostics, format, breakpoints)
-            { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' }, hidden = not is_code },
             { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = not is_code },
             { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = not is_code },
             { '<leader>f', hidden = not is_code },

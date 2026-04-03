@@ -143,7 +143,7 @@ local function suppress_roslyn()
 end
 
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = { 'octo' },
+  pattern = { 'octo', 'DiffviewFiles', 'DiffviewFileHistory' },
   callback = suppress_roslyn,
 })
 
@@ -152,9 +152,10 @@ local function try_restore_roslyn()
   if not roslyn_suppressed then
     return
   end
-  -- Don't re-enable if any octo buffer still exists (review still open)
+  -- Don't re-enable if any octo/diffview buffer still exists (review still open)
+  local suppress_fts = { octo = true, DiffviewFiles = true, DiffviewFileHistory = true }
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
+    if vim.api.nvim_buf_is_loaded(buf) and suppress_fts[vim.bo[buf].filetype] then
       return
     end
   end
