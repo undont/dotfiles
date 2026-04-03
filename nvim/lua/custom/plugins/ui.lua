@@ -31,7 +31,6 @@ return {
           { '<leader>h', group = '[H]arpoon', icon = { icon = '󱡀 ', color = 'cyan' } },
           { '<leader>s', group = '[S]earch', icon = { icon = '', color = 'green' } },
           { '<leader>S', group = '[S]pell', icon = { icon = '󰓆 ', color = 'yellow' } },
-          { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' } },
           { '<leader>t', group = '[T]est / Toggle', icon = { cat = 'filetype', name = 'neotest-summary' } },
           { '<leader>l', group = '[L]SP', icon = { icon = '', color = 'orange' } },
           { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'blue' } },
@@ -39,6 +38,7 @@ return {
           -- ── Filetype-gated groups (hidden by default, shown in code files via autocmd) ──
           { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' }, hidden = true },
           { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = true },
+          { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = true },
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = true },
 
           -- ── Filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
@@ -99,6 +99,7 @@ return {
             { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = not is_code },
             { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = not is_code },
             { '<leader>f', hidden = not is_code },
+            { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = not is_code },
             { '<leader>q', hidden = not is_code },
             { '<leader>bb', hidden = not is_code },
             { '<leader>bc', hidden = not is_code },
@@ -403,6 +404,45 @@ return {
           loc = loc .. ' Z'
         end
         return loc
+      end
+
+      -- Strip home directory prefix from filename (~/foo/bar → foo/bar)
+      ---@diagnostic disable-next-line: duplicate-set-field, unused-local
+      statusline.section_filename = function(args)
+        if vim.bo.buftype == 'terminal' then
+          return '%t'
+        end
+        local path = vim.fn.expand '%:~'
+        path = path:gsub('^~/', '')
+        local flags = (vim.bo.modified and ' [+]' or '') .. (vim.bo.readonly and ' [RO]' or '')
+        return path .. flags
+      end
+
+      -- Compact diff (just +N -N), hide LSP server count
+      ---@diagnostic disable-next-line: duplicate-set-field
+      statusline.section_diff = function(args)
+        if statusline.is_truncated(args.trunc_width) then
+          return ''
+        end
+        local s = vim.b.gitsigns_status_dict
+        if not s then
+          return ''
+        end
+        local parts = {}
+        if (s.added or 0) > 0 then
+          table.insert(parts, '+' .. s.added)
+        end
+        if (s.removed or 0) > 0 then
+          table.insert(parts, '-' .. s.removed)
+        end
+        if #parts == 0 then
+          return ''
+        end
+        return table.concat(parts, ' ')
+      end
+      ---@diagnostic disable-next-line: duplicate-set-field
+      statusline.section_lsp = function()
+        return ''
       end
 
       -- Truncate branch name to ticket ID (e.g. "feature/DANA-123-some-desc" -> "DANA-123")

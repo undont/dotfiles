@@ -194,6 +194,7 @@ Thread unresolve | <leader>pT
 Toggle file viewed | <Tab>
 Next/prev unviewed file | ]u / [u
 Next/prev changed file | ]f / [f
+Next/prev review thread | ]C / [C
 
 ## debug @debug
 Start/Continue | F5
@@ -263,10 +264,10 @@ Debug project | <leader>nd
 Delete buffer | <leader>bd
 Force delete buffer | <leader>bD
 Delete all other buffers | <leader>ba
+Yank file path | <leader>by
 
 ## bracketed @bracketed
 Next/prev buffer | ]b / [b
-Next/prev comment | ]C / [C
 Next/prev diagnostic | ]d / [d
 Next/prev file | ]F / [F
 Next/prev indent | ]i / [i

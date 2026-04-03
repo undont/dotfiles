@@ -411,6 +411,8 @@ return {
           review_diff = {
             select_next_entry = { lhs = ']f', desc = 'move to next changed file' },
             select_prev_entry = { lhs = '[f', desc = 'move to previous changed file' },
+            next_thread = { lhs = ']C', desc = 'next review thread' },
+            prev_thread = { lhs = '[C', desc = 'prev review thread' },
             toggle_viewed = { lhs = '<Tab>', desc = 'toggle file viewed' },
             select_next_unviewed_entry = { lhs = ']u', desc = 'next unviewed file' },
             select_prev_unviewed_entry = { lhs = '[u', desc = 'prev unviewed file' },

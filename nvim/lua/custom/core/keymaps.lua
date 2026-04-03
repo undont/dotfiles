@@ -12,6 +12,13 @@ function M.setup()
     require('custom.core.build').run()
   end, { desc = 'Build project' })
 
+  -- Copy buffer path to clipboard
+  vim.keymap.set('n', '<leader>by', function()
+    local path = vim.fn.expand '%:p'
+    vim.fn.setreg('+', path)
+    vim.notify(path, vim.log.levels.INFO)
+  end, { desc = '[Y]ank file path' })
+
   -- File explorer
   vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'File [E]xplorer' })
 

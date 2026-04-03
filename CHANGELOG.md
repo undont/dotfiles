@@ -9,6 +9,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.79] - 2026-04-03
 
 ### Added
+- Nvim: `<leader>by` yank full buffer path to system clipboard
+- Nvim: Octo review thread navigation (`]C`/`[C`) for jumping between PR comments in review diffs
 - Nvim: editable breakpoint list (`<leader>bl`) — float with `dd` to remove, `<CR>` to jump
 - Nvim: roslyn auto-suppression during Octo PR review — re-enables when opening a real .cs file
 - Nvim: Octo review keybindings for viewed file tracking (`<Tab>` toggle, `]u`/`[u` navigate unviewed)
@@ -19,6 +21,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `<leader>lR` refresh — notification noise suppressed via timestamp-based filter (LSP shutdown, copilot, lazy.nvim messages no longer flash)
 - Nvim: smart-paste.nvim guarded against non-modifiable buffers (help, neotest output, etc.)
 - Nvim: neotest summary keymaps — `o` to expand (was `<CR>`), `p` for output (was `o`)
+- Nvim: statusline — stripped `~/` prefix from filename, compact diff display (`+N -N` only), removed LSP server count
 - Nvim: which-key tiered display — leader popup shows only category groups; standalone muscle-memory keys hidden, context groups (Claude, Markdown, .NET, PR Review, Diagnostics) gated to relevant filetypes via BufEnter autocmd
 - Nvim: which-key icons added for all visible leader keys (cheatsheet, buffer search, buffers, build, zoom, music, harpoon, notifications)
 - Nvim: removed incorrect `<leader>B` breakpoint group (keymaps were already under lowercase `b`)
