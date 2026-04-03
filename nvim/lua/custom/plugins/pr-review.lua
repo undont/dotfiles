@@ -45,12 +45,30 @@ local function edit_diff_file()
       end
 
       local path = file.absolute_path
-      view:close()
-      dv_lib.dispose_view(view)
+
+      -- Close the tabpage directly for instant visual feedback.
+      local tabpage = view.tabpage
+      if tabpage and vim.api.nvim_tabpage_is_valid(tabpage) then
+        if #vim.api.nvim_list_tabpages() == 1 then
+          vim.cmd 'tabnew'
+        end
+        vim.cmd('tabclose ' .. vim.api.nvim_tabpage_get_number(tabpage))
+      end
+
       vim.cmd('edit ' .. vim.fn.fnameescape(path))
       if cursor then
         pcall(vim.api.nvim_win_set_cursor, 0, cursor)
       end
+
+      -- Defer heavy cleanup (file:destroy() per diff buffer) so the
+      -- editor stays responsive. Event suppression keeps it fast.
+      vim.schedule(function()
+        local ei = vim.o.eventignore
+        vim.o.eventignore = 'all'
+        view:close()
+        dv_lib.dispose_view(view)
+        vim.o.eventignore = ei
+      end)
       return
     end
   end
@@ -156,7 +174,13 @@ return {
         end,
         desc = '[D]iff [O]pen (vs index)',
       },
-      { '<leader>dc', '<cmd>DiffviewClose<CR>', desc = '[D]iff [C]lose' },
+      {
+        '<leader>dc',
+        function()
+          vim.cmd 'DiffviewClose'
+        end,
+        desc = '[D]iff [C]lose',
+      },
       {
         '<leader>dt',
         function()
@@ -279,18 +303,37 @@ return {
             { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+            -- Disable <leader> defaults — they steal the prefix from which-key
+            { 'n', '<leader>e', false },
+            { 'n', '<leader>b', false },
+            { 'n', '<leader>co', false },
+            { 'n', '<leader>ct', false },
+            { 'n', '<leader>cb', false },
+            { 'n', '<leader>ca', false },
+            { 'n', '<leader>cO', false },
+            { 'n', '<leader>cT', false },
+            { 'n', '<leader>cB', false },
+            { 'n', '<leader>cA', false },
           },
           file_panel = {
             { 'n', ']f', actions.select_next_entry, { desc = 'Next changed file' } },
             { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+            { 'n', '<leader>e', false },
+            { 'n', '<leader>b', false },
+            { 'n', '<leader>cO', false },
+            { 'n', '<leader>cT', false },
+            { 'n', '<leader>cB', false },
+            { 'n', '<leader>cA', false },
           },
           file_history_panel = {
             { 'n', ']f', actions.select_next_entry, { desc = 'Next changed file' } },
             { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+            { 'n', '<leader>e', false },
+            { 'n', '<leader>b', false },
           },
         },
       }
@@ -426,6 +469,28 @@ return {
         require('octo.picker').changed_files { repo = buffer.repo, number = buffer.number }
       end)
 
+      -- Review buffers are ephemeral — never prompt to save on close.
+      -- Thread buffers use buftype=acwrite (upstream), so Neovim can mark
+      -- them modified. Reset the flag immediately to suppress the prompt.
+      vim.api.nvim_create_autocmd('BufModifiedSet', {
+        pattern = 'octo://*/review/*',
+        callback = function(event)
+          if vim.bo[event.buf].modified then
+            vim.bo[event.buf].modified = false
+          end
+        end,
+      })
+
+      -- 'l' to open file from file panel (mirrors diffview behaviour)
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'octo_panel',
+        callback = function(event)
+          vim.keymap.set('n', 'l', function()
+            require('octo.mappings').select_entry()
+          end, { buffer = event.buf, desc = 'Open file' })
+        end,
+      })
+
       -- Scroll keymaps for review diff buffers (non-modifiable, so safe to use single keys)
       local file_entry = require 'octo.reviews.file-entry'
       local orig_configure = file_entry._configure_buffer
@@ -489,6 +554,16 @@ return {
           return
         end
         layout:select_prev_unviewed_file()
+      end
+
+      -- Fix left-side diff highlights: upstream only remaps DiffChange but
+      -- not DiffAdd, so deleted lines on the left show green instead of red.
+      local Layout = require 'octo.reviews.layout'
+      local constants = require 'octo.constants'
+      local orig_init_layout = Layout.init_layout
+      Layout.init_layout = function(self)
+        orig_init_layout(self)
+        vim.api.nvim_set_hl(constants.OCTO_REVIEW_LEFT_HIGHLIGHT_NS, 'DiffAdd', { link = 'DiffDelete' })
       end
     end,
   },

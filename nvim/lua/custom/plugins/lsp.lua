@@ -404,6 +404,10 @@ return {
       {
         '<leader>f',
         function()
+          if not vim.bo.modifiable then
+            vim.notify('Buffer is not modifiable', vim.log.levels.WARN)
+            return
+          end
           require('conform').format { async = true, lsp_format = 'fallback' }
         end,
         mode = '',

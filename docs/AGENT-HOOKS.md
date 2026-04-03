@@ -170,7 +170,7 @@ For example:
 
 ```
 work:claude:claude
-dana:opencode:opencode
+project:opencode:opencode
 ```
 
 The tmux status bar script (`tmux/scripts/alerts/show.sh`) reads this file and renders icons for sessions other than the one you're currently viewing.

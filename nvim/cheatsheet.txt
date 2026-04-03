@@ -7,6 +7,7 @@ Half-page down/up | Ctrl+d / Ctrl+u
 Jump back/forward | Ctrl+o / Ctrl+i
 Set mark | gm{a-z}
 Flash jump | s
+Flash treesitter | S
 Remote flash | r (operator-pending)
 Treesitter search | R (operator-pending/visual)
 Toggle flash in search | Ctrl+s (command mode)
@@ -45,6 +46,7 @@ Open cheatsheet | <leader>?
 Insert at/after cursor | i / a
 New line below/above | o / O
 Delete line (no yank) | dd
+Yank and delete line | dy
 Yank line | yy
 Paste after/before | p / P
 Undo / redo | u / Ctrl+r

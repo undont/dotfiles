@@ -424,6 +424,9 @@ alias ralph="cl && ralph"              # Clear scrollback + launch Ralph => Clau
 alias ralf="cl && ralf"                # Clear scrollback + launch Ralf => Claude Code
 alias gemini="cl && gemini"            # Clear scrollback + launch Gemini AI CLI
 alias copilot="cl && copilot"          # Clear scrollback + launch GitHub Copilot CLI
+alias btop="cl && btop"                # Clear scrollback + launch btop system monitor
+alias lazydocker="cl && lazydocker"    # Clear scrollback + launch lazydocker
+alias dash="cl && gh dash"             # Clear scrollback + launch GitHub Dash
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash config
 alias ff="fastfetch"                   # Fastfetch system info
@@ -632,7 +635,6 @@ alias gfp="git fetch -pf"              # Fetch and prune remote-tracking branche
 alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
 alias grmc="git rm --cached"           # Untrack file(s) without deleting from disk
 alias gca="git commit --amend"         # Amend the last commit
-alias dash="cl && gh dash"             # Open GitHub Dash, after clearing scrollback
 
 # Make: forward to repo root when no Makefile in current directory
 make() {

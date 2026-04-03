@@ -9,9 +9,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.79] - 2026-04-03
 
 ### Added
+- Nvim: `dy` keymap — yank and delete line (original `dd` behaviour, complements `dd` which now uses black hole register)
+- Nvim: Flash treesitter keymap (`S`) re-added for structural selection
+- Nvim: lazy.nvim dev plugin path (`~/playground`) — enables local plugin development with automatic fallback when clone doesn't exist
+- Nvim: easy-dotnet.nvim dev mode — uses local fork from `~/playground/easy-dotnet.nvim` when present
+- Nvim: test explorer and peek stacktrace nav trapping — `<C-h/j/k/l>` blocked in floating windows to prevent cursor escaping to main buffer
+- Nvim: `<Esc>` closes peek stacktrace floats (in addition to `q`)
+- Nvim: treesitter-aware SynSet — skips loading regex syntax for filetypes with treesitter parsers, prevents conflicts and saves ~20ms on markdown
+- Nvim: Octo review buffer `BufModifiedSet` guard — suppresses save prompt on review thread close
+- Nvim: Octo file panel `l` keymap — opens file (mirrors diffview behaviour)
+- Nvim: Octo left-side diff highlight fix — `DiffAdd` linked to `DiffDelete` in review left pane so deleted lines show red not green
+- Nvim: Neo-tree `o` opens immediately (order-by moved to `O` prefix)
 - Zsh: `nuke-nvim` alias — kill orphaned `nvim --embed` processes (PPID=1 only, safe for active sessions)
 - Zsh: `nuke-dotnet` alias — shut down MSBuild build server, kill stale OmniSharp, EasyDotnet, VBCSCompiler, vstest processes
 - Zsh: `MSBUILDDISABLENODEREUSE=1` env var — prevents MSBuild from keeping worker nodes alive between builds
+- Zsh: `btop`, `lazydocker`, `dash` aliases with scrollback clear
 - Nvim: VimLeavePre cleanup — stops LSP clients, terminates DAP, closes terminal buffers to prevent orphaned processes
 - Nvim: `<leader>by` yank full buffer path to system clipboard
 - Nvim: Octo review thread navigation (`]C`/`[C`) for jumping between PR comments in review diffs
@@ -22,6 +34,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: neotest-vitest monorepo support — resolves vitest binary from nearest `node_modules` with cached subdirectory fallback
 
 ### Changed
+- Nvim: diffview edit-from-diff — instant tab close with deferred cleanup for responsive UX
+- Nvim: diffview keybindings — disabled `<leader>` defaults that stole prefix from which-key
+- Nvim: conform format — guard against non-modifiable buffers
+- Nvim: which-key `BufEnter` — caches visibility state and skips special buftype buffers to prevent flicker during rapid transitions
+- Nvim: roslyn suppress — silences "exit code 143" notification during forced stop
+- Nvim: markdown-preview — removed `ft` trigger to prevent eager loading on markdown open
 - Nvim: `dd` deletes line without yanking (uses black hole register) — preserves clipboard and yank buffer
 - Nvim: `<leader>lR` refresh — notification noise suppressed via timestamp-based filter (LSP shutdown, copilot, lazy.nvim messages no longer flash)
 - Nvim: smart-paste.nvim guarded against non-modifiable buffers (help, neotest output, etc.)
@@ -46,8 +64,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: refactored lsp.lua and dotnet.lua — extracted complex functions to reduce cognitive complexity
 - Nvim: `dot -v` shows `-dev` suffix when CHANGELOG version isn't tagged yet
 - Nvim: roslyn notification spam suppressed ("Multiple potential target files found")
+- Docs: scrubbed project-specific references from examples and comments
 
 ### Fixed
+- Nvim: `^M` (carriage return) characters in .NET test stacktrace output — strips trailing `\r` from error messages, stdout, and frame text before display
 - Nvim: neotest-golang test discovery — unpinned from v1.15.1 to v2+ (supports current Go treesitter parser), removed unnecessary gotestsum runner dependency
 - Tmux: alert picker same-session navigation — uses `select-window` instead of `switch-client` when target is in the current session
 
@@ -55,7 +75,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: neotest-dotnet adapter and associated monkey-patch workaround
 - Nvim: `<leader>ni` add missing imports command (roslyn.nvim handles Fix All natively)
 - Nvim: fidget.nvim plugin (replaced by nvim-notify)
-- Nvim: Flash treesitter keybinding (`S`) and mini.ai textobject setup
 
 ## [0.2.78] - 2026-04-01
 

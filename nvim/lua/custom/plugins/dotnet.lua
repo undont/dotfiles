@@ -137,9 +137,24 @@ local function suppress_roslyn()
   end
   roslyn_suppressed = true
   vim.lsp.enable('roslyn', false)
+
+  -- Silence the "Client roslyn quit with exit code 143" notification
+  -- from the forced stop. The exit handler fires asynchronously.
+  local orig_notify = vim.notify
+  vim.notify = function(msg, level, opts)
+    if type(msg) == 'string' and (msg:match '[Rr]oslyn' or msg:match 'exit code 143') then
+      return
+    end
+    return orig_notify(msg, level, opts)
+  end
+
   for _, client in ipairs(vim.lsp.get_clients { name = 'roslyn' }) do
     client:stop(true)
   end
+
+  vim.defer_fn(function()
+    vim.notify = orig_notify
+  end, 2000)
 end
 
 vim.api.nvim_create_autocmd('FileType', {
@@ -244,6 +259,7 @@ return {
   -- easy-dotnet.nvim for build, run, debug, test (LSP handled by roslyn.nvim)
   {
     'GustavEikaas/easy-dotnet.nvim',
+    dev = vim.uv.fs_stat(vim.fn.expand '~/playground/easy-dotnet.nvim') ~= nil,
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-telescope/telescope.nvim',
@@ -253,7 +269,7 @@ return {
     config = function()
       -- Sync roslyn.nvim's solution target into easy-dotnet's cache so the
       -- test runner and build commands use the same solution. Force-overwrite
-      -- if the cached solution is a build variant (e.g. Dana.ci.slnx).
+      -- if the cached solution is a build variant (e.g. .ci.slnx).
       local roslyn_sln = vim.g.roslyn_nvim_selected_solution
       if roslyn_sln then
         local current_solution = require 'easy-dotnet.current_solution'
@@ -334,6 +350,83 @@ return {
       vim.keymap.set('n', '<leader>te', function()
         require('easy-dotnet.test-runner').open()
       end, { desc = 'Test [E]xplorer (.NET)' })
+
+      -- Trap window-navigation keys in test explorer and peek stacktrace floats.
+      -- Without this, <C-h/j/k/l> escapes to the main buffer and the float
+      -- becomes unreachable.
+      local nav_block_group = vim.api.nvim_create_augroup('dotnet-float-nav-block', { clear = true })
+      local nav_keys = { '<C-h>', '<C-j>', '<C-k>', '<C-l>' }
+
+      local function block_nav(buf)
+        for _, key in ipairs(nav_keys) do
+          vim.keymap.set('n', key, '<Nop>', { buffer = buf })
+        end
+      end
+
+      -- Test explorer (easy-dotnet filetype)
+      vim.api.nvim_create_autocmd('FileType', {
+        group = nav_block_group,
+        pattern = 'easy-dotnet',
+        callback = function(args)
+          block_nav(args.buf)
+        end,
+      })
+
+      -- Peek stacktrace floats (winfixbuf scratch buffers created by easy-dotnet).
+      -- Deferred via vim.schedule so winfixbuf is set by window.lua before we check.
+      vim.api.nvim_create_autocmd('WinEnter', {
+        group = nav_block_group,
+        callback = function()
+          vim.schedule(function()
+            local win = vim.api.nvim_get_current_win()
+            if not vim.api.nvim_win_is_valid(win) then
+              return
+            end
+            local cfg = vim.api.nvim_win_get_config(win)
+            if cfg.relative == '' then
+              return
+            end
+            if not vim.wo[win].winfixbuf then
+              return
+            end
+            local buf = vim.api.nvim_win_get_buf(win)
+            if vim.bo[buf].filetype == 'easy-dotnet' then
+              return
+            end
+            block_nav(buf)
+            vim.keymap.set('n', '<Esc>', function()
+              if vim.api.nvim_win_is_valid(win) then
+                vim.api.nvim_win_close(win, true)
+              end
+            end, { buffer = buf, nowait = true })
+          end)
+        end,
+      })
+
+      -- Strip ^M (carriage returns) from test result output.
+      -- .NET uses \r\n line endings; the RPC server splits on \n leaving trailing \r.
+      local results_float = require 'easy-dotnet.test-runner.results-float'
+      local orig_results_open = results_float.open
+      results_float.open = function(node, result, opts)
+        local function strip_cr(lines)
+          if not lines then
+            return
+          end
+          for i, line in ipairs(lines) do
+            lines[i] = line:gsub('\r', '')
+          end
+        end
+        strip_cr(result.errorMessage)
+        strip_cr(result.stdout)
+        if result.frames then
+          for _, frame in ipairs(result.frames) do
+            if frame.originalText then
+              frame.originalText = frame.originalText:gsub('\r', '')
+            end
+          end
+        end
+        return orig_results_open(node, result, opts)
+      end
 
       -- Run only tests in the current file (not the whole project).
       -- Upstream run_all_tests_from_buffer runs by projectId which is too broad.

@@ -26,5 +26,5 @@ export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 # Python pipx (added by pipx installer - 2025-07-15)
 export PATH="$PATH:$HOME/.local/bin"
 
-# Session launchers (tnew, dana)
+# Dotfiles session launchers
 export PATH="$PATH:$HOME/.local/launchers"

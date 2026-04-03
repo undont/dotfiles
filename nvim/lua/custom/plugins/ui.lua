@@ -87,16 +87,33 @@ return {
         ['neotest-output-panel'] = true,
       }
 
+      -- Track last visibility state to avoid unnecessary wk.add calls.
+      -- Each wk.add internally calls Buf.clear() which removes ALL trigger
+      -- keymaps from ALL buffers, creating a brief window where which-key
+      -- can't intercept <leader>. Caching prevents this during rapid buffer
+      -- transitions (e.g. diffview file navigation).
+      local prev_vis = {}
+
       vim.api.nvim_create_autocmd('BufEnter', {
         group = vim.api.nvim_create_augroup('which-key-filetype', { clear = true }),
         callback = function()
+          -- Only update for real file buffers; preserve previous state in
+          -- special contexts (diffview, telescope, neo-tree, etc.)
+          if vim.bo.buftype ~= '' then
+            return
+          end
           local ft = vim.bo.filetype
           if ft == '' then
-            return -- Skip transient buffers (e.g. diffview file transitions)
+            return
           end
           local is_code = not non_code_fts[ft]
           local is_markdown = ft == 'markdown'
           local is_dotnet = dotnet_fts[ft] or false
+
+          if prev_vis.code == is_code and prev_vis.md == is_markdown and prev_vis.dotnet == is_dotnet then
+            return
+          end
+          prev_vis = { code = is_code, md = is_markdown, dotnet = is_dotnet }
 
           wk.add {
             -- Code-file groups (LSP, diagnostics, format, breakpoints)
@@ -464,7 +481,7 @@ return {
         return ''
       end
 
-      -- Truncate branch name to ticket ID (e.g. "feature/DANA-123-some-desc" -> "DANA-123")
+      -- Truncate branch name to ticket ID (e.g. "feature/ACME-123-some-desc" -> "ACME-123")
       ---@diagnostic disable-next-line: duplicate-set-field
       statusline.section_git = function(args)
         if statusline.is_truncated(args.trunc_width) then
@@ -474,7 +491,7 @@ return {
         if head == '' then
           return ''
         end
-        -- Extract ticket ID pattern (e.g. DANA-123, JIRA-456)
+        -- Extract ticket ID pattern (e.g. ACME-123, JIRA-456)
         local ticket = head:match '[A-Z]+-[0-9]+'
         local branch = ticket or head
         local icon = vim.g.have_nerd_font and (MiniIcons.get('os', 'git') .. ' ') or 'Git: '

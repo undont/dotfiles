@@ -9,6 +9,8 @@ function M.setup()
 
   -- Delete line without yanking
   vim.keymap.set('n', 'dd', '"_dd')
+  -- Delete line and yank (original dd behaviour)
+  vim.keymap.set('n', 'dy', '<Cmd>normal! dd<CR>', { desc = '[Y]ank and delete line' })
 
   -- Build
   vim.keymap.set('n', '<leader>q', function()

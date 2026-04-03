@@ -1403,8 +1403,8 @@ _test_strip_alias_value() {
 }
 
 # Double-quoted alias with inline comment (the original bug)
-result=$(_test_strip_alias_value '"cd $DANA_ROOT"  # Dana project')
-if [[ "$result" == 'cd $DANA_ROOT' ]]; then
+result=$(_test_strip_alias_value '"cd $ACME_ROOT"  # Acme project')
+if [[ "$result" == 'cd $ACME_ROOT' ]]; then
     pass "double-quoted alias with inline comment"
 else
     fail "double-quoted alias with inline comment: got '$result'"
