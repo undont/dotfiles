@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: neotest-vitest monorepo support — resolves vitest binary from nearest `node_modules` with cached subdirectory fallback
 
 ### Changed
+- Nvim: `dd` deletes line without yanking (uses black hole register) — preserves clipboard and yank buffer
 - Nvim: `<leader>lR` refresh — notification noise suppressed via timestamp-based filter (LSP shutdown, copilot, lazy.nvim messages no longer flash)
 - Nvim: smart-paste.nvim guarded against non-modifiable buffers (help, neotest output, etc.)
 - Nvim: neotest summary keymaps — `o` to expand (was `<CR>`), `p` for output (was `o`)

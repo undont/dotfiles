@@ -7,6 +7,9 @@ function M.setup()
   -- Clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+  -- Delete line without yanking
+  vim.keymap.set('n', 'dd', '"_dd')
+
   -- Build
   vim.keymap.set('n', '<leader>q', function()
     require('custom.core.build').run()

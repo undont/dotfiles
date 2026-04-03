@@ -44,7 +44,8 @@ Open cheatsheet | <leader>?
 ## editing @editing
 Insert at/after cursor | i / a
 New line below/above | o / O
-Delete/yank line | dd / yy
+Delete line (no yank) | dd
+Yank line | yy
 Paste after/before | p / P
 Undo / redo | u / Ctrl+r
 Repeat last action | .
