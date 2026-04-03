@@ -195,44 +195,6 @@ return {
     config = function(_, opts)
       require('diffview').setup(opts)
 
-      -- Global ]f/[f: active while diffview is open, cleaned up when it closes
-      local function set_nav()
-        local actions = require 'diffview.actions'
-        vim.keymap.set('n', ']f', actions.select_next_entry, { silent = true, desc = 'Next changed file (diffview)' })
-        vim.keymap.set('n', '[f', actions.select_prev_entry, { silent = true, desc = 'Previous changed file (diffview)' })
-      end
-
-      local function clear_nav()
-        -- Restore mini.bracketed file navigation (don't just delete, or the built-in [f takes over)
-        local mb_ok, mb = pcall(require, 'mini.bracketed')
-        if mb_ok then
-          vim.keymap.set('n', ']f', function()
-            local dir = vim.fn.expand '%:p:h'
-            if dir ~= '' and vim.fn.isdirectory(dir) == 1 then
-              mb.file 'forward'
-            end
-          end, { silent = true, desc = 'Next file on disk' })
-          vim.keymap.set('n', '[f', function()
-            local dir = vim.fn.expand '%:p:h'
-            if dir ~= '' and vim.fn.isdirectory(dir) == 1 then
-              mb.file 'backward'
-            end
-          end, { silent = true, desc = 'Previous file on disk' })
-        else
-          pcall(vim.keymap.del, 'n', ']f')
-          pcall(vim.keymap.del, 'n', '[f')
-        end
-      end
-
-      vim.api.nvim_create_autocmd('User', {
-        pattern = 'DiffviewViewOpened',
-        callback = set_nav,
-      })
-      vim.api.nvim_create_autocmd('User', {
-        pattern = 'DiffviewViewClosed',
-        callback = clear_nav,
-      })
-
       -- Patch diffview upstream bugs (nil guards for async race conditions)
       -- See: https://github.com/sindrets/diffview.nvim/issues/550
       local api = vim.api
@@ -313,14 +275,20 @@ return {
         },
         keymaps = {
           view = {
+            { 'n', ']f', actions.select_next_entry, { desc = 'Next changed file' } },
+            { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
           },
           file_panel = {
+            { 'n', ']f', actions.select_next_entry, { desc = 'Next changed file' } },
+            { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
           },
           file_history_panel = {
+            { 'n', ']f', actions.select_next_entry, { desc = 'Next changed file' } },
+            { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
           },

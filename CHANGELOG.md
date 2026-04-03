@@ -25,6 +25,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: mini.icons setup with corrected YAML icon and custom `.template` filetype icon
 - Nvim: `.template` files detected as `template` filetype (was `conf`)
 - Nvim: which-key tiered display — leader popup shows only category groups; standalone muscle-memory keys hidden, context groups gated to relevant filetypes; PR Review group always visible; transient buffer guard prevents flicker in diffview
+- Nvim: statusline git section — branch icon via mini.icons (`nf-dev-git_branch`), was previously missing
+- Nvim: diffview `]f`/`[f` navigation switched from fragile global keymaps to buffer-local (no more race conditions with mini.bracketed)
 - Nvim: which-key icons added for all visible leader keys (cheatsheet, buffer search, buffers, build, zoom, music, harpoon, notifications)
 - Nvim: removed incorrect `<leader>B` breakpoint group (keymaps were already under lowercase `b`)
 - Nvim: replaced easy-dotnet LSP with roslyn.nvim for C# diagnostics — real-time inline diagnostics, proper pull diagnostic support, cross-namespace dedup, false positive filtering (IDE0005, IDE0079, CA1825)

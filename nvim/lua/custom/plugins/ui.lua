@@ -370,6 +370,9 @@ return {
           yaml = { glyph = '' },
           template = { glyph = template_icon },
         },
+        os = {
+          git = { glyph = '' }, -- nf-dev-git_branch
+        },
         extension = {
           template = { glyph = template_icon },
         },
@@ -474,7 +477,7 @@ return {
         -- Extract ticket ID pattern (e.g. DANA-123, JIRA-456)
         local ticket = head:match '[A-Z]+-[0-9]+'
         local branch = ticket or head
-        local icon = vim.g.have_nerd_font and ' ' or 'Git:'
+        local icon = vim.g.have_nerd_font and (MiniIcons.get('os', 'git') .. ' ') or 'Git: '
         return icon .. branch
       end
     end,
