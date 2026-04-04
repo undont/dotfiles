@@ -95,50 +95,6 @@ return {
         require('nvim-treesitter').install(missing)
       end
 
-      -- Replace Neovim's built-in SynSet (regex syntax loader) with a
-      -- treesitter-aware version. synload.vim is sourced AFTER plugins, so
-      -- we hook SourcePost to replace SynSet right after it's registered.
-      -- This skips loading regex syntax (~20ms for markdown's HTML/CSS/JS
-      -- chain) for filetypes with treesitter parsers and prevents conflicts
-      -- between regex and treesitter highlighting in code blocks.
-      local function install_treesitter_synset()
-        vim.cmd 'au! Syntax *'
-        vim.api.nvim_create_autocmd('Syntax', {
-          pattern = '*',
-          callback = function()
-            local syntax = vim.fn.expand '<amatch>'
-            if syntax == '' or syntax:upper() == 'OFF' then
-              return
-            end
-            if syntax:upper() == 'ON' then
-              syntax = vim.bo.filetype
-            end
-            if syntax == '' then
-              return
-            end
-            local lang = vim.treesitter.language.get_lang(syntax) or syntax
-            if pcall(vim.treesitter.language.inspect, lang) then
-              return -- treesitter handles highlighting
-            end
-            -- No treesitter parser — load old regex syntax
-            vim.cmd 'syn clear'
-            vim.b.current_syntax = nil
-            for name in syntax:gmatch '[^.]+' do
-              if name ~= '' then
-                vim.cmd(string.format('runtime! syntax/%s.{vim,lua} syntax/%s/*.{vim,lua}', name, name))
-              end
-            end
-          end,
-        })
-      end
-
-      -- synload.vim sources after plugins — hook SourcePost to catch it
-      vim.api.nvim_create_autocmd('SourcePost', {
-        pattern = '*/syntax/synload.vim',
-        once = true,
-        callback = install_treesitter_synset,
-      })
-
       -- Enable treesitter highlighting and indentation for all supported filetypes
       vim.api.nvim_create_autocmd('FileType', {
         callback = function()

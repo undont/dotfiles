@@ -448,8 +448,11 @@ return {
         if vim.bo.buftype == 'terminal' then
           return '%t'
         end
-        local path = vim.fn.expand '%:~'
-        path = path:gsub('^~/', '')
+        local path = vim.fn.expand '%:p'
+        local home = vim.uv.os_homedir()
+        if home and path:sub(1, #home) == home then
+          path = '~' .. path:sub(#home + 1)
+        end
         local flags = (vim.bo.modified and ' [+]' or '') .. (vim.bo.readonly and ' [RO]' or '')
         return path .. flags
       end

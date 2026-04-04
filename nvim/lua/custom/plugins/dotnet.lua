@@ -60,7 +60,10 @@ local function patch_diagnostic_set()
     local deduped = {}
     for _, d in ipairs(diagnostics) do
       if not false_positives[d.code] then
-        local key = d.lnum .. ':' .. d.col .. ':' .. (d.code or '') .. ':' .. d.message
+        -- Use lnum:col:code when code is present (ignores message variations
+        -- between push/pull channels or multi-project contexts).
+        -- Fall back to message when code is absent.
+        local key = d.code and (d.lnum .. ':' .. d.col .. ':' .. d.code) or (d.lnum .. ':' .. d.col .. ':' .. d.message)
         if not buf_owners[bufnr][key] then
           buf_owners[bufnr][key] = namespace
           table.insert(deduped, d)
@@ -81,6 +84,22 @@ end
 --- Fix Roslyn misclassifying unresolved identifiers on using directives as
 --- "variable" instead of "namespace". Override to @type for proper styling.
 local function setup_semantic_token_fix()
+  -- Disable Neovim 0.12's viewport-only semantic token range requests.
+  -- Roslyn dynamically registers range support via client/registerCapability
+  -- after on_init, so we intercept the registration handler and strip it.
+  -- Range responses cause tokens to flash then disappear as they get
+  -- replaced by subsequent full-document responses.
+  local orig_register = vim.lsp.handlers['client/registerCapability']
+  vim.lsp.handlers['client/registerCapability'] = function(err, res, ctx)
+    local client = vim.lsp.get_client_by_id(ctx.client_id)
+    if client and client.name == 'roslyn' then
+      res.registrations = vim.tbl_filter(function(reg)
+        return reg.method ~= 'textDocument/semanticTokens/range'
+      end, res.registrations)
+    end
+    return orig_register(err, res, ctx)
+  end
+
   vim.api.nvim_create_autocmd('LspTokenUpdate', {
     callback = function(ev)
       local token = ev.data.token
@@ -92,6 +111,21 @@ local function setup_semantic_token_fix()
         return
       end
       vim.lsp.semantic_tokens.highlight_token(token, ev.buf, ev.data.client_id, '@type')
+    end,
+  })
+
+  -- Refresh semantic tokens after roslyn finishes loading the solution.
+  -- Roslyn's initial token response is empty/stale while the project loads.
+  -- roslyn.nvim fires RoslynInitialized when workspace/projectInitializationComplete
+  -- arrives — that's exactly when correct tokens become available.
+  vim.api.nvim_create_autocmd('User', {
+    pattern = 'RoslynInitialized',
+    callback = function()
+      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'cs' then
+          vim.lsp.semantic_tokens.force_refresh(buf)
+        end
+      end
     end,
   })
 end
@@ -138,11 +172,12 @@ local function suppress_roslyn()
   roslyn_suppressed = true
   vim.lsp.enable('roslyn', false)
 
-  -- Silence the "Client roslyn quit with exit code 143" notification
-  -- from the forced stop. The exit handler fires asynchronously.
+  -- Silence roslyn exit notifications from the forced stop. The on_exit
+  -- callback fires via vim.schedule after the process exits, which can
+  -- take several seconds for large solutions.
   local orig_notify = vim.notify
   vim.notify = function(msg, level, opts)
-    if type(msg) == 'string' and (msg:match '[Rr]oslyn' or msg:match 'exit code 143') then
+    if type(msg) == 'string' and msg:match '[Rr]oslyn' then
       return
     end
     return orig_notify(msg, level, opts)
@@ -154,7 +189,7 @@ local function suppress_roslyn()
 
   vim.defer_fn(function()
     vim.notify = orig_notify
-  end, 2000)
+  end, 10000)
 end
 
 vim.api.nvim_create_autocmd('FileType', {
@@ -162,15 +197,19 @@ vim.api.nvim_create_autocmd('FileType', {
   callback = suppress_roslyn,
 })
 
--- Re-enable roslyn after Octo review closes.
+-- Re-enable roslyn after diff/review contexts close.
 local function try_restore_roslyn()
   if not roslyn_suppressed then
     return
   end
-  -- Don't re-enable if any octo/diffview buffer still exists (review still open)
-  local suppress_fts = { octo = true, DiffviewFiles = true, DiffviewFileHistory = true }
+  -- Check if an actual diffview/octo context is still active.
+  -- Don't rely on buffer filetypes — diffview buffers can linger after close.
+  local dv_ok, dv_lib = pcall(require, 'diffview.lib')
+  if dv_ok and dv_lib.get_current_view() then
+    return
+  end
   for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_loaded(buf) and suppress_fts[vim.bo[buf].filetype] then
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
       return
     end
   end
@@ -259,7 +298,6 @@ return {
   -- easy-dotnet.nvim for build, run, debug, test (LSP handled by roslyn.nvim)
   {
     'GustavEikaas/easy-dotnet.nvim',
-    dev = vim.uv.fs_stat(vim.fn.expand '~/playground/easy-dotnet.nvim') ~= nil,
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-telescope/telescope.nvim',
@@ -402,31 +440,6 @@ return {
           end)
         end,
       })
-
-      -- Strip ^M (carriage returns) from test result output.
-      -- .NET uses \r\n line endings; the RPC server splits on \n leaving trailing \r.
-      local results_float = require 'easy-dotnet.test-runner.results-float'
-      local orig_results_open = results_float.open
-      results_float.open = function(node, result, opts)
-        local function strip_cr(lines)
-          if not lines then
-            return
-          end
-          for i, line in ipairs(lines) do
-            lines[i] = line:gsub('\r', '')
-          end
-        end
-        strip_cr(result.errorMessage)
-        strip_cr(result.stdout)
-        if result.frames then
-          for _, frame in ipairs(result.frames) do
-            if frame.originalText then
-              frame.originalText = frame.originalText:gsub('\r', '')
-            end
-          end
-        end
-        return orig_results_open(node, result, opts)
-      end
 
       -- Run only tests in the current file (not the whole project).
       -- Upstream run_all_tests_from_buffer runs by projectId which is too broad.

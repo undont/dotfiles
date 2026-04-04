@@ -219,6 +219,19 @@ return {
     config = function(_, opts)
       require('diffview').setup(opts)
 
+      -- Pin a permanent <Space> → which-key keymap on diffview buffers.
+      -- Which-key's trigger system has brief suspension windows (ModeChanged,
+      -- BufNew) where the <Space> trigger is absent. A regular buffer-local
+      -- keymap isn't managed by the trigger system and can't be removed.
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'DiffviewFiles', 'DiffviewFileHistory' },
+        callback = function(ev)
+          vim.keymap.set('n', ' ', function()
+            require('which-key').show ' '
+          end, { buffer = ev.buf })
+        end,
+      })
+
       -- Patch diffview upstream bugs (nil guards for async race conditions)
       -- See: https://github.com/sindrets/diffview.nvim/issues/550
       local api = vim.api

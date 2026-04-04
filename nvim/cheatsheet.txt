@@ -46,7 +46,7 @@ Open cheatsheet | <leader>?
 Insert at/after cursor | i / a
 New line below/above | o / O
 Delete line (no yank) | dd
-Yank and delete line | dy
+Yank and delete (cut) | dy
 Yank line | yy
 Paste after/before | p / P
 Undo / redo | u / Ctrl+r

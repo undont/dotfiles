@@ -7,10 +7,10 @@ function M.setup()
   -- Clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
-  -- Delete line without yanking
+  -- dd deletes without yanking; dy yanks and deletes (original dd behaviour).
+  -- The operator-pending 'y' motion means "current line" (like _), so dy = d + line.
   vim.keymap.set('n', 'dd', '"_dd')
-  -- Delete line and yank (original dd behaviour)
-  vim.keymap.set('n', 'dy', '<Cmd>normal! dd<CR>', { desc = '[Y]ank and delete line' })
+  vim.keymap.set('o', 'y', '_')
 
   -- Build
   vim.keymap.set('n', '<leader>q', function()
