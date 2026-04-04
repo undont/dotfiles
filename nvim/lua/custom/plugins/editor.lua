@@ -322,7 +322,27 @@ return {
   {
     'nemanjamalesija/smart-paste.nvim',
     event = 'VeryLazy',
-    opts = {},
+    config = function()
+      require('smart-paste').setup()
+      -- Guard against pasting into non-modifiable buffers (e.g. help, neotest output).
+      -- The plugin's keymaps look up these functions on the module table at call time,
+      -- so patching after setup intercepts all paste paths.
+      local paste = require 'smart-paste.paste'
+      local orig_smart_paste = paste.smart_paste
+      paste.smart_paste = function(entry, ...)
+        if not vim.bo.modifiable then
+          return type(entry) == 'string' and entry or entry.lhs
+        end
+        return orig_smart_paste(entry, ...)
+      end
+      local orig_visual_paste = paste.do_visual_paste
+      paste.do_visual_paste = function(...)
+        if not vim.bo.modifiable then
+          return
+        end
+        return orig_visual_paste(...)
+      end
+    end,
   },
 
   -- Dial: increment/decrement engine
@@ -332,6 +352,9 @@ return {
       {
         '<C-a>',
         function()
+          if not vim.bo.modifiable then
+            return
+          end
           require('dial.map').manipulate('increment', 'normal')
         end,
         desc = 'Increment',
@@ -339,6 +362,9 @@ return {
       {
         '<C-x>',
         function()
+          if not vim.bo.modifiable then
+            return
+          end
           require('dial.map').manipulate('decrement', 'normal')
         end,
         desc = 'Decrement',
@@ -346,6 +372,9 @@ return {
       {
         'g<C-a>',
         function()
+          if not vim.bo.modifiable then
+            return
+          end
           require('dial.map').manipulate('increment', 'gnormal')
         end,
         desc = 'Increment (sequential)',
@@ -353,6 +382,9 @@ return {
       {
         'g<C-x>',
         function()
+          if not vim.bo.modifiable then
+            return
+          end
           require('dial.map').manipulate('decrement', 'gnormal')
         end,
         desc = 'Decrement (sequential)',
@@ -361,6 +393,9 @@ return {
         '<C-a>',
         mode = 'v',
         function()
+          if not vim.bo.modifiable then
+            return
+          end
           require('dial.map').manipulate('increment', 'visual')
         end,
         desc = 'Increment',
@@ -369,6 +404,9 @@ return {
         '<C-x>',
         mode = 'v',
         function()
+          if not vim.bo.modifiable then
+            return
+          end
           require('dial.map').manipulate('decrement', 'visual')
         end,
         desc = 'Decrement',
@@ -377,6 +415,9 @@ return {
         'g<C-a>',
         mode = 'v',
         function()
+          if not vim.bo.modifiable then
+            return
+          end
           require('dial.map').manipulate('increment', 'gvisual')
         end,
         desc = 'Increment (sequential)',
@@ -385,6 +426,9 @@ return {
         'g<C-x>',
         mode = 'v',
         function()
+          if not vim.bo.modifiable then
+            return
+          end
           require('dial.map').manipulate('decrement', 'gvisual')
         end,
         desc = 'Decrement (sequential)',

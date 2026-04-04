@@ -374,8 +374,8 @@ $ tls
 
 Available session backups:
 
-  dana                  5 windows,  6 panes  (2025-12-29 23:08) [ACTIVE]
-  supplyscan-mcp        2 windows,  3 panes  (2025-12-29 23:08)
+  acme                  5 windows,  6 panes  (2025-12-29 23:08) [ACTIVE]
+  supplyscan            2 windows,  3 panes  (2025-12-29 23:08)
 ```
 
 ---

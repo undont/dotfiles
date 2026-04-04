@@ -38,10 +38,12 @@ nvim/colors/generated/
 
 # AI Code Assistants
 .claude/*
-!.claude/commands/
+!.claude/skills/
 !.claude/rules/
 .opencode
 
 # Local markdown files
 scratch/*
 /zsh/p10k.zsh
+/Dockerfile.timemachine
+.plans/*

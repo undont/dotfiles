@@ -1,5 +1,210 @@
 -- LSP configuration
 
+--- Deduplicate LSP results and display with Telescope
+local function lsp_dedup(method)
+  return function()
+    local on_list_opts = {
+      on_list = function(options)
+        local seen = {}
+        local items = {}
+        for _, item in ipairs(options.items) do
+          local key = item.filename .. ':' .. item.lnum .. ':' .. item.col
+          if not seen[key] then
+            seen[key] = true
+            table.insert(items, item)
+          end
+        end
+        if #items == 0 then
+          vim.notify('No results found', vim.log.levels.INFO)
+          return
+        end
+        options.items = items
+        vim.fn.setqflist({}, ' ', options)
+        if #items == 1 then
+          vim.cmd.cfirst()
+        else
+          require('telescope.builtin').quickfix()
+        end
+      end,
+    }
+    if method == 'references' then
+      vim.lsp.buf[method](nil, on_list_opts)
+    else
+      vim.lsp.buf[method](on_list_opts)
+    end
+  end
+end
+
+--- Collect, deduplicate, and sort diagnostics for fix-all-in-file.
+--- Returns items sorted bottom-up so line shifts don't affect earlier fixes.
+local function collect_fixable_diagnostics(bufnr)
+  local diagnostics = vim.diagnostic.get(bufnr)
+  if #diagnostics == 0 then
+    return {}
+  end
+
+  local seen = {}
+  local items = {}
+  for _, d in ipairs(diagnostics) do
+    local key = d.lnum .. ':' .. d.col .. ':' .. (d.message or '')
+    if not seen[key] then
+      seen[key] = true
+      local lsp_diag = d.user_data and d.user_data.lsp
+        or {
+          range = {
+            start = { line = d.lnum, character = d.col },
+            ['end'] = { line = d.end_lnum or d.lnum, character = d.end_col or d.col },
+          },
+          message = d.message,
+          severity = d.severity,
+          source = d.source,
+          code = d.code,
+        }
+      table.insert(items, { lnum = d.lnum, col = d.col, lsp = lsp_diag })
+    end
+  end
+
+  table.sort(items, function(a, b)
+    if a.lnum == b.lnum then
+      return a.col > b.col
+    end
+    return a.lnum > b.lnum
+  end)
+
+  return items
+end
+
+--- Resolve a code action if needed, then apply it.
+--- Some servers (Roslyn) return lazy actions that need codeAction/resolve.
+local function resolve_and_apply(bufnr, action, client, on_done)
+  local function apply(a)
+    if a.edit then
+      vim.lsp.util.apply_workspace_edit(a.edit, 'utf-8')
+      return true
+    elseif a.command and client then
+      client:exec_cmd(a.command)
+      return true
+    end
+    return false
+  end
+
+  if action.edit or action.command then
+    local applied = apply(action)
+    on_done(applied)
+  else
+    vim.lsp.buf_request(bufnr, 'codeAction/resolve', action, function(err, resolved)
+      local applied = not err and resolved and apply(resolved) or false
+      on_done(applied)
+    end)
+  end
+end
+
+--- Apply all quickfix code actions for every diagnostic in the current buffer.
+--- Processes bottom-up so line shifts from earlier fixes don't break later ones.
+local function fix_all_in_file()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local items = collect_fixable_diagnostics(bufnr)
+  if #items == 0 then
+    vim.notify('No diagnostics in file', vim.log.levels.INFO)
+    return
+  end
+
+  local applied = 0
+  local function apply_next(idx)
+    if idx > #items then
+      vim.notify(string.format('Applied %d fix%s', applied, applied == 1 and '' or 'es'), vim.log.levels.INFO)
+      return
+    end
+
+    local item = items[idx]
+    local range = item.lsp.range
+      or {
+        start = { line = item.lnum, character = item.col },
+        ['end'] = { line = item.lnum, character = item.col },
+      }
+    local params = {
+      textDocument = vim.lsp.util.make_text_document_params(bufnr),
+      range = range,
+      context = { diagnostics = { item.lsp } },
+    }
+
+    local handled = false
+    vim.lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(err, result, ctx)
+      if handled then
+        return
+      end
+      handled = true
+
+      if err or not result or #result == 0 then
+        vim.defer_fn(function()
+          apply_next(idx + 1)
+        end, 50)
+        return
+      end
+
+      -- Prefer quickfix kind, fall back to first action
+      local action
+      for _, a in ipairs(result) do
+        if a.kind and a.kind:find '^quickfix' then
+          action = a
+          break
+        end
+      end
+      action = action or result[1]
+
+      local client = vim.lsp.get_client_by_id(ctx.client_id)
+      resolve_and_apply(bufnr, action, client, function(was_applied)
+        if was_applied then
+          applied = applied + 1
+        end
+        vim.defer_fn(function()
+          apply_next(idx + 1)
+        end, 50)
+      end)
+    end)
+  end
+
+  apply_next(1)
+end
+
+--- Restart all LSP servers attached to the given buffer.
+local function restart_lsp_clients(bufnr)
+  local clients = vim.lsp.get_clients { bufnr = bufnr }
+  local count = 0
+  for _, client in ipairs(clients) do
+    if client.server_capabilities then
+      vim.cmd('lsp restart ' .. client.name)
+      count = count + 1
+    end
+  end
+  if count > 0 then
+    vim.notify(string.format('Restarted %d LSP server(s)', count), vim.log.levels.INFO)
+  else
+    vim.notify('No LSP servers attached to buffer', vim.log.levels.WARN)
+  end
+end
+
+--- Override show_document to handle cursor-position-outside-buffer errors
+--- from LSP servers that report invalid ranges.
+local function patch_show_document()
+  local orig = vim.lsp.util.show_document
+  vim.lsp.util.show_document = function(location, offset_encoding, opts)
+    local ok, ret = pcall(orig, location, offset_encoding, opts)
+    if ok then
+      return ret
+    end
+    if ret:match 'Cursor position outside buffer' then
+      local uri = location.uri or location.targetUri
+      if uri then
+        vim.cmd('edit ' .. vim.uri_to_fname(uri))
+        vim.notify('Jumped to file (cursor position was invalid)', vim.log.levels.WARN)
+        return true
+      end
+    end
+    error(ret)
+  end
+end
+
 return {
   -- Lua development for Neovim
   {
@@ -16,167 +221,20 @@ return {
   {
     'neovim/nvim-lspconfig',
     dependencies = {
-      { 'mason-org/mason.nvim', opts = {} },
+      {
+        'mason-org/mason.nvim',
+        opts = {
+          registries = {
+            'github:mason-org/mason-registry',
+            'github:Crashdummyy/mason-registry', -- roslyn LSP server
+          },
+        },
+      },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-      { 'j-hui/fidget.nvim', event = 'LspAttach', opts = {} },
       'saghen/blink.cmp',
     },
     config = function()
-      -- Deduplicate LSP results and display with Telescope
-      local function lsp_dedup(method)
-        return function()
-          local on_list_opts = {
-            on_list = function(options)
-              local seen = {}
-              local items = {}
-              for _, item in ipairs(options.items) do
-                local key = item.filename .. ':' .. item.lnum .. ':' .. item.col
-                if not seen[key] then
-                  seen[key] = true
-                  table.insert(items, item)
-                end
-              end
-              if #items == 0 then
-                vim.notify('No results found', vim.log.levels.INFO)
-                return
-              end
-              options.items = items
-              vim.fn.setqflist({}, ' ', options)
-              if #items == 1 then
-                vim.cmd.cfirst()
-              else
-                require('telescope.builtin').quickfix()
-              end
-            end,
-          }
-          if method == 'references' then
-            vim.lsp.buf[method](nil, on_list_opts)
-          else
-            vim.lsp.buf[method](on_list_opts)
-          end
-        end
-      end
-
-      -- Apply all quickfix code actions for every diagnostic in the current buffer.
-      -- Processes bottom-up so line shifts from earlier fixes don't break later ones.
-      -- Handles servers that need codeAction/resolve (e.g. Roslyn).
-      local function fix_all_in_file()
-        local bufnr = vim.api.nvim_get_current_buf()
-        local diagnostics = vim.diagnostic.get(bufnr)
-        if #diagnostics == 0 then
-          vim.notify('No diagnostics in file', vim.log.levels.INFO)
-          return
-        end
-
-        -- Deduplicate and convert to LSP format
-        local seen = {}
-        local items = {}
-        for _, d in ipairs(diagnostics) do
-          local key = d.lnum .. ':' .. d.col .. ':' .. (d.message or '')
-          if not seen[key] then
-            seen[key] = true
-            -- Use original LSP diagnostic if available (preserves data/code fields servers need)
-            local lsp_diag = d.user_data and d.user_data.lsp
-              or {
-                range = {
-                  start = { line = d.lnum, character = d.col },
-                  ['end'] = { line = d.end_lnum or d.lnum, character = d.end_col or d.col },
-                },
-                message = d.message,
-                severity = d.severity,
-                source = d.source,
-                code = d.code,
-              }
-            table.insert(items, { lnum = d.lnum, col = d.col, lsp = lsp_diag })
-          end
-        end
-
-        -- Sort bottom-up so line shifts don't affect earlier fixes
-        table.sort(items, function(a, b)
-          if a.lnum == b.lnum then
-            return a.col > b.col
-          end
-          return a.lnum > b.lnum
-        end)
-
-        local applied = 0
-        local function apply_next(idx)
-          if idx > #items then
-            vim.notify(string.format('Applied %d fix%s', applied, applied == 1 and '' or 'es'), vim.log.levels.INFO)
-            return
-          end
-
-          local item = items[idx]
-          local range = item.lsp.range
-            or {
-              start = { line = item.lnum, character = item.col },
-              ['end'] = { line = item.lnum, character = item.col },
-            }
-          local params = {
-            textDocument = vim.lsp.util.make_text_document_params(bufnr),
-            range = range,
-            context = { diagnostics = { item.lsp } },
-          }
-
-          local function next_item()
-            vim.defer_fn(function()
-              apply_next(idx + 1)
-            end, 50)
-          end
-
-          local function apply_action(a, client)
-            if a.edit then
-              vim.lsp.util.apply_workspace_edit(a.edit, 'utf-8')
-              applied = applied + 1
-            elseif a.command and client then
-              client:exec_cmd(a.command)
-              applied = applied + 1
-            end
-            next_item()
-          end
-
-          local handled = false
-          vim.lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(err, result, ctx)
-            if handled then
-              return
-            end
-            handled = true
-
-            local client = vim.lsp.get_client_by_id(ctx.client_id)
-
-            if not err and result and #result > 0 then
-              -- Prefer quickfix kind, fall back to first action
-              local action
-              for _, a in ipairs(result) do
-                if a.kind and a.kind:find '^quickfix' then
-                  action = a
-                  break
-                end
-              end
-              action = action or result[1]
-
-              -- Some servers (Roslyn) need codeAction/resolve to get the edit
-              if not action.edit and not action.command then
-                vim.lsp.buf_request(bufnr, 'codeAction/resolve', action, function(resolve_err, resolved)
-                  if not resolve_err and resolved then
-                    apply_action(resolved, client)
-                  else
-                    next_item()
-                  end
-                end)
-              else
-                apply_action(action, client)
-              end
-            else
-              next_item()
-            end
-          end)
-        end
-
-        apply_next(1)
-      end
-
       -- LSP attach autocmd
       vim.api.nvim_create_autocmd('LspAttach', {
         group = vim.api.nvim_create_augroup('kickstart-lsp-attach', { clear = true }),
@@ -188,7 +246,6 @@ return {
 
           -- LSP keymaps
           map('K', function()
-            -- Close any open diagnostic float and suppress it until cursor moves
             pcall(vim.api.nvim_win_close, vim.b[event.buf]._diag_float_win or -1, true)
             vim.b._hover_open = true
             vim.lsp.buf.hover()
@@ -204,38 +261,12 @@ return {
           map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Workspace symbols')
           map('grt', lsp_dedup 'type_definition', '[T]ype definition')
           map('<leader>lr', function()
-            -- Get all LSP clients attached to the current buffer
-            local clients = vim.lsp.get_clients { bufnr = event.buf }
-            local restarted_count = 0
-
-            for _, client in ipairs(clients) do
-              -- Only restart clients that have server_capabilities (actual LSP servers)
-              -- This filters out non-LSP clients like Copilot
-              if client.server_capabilities then
-                vim.cmd('lsp restart ' .. client.name)
-                restarted_count = restarted_count + 1
-              end
-            end
-
-            if restarted_count > 0 then
-              vim.notify(string.format('Restarted %d LSP server(s)', restarted_count), vim.log.levels.INFO)
-            else
-              vim.notify('No LSP servers attached to buffer', vim.log.levels.WARN)
-            end
+            restart_lsp_clients(event.buf)
           end, '[R]estart')
-
-          -- Helper for checking client support
-          ---@param client vim.lsp.Client
-          ---@param method vim.lsp.protocol.Method
-          ---@param bufnr? integer
-          ---@return boolean
-          local function client_supports_method(client, method, bufnr)
-            return client:supports_method(method, bufnr)
-          end
 
           -- Document highlight on cursor hold
           local client = vim.lsp.get_client_by_id(event.data.client_id)
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
             local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
             vim.api.nvim_create_autocmd({ 'CursorHold', 'CursorHoldI' }, {
               buffer = event.buf,
@@ -259,7 +290,7 @@ return {
           end
 
           -- Inlay hints toggle
-          if client and client_supports_method(client, vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
+          if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
             map('<leader>th', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, 'Inlay [H]ints')
@@ -286,41 +317,15 @@ return {
         },
       }
 
-      -- NOTE: IDE0079 (Remove unnecessary suppression) filtering is in dotnet.lua
-      -- scoped to the Roslyn LSP client where the false positives originate
-
       -- Hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
 
-      -- Apply blink.cmp capabilities to all LSP servers
-      vim.lsp.config('*', {
-        capabilities = require('blink.cmp').get_lsp_capabilities(),
-      })
+      local caps = require('blink.cmp').get_lsp_capabilities()
+      -- Remove colorProvider to prevent nvim 0.12 document_color assertion bug
+      caps.textDocument.colorProvider = nil
+      vim.lsp.config('*', { capabilities = caps })
 
-      -- Override show_document to handle cursor position errors
-      local show_document = vim.lsp.util.show_document
-      vim.lsp.util.show_document = function(location, offset_encoding, opts)
-        -- Try to show the document, catching cursor position errors
-        local ok, ret = pcall(show_document, location, offset_encoding, opts)
+      patch_show_document()
 
-        if not ok then
-          -- If error contains "Cursor position outside buffer", try to handle it
-          if ret:match 'Cursor position outside buffer' then
-            -- Open the file without jumping to the position
-            local uri = location.uri or location.targetUri
-            if uri then
-              vim.cmd('edit ' .. vim.uri_to_fname(uri))
-              vim.notify('Jumped to file (cursor position was invalid)', vim.log.levels.WARN)
-              return true
-            end
-          end
-          -- Re-throw other errors
-          error(ret)
-        end
-
-        return ret
-      end
-
-      -- Configure cssls to ignore Tailwind v4 at-rules (@theme, @apply, @custom-variant)
       vim.lsp.config('cssls', {
         settings = {
           css = { lint = { unknownAtRules = 'ignore' } },
@@ -353,19 +358,14 @@ return {
         yamlls = {},
       }
 
-      -- Setup LSP servers with mason-lspconfig
-      -- NOTE: handlers option was removed in mason-lspconfig v2.0.0
-      -- Servers are now auto-enabled via vim.lsp.enable() by automatic_enable (default)
       require('mason-lspconfig').setup {
         ensure_installed = vim.tbl_keys(servers or {}),
         automatic_installation = false,
         automatic_enable = {
-          exclude = { 'omnisharp' }, -- Using easy-dotnet's Roslyn LSP instead
+          exclude = { 'omnisharp' }, -- Using roslyn.nvim instead
         },
       }
 
-      -- Install additional tools (formatters, linters)
-      -- Note: These are NOT LSP servers, just CLI tools
       require('mason-tool-installer').setup {
         ensure_installed = {
           -- LSP servers
@@ -380,12 +380,14 @@ return {
           'tailwindcss',
           'ts_ls',
           'yamlls',
-        -- Formatters
-        'csharpier',
-        'gofumpt',
-        'goimports',
-        'prettier',
-        'stylua',
+          -- Roslyn (C# LSP, from Crashdummyy/mason-registry)
+          'roslyn',
+          -- Formatters
+          'csharpier',
+          'gofumpt',
+          'goimports',
+          'prettier',
+          'stylua',
           -- Linters
           'golangci-lint',
         },
@@ -402,7 +404,11 @@ return {
       {
         '<leader>f',
         function()
-          require('conform').format({ async = true, lsp_format = 'fallback' })
+          if not vim.bo.modifiable then
+            vim.notify('Buffer is not modifiable', vim.log.levels.WARN)
+            return
+          end
+          require('conform').format { async = true, lsp_format = 'fallback' }
         end,
         mode = '',
         desc = '[F]ormat buffer',

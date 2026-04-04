@@ -367,6 +367,8 @@ fi
 # =============================================================================
 # Disable Microsoft telemetry for .NET CLI
 export DOTNET_CLI_TELEMETRY_OPTOUT='true'
+# Prevent MSBuild from keeping worker nodes alive between builds
+export MSBUILDDISABLENODEREUSE=1
 
 # =============================================================================
 # SONARCLOUD
@@ -422,6 +424,9 @@ alias ralph="cl && ralph"              # Clear scrollback + launch Ralph => Clau
 alias ralf="cl && ralf"                # Clear scrollback + launch Ralf => Claude Code
 alias gemini="cl && gemini"            # Clear scrollback + launch Gemini AI CLI
 alias copilot="cl && copilot"          # Clear scrollback + launch GitHub Copilot CLI
+alias btop="cl && btop"                # Clear scrollback + launch btop system monitor
+alias lazydocker="cl && lazydocker"    # Clear scrollback + launch lazydocker
+alias dash="cl && gh dash"             # Clear scrollback + launch GitHub Dash
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash config
 alias ff="fastfetch"                   # Fastfetch system info
@@ -459,6 +464,8 @@ alias grep="grep --color=auto"
 alias h="cd ~"
 alias j="jobs"
 alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'
+alias nuke-nvim='ps -eo pid,ppid,args | awk "/nvim --embed/ && \$2 == 1 {print \$1}" | xargs kill 2>/dev/null && echo "done" || echo "no stale nvim processes"'
+alias nuke-dotnet='dotnet build-server shutdown 2>/dev/null; pkill -f "OmniSharp.dll" 2>/dev/null; pkill -f "EasyDotnet.BuildServer.dll" 2>/dev/null; pkill -f "dotnet-easydotnet" 2>/dev/null; pkill -f "VBCSCompiler" 2>/dev/null; pkill -f "vstest.console.dll" 2>/dev/null; echo "done"'
 
 # Clipboard — Linux only (macOS has pbcopy/pbpaste natively)
 if [[ "$IS_MACOS" != "1" ]]; then
@@ -628,7 +635,6 @@ alias gfp="git fetch -pf"              # Fetch and prune remote-tracking branche
 alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
 alias grmc="git rm --cached"           # Untrack file(s) without deleting from disk
 alias gca="git commit --amend"         # Amend the last commit
-alias dash="cl && gh dash"             # Open GitHub Dash, after clearing scrollback
 
 # Make: forward to repo root when no Makefile in current directory
 make() {
