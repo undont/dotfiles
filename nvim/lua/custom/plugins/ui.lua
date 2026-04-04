@@ -34,15 +34,15 @@ return {
         spec = {
           -- ── Always-visible groups ──
           { '<leader>a', group = '[A]I', icon = { icon = '󰚩 ', color = 'purple' } },
-          { '<leader>b', group = '[B]uffer / Breakpoint', icon = { icon = '󰈔 ', color = 'azure' } },
+          { '<leader>b', group = '[B]reakpoint / Buffer', icon = { icon = '󰈔 ', color = 'red' } },
           { '<leader>d', group = '[D]iff', icon = { cat = 'filetype', name = 'git' } },
           { '<leader>H', group = 'Git [H]unk', icon = { cat = 'filetype', name = 'git' } },
-          { '<leader>h', group = '[H]arpoon', icon = { icon = '󱡀 ', color = 'cyan' } },
-          { '<leader>s', group = '[S]earch', icon = { icon = '', color = 'green' } },
+          { '<leader>h', group = '[H]arpoon', icon = { icon = '󱡀 ', color = 'blue' } },
+          { '<leader>s', group = '[S]earch', icon = { icon = '', color = 'blue' } },
           { '<leader>S', group = '[S]pell', icon = { icon = '󰓆 ', color = 'yellow' } },
           { '<leader>t', group = '[T]est / Toggle', icon = { cat = 'filetype', name = 'neotest-summary' } },
-          { '<leader>l', group = '[L]SP', icon = { icon = '', color = 'orange' } },
-          { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'blue' } },
+          { '<leader>l', group = '[L]SP', icon = { icon = '', color = 'green' } },
+          { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'red' } },
 
           -- ── Always-visible (non-code contexts like Octo, diffview) ──
           { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' } },
@@ -50,7 +50,7 @@ return {
           -- ── Filetype-gated groups (hidden by default, shown in code files via autocmd) ──
           { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = true },
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = true },
-          { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = true },
+          { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = true },
 
           -- ── Filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
           { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = true },
@@ -67,12 +67,12 @@ return {
           { '<leader>g', hidden = true },
           { '<leader>i', hidden = true },
 
-          { '<leader>?', icon = { icon = '', color = 'cyan' } },
-          { '<leader>/', icon = { icon = '', color = 'green' } },
-          { '<leader><leader>', icon = { icon = '', color = 'azure' } },
-          { '<leader>z', icon = { icon = '', color = 'blue' } },
+          { '<leader>?', icon = { icon = '', color = 'blue' } },
+          { '<leader>/', icon = { icon = '', color = 'blue' } },
+          { '<leader><leader>', icon = { icon = '', color = 'blue' } },
+          { '<leader>z', icon = { icon = '', color = 'red' } },
           -- ── Conditionally hidden (shown in code files via autocmd) ──
-          { '<leader>q', icon = { icon = '', color = 'orange' }, hidden = true },
+          { '<leader>q', icon = { icon = '', color = 'green' }, hidden = true },
           { '<leader>f', hidden = true },
           { '<leader>bb', hidden = true },
           { '<leader>bc', hidden = true },
@@ -127,7 +127,7 @@ return {
           wk.add {
             -- Code-file groups (LSP, diagnostics, format, breakpoints)
             { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = not is_code },
-            { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = not is_code },
+            { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = not is_code },
             { '<leader>f', hidden = not is_code },
             { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = not is_code },
             { '<leader>q', hidden = not is_code },

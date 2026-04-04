@@ -14,7 +14,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: roslyn auto-suppression during Octo PR review and diffview — re-enables when opening a real .cs file
 - Nvim: replaced fidget.nvim with nvim-notify for LSP progress, build status, and refresh messages
 - Nvim: Octo improvements — review thread navigation (`]C`/`[C`), viewed file tracking (`<Tab>`, `]u`/`[u`), file panel `l` keymap, left-side diff highlight fix, `BufModifiedSet` save guard
-- Nvim: which-key tiered display — leader popup shows only category groups; context groups gated to relevant filetypes; PR Review always visible
+- Nvim: which-key tiered display — leader popup shows only category groups; context groups gated to relevant filetypes; PR Review always visible; consistent icon colour scheme (blue=navigation, green=tooling, red=editor, purple=AI, yellow=misc)
+- Nvim: which-key Claude icon uses custom orange highlight (`#ff9e64`) distinct from yellow `DiagnosticWarn`; `<leader>b` label updated to `[B]reakpoint / Buffer`
 - Nvim: neotest-vitest monorepo support — resolves vitest binary from nearest `node_modules` with cached subdirectory fallback
 - Nvim: statusline — `~/` relative paths, compact diff (`+N -N`), mini.icons for filetype/git icons, removed LSP server count
 - Nvim: editable breakpoint list (`<leader>bl`), `<leader>by` yank buffer path, Flash treesitter (`S`)
