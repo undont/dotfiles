@@ -46,6 +46,16 @@ local function edit_diff_file()
 
       local path = file.absolute_path
 
+      -- Pre-load the target buffer and force-parse the treesitter tree
+      -- while diffview is still visible. Heavy grammars (C#) take 2-5s
+      -- to parse — doing it here means highlighting is ready on switch
+      -- instead of the user watching an un-styled buffer settle.
+      local target_buf = vim.fn.bufadd(path)
+      vim.fn.bufload(target_buf)
+      pcall(function()
+        vim.treesitter.get_parser(target_buf):parse()
+      end)
+
       -- Close the tabpage directly for instant visual feedback.
       local tabpage = view.tabpage
       if tabpage and vim.api.nvim_tabpage_is_valid(tabpage) then

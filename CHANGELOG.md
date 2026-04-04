@@ -24,7 +24,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 - Nvim: `dd` deletes without yanking (black hole register); `dy` yanks and deletes (original `dd` via operator-pending `y` = current line motion)
-- Nvim: diffview — instant tab close, `]f`/`[f` as buffer-local keymaps, disabled `<leader>` defaults that stole which-key prefix
+- Nvim: diffview — instant tab close, `]f`/`[f` as buffer-local keymaps, disabled `<leader>` defaults that stole which-key prefix, treesitter pre-warming on `<leader>de` for instant highlighting
 - Nvim: which-key `BufEnter` caches visibility state and skips `buftype ~= ''` buffers to avoid trigger removal during rapid transitions
 - Nvim: `<leader>lR` refresh noise suppressed via timestamp-based filter
 - Nvim: smart-paste, conform, dial.nvim guarded against non-modifiable buffers

@@ -14,6 +14,15 @@ return {
     config = function()
       local wk = require 'which-key'
 
+      -- Custom highlight for Claude icon (distinct orange, not DiagnosticWarn yellow)
+      vim.api.nvim_set_hl(0, 'WhichKeyIconClaude', { fg = '#ff9e64' })
+      vim.api.nvim_create_autocmd('ColorScheme', {
+        group = vim.api.nvim_create_augroup('which-key-claude-hl', { clear = true }),
+        callback = function()
+          vim.api.nvim_set_hl(0, 'WhichKeyIconClaude', { fg = '#ff9e64' })
+        end,
+      })
+
       -- Filetype sets for context gating
       local dotnet_fts = { cs = true, fsharp = true, razor = true, xml = true }
 
@@ -25,7 +34,7 @@ return {
         spec = {
           -- ── Always-visible groups ──
           { '<leader>a', group = '[A]I', icon = { icon = '󰚩 ', color = 'purple' } },
-          { '<leader>b', group = '[B]uffer', icon = { icon = '󰈔 ', color = 'azure' } },
+          { '<leader>b', group = '[B]uffer / Breakpoint', icon = { icon = '󰈔 ', color = 'azure' } },
           { '<leader>d', group = '[D]iff', icon = { cat = 'filetype', name = 'git' } },
           { '<leader>H', group = 'Git [H]unk', icon = { cat = 'filetype', name = 'git' } },
           { '<leader>h', group = '[H]arpoon', icon = { icon = '󱡀 ', color = 'cyan' } },
@@ -44,7 +53,7 @@ return {
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'cyan' }, hidden = true },
 
           -- ── Filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
-          { '<leader>c', group = '[C]laude', icon = { icon = '', color = 'green' }, hidden = true },
+          { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = true },
           { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = true },
           { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' }, hidden = true },
           { '<leader>N', group = '[N]otifications', icon = { icon = '󰈸 ', color = 'yellow' } },
@@ -128,7 +137,7 @@ return {
             { '<leader>bl', hidden = not is_code },
 
             -- Markdown-only groups
-            { '<leader>c', group = '[C]laude', icon = { icon = '', color = 'green' }, hidden = not is_markdown },
+            { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = not is_markdown },
             { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = not is_markdown },
 
             -- .NET-only group

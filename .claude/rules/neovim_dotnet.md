@@ -64,6 +64,19 @@ cycle:
 - **Triggers:** `FileType cs` and `BufEnter *.cs` (2s defer) both call
   `try_restore_roslyn()` to catch different re-entry paths.
 
+## Diffview Edit (`<leader>de`) — Treesitter Pre-warming
+
+Opening a .cs file from diffview via `edit_diff_file()` in `pr-review.lua` used
+to show an un-highlighted buffer for 2-5s while treesitter parsed the C# grammar.
+
+Fix: before closing the diffview tab, `bufadd` + `bufload` the target file and
+call `vim.treesitter.get_parser(buf):parse()` to force a synchronous full-tree
+parse while diffview is still visible. When the tab closes and `:edit` switches
+to the already-loaded buffer, highlighting is instant.
+
+Roslyn restore is safe during pre-load — `try_restore_roslyn()` checks
+`dv_lib.get_current_view()` and bails because diffview is still open.
+
 ## Which-Key in Diffview
 
 Which-key's trigger system has brief suspension windows (`ModeChanged`, `BufNew`)
