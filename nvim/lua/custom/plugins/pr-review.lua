@@ -31,24 +31,53 @@ local function edit_diff_file()
         return
       end
 
-      -- Capture cursor from the diff view's main window
+      -- Capture cursor position before closing. Try the right-side (new)
+      -- diff pane first, fall back to current window.
       local cursor
-      if file == view.cur_entry and view.cur_layout then
+      if view.cur_layout then
         local win = view.cur_layout:get_main_win()
         if win and win.id and vim.api.nvim_win_is_valid(win.id) then
           cursor = vim.api.nvim_win_get_cursor(win.id)
         end
       end
+      if not cursor then
+        cursor = vim.api.nvim_win_get_cursor(0)
+      end
 
       local path = file.absolute_path
-      view:close()
-      dv_lib.dispose_view(view)
 
-      vim.schedule(function()
-        vim.cmd('edit ' .. vim.fn.fnameescape(path))
-        if cursor then
-          pcall(vim.api.nvim_win_set_cursor, 0, cursor)
+      -- Pre-load the target buffer and force-parse the treesitter tree
+      -- while diffview is still visible. Heavy grammars (C#) take 2-5s
+      -- to parse — doing it here means highlighting is ready on switch
+      -- instead of the user watching an un-styled buffer settle.
+      local target_buf = vim.fn.bufadd(path)
+      vim.fn.bufload(target_buf)
+      pcall(function()
+        vim.treesitter.get_parser(target_buf):parse()
+      end)
+
+      -- Close the tabpage directly for instant visual feedback.
+      local tabpage = view.tabpage
+      if tabpage and vim.api.nvim_tabpage_is_valid(tabpage) then
+        if #vim.api.nvim_list_tabpages() == 1 then
+          vim.cmd 'tabnew'
         end
+        vim.cmd('tabclose ' .. vim.api.nvim_tabpage_get_number(tabpage))
+      end
+
+      vim.cmd('edit ' .. vim.fn.fnameescape(path))
+      if cursor then
+        pcall(vim.api.nvim_win_set_cursor, 0, cursor)
+      end
+
+      -- Defer heavy cleanup (file:destroy() per diff buffer) so the
+      -- editor stays responsive. Event suppression keeps it fast.
+      vim.schedule(function()
+        local ei = vim.o.eventignore
+        vim.o.eventignore = 'all'
+        view:close()
+        dv_lib.dispose_view(view)
+        vim.o.eventignore = ei
       end)
       return
     end
@@ -155,7 +184,13 @@ return {
         end,
         desc = '[D]iff [O]pen (vs index)',
       },
-      { '<leader>dc', '<cmd>DiffviewClose<CR>', desc = '[D]iff [C]lose' },
+      {
+        '<leader>dc',
+        function()
+          vim.cmd 'DiffviewClose'
+        end,
+        desc = '[D]iff [C]lose',
+      },
       {
         '<leader>dt',
         function()
@@ -194,42 +229,17 @@ return {
     config = function(_, opts)
       require('diffview').setup(opts)
 
-      -- Global ]f/[f: active while diffview is open, cleaned up when it closes
-      local function set_nav()
-        local actions = require 'diffview.actions'
-        vim.keymap.set('n', ']f', actions.select_next_entry, { silent = true, desc = 'Next changed file (diffview)' })
-        vim.keymap.set('n', '[f', actions.select_prev_entry, { silent = true, desc = 'Previous changed file (diffview)' })
-      end
-
-      local function clear_nav()
-        -- Restore mini.bracketed file navigation (don't just delete, or the built-in [f takes over)
-        local mb_ok, mb = pcall(require, 'mini.bracketed')
-        if mb_ok then
-          vim.keymap.set('n', ']f', function()
-            local dir = vim.fn.expand '%:p:h'
-            if dir ~= '' and vim.fn.isdirectory(dir) == 1 then
-              mb.file 'forward'
-            end
-          end, { silent = true, desc = 'Next file on disk' })
-          vim.keymap.set('n', '[f', function()
-            local dir = vim.fn.expand '%:p:h'
-            if dir ~= '' and vim.fn.isdirectory(dir) == 1 then
-              mb.file 'backward'
-            end
-          end, { silent = true, desc = 'Previous file on disk' })
-        else
-          pcall(vim.keymap.del, 'n', ']f')
-          pcall(vim.keymap.del, 'n', '[f')
-        end
-      end
-
-      vim.api.nvim_create_autocmd('User', {
-        pattern = 'DiffviewViewOpened',
-        callback = set_nav,
-      })
-      vim.api.nvim_create_autocmd('User', {
-        pattern = 'DiffviewViewClosed',
-        callback = clear_nav,
+      -- Pin a permanent <Space> → which-key keymap on diffview buffers.
+      -- Which-key's trigger system has brief suspension windows (ModeChanged,
+      -- BufNew) where the <Space> trigger is absent. A regular buffer-local
+      -- keymap isn't managed by the trigger system and can't be removed.
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'DiffviewFiles', 'DiffviewFileHistory' },
+        callback = function(ev)
+          vim.keymap.set('n', ' ', function()
+            require('which-key').show ' '
+          end, { buffer = ev.buf })
+        end,
       })
 
       -- Patch diffview upstream bugs (nil guards for async race conditions)
@@ -312,16 +322,41 @@ return {
         },
         keymaps = {
           view = {
+            { 'n', ']f', actions.select_next_entry, { desc = 'Next changed file' } },
+            { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+            -- Disable <leader> defaults — they steal the prefix from which-key
+            { 'n', '<leader>e', false },
+            { 'n', '<leader>b', false },
+            { 'n', '<leader>co', false },
+            { 'n', '<leader>ct', false },
+            { 'n', '<leader>cb', false },
+            { 'n', '<leader>ca', false },
+            { 'n', '<leader>cO', false },
+            { 'n', '<leader>cT', false },
+            { 'n', '<leader>cB', false },
+            { 'n', '<leader>cA', false },
           },
           file_panel = {
+            { 'n', ']f', actions.select_next_entry, { desc = 'Next changed file' } },
+            { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+            { 'n', '<leader>e', false },
+            { 'n', '<leader>b', false },
+            { 'n', '<leader>cO', false },
+            { 'n', '<leader>cT', false },
+            { 'n', '<leader>cB', false },
+            { 'n', '<leader>cA', false },
           },
           file_history_panel = {
+            { 'n', ']f', actions.select_next_entry, { desc = 'Next changed file' } },
+            { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
+            { 'n', '<leader>e', false },
+            { 'n', '<leader>b', false },
           },
         },
       }
@@ -410,11 +445,19 @@ return {
           review_diff = {
             select_next_entry = { lhs = ']f', desc = 'move to next changed file' },
             select_prev_entry = { lhs = '[f', desc = 'move to previous changed file' },
+            next_thread = { lhs = ']C', desc = 'next review thread' },
+            prev_thread = { lhs = '[C', desc = 'prev review thread' },
+            toggle_viewed = { lhs = '<Tab>', desc = 'toggle file viewed' },
+            select_next_unviewed_entry = { lhs = ']u', desc = 'next unviewed file' },
+            select_prev_unviewed_entry = { lhs = '[u', desc = 'prev unviewed file' },
           },
           file_panel = {
             select_next_entry = { lhs = ']f', desc = 'move to next changed file' },
             select_prev_entry = { lhs = '[f', desc = 'move to previous changed file' },
             select_entry = { lhs = '<CR>', desc = 'open file' },
+            toggle_viewed = { lhs = '<Tab>', desc = 'toggle file viewed' },
+            select_next_unviewed_entry = { lhs = ']u', desc = 'next unviewed file' },
+            select_prev_unviewed_entry = { lhs = '[u', desc = 'prev unviewed file' },
           },
           review_thread = {
             select_next_entry = { lhs = ']f', desc = 'move to next changed file' },
@@ -448,6 +491,28 @@ return {
       mappings.list_changed_files = context.within_octo_buffer(function(buffer)
         require('octo.picker').changed_files { repo = buffer.repo, number = buffer.number }
       end)
+
+      -- Review buffers are ephemeral — never prompt to save on close.
+      -- Thread buffers use buftype=acwrite (upstream), so Neovim can mark
+      -- them modified. Reset the flag immediately to suppress the prompt.
+      vim.api.nvim_create_autocmd('BufModifiedSet', {
+        pattern = 'octo://*/review/*',
+        callback = function(event)
+          if vim.bo[event.buf].modified then
+            vim.bo[event.buf].modified = false
+          end
+        end,
+      })
+
+      -- 'l' to open file from file panel (mirrors diffview behaviour)
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'octo_panel',
+        callback = function(event)
+          vim.keymap.set('n', 'l', function()
+            require('octo.mappings').select_entry()
+          end, { buffer = event.buf, desc = 'Open file' })
+        end,
+      })
 
       -- Scroll keymaps for review diff buffers (non-modifiable, so safe to use single keys)
       local file_entry = require 'octo.reviews.file-entry'
@@ -493,6 +558,35 @@ return {
           return
         end
         layout:select_prev_file()
+      end
+
+      mappings.select_next_unviewed_entry = function()
+        local layout = reviews.get_current_layout()
+        if not layout then
+          return
+        end
+        local file = layout:get_current_file()
+        if file and file.viewed_state ~= 'VIEWED' then
+          file:toggle_viewed()
+        end
+        layout:select_next_unviewed_file()
+      end
+      mappings.select_prev_unviewed_entry = function()
+        local layout = reviews.get_current_layout()
+        if not layout then
+          return
+        end
+        layout:select_prev_unviewed_file()
+      end
+
+      -- Fix left-side diff highlights: upstream only remaps DiffChange but
+      -- not DiffAdd, so deleted lines on the left show green instead of red.
+      local Layout = require 'octo.reviews.layout'
+      local constants = require 'octo.constants'
+      local orig_init_layout = Layout.init_layout
+      Layout.init_layout = function(self)
+        orig_init_layout(self)
+        vim.api.nvim_set_hl(constants.OCTO_REVIEW_LEFT_HIGHLIGHT_NS, 'DiffAdd', { link = 'DiffDelete' })
       end
     end,
   },

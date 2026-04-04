@@ -6,6 +6,52 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.79] - 2026-04-04
+
+### Added
+- Nvim: replaced easy-dotnet LSP with roslyn.nvim for C# diagnostics — real-time inline diagnostics, pull diagnostic support, cross-namespace dedup, false positive filtering (IDE0005, IDE0079, CA1825)
+- Nvim: .NET tests now use easy-dotnet.nvim's built-in test runner — gutter signs, run/debug from buffer (`<leader>tr`/`<leader>td`), test explorer (`<leader>te`), peek stacktrace (`<leader>tp`)
+- Nvim: roslyn auto-suppression during Octo PR review and diffview — re-enables when opening a real .cs file
+- Nvim: replaced fidget.nvim with nvim-notify for LSP progress, build status, and refresh messages
+- Nvim: Octo improvements — review thread navigation (`]C`/`[C`), viewed file tracking (`<Tab>`, `]u`/`[u`), file panel `l` keymap, left-side diff highlight fix, `BufModifiedSet` save guard
+- Nvim: which-key tiered display — leader popup shows only category groups; context groups gated to relevant filetypes; PR Review always visible; consistent icon colour scheme (blue=navigation, green=tooling, red=editor, purple=AI, yellow=misc)
+- Nvim: which-key Claude icon uses custom orange highlight (`#ff9e64`) distinct from yellow `DiagnosticWarn`; `<leader>b` label updated to `[B]reakpoint / Buffer`
+- Nvim: neotest-vitest monorepo support — resolves vitest binary from nearest `node_modules` with cached subdirectory fallback
+- Nvim: statusline — `~/` relative paths, compact diff (`+N -N`), mini.icons for filetype/git icons, removed LSP server count
+- Nvim: editable breakpoint list (`<leader>bl`), `<leader>by` yank buffer path, Flash treesitter (`S`)
+- Nvim: VimLeavePre cleanup — stops LSP clients, terminates DAP, closes terminal buffers to prevent orphaned processes
+- Nvim: test explorer nav trapping — `<C-h/j/k/l>` blocked in floating windows, `<Esc>` closes peek floats
+- Zsh: `nuke-nvim`, `nuke-dotnet` aliases; `MSBUILDDISABLENODEREUSE=1`; `btop`, `lazydocker`, `dash` aliases
+
+### Changed
+- Nvim: `dd` deletes without yanking (black hole register); `dy` yanks and deletes (original `dd` via operator-pending `y` = current line motion)
+- Nvim: diffview — instant tab close, `]f`/`[f` as buffer-local keymaps, disabled `<leader>` defaults that stole which-key prefix, treesitter pre-warming on `<leader>de` for instant highlighting
+- Nvim: which-key `BufEnter` caches visibility state and skips `buftype ~= ''` buffers to avoid trigger removal during rapid transitions
+- Nvim: `<leader>lR` refresh noise suppressed via timestamp-based filter
+- Nvim: smart-paste, conform, dial.nvim guarded against non-modifiable buffers
+- Nvim: neotest — summary keymaps (`o` expand, `p` output), output preview UX, keymaps skip `.cs` files
+- Nvim: mini.icons setup with YAML, `.template` icons; `.template` filetype detection
+- Nvim: Neo-tree `o` opens immediately (order-by moved to `O` prefix)
+- Nvim: markdown-preview — removed `ft` trigger to prevent eager loading
+- Nvim: cmdline completion hidden by default, Tab triggers and cycles, Ctrl+Space as alternative
+- Nvim: notification history viewer — dynamic height and line wrapping
+- Nvim: Mason custom registry (Crashdummyy) for Roslyn LSP auto-install
+
+### Fixed
+- Nvim: roslyn semantic tokens flashing/disappearing — Neovim 0.12's `semanticTokens/range` requests caused viewport-only responses to replace full-document tokens; fixed by intercepting `client/registerCapability` to strip range registrations
+- Nvim: roslyn semantic tokens on first load — refreshes tokens on `RoslynInitialized` event (project init complete) since roslyn doesn't send `workspace/semanticTokens/refresh` after solution loads
+- Nvim: roslyn not restoring after diffview close — uses `diffview.lib.get_current_view()` instead of buffer filetype scanning (lingering buffers blocked restore)
+- Nvim: which-key intermittently not showing in diffview panels — permanent `<Space>` keymap bypasses which-key's trigger suspension windows
+- Nvim: roslyn diagnostic dedup — ignores message variations across push/pull channels and multi-project contexts
+- Nvim: neotest-golang — unpinned from v1.15.1 to v2+ (supports current Go treesitter parser)
+- Tmux: alert picker same-session navigation fix
+
+### Removed
+- Nvim: neotest-dotnet adapter and monkey-patch workaround
+- Nvim: `<leader>ni` add missing imports (roslyn.nvim handles Fix All natively)
+- Nvim: fidget.nvim (replaced by nvim-notify)
+- Nvim: easy-dotnet.nvim `^M` strip monkey-patch — merged upstream (GustavEikaas/easy-dotnet.nvim#883)
+
 ## [0.2.78] - 2026-04-01
 
 ### Added

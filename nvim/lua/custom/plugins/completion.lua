@@ -107,12 +107,13 @@ return {
             end,
             'fallback',
           },
-          ['<Tab>'] = { 'show', 'accept' },
+          ['<Tab>'] = { 'show', 'select_next', 'fallback' },
+          ['<S-Tab>'] = { 'select_prev', 'fallback' },
           ['<C-j>'] = { 'select_next', 'fallback' },
           ['<C-k>'] = { 'select_prev', 'fallback' },
           ['<C-space>'] = { 'show' },
         },
-        sources = { 'buffer', 'cmdline' },
+        sources = { 'cmdline', 'buffer' },
         completion = {
           menu = { auto_show = false },
           list = {

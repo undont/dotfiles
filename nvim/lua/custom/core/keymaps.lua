@@ -7,10 +7,22 @@ function M.setup()
   -- Clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
+  -- dd deletes without yanking; dy yanks and deletes (original dd behaviour).
+  -- The operator-pending 'y' motion means "current line" (like _), so dy = d + line.
+  vim.keymap.set('n', 'dd', '"_dd')
+  vim.keymap.set('o', 'y', '_')
+
   -- Build
   vim.keymap.set('n', '<leader>q', function()
     require('custom.core.build').run()
   end, { desc = 'Build project' })
+
+  -- Copy buffer path to clipboard
+  vim.keymap.set('n', '<leader>by', function()
+    local path = vim.fn.expand '%:p'
+    vim.fn.setreg('+', path)
+    vim.notify(path, vim.log.levels.INFO)
+  end, { desc = '[Y]ank file path' })
 
   -- File explorer
   vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'File [E]xplorer' })
@@ -319,6 +331,10 @@ function M.setup()
 
   -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()
+    -- Timestamp tells the notify filter in ui.lua to suppress INFO noise during
+    -- refresh. Uses vim.g so it survives the config re-source.
+    vim.g.nvim_refresh_at = vim.uv.now()
+
     -- Close stateful plugins cleanly before wiping buffers
     pcall(vim.cmd, 'Neotree close')
     pcall(vim.cmd, 'DiffviewClose')
@@ -345,8 +361,9 @@ function M.setup()
 
     -- Open the dashboard in the current window (not as a float) for a clean start
     vim.defer_fn(function()
-      Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
+      vim.g.nvim_refresh_at = nil
       vim.notify('Neovim refreshed', vim.log.levels.INFO)
+      Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
     end, 200)
   end, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })
 

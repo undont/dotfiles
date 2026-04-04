@@ -112,10 +112,11 @@ nvim/
 |--------|---------|
 | Custom colourschemes (`nvim/colors/`) | 15 themes matching dotfiles theme system |
 | [auto-dark-mode.nvim](https://github.com/f-person/auto-dark-mode.nvim) | Follows system theme |
-| [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, ai textobjects, notify, bracketed navigation, splitjoin, pairs, hipatterns |
+| [mini.nvim](https://github.com/echasnovski/mini.nvim) | Statusline, surround, bracketed navigation, splitjoin, pairs, hipatterns |
+| [nvim-notify](https://github.com/rcarriga/nvim-notify) | Notification manager with LSP progress routing |
 | [indent-blankline](https://github.com/lukas-reineke/indent-blankline.nvim) | Indent guides |
 | [neo-tree.nvim](https://github.com/nvim-neo-tree/neo-tree.nvim) | File explorer sidebar |
-| [which-key.nvim](https://github.com/folke/which-key.nvim) | Keybinding popup hints |
+| [which-key.nvim](https://github.com/folke/which-key.nvim) | Tiered keybinding popup — context groups shown by filetype |
 | [cheatsheet.nvim](https://github.com/sudormrfbin/cheatsheet.nvim) | Searchable keybinding/command cheatsheet |
 | [todo-comments.nvim](https://github.com/folke/todo-comments.nvim) | Highlight TODO/FIXME comments |
 | [trouble.nvim](https://github.com/folke/trouble.nvim) | Better diagnostics list and quickfix |
@@ -137,7 +138,7 @@ nvim/
 | [guess-indent.nvim](https://github.com/NMAC427/guess-indent.nvim) | Auto-detect indentation |
 | [lazydev.nvim](https://github.com/folke/lazydev.nvim) | Lua development for Neovim |
 | [noice.nvim](https://github.com/folke/noice.nvim) | Enhanced LSP hover and signature help rendering |
-| [fidget.nvim](https://github.com/j-hui/fidget.nvim) | LSP progress indicator |
+
 
 ### Git Integration
 
@@ -171,8 +172,8 @@ nvim/
 | Plugin | Purpose |
 |--------|---------|
 | [neotest](https://github.com/nvim-neotest/neotest) | Test runner framework with summary panel and diagnostics |
-| [neotest-dotnet](https://github.com/Issafalcon/neotest-dotnet) | .NET adapter (xUnit, NUnit, MSTest) with `.slnx` support |
-| [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (gotestsum runner, pinned to v1.15.1) |
+| [easy-dotnet.nvim](https://github.com/GustavEikaas/easy-dotnet.nvim) | .NET test runner with gutter signs, debug, and explorer UI |
+| [neotest-golang](https://github.com/fredrikaverpil/neotest-golang) | Go adapter (v2+) |
 | [neotest-vitest](https://github.com/marilari88/neotest-vitest) | Vitest/Bun adapter (`bun run test`) |
 
 ### Debugging
@@ -274,10 +275,10 @@ Set breakpoints before starting a debug session. They appear as icons in the sig
 
 | Keybinding | Action |
 |------------|--------|
-| `Space Bt` | Toggle breakpoint |
-| `Space Bc` | Conditional breakpoint (prompts for expression) |
-| `Space Bl` | Logpoint (logs message without stopping) |
-| `Space BB` | List all breakpoints (quickfix list) |
+| `Space bb` | Toggle breakpoint |
+| `Space bc` | Conditional breakpoint (prompts for expression) |
+| `Space bL` | Logpoint (logs message without stopping) |
+| `Space bl` | List all breakpoints (editable float) |
 
 #### Stepping
 
@@ -301,7 +302,7 @@ Expand variables in the Scopes panel with `Enter`. Type expressions in the REPL 
 
 #### Go
 
-1. Set breakpoints in your code (`Space Bt`)
+1. Set breakpoints in your code (`Space bb`)
 2. Navigate to a `main.go` or test file
 3. `F5` → select "Debug" (for main) or "Debug test" (for nearest test)
 4. `Space td` also works for debugging the nearest test via neotest
@@ -310,20 +311,19 @@ Expand variables in the Scopes panel with `Enter`. Type expressions in the REPL 
 
 **Debugging a project:**
 
-1. Set breakpoints in your code (`Space Bt`)
+1. Set breakpoints in your code (`Space bb`)
 2. `Space nd` (`:Dotnet debug`) → pick the project to debug
 3. easy-dotnet builds, finds the DLL, and launches netcoredbg
 
 **Debugging tests:**
 
-1. Set breakpoints in the code under test (`Space Bt`)
+1. Set breakpoints in the code under test (`Space bb`)
 2. `Space nd` → pick the **test project**
 3. The debugger attaches and hits your breakpoints
 
-> **Note:** `Space td` (neotest DAP strategy) does not work for .NET —
-> neotest-dotnet is abandoned and has multiple Neovim 0.11 incompatibilities.
-> Use `Space nd` on the test project instead. This runs all tests in the
-> project under the debugger (not a single test), but reliably hits breakpoints.
+> **Note:** .NET tests use easy-dotnet.nvim's built-in test runner (not neotest).
+> Use `Space tr` to run a test from the buffer, `Space td` to debug, and
+> `Space te` to open the test explorer. Gutter signs show pass/fail status.
 > Use `Space tt` to run individual tests without debugging.
 
 #### .NET Keybindings
@@ -346,7 +346,7 @@ LSP servers are managed by Mason. The following are configured:
 
 - **Bash** - bashls
 - **C/C++** - clangd
-- **C#** - Roslyn via easy-dotnet.nvim (replaces OmniSharp)
+- **C#** - Roslyn via roslyn.nvim (replaces OmniSharp)
 - **CSS** - cssls
 - **Go** - gopls
 - **HTML** - html

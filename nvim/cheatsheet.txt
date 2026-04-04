@@ -45,7 +45,9 @@ Open cheatsheet | <leader>?
 ## editing @editing
 Insert at/after cursor | i / a
 New line below/above | o / O
-Delete/yank line | dd / yy
+Delete line (no yank) | dd
+Yank and delete (cut) | dy
+Yank line | yy
 Paste after/before | p / P
 Undo / redo | u / Ctrl+r
 Repeat last action | .
@@ -192,15 +194,20 @@ Convert to draft | <leader>pD
 Discard review | <leader>pd
 Thread resolve | <leader>pt
 Thread unresolve | <leader>pT
+Toggle file viewed | <Tab>
+Next/prev unviewed file | ]u / [u
 Next/prev changed file | ]f / [f
+Next/prev review thread | ]C / [C
 
 ## debug @debug
 Start/Continue | F5
 Step into | F1
 Step over | F2
 Step out | F3
-Toggle breakpoint | <leader>Bt
-Conditional breakpoint | <leader>Bc
+Toggle breakpoint | <leader>bb
+Conditional breakpoint | <leader>bc
+Logpoint | <leader>bL
+List breakpoints | <leader>bl
 Toggle debug UI | F7
 
 ## markdown @markdown
@@ -227,6 +234,24 @@ Stop test | <leader>tS
 Toggle watch | <leader>tw
 Debug nearest test | <leader>td
 Next/prev failed test | ]t / [t
+.NET run test (buffer) | <leader>tr
+.NET debug test (buffer) | <leader>td
+.NET peek stacktrace (buffer) | <leader>tp
+.NET test explorer | <leader>te
+
+## dotnet-test-explorer @dotnet-test-explorer
+Run test | r
+Run all tests | R
+Debug test | d
+Peek stacktrace | p
+Go to file | gf
+Build errors | ge
+Expand/collapse | o
+Expand all | E
+Collapse all | W
+Refresh | <C-r>
+Cancel | <C-c>
+Close | q
 
 ## dotnet @dotnet
 Run project | <leader>nr
@@ -236,17 +261,16 @@ Manage secrets | <leader>ns
 Watch project | <leader>nw
 New item | <leader>nn
 Outdated packages | <leader>no
-Add missing imports | <leader>ni
 Debug project | <leader>nd
 
 ## buffers @buffers
 Delete buffer | <leader>bd
 Force delete buffer | <leader>bD
 Delete all other buffers | <leader>ba
+Yank file path | <leader>by
 
 ## bracketed @bracketed
 Next/prev buffer | ]b / [b
-Next/prev comment | ]C / [C
 Next/prev diagnostic | ]d / [d
 Next/prev file | ]F / [F
 Next/prev indent | ]i / [i

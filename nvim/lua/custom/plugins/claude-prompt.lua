@@ -20,7 +20,7 @@ return {
           -- Only activate for Claude Code prompt files or files under .claude/
           local filename = vim.fn.fnamemodify(ev.file, ':t')
           local abs_path = vim.fn.fnamemodify(ev.file, ':p')
-          if not filename:match '^claude%-prompt%-.*%.md$' and not abs_path:match '/%.claude/' then
+          if not filename:match '^claude%-prompt%-.*%.md$' and not abs_path:match '/%.claude/' and not abs_path:match '/%.plans/' then
             return
           end
 

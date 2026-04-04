@@ -48,6 +48,3 @@ fi
 #   export DEV_ROOT="$HOME/src"
 #   export PROJECTS_ROOT="$HOME/playground"
 #   export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT"
-#
-# Project roots for named launchers (e.g. dana):
-#   export DANA_ROOT="$HOME/src/dana"

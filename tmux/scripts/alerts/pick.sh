@@ -113,5 +113,11 @@ selected=$(printf '%s\n' "$entry_list" | fzf \
 target=$(_extract_target "$selected")
 
 if [[ -n "$target" ]]; then
-    tmux switch-client -t "$target" 2>/dev/null
+    target_session="${target%%:*}"
+    current_session=$(tmux display-message -p '#S' 2>/dev/null)
+    if [[ "$target_session" != "$current_session" ]]; then
+        tmux switch-client -t "$target" 2>/dev/null || tmux select-window -t "$target" 2>/dev/null || true
+    else
+        tmux select-window -t "$target" 2>/dev/null || true
+    fi
 fi

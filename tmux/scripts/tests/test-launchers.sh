@@ -214,7 +214,7 @@ test_base_session() {
 test_base_session "myproject" "myproject" "plain value 'myproject'"
 
 # ${SESSION_NAME:-default} pattern
-test_base_session '${SESSION_NAME:-dana}' "dana" '${SESSION_NAME:-dana} extracts default'
+test_base_session '${SESSION_NAME:-acme}' "acme" '${SESSION_NAME:-acme} extracts default'
 
 # Complex default with dashes
 test_base_session '${SESSION_NAME:-my-app}' "my-app" '${SESSION_NAME:-my-app} preserves dashes'

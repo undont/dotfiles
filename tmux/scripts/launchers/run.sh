@@ -97,7 +97,7 @@ handle_fixed_session() {
     base_name=$(get_base_session_name)
 
     # Find running sessions matching base name or base-<suffix> pattern
-    # Matches both auto-incremented (dana-2) and prompted (dana-1234) instances
+    # Matches both auto-incremented (acme-2) and prompted (acme-1234) instances
     local running=()
     while IFS= read -r session; do
         if [[ "$session" == "$base_name" ]] || [[ "$session" =~ ^${base_name}-.+$ ]]; then
@@ -132,10 +132,10 @@ handle_fixed_session() {
 
     local new_cmd
     if [[ "$instance_mode" == "prompt" ]]; then
-        # Prompt for a suffix (e.g. ticket number) → dana-1234
+        # Prompt for a suffix (e.g. ticket number) → acme-1234
         new_cmd="suffix=\$(printf '' | fzf --query='' --prompt=${safe_base_name}- --height=100% --layout=reverse --border=rounded --border-label=' ⏎ create · esc cancel ' --border-label-pos=bottom --no-info --pointer=' ' --bind 'enter:print-query' --bind 'esc:abort' 2>/dev/null) && [ -n \"\$suffix\" ] && suffix=\$(printf '%s' \"\$suffix\" | tr -c '[:alnum:]_-' '-') && SESSION_NAME=${safe_base_name}-\$suffix exec ${safe_launcher}"
     else
-        # Auto-increment → dana-2, dana-3, etc.
+        # Auto-increment → acme-2, acme-3, etc.
         new_cmd="num=2; while tmux has-session -t ${safe_base_name}-\$num 2>/dev/null; do num=\$((num+1)); done; SESSION_NAME=${safe_base_name}-\$num exec ${safe_launcher}"
     fi
 

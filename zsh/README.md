@@ -234,6 +234,8 @@ direnv allow
 | `copilot`  | `cl && copilot`                 | Clear scrollback + launch Copilot CLI |
 | `ralph`    | `cl && ralph`                   | Clear scrollback + launch Ralph (Claude Code) |
 | `ralf`     | `cl && ralf`                    | Clear scrollback + launch Ralf (Claude Code) |
+| `btop`     | `cl && btop`                    | Clear scrollback + launch btop system monitor |
+| `lazydocker` | `cl && lazydocker`            | Clear scrollback + launch lazydocker |
 | `dot`      | `dotfiles`                      | Shorthand for dotfiles CLI         |
 | `drs`      | `dash-repo-sync`                | Sync local repo paths into gh-dash config |
 | `ff`       | `fastfetch`                     | System info (fastfetch)                    |

@@ -239,13 +239,9 @@ end
 local function run_build(cfg)
   local cmd_str = table.concat(cfg.cmd, ' ')
 
-  -- Show fidget progress spinner
-  local progress = require 'fidget.progress'
-  local handle = progress.handle.create {
-    title = cmd_str,
-    message = 'Running...',
-    lsp_client = { name = 'build' },
-  }
+  -- Show progress notification (replaceable via nvim-notify)
+  local notify_opts = { title = 'Build', timeout = false }
+  local notify_id = vim.notify('Running: ' .. cmd_str, vim.log.levels.INFO, notify_opts)
 
   vim.system(
     cfg.cmd,
@@ -256,18 +252,17 @@ local function run_build(cfg)
     vim.schedule_wrap(function(result)
       local output = strip_ansi((result.stdout or '') .. (result.stderr or ''))
       local lines = vim.split(output, '\n', { trimempty = true })
+      local replace_opts = { title = 'Build', replace = notify_id, timeout = 3000 }
 
-      -- Build succeeded — just finish the spinner
+      -- Build succeeded
       if result.code == 0 then
-        handle:report { message = 'Succeeded' }
-        handle:finish()
+        vim.notify('Succeeded: ' .. cmd_str, vim.log.levels.INFO, replace_opts)
         return
       end
 
       -- Build failed but no output
       if #lines == 0 then
-        handle:report { message = 'Failed (exit ' .. result.code .. ')' }
-        handle:finish()
+        vim.notify('Failed (exit ' .. result.code .. '): ' .. cmd_str, vim.log.levels.ERROR, replace_opts)
         return
       end
 
@@ -288,14 +283,11 @@ local function run_build(cfg)
         end
       end
       if not has_valid then
-        handle:report { message = 'Succeeded' }
-        handle:finish()
+        vim.notify('Succeeded: ' .. cmd_str, vim.log.levels.INFO, replace_opts)
         return
       end
 
-      handle:report { message = 'Failed — ' .. #lines .. ' line(s)' }
-      handle:finish()
-
+      vim.notify('Failed — ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, replace_opts)
       vim.cmd 'Trouble qflist open'
     end)
   )
