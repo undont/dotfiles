@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.80] - 2026-04-07
+
+### Added
+- Nvim: `fg_variable` theme colour — variables now render distinctly from Normal text across all 15 themes, derived via 10% blend with palette accent + 4.5:1 contrast check
+- Nvim: Roslyn semantic token fixes — built-in C# types (`string`, `int`, `bool`, etc.) remapped to `@type.builtin`; attribute names inside `[brackets]` remapped to `@attribute`
+- Nvim: spellcheck module (`custom/core/spellcheck.lua`) — auto-correct word (`<leader>Sc`), line (`<leader>Sl`), and buffer (`<leader>SB`)
+- Nvim: undo tree (`<leader>u`), treesitter refresh (`<leader>lt`), harpoon `o` to open
+- Nvim: DAP scopes — `<CR>`/`o` to expand, disabled accidental edit/open mappings
+- Nvim: treesitter large-file skip (>1MB), query directory cleanup on parser purge
+
+### Changed
+- Nvim: gitsigns keymaps consolidated under `<leader>H` — blame (`<leader>Hb`/`<leader>HB`), inline diff (`<leader>Hi`) moved from `<leader>d`/`<leader>t`
+- Nvim: inlay hints toggle moved to `<leader>lh`; theme reload keymap removed
+- Nvim: comment block keymaps (`<leader>c*`) moved from core keymaps to `claude-prompt.lua` (buffer-local to plan/prompt files)
+- Nvim: `<leader>lR` refresh — notify wrapper now restores `vim.notify` after 3s instead of leaving wrapper in place
+- Nvim: LSP capabilities merge — `blink.cmp` caps merged with Neovim defaults so semantic tokens and document highlights aren't dropped
+- Nvim: `@lsp.type.variable` linked to `@variable` so LSP variable tokens inherit treesitter styling
+- Nvim: removed diffview treesitter pre-warming on `<leader>de` (was blocking editor on large files)
+- Docs: removed per-component READMEs (ghostty, hammerspoon, karabiner, nvim, tmux, zsh) — consolidated into main README
+
+### Fixed
+- Nvim: `autocorrect_range` stall guard — loop now breaks if cursor doesn't advance
+- Nvim: `<leader>lR` repeated use no longer chains notify wrappers
+
 ## [0.2.79] - 2026-04-04
 
 ### Added

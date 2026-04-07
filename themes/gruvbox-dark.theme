@@ -72,3 +72,4 @@ GHOSTTY_PALETTE_15="#ebdbb2"
 # ══════════════════════════════════════════════════════════════
 
 NVIM_COLORSCHEME="gruvbox"
+NVIM_FG_VARIABLE="#d5c5a2"

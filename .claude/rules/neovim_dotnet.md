@@ -33,10 +33,19 @@ We listen for the `RoslynInitialized` user event (fired by roslyn.nvim when
 `workspace/projectInitializationComplete` arrives) and `force_refresh` all `.cs`
 buffers.
 
-### 3. Using directive fix
+### 3. Token classification fixes
 
-Roslyn misclassifies unresolved identifiers on `using` directives as `variable`
-instead of `namespace`. An `LspTokenUpdate` autocmd overrides these to `@type`.
+Roslyn misclassifies a few C# tokens, so an `LspTokenUpdate` autocmd applies
+targeted overrides:
+
+- `using Foo;` unresolved identifiers reported as `variable` are remapped to
+  `@type` so they render like namespaces/types instead of plain variables.
+- Built-in C# types such as `string`, `int`, `bool`, `object`, etc. reported as
+  `keyword` are remapped to `@type.builtin` so they don't override TreeSitter's
+  built-in type highlighting.
+- Attribute names such as `Required` in `[Required]` or `[property: Required]`
+  reported as `class` are remapped to `@attribute` when they appear inside an
+  active attribute bracket context.
 
 ## Roslyn Deferred Loading
 
@@ -64,18 +73,19 @@ cycle:
 - **Triggers:** `FileType cs` and `BufEnter *.cs` (2s defer) both call
   `try_restore_roslyn()` to catch different re-entry paths.
 
-## Diffview Edit (`<leader>de`) — Treesitter Pre-warming
+## Diffview Edit (`<leader>de`) — No Treesitter Pre-warming
 
-Opening a .cs file from diffview via `edit_diff_file()` in `pr-review.lua` used
-to show an un-highlighted buffer for 2-5s while treesitter parsed the C# grammar.
+`edit_diff_file()` in `pr-review.lua` used to pre-load the target buffer and
+force a synchronous Treesitter parse before leaving diffview.
 
-Fix: before closing the diffview tab, `bufadd` + `bufload` the target file and
-call `vim.treesitter.get_parser(buf):parse()` to force a synchronous full-tree
-parse while diffview is still visible. When the tab closes and `:edit` switches
-to the already-loaded buffer, highlighting is instant.
+That made highlighting feel instant after the switch, but it also blocked the
+editor for large `.cs`, `.ts`, and `.tsx` files because the parse happened on
+the hot path for `<leader>de`.
 
-Roslyn restore is safe during pre-load — `try_restore_roslyn()` checks
-`dv_lib.get_current_view()` and bails because diffview is still open.
+Current behavior: no pre-warm. `<leader>de` closes diffview and edits the file
+immediately, leaving Treesitter to initialize on the normal buffer-open path.
+This trades "instant highlighting" for a responsive editor, which is the
+correct default for large projects.
 
 ## Which-Key in Diffview
 

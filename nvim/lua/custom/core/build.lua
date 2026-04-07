@@ -234,10 +234,65 @@ local function strip_ansi(str)
   return (str:gsub('\027%[[%d;]*m', ''))
 end
 
+--- Detect whether a command argument is a filesystem path.
+--- Used only for shortening notification text; execution still uses the full cmd.
+---@param arg string
+---@return boolean
+local function is_path_arg(arg)
+  return arg:find '^/' or arg:find '^%./' or arg:find '^%.%./' or arg:find '^~/' or arg:find('/', 1, true)
+end
+
+--- Format a command for notifications without noisy path arguments.
+---@param cmd string[]
+---@return string
+local function format_cmd_for_display(cmd)
+  local parts = {}
+  for _, arg in ipairs(cmd) do
+    if not is_path_arg(arg) then
+      table.insert(parts, arg)
+    end
+  end
+  return table.concat(parts, ' ')
+end
+
+--- Deduplicate quickfix items produced from build output.
+---@param items table[]
+---@return table[]
+local function dedupe_qf_items(items)
+  local seen = {}
+  local deduped = {}
+
+  for _, item in ipairs(items) do
+    local file = item.filename or ''
+    if file == '' and item.bufnr and item.bufnr > 0 then
+      file = vim.api.nvim_buf_get_name(item.bufnr)
+    end
+
+    local key = table.concat({
+      item.valid or 0,
+      file,
+      item.lnum or 0,
+      item.end_lnum or 0,
+      item.col or 0,
+      item.end_col or 0,
+      item.type or '',
+      item.nr or '',
+      item.text or '',
+    }, ':')
+
+    if not seen[key] then
+      seen[key] = true
+      table.insert(deduped, item)
+    end
+  end
+
+  return deduped
+end
+
 --- Run async build and populate quickfix list, then open Trouble
 ---@param cfg table Build config with cmd and optional efm
 local function run_build(cfg)
-  local cmd_str = table.concat(cfg.cmd, ' ')
+  local cmd_str = format_cmd_for_display(cfg.cmd)
 
   -- Show progress notification (replaceable via nvim-notify)
   local notify_opts = { title = 'Build', timeout = false }
@@ -256,7 +311,7 @@ local function run_build(cfg)
 
       -- Build succeeded
       if result.code == 0 then
-        vim.notify('Succeeded: ' .. cmd_str, vim.log.levels.INFO, replace_opts)
+        vim.notify('Build succeeded', vim.log.levels.INFO, replace_opts)
         return
       end
 
@@ -273,17 +328,20 @@ local function run_build(cfg)
       end
       vim.fn.setqflist({}, 'r', qf_opts)
 
+      local qf_items = dedupe_qf_items(vim.fn.getqflist())
+      vim.fn.setqflist({}, 'r', { title = 'Build: ' .. cmd_str, items = qf_items })
+
       -- Check if any parsed entries have a valid file/line — if not, treat as success
       -- (e.g. bun echoes the command being run, producing output that doesn't match efm)
       local has_valid = false
-      for _, item in ipairs(vim.fn.getqflist()) do
+      for _, item in ipairs(qf_items) do
         if item.valid == 1 then
           has_valid = true
           break
         end
       end
       if not has_valid then
-        vim.notify('Succeeded: ' .. cmd_str, vim.log.levels.INFO, replace_opts)
+        vim.notify('Build succeeded', vim.log.levels.INFO, replace_opts)
         return
       end
 

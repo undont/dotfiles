@@ -91,10 +91,11 @@ Fix all in file | grf
 Document symbols | gO
 Workspace symbols | gW
 Hover documentation | K
-Toggle inlay hints | <leader>th
+Toggle inlay hints | <leader>lh
 Format buffer | <leader>f
 LSP restart | <leader>lr
 Refresh Neovim | <leader>lR
+Refresh Treesitter + semantic tokens | <leader>lt
 
 ## tools @tools
 Toggle file tree | <leader>e
@@ -102,7 +103,7 @@ NeoTree reveal | |
 Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
-Quickfix picker | <leader>q
+Build project / pick Make target | <leader>q
 Notification history (filtered) | <leader>Nn
 Notification history (all) | <leader>Na
 
@@ -159,15 +160,15 @@ Reset buffer | <leader>HR
 Preview hunk | <leader>Hp
 Diff against index | <leader>Hd
 Diff against last commit | <leader>HD
-Toggle show deleted | <leader>tD
+Inline hunk diff | <leader>Hi
+Blame line popup | <leader>Hb
+Toggle inline blame | <leader>HB
 
 ## diff @diff
 Diffview open (vs index) | <leader>do
 Diffview close | <leader>dc
 Diffview file history | <leader>dh
 Diffview branch total (vs main) | <leader>dt
-Toggle inline blame | <leader>db
-Blame line popup | <leader>dB
 Diffview PR review | <leader>dp
 Diffview edit file | <leader>de
 
@@ -209,6 +210,8 @@ Conditional breakpoint | <leader>bc
 Logpoint | <leader>bL
 List breakpoints | <leader>bl
 Toggle debug UI | F7
+Watch expression in scopes | w
+Send expression to REPL in scopes | r
 
 ## markdown @markdown
 Toggle todo | <leader>mt
@@ -294,13 +297,17 @@ Tailwind: cycle class down | Ctrl+x (on tailwind class)
 
 ## spell @spell
 Toggle spellcheck | <leader>St
+Auto-correct current word | <leader>Sc
+Auto-correct current line | <leader>Sl
+Auto-correct entire buffer | <leader>SB
 Suggest corrections (Telescope) | <leader>Ss
 Add word to dictionary | <leader>Sa
-Remove word from dictionary | <leader>Sr
+Remove word from dictionary (asks first) | <leader>Sr
 Edit personal dictionary | <leader>Sd
 Full suggestion list | <leader>S?
 Next misspelling | ]s
 Previous misspelling | [s
 
-## theme @theme
-Theme reload | <leader>tr
+## undo @undo
+Undo tree | <leader>u
+

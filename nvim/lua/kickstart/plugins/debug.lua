@@ -169,6 +169,13 @@ return {
     -- UI layout: scopes-heavy sidebar + REPL-focused bottom
     dapui.setup {
       icons = { expanded = '▾', collapsed = '▸', current_frame = '' },
+      element_mappings = {
+        scopes = {
+          expand = { '<CR>', 'o', '<2-LeftMouse>' },
+          edit = {},
+          open = {},
+        },
+      },
       layouts = {
         {
           elements = {

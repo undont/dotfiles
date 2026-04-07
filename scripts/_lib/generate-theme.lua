@@ -110,6 +110,11 @@ function M.extract_colours(ghostty)
     fg_secondary = colour.blend(fg, bg, 0.35)
   end
 
+  -- Derive fg_variable: keep variable identifiers distinct from Normal text
+  -- without making them read like another accent class.
+  local fg_variable = colour.blend(fg, p[6], 0.10)
+  fg_variable = colour.ensure_contrast(fg_variable, bg, 4.5)
+
   -- Line highlight: subtle lighten of bg
   local line_highlight = colour.lighten(bg, 4)
 
@@ -121,6 +126,7 @@ function M.extract_colours(ghostty)
     fg_primary = fg,
     bg_secondary = bg_secondary,
     fg_secondary = fg_secondary,
+    fg_variable = fg_variable,
     line_highlight = line_highlight,
     selection = selection,
     selection_fg = ghostty['selection-foreground'] or '#ffffff',
@@ -250,6 +256,7 @@ function M.generate_theme_file(name, display_name, colours, status, active_accen
   assert_hex(colours.fg_primary, 'fg_primary')
   assert_hex(colours.bg_secondary, 'bg_secondary')
   assert_hex(colours.fg_secondary, 'fg_secondary')
+  assert_hex(colours.fg_variable, 'fg_variable')
   assert_hex(colours.line_highlight, 'line_highlight')
   assert_hex(colours.selection, 'selection')
   assert_hex(colours.cursor_colour, 'cursor_colour')
@@ -341,6 +348,7 @@ function M.generate_theme_file(name, display_name, colours, status, active_accen
   add('# ' .. string.rep('=', 62))
   add('')
   add(string.format('NVIM_COLORSCHEME="%s"', name))
+  add(string.format('NVIM_FG_VARIABLE="%s"', colours.fg_variable))
   add('')
 
   return table.concat(lines, '\n')
@@ -409,6 +417,7 @@ function M.generate_nvim_colourscheme(name, colours)
   add(string.format("  fg_primary = '%s',", colours.fg_primary))
   add(string.format("  bg_secondary = '%s',", colours.bg_secondary))
   add(string.format("  fg_secondary = '%s',", colours.fg_secondary))
+  add(string.format("  fg_variable = '%s',", colours.fg_variable))
   add(string.format("  purple = '%s',", colours.purple))
   add(string.format("  pink = '%s',", colours.pink))
   add(string.format("  cyan = '%s',", colours.cyan))
@@ -547,7 +556,7 @@ function M.generate_nvim_colourscheme(name, colours)
 
   -- Treesitter groups (use role mapping)
   local ts = {
-    { '@variable', 'fg = colors.fg_primary' },
+    { '@variable', 'fg = colors.fg_variable' },
     { '@variable.builtin', 'fg = colors.purple' },
     { '@variable.parameter', 'fg = colors.fg_secondary' },
     { '@variable.member', 'fg = colors.cyan' },

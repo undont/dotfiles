@@ -72,3 +72,4 @@ GHOSTTY_PALETTE_15="#f9f8f5"
 # ══════════════════════════════════════════════════════════════
 
 NVIM_COLORSCHEME="monokai"
+NVIM_FG_VARIABLE="#d7d6cd"

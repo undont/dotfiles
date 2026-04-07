@@ -84,6 +84,38 @@ end
 --- Fix Roslyn misclassifying unresolved identifiers on using directives as
 --- "variable" instead of "namespace". Override to @type for proper styling.
 local function setup_semantic_token_fix()
+  local builtin_types = {
+    bool = true,
+    byte = true,
+    char = true,
+    decimal = true,
+    double = true,
+    dynamic = true,
+    float = true,
+    int = true,
+    long = true,
+    nint = true,
+    nuint = true,
+    object = true,
+    sbyte = true,
+    short = true,
+    string = true,
+    uint = true,
+    ulong = true,
+    ushort = true,
+    void = true,
+  }
+
+  local function in_attribute_context(line, start_col)
+    local before = line:sub(1, start_col)
+    local last_open = before:match '.*()%['
+    if not last_open then
+      return false
+    end
+    local last_close = before:match '.*()%]'
+    return not last_close or last_open > last_close
+  end
+
   -- Disable Neovim 0.12's viewport-only semantic token range requests.
   -- Roslyn dynamically registers range support via client/registerCapability
   -- after on_init, so we intercept the registration handler and strip it.
@@ -103,14 +135,37 @@ local function setup_semantic_token_fix()
   vim.api.nvim_create_autocmd('LspTokenUpdate', {
     callback = function(ev)
       local token = ev.data.token
-      if token.type ~= 'variable' then
-        return
-      end
       local line = vim.api.nvim_buf_get_lines(ev.buf, token.line, token.line + 1, false)[1]
-      if not line or not line:match '^%s*using%s' or line:match '[%(=]' then
+      if not line then
         return
       end
-      vim.lsp.semantic_tokens.highlight_token(token, ev.buf, ev.data.client_id, '@type')
+      if vim.bo[ev.buf].filetype ~= 'cs' then
+        return
+      end
+
+      if token.type == 'variable' then
+        if not line:match '^%s*using%s' or line:match '[%(=]' then
+          return
+        end
+        vim.lsp.semantic_tokens.highlight_token(token, ev.buf, ev.data.client_id, '@type')
+        return
+      end
+
+      if token.type == 'class' then
+        if in_attribute_context(line, token.start_col) then
+          vim.lsp.semantic_tokens.highlight_token(token, ev.buf, ev.data.client_id, '@attribute')
+        end
+        return
+      end
+
+      if token.type ~= 'keyword' then
+        return
+      end
+
+      local text = line:sub(token.start_col + 1, token.end_col)
+      if builtin_types[text] then
+        vim.lsp.semantic_tokens.highlight_token(token, ev.buf, ev.data.client_id, '@type.builtin')
+      end
     end,
   })
 

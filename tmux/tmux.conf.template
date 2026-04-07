@@ -7,8 +7,6 @@
 # A compatibility symlink exists at ~/.tmux.conf for backwards compatibility.
 # Change themes with: dotfiles theme <theme-name>
 #
-# See ~/.tmux/README.md for full documentation and setup guide.
-#
 # Quick reference:
 #   Prefix: ` (backtick) or Ctrl+b (mobile-friendly)
 #   Help:   ` h (popup with keybindings)

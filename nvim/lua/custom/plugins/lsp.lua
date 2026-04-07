@@ -291,7 +291,7 @@ return {
 
           -- Inlay hints toggle
           if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
-            map('<leader>th', function()
+            map('<leader>lh', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, 'Inlay [H]ints')
           end
@@ -319,7 +319,10 @@ return {
 
       -- Hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
 
-      local caps = require('blink.cmp').get_lsp_capabilities()
+      -- Merge blink.cmp completion capabilities with Neovim defaults so that
+      -- semantic tokens, document highlights, and other standard capabilities
+      -- aren't dropped (blink only provides completion-related caps).
+      local caps = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('blink.cmp').get_lsp_capabilities())
       -- Remove colorProvider to prevent nvim 0.12 document_color assertion bug
       caps.textDocument.colorProvider = nil
       vim.lsp.config('*', { capabilities = caps })

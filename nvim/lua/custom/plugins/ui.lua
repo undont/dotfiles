@@ -50,6 +50,7 @@ return {
           -- ── Filetype-gated groups (hidden by default, shown in code files via autocmd) ──
           { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = true },
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = true },
+          { '<leader>u', icon = { icon = '󰕌 ', color = 'blue' }, hidden = true },
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = true },
 
           -- ── Filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
@@ -130,6 +131,7 @@ return {
             { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = not is_code },
             { '<leader>f', hidden = not is_code },
             { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = not is_code },
+            { '<leader>u', icon = { icon = '󰕌 ', color = 'blue' }, hidden = not is_code },
             { '<leader>q', hidden = not is_code },
             { '<leader>bb', hidden = not is_code },
             { '<leader>bc', hidden = not is_code },
@@ -225,13 +227,6 @@ return {
       vim.notify = function(msg, level, opts)
         if type(msg) ~= 'string' then
           return _original_notify(msg, level, opts)
-        end
-
-        -- Suppress INFO noise for 2s after <leader>lR refresh (async LSP shutdown
-        -- messages arrive well after the defer that shows "Neovim refreshed")
-        local refresh_at = vim.g.nvim_refresh_at
-        if refresh_at and (vim.uv.now() - refresh_at) < 2000 and (level == vim.log.levels.INFO or level == nil) then
-          return
         end
 
         -- Global noise (source-agnostic)
