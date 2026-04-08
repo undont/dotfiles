@@ -229,6 +229,7 @@ return {
           vim.keymap.set('n', ' ', function()
             require('which-key').show ' '
           end, { buffer = ev.buf })
+          vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = ev.buf })
         end,
       })
 
@@ -300,6 +301,11 @@ return {
       local actions = require 'diffview.actions'
       return {
         enhanced_diff_hl = true,
+        hooks = {
+          diff_buf_read = function(bufnr)
+            vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = bufnr })
+          end,
+        },
         view = {
           default = { layout = 'diff2_horizontal' },
           merge_tool = { layout = 'diff3_mixed' },
@@ -494,6 +500,14 @@ return {
         end,
       })
 
+      -- Disable keymaps that don't make sense in Octo review context
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'octo',
+        callback = function(event)
+          vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = event.buf })
+        end,
+      })
+
       -- 'l' to open file from file panel (mirrors diffview behaviour)
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'octo_panel',
@@ -509,6 +523,7 @@ return {
       local orig_configure = file_entry._configure_buffer
       file_entry._configure_buffer = function(bufid)
         orig_configure(bufid)
+        vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = bufid })
         local function scroll(fraction)
           local lines = math.floor(vim.api.nvim_win_get_height(0) * math.abs(fraction))
           local key = fraction > 0 and '<C-e>' or '<C-y>'

@@ -5,6 +5,7 @@ return {
   { import = 'custom.plugins.dashboard' },
   { import = 'custom.plugins.ui' },
   { import = 'custom.plugins.editor' },
+  { import = 'custom.plugins.markdown-ui' },
   { import = 'custom.plugins.telescope' },
   { import = 'custom.plugins.lsp' },
   { import = 'custom.plugins.completion' },
