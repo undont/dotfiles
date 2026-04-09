@@ -28,6 +28,9 @@ return {
 
       wk.setup {
         delay = 0, -- Show immediately for snappy feel
+        filter = function(mapping)
+          return mapping.desc ~= 'diffview_ignore'
+        end,
         win = {
           no_overlap = false,
         },
@@ -117,9 +120,9 @@ return {
         if ft == '' then
           return
         end
-          local is_code = not non_code_fts[ft]
-          local is_markdown = ft == 'markdown'
-          local is_dotnet = dotnet_fts[ft] or false
+        local is_code = not non_code_fts[ft]
+        local is_markdown = ft == 'markdown'
+        local is_dotnet = dotnet_fts[ft] or false
 
         if prev_vis.code == is_code and prev_vis.md == is_markdown and prev_vis.dotnet == is_dotnet then
           return

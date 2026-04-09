@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.80] - 2026-04-07
+## [0.2.80] - 2026-04-09
 
 ### Added
 - Nvim: `fg_variable` theme colour — variables now render distinctly from Normal text across all 15 themes, derived via 10% blend with palette accent + 4.5:1 contrast check
@@ -15,6 +15,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: undo tree (`<leader>u`), treesitter refresh (`<leader>lt`), harpoon `o` to open
 - Nvim: DAP scopes — `<CR>`/`o` to expand, disabled accidental edit/open mappings
 - Nvim: treesitter large-file skip (>1MB), query directory cleanup on parser purge
+- Nvim: fold aliases — `zr`→open all, `zc`→close recursive, `zm`→close all with silent error handling
+- Ghostty: background image support (`ghostty/background-images/`)
 
 ### Changed
 - Nvim: gitsigns keymaps consolidated under `<leader>H` — blame (`<leader>Hb`/`<leader>HB`), inline diff (`<leader>Hi`) moved from `<leader>d`/`<leader>t`
@@ -24,6 +26,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: LSP capabilities merge — `blink.cmp` caps merged with Neovim defaults so semantic tokens and document highlights aren't dropped
 - Nvim: `@lsp.type.variable` linked to `@variable` so LSP variable tokens inherit treesitter styling
 - Nvim: removed diffview treesitter pre-warming on `<leader>de` (was blocking editor on large files)
+- Nvim: diffview fold compatibility — fold commands synced across both diff panels; `diffview_ignore` mappings hidden from which-key
+- Nvim: command-line auto-clear timer increased from 1s to 4s
+- Lazydocker: added `--no-log-prefix` to all log command templates for cleaner output
+- Tmux: agent alert icons switched from emoji to Nerd Font glyphs
 - Docs: removed per-component READMEs (ghostty, hammerspoon, karabiner, nvim, tmux, zsh) — consolidated into main README
 
 ### Fixed

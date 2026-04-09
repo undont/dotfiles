@@ -93,7 +93,7 @@ function M.setup()
   -- Apply immediately for the current colourscheme
   vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
 
-  -- Auto-clear command-line messages after 1 second
+  -- Auto-clear command-line messages after 4 seconds
   local msg_clear_timer = vim.uv.new_timer()
   local function schedule_msg_clear()
     msg_clear_timer:stop()

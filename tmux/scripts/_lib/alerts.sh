@@ -22,9 +22,9 @@ get_agent_icon() {
     local agent="$1"
     case "$agent" in
         claude) echo "⚡" ;;
-        opencode) echo "🔮" ;;
-        copilot) echo "✦" ;;
-        *) echo "🤖" ;;
+        opencode) echo "" ;;
+        copilot) echo "" ;;
+        *) echo "󱜙" ;;
     esac
 }
 
@@ -47,9 +47,9 @@ get_agent_colour() {
 get_agent_display() {
     case "$1" in
         claude)   echo "⚡|#f1fa8c" ;;
-        opencode) echo "🔮|#bd93f9" ;;
-        copilot)  echo "✦|#58a6ff" ;;
-        *)        echo "🤖|#6272a4" ;;
+        opencode) echo "|#bd93f9" ;;
+        copilot)  echo "|#58a6ff" ;;
+        *)        echo "󱜙|#6272a4" ;;
     esac
 }
 
