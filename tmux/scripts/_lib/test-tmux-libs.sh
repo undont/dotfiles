@@ -545,10 +545,10 @@ else
 fi
 
 OPENCODE_ICON=$(get_agent_icon "opencode")
-if [[ "$OPENCODE_ICON" == "" ]]; then
+if [[ "$OPENCODE_ICON" == "" ]]; then
     pass "  get_agent_icon returns correct icon for opencode"
 else
-    fail "  get_agent_icon should return  for opencode, got: $OPENCODE_ICON"
+    fail "  get_agent_icon should return  for opencode, got: $OPENCODE_ICON"
 fi
 
 CLAUDE_COLOUR=$(get_agent_colour "claude")
