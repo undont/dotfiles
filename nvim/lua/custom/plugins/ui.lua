@@ -28,6 +28,12 @@ return {
 
       wk.setup {
         delay = 0, -- Show immediately for snappy feel
+        filter = function(mapping)
+          return mapping.desc ~= 'diffview_ignore'
+        end,
+        win = {
+          no_overlap = false,
+        },
         icons = {
           mappings = vim.g.have_nerd_font,
         },
@@ -50,6 +56,7 @@ return {
           -- ── Filetype-gated groups (hidden by default, shown in code files via autocmd) ──
           { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = true },
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = true },
+          { '<leader>u', icon = { icon = '󰕌 ', color = 'blue' }, hidden = true },
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = true },
 
           -- ── Filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
@@ -103,48 +110,53 @@ return {
       -- transitions (e.g. diffview file navigation).
       local prev_vis = {}
 
-      vim.api.nvim_create_autocmd('BufEnter', {
+      local function update_filetype_groups()
+        -- Only update for real file buffers; preserve previous state in
+        -- special contexts (diffview, telescope, neo-tree, etc.)
+        if vim.bo.buftype ~= '' then
+          return
+        end
+        local ft = vim.bo.filetype
+        if ft == '' then
+          return
+        end
+        local is_code = not non_code_fts[ft]
+        local is_markdown = ft == 'markdown'
+        local is_dotnet = dotnet_fts[ft] or false
+
+        if prev_vis.code == is_code and prev_vis.md == is_markdown and prev_vis.dotnet == is_dotnet then
+          return
+        end
+        prev_vis = { code = is_code, md = is_markdown, dotnet = is_dotnet }
+
+        wk.add {
+          -- Code-file groups (LSP, diagnostics, format, breakpoints)
+          { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = not is_code },
+          { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = not is_code },
+          { '<leader>f', hidden = not is_code },
+          { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = not is_code },
+          { '<leader>u', icon = { icon = '󰕌 ', color = 'blue' }, hidden = not is_code },
+          { '<leader>q', hidden = not is_code },
+          { '<leader>bb', hidden = not is_code },
+          { '<leader>bc', hidden = not is_code },
+          { '<leader>bL', hidden = not is_code },
+          { '<leader>bl', hidden = not is_code },
+
+          -- Markdown-only groups
+          { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = not is_markdown },
+          { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = not is_markdown },
+
+          -- .NET-only group
+          { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' }, hidden = not is_dotnet },
+        }
+      end
+
+      vim.api.nvim_create_autocmd({ 'BufEnter', 'FileType' }, {
         group = vim.api.nvim_create_augroup('which-key-filetype', { clear = true }),
-        callback = function()
-          -- Only update for real file buffers; preserve previous state in
-          -- special contexts (diffview, telescope, neo-tree, etc.)
-          if vim.bo.buftype ~= '' then
-            return
-          end
-          local ft = vim.bo.filetype
-          if ft == '' then
-            return
-          end
-          local is_code = not non_code_fts[ft]
-          local is_markdown = ft == 'markdown'
-          local is_dotnet = dotnet_fts[ft] or false
-
-          if prev_vis.code == is_code and prev_vis.md == is_markdown and prev_vis.dotnet == is_dotnet then
-            return
-          end
-          prev_vis = { code = is_code, md = is_markdown, dotnet = is_dotnet }
-
-          wk.add {
-            -- Code-file groups (LSP, diagnostics, format, breakpoints)
-            { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = not is_code },
-            { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = not is_code },
-            { '<leader>f', hidden = not is_code },
-            { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = not is_code },
-            { '<leader>q', hidden = not is_code },
-            { '<leader>bb', hidden = not is_code },
-            { '<leader>bc', hidden = not is_code },
-            { '<leader>bL', hidden = not is_code },
-            { '<leader>bl', hidden = not is_code },
-
-            -- Markdown-only groups
-            { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = not is_markdown },
-            { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = not is_markdown },
-
-            -- .NET-only group
-            { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' }, hidden = not is_dotnet },
-          }
-        end,
+        callback = update_filetype_groups,
       })
+
+      vim.schedule(update_filetype_groups)
     end,
   },
 
@@ -225,13 +237,6 @@ return {
       vim.notify = function(msg, level, opts)
         if type(msg) ~= 'string' then
           return _original_notify(msg, level, opts)
-        end
-
-        -- Suppress INFO noise for 2s after <leader>lR refresh (async LSP shutdown
-        -- messages arrive well after the defer that shows "Neovim refreshed")
-        local refresh_at = vim.g.nvim_refresh_at
-        if refresh_at and (vim.uv.now() - refresh_at) < 2000 and (level == vim.log.levels.INFO or level == nil) then
-          return
         end
 
         -- Global noise (source-agnostic)

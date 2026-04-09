@@ -17,6 +17,7 @@ local colors = {
   fg_primary = '#e4d5c4',
   bg_secondary = '#2a2320',
   fg_secondary = '#8a7a6a',
+  fg_variable = '#cebeae',
 
   -- Accents - autumn leaves and twilight
   purple = '#a67b8a', -- Twilight purple
@@ -153,7 +154,7 @@ hl('LspReferenceRead', { bg = colors.selection })
 hl('LspReferenceWrite', { bg = colors.selection })
 
 -- Treesitter - rich autumn syntax
-hl('@variable', { fg = colors.fg_primary })
+hl('@variable', { fg = colors.fg_variable })
 hl('@variable.builtin', { fg = colors.purple })
 hl('@variable.parameter', { fg = colors.pink })
 hl('@variable.member', { fg = colors.fg_primary })

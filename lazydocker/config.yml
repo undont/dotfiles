@@ -13,10 +13,10 @@ gui:
 
 commandTemplates:
   # Show timestamps in the main (m) log views
-  serviceLogs: '{{ .DockerCompose }} logs --since=60m --follow --timestamps {{ .Service.Name }}'
-  viewServiceLogs: '{{ .DockerCompose }} logs --follow --timestamps {{ .Service.Name }}'
-  allLogs: '{{ .DockerCompose }} logs --tail=300 --follow --timestamps'
-  viewAllLogs: '{{ .DockerCompose }} logs --timestamps'
+  serviceLogs: '{{ .DockerCompose }} logs --since=60m --follow --timestamps --no-log-prefix {{ .Service.Name }}'
+  viewServiceLogs: '{{ .DockerCompose }} logs --follow --timestamps --no-log-prefix {{ .Service.Name }}'
+  allLogs: '{{ .DockerCompose }} logs --tail=300 --follow --timestamps --no-log-prefix'
+  viewAllLogs: '{{ .DockerCompose }} logs --timestamps --no-log-prefix'
 
 logs:
   timestamps: false

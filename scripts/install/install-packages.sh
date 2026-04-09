@@ -158,6 +158,25 @@ if should_install "core" && is_linux; then
     echo ""
 fi
 
+# Ollama - native install (replaces brew formula for faster updates)
+if should_install "core"; then
+    # Uninstall brew formula if present to avoid conflicts
+    if brew list ollama &>/dev/null; then
+        echo "Removing Homebrew Ollama formula (switching to native install)..."
+        brew uninstall ollama || warn "Failed to uninstall brew ollama"
+    fi
+
+    if ! command_exists ollama; then
+        echo "Installing Ollama (native)..."
+        # Trust decision: first-party URL (ollama.com) — no third-party CDN involved.
+        if ! curl -fsSL https://ollama.com/install.sh | sh; then
+            warn "Ollama install failed. You can retry manually: curl -fsSL https://ollama.com/install.sh | sh"
+        fi
+    else
+        echo "Ollama already installed: $(ollama --version 2>/dev/null || echo 'unknown version')"
+    fi
+fi
+
 # Claude Code - native install (replaces brew cask)
 if should_install "core"; then
     # Uninstall brew cask version if present to avoid conflicts (macOS only)

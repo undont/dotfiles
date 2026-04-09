@@ -4,6 +4,20 @@
 local M = {}
 
 function M.setup()
+  local spellcheck = require 'custom.core.spellcheck'
+  local function safe_fold_alias(target)
+    return function()
+      local ok, msg = pcall(vim.cmd, 'normal! ' .. target)
+      if ok then
+        return
+      end
+      if type(msg) == 'string' and msg:match 'E490: No fold found' then
+        return
+      end
+      vim.api.nvim_err_writeln(msg)
+    end
+  end
+
   -- Clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
@@ -12,10 +26,15 @@ function M.setup()
   vim.keymap.set('n', 'dd', '"_dd')
   vim.keymap.set('o', 'y', '_')
 
+  -- Folding aliases: default to recursive/all-fold variants.
+  vim.keymap.set('n', 'zr', safe_fold_alias 'zR', { desc = 'Open all folds', silent = true })
+  vim.keymap.set('n', 'zc', safe_fold_alias 'zC', { desc = 'Close fold recursively', silent = true })
+  vim.keymap.set('n', 'zm', safe_fold_alias 'zM', { desc = 'Close all folds', silent = true })
+
   -- Build
   vim.keymap.set('n', '<leader>q', function()
     require('custom.core.build').run()
-  end, { desc = 'Build project' })
+  end, { desc = 'Build project or pick Make target' })
 
   -- Copy buffer path to clipboard
   vim.keymap.set('n', '<leader>by', function()
@@ -30,10 +49,11 @@ function M.setup()
   -- Git UI
   vim.keymap.set('n', '<leader>g', '<cmd>LazyGit<CR>', { desc = 'Lazy[G]it' })
 
-  -- Theme reload
-  vim.keymap.set('n', '<leader>tr', function()
-    require('custom.core.theme').reload(true)
-  end, { desc = '[R]eload theme' })
+  -- Undo tree
+  vim.keymap.set('n', '<leader>u', function()
+    vim.cmd 'packadd nvim.undotree'
+    require('undotree').open { command = '60vnew' }
+  end, { desc = '[U]ndo tree' })
 
   -- Shift+Enter → Enter (Ghostty sends Alt+Enter / \x1b\r)
   vim.keymap.set({ 'i', 'n', 'v', 'c' }, '<M-CR>', '<CR>')
@@ -94,236 +114,38 @@ function M.setup()
   vim.keymap.set('i', '<Home>', '<C-o>0', { desc = 'Beginning of line (Cmd+Left)' })
   vim.keymap.set('i', '<End>', '<C-o>$', { desc = 'End of line (Cmd+Right)' })
 
-  -- Helper: insert snippet with smart spacing (blank lines only where needed)
-  local function insert_snippet(trigger)
-    local ls = require 'luasnip'
-    local snippets = ls.get_snippets 'all'
-    for _, snip in ipairs(snippets) do
-      if snip.trigger == trigger then
-        local row = vim.api.nvim_win_get_cursor(0)[1]
-        local line_count = vim.api.nvim_buf_line_count(0)
-        local cur_line = vim.api.nvim_get_current_line()
-        local next_line = row < line_count and vim.api.nvim_buf_get_lines(0, row, row + 1, false)[1] or nil
-
-        local new_lines = {}
-        if cur_line:match '%S' then
-          table.insert(new_lines, '') -- blank line before for spacing
-        end
-        table.insert(new_lines, '') -- line where snippet will expand
-        if next_line and next_line:match '%S' then
-          table.insert(new_lines, '') -- blank line after for spacing
-        end
-
-        vim.api.nvim_buf_set_lines(0, row, row, false, new_lines)
-        local snippet_row = row + (cur_line:match '%S' and 2 or 1)
-        vim.api.nvim_win_set_cursor(0, { snippet_row, 0 })
-        vim.cmd 'undojoin'
-        ls.snip_expand(snip)
-        return
-      end
-    end
-  end
-
-  -- LuaSnip: Insert Claude comment template
-  vim.keymap.set('n', '<leader>cc', function()
-    insert_snippet 'claudecomment'
-  end, { desc = '[C]omment template' })
-
-  -- LuaSnip: Insert Claude user/exchange snippet
-  -- If inside a <comment> block, adds a properly indented exchange before </comment>
-  -- If outside, uses the standalone snippet with smart spacing
-  vim.keymap.set('n', '<leader>cu', function()
-    local row = vim.api.nvim_win_get_cursor(0)[1]
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-
-    -- Check if we're inside a <comment> block
-    local comment_start, comment_end
-    for i = row, 1, -1 do
-      if lines[i]:match '<comment%s+state=' then
-        comment_start = i
-        break
-      end
-      if lines[i]:match '</comment>' then
-        break
-      end
-    end
-    if comment_start then
-      for i = comment_start, #lines do
-        if lines[i]:match '</comment>' then
-          if row <= i then
-            comment_end = i
-          end
-          break
-        end
-      end
-    end
-
-    if not comment_end then
-      insert_snippet 'cu'
-      return
-    end
-
-    -- Detect indentation from existing <user> tags in the block
-    local indent = '    '
-    for i = comment_start, comment_end do
-      local m = lines[i]:match '^(%s*)<user>'
-      if m then
-        indent = m
-        break
-      end
-    end
-    local inner_indent = indent .. '    '
-
-    -- Insert new exchange before </comment>
-    local new_lines = {
-      indent .. '<user>',
-      inner_indent,
-      indent .. '</user>',
-      indent .. '<claude>',
-      inner_indent .. '[ claude - reply here ]',
-      indent .. '</claude>',
-    }
-    vim.api.nvim_buf_set_lines(0, comment_end - 1, comment_end - 1, false, new_lines)
-
-    -- Position cursor on the user content line and enter insert mode
-    local cursor_row = comment_end + 1 -- the inner_indent line (1-indexed)
-    vim.api.nvim_win_set_cursor(0, { cursor_row, #inner_indent })
-    vim.cmd 'startinsert!'
-  end, { desc = '[U]ser exchange snippet' })
-
-  -- Toggle <comment> block state (open <-> resolved)
-  vim.keymap.set('n', '<leader>cr', function()
-    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-    local comment_line
-    for i = cursor_line, 1, -1 do
-      if lines[i]:match '<comment%s+state=' then
-        comment_line = i
-        break
-      end
-      if i < cursor_line and lines[i]:match '</comment>' then
-        break
-      end
-    end
-    if not comment_line then
-      vim.notify('No comment block at cursor', vim.log.levels.WARN)
-      return
-    end
-    for i = comment_line, #lines do
-      if lines[i]:match '</comment>' then
-        if cursor_line > i then
-          vim.notify('No comment block at cursor', vim.log.levels.WARN)
-          return
-        end
-        break
-      end
-    end
-    local line = lines[comment_line]
-    local new_line
-    if line:match 'state="open"' then
-      new_line = line:gsub('state="open"', 'state="resolved"')
-    elseif line:match 'state="resolved"' then
-      new_line = line:gsub('state="resolved"', 'state="open"')
-    else
-      vim.notify('Unknown comment state', vim.log.levels.WARN)
-      return
-    end
-    vim.api.nvim_buf_set_lines(0, comment_line - 1, comment_line, false, { new_line })
-  end, { desc = 'Toggle comment [R]esolved' })
-
-  -- Navigate to next/previous <comment> block
-  vim.keymap.set('n', '<leader>c]', function()
-    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-    for i = cursor_line + 1, #lines do
-      if lines[i]:match '<comment%s+state=' then
-        vim.api.nvim_win_set_cursor(0, { i, 0 })
-        return
-      end
-    end
-    vim.notify('No next comment block', vim.log.levels.INFO)
-  end, { desc = 'Next comment block' })
-
-  vim.keymap.set('n', '<leader>c[', function()
-    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-    for i = cursor_line - 1, 1, -1 do
-      if lines[i]:match '<comment%s+state=' then
-        -- Skip if cursor is inside this block (no </comment> between tag and cursor)
-        local closed = false
-        for j = i + 1, cursor_line do
-          if lines[j]:match '</comment>' then
-            closed = true
-            break
-          end
-        end
-        if closed then
-          vim.api.nvim_win_set_cursor(0, { i, 0 })
-          return
-        end
-      end
-    end
-    vim.notify('No previous comment block', vim.log.levels.INFO)
-  end, { desc = 'Previous comment block' })
-
-  -- Delete <comment> block under cursor
-  vim.keymap.set('n', '<leader>cd', function()
-    local cursor_line = vim.api.nvim_win_get_cursor(0)[1]
-    local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
-    local comment_start
-    for i = cursor_line, 1, -1 do
-      if lines[i]:match '<comment%s+state=' then
-        comment_start = i
-        break
-      end
-      if i < cursor_line and lines[i]:match '</comment>' then
-        break
-      end
-    end
-    if not comment_start then
-      vim.notify('No comment block at cursor', vim.log.levels.WARN)
-      return
-    end
-    local comment_end
-    for i = comment_start, #lines do
-      if lines[i]:match '</comment>' then
-        if cursor_line > i then
-          vim.notify('No comment block at cursor', vim.log.levels.WARN)
-          return
-        end
-        comment_end = i
-        break
-      end
-    end
-    if not comment_end then
-      vim.notify('No closing </comment> tag found', vim.log.levels.WARN)
-      return
-    end
-    -- Expand deletion range to include surrounding blank spacing lines
-    -- If both sides have blanks, only consume one to preserve spacing
-    local del_start = comment_start
-    local del_end = comment_end
-    local blank_above = del_start > 1 and not lines[del_start - 1]:match '%S'
-    local blank_below = del_end < #lines and not lines[del_end + 1]:match '%S'
-    if blank_above then
-      del_start = del_start - 1
-    end
-    if blank_below and not blank_above then
-      del_end = del_end + 1
-    end
-    vim.api.nvim_buf_set_lines(0, del_start - 1, del_end, false, {})
-    local new_line = math.max(1, del_start - 1)
-    local line_count = vim.api.nvim_buf_line_count(0)
-    vim.api.nvim_win_set_cursor(0, { math.min(new_line, line_count), 0 })
-  end, { desc = '[D]elete comment block' })
-
   -- Spelling
   vim.keymap.set('n', '<leader>St', '<cmd>set spell!<CR>', { desc = '[T]oggle spellcheck' })
+  vim.keymap.set('n', '<leader>Sc', function()
+    if not spellcheck.apply_first_suggestion() then
+      vim.notify('No misspelled word under cursor', vim.log.levels.WARN)
+    end
+  end, { desc = 'Auto-[C]orrect word' })
+  vim.keymap.set('n', '<leader>Sl', function()
+    local row = vim.api.nvim_win_get_cursor(0)[1]
+    local fixed = spellcheck.autocorrect_range(row, row)
+    vim.notify(('Autocorrected %d word%s on this line'):format(fixed, fixed == 1 and '' or 's'))
+  end, { desc = 'Auto-correct current [L]ine' })
+  vim.keymap.set('n', '<leader>SB', function()
+    local fixed = spellcheck.autocorrect_range(1, vim.api.nvim_buf_line_count(0))
+    vim.notify(('Autocorrected %d word%s in buffer'):format(fixed, fixed == 1 and '' or 's'))
+  end, { desc = 'Auto-correct [B]uffer' })
   vim.keymap.set('n', '<leader>Ss', function()
     require('telescope.builtin').spell_suggest(require('telescope.themes').get_cursor())
   end, { desc = '[S]uggest corrections' })
   vim.keymap.set('n', '<leader>Sa', 'zg', { desc = '[A]dd word to dictionary' })
-  vim.keymap.set('n', '<leader>Sr', 'zw', { desc = '[R]emove word from dictionary' })
+  vim.keymap.set('n', '<leader>Sr', function()
+    local word = vim.fn.expand '<cword>'
+    if word == nil or word == '' then
+      vim.notify('No word under cursor', vim.log.levels.WARN)
+      return
+    end
+
+    local choice = vim.fn.confirm(('Mark "%s" as misspelled?'):format(word), '&Yes\n&No', 2)
+    if choice == 1 then
+      vim.cmd 'normal! zw'
+    end
+  end, { desc = '[R]emove word from dictionary' })
   vim.keymap.set('n', '<leader>S?', 'z=', { desc = 'Full suggestion list' })
   vim.keymap.set('n', '<leader>Sd', function()
     vim.cmd('edit ' .. vim.fn.stdpath 'data' .. '/spell/en.utf-8.add')
@@ -331,10 +153,6 @@ function M.setup()
 
   -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()
-    -- Timestamp tells the notify filter in ui.lua to suppress INFO noise during
-    -- refresh. Uses vim.g so it survives the config re-source.
-    vim.g.nvim_refresh_at = vim.uv.now()
-
     -- Close stateful plugins cleanly before wiping buffers
     pcall(vim.cmd, 'Neotree close')
     pcall(vim.cmd, 'DiffviewClose')
@@ -342,6 +160,20 @@ function M.setup()
 
     -- Close all splits so the window fills the terminal before wiping buffers
     vim.cmd 'only'
+
+    -- Suppress shutdown noise from force-stopped LSP clients. Async exit
+    -- callbacks (vim.schedule inside on_exit) arrive well after the defer
+    -- below, so the wrapper must outlive the refresh sequence.
+    local real_notify = vim.notify
+    local suppressing = true
+    vim.notify = function(msg, level, opts)
+      if suppressing and type(msg) == 'string' then
+        if msg:match 'quit with exit code' or msg:match 'server stopped' or msg:match 'Re%-sourcing' then
+          return
+        end
+      end
+      return real_notify(msg, level, opts)
+    end
 
     -- Stop all LSP clients
     for _, client in ipairs(vim.lsp.get_clients()) do
@@ -361,11 +193,44 @@ function M.setup()
 
     -- Open the dashboard in the current window (not as a float) for a clean start
     vim.defer_fn(function()
-      vim.g.nvim_refresh_at = nil
-      vim.notify('Neovim refreshed', vim.log.levels.INFO)
+      -- Restart Copilot — its lazy InsertEnter event won't re-fire after re-source
+      pcall(function()
+        require('copilot.command').enable()
+      end)
+
+      real_notify('Neovim refreshed', vim.log.levels.INFO)
       Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
     end, 200)
+
+    -- Restore vim.notify after async LSP exit callbacks have had time to fire.
+    -- Without this, repeated <leader>lR would chain wrappers (each capturing
+    -- the previous wrapper as real_notify).
+    vim.defer_fn(function()
+      vim.notify = real_notify
+    end, 3000)
   end, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })
+
+  vim.keymap.set('n', '<leader>lt', function()
+    local bufnr = vim.api.nvim_get_current_buf()
+    local ft = vim.bo[bufnr].filetype
+    local lang = vim.treesitter.language.get_lang(ft) or ft
+
+    if lang ~= '' and not pcall(vim.treesitter.language.inspect, lang) then
+      vim.notify('Missing tree-sitter parser for ' .. lang .. '. Run :TSInstall ' .. lang, vim.log.levels.WARN)
+      return
+    end
+
+    local ok, parser = pcall(vim.treesitter.get_parser, bufnr)
+    if ok and parser then
+      parser:parse(true)
+    end
+
+    if vim.lsp.semantic_tokens then
+      vim.lsp.semantic_tokens.force_refresh(bufnr)
+    end
+
+    vim.notify('Refreshed tree-sitter', vim.log.levels.INFO)
+  end, { desc = 'Refresh [T]reesitter' })
 
   -- LuaSnip navigation keymaps
   vim.keymap.set({ 'i', 's' }, '<C-k>', function()

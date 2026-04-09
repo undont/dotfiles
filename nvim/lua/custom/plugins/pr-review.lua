@@ -46,16 +46,6 @@ local function edit_diff_file()
 
       local path = file.absolute_path
 
-      -- Pre-load the target buffer and force-parse the treesitter tree
-      -- while diffview is still visible. Heavy grammars (C#) take 2-5s
-      -- to parse — doing it here means highlighting is ready on switch
-      -- instead of the user watching an un-styled buffer settle.
-      local target_buf = vim.fn.bufadd(path)
-      vim.fn.bufload(target_buf)
-      pcall(function()
-        vim.treesitter.get_parser(target_buf):parse()
-      end)
-
       -- Close the tabpage directly for instant visual feedback.
       local tabpage = view.tabpage
       if tabpage and vim.api.nvim_tabpage_is_valid(tabpage) then
@@ -239,6 +229,7 @@ return {
           vim.keymap.set('n', ' ', function()
             require('which-key').show ' '
           end, { buffer = ev.buf })
+          vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = ev.buf })
         end,
       })
 
@@ -308,8 +299,91 @@ return {
     end,
     opts = function()
       local actions = require 'diffview.actions'
+      local function safe_compat_fold(fold_cmd)
+        return function()
+          local normalized = ({
+            zr = 'zR',
+            zc = 'zC',
+            zm = 'zM',
+          })[fold_cmd] or fold_cmd
+
+          local function run_in_win(winid)
+            local ok, msg = pcall(vim.api.nvim_win_call, winid, function()
+              vim.cmd('norm! ' .. normalized)
+            end)
+            if ok then
+              return nil
+            end
+            if type(msg) == 'string' and msg:match 'E490: No fold found' then
+              return nil
+            end
+            return msg
+          end
+
+          if vim.wo.foldmethod ~= 'manual' then
+            local err = run_in_win(vim.api.nvim_get_current_win())
+            if err then
+              vim.api.nvim_err_writeln(err)
+            end
+            return
+          end
+
+          local view = require('diffview.lib').get_current_view()
+          local sv_ok, StandardView = pcall(require, 'diffview.scene.views.standard.standard_view')
+          if not (view and sv_ok and view:instanceof(StandardView.StandardView.__get())) then
+            local err = run_in_win(vim.api.nvim_get_current_win())
+            if err then
+              vim.api.nvim_err_writeln(err)
+            end
+            return
+          end
+
+          local err
+          for _, win in ipairs(view.cur_layout.windows) do
+            local win_err = run_in_win(win.id)
+            if win_err then
+              err = win_err
+            end
+          end
+          if err then
+            vim.api.nvim_err_writeln(err)
+          end
+        end
+      end
       return {
         enhanced_diff_hl = true,
+        hooks = {
+          diff_buf_read = function(bufnr)
+            vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = bufnr })
+            for _, fold_cmd in ipairs {
+              'za',
+              'zA',
+              'ze',
+              'zE',
+              'zo',
+              'zc',
+              'zO',
+              'zC',
+              'zr',
+              'zm',
+              'zR',
+              'zM',
+              'zv',
+              'zx',
+              'zX',
+              'zn',
+              'zN',
+              'zi',
+            } do
+              vim.keymap.set('n', fold_cmd, safe_compat_fold(fold_cmd), {
+                buffer = bufnr,
+                desc = 'diffview_ignore',
+                nowait = true,
+                silent = true,
+              })
+            end
+          end,
+        },
         view = {
           default = { layout = 'diff2_horizontal' },
           merge_tool = { layout = 'diff3_mixed' },
@@ -504,6 +578,14 @@ return {
         end,
       })
 
+      -- Disable keymaps that don't make sense in Octo review context
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = 'octo',
+        callback = function(event)
+          vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = event.buf })
+        end,
+      })
+
       -- 'l' to open file from file panel (mirrors diffview behaviour)
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'octo_panel',
@@ -519,6 +601,7 @@ return {
       local orig_configure = file_entry._configure_buffer
       file_entry._configure_buffer = function(bufid)
         orig_configure(bufid)
+        vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = bufid })
         local function scroll(fraction)
           local lines = math.floor(vim.api.nvim_win_get_height(0) * math.abs(fraction))
           local key = fraction > 0 and '<C-e>' or '<C-y>'

@@ -38,7 +38,6 @@ cask "visual-studio-code"
 
 # AI Coding Assistants
 brew "opencode"
-brew "ollama"   # Local LLM runner
 cask "codexbar" # Menu bar usage monitor for Codex and Claude
 
 # Git & GitHub

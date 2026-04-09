@@ -72,3 +72,4 @@ GHOSTTY_PALETTE_15="#a6adc8"
 # ══════════════════════════════════════════════════════════════
 
 NVIM_COLORSCHEME="catppuccin-mocha"
+NVIM_FG_VARIABLE="#b5bcd8"

@@ -72,3 +72,4 @@ GHOSTTY_PALETTE_15="#e4e4e5"
 # ══════════════════════════════════════════════════════════════
 
 NVIM_COLORSCHEME="nightfox"
+NVIM_FG_VARIABLE="#b6bbc2"

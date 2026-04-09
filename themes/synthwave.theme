@@ -72,3 +72,4 @@ GHOSTTY_PALETTE_15="#ffffff"     # Bright white
 # ══════════════════════════════════════════════════════════════
 
 NVIM_COLORSCHEME="synthwave"
+NVIM_FG_VARIABLE="#d2cbe4"

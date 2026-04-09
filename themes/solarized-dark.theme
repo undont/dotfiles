@@ -72,3 +72,4 @@ GHOSTTY_PALETTE_15="#fdf6e3"
 # ══════════════════════════════════════════════════════════════
 
 NVIM_COLORSCHEME="solarized-dark"
+NVIM_FG_VARIABLE="#88989a"

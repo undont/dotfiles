@@ -21,6 +21,8 @@ return {
         'javascript',
         'jsdoc',
         'json',
+        'json5',
+        'jsonc',
         'make',
         'python',
         -- lua, luadoc, vim, vimdoc, query, markdown, markdown_inline are bundled
@@ -33,8 +35,11 @@ return {
 
       -- Purge compiled parsers when nvim-treesitter updates to prevent ABI crashes.
       -- Old .so files compiled against a previous treesitter ABI can crash Neovim
-      -- when opened (e.g. markdown, c_sharp after breaking updates).
+      -- when opened (e.g. markdown, c_sharp after breaking updates). Remove the
+      -- matching query directories too, otherwise health checks report orphaned
+      -- queries for parsers that no longer exist on disk.
       local parser_dir = vim.fn.stdpath 'data' .. '/site/parser'
+      local query_dir = vim.fn.stdpath 'data' .. '/site/queries'
       local marker_path = vim.fn.stdpath 'data' .. '/nvim-treesitter-rev'
       local plugin_dir = vim.fn.stdpath 'data' .. '/lazy/nvim-treesitter'
       local current_rev = vim.fn.system('git -C ' .. plugin_dir .. ' rev-parse --short HEAD 2>/dev/null'):gsub('%s+', '')
@@ -59,6 +64,11 @@ return {
                 end
                 if typ == 'file' and name:match '%.so$' then
                   os.remove(parser_dir .. '/' .. name)
+                  local lang = name:gsub('%.so$', '')
+                  local qdir = query_dir .. '/' .. lang
+                  if vim.uv.fs_stat(qdir) then
+                    vim.fn.delete(qdir, 'rf')
+                  end
                 end
               end
             end
@@ -98,6 +108,12 @@ return {
       -- Enable treesitter highlighting and indentation for all supported filetypes
       vim.api.nvim_create_autocmd('FileType', {
         callback = function()
+          -- Skip treesitter for large files to avoid blocking the editor
+          local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(0))
+          if ok and stats and stats.size > 1024 * 1024 then
+            return
+          end
+
           if pcall(vim.treesitter.start) then
             -- Only set treesitter indentexpr when indent queries exist for this
             -- language, otherwise fall back to Vim's native indent (autoindent,
@@ -469,6 +485,11 @@ return {
           save_on_toggle = true,
           sync_on_ui_close = true,
         },
+      }
+      harpoon:extend {
+        UI_CREATE = function(cx)
+          vim.keymap.set('n', 'o', '<CR>', { buffer = cx.bufnr, remap = true, silent = true })
+        end,
       }
 
       -- Keymaps
