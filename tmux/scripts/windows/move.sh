@@ -25,7 +25,7 @@ fi
 SOURCE_SESSION="${SOURCE_WINDOW%%:*}"
 WINDOW_INDEX="${SOURCE_WINDOW##*:}"
 
-# Remove any trailing indicators (⚡, 🤖, etc.) from the window identifier
+# Remove any trailing indicators (⚡, 󱜙, etc.) from the window identifier
 SOURCE_SESSION="${SOURCE_SESSION%% *}"
 WINDOW_INDEX="${WINDOW_INDEX%% *}"
 

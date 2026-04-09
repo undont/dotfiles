@@ -17,6 +17,7 @@ local colors = {
   fg_primary = '#93a1a1',
   bg_secondary = '#073642',
   fg_secondary = '#657b83',
+  fg_variable = '#88989a',
 
   -- Accents
   purple = '#6c71c4',
@@ -146,7 +147,7 @@ hl('LspReferenceRead', { bg = colors.selection })
 hl('LspReferenceWrite', { bg = colors.selection })
 
 -- Treesitter
-hl('@variable', { fg = colors.blue })
+hl('@variable', { fg = colors.fg_variable })
 hl('@variable.builtin', { fg = colors.cyan })
 hl('@variable.parameter', { fg = colors.blue })
 hl('@variable.member', { fg = colors.blue })

@@ -353,7 +353,7 @@ preexec_functions+=(_dotfiles_preexec)
 # SECRETS & CREDENTIALS
 # =============================================================================
 # API keys and tokens loaded from separate file (not version controlled)
-# See ~/dotfiles/zsh/README.md for structure of secrets.zsh
+# See ~/dotfiles/zsh/secrets.zsh.template for structure
 ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
   source "$ZSH_CONFIG_DIR/secrets.zsh"
@@ -432,7 +432,7 @@ alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash conf
 alias ff="fastfetch"                   # Fastfetch system info
 alias ac="alerts-clear"                # Clear tmux alerts (see alias below)
 
-# Tmux session management (see ~/.tmux/README.md)
+# Tmux session management
 alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
 alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts"  # Clear all tmux alerts

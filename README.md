@@ -105,9 +105,9 @@ The installer detects what's already configured and only shows steps you still n
 
 ### Neovim — Modular Config, Diverse Tooling
 
-> Based on kickstart.nvim with lazy.nvim, Treesitter, and 10 language servers via Mason.
+> Based on kickstart.nvim with lazy.nvim, Treesitter, and language servers managed via Mason.
 
-- **LSP** — TypeScript, Go, Python, Lua, C#/.NET (Roslyn), ESLint, Bash, CSS, HTML, YAML
+- **LSP** — TypeScript, Go, Python, Lua, C#/.NET (Roslyn), ESLint, Bash, CSS/Tailwind, HTML, YAML + more
 - **Git** — LazyGit (status, blame, diff), gitsigns (inline decorations, hunk navigation)
 - **PR review** — Octo.nvim for GitHub PRs + diffview for side-by-side diffs and merge conflict resolution
 - **Build picker** (`Space q`) — auto-detects Go, TypeScript, .NET, and Makefile projects
@@ -130,7 +130,7 @@ The installer detects what's already configured and only shows steps you still n
 
 Press `` ` p `` to open the launcher picker — shell scripts that create pre-configured tmux sessions.
 
-- **Built-in**: `dev` (dev session), `github` (gh-dash), `btop` (system monitor)
+- **Built-in**: `dev` (dev session), `github` (gh-dash), `btop` (system monitor), `docker` (lazydocker), `dotfiles` (open dotfiles in $EDITOR), `config` (open ~/.config in $EDITOR)
 - **Wizard**: press `n` to scaffold a new launcher interactively
 - **User launchers** in `~/.config/dotfiles/launchers/` override repo launchers by name
 - **Set**: press `s` to configure `DEV_ROOT` and `PROJECTS_ROOT` for dynamic project discovery

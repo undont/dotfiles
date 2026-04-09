@@ -72,3 +72,4 @@ GHOSTTY_PALETTE_15="#e0def4"
 # ══════════════════════════════════════════════════════════════
 
 NVIM_COLORSCHEME="rose-pine"
+NVIM_FG_VARIABLE="#c4c1d8"

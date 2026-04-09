@@ -58,14 +58,9 @@ description: Commit staged changes and create a PR, push on top if PR already ex
 
     | Directory with changes | Documentation files to read |
     |------------------------|----------------------------|
-    | `tmux/` | `tmux/.tmux/README.md`, `tmux/.tmux/tmux-help.txt` |
-    | `nvim/` | `nvim/README.md`, `nvim/cheatsheet.txt` |
-    | `zsh/` | `zsh/.zsh/README.md` |
-    | `karabiner/` | `karabiner/README.md` |
-    | `ghostty/` | `ghostty/README.md` |
-    | `hammerspoon/` | `hammerspoon/README.md` |
-    | `bin/` | `README.md` (custom scripts section) |
-    | Root files | `README.md` |
+    | `tmux/` | `tmux/tmux-help.template` |
+    | `nvim/` | `nvim/cheatsheet.txt` |
+    | Any | `README.md` |
 
     - **Compare changes against documentation content** - for each changed file, check if:
       - New keybindings or keyboard shortcuts were added/changed

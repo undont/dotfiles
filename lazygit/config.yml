@@ -3,6 +3,7 @@
 # Personal overrides go in local.yml (same directory) — set via LG_CONFIG_FILE.
 
 gui:
+  nerdFontsVersion: "3"
   theme:
     # Use reverse video for selections — works with any terminal colour scheme
     # and avoids poor contrast from ANSI colours used as backgrounds

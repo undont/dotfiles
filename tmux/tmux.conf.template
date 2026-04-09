@@ -7,8 +7,6 @@
 # A compatibility symlink exists at ~/.tmux.conf for backwards compatibility.
 # Change themes with: dotfiles theme <theme-name>
 #
-# See ~/.tmux/README.md for full documentation and setup guide.
-#
 # Quick reference:
 #   Prefix: ` (backtick) or Ctrl+b (mobile-friendly)
 #   Help:   ` h (popup with keybindings)
@@ -107,8 +105,8 @@ set -s escape-time 0
 # History: 50,000 lines of scrollback per pane
 set -g history-limit 50000
 
-# Status bar refresh: every 2 seconds (for responsive CPU/RAM display)
-set -g status-interval 2
+# Status bar refresh: every second (keeps right-side clock seconds in sync)
+set -g status-interval 1
 
 # ══════════════════════════════════════════════════════════════
 # Keybindings
@@ -454,7 +452,7 @@ set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
 set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
 # Responsive: full stats on wide terminals (≥80 cols), compact on narrow (mobile)
-set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ≡ #{ram_percentage} ,}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M '
+set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ≡ #{ram_percentage} ,}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M:%S '
 set -g status-left-length 30
 set -g status-right-length 150
 

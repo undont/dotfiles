@@ -66,15 +66,13 @@ return {
         map('n', '<leader>Hu', gitsigns.undo_stage_hunk, { desc = '[U]ndo stage hunk' })
         map('n', '<leader>HR', gitsigns.reset_buffer, { desc = '[R]eset buffer' })
         map('n', '<leader>Hp', gitsigns.preview_hunk, { desc = '[P]review hunk' })
+        map('n', '<leader>Hi', gitsigns.preview_hunk_inline, { desc = '[I]nline hunk diff' })
         map('n', '<leader>Hd', gitsigns.diffthis, { desc = '[D]iff against index' })
         map('n', '<leader>HD', function()
           gitsigns.diffthis '@'
         end, { desc = '[D]iff against last commit' })
-        -- Blame (under <leader>d with diffview)
-        map('n', '<leader>db', gitsigns.toggle_current_line_blame, { desc = 'Toggle inline [B]lame' })
-        map('n', '<leader>dB', gitsigns.blame_line, { desc = '[B]lame line popup' })
-        -- Toggles
-        map('n', '<leader>tD', gitsigns.preview_hunk_inline, { desc = 'Toggle [D]eleted' })
+        map('n', '<leader>Hb', gitsigns.blame_line, { desc = '[B]lame line popup' })
+        map('n', '<leader>HB', gitsigns.toggle_current_line_blame, { desc = 'Toggle inline [B]lame' })
       end,
     },
   },

@@ -150,9 +150,9 @@ section "Alert Library - Agent Icons"
 
 # Test agent icon lookup
 assert_equals "Claude icon is ⚡" "⚡" "$(get_agent_icon claude)"
-assert_equals "OpenCode icon is 🔮" "🔮" "$(get_agent_icon opencode)"
+assert_equals "OpenCode icon is " "" "$(get_agent_icon opencode)"
 
-assert_equals "Unknown agent icon is 🤖" "🤖" "$(get_agent_icon unknown)"
+assert_equals "Unknown agent icon is 󱜙" "󱜙" "$(get_agent_icon unknown)"
 
 section "Alert Library - Agent Colours"
 
