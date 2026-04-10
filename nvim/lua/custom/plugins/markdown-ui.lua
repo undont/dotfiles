@@ -75,8 +75,12 @@ return {
               -- Only renumber if cursor is on/near a numbered list
               local line = vim.api.nvim_get_current_line()
               if line:match '^%s*%d+[%.%)%)]%s' then
-                pcall(vim.cmd, 'undojoin')
-                pcall(vim.cmd, 'MkdnUpdateNumbering')
+                pcall(function()
+                  vim.cmd 'undojoin'
+                end)
+                pcall(function()
+                  vim.cmd 'MkdnUpdateNumbering'
+                end)
               end
             end,
           })

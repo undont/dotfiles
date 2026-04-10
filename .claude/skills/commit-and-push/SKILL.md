@@ -1,5 +1,5 @@
 ---
-description: Commit staged changes and create a PR, push on top if PR already exists.
+description: Commit staged changes and push. Offer to create a PR if none exists, otherwise push on top of the existing one.
 ---
 
 # Commit and Push Changes
@@ -174,14 +174,41 @@ refactor: split zsh config into modular files
     ```
     **Note**: Version tags are created automatically by CI when merged to main. The `auto-tag` job reads the latest version from CHANGELOG.md and creates a `vX.Y.Z` tag if it doesn't already exist. No manual tagging needed.
 
-## Pull Request Creation
+## Pull Request Handling
 
 ### Branch Check
 
 - Verify you are on a feature branch (not `main`)
 - If you accidentally committed to `main`, move changes to a new branch before pushing
 
-### Create Pull Request
+### Check for Existing PR
+
+After pushing, always check whether a PR already exists for the branch **before**
+considering whether to create one:
+
+```bash
+gh pr view --json number,url,state 2>/dev/null
+```
+
+- **If a PR exists and is open**: do NOT create a new one. The push already updated
+  it — surface the PR URL to the user and stop. The branch has been updated on top of
+  the existing PR; that's the desired state.
+- **If a PR exists but is closed/merged**: mention this to the user and ask whether they
+  want a fresh PR opened against main, or if this is a new direction for the branch.
+- **If no PR exists**: **ASK the user** whether they want you to create one. Do NOT
+  create a PR by default. Many workflows prefer to push first, keep iterating, and only
+  open a PR when the change is ready for review.
+
+### Asking About PR Creation
+
+When no PR exists, surface something like:
+
+> Pushed to `<branch>`. No open PR exists for this branch. Want me to open one?
+
+Wait for the user's answer. Only proceed to the "Create Pull Request" step if they
+explicitly say yes.
+
+### Create Pull Request (only if user confirms)
 
 ```bash
 gh pr create --title "<title>" --body "$(cat <<'EOF'

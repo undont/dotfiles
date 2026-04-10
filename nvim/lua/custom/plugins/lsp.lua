@@ -206,17 +206,6 @@ local function patch_show_document()
 end
 
 return {
-  -- Lua development for Neovim
-  {
-    'folke/lazydev.nvim',
-    ft = 'lua',
-    opts = {
-      library = {
-        { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
-      },
-    },
-  },
-
   -- Main LSP Configuration
   {
     'neovim/nvim-lspconfig',
@@ -339,9 +328,6 @@ return {
         settings = {
           Lua = {
             completion = { callSnippet = 'Replace' },
-            diagnostics = {
-              globals = { 'vim' },
-            },
           },
         },
       })

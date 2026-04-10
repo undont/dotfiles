@@ -112,7 +112,7 @@ The installer detects what's already configured and only shows steps you still n
 - **PR review** — Octo.nvim for GitHub PRs + diffview for side-by-side diffs and merge conflict resolution
 - **Build picker** (`Space q`) — auto-detects Go, TypeScript, .NET, and Makefile projects
 - **Test runner** — Neotest with three adapters: .NET, Go, and Vitest/Bun
-- **Navigation** — flash.nvim (jump), grug-far (project-wide search & replace), oil.nvim (file ops), trouble.nvim (diagnostics)
+- **Navigation** — native vim motions (`f`/`t`/`/`), grug-far (project-wide search & replace), oil.nvim (file ops), trouble.nvim (diagnostics)
 - **Multiple cursors** — vim-visual-multi (`Ctrl+n`, `Alt+↓/↑`)
 - **Markdown** — mkdnflow with list continuation, todo toggles, table formatting
 - **Colourschemes** — 15 hand-crafted + generatable from 438 Ghostty themes, self-contained Lua files with no plugin deps

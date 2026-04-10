@@ -7,14 +7,16 @@ function M.setup()
   local spellcheck = require 'custom.core.spellcheck'
   local function safe_fold_alias(target)
     return function()
-      local ok, msg = pcall(vim.cmd, 'normal! ' .. target)
+      local ok, msg = pcall(function()
+        vim.cmd('normal! ' .. target)
+      end)
       if ok then
         return
       end
       if type(msg) == 'string' and msg:match 'E490: No fold found' then
         return
       end
-      vim.api.nvim_err_writeln(msg)
+      vim.api.nvim_echo({ { tostring(msg), 'ErrorMsg' } }, true, { err = true })
     end
   end
 
@@ -25,6 +27,17 @@ function M.setup()
   -- The operator-pending 'y' motion means "current line" (like _), so dy = d + line.
   vim.keymap.set('n', 'dd', '"_dd')
   vim.keymap.set('o', 'y', '_')
+
+  -- Smart i/a on empty lines: reindent via cc (which respects indentexpr)
+  -- rather than dropping the cursor at column 0. Uses the black hole register
+  -- so the empty line contents don't clobber the unnamed register.
+  local function smart_insert(fallback)
+    return function()
+      return #vim.api.nvim_get_current_line() == 0 and '"_cc' or fallback
+    end
+  end
+  vim.keymap.set('n', 'i', smart_insert 'i', { expr = true, desc = 'Insert (smart indent on empty line)' })
+  vim.keymap.set('n', 'a', smart_insert 'a', { expr = true, desc = 'Append (smart indent on empty line)' })
 
   -- Folding aliases: default to recursive/all-fold variants.
   vim.keymap.set('n', 'zr', safe_fold_alias 'zR', { desc = 'Open all folds', silent = true })
@@ -154,9 +167,15 @@ function M.setup()
   -- Refresh: wipe all buffers, restart LSP, re-source config, reset layout
   vim.keymap.set('n', '<leader>lR', function()
     -- Close stateful plugins cleanly before wiping buffers
-    pcall(vim.cmd, 'Neotree close')
-    pcall(vim.cmd, 'DiffviewClose')
-    pcall(vim.cmd, 'Trouble close')
+    pcall(function()
+      vim.cmd 'Neotree close'
+    end)
+    pcall(function()
+      vim.cmd 'DiffviewClose'
+    end)
+    pcall(function()
+      vim.cmd 'Trouble close'
+    end)
 
     -- Close all splits so the window fills the terminal before wiping buffers
     vim.cmd 'only'

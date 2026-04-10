@@ -6,11 +6,11 @@ File top/bottom | gg / G
 Half-page down/up | Ctrl+d / Ctrl+u
 Jump back/forward | Ctrl+o / Ctrl+i
 Set mark | gm{a-z}
-Flash jump | s
-Flash treesitter | S
-Remote flash | r (operator-pending)
-Treesitter search | R (operator-pending/visual)
-Toggle flash in search | Ctrl+s (command mode)
+Find char forward/back | f{char} / F{char}
+Till char forward/back | t{char} / T{char}
+Repeat f/F/t/T | ; / ,
+Next/prev search match | n / N
+Search word under cursor | * / #
 
 ## harpoon @harpoon
 Add file | <leader>ha
@@ -67,6 +67,9 @@ Exit multi-cursor | Esc
 ## text-objects @text-objects
 Inner/around word | iw / aw
 Inside quotes/parens/braces | i" / i( / i{
+Expand selection to parent treesitter node | an (visual)
+Shrink selection to child treesitter node | in (visual)
+Next/previous sibling treesitter node | ]n / [n (visual)
 Around/inside method/function | am / im
 Around/inside class | aC / iC
 Surround add (word with ") | gsaiw"
@@ -104,8 +107,7 @@ Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
 Build project / pick Make target | <leader>q
-Notification history (filtered) | <leader>Nn
-Notification history (all) | <leader>Na
+Notification history | <leader>Nn
 
 ## diagnostics @diagnostics
 All diagnostics (Trouble) | <leader>xx

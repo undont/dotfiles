@@ -294,7 +294,7 @@ end
 local function run_build(cfg)
   local cmd_str = format_cmd_for_display(cfg.cmd)
 
-  -- Show progress notification (replaceable via nvim-notify)
+  -- Show progress notification
   local notify_opts = { title = 'Build', timeout = false }
   local notify_id = vim.notify('Running: ' .. cmd_str, vim.log.levels.INFO, notify_opts)
 

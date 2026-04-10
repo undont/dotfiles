@@ -37,6 +37,52 @@ local theme_map = {
 -- Default fallback
 local default_scheme = 'dracula'
 
+--- Check whether Ghostty has background transparency enabled.
+--- Reads both config and local (last-value-wins, matching Ghostty behaviour).
+---@return boolean
+local function ghostty_transparent()
+  local opacity = 1
+  local ghostty_dir = (os.getenv 'XDG_CONFIG_HOME' or vim.fn.expand '~/.config') .. '/ghostty'
+  for _, path in ipairs { ghostty_dir .. '/config', ghostty_dir .. '/local' } do
+    local f = io.open(path, 'r')
+    if f then
+      for line in f:lines() do
+        local val = line:match '^%s*background%-opacity%s*=%s*([%d%.]+)'
+        if val then
+          opacity = tonumber(val)
+        end
+      end
+      f:close()
+    end
+  end
+  return opacity < 1
+end
+
+--- Clear background on key highlight groups for terminal transparency
+local function apply_transparency()
+  local groups = {
+    'Normal',
+    'NormalNC',
+    'SignColumn',
+    'EndOfBuffer',
+    'StatusLine',
+    'StatusLineNC',
+    'TabLine',
+    'TabLineFill',
+    'MiniStatuslineDevinfo',
+    'MiniStatuslineFilename',
+    'MiniStatuslineFileinfo',
+    'MiniStatuslineInactive',
+    'NeoTreeNormal',
+    'NeoTreeNormalNC',
+  }
+  for _, group in ipairs(groups) do
+    local existing = vim.api.nvim_get_hl(0, { name = group })
+    existing.bg = nil
+    vim.api.nvim_set_hl(0, group, existing)
+  end
+end
+
 -- Track current theme to avoid unnecessary reloads
 local current_theme = nil
 
@@ -104,6 +150,10 @@ function M.reload(force)
 
   if apply_colourscheme(scheme) then
     current_theme = theme
+    -- Clear backgrounds when Ghostty transparency is active
+    if ghostty_transparent() then
+      apply_transparency()
+    end
     -- Subtle notification (only on manual reload or actual change)
     if force or current_theme ~= nil then
       vim.notify(string.format('Theme: %s', theme or 'default'), vim.log.levels.INFO)

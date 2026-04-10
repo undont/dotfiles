@@ -181,7 +181,64 @@ return {
     opts = {},
   },
 
-  -- Noice: enhanced LSP hover and signature help rendering (progress handled by nvim-notify)
+  -- Fidget: LSP progress spinner and vim.notify backend
+  {
+    'j-hui/fidget.nvim',
+    event = 'VeryLazy',
+    opts = {
+      progress = {
+        display = {
+          done_ttl = 2,
+          progress_icon = { 'dots' },
+        },
+      },
+      notification = {
+        override_vim_notify = true,
+        window = {
+          winblend = 0,
+          align = 'bottom',
+        },
+      },
+    },
+    config = function(_, opts)
+      opts.notification = opts.notification or {}
+      opts.notification.configs = {
+        default = vim.tbl_extend('force', require('fidget.notification').default_config, {
+          name = false,
+          icon = false,
+        }),
+      }
+      require('fidget').setup(opts)
+
+      -- Wrap fidget's vim.notify with a spam filter (noisy dotnet/roslyn startup)
+      local base_notify = vim.notify
+      vim.notify = function(msg, level, nopts)
+        if type(msg) ~= 'string' then
+          return base_notify(msg, level, nopts)
+        end
+
+        if msg:match '^Multiple potential target files found' then
+          return
+        end
+
+        local title = nopts and nopts.title
+        if not title or title == 'Progress' or (type(title) == 'string' and (title:match 'roslyn' or title:match 'easy%-dotnet')) then
+          local dotnet_spam = { '^Initializing', '^Loading ', ' loaded$', '^Client initialized' }
+          for _, pat in ipairs(dotnet_spam) do
+            if msg:match(pat) then
+              return
+            end
+          end
+        end
+
+        return base_notify(msg, level, nopts)
+      end
+
+      vim.keymap.set('n', '<leader>Nn', '<cmd>Fidget history<cr>', { desc = 'Notification history' })
+    end,
+  },
+
+  -- Noice: enhanced LSP hover and signature help rendering
   {
     'folke/noice.nvim',
     event = 'VeryLazy',
@@ -209,187 +266,6 @@ return {
     },
   },
 
-  -- Nvim-notify: beautiful animated notifications
-  {
-    'rcarriga/nvim-notify',
-    event = 'VeryLazy',
-    config = function()
-      local notify = require 'notify'
-      notify.setup {
-        stages = 'fade',
-        timeout = 3000,
-        max_width = 80,
-        max_height = 20,
-        render = 'compact',
-        background_colour = 'Normal',
-        icons = {
-          ERROR = '',
-          WARN = '',
-          INFO = '',
-          DEBUG = '',
-          TRACE = '',
-        },
-      }
-      vim.notify = notify
-
-      -- Suppress noisy notifications selectively
-      local _original_notify = vim.notify
-      vim.notify = function(msg, level, opts)
-        if type(msg) ~= 'string' then
-          return _original_notify(msg, level, opts)
-        end
-
-        -- Global noise (source-agnostic)
-        if msg:match '^No matching notification' then
-          return
-        end
-        if msg:match '^Multiple potential target files found' then
-          return
-        end
-
-        -- Dotnet startup spam — only filter untitled (direct easy-dotnet calls) or dotnet-sourced
-        local title = opts and opts.title
-        if not title or title == 'Progress' or title:match 'roslyn' or title:match 'easy%-dotnet' then
-          local dotnet_spam = { '^Initializing', '^Loading ', ' loaded$', '^Client initialized' }
-          for _, pat in ipairs(dotnet_spam) do
-            if msg:match(pat) then
-              return
-            end
-          end
-        end
-
-        return _original_notify(msg, level, opts)
-      end
-
-      --- Open a notification history float with dynamic height.
-      local function open_notify_float(title, entries)
-        if #entries == 0 then
-          vim.notify('No notifications', vim.log.levels.INFO)
-          return
-        end
-
-        local level_icons = {
-          [vim.log.levels.ERROR] = 'E',
-          [vim.log.levels.WARN] = 'W',
-          [vim.log.levels.INFO] = 'I',
-          [vim.log.levels.DEBUG] = 'D',
-          [vim.log.levels.TRACE] = 'T',
-        }
-        local lines = vim.tbl_map(function(n)
-          local t = os.date('%H:%M:%S', math.floor(n.time / 1000))
-          local icon = level_icons[n.level] or 'I'
-          local msg = type(n.message) == 'table' and table.concat(n.message, ' ') or tostring(n.message or '')
-          return string.format('%s [%s] %s', t, icon, msg:gsub('\n', ' '))
-        end, entries)
-
-        local buf = vim.api.nvim_create_buf(false, true)
-        vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
-        vim.bo[buf].modifiable = false
-        vim.bo[buf].bufhidden = 'wipe'
-
-        local w = math.min(math.floor(vim.o.columns * 0.8), 120)
-        -- Count wrapped screen lines to size the window properly
-        local wrapped = 0
-        for _, line in ipairs(lines) do
-          wrapped = wrapped + math.max(1, math.ceil(#line / w))
-        end
-        local h = math.max(3, math.min(wrapped, math.floor(vim.o.lines * 0.6)))
-
-        local win = vim.api.nvim_open_win(buf, true, {
-          relative = 'editor',
-          width = w,
-          height = h,
-          row = math.floor((vim.o.lines - h) / 2),
-          col = math.floor((vim.o.columns - w) / 2),
-          style = 'minimal',
-          border = 'rounded',
-          title = ' ' .. title .. ' ',
-          title_pos = 'center',
-        })
-        vim.wo[win].wrap = true
-        vim.keymap.set('n', 'q', '<cmd>close<cr>', { buffer = buf, silent = true })
-        vim.keymap.set('n', '<Esc>', '<cmd>close<cr>', { buffer = buf, silent = true })
-      end
-
-      -- LSP progress → nvim-notify (replaces fidget.nvim)
-      local progress_notifications = {} ---@type table<string, number|nil>
-      vim.api.nvim_create_autocmd('LspProgress', {
-        callback = function(ev)
-          local data = ev.data
-          if not data or not data.params then
-            return
-          end
-          local val = data.params.value
-          if not val then
-            return
-          end
-
-          -- Skip roslyn's stale Restore progress tokens (never complete)
-          if val.title and val.title:match '^Restore' then
-            return
-          end
-
-          local client = vim.lsp.get_client_by_id(data.client_id)
-          local client_name = client and client.name or 'lsp'
-          local token = data.params.token
-          local key = data.client_id .. ':' .. tostring(token)
-
-          if val.kind == 'begin' then
-            local msg = val.title or 'Working...'
-            if val.message then
-              msg = msg .. ': ' .. val.message
-            end
-            progress_notifications[key] = vim.notify(msg, vim.log.levels.INFO, {
-              title = client_name,
-              timeout = false,
-              hide_from_history = true,
-            })
-          elseif val.kind == 'report' then
-            local existing = progress_notifications[key]
-            if existing then
-              local msg = val.message or val.title or 'Working...'
-              if val.percentage then
-                msg = msg .. ' (' .. val.percentage .. '%)'
-              end
-              vim.notify(msg, vim.log.levels.INFO, {
-                title = client_name,
-                replace = existing,
-                timeout = false,
-                hide_from_history = true,
-              })
-            end
-          elseif val.kind == 'end' then
-            local existing = progress_notifications[key]
-            if existing then
-              local msg = val.message or 'Done'
-              vim.notify(msg, vim.log.levels.INFO, {
-                title = client_name,
-                replace = existing,
-                timeout = 2000,
-                hide_from_history = true,
-              })
-              progress_notifications[key] = nil
-            end
-          end
-        end,
-      })
-
-      -- Notification history viewer (warnings/errors only)
-      vim.keymap.set('n', '<leader>Nn', function()
-        local history = notify.history()
-        local filtered = vim.tbl_filter(function(n)
-          return n.level == vim.log.levels.WARN or n.level == vim.log.levels.ERROR
-        end, history)
-        open_notify_float('Notifications', filtered)
-      end, { desc = 'Notification history (filtered)' })
-
-      -- Full unfiltered history
-      vim.keymap.set('n', '<leader>Na', function()
-        open_notify_float('All Notifications', notify.history())
-      end, { desc = 'Notification history (all)' })
-    end,
-  },
-
   -- Mini plugins
   {
     'echasnovski/mini.nvim',
@@ -410,7 +286,7 @@ return {
       }
 
       -- Add/delete/replace surroundings (brackets, quotes, etc.)
-      -- Prefix remapped from 's' to 'gs' to avoid clash with flash.nvim
+      -- Uses 'gs' prefix to avoid delay on native 's' (substitute char)
       require('mini.surround').setup {
         mappings = {
           add = 'gsa',

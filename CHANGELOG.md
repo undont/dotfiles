@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.81] - 2026-04-10
+
+### Added
+- Nvim: `fidget.nvim` for LSP progress + `vim.notify` backend (replaces `nvim-notify` + `noice.nvim` for notifications)
+- Nvim: `.luarc.json` generation from `.luarc.json.template` during install — resolves machine-specific VIMRUNTIME path via `nvim --headless`, fixes hover/completion for `vim.*` API across fresh clones
+- Nvim: `lazy.nvim` `dev = { path = '~/playground', fallback = true }` for local plugin development
+- Nvim: smart `i`/`a` on empty lines — falls back to `"_cc` so the cursor lands at the correct indent level (respects `indentexpr`/treesitter) instead of column 0
+- Core: Ghostty transparency detection across nvim theme, tmux status bar, and fzf preview — auto-clears backgrounds when `background-opacity < 1`
+
+### Changed
+- Nvim: slimmed down plugin set — removed `flash.nvim`, `nvim-notify`, `noice.nvim`, `lazydev.nvim`, and the dead `discord.lua` module
+- Nvim: restored native `s`/`S` (substitute) by dropping `flash.nvim`; navigation now relies on `f`/`t`/`/` + `;`/`,` repeat
+- Nvim: `vim.api.nvim_err_writeln` → `vim.api.nvim_echo(..., { err = true })` (deprecated API cleanup in keymaps.lua and pr-review.lua)
+- Nvim: `pcall(vim.cmd, 'string')` → `pcall(function() vim.cmd(...) end)` to satisfy lua_ls type checks (keymaps.lua, markdown-ui.lua)
+- Nvim: cheatsheet updated to document native `f`/`t`/`/` motions in place of flash keybindings, plus nvim 0.12 visual-mode treesitter node selection (`an`/`in`/`]n`/`[n`)
+
 ## [0.2.80] - 2026-04-09
 
 ### Added

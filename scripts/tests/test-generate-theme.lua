@@ -211,6 +211,7 @@ local theme_content = gen.generate_theme_file(
   {
     bg_primary = '#282a36', fg_primary = '#f8f8f2',
     bg_secondary = '#44475a', fg_secondary = '#6272a4',
+    fg_variable = '#eeeee0',
     line_highlight = '#303340',
     red = '#ff5555', green = '#50fa7b', yellow = '#f1fa8c',
     purple = '#bd93f9', pink = '#ff79c6', cyan = '#8be9fd',
