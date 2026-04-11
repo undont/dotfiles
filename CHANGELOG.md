@@ -21,6 +21,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `vim.api.nvim_err_writeln` → `vim.api.nvim_echo(..., { err = true })` (deprecated API cleanup in keymaps.lua and pr-review.lua)
 - Nvim: `pcall(vim.cmd, 'string')` → `pcall(function() vim.cmd(...) end)` to satisfy lua_ls type checks (keymaps.lua, markdown-ui.lua)
 - Nvim: cheatsheet updated to document native `f`/`t`/`/` motions in place of flash keybindings, plus nvim 0.12 visual-mode treesitter node selection (`an`/`in`/`]n`/`[n`)
+- Nvim: mkdnflow — section fold/unfold moved to `zc`/`zr` (markdown-buffer-local, overrides global fold keys only in markdown); added table insert/delete keymaps (`<leader>mi*` / `<leader>md*`) and clipboard link (`<leader>ml`)
+- Nvim: spellcheck — `zw` ("mark word as misspelled") remapped to `zW` to prevent accidental marking; `zw` is now a no-op
 
 ## [0.2.80] - 2026-04-09
 

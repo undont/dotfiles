@@ -217,9 +217,14 @@ Send expression to REPL in scopes | r
 
 ## markdown @markdown
 Toggle todo | <leader>mt
-Fold section | <leader>mf
-Unfold section | <leader>mu
+Fold section | zc (markdown-buffer-local)
+Unfold section | zr (markdown-buffer-local)
 Renumber list | <leader>mn
+Create link from clipboard | <leader>ml (normal/visual)
+Table new row below/above | <leader>mir / <leader>miR
+Table new column after/before | <leader>mic / <leader>miC
+Table delete row | <leader>mdr
+Table delete column | <leader>mdc
 Table align centre | <leader>mAc
 Table align left | <leader>mAl
 Table align right | <leader>mAr
@@ -306,6 +311,7 @@ Suggest corrections (Telescope) | <leader>Ss
 Add word to dictionary | <leader>Sa
 Remove word from dictionary (asks first) | <leader>Sr
 Edit personal dictionary | <leader>Sd
+Mark word as misspelled | zW (remapped from zw to prevent accidental marking)
 Full suggestion list | <leader>S?
 Next misspelling | ]s
 Previous misspelling | [s

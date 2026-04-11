@@ -44,6 +44,10 @@ function M.setup()
   vim.keymap.set('n', 'zc', safe_fold_alias 'zC', { desc = 'Close fold recursively', silent = true })
   vim.keymap.set('n', 'zm', safe_fold_alias 'zM', { desc = 'Close all folds', silent = true })
 
+  -- Shift spelling "mark bad word" from zw to zW to prevent accidental marking.
+  vim.keymap.set('n', 'zW', 'zw', { desc = 'Mark word as misspelled', silent = true })
+  vim.keymap.set('n', 'zw', '<Nop>', { silent = true })
+
   -- Build
   vim.keymap.set('n', '<leader>q', function()
     require('custom.core.build').run()
