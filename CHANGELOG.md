@@ -6,17 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.81] - 2026-04-10
+## [0.2.81] - 2026-04-12
 
 ### Added
-- Nvim: `fidget.nvim` for LSP progress + `vim.notify` backend (replaces `nvim-notify` + `noice.nvim` for notifications)
+- Nvim: `fidget.nvim` for LSP progress + `vim.notify` backend (replaces `nvim-notify` for notifications)
 - Nvim: `.luarc.json` generation from `.luarc.json.template` during install — resolves machine-specific VIMRUNTIME path via `nvim --headless`, fixes hover/completion for `vim.*` API across fresh clones
 - Nvim: `lazy.nvim` `dev = { path = '~/playground', fallback = true }` for local plugin development
 - Nvim: smart `i`/`a` on empty lines — falls back to `"_cc` so the cursor lands at the correct indent level (respects `indentexpr`/treesitter) instead of column 0
 - Core: Ghostty transparency detection across nvim theme, tmux status bar, and fzf preview — auto-clears backgrounds when `background-opacity < 1`
 
 ### Changed
-- Nvim: slimmed down plugin set — removed `flash.nvim`, `nvim-notify`, `noice.nvim`, `lazydev.nvim`, and the dead `discord.lua` module
+- Nvim: slimmed down plugin set — removed `flash.nvim`, `nvim-notify`, `lazydev.nvim`, and the dead `discord.lua` module; `noice.nvim` trimmed to LSP hover + signature help only
 - Nvim: restored native `s`/`S` (substitute) by dropping `flash.nvim`; navigation now relies on `f`/`t`/`/` + `;`/`,` repeat
 - Nvim: `vim.api.nvim_err_writeln` → `vim.api.nvim_echo(..., { err = true })` (deprecated API cleanup in keymaps.lua and pr-review.lua)
 - Nvim: `pcall(vim.cmd, 'string')` → `pcall(function() vim.cmd(...) end)` to satisfy lua_ls type checks (keymaps.lua, markdown-ui.lua)
@@ -24,10 +24,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: mkdnflow — section fold/unfold moved to `zc`/`zr` (markdown-buffer-local, overrides global fold keys only in markdown); added table insert/delete keymaps (`<leader>mi*` / `<leader>md*`) and clipboard link (`<leader>ml`)
 - Nvim: spellcheck — `zw` ("mark word as misspelled") remapped to `zW` to prevent accidental marking; `zw` is now a no-op
 
+### Fixed
+- Nvim: gopls no longer spams `JSON RPC parse error: DocumentURI scheme is not 'file'` when opening Go files inside diffview — `vim.lsp.start` is wrapped to skip attachment on any non-`file://` buffer (covers `diffview://`, `octo://`, `fugitive://`, etc.)
+- Nvim: `<leader>de` no longer freezes on the keypress in large C# projects — the `FileType cs` restore path now defers `try_restore_roslyn()` by 500ms so `:edit` returns instantly and the file paints before Roslyn's (unavoidable) solution-load blocks the main loop
+
 ## [0.2.80] - 2026-04-09
 
 ### Added
-- Nvim: `fg_variable` theme colour — variables now render distinctly from Normal text across all 15 themes, derived via 10% blend with palette accent + 4.5:1 contrast check
+- Nvim: `fg_variable` theme colour — variables now render distinctly from Normal text across all 14 themes, derived via 10% blend with palette accent + 4.5:1 contrast check
 - Nvim: Roslyn semantic token fixes — built-in C# types (`string`, `int`, `bool`, etc.) remapped to `@type.builtin`; attribute names inside `[brackets]` remapped to `@attribute`
 - Nvim: spellcheck module (`custom/core/spellcheck.lua`) — auto-correct word (`<leader>Sc`), line (`<leader>Sl`), and buffer (`<leader>SB`)
 - Nvim: undo tree (`<leader>u`), treesitter refresh (`<leader>lt`), harpoon `o` to open
@@ -1204,8 +1208,6 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Neovim: Neotest test runner with .NET adapter and `.slnx` support
 - Neovim: Window resize keybindings (`<leader>wh/wl/wj/wk`)
 - Neovim: `<leader>v` (VCS) and `<leader>w` (Window resize) which-key groups
-- Neovim: Maple colourscheme — custom autumn-inspired theme with full treesitter/telescope/neo-tree support
-- Themes: Maple theme definition for tmux, ghostty, and neovim
 - Neovim: Telescope path display shows `parent/file.ext` instead of truncated paths
 - Neovim: Statusline branch name truncated to ticket ID (e.g. `DANA-123`)
 - Neovim: Octo `]f`/`[f` navigation auto-marks files as viewed

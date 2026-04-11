@@ -115,7 +115,7 @@ The installer detects what's already configured and only shows steps you still n
 - **Navigation** — native vim motions (`f`/`t`/`/`), grug-far (project-wide search & replace), oil.nvim (file ops), trouble.nvim (diagnostics)
 - **Multiple cursors** — vim-visual-multi (`Ctrl+n`, `Alt+↓/↑`)
 - **Markdown** — mkdnflow with list continuation, todo toggles, table formatting
-- **Colourschemes** — 15 hand-crafted + generatable from 438 Ghostty themes, self-contained Lua files with no plugin deps
+- **Colourschemes** — 14 hand-crafted + generatable from 438 Ghostty themes, self-contained Lua files with no plugin deps
 - **GitHub Copilot** with security (disabled for `.env`, credentials, secrets)
 - **Searchable cheatsheet** — `Space ?` opens a filterable keybinding reference
 - **Local overrides** — `~/.config/nvim/local.lua` survives updates
@@ -181,9 +181,9 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the full architecture.
 
 ### Hand-Crafted Themes
 
-**15 curated themes** with carefully tuned palettes, each passing WCAG 2.1 contrast checks:
+**14 curated themes** with carefully tuned palettes, each passing WCAG 2.1 contrast checks:
 
-> Dracula · Catppuccin Mocha · Tokyo Night · Nord · Rosé Pine · Kanagawa · Gruvbox · Maple · Synthwave · One Dark · Monokai · Nightfox · Everforest · Ayu Dark · Solarized
+> Dracula · Catppuccin Mocha · Tokyo Night · Nord · Rosé Pine · Kanagawa · Gruvbox · Synthwave · One Dark · Monokai · Nightfox · Everforest · Ayu Dark · Solarized
 
 **Local overrides survive every theme switch** — cursor style, fonts, and extra keybindings persist in files that are never overwritten:
 
