@@ -65,7 +65,7 @@ source "$THEMES_DIR/theme-defaults.sh"
 apply_theme_defaults
 
 # Transparent backgrounds when Ghostty background-opacity < 1
-_ghostty_opacity=$(cat ~/.config/ghostty/config ~/.config/ghostty/local 2>/dev/null | grep -E '^[[:space:]]*background-opacity' | tail -1 | sed 's/.*=[[:space:]]*//')
+_ghostty_opacity=$(cat ~/.config/ghostty/config ~/.config/ghostty/local 2>/dev/null | grep -E '^[[:space:]]*background-opacity' | tail -1 | sed 's/.*=[[:space:]]*//' || true)
 if [[ "${_ghostty_opacity:-1}" == 0.* ]]; then
     FZF_BG="-1"
     FZF_PREVIEW_BG="-1"
