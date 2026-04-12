@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.82] - 2026-04-14
+
+### Changed
+- Nvim: enable experimental `vim._core.ui2` — messages appear in a floating window that auto-dismisses after 4 seconds; `cmdheight` set to 0 to reclaim the bottom row; manual cmdline-clearing autocmd removed (superseded by `ui2` timeout)
+- Nvim: `shortmess += I` to suppress intro screen flash caused by `cmdheight=0`
+
 ## [0.2.81] - 2026-04-12
 
 ### Added
