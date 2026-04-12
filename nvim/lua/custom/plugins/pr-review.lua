@@ -224,12 +224,17 @@ return {
       -- BufNew) where the <Space> trigger is absent. A regular buffer-local
       -- keymap isn't managed by the trigger system and can't be removed.
       vim.api.nvim_create_autocmd('FileType', {
-        pattern = { 'DiffviewFiles', 'DiffviewFileHistory' },
+        pattern = { 'DiffviewFiles', 'DiffviewFileHistory', 'DiffviewBlob' },
         callback = function(ev)
           vim.keymap.set('n', ' ', function()
             require('which-key').show ' '
           end, { buffer = ev.buf })
           vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = ev.buf })
+          -- Allow diff commands to work from any diff buffer
+          vim.keymap.set('n', '<leader>dc', function()
+            vim.cmd 'DiffviewClose'
+          end, { buffer = ev.buf, desc = '[D]iff [C]lose' })
+          vim.keymap.set('n', '<leader>de', edit_diff_file, { buffer = ev.buf, desc = '[D]iff [E]dit file' })
         end,
       })
 
@@ -323,7 +328,7 @@ return {
           if vim.wo.foldmethod ~= 'manual' then
             local err = run_in_win(vim.api.nvim_get_current_win())
             if err then
-              vim.api.nvim_err_writeln(err)
+              vim.api.nvim_echo({ { tostring(err), 'ErrorMsg' } }, true, { err = true })
             end
             return
           end
@@ -333,7 +338,7 @@ return {
           if not (view and sv_ok and view:instanceof(StandardView.StandardView.__get())) then
             local err = run_in_win(vim.api.nvim_get_current_win())
             if err then
-              vim.api.nvim_err_writeln(err)
+              vim.api.nvim_echo({ { tostring(err), 'ErrorMsg' } }, true, { err = true })
             end
             return
           end
@@ -346,7 +351,7 @@ return {
             end
           end
           if err then
-            vim.api.nvim_err_writeln(err)
+            vim.api.nvim_echo({ { tostring(err), 'ErrorMsg' } }, true, { err = true })
           end
         end
       end

@@ -212,7 +212,7 @@ OPTIONS:
 EXAMPLES:
     $(basename "$0") themes/dracula.theme       # Check single theme
     $(basename "$0") --all                       # Check all themes
-    $(basename "$0") --fix themes/maple.theme   # Check with suggestions
+    $(basename "$0") --fix themes/synthwave.theme   # Check with suggestions
 
 THRESHOLDS:
     All readable text:  4.5:1 (WCAG AA for normal text)
