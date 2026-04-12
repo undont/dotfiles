@@ -272,7 +272,9 @@ local function try_restore_roslyn()
   source_deferred_plugin()
 end
 
--- Re-enable when opening a real .cs file after review closes
+-- Re-enable when opening a real .cs file after review closes.
+-- Deferred so <leader>de's :edit returns instantly — Roslyn's solution load
+-- blocks the main loop for several seconds and must stay off the hot path.
 vim.api.nvim_create_autocmd('FileType', {
   pattern = 'cs',
   callback = function(args)
@@ -281,7 +283,11 @@ vim.api.nvim_create_autocmd('FileType', {
     end
     local name = vim.api.nvim_buf_get_name(args.buf)
     if name ~= '' and vim.bo[args.buf].buftype == '' then
-      try_restore_roslyn()
+      vim.defer_fn(function()
+        if roslyn_suppressed then
+          try_restore_roslyn()
+        end
+      end, 500)
     end
   end,
 })

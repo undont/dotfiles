@@ -38,9 +38,21 @@ return {
           MkdnGoForward = { 'n', '<Del>' },
           MkdnNextHeading = { 'n', ']]' },
           MkdnPrevHeading = { 'n', '[[' },
-          MkdnFoldSection = { 'n', '<leader>mf' },
-          MkdnUnfoldSection = { 'n', '<leader>mu' },
+          -- Section fold/unfold: override global zc/zr in markdown buffers only
+          -- (markdown's natural fold unit is the section, not nested vim folds)
+          MkdnFoldSection = { 'n', 'zc' },
+          MkdnUnfoldSection = { 'n', 'zr' },
           MkdnUpdateNumbering = { 'n', '<leader>mn' }, -- renumber ordered list
+          -- Create link from clipboard: moved from <leader>p (conflicts with PR Review)
+          MkdnCreateLinkFromClipboard = { { 'n', 'v' }, '<leader>ml' },
+          -- Table insert: moved from <leader>i* (orphaned, no group)
+          MkdnTableNewRowBelow = { 'n', '<leader>mir' },
+          MkdnTableNewRowAbove = { 'n', '<leader>miR' },
+          MkdnTableNewColAfter = { 'n', '<leader>mic' },
+          MkdnTableNewColBefore = { 'n', '<leader>miC' },
+          -- Table delete: moved from <leader>d* (conflicts with Diff)
+          MkdnTableDeleteRow = { 'n', '<leader>mdr' },
+          MkdnTableDeleteCol = { 'n', '<leader>mdc' },
           -- Table alignment: moved from <leader>a* (conflicts with codecompanion)
           MkdnTableAlignCenter = { 'n', '<leader>mAc' },
           MkdnTableAlignLeft = { 'n', '<leader>mAl' },
@@ -75,8 +87,12 @@ return {
               -- Only renumber if cursor is on/near a numbered list
               local line = vim.api.nvim_get_current_line()
               if line:match '^%s*%d+[%.%)%)]%s' then
-                pcall(vim.cmd, 'undojoin')
-                pcall(vim.cmd, 'MkdnUpdateNumbering')
+                pcall(function()
+                  vim.cmd 'undojoin'
+                end)
+                pcall(function()
+                  vim.cmd 'MkdnUpdateNumbering'
+                end)
               end
             end,
           })

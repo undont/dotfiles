@@ -693,5 +693,9 @@ bind r run-shell "{{DOTFILES_ROOT}}/scripts/reload-locals.sh > /dev/null 2>&1"  
 # Reload shell config: source ~/.zshrc in all zsh panes across all sessions
 bind R run-shell '~/.tmux/scripts/utils/reload-shells.sh'    # prefix + R
 
+# Transparent status bar when Ghostty background-opacity < 1
+if-shell 'cat ~/.config/ghostty/config ~/.config/ghostty/local 2>/dev/null | grep -E "^[[:space:]]*background-opacity" | tail -1 | grep -qE "=[[:space:]]*0\."' \
+  'set -g status-style "bg=default fg={{TMUX_STATUS_FG}}"'
+
 # User overrides (not managed by dotfiles — survives theme changes)
 source-file -q ~/.config/tmux/local.conf

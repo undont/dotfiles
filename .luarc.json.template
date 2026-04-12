@@ -1,0 +1,24 @@
+{
+  "diagnostics": {
+    "globals": ["vim", "hs",
+            "Snacks",
+            "MiniIcons",
+            "read_globals",
+            "globals",
+            "max_line_length",
+            "unused_args"],
+    "disable": ["undefined-doc-name",
+            "undefined-field",
+            "duplicate-set-field",
+            "return-type-mismatch",
+            "cast-local-type"]
+  },
+  "runtime": {
+    "version": "LuaJIT",
+    "path": ["?.lua", "?/init.lua"]
+  },
+  "workspace": {
+    "library": ["{{NVIM_RUNTIME_LUA}}"],
+    "checkThirdParty": false
+  }
+}

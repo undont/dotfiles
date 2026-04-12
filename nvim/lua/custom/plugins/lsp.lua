@@ -184,6 +184,22 @@ local function restart_lsp_clients(bufnr)
   end
 end
 
+--- Prevent LSP servers from attaching to non-file:// buffers (diffview://,
+--- octo://, fugitive://, etc.). Without this, servers like gopls log JSON-RPC
+--- parse errors when nvim sends didOpen with a non-file URI.
+local function patch_lsp_start()
+  local orig_start = vim.lsp.start
+  vim.lsp.start = function(config, opts)
+    opts = opts or {}
+    local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
+    local name = vim.api.nvim_buf_get_name(bufnr)
+    if name:match '^%w[%w+.-]*://' and not name:match '^file://' then
+      return nil
+    end
+    return orig_start(config, opts)
+  end
+end
+
 --- Override show_document to handle cursor-position-outside-buffer errors
 --- from LSP servers that report invalid ranges.
 local function patch_show_document()
@@ -206,17 +222,6 @@ local function patch_show_document()
 end
 
 return {
-  -- Lua development for Neovim
-  {
-    'folke/lazydev.nvim',
-    ft = 'lua',
-    opts = {
-      library = {
-        { path = '${3rd}/luv/library', words = { 'vim%.uv' } },
-      },
-    },
-  },
-
   -- Main LSP Configuration
   {
     'neovim/nvim-lspconfig',
@@ -327,6 +332,7 @@ return {
       caps.textDocument.colorProvider = nil
       vim.lsp.config('*', { capabilities = caps })
 
+      patch_lsp_start()
       patch_show_document()
 
       vim.lsp.config('cssls', {
@@ -339,9 +345,6 @@ return {
         settings = {
           Lua = {
             completion = { callSnippet = 'Replace' },
-            diagnostics = {
-              globals = { 'vim' },
-            },
           },
         },
       })
