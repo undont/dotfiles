@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.82] - 2026-04-14
 
 ### Added
+- Nvim: gopher glyph (`nf-seti-go`) for Go filetype + `.go` extension in `mini.icons`
 - Nvim: `csharpier` registered as a conform formatter (uses the Mason-installed binary)
 - Tmux: `focus-events on` — forwards terminal focus into panes so nvim `:checktime` autoreload, Claude Code focus tracking, and unfocus-pausing TUIs work inside tmux
 - Brewfile: `seanhalberthal/tap/seeql` SQL client TUI
