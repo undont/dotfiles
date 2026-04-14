@@ -93,26 +93,6 @@ function M.setup()
   -- Apply immediately for the current colourscheme
   vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
 
-  -- Auto-clear command-line messages after 4 seconds
-  local msg_clear_timer = vim.uv.new_timer()
-  local function schedule_msg_clear()
-    msg_clear_timer:stop()
-    msg_clear_timer:start(
-      4000,
-      0,
-      vim.schedule_wrap(function()
-        if vim.fn.mode() == 'n' then
-          vim.cmd.echon()
-        end
-      end)
-    )
-  end
-  vim.api.nvim_create_autocmd({ 'CmdlineLeave', 'CursorMoved', 'BufWritePost' }, {
-    desc = 'Clear command-line messages after a delay',
-    group = vim.api.nvim_create_augroup('clear-cmdline-messages', { clear = true }),
-    callback = schedule_msg_clear,
-  })
-
   -- Dynamic diff highlights (diffview, octo)
   require('custom.core.diff-highlights').setup()
 
