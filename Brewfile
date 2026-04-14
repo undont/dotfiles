@@ -104,6 +104,7 @@ brew "postgresql@14"
 brew "mongosh"
 brew "libsql/sqld/sqld"
 brew "gotermsql" unless OS.linux? && Hardware::CPU.arm? # No Linux ARM formula
+brew "seanhalberthal/tap/seeql"     # SQL client TUI
 
 # Containers & Infrastructure
 brew "act"                          # GitHub Actions locally

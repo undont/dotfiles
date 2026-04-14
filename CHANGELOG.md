@@ -8,9 +8,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.2.82] - 2026-04-14
 
+### Added
+- Nvim: `csharpier` registered as a conform formatter (uses the Mason-installed binary)
+- Tmux: `focus-events on` — forwards terminal focus into panes so nvim `:checktime` autoreload, Claude Code focus tracking, and unfocus-pausing TUIs work inside tmux
+- Brewfile: `seanhalberthal/tap/seeql` SQL client TUI
+
 ### Changed
 - Nvim: enable experimental `vim._core.ui2` — messages appear in a floating window that auto-dismisses after 4 seconds; `cmdheight` set to 0 to reclaim the bottom row; manual cmdline-clearing autocmd removed (superseded by `ui2` timeout)
 - Nvim: `shortmess += I` to suppress intro screen flash caused by `cmdheight=0`
+- Nvim: lazy-load triggers on `blink.cmp` (`InsertEnter`/`CmdlineEnter`), `nvim-lspconfig` (`BufReadPre`/`BufNewFile` + Mason `cmd`s), `gitsigns.nvim` and `mini.nvim` (`VeryLazy`) to defer plugin work past the initial UI paint
+- Nvim: treesitter missing-parser install now blocks up to 120s (`:wait(120000)`) so parsers are ready before highlighting attaches on first open
+- Nvim: conform `notify_on_error` flipped to `true` so formatter failures surface instead of silently dropping
 
 ## [0.2.81] - 2026-04-12
 

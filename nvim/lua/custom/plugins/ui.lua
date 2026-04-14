@@ -267,8 +267,12 @@ return {
   },
 
   -- Mini plugins
+  -- VeryLazy so the 7 module requires (surround/pairs/hipatterns/bracketed/
+  -- splitjoin/icons/statusline) defer past the initial UI paint. Statusline
+  -- redraws once setup lands, which is invisible in practice.
   {
     'echasnovski/mini.nvim',
+    event = 'VeryLazy',
     config = function()
       -- Icons provider (used by mini.statusline for filetype icons)
       local template_icon = vim.fn.nr2char(0xf05c0) -- nf-md-file_code_outline

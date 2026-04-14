@@ -3,6 +3,7 @@
 return {
   {
     'lewis6991/gitsigns.nvim',
+    event = { 'BufReadPre', 'BufNewFile' },
     config = function(_, opts)
       require('gitsigns').setup(opts)
       -- Git sign colours are defined in nvim/colors/*.lua colourschemes
