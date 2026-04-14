@@ -225,6 +225,8 @@ return {
   -- Main LSP Configuration
   {
     'neovim/nvim-lspconfig',
+    event = { 'BufReadPre', 'BufNewFile' },
+    cmd = { 'Mason', 'MasonInstall', 'MasonUninstall', 'MasonUninstallAll', 'MasonLog', 'MasonUpdate', 'MasonToolsInstall', 'MasonToolsUpdate' },
     dependencies = {
       {
         'mason-org/mason.nvim',
@@ -421,7 +423,7 @@ return {
       },
     },
     opts = {
-      notify_on_error = false,
+      notify_on_error = true,
       format_on_save = function(bufnr)
         local disable_filetypes = { c = true, cpp = true }
         if disable_filetypes[vim.bo[bufnr].filetype] then
@@ -446,6 +448,9 @@ return {
       formatters = {
         goimports = {
           command = vim.fn.stdpath 'data' .. '/mason/bin/goimports',
+        },
+        csharpier = {
+          command = vim.fn.stdpath 'data' .. '/mason/bin/csharpier',
         },
       },
     },

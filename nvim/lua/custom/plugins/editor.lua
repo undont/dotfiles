@@ -102,7 +102,7 @@ return {
         return not pcall(vim.treesitter.language.inspect, lang)
       end, parsers)
       if #missing > 0 then
-        require('nvim-treesitter').install(missing)
+        require('nvim-treesitter').install(missing):wait(120000)
       end
 
       -- Enable treesitter highlighting and indentation for all supported filetypes

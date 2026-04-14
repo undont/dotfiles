@@ -46,6 +46,7 @@ function M.setup()
   vim.o.updatetime = 250
   vim.o.timeoutlen = 200
   vim.o.ttimeoutlen = 10 -- Fast key code sequences (responsive escape key)
+  vim.opt.shortmess:append 'I' -- Suppress intro screen (flashes with cmdheight=0)
 
   -- Window splitting
   vim.o.splitright = true
@@ -86,6 +87,21 @@ function M.setup()
 
   -- Cursor style (block in all modes, blinking in insert)
   vim.opt.guicursor = 'n-v-c:block,i-ci-ve:block-blinkwait700-blinkon400-blinkoff250'
+
+  -- Reclaim the command line row (ui2 msg window handles messages)
+  vim.o.cmdheight = 0
+
+  -- Experimental UI2: replaces builtin message + cmdline presentation.
+  -- Messages appear in a floating window that auto-dismisses; cmdline
+  -- appears on-demand. Use g< or ENTER after a command to see full messages.
+  require('vim._core.ui2').enable {
+    msg = {
+      targets = 'msg',
+      msg = {
+        timeout = 4000,
+      },
+    },
+  }
 end
 
 return M
