@@ -413,4 +413,25 @@ function M.run()
   end
 end
 
+--- Run the Makefile build picker directly, bypassing language-specific detection.
+function M.run_make()
+  local cwd = vim.fn.getcwd()
+  local makefile_path = cwd .. '/Makefile'
+  if vim.fn.filereadable(makefile_path) ~= 1 then
+    vim.notify('No Makefile in ' .. cwd, vim.log.levels.WARN)
+    return
+  end
+  local targets = parse_make_build_targets(makefile_path)
+  if #targets == 0 then
+    vim.notify('No build targets found in Makefile', vim.log.levels.WARN)
+    return
+  end
+  pick_make_target(targets)
+end
+
+function M.setup()
+  vim.keymap.set('n', '<leader>q', M.run, { desc = 'Build project or pick Make target' })
+  vim.keymap.set('n', '<leader>Q', M.run_make, { desc = 'Pick Make target' })
+end
+
 return M

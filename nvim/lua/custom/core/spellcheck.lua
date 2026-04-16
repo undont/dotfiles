@@ -1,7 +1,13 @@
--- Spell autocorrect utilities
+-- Spell autocorrect utilities and keymaps.
 -- Provides single-word, line, and buffer-wide autocorrect using Vim's spellsuggest.
 
 local M = {}
+
+--- Shift spelling "mark bad word" from zw to zW to prevent accidents.
+local function setup_mark_swap()
+  vim.keymap.set('n', 'zW', 'zw', { desc = 'Mark word as misspelled', silent = true })
+  vim.keymap.set('n', 'zw', '<Nop>', { silent = true })
+end
 
 --- Apply the first spell suggestion to the misspelled word nearest the cursor.
 ---@return boolean true if a word was corrected
@@ -92,6 +98,46 @@ function M.autocorrect_range(start_line, end_line)
   vim.fn.winrestview(view)
   vim.o.wrapscan = wrapscan
   return fixed
+end
+
+function M.setup()
+  setup_mark_swap()
+
+  vim.keymap.set('n', '<leader>St', '<cmd>set spell!<CR>', { desc = '[T]oggle spellcheck' })
+  vim.keymap.set('n', '<leader>Sc', function()
+    if not M.apply_first_suggestion() then
+      vim.notify('No misspelled word under cursor', vim.log.levels.WARN)
+    end
+  end, { desc = 'Auto-[C]orrect word' })
+  vim.keymap.set('n', '<leader>Sl', function()
+    local row = vim.api.nvim_win_get_cursor(0)[1]
+    local fixed = M.autocorrect_range(row, row)
+    vim.notify(('Autocorrected %d word%s on this line'):format(fixed, fixed == 1 and '' or 's'))
+  end, { desc = 'Auto-correct current [L]ine' })
+  vim.keymap.set('n', '<leader>SB', function()
+    local fixed = M.autocorrect_range(1, vim.api.nvim_buf_line_count(0))
+    vim.notify(('Autocorrected %d word%s in buffer'):format(fixed, fixed == 1 and '' or 's'))
+  end, { desc = 'Auto-correct [B]uffer' })
+  vim.keymap.set('n', '<leader>Ss', function()
+    require('telescope.builtin').spell_suggest(require('telescope.themes').get_cursor())
+  end, { desc = '[S]uggest corrections' })
+  vim.keymap.set('n', '<leader>Sa', 'zg', { desc = '[A]dd word to dictionary' })
+  vim.keymap.set('n', '<leader>Sr', function()
+    local word = vim.fn.expand '<cword>'
+    if word == nil or word == '' then
+      vim.notify('No word under cursor', vim.log.levels.WARN)
+      return
+    end
+
+    local choice = vim.fn.confirm(('Mark "%s" as misspelled?'):format(word), '&Yes\n&No', 2)
+    if choice == 1 then
+      vim.cmd 'normal! zw'
+    end
+  end, { desc = '[R]emove word from dictionary' })
+  vim.keymap.set('n', '<leader>S?', 'z=', { desc = 'Full suggestion list' })
+  vim.keymap.set('n', '<leader>Sd', function()
+    vim.cmd('edit ' .. vim.fn.stdpath 'data' .. '/spell/en.utf-8.add')
+  end, { desc = '[D]ictionary (personal)' })
 end
 
 return M

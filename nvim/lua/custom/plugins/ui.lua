@@ -1,9 +1,28 @@
--- UI plugins: which-key, statusline, todo-comments
--- Colourschemes are custom files in nvim/colors/ — no plugins needed
+-- UI plugins: which-key, todo-comments, fidget, noice, cheatsheet.
+-- mini.nvim lives in plugins/mini.lua.
+-- Colourschemes are custom files in nvim/colors/ — no plugins needed.
 
 return {
   -- File explorer (neo-tree is imported from kickstart)
   -- See kickstart/plugins/neo-tree.lua
+
+  -- Cheatsheet for keybindings and commands
+  {
+    'sudormrfbin/cheatsheet.nvim',
+    cmd = 'Cheatsheet',
+    keys = {
+      { '<leader>?', '<cmd>Cheatsheet<CR>', desc = 'Open cheatsheet' },
+    },
+    dependencies = {
+      'nvim-telescope/telescope.nvim',
+      'nvim-lua/popup.nvim',
+      'nvim-lua/plenary.nvim',
+    },
+    opts = {
+      bundled_cheatsheets = false,
+      bundled_plugin_cheatsheets = false,
+    },
+  },
 
   -- Which-key for keybinding hints
   -- Tiered display: top-level shows category groups only; standalone keys and
@@ -75,11 +94,11 @@ return {
           { '<leader>i', hidden = true },
 
           { '<leader>?', icon = { icon = '', color = 'blue' } },
-          { '<leader>/', icon = { icon = '', color = 'blue' } },
           { '<leader><leader>', icon = { icon = '', color = 'blue' } },
           { '<leader>z', icon = { icon = '', color = 'red' } },
           -- ── Conditionally hidden (shown in code files via autocmd) ──
           { '<leader>q', icon = { icon = '', color = 'green' }, hidden = true },
+          { '<leader>Q', icon = { icon = '', color = 'green' }, hidden = true },
           { '<leader>f', hidden = true },
           { '<leader>bb', hidden = true },
           { '<leader>bc', hidden = true },
@@ -251,139 +270,5 @@ return {
         long_message_to_split = true,
       },
     },
-  },
-
-  -- Mini plugins
-  -- VeryLazy so the 7 module requires (surround/pairs/hipatterns/bracketed/
-  -- splitjoin/icons/statusline) defer past the initial UI paint. Statusline
-  -- redraws once setup lands, which is invisible in practice.
-  {
-    'echasnovski/mini.nvim',
-    event = 'VeryLazy',
-    config = function()
-      -- Icons provider (used by mini.statusline for filetype icons)
-      local template_icon = vim.fn.nr2char(0xf05c0) -- nf-md-file_code_outline
-      local gopher_icon = vim.fn.nr2char(0xe627) -- nf-seti-go (gopher)
-      require('mini.icons').setup {
-        filetype = {
-          yaml = { glyph = '' },
-          template = { glyph = template_icon },
-          go = { glyph = gopher_icon },
-        },
-        os = {
-          git = { glyph = '' }, -- nf-oct-git_branch
-        },
-        extension = {
-          template = { glyph = template_icon },
-          go = { glyph = gopher_icon },
-        },
-      }
-
-      -- Add/delete/replace surroundings (brackets, quotes, etc.)
-      -- Uses 'gs' prefix to avoid delay on native 's' (substitute char)
-      require('mini.surround').setup {
-        mappings = {
-          add = 'gsa',
-          delete = 'gsd',
-          find = 'gsf',
-          find_left = 'gsF',
-          highlight = 'gsh',
-          replace = 'gsr',
-          update_n_lines = 'gsn',
-        },
-      }
-
-      -- Auto-close brackets, quotes, etc. (replaces nvim-autopairs)
-      require('mini.pairs').setup()
-
-      -- Highlight hex colour codes inline
-      require('mini.hipatterns').setup {
-        highlighters = {
-          hex_color = require('mini.hipatterns').gen_highlighter.hex_color(),
-        },
-      }
-
-      -- Extended ]/[ navigation; disable suffixes that conflict with other plugins
-      require('mini.bracketed').setup {
-        comment = { suffix = '' }, -- ]c/[c reserved for gitsigns (git changes)
-        file = { suffix = 'f' }, -- diffview overrides ]f/[f when open
-        treesitter = { suffix = '' }, -- ]t/[t reserved for neotest (failed tests)
-      }
-
-      -- Split/join code constructs (gS to split, gJ to join)
-      require('mini.splitjoin').setup()
-
-      -- Simple and easy statusline
-      local statusline = require 'mini.statusline'
-      statusline.setup { use_icons = vim.g.have_nerd_font }
-
-      ---@diagnostic disable-next-line: duplicate-set-field
-      statusline.section_location = function()
-        local loc = '%2l:%-2v'
-        if vim.t.zoomed then
-          loc = loc .. ' Z'
-        end
-        return loc
-      end
-
-      -- Strip home directory prefix from filename (~/foo/bar → foo/bar)
-      ---@diagnostic disable-next-line: duplicate-set-field, unused-local
-      statusline.section_filename = function(args)
-        if vim.bo.buftype == 'terminal' then
-          return '%t'
-        end
-        local path = vim.fn.expand '%:p'
-        local home = vim.uv.os_homedir()
-        if home and path:sub(1, #home) == home then
-          path = '~' .. path:sub(#home + 1)
-        end
-        local flags = (vim.bo.modified and ' [+]' or '') .. (vim.bo.readonly and ' [RO]' or '')
-        return path .. flags
-      end
-
-      -- Compact diff (just +N -N), hide LSP server count
-      ---@diagnostic disable-next-line: duplicate-set-field
-      statusline.section_diff = function(args)
-        if statusline.is_truncated(args.trunc_width) then
-          return ''
-        end
-        local s = vim.b.gitsigns_status_dict
-        if not s then
-          return ''
-        end
-        local parts = {}
-        if (s.added or 0) > 0 then
-          table.insert(parts, '+' .. s.added)
-        end
-        if (s.removed or 0) > 0 then
-          table.insert(parts, '-' .. s.removed)
-        end
-        if #parts == 0 then
-          return ''
-        end
-        return table.concat(parts, ' ')
-      end
-      ---@diagnostic disable-next-line: duplicate-set-field
-      statusline.section_lsp = function()
-        return ''
-      end
-
-      -- Truncate branch name to ticket ID (e.g. "feature/ACME-123-some-desc" -> "ACME-123")
-      ---@diagnostic disable-next-line: duplicate-set-field
-      statusline.section_git = function(args)
-        if statusline.is_truncated(args.trunc_width) then
-          return ''
-        end
-        local head = vim.b.gitsigns_head or ''
-        if head == '' then
-          return ''
-        end
-        -- Extract ticket ID pattern (e.g. ACME-123, JIRA-456)
-        local ticket = head:match '[A-Z]+-[0-9]+'
-        local branch = ticket or head
-        local icon = vim.g.have_nerd_font and (MiniIcons.get('os', 'git') .. ' ') or 'Git: '
-        return icon .. branch
-      end
-    end,
   },
 }

@@ -156,20 +156,12 @@ return {
       end, { desc = 'Search [L]ine' })
 
       -- Fuzzy search in current buffer
-      vim.keymap.set('n', '<leader>/', function()
+      vim.keymap.set('n', '<leader>s/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
           winblend = 10,
           previewer = false,
         })
       end, { desc = 'Fuzzy search buffer' })
-
-      -- Search in open files
-      vim.keymap.set('n', '<leader>s/', function()
-        builtin.live_grep {
-          grep_open_files = true,
-          prompt_title = 'Live Grep in Open Files',
-        }
-      end, { desc = 'Grep open files [/]' })
 
       -- Search Neovim config files
       vim.keymap.set('n', '<leader>sn', function()

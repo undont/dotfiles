@@ -115,6 +115,7 @@ Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
 Build project / pick Make target | <leader>q
+Pick Make target | <leader>Q
 Notification history | <leader>Nn
 
 ## diagnostics @diagnostics
