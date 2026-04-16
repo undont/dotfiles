@@ -36,7 +36,6 @@ Search resume | <leader>sr
 Search recent files | <leader>s.
 Search in open files | <leader>s/
 Search Neovim config | <leader>sn
-Go to line number | <leader>sl
 Select Telescope picker | <leader>ss
 Grep (literal/fixed-strings) | <leader>sG
 Search & replace (grug-far) | <leader>sR

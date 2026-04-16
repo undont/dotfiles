@@ -196,6 +196,11 @@ return {
         display = {
           done_ttl = 2,
           progress_icon = { 'dots' },
+          overrides = {
+            build = {
+              name = false,
+            },
+          },
         },
       },
       notification = {

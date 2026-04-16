@@ -146,15 +146,6 @@ return {
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = 'Recent files [.]' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = 'Buffers' })
 
-      -- Go to line number
-      vim.keymap.set('n', '<leader>sl', function()
-        vim.ui.input({ prompt = 'Go to line: ' }, function(input)
-          if input then
-            vim.cmd('normal! ' .. input .. 'G')
-          end
-        end)
-      end, { desc = 'Search [L]ine' })
-
       -- Fuzzy search in current buffer
       vim.keymap.set('n', '<leader>s/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
