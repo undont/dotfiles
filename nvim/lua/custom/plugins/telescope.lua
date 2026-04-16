@@ -61,6 +61,14 @@ return {
               ['<C-u>'] = function(prompt_bufnr)
                 require('telescope.actions.state').get_current_picker(prompt_bufnr):set_prompt ''
               end,
+              ['<C-g>'] = function(prompt_bufnr)
+                actions.send_to_loclist(prompt_bufnr)
+                actions.open_loclist(prompt_bufnr)
+              end,
+              ['<M-g>'] = function(prompt_bufnr)
+                actions.send_selected_to_loclist(prompt_bufnr)
+                actions.open_loclist(prompt_bufnr)
+              end,
             },
           },
         },

@@ -60,6 +60,85 @@ function M.setup()
     vim.notify(path, vim.log.levels.INFO)
   end, { desc = '[Y]ank file path' })
 
+  -- Toggle native quickfix / location list windows
+  -- Dashboard escape is handled globally in autocmds.lua (FileType qf autocmd)
+  vim.keymap.set('n', '<leader>xq', function()
+    for _, win in ipairs(vim.fn.getwininfo()) do
+      if win.quickfix == 1 and win.loclist == 0 then
+        vim.cmd 'cclose'
+        return
+      end
+    end
+    vim.cmd 'botright copen'
+  end, { desc = '[Q]uickfix list toggle' })
+  vim.keymap.set('n', '<leader>xl', function()
+    for _, win in ipairs(vim.fn.getwininfo()) do
+      if win.loclist == 1 then
+        vim.cmd 'lclose'
+        return
+      end
+    end
+    local ok = pcall(vim.cmd.lopen)
+    if not ok then
+      vim.notify('No location list for current window', vim.log.levels.WARN)
+    end
+  end, { desc = '[L]ocation list toggle' })
+
+  -- Diagnostics into native lists
+  vim.keymap.set('n', '<leader>xx', function()
+    vim.diagnostic.setqflist()
+  end, { desc = 'All [D]iagnostics to quickfix' })
+  vim.keymap.set('n', '<leader>xX', function()
+    vim.diagnostic.setloclist()
+  end, { desc = 'Buffer diagnostics to loclist' })
+
+  -- Override mini.bracketed's ]q/[q and ]l/[l with empty-list notifications.
+  -- mini.bracketed silently no-ops when the list is empty, which is confusing.
+  -- :cnext/:cprev echo "(N of M): ..." which ui2 surfaces as a notification.
+  -- Silence via the :silent! modifier while keeping mini.bracketed's wrap-around.
+  local function bracketed_qf(direction)
+    return function()
+      if vim.tbl_isempty(vim.fn.getqflist()) then
+        vim.notify('Quickfix list is empty', vim.log.levels.WARN)
+        return
+      end
+      vim.cmd(string.format([[silent! lua require('mini.bracketed').quickfix(%q)]], direction))
+    end
+  end
+  local function bracketed_loc(direction)
+    return function()
+      if vim.tbl_isempty(vim.fn.getloclist(0)) then
+        vim.notify('Location list is empty', vim.log.levels.WARN)
+        return
+      end
+      vim.cmd(string.format([[silent! lua require('mini.bracketed').location(%q)]], direction))
+    end
+  end
+  vim.keymap.set('n', ']q', bracketed_qf 'forward', { desc = 'Next quickfix entry' })
+  vim.keymap.set('n', '[q', bracketed_qf 'backward', { desc = 'Previous quickfix entry' })
+  vim.keymap.set('n', ']l', bracketed_loc 'forward', { desc = 'Next location entry' })
+  vim.keymap.set('n', '[l', bracketed_loc 'backward', { desc = 'Previous location entry' })
+
+  -- Clear quickfix list (and close the window)
+  vim.keymap.set('n', '<leader>xcq', function()
+    vim.fn.setqflist({}, 'r')
+    vim.cmd 'cclose'
+  end, { desc = '[C]lear [Q]uickfix list' })
+
+  -- Clear location list for current window (and close the window)
+  vim.keymap.set('n', '<leader>xcl', function()
+    vim.fn.setloclist(0, {}, 'r')
+    vim.cmd 'lclose'
+  end, { desc = '[C]lear [L]ocation list' })
+
+  -- Clear both
+  vim.keymap.set('n', '<leader>xcc', function()
+    vim.fn.setqflist({}, 'r')
+    vim.fn.setloclist(0, {}, 'r')
+    vim.cmd 'cclose'
+    vim.cmd 'lclose'
+  end, { desc = '[C]lear both quickfix and location lists' })
+
   -- File explorer
   vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'File [E]xplorer' })
 
@@ -176,9 +255,6 @@ function M.setup()
     end)
     pcall(function()
       vim.cmd 'DiffviewClose'
-    end)
-    pcall(function()
-      vim.cmd 'Trouble close'
     end)
 
     -- Close all splits so the window fills the terminal before wiping buffers

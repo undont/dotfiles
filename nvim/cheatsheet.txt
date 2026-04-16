@@ -41,6 +41,12 @@ Select Telescope picker | <leader>ss
 Grep (literal/fixed-strings) | <leader>sG
 Search & replace (grug-far) | <leader>sR
 Open cheatsheet | <leader>?
+Telescope: toggle selection, move down | <Tab>
+Telescope: toggle selection, move up | <S-Tab>
+Telescope: send all results to quickfix | <C-q>
+Telescope: send selected entries to quickfix | <M-q>
+Telescope: send all results to loclist | <C-g>
+Telescope: send selected entries to loclist | <M-g>
 
 ## editing @editing
 Insert at/after cursor | i / a
@@ -95,6 +101,8 @@ Document symbols | gO
 Workspace symbols | gW
 Hover documentation | K
 Toggle inlay hints | <leader>lh
+Code lens run | <leader>ll
+Code lens refresh | <leader>lL
 Format buffer | <leader>f
 LSP restart | <leader>lr
 Refresh Neovim | <leader>lR
@@ -110,10 +118,13 @@ Build project / pick Make target | <leader>q
 Notification history | <leader>Nn
 
 ## diagnostics @diagnostics
-All diagnostics (Trouble) | <leader>xx
-Buffer diagnostics (Trouble) | <leader>xX
-Quickfix list (Trouble) | <leader>xq
-Location list (Trouble) | <leader>xl
+All diagnostics to quickfix | <leader>xx
+Buffer diagnostics to loclist | <leader>xX
+Quickfix list toggle | <leader>xq
+Location list toggle | <leader>xl
+Clear quickfix list | <leader>xcq
+Clear location list | <leader>xcl
+Clear both | <leader>xcc
 
 ## windows @windows
 Move to window | Ctrl+hjkl

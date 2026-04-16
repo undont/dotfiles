@@ -41,6 +41,12 @@ function M.setup()
   vim.o.ignorecase = true
   vim.o.smartcase = true
 
+  -- Use ripgrep for :grep / :grepadd (quickfix-based workflow)
+  if vim.fn.executable 'rg' == 1 then
+    vim.o.grepprg = 'rg --vimgrep --smart-case'
+    vim.o.grepformat = '%f:%l:%c:%m'
+  end
+
   -- UI
   vim.o.signcolumn = 'yes'
   vim.o.updatetime = 250

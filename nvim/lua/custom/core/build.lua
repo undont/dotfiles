@@ -1,4 +1,4 @@
--- Async project build: detect project type, run build, populate quickfix for Trouble
+-- Async project build: detect project type, run build, populate quickfix
 
 local M = {}
 
@@ -289,7 +289,7 @@ local function dedupe_qf_items(items)
   return deduped
 end
 
---- Run async build and populate quickfix list, then open Trouble
+--- Run async build and populate quickfix list, then open the quickfix window
 ---@param cfg table Build config with cmd and optional efm
 local function run_build(cfg)
   local cmd_str = format_cmd_for_display(cfg.cmd)
@@ -346,7 +346,7 @@ local function run_build(cfg)
       end
 
       vim.notify('Failed — ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, replace_opts)
-      vim.cmd 'Trouble qflist open'
+      vim.cmd 'botright copen'
     end)
   )
 end

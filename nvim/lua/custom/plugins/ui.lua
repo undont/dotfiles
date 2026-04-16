@@ -168,19 +168,6 @@ return {
     opts = { signs = false },
   },
 
-  -- Trouble: better diagnostics list
-  {
-    'folke/trouble.nvim',
-    cmd = 'Trouble',
-    keys = {
-      { '<leader>xx', '<cmd>Trouble diagnostics toggle<CR>', desc = 'All diagnostics' },
-      { '<leader>xX', '<cmd>Trouble diagnostics toggle filter.buf=0<CR>', desc = 'Buffer diagnostics' },
-      { '<leader>xq', '<cmd>Trouble qflist toggle<CR>', desc = 'Quickfix list' },
-      { '<leader>xl', '<cmd>Trouble loclist toggle<CR>', desc = 'Location list' },
-    },
-    opts = {},
-  },
-
   -- Fidget: LSP progress spinner and vim.notify backend
   {
     'j-hui/fidget.nvim',
