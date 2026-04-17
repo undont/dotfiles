@@ -284,6 +284,7 @@ bind -n "M-)" select-layout -E       # Opt+Shift+0 = equalise pane sizes
 bind E break-pane                      # `+Shift+e = break pane to new window
 bind [ previous-layout                # `+[ = previous layout
 bind ] next-layout                    # `+] = next layout
+bind \\ rotate-window                  # `+\ = rotate through panes (ex C-o)
 
 # Swap panes (requires prefix)
 bind H swap-pane -U
@@ -395,7 +396,7 @@ bind -T copy-mode-vi Escape send-keys -X cancel       # Esc = quit scroll mode
 # ─────────────────────────────────────────
 # Display keybinding reference popup (press Esc to close)
 bind h if-shell '[ #{client_width} -ge 80 ]' \
-  'display-popup -w 74 -h 38 "~/.tmux/scripts/utils/show-help.sh; read -sk1"' \
+  'display-popup -w 74 -h 40 "~/.tmux/scripts/utils/show-help.sh; read -sk1"' \
   'display-popup -w 95% -h 95% "~/.tmux/scripts/utils/show-help.sh; read -sk1"'
 
 # ─────────────────────────────────────────
