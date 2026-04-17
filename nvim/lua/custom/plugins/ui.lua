@@ -67,6 +67,7 @@ return {
           { '<leader>S', group = '[S]pell', icon = { icon = '󰓆 ', color = 'yellow' } },
           { '<leader>t', group = '[T]est / Toggle', icon = { cat = 'filetype', name = 'neotest-summary' } },
           { '<leader>l', group = '[L]SP', icon = { icon = '', color = 'green' } },
+          { '<leader>o', group = '[O]bsidian', icon = { icon = '󱞁 ', color = 'purple' } },
           { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'red' } },
 
           -- ── Always-visible (non-code contexts like Octo, diffview) ──

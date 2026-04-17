@@ -243,6 +243,22 @@ Table align default | <leader>mAx
 Preview in browser | <leader>mp
 Next/prev heading | ]] / [[
 
+## obsidian @obsidian
+Open today's daily note | <leader>oo
+Open yesterday's daily note | <leader>oy
+Open tomorrow's daily note | <leader>oT
+New note | <leader>on
+Find note (quick switch) | <leader>of
+Search vault (grep) | <leader>os
+Tags | <leader>ot
+Backlinks | <leader>ob
+Links in current note | <leader>ol
+Insert template into note | <leader>oi
+New note from template | <leader>oN
+Switch workspace | <leader>ow
+Rename note | <leader>or
+Extract selection to new note | <leader>oe (normal/visual)
+
 ## test @test
 Run nearest test | <leader>tt
 Run file tests | <leader>tf
