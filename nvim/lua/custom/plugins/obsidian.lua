@@ -1,18 +1,40 @@
 -- Obsidian vault integration: daily notes, backlinks, tags, templates.
 -- Markdown rendering and list/link editing stay in markdown-ui.lua
 -- (mkdnflow + conceallevel); obsidian.nvim is kept to vault-aware features.
+--
+-- Vault root resolution (in order):
+--   1. `vim.g.obsidian_vault_root` — set in ~/.config/nvim/local.lua to override
+--   2. ~/Library/Mobile Documents/iCloud~md~obsidian/Documents — default iCloud path
+--   3. Neither exists — plugin spec is empty, obsidian.nvim is not loaded
 
-local vault_root = vim.fn.expand '~/Library/Mobile Documents/iCloud~md~obsidian/Documents'
+local function resolve_vault_root()
+  local override = vim.g.obsidian_vault_root
+  if override and override ~= '' then
+    local path = vim.fn.expand(override)
+    if vim.fn.isdirectory(path) == 1 then
+      return path
+    end
+    vim.notify(('obsidian.nvim: vim.g.obsidian_vault_root=%q not found, skipping'):format(override), vim.log.levels.WARN)
+    return nil
+  end
+
+  local default = vim.fn.expand '~/Library/Mobile Documents/iCloud~md~obsidian/Documents'
+  if vim.fn.isdirectory(default) == 1 then
+    return default
+  end
+  return nil
+end
+
+local vault_root = resolve_vault_root()
+if not vault_root then
+  return {}
+end
 
 local function discover_workspaces()
   local workspaces = {}
   for _, dir in ipairs(vim.fn.glob(vault_root .. '/*', false, true)) do
     local name = vim.fn.fnamemodify(dir, ':t')
-    if
-      vim.fn.isdirectory(dir) == 1
-      and vim.fn.isdirectory(dir .. '/.obsidian') == 1
-      and not name:match '%.backup'
-    then
+    if vim.fn.isdirectory(dir) == 1 and vim.fn.isdirectory(dir .. '/.obsidian') == 1 and not name:match '%.backup' then
       table.insert(workspaces, { name = name, path = dir })
     end
   end

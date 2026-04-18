@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `gx` override in `custom/core/keymaps.lua` that strips wrapper chars (`<>`, `()`, `[]`, quotes) from URLs before handing off to `vim.ui.open` — fixes markdown autolinks like `<https://example.com>` failing to open in buffers where the `markdown_inline` treesitter query didn't strip the brackets
 
 ### Changed
+- Nvim: neo-tree hides `.DS_Store` via `never_show` (filesystem source) — macOS finder metadata stays out of the tree even with `hide_dotfiles = false`
+- Nvim: `obsidian.nvim` vault root is now overridable via `vim.g.obsidian_vault_root` (settable in `local.lua`); falls back to the default iCloud path, and the plugin spec is returned empty (plugin not loaded) if neither exists — makes the config portable to non-iCloud machines. Override documented in `nvim/local.lua.template`.
 - Nvim: build/diagnostics flow switched off Trouble onto native quickfix — build failures now open `botright copen`, and `<leader>x*` bindings target quickfix/loclist directly
 - Nvim: build progress now uses a `fidget.progress` handle (reported as LSP client `build`) instead of a replace-based notification; final success/failure still surfaces via `vim.notify`
 - Nvim: macro recording state surfaces in the `mini.statusline` mode section (`@reg`), with a guarded redraw on `RecordingEnter`/`RecordingLeave`
