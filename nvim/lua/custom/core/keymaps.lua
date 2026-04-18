@@ -34,6 +34,18 @@ function M.setup()
   -- Terminal mode escape
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
+  -- gx: open URL under cursor, stripping wrapper chars (<>, (), [], quotes)
+  -- that leak through when the TS highlighter isn't active or the fallback
+  -- <cfile> path is used (e.g. markdown autolinks <https://...> in buffers
+  -- without markdown_inline parsed).
+  vim.keymap.set('n', 'gx', function()
+    local urls = require('vim.ui')._get_urls()
+    for _, url in ipairs(urls) do
+      local cleaned = url:gsub('^[%<%(%[%"\']+', ''):gsub('[%>%)%]%"\']+$', '')
+      vim.ui.open(cleaned)
+    end
+  end, { desc = 'Open URL/file under cursor (strip wrappers)' })
+
   -- Copy buffer path to clipboard
   vim.keymap.set('n', '<leader>by', function()
     local path = vim.fn.expand '%:p'

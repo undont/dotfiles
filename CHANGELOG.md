@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `<leader>Q` pick a Make target (previously only `<leader>q` to run the detected build)
 - Nvim: ripgrep wired into `grepprg`/`grepformat` when `rg` is available (`rg --vimgrep --smart-case`)
 - Tmux: `` ` \ `` rotates through panes (binds `rotate-window`, the default `C-o` action) — also documented in the help overlay
+- Nvim: `gx` override in `custom/core/keymaps.lua` that strips wrapper chars (`<>`, `()`, `[]`, quotes) from URLs before handing off to `vim.ui.open` — fixes markdown autolinks like `<https://example.com>` failing to open in buffers where the `markdown_inline` treesitter query didn't strip the brackets
 
 ### Changed
 - Nvim: build/diagnostics flow switched off Trouble onto native quickfix — build failures now open `botright copen`, and `<leader>x*` bindings target quickfix/loclist directly

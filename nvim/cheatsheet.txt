@@ -11,6 +11,7 @@ Till char forward/back | t{char} / T{char}
 Repeat f/F/t/T | ; / ,
 Next/prev search match | n / N
 Search word under cursor | * / #
+Open URL/file under cursor | gx
 
 ## harpoon @harpoon
 Add file | <leader>ha
