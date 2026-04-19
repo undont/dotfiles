@@ -6,6 +6,35 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.83] - 2026-04-17
+
+### Added
+- Shell: `carapace` multi-shell completion provider (brewed under `@preset: minimal`) — bridges zsh's native completion system so built-in completers still work, sourced via `_cached_eval` so `carapace _carapace` forks once per day instead of every shell start (~40ms saved); `zstyle ':completion:*' menu select` + `group-name ''` added. Description colouring is applied via `carapace --style 'carapace.Description=cyan'` which persists to `~/Library/Application Support/carapace/styles.json` (macOS) / `~/.config/carapace/styles.json` (Linux)
+- Nvim: `obsidian.nvim` vault integration — auto-discovers workspaces under `~/Library/Mobile Documents/iCloud~md~obsidian/Documents`, daily notes (`<leader>oo`/`oy`/`oT` with `DD-MM-YYYY` date format and `daily note.md` template), find/search/tags/backlinks/links (`<leader>of`/`os`/`ot`/`ob`/`ol`), new note/template/rename/extract/workspace (`<leader>on`/`oi`/`oN`/`or`/`oe`/`ow`); markdown rendering stays owned by `mkdnflow` in `markdown-ui.lua`
+- Nvim: native quickfix/loclist workflow — `<leader>xq`/`<leader>xl` toggle, `<leader>xx` dumps workspace diagnostics to quickfix, `<leader>xX` dumps buffer diagnostics to loclist, `<leader>xcq`/`<leader>xcl`/`<leader>xcc` clear quickfix/loclist/both; Telescope `<C-q>`/`<M-q>` send all/selected to quickfix and `<C-g>`/`<M-g>` to loclist
+- Nvim: gopls code lens auto-enabled on attach — `<leader>ll` runs the lens under cursor, `<leader>lL` refreshes; enabled `generate`, `regenerate_cgo`, `test`, `tidy`, `upgrade_dependency`, `vendor`, `run_govulncheck` lenses (other languages skipped — above-line rendering clashes with nested declarations)
+- Nvim: `<leader>Q` pick a Make target (previously only `<leader>q` to run the detected build)
+- Nvim: ripgrep wired into `grepprg`/`grepformat` when `rg` is available (`rg --vimgrep --smart-case`)
+- Tmux: `` ` \ `` rotates through panes (binds `rotate-window`, the default `C-o` action) — also documented in the help overlay
+- Nvim: `gx` override in `custom/core/keymaps.lua` that strips wrapper chars (`<>`, `()`, `[]`, quotes) from URLs before handing off to `vim.ui.open` — fixes markdown autolinks like `<https://example.com>` failing to open in buffers where the `markdown_inline` treesitter query didn't strip the brackets
+
+### Changed
+- Nvim: neo-tree hides `.DS_Store` via `never_show` (filesystem source) — macOS finder metadata stays out of the tree even with `hide_dotfiles = false`
+- Nvim: `obsidian.nvim` vault root is now overridable via `vim.g.obsidian_vault_root` (settable in `local.lua`); falls back to the default iCloud path, and the plugin spec is returned empty (plugin not loaded) if neither exists — makes the config portable to non-iCloud machines. Override documented in `nvim/local.lua.template`.
+- Nvim: build/diagnostics flow switched off Trouble onto native quickfix — build failures now open `botright copen`, and `<leader>x*` bindings target quickfix/loclist directly
+- Nvim: build progress now uses a `fidget.progress` handle (reported as LSP client `build`) instead of a replace-based notification; final success/failure still surfaces via `vim.notify`
+- Nvim: macro recording state surfaces in the `mini.statusline` mode section (`@reg`), with a guarded redraw on `RecordingEnter`/`RecordingLeave`
+- Nvim: `]q`/`[q` and `]l`/`[l` (mini.bracketed quickfix/location nav) now silence the `:cnext`/`:cprev` echo via `:silent!`
+- Nvim: `<leader>sl` (go-to-line telescope) removed from the cheatsheet; line-number jump is native
+
+### Removed
+- Brewfile: `gotermsql` (superseded by the existing `seanhalberthal/tap/seeql` SQL TUI)
+
+### Refactor
+- Nvim: split the monolithic `custom/plugins/editor.lua` into single-concern plugin modules — `buffers`, `completion`, `dial`, `mini`, `multi-cursor`, `navigation`, `paste`, `search`, `treesitter`
+- Nvim: extracted focused core modules from `custom/core/keymaps.lua` — `folding`, `lists`, `macos-nav`, `refresh`, `windows`; `keymaps.lua` is now a slim entry point that wires the focused modules together
+- Docs: `.claude/rules/neovim.md` updated to reflect the new module layout and the keymaps-ownership rule (each focused module owns its own keymaps)
+
 ## [0.2.82] - 2026-04-14
 
 ### Added

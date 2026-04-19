@@ -1,4 +1,4 @@
--- Async project build: detect project type, run build, populate quickfix for Trouble
+-- Async project build: detect project type, run build, populate quickfix
 
 local M = {}
 
@@ -255,6 +255,21 @@ local function format_cmd_for_display(cmd)
   return table.concat(parts, ' ')
 end
 
+--- Create a fidget progress handle for builds if the plugin is available.
+---@param cmd_str string
+---@return table|nil
+local function start_build_progress(cmd_str)
+  local ok, progress = pcall(require, 'fidget.progress')
+  if not ok then
+    return nil
+  end
+
+  return progress.handle.create {
+    message = cmd_str,
+    lsp_client = { name = 'build' },
+  }
+end
+
 --- Deduplicate quickfix items produced from build output.
 ---@param items table[]
 ---@return table[]
@@ -289,14 +304,11 @@ local function dedupe_qf_items(items)
   return deduped
 end
 
---- Run async build and populate quickfix list, then open Trouble
+--- Run async build and populate quickfix list, then open the quickfix window
 ---@param cfg table Build config with cmd and optional efm
 local function run_build(cfg)
   local cmd_str = format_cmd_for_display(cfg.cmd)
-
-  -- Show progress notification
-  local notify_opts = { title = 'Build', timeout = false }
-  local notify_id = vim.notify('Running: ' .. cmd_str, vim.log.levels.INFO, notify_opts)
+  local progress = start_build_progress(cmd_str)
 
   vim.system(
     cfg.cmd,
@@ -307,17 +319,22 @@ local function run_build(cfg)
     vim.schedule_wrap(function(result)
       local output = strip_ansi((result.stdout or '') .. (result.stderr or ''))
       local lines = vim.split(output, '\n', { trimempty = true })
-      local replace_opts = { title = 'Build', replace = notify_id, timeout = 3000 }
 
       -- Build succeeded
       if result.code == 0 then
-        vim.notify('Build succeeded', vim.log.levels.INFO, replace_opts)
+        if progress then
+          progress:finish()
+        end
+        vim.notify('Build succeeded', vim.log.levels.INFO, { title = 'Build', timeout = 3000 })
         return
       end
 
       -- Build failed but no output
       if #lines == 0 then
-        vim.notify('Failed (exit ' .. result.code .. '): ' .. cmd_str, vim.log.levels.ERROR, replace_opts)
+        if progress then
+          progress:finish()
+        end
+        vim.notify('Failed (exit ' .. result.code .. '): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
         return
       end
 
@@ -341,12 +358,18 @@ local function run_build(cfg)
         end
       end
       if not has_valid then
-        vim.notify('Build succeeded', vim.log.levels.INFO, replace_opts)
+        if progress then
+          progress:finish()
+        end
+        vim.notify('Build succeeded', vim.log.levels.INFO, { title = 'Build', timeout = 3000 })
         return
       end
 
-      vim.notify('Failed — ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, replace_opts)
-      vim.cmd 'Trouble qflist open'
+      if progress then
+        progress:finish()
+      end
+      vim.notify('Failed — ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
+      vim.cmd 'botright copen'
     end)
   )
 end
@@ -411,6 +434,27 @@ function M.run()
   else
     run_build(cfg)
   end
+end
+
+--- Run the Makefile build picker directly, bypassing language-specific detection.
+function M.run_make()
+  local cwd = vim.fn.getcwd()
+  local makefile_path = cwd .. '/Makefile'
+  if vim.fn.filereadable(makefile_path) ~= 1 then
+    vim.notify('No Makefile in ' .. cwd, vim.log.levels.WARN)
+    return
+  end
+  local targets = parse_make_build_targets(makefile_path)
+  if #targets == 0 then
+    vim.notify('No build targets found in Makefile', vim.log.levels.WARN)
+    return
+  end
+  pick_make_target(targets)
+end
+
+function M.setup()
+  vim.keymap.set('n', '<leader>q', M.run, { desc = 'Build project or pick Make target' })
+  vim.keymap.set('n', '<leader>Q', M.run_make, { desc = 'Pick Make target' })
 end
 
 return M

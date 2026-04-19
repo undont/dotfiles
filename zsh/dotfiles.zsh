@@ -299,6 +299,20 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
   zle -N _cdl-widget
   bindkey '\ea' _cdl-widget
 fi
+# =============================================================================
+# CARAPACE COMPLETIONS
+# =============================================================================
+# Multi-shell completion provider. Bridges zsh's existing completion system,
+# so builtin zsh completions continue to work. Cached via _cached_eval so we
+# don't fork `carapace _carapace` on every shell start.
+export CARAPACE_BRIDGES='zsh'
+zstyle ':completion:*:git:*' group-order 'main commands' 'alias commands' 'external commands'
+zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
+zstyle ':completion:*' menu select
+zstyle ':completion:*' group-name ''
+if (( $+commands[carapace] )); then
+  _cached_eval carapace carapace _carapace
+fi
 
 # =============================================================================
 # TERMINAL TITLE HOOKS
@@ -672,6 +686,9 @@ alias brewup="brew update && brew upgrade"
 # Ensure common word deletion shortcuts work correctly
 bindkey '^[^?' backward-kill-word      # Option+Backspace: delete word backwards
 bindkey '^W' backward-kill-word        # Ctrl+W: delete word backwards
+
+# Shift+Tab walks backwards through menu completions (complements Tab going forward)
+bindkey '^[[Z' reverse-menu-complete
 
 # Bind Home/End in both forms: Ghostty sends CSI H/F directly; tmux with
 # extended-keys re-encodes them as VT220-style \x1b[1~ and \x1b[4~.

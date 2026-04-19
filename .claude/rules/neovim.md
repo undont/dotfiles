@@ -7,9 +7,17 @@ paths:
 # Neovim Configuration
 
 Based on kickstart.nvim with modular organisation:
-- `lua/custom/core/`: autocmds.lua, build.lua, diff-highlights.lua, keymaps.lua, options.lua, theme.lua
-- `lua/custom/plugins/`: init.lua, ui.lua, lsp.lua, completion.lua, telescope.lua, editor.lua, copilot.lua, git.lua, pr-review.lua, dotnet.lua, test.lua, markdown-ui.lua, codecompanion.lua, claude-prompt.lua
+- `lua/custom/core/`: autocmds.lua, build.lua, commands.lua, diff-highlights.lua, folding.lua, keymaps.lua, lists.lua, macos-nav.lua, options.lua, refresh.lua, spellcheck.lua, theme.lua, windows.lua
+- `lua/custom/plugins/`: init.lua, buffers.lua, claude-prompt.lua, codecompanion.lua, completion.lua, copilot.lua, dashboard.lua, dial.lua, dotnet.lua, git.lua, lsp.lua, markdown-ui.lua, mini.lua, multi-cursor.lua, music.lua, navigation.lua, paste.lua, pr-review.lua, search.lua, telescope.lua, test.lua, treesitter.lua, ui.lua
 - `lua/kickstart/plugins/`: neo-tree.lua, gitsigns.lua, autopairs.lua, debug.lua, lint.lua, indent_line.lua
+
+`core/keymaps.lua` is a slim entry point: it defines a few fundamental
+editing tweaks (`<Esc>` hl-clear, `dd`/`dy`, smart `i`/`a`, `m`/`M`/`gm`
+line nav, terminal escape, `<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
+and then calls `setup()` on the focused core modules (folding, lists,
+windows, macos-nav, refresh, spellcheck, build). Each focused module owns
+its own keymaps — add new ones where they belong rather than letting
+`keymaps.lua` regrow into a grab-bag.
 
 ## lua_ls Workspace Config (`.luarc.json`)
 

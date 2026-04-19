@@ -302,6 +302,16 @@ return {
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, 'Inlay [H]ints')
           end
+
+          -- Code lens (gopls only; other languages render above-line which clashes
+          -- with deeply-nested declarations and adds noise).
+          if client and client.name == 'gopls' and client:supports_method(vim.lsp.protocol.Methods.textDocument_codeLens, event.buf) then
+            vim.lsp.codelens.enable(true, { bufnr = event.buf })
+            map('<leader>ll', vim.lsp.codelens.run, 'Code [L]ens run')
+            map('<leader>lL', function()
+              vim.lsp.codelens.enable(true, { bufnr = event.buf })
+            end, 'Code [L]ens refresh')
+          end
         end,
       })
 
@@ -347,6 +357,22 @@ return {
         settings = {
           Lua = {
             completion = { callSnippet = 'Replace' },
+          },
+        },
+      })
+
+      vim.lsp.config('gopls', {
+        settings = {
+          gopls = {
+            codelenses = {
+              generate = true,
+              regenerate_cgo = true,
+              test = true,
+              tidy = true,
+              upgrade_dependency = true,
+              vendor = true,
+              run_govulncheck = true,
+            },
           },
         },
       })

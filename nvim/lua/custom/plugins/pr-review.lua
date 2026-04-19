@@ -469,7 +469,7 @@ return {
       { '<leader>pr', '<cmd>Octo review start<CR>', desc = '[R]eview start' },
       { '<leader>pe', '<cmd>Octo review resume<CR>', desc = 'Review r[E]sume' },
       { '<leader>pm', '<cmd>Octo review submit<CR>', desc = 'Review sub[M]it' },
-      { '<leader>pp', '<cmd>Octo pr approve<CR>', desc = 'A[P]prove' },
+      { '<leader>pP', '<cmd>Octo pr approve<CR>', desc = 'A[P]prove' },
       { '<leader>pa', '<cmd>Octo comment add<CR>', desc = 'Comment [A]dd', mode = { 'n', 'v' } },
       { '<leader>pc', '<cmd>Octo pr comments<CR>', desc = '[C]omments' },
       { '<leader>pC', '<cmd>Octo review close<CR>', desc = 'Review [C]lose' },
