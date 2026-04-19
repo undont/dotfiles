@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Tmux: status bar icons upgraded to Nerd Font glyphs — cpu (``), ram (``), and battery (`` charged / `` charging / `` discharging / `` attached / `` unknown). Layout, theme variables, and the dotfiles sync indicator on the left are untouched
 - Nvim: build runner resolves task-runner-prefixed paths in monorepos — efm captures like `@scope/pkg:task: src/foo.ts` are stripped progressively and searched against the build dir (and one level of package subdirs, skipping `node_modules`/`.git`/`dist`/`build`/`.next`/`.turbo`), so quickfix entries from turbo/nx pipelines navigate to real files
+- Nvim: build quickfix auto-prunes as diagnostics are resolved — on `DiagnosticChanged` for an LSP-attached buffer, qf items on lines without a diagnostic are dropped from any `Build:`-titled list; when the list empties, qf windows close and a `Build errors resolved` notification fires
 
 ## [0.2.83] - 2026-04-17
 

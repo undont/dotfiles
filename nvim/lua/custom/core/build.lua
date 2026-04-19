@@ -568,9 +568,65 @@ function M.run_make()
   pick_make_target(targets)
 end
 
+--- Prune build qf entries as their diagnostics are resolved.
+--- Fires on DiagnosticChanged — for a loaded buffer with an LSP attached,
+--- drop qf items on lines that no longer carry a diagnostic. Only touches
+--- qf lists produced by this module (title prefix "Build:").
+local function setup_auto_clear()
+  local group = vim.api.nvim_create_augroup('CustomBuildAutoClear', { clear = true })
+  vim.api.nvim_create_autocmd('DiagnosticChanged', {
+    group = group,
+    callback = function(args)
+      local bufnr = args.buf
+      if not vim.api.nvim_buf_is_loaded(bufnr) then
+        return
+      end
+      if #vim.lsp.get_clients { bufnr = bufnr } == 0 then
+        return
+      end
+
+      local qf = vim.fn.getqflist { title = 0, items = 0 }
+      if not qf.title or not qf.title:match '^Build:' then
+        return
+      end
+
+      local lines_with_diag = {}
+      for _, d in ipairs(vim.diagnostic.get(bufnr)) do
+        lines_with_diag[d.lnum + 1] = true
+      end
+
+      local kept = {}
+      local dropped = 0
+      for _, item in ipairs(qf.items) do
+        if item.bufnr == bufnr and item.valid == 1 and not lines_with_diag[item.lnum] then
+          dropped = dropped + 1
+        else
+          table.insert(kept, item)
+        end
+      end
+
+      if dropped == 0 then
+        return
+      end
+
+      vim.fn.setqflist({}, 'r', { title = qf.title, items = kept })
+
+      if #kept == 0 then
+        for _, win in ipairs(vim.api.nvim_list_wins()) do
+          if vim.bo[vim.api.nvim_win_get_buf(win)].buftype == 'quickfix' then
+            vim.api.nvim_win_close(win, true)
+          end
+        end
+        vim.notify('Build errors resolved', vim.log.levels.INFO, { title = 'Build', timeout = 3000 })
+      end
+    end,
+  })
+end
+
 function M.setup()
   vim.keymap.set('n', '<leader>q', M.run, { desc = 'Build project or pick Make target' })
   vim.keymap.set('n', '<leader>Q', M.run_make, { desc = 'Pick Make target' })
+  setup_auto_clear()
 end
 
 return M
