@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.84] - dev
+## [0.2.84] - 2026-04-20
 
 ### Added
 - Tmux: status bar icons upgraded to Nerd Font glyphs — cpu (``), ram (``), and battery (`` charged / `` charging / `` discharging / `` attached / `` unknown). Layout, theme variables, and the dotfiles sync indicator on the left are untouched
