@@ -13,6 +13,30 @@ return {
         version = 'v2.*',
         build = 'make install_jsregexp',
         dependencies = { 'rafamadriz/friendly-snippets' },
+        keys = {
+          {
+            '<C-k>',
+            function()
+              local ls = require 'luasnip'
+              if ls.expand_or_jumpable() then
+                ls.expand_or_jump()
+              end
+            end,
+            mode = { 'i', 's' },
+            desc = 'LuaSnip: Expand or jump to next placeholder',
+          },
+          {
+            '<C-j>',
+            function()
+              local ls = require 'luasnip'
+              if ls.jumpable(-1) then
+                ls.jump(-1)
+              end
+            end,
+            mode = { 'i', 's' },
+            desc = 'LuaSnip: Jump to previous placeholder',
+          },
+        },
         config = function()
           require('luasnip.loaders.from_lua').load { paths = '~/.config/nvim/snippets/' }
         end,

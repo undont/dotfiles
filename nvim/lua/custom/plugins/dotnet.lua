@@ -345,8 +345,8 @@ return {
             dotnet_show_name_completion_suggestions = true,
           },
           ['csharp|code_lens'] = {
-            dotnet_enable_references_code_lens = true,
-            dotnet_enable_tests_code_lens = true,
+            dotnet_enable_references_code_lens = false,
+            dotnet_enable_tests_code_lens = false,
           },
         },
       })

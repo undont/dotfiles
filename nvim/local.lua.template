@@ -18,3 +18,7 @@
 --
 -- Music player backend (default: apple_music):
 --   require('music.config').options.preferred_backend = 'spotify'
+--
+-- Obsidian vault root (default: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents):
+--   vim.g.obsidian_vault_root = '~/notes'
+--   If unset and the default path doesn't exist, obsidian.nvim is skipped.

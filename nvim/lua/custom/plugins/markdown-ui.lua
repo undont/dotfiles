@@ -38,6 +38,10 @@ return {
           MkdnGoForward = { 'n', '<Del>' },
           MkdnNextHeading = { 'n', ']]' },
           MkdnPrevHeading = { 'n', '[[' },
+          -- Defaults ][ and [] clutter which-key behind [/] and shadow
+          -- vim's native section-end motions. Use ]]/[[ instead.
+          MkdnNextHeadingSame = false,
+          MkdnPrevHeadingSame = false,
           -- Section fold/unfold: override global zc/zr in markdown buffers only
           -- (markdown's natural fold unit is the section, not nested vim folds)
           MkdnFoldSection = { 'n', 'zc' },

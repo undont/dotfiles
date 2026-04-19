@@ -11,6 +11,7 @@ Till char forward/back | t{char} / T{char}
 Repeat f/F/t/T | ; / ,
 Next/prev search match | n / N
 Search word under cursor | * / #
+Open URL/file under cursor | gx
 
 ## harpoon @harpoon
 Add file | <leader>ha
@@ -36,11 +37,16 @@ Search resume | <leader>sr
 Search recent files | <leader>s.
 Search in open files | <leader>s/
 Search Neovim config | <leader>sn
-Go to line number | <leader>sl
 Select Telescope picker | <leader>ss
 Grep (literal/fixed-strings) | <leader>sG
 Search & replace (grug-far) | <leader>sR
 Open cheatsheet | <leader>?
+Telescope: toggle selection, move down | <Tab>
+Telescope: toggle selection, move up | <S-Tab>
+Telescope: send all results to quickfix | <C-q>
+Telescope: send selected entries to quickfix | <M-q>
+Telescope: send all results to loclist | <C-g>
+Telescope: send selected entries to loclist | <M-g>
 
 ## editing @editing
 Insert at/after cursor | i / a
@@ -95,6 +101,8 @@ Document symbols | gO
 Workspace symbols | gW
 Hover documentation | K
 Toggle inlay hints | <leader>lh
+Code lens run | <leader>ll
+Code lens refresh | <leader>lL
 Format buffer | <leader>f
 LSP restart | <leader>lr
 Refresh Neovim | <leader>lR
@@ -107,13 +115,17 @@ Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
 Build project / pick Make target | <leader>q
+Pick Make target | <leader>Q
 Notification history | <leader>Nn
 
 ## diagnostics @diagnostics
-All diagnostics (Trouble) | <leader>xx
-Buffer diagnostics (Trouble) | <leader>xX
-Quickfix list (Trouble) | <leader>xq
-Location list (Trouble) | <leader>xl
+All diagnostics to quickfix | <leader>xx
+Buffer diagnostics to loclist | <leader>xX
+Quickfix list toggle | <leader>xq
+Location list toggle | <leader>xl
+Clear quickfix list | <leader>xcq
+Clear location list | <leader>xcl
+Clear both | <leader>xcc
 
 ## windows @windows
 Move to window | Ctrl+hjkl
@@ -231,6 +243,22 @@ Table align right | <leader>mAr
 Table align default | <leader>mAx
 Preview in browser | <leader>mp
 Next/prev heading | ]] / [[
+
+## obsidian @obsidian
+Open today's daily note | <leader>oo
+Open yesterday's daily note | <leader>oy
+Open tomorrow's daily note | <leader>oT
+New note | <leader>on
+Find note (quick switch) | <leader>of
+Search vault (grep) | <leader>os
+Tags | <leader>ot
+Backlinks | <leader>ob
+Links in current note | <leader>ol
+Insert template into note | <leader>oi
+New note from template | <leader>oN
+Switch workspace | <leader>ow
+Rename note | <leader>or
+Extract selection to new note | <leader>oe (normal/visual)
 
 ## test @test
 Run nearest test | <leader>tt
