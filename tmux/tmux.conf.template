@@ -457,7 +457,7 @@ set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
 set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
 # Responsive: full stats on wide terminals (≥80 cols), compact on narrow (mobile)
-set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}] ⚙ #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}] ≡ #{ram_percentage} ,}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M:%S '
+set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}]  #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}]  #{ram_percentage} ,}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M:%S '
 set -g status-left-length 30
 set -g status-right-length 150
 
@@ -528,9 +528,9 @@ set -g @continuum-save-interval '1'
 # tmux-cpu configuration
 # ─────────────────────────────────────────
 # Icons for different load levels
-set -g @cpu_low_icon "="
-set -g @cpu_medium_icon "≡"
-set -g @cpu_high_icon "≣"
+set -g @cpu_low_icon ""
+set -g @cpu_medium_icon ""
+set -g @cpu_high_icon ""
 
 # CPU background colours (themed)
 set -g @cpu_low_bg_color "#[bg={{TMUX_CPU_LOW_BG}}]"
@@ -541,9 +541,9 @@ set -g @cpu_high_bg_color "#[bg={{TMUX_CPU_HIGH_BG}}]"
 set -g @cpu_percentage_format "%.0f%%"
 
 # RAM icons for different load levels
-set -g @ram_low_icon "="
-set -g @ram_medium_icon "≡"
-set -g @ram_high_icon "≣"
+set -g @ram_low_icon ""
+set -g @ram_medium_icon ""
+set -g @ram_high_icon ""
 
 # RAM background colours (themed)
 set -g @ram_low_bg_color "#[bg={{TMUX_RAM_LOW_BG}}]"
@@ -557,11 +557,11 @@ set -g @ram_percentage_format "%.0f%%"
 # tmux-battery configuration
 # ─────────────────────────────────────────
 # Battery status icons (geometric, matches CPU/RAM style)
-set -g @batt_icon_status_charged '■'
-set -g @batt_icon_status_charging '▲'
-set -g @batt_icon_status_discharging '▼'
-set -g @batt_icon_status_attached '■'
-set -g @batt_icon_status_unknown '?'
+set -g @batt_icon_status_charged ''
+set -g @batt_icon_status_charging ''
+set -g @batt_icon_status_discharging ''
+set -g @batt_icon_status_attached ''
+set -g @batt_icon_status_unknown ''
 
 # Battery background colours (themed)
 set -g @batt_color_charge_primary_tier8 '{{TMUX_BATTERY_NORMAL_BG}}'
