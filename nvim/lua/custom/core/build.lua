@@ -270,6 +270,119 @@ local function start_build_progress(cmd_str)
   }
 end
 
+-- Directories to skip when hunting for a real path in a monorepo
+local ignore_dirs = { ['node_modules'] = true, ['.git'] = true, ['dist'] = true, ['build'] = true, ['.next'] = true, ['.turbo'] = true }
+
+--- Search for cand inside build_dir up to `max_depth` subdirs deep,
+--- skipping heavy/irrelevant directories (node_modules, .git, etc).
+---@param build_dir string
+---@param cand string relative path from some package root
+---@param max_depth integer
+---@return string|nil absolute path if exactly one match is found
+local function search_monorepo(build_dir, cand, max_depth)
+  local found
+  local function walk(dir, depth)
+    if found ~= nil or depth > max_depth then
+      return
+    end
+    local handle = vim.loop.fs_scandir(dir)
+    if not handle then
+      return
+    end
+    while true do
+      local n, t = vim.loop.fs_scandir_next(handle)
+      if not n then
+        break
+      end
+      if t == 'directory' and not ignore_dirs[n] and n:sub(1, 1) ~= '.' then
+        local sub = dir .. '/' .. n
+        local candidate = sub .. '/' .. cand
+        if vim.fn.filereadable(candidate) == 1 then
+          if found then
+            found = false -- ambiguous: more than one match, give up
+            return
+          end
+          found = candidate
+        end
+        walk(sub, depth + 1)
+      end
+    end
+  end
+  walk(build_dir, 1)
+  return found or nil
+end
+
+--- Find the real path for a filename that efm captured with a runner prefix
+--- (e.g. turbo's "@scope/pkg:task: src/foo.ts"). Tries progressive strips of
+--- "<prefix>: " chunks, resolving each candidate against build_dir directly
+--- and then searching its subdirectories (common monorepo package layout).
+---@param name string filename as stored on the qf item's buffer
+---@param build_dir string directory the build ran in
+---@return string|nil absolute path if a real file is found
+local function resolve_real_path(name, build_dir)
+  local function try(p)
+    if p == '' then
+      return nil
+    end
+    if p:sub(1, 1) ~= '/' then
+      p = build_dir .. '/' .. p
+    end
+    return vim.fn.filereadable(p) == 1 and p or nil
+  end
+
+  local candidates = { name }
+  local current = name
+  while true do
+    local rest = current:match '^.-:%s+(.+)$'
+    if not rest or rest == current then
+      break
+    end
+    current = rest
+    table.insert(candidates, current)
+  end
+
+  for _, cand in ipairs(candidates) do
+    local direct = try(cand)
+    if direct then
+      return direct
+    end
+    if cand:sub(1, 1) ~= '/' then
+      local found = search_monorepo(build_dir, cand, 3)
+      if found then
+        return found
+      end
+    end
+  end
+  return nil
+end
+
+--- Repair qf items whose filenames were polluted by task-runner prefixes.
+--- Memoizes per unique source name so a repeated prefix is stat'd once.
+---@param items table[]
+---@param build_dir string
+---@return table[] items with repaired bufnrs (unresolvable entries marked invalid)
+local function repair_qf_paths(items, build_dir)
+  local cache = {}
+  for _, item in ipairs(items) do
+    if item.valid == 1 and item.bufnr and item.bufnr > 0 then
+      local name = vim.api.nvim_buf_get_name(item.bufnr)
+      if name ~= '' and vim.fn.filereadable(name) ~= 1 then
+        local fixed = cache[name]
+        if fixed == nil then
+          fixed = resolve_real_path(name, build_dir) or false
+          cache[name] = fixed
+        end
+        if fixed then
+          item.bufnr = vim.fn.bufadd(fixed)
+        else
+          item.valid = 0
+        end
+      end
+    end
+  end
+  return items
+end
+
 --- Deduplicate quickfix items produced from build output.
 ---@param items table[]
 ---@return table[]
@@ -346,10 +459,10 @@ local function run_build(cfg)
       vim.fn.setqflist({}, 'r', qf_opts)
 
       local qf_items = dedupe_qf_items(vim.fn.getqflist())
-      vim.fn.setqflist({}, 'r', { title = 'Build: ' .. cmd_str, items = qf_items })
 
-      -- Check if any parsed entries have a valid file/line — if not, treat as success
-      -- (e.g. bun echoes the command being run, producing output that doesn't match efm)
+      -- Check ORIGINAL validity before repair — if efm matched nothing,
+      -- the tool was probably just noisy (e.g. bun echoing scripts) and
+      -- we treat a non-zero exit as success.
       local has_valid = false
       for _, item in ipairs(qf_items) do
         if item.valid == 1 then
@@ -357,6 +470,9 @@ local function run_build(cfg)
           break
         end
       end
+
+      qf_items = repair_qf_paths(qf_items, cfg.build_dir or vim.fn.getcwd())
+      vim.fn.setqflist({}, 'r', { title = 'Build: ' .. cmd_str, items = qf_items })
       if not has_valid then
         if progress then
           progress:finish()
