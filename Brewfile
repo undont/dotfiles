@@ -25,6 +25,7 @@ brew "powerlevel10k"
 brew "zsh-autosuggestions"
 brew "fzf"                    # >= 0.40 for --tmux flag
 brew "direnv"
+brew "carapace"               # Multi-shell completion provider (bridges zsh completion)
 
 # =============================================================================
 # @preset: core
