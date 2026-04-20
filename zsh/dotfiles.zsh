@@ -439,12 +439,14 @@ alias ralf="cl && ralf"                # Clear scrollback + launch Ralf => Claud
 alias gemini="cl && gemini"            # Clear scrollback + launch Gemini AI CLI
 alias copilot="cl && copilot"          # Clear scrollback + launch GitHub Copilot CLI
 alias btop="cl && btop"                # Clear scrollback + launch btop system monitor
-alias lazydocker="cl && lazydocker"    # Clear scrollback + launch lazydocker
 alias dash="cl && gh dash"             # Clear scrollback + launch GitHub Dash
 alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash config
 alias ff="fastfetch"                   # Fastfetch system info
 alias ac="alerts-clear"                # Clear tmux alerts (see alias below)
+alias j="cl && jiru"                                 # Jiru CLI alias (cl to clear scrollback first)
+alias lg="cl && lazygit"                           # LazyGit alias (cl to clear scrollback first)
+alias ld="cl && lazydocker"                     # LazyDocker alias (cl to clear scrollback first)
 
 # Tmux session management
 alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
@@ -475,8 +477,6 @@ alias l="ls -CF"
 alias grep="grep --color=auto"
 
 # Shell shortcuts
-alias h="cd ~"
-alias j="jobs"
 alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'
 alias nuke-nvim='ps -eo pid,ppid,args | awk "/nvim --embed/ && \$2 == 1 {print \$1}" | xargs kill 2>/dev/null && echo "done" || echo "no stale nvim processes"'
 alias nuke-dotnet='dotnet build-server shutdown 2>/dev/null; pkill -f "OmniSharp.dll" 2>/dev/null; pkill -f "EasyDotnet.BuildServer.dll" 2>/dev/null; pkill -f "dotnet-easydotnet" 2>/dev/null; pkill -f "VBCSCompiler" 2>/dev/null; pkill -f "vstest.console.dll" 2>/dev/null; echo "done"'
@@ -734,6 +734,11 @@ compdef _dotfiles dot
 # Automatically sends a tmux alert when a command finishes after ≥10 seconds
 # and you've switched away from the window while it was running.
 [[ -f "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh" ]] && source "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh"
+
+# =============================================================================
+# ZOXIDE
+# =============================================================================
+eval "$(zoxide init zsh)"
 
 # =============================================================================
 # SHELL STARTUP PROFILING

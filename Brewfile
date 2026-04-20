@@ -55,6 +55,7 @@ brew "wget"
 brew "bat"           # Cat with syntax highlighting
 brew "diffnav"       # Diff navigator for GitHub PRs
 brew "monolith" unless OS.linux? && Hardware::CPU.arm?  # No Linux ARM bottle
+brew "zoxide"        # smart cd replacement
 
 # Build Tools
 brew "binutils" # GNU binary utilities

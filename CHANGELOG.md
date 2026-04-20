@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.85] - 2026-04-20
+
+### Added
+- Shell: `zoxide` (brewed) wired into zsh via `eval "$(zoxide init zsh)"` — provides `z`/`zi` smart `cd` with frecency-based directory jumping
+- Shell: `j` alias for `cl && jiru` (Jira TUI), `lg` for `cl && lazygit`, `ld` for `cl && lazydocker` — quick launchers that clear scrollback first
+
+### Changed
+- Shell: `lazydocker` command is no longer pre-aliased to `cl && lazydocker` — use the new `ld` alias instead; the bare binary stays available for scripting
+
+### Removed
+- Shell: `h="cd ~"` and `j="jobs"` aliases — `h` was redundant with bare `cd`, and `j` is reclaimed for `jiru`
+
 ## [0.2.84] - 2026-04-20
 
 ### Added
