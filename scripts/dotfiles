@@ -957,8 +957,6 @@ cmd_aliases() {
         "df"      "df -h" \
         "du"      "du -sh" \
         "myip"    "curl ifconfig.me" \
-        "h"       "cd ~" \
-        "j"       "jobs" \
         "v"       "clear + nvim" \
         "o"       "open file/dir" \
         "finder"  "open in Finder (macOS)" \
@@ -978,6 +976,9 @@ cmd_aliases() {
         "drs"        "sync repo paths" \
         "ff"         "fastfetch system info" \
         "dash"       "cl + gh dash" \
+        "j"          "cl + jiru (Jira TUI)" \
+        "lg"         "cl + lazygit" \
+        "ld"         "cl + lazydocker" \
         "gols"       "list Go binaries" \
         "nvim-clear" "clear nvim cache" \
         "nvim-sync"  "sync Lazy.nvim plugins" \
