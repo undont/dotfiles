@@ -972,7 +972,6 @@ cmd_aliases() {
         "claude"     "cl + claude" \
         "gemini"     "cl + gemini" \
         "copilot"    "cl + copilot" \
-        "ralph"      "cl + ralph" \
         "drs"        "sync repo paths" \
         "ff"         "fastfetch system info" \
         "dash"       "cl + gh dash" \
