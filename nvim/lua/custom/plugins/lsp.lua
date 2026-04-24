@@ -416,6 +416,8 @@ return {
           'yamlls',
           -- Roslyn (C# LSP, from Crashdummyy/mason-registry)
           'roslyn',
+          -- SonarLint LSP (analyzers + bundled omnisharp for C#); driven by sonarlint.lua
+          'sonarlint-language-server',
           -- Formatters
           'csharpier',
           'gofumpt',

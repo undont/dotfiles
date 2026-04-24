@@ -159,8 +159,8 @@ Toggle comment resolved | <leader>cr
 Delete comment block | <leader>cd
 Next comment block | <leader>c]
 Previous comment block | <leader>c[
-@ file reference (prompt files) | @ (insert mode)
-Literal @ (prompt files) | @@ (insert mode)
+@ file reference (markdown) | @ (insert mode)
+Literal @ (markdown) | @@ (insert mode)
 Expand/jump next placeholder | Ctrl+k
 Jump prev placeholder | Ctrl+j
 

@@ -108,6 +108,7 @@ The installer detects what's already configured and only shows steps you still n
 > Based on kickstart.nvim with lazy.nvim, Treesitter, and language servers managed via Mason.
 
 - **LSP** — TypeScript, Go, Python, Lua, C#/.NET (Roslyn), ESLint, Bash, CSS/Tailwind, HTML, YAML + more
+- **SonarLint** — second LSP client surfacing SonarQube/SonarCloud diagnostics for JS/TS, Python, Go, C#, C/C++, PHP, HTML/CSS, IaC, Docker, Secrets. Connected mode auto-enables when `SONARQUBE_TOKEN` + `SONARQUBE_ORG` are in the env; per-project binding via `.sonarlint/connectedMode.json`
 - **Git** — LazyGit (status, blame, diff), gitsigns (inline decorations, hunk navigation)
 - **PR review** — Octo.nvim for GitHub PRs + diffview for side-by-side diffs and merge conflict resolution
 - **Build picker** (`Space q`) — auto-detects Go, TypeScript, .NET, and Makefile projects
@@ -242,6 +243,15 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the full architecture.
 | Test nearest | `Space tt` |
 | Diagnostics | `Space xx` |
 | PR diff review | `Space dp` |
+
+</td><td>
+
+### Zsh
+
+| Action | Keybinding |
+|--------|------------|
+| Edit command in editor | `Ctrl+G` |
+| Expand alias under cursor | `Spacebar` |
 
 </td></tr>
 </table>

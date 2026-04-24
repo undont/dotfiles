@@ -1,8 +1,9 @@
 -- Claude Code prompt editing support
+-- For any markdown file:
+--   - <leader>c* keymaps for comment block management (insert, navigate, toggle, delete)
 -- For Claude prompt files (claude-prompt-*.md, or any .md under .claude/ or .plans/):
 --   - @ in insert mode opens Telescope file finder for project file references
 --   - @@ inserts a literal @ character
---   - <leader>c* keymaps for comment block management (insert, navigate, toggle, delete)
 
 --- Insert a LuaSnip snippet with smart spacing (blank lines only where needed)
 local function insert_snippet(trigger)
@@ -248,7 +249,10 @@ return {
         pattern = '*.md',
         group = group,
         callback = function(ev)
-          -- Only activate for Claude Code prompt files or files under .claude/
+          -- Comment block keymaps apply to every markdown file
+          setup_comment_keymaps(ev.buf)
+
+          -- @ file picker is scoped to Claude Code prompt files, .claude/, and .plans/
           local filename = vim.fn.fnamemodify(ev.file, ':t')
           local abs_path = vim.fn.fnamemodify(ev.file, ':p')
           if not filename:match '^claude%-prompt%-.*%.md$' and not abs_path:match '/%.claude/' and not abs_path:match '/%.plans/' then
@@ -258,9 +262,6 @@ return {
           -- Use git root as project root (matches Claude Code's @ file resolution)
           local git_root = vim.fn.systemlist('git rev-parse --show-toplevel')[1]
           local cwd = (vim.v.shell_error == 0 and git_root ~= '') and git_root or vim.fn.getcwd()
-
-          -- Comment block keymaps (buffer-local)
-          setup_comment_keymaps(ev.buf)
 
           -- Map @@ to insert a literal @ character
           vim.keymap.set('i', '@@', '@', { buffer = ev.buf, desc = 'Insert literal @' })

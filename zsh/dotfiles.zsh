@@ -473,6 +473,14 @@ alias ll="ls -alF"
 alias la="ls -A"
 alias l="ls -CF"
 
+# Open buffer line in editor
+autoload -Uz edit-command-line
+zle -N edit-command-line
+bindkey '^g' edit-command-line  # Ctrl+G to open current command line in $EDITOR (e.g. nvim)
+
+# Magic space binding to spacebar
+bindkey ' ' magic-space  # Spacebar to expand aliases and re-evaluate the command line (e.g. `gs` → `git status -sb`)
+
 # Search
 alias grep="grep --color=auto"
 
@@ -504,6 +512,9 @@ alias myip="curl -s ifconfig.me"
 alias secrets="v ~/.config/zsh/secrets.zsh"  # Edit API keys and credentials
 alias config="v ~/.config"                   # Edit general config files
 alias zshrc="v ~/.zshrc"                     # Edit personal shell config
+
+# Suffix aliases
+alias -s md='-t glow' # View markdown files with syntax highlighting using glow (if installed)
 
 # Open — platform-aware (macOS: open, Linux: xdg-open)
 if [[ "$IS_MACOS" == "1" ]]; then
@@ -738,7 +749,18 @@ compdef _dotfiles dot
 # =============================================================================
 # ZOXIDE
 # =============================================================================
-eval "$(zoxide init zsh)"
+# Eager init so `z` is defined in every shell mode — interactive, `zsh -i -c`
+# (Claude Code's !-shell), and `zsh -c` (Bash tool).
+#
+# Override __zoxide_doctor with a no-op. Its heuristic checks whether
+# __zoxide_hook lives in chpwd_functions, but Claude Code's shell snapshots
+# capture function definitions without the chpwd_functions array, so the
+# check fails spuriously on every replay. Env-based silencing via
+# _ZO_DOCTOR=0 doesn't survive snapshotting; overriding the function does.
+if command -v zoxide >/dev/null 2>&1; then
+  eval "$(zoxide init zsh)"
+  __zoxide_doctor() { :; }
+fi
 
 # =============================================================================
 # SHELL STARTUP PROFILING

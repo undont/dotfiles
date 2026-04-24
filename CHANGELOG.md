@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.86] - 2026-04-22
+
+### Added
+- Nvim: `sonarlint.nvim` wraps the official `sonarlint-language-server` (Mason-installed) as a second LSP client for SonarQube-style diagnostics + quick-fixes — covers Python, JS/TS, Go, C#, C/C++, PHP, HTML/CSS, IaC (Terraform/K8s/CloudFormation), Docker, secrets and XML; lazy-loaded by filetype. Connected mode (SonarCloud, EU region) auto-enables when both `SONARQUBE_TOKEN` and `SONARQUBE_ORG` are present in the env (sourced from `~/.config/zsh/secrets.zsh`); without them the plugin still loads in local-only mode. Per-project binding follows the JetBrains/VSCode convention via `.sonarlint/connectedMode.json` (`{ "projectKey": "..." }`) at the project root — repos without the file run unbound. C# analysis uses the omnisharp instance bundled inside the sonarlint vsix (sonarlint internal — does not replace `roslyn.nvim` for editor LSP). Includes a local workaround for an upstream bug in `sonarlint.nvim`'s `find_server_url` (crashes on SonarCloud-only setups because it iterates a nil `connections.sonarqube` and treats `connections.sonarcloud` as a single object instead of the documented array) — patches `notify_connection_result` and `notify_invalid_token` before `setup()` captures their references
+
+### Fixed
+- Shell: zoxide doctor warning silenced by overriding `__zoxide_doctor` with a no-op after `zoxide init zsh` — the check spuriously fires in Claude Code's `!` shell because shell snapshots capture function definitions without the `chpwd_functions` array, so `__zoxide_hook` appears missing on every replay; env-based `_ZO_DOCTOR=0` doesn't survive snapshotting, overriding the function does
+
+### Changed
+- Nvim: `claude-prompt.lua` `<leader>c*` comment keymaps now activate on every markdown buffer; the `@` file picker and `@@` literal stay scoped to `claude-prompt-*.md` / files under `.claude/` or `.plans/`
+
 ## [0.2.85] - 2026-04-20
 
 ### Added
