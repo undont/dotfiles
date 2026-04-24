@@ -107,6 +107,8 @@ Format buffer | <leader>f
 LSP restart | <leader>lr
 Refresh Neovim | <leader>lR
 Refresh Treesitter + semantic tokens | <leader>lt
+Sonar scan changed files | <leader>ls
+Sonar scan whole project | <leader>lS
 
 ## tools @tools
 Toggle file tree | <leader>e

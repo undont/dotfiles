@@ -473,6 +473,10 @@ while true; do
             local_selected=$(printf '%s' "$local_fzf_result" | sed -n '2p' | sed 's/^[[:space:]]*//')
             local_dir="${local_selected:-$local_query}"
 
+            # Strip shell-escape backslashes from pasted paths (e.g. ~/Library/Mobile\ Documents/iCloud\~md\~obsidian)
+            local_dir="${local_dir//\\ / }"
+            local_dir="${local_dir//\\~/~}"
+
             if [[ -z "$local_dir" ]]; then
                 local_dir="$local_default_dir"
             fi
@@ -612,6 +616,10 @@ while true; do
                         local_query=$(printf '%s' "$local_fzf_result" | sed -n '1p' | sed 's/^[[:space:]]*//')
                         local_selected=$(printf '%s' "$local_fzf_result" | sed -n '2p' | sed 's/^[[:space:]]*//')
                         local_wtdir="${local_selected:-$local_query}"
+
+                        # Strip shell-escape backslashes from pasted paths (e.g. ~/Library/Mobile\ Documents/iCloud\~md\~obsidian)
+                        local_wtdir="${local_wtdir//\\ / }"
+                        local_wtdir="${local_wtdir//\\~/~}"
 
                         if [[ -z "$local_wtdir" ]]; then
                             local_wtdir="$local_wt_default"

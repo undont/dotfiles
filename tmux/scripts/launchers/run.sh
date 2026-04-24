@@ -274,6 +274,10 @@ handle_parameterised() {
     dir="${selected:-$query}"
     [[ -n "$dir" ]] || exit 0
 
+    # Strip shell-escape backslashes from pasted paths (e.g. ~/Library/Mobile\ Documents/iCloud\~md\~obsidian)
+    dir="${dir//\\ / }"
+    dir="${dir//\\~/~}"
+
     # Expand ~ back to $HOME
     dir="${dir/#\~/$HOME}"
 
