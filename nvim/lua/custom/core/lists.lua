@@ -63,62 +63,10 @@ end
 --                diagnostics show up in vim.diagnostic.get without an
 --                explicit scan trigger).
 
-local modified_scan = { active = false }
-
-local function clear_modified_timer(name)
-  if modified_scan[name] then
-    pcall(function()
-      modified_scan[name]:stop()
-      modified_scan[name]:close()
-    end)
-    modified_scan[name] = nil
-  end
-end
-
-local function finalise_modified_scan()
-  clear_modified_timer 'debounce'
-  clear_modified_timer 'hard_timeout'
-  if modified_scan.augroup then
-    pcall(vim.api.nvim_del_augroup_by_id, modified_scan.augroup)
-    modified_scan.augroup = nil
-  end
-
-  local items = {}
-  for _, bufnr in ipairs(modified_scan.bufnrs or {}) do
-    if vim.api.nvim_buf_is_valid(bufnr) then
-      local fname = vim.api.nvim_buf_get_name(bufnr)
-      local entries = vim.diagnostic.toqflist(vim.diagnostic.get(bufnr))
-      for _, item in ipairs(entries) do
-        if fname ~= '' then
-          item.filename = fname
-        end
-        item.bufnr = nil
-      end
-      vim.list_extend(items, entries)
-    end
-  end
-
-  vim.fn.setqflist({}, 'r', { title = modified_scan.title, items = items })
-  local label = modified_scan.label
-  modified_scan.active = false
-
-  if #items > 0 then
-    vim.notify(label .. ': ' .. #items .. ' diagnostic(s)', vim.log.levels.WARN)
-    vim.cmd 'botright copen'
-  else
-    vim.notify(label .. ': clean', vim.log.levels.INFO)
-  end
-end
-
-local function reset_modified_debounce()
-  clear_modified_timer 'debounce'
-  modified_scan.debounce = vim.uv.new_timer()
-  modified_scan.debounce:start(modified_scan.debounce_ms, 0, vim.schedule_wrap(finalise_modified_scan))
-end
-
 local function open_git_modified(opts)
-  if modified_scan.active then
-    vim.notify('Modified-scan already running', vim.log.levels.WARN)
+  local scan_runner = require 'custom.core.scan_runner'
+  if scan_runner.is_active() then
+    vim.notify('A scan is already running', vim.log.levels.WARN)
     return
   end
   opts = opts or {}
@@ -148,41 +96,23 @@ local function open_git_modified(opts)
   end
   vim.cmd('args ' .. table.concat(escaped, ' '))
 
-  local bufnrs, watched = {}, {}
+  local bufnrs = {}
   for _, f in ipairs(files) do
     local bufnr = vim.fn.bufadd(vim.fn.fnamemodify(f, ':p'))
     pcall(vim.fn.bufload, bufnr)
     table.insert(bufnrs, bufnr)
-    watched[bufnr] = true
   end
 
-  modified_scan.active = true
-  modified_scan.bufnrs = bufnrs
-  modified_scan.title = title
-  modified_scan.label = label
-  modified_scan.debounce_ms = debounce_ms
-  modified_scan.augroup = vim.api.nvim_create_augroup('GitModifiedScan', { clear = true })
-  vim.api.nvim_create_autocmd('DiagnosticChanged', {
-    group = modified_scan.augroup,
-    callback = function(args)
-      if modified_scan.active and watched[args.buf] then
-        reset_modified_debounce()
-      end
-    end,
-  })
-
   vim.notify('Scanning ' .. #files .. ' ' .. note .. '…', vim.log.levels.INFO)
-  reset_modified_debounce()
-  modified_scan.hard_timeout = vim.uv.new_timer()
-  modified_scan.hard_timeout:start(
-    hard_timeout_ms,
-    0,
-    vim.schedule_wrap(function()
-      if modified_scan.active then
-        finalise_modified_scan()
-      end
-    end)
-  )
+
+  scan_runner.start {
+    bufnrs = bufnrs,
+    debounce_ms = debounce_ms,
+    hard_timeout_ms = hard_timeout_ms,
+    qf_title = title,
+    qf_label = label,
+    augroup_name = 'GitModifiedScan',
+  }
 end
 
 function M.setup()

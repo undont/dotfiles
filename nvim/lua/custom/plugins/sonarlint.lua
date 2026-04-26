@@ -134,25 +134,6 @@ local function is_scannable_path(path)
   return base == 'dockerfile' or base:match '%.dockerfile$' ~= nil
 end
 
-local scan = {
-  active = false,
-  created_bufs = {},
-  progress = nil,
-  debounce = nil,
-  hard_timeout = nil,
-  augroup = nil,
-}
-
-local function clear_timer(name)
-  if scan[name] then
-    pcall(function()
-      scan[name]:stop()
-      scan[name]:close()
-    end)
-    scan[name] = nil
-  end
-end
-
 local function sonarlint_diagnostics(bufnr)
   local clients = vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }
   if #clients == 0 then
@@ -166,79 +147,6 @@ local function sonarlint_diagnostics(bufnr)
   return vim.tbl_filter(function(d)
     return d.source and d.source:lower():match 'sonar'
   end, vim.diagnostic.get(bufnr))
-end
-
-local function finalise_scan()
-  clear_timer 'debounce'
-  clear_timer 'hard_timeout'
-  if scan.augroup then
-    pcall(vim.api.nvim_del_augroup_by_id, scan.augroup)
-    scan.augroup = nil
-  end
-
-  -- Collect diagnostics, converting bufnr -> filename so qf entries survive
-  -- the buffer-unload below. Items keyed only by bufnr would crash setqflist
-  -- ("E92: Buffer N not found") once the underlying buffer is gone.
-  local function collect(bufnr)
-    if not vim.api.nvim_buf_is_valid(bufnr) then
-      return {}
-    end
-    local fname = vim.api.nvim_buf_get_name(bufnr)
-    local out = vim.diagnostic.toqflist(sonarlint_diagnostics(bufnr))
-    for _, item in ipairs(out) do
-      if fname ~= '' then
-        item.filename = fname
-      end
-      item.bufnr = nil
-    end
-    return out
-  end
-
-  local items = {}
-  for bufnr, _ in pairs(scan.created_bufs) do
-    vim.list_extend(items, collect(bufnr))
-  end
-  -- Also pick up diagnostics from any pre-existing sonarlint buffers the
-  -- user already had open -- a "project scan" should reflect everything
-  -- sonarlint knows about.
-  for _, client in ipairs(vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }) do
-    for bufnr, _ in pairs(client.attached_buffers or {}) do
-      if not scan.created_bufs[bufnr] then
-        vim.list_extend(items, collect(bufnr))
-      end
-    end
-  end
-
-  for bufnr, _ in pairs(scan.created_bufs) do
-    if vim.api.nvim_buf_is_valid(bufnr) then
-      pcall(vim.api.nvim_buf_delete, bufnr, { force = true })
-    end
-  end
-  scan.created_bufs = {}
-
-  vim.fn.setqflist({}, 'r', { title = 'Sonar: scan', items = items })
-
-  if scan.progress then
-    pcall(function()
-      scan.progress:finish()
-    end)
-    scan.progress = nil
-  end
-
-  scan.active = false
-
-  if #items > 0 then
-    vim.notify('Sonar scan: ' .. #items .. ' issue(s)', vim.log.levels.WARN, { title = 'SonarLint', timeout = 4000 })
-    vim.cmd 'botright copen'
-  else
-    vim.notify('Sonar scan: clean', vim.log.levels.INFO, { title = 'SonarLint', timeout = 3000 })
-  end
-end
-
-local function reset_debounce()
-  clear_timer 'debounce'
-  scan.debounce = vim.uv.new_timer()
-  scan.debounce:start(SCAN_DEBOUNCE_MS, 0, vim.schedule_wrap(finalise_scan))
 end
 
 --- Run a git command and return its stdout split into lines.
@@ -304,77 +212,93 @@ local function list_scan_targets(mode)
   return files
 end
 
-local function load_files(files)
-  scan.augroup = vim.api.nvim_create_augroup('SonarlintScan', { clear = true })
-  vim.api.nvim_create_autocmd('DiagnosticChanged', {
-    group = scan.augroup,
-    callback = function(args)
-      if scan.active and scan.created_bufs[args.buf] then
-        reset_debounce()
-      end
-    end,
-  })
-
-  for _, path in ipairs(files) do
-    local existed = vim.fn.bufnr(path) ~= -1
-    local bufnr = vim.fn.bufadd(path)
-    if not vim.api.nvim_buf_is_loaded(bufnr) then
-      pcall(vim.fn.bufload, bufnr)
-      local ft = vim.filetype.match { buf = bufnr, filename = path }
-      if ft then
-        vim.bo[bufnr].filetype = ft
-      end
-    end
-    if not existed then
-      scan.created_bufs[bufnr] = true
-    end
-  end
-
-  reset_debounce()
-
-  scan.hard_timeout = vim.uv.new_timer()
-  scan.hard_timeout:start(
-    SCAN_HARD_TIMEOUT_MS,
-    0,
-    vim.schedule_wrap(function()
-      if scan.active then
-        vim.notify('Sonar scan: hit ' .. (SCAN_HARD_TIMEOUT_MS / 60000) .. 'min hard timeout', vim.log.levels.WARN)
-        finalise_scan()
-      end
-    end)
-  )
-end
-
 --- @param mode 'changed' | 'all'
 local function run_scan(mode)
-  if scan.active then
-    vim.notify('Sonar scan already running', vim.log.levels.WARN)
+  local scan_runner = require 'custom.core.scan_runner'
+  if scan_runner.is_active() then
+    vim.notify('A scan is already running', vim.log.levels.WARN)
     return
   end
 
   local files = list_scan_targets(mode)
   if #files == 0 then
-    local label = mode == 'changed' and 'No changed sonarlint-scannable files' or 'No sonarlint-scannable files in ' .. vim.fn.getcwd()
-    vim.notify(label, vim.log.levels.INFO)
+    local msg = mode == 'changed' and 'No changed sonarlint-scannable files' or 'No sonarlint-scannable files in ' .. vim.fn.getcwd()
+    vim.notify(msg, vim.log.levels.INFO)
     return
   end
 
   local label = mode == 'changed' and 'changed' or 'project'
 
   local function proceed()
-    scan.active = true
-    scan.created_bufs = {}
-
-    local ok, fidget = pcall(require, 'fidget.progress')
-    if ok then
-      scan.progress = fidget.handle.create {
-        title = 'SonarLint',
-        message = 'scanning ' .. #files .. ' ' .. label .. ' file(s)',
-        lsp_client = { name = 'sonar-scan' },
-      }
+    -- Track the buffers we open so we can unload only those in on_finalise.
+    local created = {}
+    for _, path in ipairs(files) do
+      local existed = vim.fn.bufnr(path) ~= -1
+      local bufnr = vim.fn.bufadd(path)
+      if not vim.api.nvim_buf_is_loaded(bufnr) then
+        pcall(vim.fn.bufload, bufnr)
+        local ft = vim.filetype.match { buf = bufnr, filename = path }
+        if ft then
+          vim.bo[bufnr].filetype = ft
+        end
+      end
+      if not existed then
+        table.insert(created, bufnr)
+      end
     end
 
-    load_files(files)
+    -- Pre-existing sonarlint buffers should still surface in the qf even
+    -- though they don't drive the debounce.
+    local extra = {}
+    for _, client in ipairs(vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }) do
+      for bufnr, _ in pairs(client.attached_buffers or {}) do
+        table.insert(extra, bufnr)
+      end
+    end
+
+    local ok, fidget = pcall(require, 'fidget.progress')
+    local progress = ok
+        and fidget.handle.create {
+          title = 'SonarLint',
+          message = 'scanning ' .. #files .. ' ' .. label .. ' file(s)',
+          lsp_client = { name = 'sonar-scan' },
+        }
+      or nil
+
+    local watched = {}
+    for _, b in ipairs(created) do
+      table.insert(watched, b)
+    end
+    -- Also watch already-loaded buffers from `files` so debounce reacts to
+    -- them; they're not in `created` because they pre-existed.
+    for _, path in ipairs(files) do
+      local b = vim.fn.bufnr(path)
+      if b ~= -1 then
+        table.insert(watched, b)
+      end
+    end
+
+    local collect = vim.list_extend(vim.list_extend({}, watched), extra)
+
+    scan_runner.start {
+      bufnrs = watched,
+      collect_bufnrs = collect,
+      get_diagnostics = sonarlint_diagnostics,
+      debounce_ms = SCAN_DEBOUNCE_MS,
+      hard_timeout_ms = SCAN_HARD_TIMEOUT_MS,
+      qf_title = 'Sonar: scan',
+      qf_label = 'Sonar scan',
+      augroup_name = 'SonarlintScan',
+      progress = progress,
+      hard_timeout_message = 'Sonar scan: hit ' .. (SCAN_HARD_TIMEOUT_MS / 60000) .. 'min hard timeout',
+      on_finalise = function()
+        for _, b in ipairs(created) do
+          if vim.api.nvim_buf_is_valid(b) then
+            pcall(vim.api.nvim_buf_delete, b, { force = true })
+          end
+        end
+      end,
+    }
   end
 
   -- Only the full-project scan asks for confirmation above the cap; the
@@ -474,6 +398,9 @@ return {
         --      documented config (and ours) makes it an array of connections
         -- Patch both notification handlers before setup() captures the
         -- function references on line 113-114 of sonarlint.lua.
+        --
+        -- Upstream tracking: https://gitlab.com/schrieveslaach/sonarlint.nvim/-/issues/42
+        -- Remove this block once the fix lands and we've bumped the plugin.
         local cm = require 'sonarlint.connected_mode'
         local function safe_server_url(client, connection_id)
           local conns = vim.tbl_get(client, 'config', 'settings', 'sonarlint', 'connectedMode', 'connections') or {}

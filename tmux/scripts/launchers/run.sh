@@ -17,6 +17,16 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
+# Strip shell-escape backslashes from a pasted path. Fzf gives literal text
+# (not shell-parsed), so `~/Library/Mobile\ Documents/...` arrives with the
+# backslashes intact and fails the [[ -d ... ]] check downstream.
+unescape_paste() {
+    local s="$1"
+    s="${s//\\ / }"
+    s="${s//\\~/~}"
+    printf '%s' "$s"
+}
+
 if [[ -z "${DOTFILES_ROOT:-}" ]] || [[ ! -d "$DOTFILES_ROOT" ]]; then
     error "DOTFILES_ROOT not set or invalid: ${DOTFILES_ROOT:-<empty>}"
     exit 1
@@ -274,9 +284,7 @@ handle_parameterised() {
     dir="${selected:-$query}"
     [[ -n "$dir" ]] || exit 0
 
-    # Strip shell-escape backslashes from pasted paths (e.g. ~/Library/Mobile\ Documents/iCloud\~md\~obsidian)
-    dir="${dir//\\ / }"
-    dir="${dir//\\~/~}"
+    dir=$(unescape_paste "$dir")
 
     # Expand ~ back to $HOME
     dir="${dir/#\~/$HOME}"

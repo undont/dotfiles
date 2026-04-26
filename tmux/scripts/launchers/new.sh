@@ -17,6 +17,16 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 
+# Strip shell-escape backslashes from a pasted path. Fzf gives literal text
+# (not shell-parsed), so `~/Library/Mobile\ Documents/...` arrives with the
+# backslashes intact and fails the [[ -d ... ]] check downstream.
+unescape_paste() {
+    local s="$1"
+    s="${s//\\ / }"
+    s="${s//\\~/~}"
+    printf '%s' "$s"
+}
+
 # Ensure stdin/stdout use terminal (needed when called via fzf become() in a pipeline).
 # Security note: this redirects to the controlling terminal, bypassing any pipe isolation.
 # Safe here because this script is only invoked interactively from the launcher picker.
@@ -473,9 +483,7 @@ while true; do
             local_selected=$(printf '%s' "$local_fzf_result" | sed -n '2p' | sed 's/^[[:space:]]*//')
             local_dir="${local_selected:-$local_query}"
 
-            # Strip shell-escape backslashes from pasted paths (e.g. ~/Library/Mobile\ Documents/iCloud\~md\~obsidian)
-            local_dir="${local_dir//\\ / }"
-            local_dir="${local_dir//\\~/~}"
+            local_dir=$(unescape_paste "$local_dir")
 
             if [[ -z "$local_dir" ]]; then
                 local_dir="$local_default_dir"
@@ -617,9 +625,7 @@ while true; do
                         local_selected=$(printf '%s' "$local_fzf_result" | sed -n '2p' | sed 's/^[[:space:]]*//')
                         local_wtdir="${local_selected:-$local_query}"
 
-                        # Strip shell-escape backslashes from pasted paths (e.g. ~/Library/Mobile\ Documents/iCloud\~md\~obsidian)
-                        local_wtdir="${local_wtdir//\\ / }"
-                        local_wtdir="${local_wtdir//\\~/~}"
+                        local_wtdir=$(unescape_paste "$local_wtdir")
 
                         if [[ -z "$local_wtdir" ]]; then
                             local_wtdir="$local_wt_default"
