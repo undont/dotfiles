@@ -503,7 +503,9 @@ return {
             vim.notify_once('Connected to ' .. url .. ' (' .. cid .. ')', vim.log.levels.DEBUG)
           else
             status = 'failed-connection'
-            vim.notify_once('Cannot connect to ' .. url .. ' (' .. cid .. '): ' .. (params.reason or 'unknown'), vim.log.levels.ERROR)
+            -- params.reason is server-controlled; bound to keep the notify log sane.
+            local reason = tostring(params.reason or 'unknown'):sub(1, 200)
+            vim.notify_once('Cannot connect to ' .. url .. ' (' .. cid .. '): ' .. reason, vim.log.levels.ERROR)
           end
           cm._connected_clients[client.id] = status
         end

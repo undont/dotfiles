@@ -151,7 +151,7 @@ local function open_git_modified(opts)
   local bufnrs, watched = {}, {}
   for _, f in ipairs(files) do
     local bufnr = vim.fn.bufadd(vim.fn.fnamemodify(f, ':p'))
-    vim.fn.bufload(bufnr)
+    pcall(vim.fn.bufload, bufnr)
     table.insert(bufnrs, bufnr)
     watched[bufnr] = true
   end

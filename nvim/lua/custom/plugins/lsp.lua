@@ -22,15 +22,20 @@ local function lsp_dedup(method)
       return
     end
 
-    local offset_encoding = clients[1].offset_encoding or 'utf-16'
-    local params = vim.lsp.util.make_position_params(0, offset_encoding)
-    if method == 'references' then
-      -- Exclude the declaration so `grr` on a symbol with no callers triggers
-      -- the `No references found` warning instead of jumping to the decl itself.
-      params.context = { includeDeclaration = false }
+    -- Build params per-client so mixed-encoding setups (e.g. utf-8 + utf-16
+    -- LSPs on the same buffer) get correctly aligned column offsets. The
+    -- response side already does this correctly via `client.offset_encoding`.
+    local function make_params(client)
+      local p = vim.lsp.util.make_position_params(0, client.offset_encoding or 'utf-16')
+      if method == 'references' then
+        -- Exclude the declaration so `grr` on a symbol with no callers triggers
+        -- the `No references found` warning instead of jumping to the decl itself.
+        p.context = { includeDeclaration = false }
+      end
+      return p
     end
 
-    vim.lsp.buf_request_all(bufnr, spec.lsp, params, function(responses)
+    vim.lsp.buf_request_all(bufnr, spec.lsp, make_params, function(responses)
       local seen = {}
       local items = {}
       for client_id, response in pairs(responses) do
