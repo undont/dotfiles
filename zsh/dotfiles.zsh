@@ -444,9 +444,10 @@ alias dot="dotfiles"                   # Shorthand for dotfiles CLI
 alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash config
 alias ff="fastfetch"                   # Fastfetch system info
 alias ac="alerts-clear"                # Clear tmux alerts (see alias below)
-alias j="cl && jiru"                                 # Jiru CLI alias (cl to clear scrollback first)
-alias lg="cl && lazygit"                           # LazyGit alias (cl to clear scrollback first)
-alias ld="cl && lazydocker"                     # LazyDocker alias (cl to clear scrollback first)
+alias j="cl && jiru"                   # Jiru CLI alias (cl to clear scrollback first)
+alias lg="cl && lazygit"               # LazyGit alias (cl to clear scrollback first)
+alias ld="cl && lazydocker"            # LazyDocker alias (cl to clear scrollback first)
+alias lc="cl && lazycron"              # LazyCron alias (cl to clear scrollback first)
 
 # Tmux session management
 alias tls="~/.tmux/scripts/resurrect/restore.sh --list"

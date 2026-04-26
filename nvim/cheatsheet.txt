@@ -39,6 +39,7 @@ Search in open files | <leader>s/
 Search Neovim config | <leader>sn
 Select Telescope picker | <leader>ss
 Grep (literal/fixed-strings) | <leader>sG
+Search git modified files | <leader>sm
 Search & replace (grug-far) | <leader>sR
 Open cheatsheet | <leader>?
 Telescope: toggle selection, move down | <Tab>
@@ -128,6 +129,8 @@ Location list toggle | <leader>xl
 Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
+Git modified → diagnostics qf | <leader>xm
+Git modified → diagnostics qf (incl. sonar) | <leader>xM
 
 ## windows @windows
 Move to window | Ctrl+hjkl

@@ -141,6 +141,7 @@ return {
       vim.keymap.set('n', '<leader>sG', function()
         builtin.live_grep { additional_args = { '--hidden', '--fixed-strings' } }
       end, { desc = 'Search [G]rep (literal)' })
+      vim.keymap.set('n', '<leader>sm', builtin.git_status, { desc = 'Search git [M]odified files' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = 'Search [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = 'Search [R]esume' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = 'Recent files [.]' })
