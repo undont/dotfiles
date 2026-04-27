@@ -568,10 +568,17 @@ function M.run_make()
   pick_make_target(targets)
 end
 
---- Prune build qf entries as their diagnostics are resolved.
+--- Prune diagnostics-backed qf entries as the underlying issues are fixed.
 --- Fires on DiagnosticChanged — for a loaded buffer with an LSP attached,
---- drop qf items on lines that no longer carry a diagnostic. Only touches
---- qf lists produced by this module (title prefix "Build:").
+--- drop qf items on lines that no longer carry a diagnostic. Triggers on
+--- titles starting with "<Kind>:" where Kind is in AUTO_CLEAR_KINDS; the
+--- kind's value drives the "all clear" notification text.
+local AUTO_CLEAR_KINDS = {
+  Build = 'Build errors resolved',
+  Sonar = 'Sonar issues resolved',
+  Modified = 'Modified file diagnostics resolved',
+}
+
 local function setup_auto_clear()
   local group = vim.api.nvim_create_augroup('CustomBuildAutoClear', { clear = true })
   vim.api.nvim_create_autocmd('DiagnosticChanged', {
@@ -586,7 +593,9 @@ local function setup_auto_clear()
       end
 
       local qf = vim.fn.getqflist { title = 0, items = 0 }
-      if not qf.title or not qf.title:match '^Build:' then
+      local kind = qf.title and qf.title:match '^(%w+):'
+      local resolved_label = kind and AUTO_CLEAR_KINDS[kind]
+      if not resolved_label then
         return
       end
 
@@ -617,7 +626,7 @@ local function setup_auto_clear()
             vim.api.nvim_win_close(win, true)
           end
         end
-        vim.notify('Build errors resolved', vim.log.levels.INFO, { title = 'Build', timeout = 3000 })
+        vim.notify(resolved_label, vim.log.levels.INFO, { title = kind, timeout = 3000 })
       end
     end,
   })
