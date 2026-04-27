@@ -39,6 +39,7 @@ Search in open files | <leader>s/
 Search Neovim config | <leader>sn
 Select Telescope picker | <leader>ss
 Grep (literal/fixed-strings) | <leader>sG
+Search git modified files | <leader>sm
 Search & replace (grug-far) | <leader>sR
 Open cheatsheet | <leader>?
 Telescope: toggle selection, move down | <Tab>
@@ -107,6 +108,8 @@ Format buffer | <leader>f
 LSP restart | <leader>lr
 Refresh Neovim | <leader>lR
 Refresh Treesitter + semantic tokens | <leader>lt
+Sonar scan changed files | <leader>ls
+Sonar scan whole project | <leader>lS
 
 ## tools @tools
 Toggle file tree | <leader>e
@@ -126,6 +129,7 @@ Location list toggle | <leader>xl
 Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
+Git modified → diagnostics qf | <leader>xm
 
 ## windows @windows
 Move to window | Ctrl+hjkl
@@ -159,8 +163,8 @@ Toggle comment resolved | <leader>cr
 Delete comment block | <leader>cd
 Next comment block | <leader>c]
 Previous comment block | <leader>c[
-@ file reference (prompt files) | @ (insert mode)
-Literal @ (prompt files) | @@ (insert mode)
+@ file reference (markdown) | @ (insert mode)
+Literal @ (markdown) | @@ (insert mode)
 Expand/jump next placeholder | Ctrl+k
 Jump prev placeholder | Ctrl+j
 

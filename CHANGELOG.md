@@ -6,6 +6,32 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.86] - 2026-04-27
+
+### Added
+- Nvim: `sonarlint.nvim` wraps `sonarlint-language-server` (Mason) as a second LSP for SonarQube-style diagnostics — covers Python, JS/TS, Go, C#, C/C++, PHP, HTML/CSS, IaC, Docker, secrets, XML; lazy-loaded by filetype. Connected mode (SonarCloud, EU) auto-enables when `SONARQUBE_TOKEN` + `SONARQUBE_ORG` are set; per-project binding via `.sonarlint/connectedMode.json` at the project root, JetBrains/VSCode-style. Includes a local patch for an upstream bug in `find_server_url` that crashed on SonarCloud-only setups
+- Nvim: Sonar project scan — `<leader>ls` scans changed/untracked files, `<leader>lS` scans the whole project (confirmation prompt above 500 files); both filter to sonarlint-supported extensions, hidden-load each file so sonarlint attaches, then snapshot diagnostics into a `Sonar:`-titled qf on 2 s of `DiagnosticChanged` quiet (5 min hard timeout). Fidget progress handle reports as a virtual `sonar-scan` LSP
+- Nvim: `<leader>xm` / `:GitModified` — hidden-loads git-modified files, debounces on `DiagnosticChanged` (5 s / 5 min) and dumps diagnostics into a `Modified:`-titled qf without leaving the current buffer. Pulls `textDocument/diagnostic` explicitly on `LspAttach` for clients (roslyn) that only push for visible documents
+- Nvim: `<leader>sm` telescope picker over `git_status` — modified + untracked files with diff previews
+- Shell: `lc` alias for `cl && lazycron` — completes the `j`/`lg`/`ld` family of clear-then-launch TUI shortcuts
+
+### Changed
+- Nvim: `build.lua`'s qf auto-clear (drops items as their underlying diagnostics resolve) now also fires on `Sonar:`- and `Modified:`-titled lists; only the "all clear" notification text varies
+- Nvim: `claude-prompt.lua` `<leader>c*` comment keymaps now activate on every markdown buffer; the `@` file picker and `@@` literal stay scoped to `claude-prompt-*.md` / files under `.claude/` or `.plans/`
+- Nvim: `grr`/`gri`/`grd`/`grt` now surface a warning notification when the LSP returns no results — the previous `lsp_dedup` path relied on `vim.lsp.buf.<method>`'s `on_list` callback which Neovim's built-in handlers short-circuit on empty results, so location methods failed silently. Now drives `vim.lsp.buf_request_all` directly. `grr` also flips `includeDeclaration` to `false` so it warns on truly-unused symbols instead of jumping to the declaration
+- Nvim: scan helpers unified into `core/scan_runner.lua` (~110 LOC of duplication removed across `sonarlint.lua` and `core/lists.lua`). Single global singleton — triggering `<leader>xm` while `<leader>ls` is running (or vice versa) reports `A scan is already running` instead of letting both write to the qf concurrently
+
+### Fixed
+- Shell: zoxide doctor warning silenced by overriding `__zoxide_doctor` with a no-op after `zoxide init zsh` — the check spuriously fires in Claude Code's `!` shell because shell snapshots capture function definitions without the `chpwd_functions` array; env-based `_ZO_DOCTOR=0` doesn't survive snapshotting, overriding the function does
+- Tmux: launcher picker and wizard now strip shell-escape backslashes (`\ ` → space, `\~` → `~`) from pasted directory paths — fzf input is literal text, so escaped paths failed `[[ -d ]]` and got baked into the generated launcher's `PROJECT_DIR`. Pre-existing launchers need the backslashes stripped by hand
+- Nvim: `lsp_dedup` (`grr`/`gri`/`grd`/`grt`) builds the `textDocument/position` payload per-client instead of broadcasting `clients[1].offset_encoding` to everyone — could land on the wrong byte for non-first clients in mixed-encoding setups (e.g. utf-8 rust-analyzer + utf-16 lua_ls) on lines with multibyte characters
+- Nvim: sonarlint connected-mode `notify_connection_result` `tostring`-coerces and clamps `params.reason` to 200 chars — server-supplied field shouldn't bloat the notify log
+- Nvim: `<leader>xm` modified-scan wraps `vim.fn.bufload` in `pcall` so a single un-loadable file (broken symlink, permission `000`) skips silently instead of aborting the whole scan
+
+### Refactor
+- Nvim: `build.lua`'s qf auto-clear `Build`/`Sonar` predicate collapsed into an `AUTO_CLEAR_KINDS` kind→label table — adding a new kind is a one-line addition. No behaviour change
+- Tmux: 3 verbatim copies of the shell-escape strip block (`run.sh`, `new.sh` × 2) extracted into an `unescape_paste` helper. No behaviour change
+
 ## [0.2.85] - 2026-04-20
 
 ### Added

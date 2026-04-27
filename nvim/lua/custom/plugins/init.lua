@@ -15,6 +15,7 @@ return {
   { import = 'custom.plugins.markdown-ui' },
   { import = 'custom.plugins.telescope' },
   { import = 'custom.plugins.lsp' },
+  { import = 'custom.plugins.sonarlint' },
   { import = 'custom.plugins.completion' },
   { import = 'custom.plugins.git' },
   { import = 'custom.plugins.copilot' },

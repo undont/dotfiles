@@ -1,37 +1,74 @@
 -- LSP configuration
 
---- Deduplicate LSP results and display with Telescope
+--- Deduplicate LSP results and display with Telescope.
+--- Drives the request directly (instead of `vim.lsp.buf.<method>`) so empty
+--- results reach our on_list path; the built-in handlers short-circuit on
+--- empty (references notifies `No references found`, the location methods
+--- return silently) before on_list would ever run.
+local lsp_dedup_methods = {
+  references = { lsp = 'textDocument/references', label = 'references' },
+  implementation = { lsp = 'textDocument/implementation', label = 'implementations' },
+  definition = { lsp = 'textDocument/definition', label = 'definitions' },
+  type_definition = { lsp = 'textDocument/typeDefinition', label = 'type definitions' },
+}
+
 local function lsp_dedup(method)
+  local spec = assert(lsp_dedup_methods[method], 'unsupported lsp_dedup method: ' .. method)
   return function()
-    local on_list_opts = {
-      on_list = function(options)
-        local seen = {}
-        local items = {}
-        for _, item in ipairs(options.items) do
-          local key = item.filename .. ':' .. item.lnum .. ':' .. item.col
-          if not seen[key] then
-            seen[key] = true
-            table.insert(items, item)
+    local bufnr = vim.api.nvim_get_current_buf()
+    local clients = vim.lsp.get_clients { bufnr = bufnr, method = spec.lsp }
+    if #clients == 0 then
+      vim.notify('No LSP client supports ' .. spec.label, vim.log.levels.WARN)
+      return
+    end
+
+    -- Build params per-client so mixed-encoding setups (e.g. utf-8 + utf-16
+    -- LSPs on the same buffer) get correctly aligned column offsets. The
+    -- response side already does this correctly via `client.offset_encoding`.
+    local function make_params(client)
+      local p = vim.lsp.util.make_position_params(0, client.offset_encoding or 'utf-16')
+      if method == 'references' then
+        -- Exclude the declaration so `grr` on a symbol with no callers triggers
+        -- the `No references found` warning instead of jumping to the decl itself.
+        p.context = { includeDeclaration = false }
+      end
+      return p
+    end
+
+    vim.lsp.buf_request_all(bufnr, spec.lsp, make_params, function(responses)
+      local seen = {}
+      local items = {}
+      for client_id, response in pairs(responses) do
+        local result = response.result
+        if result and not vim.tbl_isempty(result) then
+          local client = vim.lsp.get_client_by_id(client_id)
+          local enc = (client and client.offset_encoding) or 'utf-16'
+          -- Location methods can return a single Location; wrap into a list.
+          if not vim.islist(result) then
+            result = { result }
+          end
+          for _, item in ipairs(vim.lsp.util.locations_to_items(result, enc)) do
+            local key = item.filename .. ':' .. item.lnum .. ':' .. item.col
+            if not seen[key] then
+              seen[key] = true
+              table.insert(items, item)
+            end
           end
         end
-        if #items == 0 then
-          vim.notify('No results found', vim.log.levels.INFO)
-          return
-        end
-        options.items = items
-        vim.fn.setqflist({}, ' ', options)
-        if #items == 1 then
-          vim.cmd.cfirst()
-        else
-          require('telescope.builtin').quickfix()
-        end
-      end,
-    }
-    if method == 'references' then
-      vim.lsp.buf[method](nil, on_list_opts)
-    else
-      vim.lsp.buf[method](on_list_opts)
-    end
+      end
+
+      if #items == 0 then
+        vim.notify('No ' .. spec.label .. ' found', vim.log.levels.WARN)
+        return
+      end
+
+      vim.fn.setqflist({}, ' ', { title = spec.label, items = items })
+      if #items == 1 then
+        vim.cmd.cfirst()
+      else
+        require('telescope.builtin').quickfix()
+      end
+    end)
   end
 end
 
@@ -416,6 +453,8 @@ return {
           'yamlls',
           -- Roslyn (C# LSP, from Crashdummyy/mason-registry)
           'roslyn',
+          -- SonarLint LSP (analyzers + bundled omnisharp for C#); driven by sonarlint.lua
+          'sonarlint-language-server',
           -- Formatters
           'csharpier',
           'gofumpt',
