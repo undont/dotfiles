@@ -576,6 +576,7 @@ end
 local AUTO_CLEAR_KINDS = {
   Build = 'Build errors resolved',
   Sonar = 'Sonar issues resolved',
+  Modified = 'Modified file diagnostics resolved',
 }
 
 local function setup_auto_clear()

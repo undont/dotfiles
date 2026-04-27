@@ -130,7 +130,6 @@ Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
 Git modified → diagnostics qf | <leader>xm
-Git modified → diagnostics qf (incl. sonar) | <leader>xM
 
 ## windows @windows
 Move to window | Ctrl+hjkl
