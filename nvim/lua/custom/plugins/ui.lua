@@ -61,6 +61,7 @@ return {
           { '<leader>a', group = '[A]I', icon = { icon = '󰚩 ', color = 'purple' } },
           { '<leader>b', group = '[B]reakpoint / Buffer', icon = { icon = '󰈔 ', color = 'red' } },
           { '<leader>d', group = '[D]iff', icon = { cat = 'filetype', name = 'git' } },
+          { '<leader>G', group = '[G]it (Fugitive)', icon = { cat = 'filetype', name = 'git' } },
           { '<leader>H', group = 'Git [H]unk', icon = { cat = 'filetype', name = 'git' } },
           { '<leader>h', group = '[H]arpoon', icon = { icon = '󱡀 ', color = 'blue' } },
           { '<leader>s', group = '[S]earch', icon = { icon = '', color = 'blue' } },
@@ -73,8 +74,10 @@ return {
           -- ── Always-visible (non-code contexts like Octo, diffview) ──
           { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' } },
 
+          -- ── Always-visible (qf/loclist commands work in any buffer) ──
+          { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' } },
+
           -- ── Filetype-gated groups (hidden by default, shown in code files via autocmd) ──
-          { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = true },
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = true },
           { '<leader>u', icon = { icon = '󰕌 ', color = 'blue' }, hidden = true },
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = true },
@@ -150,8 +153,7 @@ return {
         prev_vis = { code = is_code, md = is_markdown, dotnet = is_dotnet }
 
         wk.add {
-          -- Code-file groups (LSP, diagnostics, format, breakpoints)
-          { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' }, hidden = not is_code },
+          -- Code-file groups (LSP, format, breakpoints)
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = not is_code },
           { '<leader>f', hidden = not is_code },
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = not is_code },

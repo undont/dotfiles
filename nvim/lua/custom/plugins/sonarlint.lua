@@ -316,6 +316,99 @@ local function run_scan(mode)
   end
 end
 
+-- Suppress sonarlint when entering diff/review contexts (Octo, Diffview).
+-- SonarLint analysis is unnecessary in review buffers and can be slow on large diffs.
+local sonarlint_suppressed = false
+
+local function suppress_sonarlint()
+  if sonarlint_suppressed then
+    return
+  end
+  sonarlint_suppressed = true
+
+  -- Clear cached client IDs so sonarlint.nvim spawns fresh clients after review
+  local ok, sonarlint = pcall(require, 'sonarlint')
+  if ok then
+    for k, _ in pairs(sonarlint._client_id_by_root_dir) do
+      sonarlint._client_id_by_root_dir[k] = nil
+    end
+  end
+
+  -- Silence sonarlint exit notifications from the forced stop. The on_exit
+  -- callback fires via vim.schedule after the process exits, which can take
+  -- a moment for the JVM-based language server.
+  local orig_notify = vim.notify
+  vim.notify = function(msg, level, opts)
+    if type(msg) == 'string' and msg:match '[Ss]onarlint' then
+      return
+    end
+    return orig_notify(msg, level, opts)
+  end
+
+  for _, client in ipairs(vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }) do
+    client:stop(true)
+  end
+
+  vim.defer_fn(function()
+    vim.notify = orig_notify
+  end, 10000)
+end
+
+local function try_restore_sonarlint()
+  if not sonarlint_suppressed then
+    return
+  end
+
+  -- Same guard as roslyn: don't restore while still in a review context
+  local dv_ok, dv_lib = pcall(require, 'diffview.lib')
+  if dv_ok and dv_lib.get_current_view() then
+    return
+  end
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
+      return
+    end
+  end
+
+  sonarlint_suppressed = false
+
+  local ok, _ = pcall(require, 'sonarlint')
+  if not ok then
+    return
+  end
+
+  -- Re-fire FileType for loaded buffers so sonarlint.nvim reattaches
+  local filetype_set = {}
+  for _, ft in ipairs(FILETYPES) do
+    filetype_set[ft] = true
+  end
+
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and filetype_set[vim.bo[buf].filetype] then
+      vim.api.nvim_exec_autocmds('FileType', { buffer = buf })
+    end
+  end
+end
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'octo', 'DiffviewFiles', 'DiffviewFileHistory' },
+  callback = suppress_sonarlint,
+})
+
+-- Re-enable sonarlint when returning to normal buffers after review closes.
+vim.api.nvim_create_autocmd('BufEnter', {
+  callback = function()
+    if sonarlint_suppressed then
+      vim.defer_fn(function()
+        if not sonarlint_suppressed then
+          return
+        end
+        try_restore_sonarlint()
+      end, 2000)
+    end
+  end,
+})
+
 return {
   {
     'https://gitlab.com/schrieveslaach/sonarlint.nvim',

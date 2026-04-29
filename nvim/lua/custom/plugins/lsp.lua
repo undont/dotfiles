@@ -12,10 +12,31 @@ local lsp_dedup_methods = {
   type_definition = { lsp = 'textDocument/typeDefinition', label = 'type definitions' },
 }
 
+local function telescope_locations(title, items)
+  local pickers = require 'telescope.pickers'
+  local finders = require 'telescope.finders'
+  local make_entry = require 'telescope.make_entry'
+  local conf = require('telescope.config').values
+
+  pickers
+    .new({}, {
+      prompt_title = title,
+      finder = finders.new_table {
+        results = items,
+        entry_maker = make_entry.gen_from_quickfix {},
+      },
+      previewer = conf.qflist_previewer {},
+      sorter = conf.generic_sorter {},
+    })
+    :find()
+end
+
 local function lsp_dedup(method)
   local spec = assert(lsp_dedup_methods[method], 'unsupported lsp_dedup method: ' .. method)
   return function()
     local bufnr = vim.api.nvim_get_current_buf()
+    local cursor = vim.api.nvim_win_get_cursor(0)
+    local current_filename = vim.fn.fnamemodify(vim.api.nvim_buf_get_name(bufnr), ':p')
     local clients = vim.lsp.get_clients { bufnr = bufnr, method = spec.lsp }
     if #clients == 0 then
       vim.notify('No LSP client supports ' .. spec.label, vim.log.levels.WARN)
@@ -49,7 +70,9 @@ local function lsp_dedup(method)
           end
           for _, item in ipairs(vim.lsp.util.locations_to_items(result, enc)) do
             local key = item.filename .. ':' .. item.lnum .. ':' .. item.col
-            if not seen[key] then
+            local item_filename = vim.fn.fnamemodify(item.filename, ':p')
+            local is_current_location = item_filename == current_filename and item.lnum == cursor[1] and item.col == (cursor[2] + 1)
+            if not is_current_location and not seen[key] then
               seen[key] = true
               table.insert(items, item)
             end
@@ -62,11 +85,15 @@ local function lsp_dedup(method)
         return
       end
 
-      vim.fn.setqflist({}, ' ', { title = spec.label, items = items })
       if #items == 1 then
-        vim.cmd.cfirst()
+        vim.lsp.util.show_document({
+          uri = vim.uri_from_fname(items[1].filename),
+          range = {
+            start = { line = items[1].lnum - 1, character = items[1].col - 1 },
+          },
+        }, 'utf-8', { reuse_win = true, focus = true })
       else
-        require('telescope.builtin').quickfix()
+        telescope_locations(spec.label, items)
       end
     end)
   end
@@ -377,8 +404,9 @@ return {
       -- semantic tokens, document highlights, and other standard capabilities
       -- aren't dropped (blink only provides completion-related caps).
       local caps = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('blink.cmp').get_lsp_capabilities())
-      -- Remove colorProvider to prevent nvim 0.12 document_color assertion bug
-      caps.textDocument.colorProvider = nil
+      -- Disable built-in document_color to avoid assertion failures on stale client IDs
+      -- (neovim/neovim#38404).
+      vim.lsp.document_color.enable(false)
       vim.lsp.config('*', { capabilities = caps })
 
       patch_lsp_start()
@@ -416,6 +444,7 @@ return {
 
       -- Server configurations
       local servers = {
+        astro = {},
         bashls = {},
         clangd = {},
         cssls = {},
@@ -440,6 +469,7 @@ return {
       require('mason-tool-installer').setup {
         ensure_installed = {
           -- LSP servers
+          'astro',
           'bashls',
           'clangd',
           'cssls',
@@ -500,6 +530,7 @@ return {
         }
       end,
       formatters_by_ft = {
+        astro = { 'prettier' },
         cs = { 'csharpier' },
         go = { 'goimports', 'gofumpt' },
         javascript = { 'prettier' },
@@ -516,6 +547,13 @@ return {
         },
         csharpier = {
           command = vim.fn.stdpath 'data' .. '/mason/bin/csharpier',
+        },
+        prettier = {
+          -- Prefer the project's local prettier so plugins declared in
+          -- the project's .prettierrc (e.g. prettier-plugin-astro) are
+          -- resolved against the project's node_modules. Falls back to
+          -- Mason's prettier when there's no local install.
+          prefer_local = 'node_modules/.bin',
         },
       },
     },

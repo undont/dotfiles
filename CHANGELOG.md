@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Nvim: tpope plugin set — `vim-fugitive` (`:Git`, `:Git blame`, `:Gdiffsplit`, stage/diff hunks in-buffer; complements LazyGit's TUI workflow) + `vim-rhubarb` (`:GBrowse` opens current file/line/commit on GitHub) wired into `plugins/git.lua`. New `plugins/tpope.lua` bundles `vim-abolish` (`:Subvert/foo/bar/g`, `cr*` case coercions), `vim-repeat` (so `.` repeats fugitive/abolish actions), and `vim-sleuth` (auto-detects `shiftwidth`/`expandtab` per buffer). Surround / commentary / unimpaired deliberately omitted — already covered by `mini.surround`, built-in `gc`, and `mini.bracketed`
+- Nvim: fugitive keymaps under `<leader>G*` (capital, to mirror `<leader>H*` for gitsigns hunks; lowercase `<leader>g` stays the LazyGit leaf-shortcut) — `Gs` status, `Gb` blame, `Gd` diffsplit, `Gl` file log → qf, `Gw` write/stage buffer, `Go` GBrowse (visual mode opens with line range). Group registered with which-key
+- Nvim: `cheatsheet.txt` gains `## fugitive @fugitive` and `## coerce @coerce` sections — fugitive maps + abolish `cr*` coercions and `:Subvert` discoverable via `<leader>?`
+- Nvim: `astro` added to mason-lspconfig (`servers`), mason-tool-installer (`ensure_installed`), and the treesitter parser list — Astro files now get LSP diagnostics/completion plus syntax highlighting out of the box
+- Nvim: conform.nvim formats `.astro` files via `prettier` (was falling back to the astro LSP's bundled formatter, which drifted from `bunx prettier . -w` output). Also sets `prefer_local = 'node_modules/.bin'` on the prettier formatter so all prettier-driven filetypes resolve plugins (`prettier-plugin-astro`, etc.) and version pins from the project's `node_modules` — Mason's prettier remains the fallback outside JS projects
+
+### Changed
+- Nvim: `sonarlint.nvim` now auto-suppresses when entering PR review buffers (`octo`, `DiffviewFiles`, `DiffviewFileHistory`) and restores when leaving — mirrors the existing `roslyn.nvim` behaviour so heavy SonarLint analysis doesn't run on diff buffers. Logic lives in `sonarlint.lua` (not `pr-review.lua`) to keep review-context handling contained per-plugin
+
+### Fixed
+- Nvim: built-in `document_color` disabled globally to prevent assertion failures on stale client IDs (`document_color.lua:225: assertion failed!`). The previous `caps.textDocument.colorProvider = nil` workaround was ineffective because Neovim's `document_color` attaches based on the *server's* capability advertisement (e.g. `tailwindcss` on TSX), not the client's. Disabling outright avoids the race condition until upstream fixes the lifecycle bug
+- Nvim: `<leader>xm` skips paths that fail `filereadable` — `git ls-files -m` includes deleted-but-unstaged entries, and creating buffers for non-existent C# files triggered `easy-dotnet.nvim`'s `BootstrapFile` to walk a missing directory and crash with `-32000` (visible as `Crash dump written at /tmp/lua_*` notifications)
+- Nvim: `<leader>xm` Roslyn pull now gates behind `workspace/projectInitializationComplete` — pulling before Roslyn's workspace finishes initialising returned `-30099 Failed to get language`. Wraps the LSP method handler (Roslyn protocol contract, not roslyn.nvim's `User RoslynInitialized` autocmd) so cold-start scans wait for init and warm-start scans pull immediately
+
 ## [0.2.86] - 2026-04-27
 
 ### Added
