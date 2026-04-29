@@ -50,7 +50,7 @@ return {
       -- GBrowse: normal opens current line, visual opens selected range.
       -- Visual mapping uses `:` (not `<cmd>`) so vim prepends `'<,'>` for the range.
       { '<leader>Go', '<cmd>GBrowse<CR>', desc = '[O]pen on GitHub' },
-      { '<leader>Go', ":GBrowse<CR>", mode = 'v', desc = '[O]pen on GitHub (range)' },
+      { '<leader>Go', ':GBrowse<CR>', mode = 'v', desc = '[O]pen on GitHub (range)' },
     },
     dependencies = {
       -- Rhubarb: `:GBrowse` handler for GitHub URLs (open file/line/commit on github.com)
