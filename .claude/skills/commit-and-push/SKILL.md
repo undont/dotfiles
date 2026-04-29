@@ -80,6 +80,26 @@ description: Commit staged changes and push. Offer to create a PR if none exists
     - **If unsure**: Ask the user whether documentation updates are needed
     - **Do NOT skip this step** - documentation drift causes confusion
 
+    - **Rules sweep (`.claude/rules/`)**: After the README/help check, also sweep
+      `.claude/rules/` for any rule files whose guidance may be affected by the
+      changes. Match changed areas to relevant rule files, e.g.:
+
+      | Changed area | Rule files to review |
+      |--------------|---------------------|
+      | `nvim/` | `.claude/rules/neovim.md`, `.claude/rules/neovim_dotnet.md` |
+      | `tmux/` | `.claude/rules/tmux.md` |
+      | `zsh/`, shell scripts | `.claude/rules/shell.md` |
+      | `scripts/install/`, `install.sh` | `.claude/rules/install.md` |
+      | Test infrastructure | `.claude/rules/tests.md` |
+      | Theme system | `.claude/rules/themes.md` |
+      | Documentation conventions | `.claude/rules/docs.md` |
+
+      - Read the relevant rule files and check whether the new behaviour, file
+        paths, conventions, or workflows they describe are still accurate.
+      - If a rule is now wrong, incomplete, or missing guidance the change implies,
+        update it and stage the change with the commit.
+      - If unsure whether a rule update is warranted, ask the user.
+
 5. **CHANGELOG Update**:
     - Update `CHANGELOG.md` for user-facing changes
     - **When to update**: `fix:`, `add:`, `update:`, `breaking:` commits

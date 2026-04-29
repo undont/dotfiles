@@ -256,6 +256,12 @@ local function patch_lsp_start()
   vim.lsp.start = function(config, opts)
     opts = opts or {}
     local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
+    -- Buffer can be wiped between when lsp_enable_callback queues the start
+    -- and when this scheduled callback fires (e.g. diffview disposing diff
+    -- buffers); abort silently in that case.
+    if not vim.api.nvim_buf_is_valid(bufnr) then
+      return nil
+    end
     local name = vim.api.nvim_buf_get_name(bufnr)
     if name:match '^%w[%w+.-]*://' and not name:match '^file://' then
       return nil
@@ -458,43 +464,50 @@ return {
         yamlls = {},
       }
 
-      require('mason-lspconfig').setup {
-        ensure_installed = vim.tbl_keys(servers or {}),
-        automatic_installation = false,
-        automatic_enable = {
-          exclude = { 'omnisharp' }, -- Using roslyn.nvim instead
-        },
-      }
+      -- Defer mason setups: their `setup{}` calls do tool-install verification
+      -- and per-server enable iteration that can take many seconds on cold
+      -- start. Running them in vim.schedule lets the triggering buffer
+      -- (BufReadPre, including diffview/octo diff buffers) finish opening
+      -- first. Servers register/attach a few ms later — invisible in practice.
+      vim.schedule(function()
+        require('mason-lspconfig').setup {
+          ensure_installed = vim.tbl_keys(servers or {}),
+          automatic_installation = false,
+          automatic_enable = {
+            exclude = { 'omnisharp' }, -- Using roslyn.nvim instead
+          },
+        }
 
-      require('mason-tool-installer').setup {
-        ensure_installed = {
-          -- LSP servers
-          'astro',
-          'bashls',
-          'clangd',
-          'cssls',
-          'eslint',
-          'gopls',
-          'html',
-          'lua_ls',
-          'pyright',
-          'tailwindcss',
-          'ts_ls',
-          'yamlls',
-          -- Roslyn (C# LSP, from Crashdummyy/mason-registry)
-          'roslyn',
-          -- SonarLint LSP (analyzers + bundled omnisharp for C#); driven by sonarlint.lua
-          'sonarlint-language-server',
-          -- Formatters
-          'csharpier',
-          'gofumpt',
-          'goimports',
-          'prettier',
-          'stylua',
-          -- Linters
-          'golangci-lint',
-        },
-      }
+        require('mason-tool-installer').setup {
+          ensure_installed = {
+            -- LSP servers
+            'astro',
+            'bashls',
+            'clangd',
+            'cssls',
+            'eslint',
+            'gopls',
+            'html',
+            'lua_ls',
+            'pyright',
+            'tailwindcss',
+            'ts_ls',
+            'yamlls',
+            -- Roslyn (C# LSP, from Crashdummyy/mason-registry)
+            'roslyn',
+            -- SonarLint LSP (analyzers + bundled omnisharp for C#); driven by sonarlint.lua
+            'sonarlint-language-server',
+            -- Formatters
+            'csharpier',
+            'gofumpt',
+            'goimports',
+            'prettier',
+            'stylua',
+            -- Linters
+            'golangci-lint',
+          },
+        }
+      end)
     end,
   },
 
@@ -546,7 +559,15 @@ return {
           command = vim.fn.stdpath 'data' .. '/mason/bin/goimports',
         },
         csharpier = {
+          -- conform's default args switch on `dotnet csharpier --version` and
+          -- pass `csharpier format --stdin-path $FILENAME` (i.e. as a dotnet
+          -- subcommand). When we override `command` to Mason's standalone
+          -- binary, those args get passed to it directly and csharpier 1.0+
+          -- bails with "Unrecognized command or argument 'csharpier'". Pin
+          -- args to the format subcommand the standalone binary understands.
           command = vim.fn.stdpath 'data' .. '/mason/bin/csharpier',
+          args = { 'format', '--stdin-path', '$FILENAME' },
+          stdin = true,
         },
         prettier = {
           -- Prefer the project's local prettier so plugins declared in

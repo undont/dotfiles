@@ -196,6 +196,24 @@ return {
     event = 'VeryLazy',
     opts = {
       progress = {
+        -- Drop sonarlint/roslyn LSP progress chatter while suppressed (during
+        -- diffview/octo review). Outside review, progress shows normally.
+        -- Flags are owned by sonarlint.lua / dotnet.lua respectively.
+        ignore = {
+          function(msg)
+            if not (msg.lsp_client and msg.lsp_client.name) then
+              return false
+            end
+            local name = msg.lsp_client.name
+            if name == 'sonarlint.nvim' then
+              return vim.g.sonarlint_suppressed
+            end
+            if name == 'roslyn' then
+              return vim.g.roslyn_suppressed
+            end
+            return false
+          end,
+        },
         display = {
           done_ttl = 2,
           progress_icon = { 'dots' },
@@ -224,7 +242,11 @@ return {
       }
       require('fidget').setup(opts)
 
-      -- Wrap fidget's vim.notify with a spam filter (noisy dotnet/roslyn startup)
+      -- Wrap fidget's vim.notify with a spam filter. ALL notification
+      -- filtering lives here because fidget's `override_vim_notify = true`
+      -- overwrites vim.notify at setup time, blowing away any wrap installed
+      -- by other plugin specs at module load. This wrap runs after fidget
+      -- setup so it survives.
       local base_notify = vim.notify
       vim.notify = function(msg, level, nopts)
         if type(msg) ~= 'string' then
@@ -236,12 +258,35 @@ return {
         end
 
         local title = nopts and nopts.title
-        if not title or title == 'Progress' or (type(title) == 'string' and (title:match 'roslyn' or title:match 'easy%-dotnet')) then
+        local title_str = type(title) == 'string' and title or nil
+
+        -- Always-silenced dotnet/roslyn startup spam (regardless of suppress)
+        if not title or title == 'Progress' or (title_str and (title_str:match 'roslyn' or title_str:match 'easy%-dotnet')) then
           local dotnet_spam = { '^Initializing', '^Loading ', ' loaded$', '^Client initialized' }
           for _, pat in ipairs(dotnet_spam) do
             if msg:match(pat) then
               return
             end
+          end
+        end
+
+        -- Suppress-gated filters: drop sonarlint/roslyn chatter while in
+        -- diff/review contexts. Flags are owned by sonarlint.lua / dotnet.lua.
+        if vim.g.sonarlint_suppressed then
+          if msg:match '[Ss]onarlint' or msg:match '[Ss]onar[Qq]ube' then
+            return
+          end
+          if title_str and title_str:lower():match 'sonar' then
+            return
+          end
+        end
+
+        if vim.g.roslyn_suppressed then
+          if msg:match '[Rr]oslyn' then
+            return
+          end
+          if title_str and title_str:lower():match 'roslyn' then
+            return
           end
         end
 

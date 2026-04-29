@@ -9,6 +9,23 @@ local octo_review_cache = {
 --- the command; consumed once by the patched set_files_and_select_first.
 local pending_resume_target = nil ---@type {path: string, line: integer}?
 
+--- Re-attach treesitter highlighting on the current buffer ONLY if it's
+--- not already active. After `<leader>de` switches from a diff context to
+--- a normal edit buffer, some :edit paths leave treesitter unattached.
+--- Calling vim.treesitter.start unconditionally would replace an active
+--- highlighter and force a full re-parse (slow on large files, visible
+--- as flicker), so we skip when one is already attached.
+local function refresh_treesitter_highlight()
+  if vim.bo.filetype == '' then
+    return
+  end
+  local bufnr = vim.api.nvim_get_current_buf()
+  if vim.treesitter.highlighter.active[bufnr] then
+    return
+  end
+  pcall(vim.treesitter.start, 0)
+end
+
 local function octo_review_cache_key(pr)
   return table.concat({ pr.repo, tostring(pr.number), pr.left.commit, pr.right.commit }, ':')
 end
@@ -137,7 +154,7 @@ local function setup_octo_review_cache()
     end
   end
 
-  vim.api.nvim_create_user_command('OctoReviewCacheClear', function()
+  vim.api.nvim_create_user_command('OctoCacheClear', function()
     octo_review_cache.changed_files = {}
     octo_review_cache.file_contents = {}
     vim.notify('Cleared Octo review cache', vim.log.levels.INFO)
@@ -247,6 +264,8 @@ local function edit_diff_file()
         pcall(vim.api.nvim_win_set_cursor, 0, cursor)
       end
 
+      vim.schedule(refresh_treesitter_highlight)
+
       -- Defer heavy cleanup (file:destroy() per diff buffer) so the
       -- editor stays responsive. Event suppression keeps it fast.
       vim.schedule(function()
@@ -256,6 +275,7 @@ local function edit_diff_file()
         dv_lib.dispose_view(view)
         vim.o.eventignore = ei
       end)
+
       return
     end
   end
@@ -309,6 +329,7 @@ local function edit_diff_file()
         vim.cmd('edit ' .. vim.fn.fnameescape(path))
         pcall(vim.api.nvim_win_set_cursor, 0, cursor)
         vim.cmd 'doautocmd BufEnter'
+        refresh_treesitter_highlight()
       end)
       return
     end
@@ -327,9 +348,20 @@ return {
       {
         '<leader>do',
         function()
+          -- Phase tracer: enable via `:lua vim.g.do_perf = true`, run
+          -- `<leader>do` once, paste output. Off by default; near-zero overhead.
+          local t0 = vim.g.do_perf and vim.uv.hrtime() or nil
+          local segs = {}
+          local function mark(label)
+            if t0 then
+              table.insert(segs, string.format('%s=%.0fms', label, (vim.uv.hrtime() - t0) / 1e6))
+            end
+          end
+
           local current_file = vim.fn.expand '%:p'
           local current_line = vim.fn.line '.'
           local has_file = current_file ~= '' and vim.bo.buftype == ''
+          mark 'preamble'
 
           -- After diffview opens, restore cursor line if the same file is shown
           if has_file and current_line > 1 then
@@ -356,8 +388,14 @@ return {
               end,
             })
           end
+          mark 'cursor_hook'
 
           diffview_open 'DiffviewOpen'
+          mark 'diffview_open'
+
+          if t0 then
+            vim.notify('[do-perf] ' .. table.concat(segs, ' '), vim.log.levels.INFO)
+          end
         end,
         desc = '[D]iff [O]pen (vs index)',
       },
@@ -632,7 +670,7 @@ return {
   -- Octo: GitHub PR review from within Neovim
   {
     'pwntester/octo.nvim',
-    cmd = 'Octo',
+    cmd = { 'Octo', 'OctoCacheClear' },
     dependencies = {
       'nvim-lua/plenary.nvim',
       'nvim-telescope/telescope.nvim',

@@ -224,8 +224,9 @@ set_exit_alert() {
     fi
 
     # Add window to alerts file with exit code and label (5-field format)
-    # Validate win is in format "session:window" (both non-empty, valid chars)
-    if [[ "$win" =~ ^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$ ]]; then
+    # Session: project convention (alnum, dot, underscore, hyphen).
+    # Window: any non-colon, non-control chars (allows spaces in names).
+    if [[ "$win" =~ ^[a-zA-Z0-9._-]+:[^:[:cntrl:]]+$ ]]; then
         local entry="${win}:exit:${code}:${label}"
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
@@ -278,8 +279,9 @@ set_window_alert() {
     fi
 
     # Add window to alerts file with agent type if not already present
-    # Validate win is in format "session:window" (both non-empty, valid chars)
-    if [[ "$win" =~ ^[a-zA-Z0-9._-]+:[a-zA-Z0-9._-]+$ ]]; then
+    # Session: project convention (alnum, dot, underscore, hyphen).
+    # Window: any non-colon, non-control chars (allows spaces in names).
+    if [[ "$win" =~ ^[a-zA-Z0-9._-]+:[^:[:cntrl:]]+$ ]]; then
         local entry="${win}:${agent}"
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
