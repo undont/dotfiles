@@ -17,9 +17,12 @@ if [[ "$SESSION" == '#{session_name}' ]] || [[ -z "$SESSION" ]]; then
     WINDOW_ID=$(tmux display-message -p '#D')
 fi
 
-# Validate session and window names to prevent injection attacks
-# Only allow alphanumeric characters, dots, underscores, and hyphens
-if [[ ! "$SESSION" =~ ^[a-zA-Z0-9._-]+$ ]] || [[ ! "$WINDOW" =~ ^[a-zA-Z0-9._-]+$ ]]; then
+# Validate session and window names. Sessions follow project convention
+# (alphanumerics, dots, underscores, hyphens — see validate_session_name).
+# Windows are looser because tmux assigns names from running commands and
+# user-rename can include spaces; reject only colons (alerts file delimiter)
+# and control characters.
+if [[ ! "$SESSION" =~ ^[a-zA-Z0-9._-]+$ ]] || [[ ! "$WINDOW" =~ ^[^:[:cntrl:]]+$ ]]; then
     exit 1
 fi
 

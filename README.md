@@ -109,7 +109,7 @@ The installer detects what's already configured and only shows steps you still n
 
 - **LSP** — TypeScript, Go, Python, Lua, C#/.NET (Roslyn), ESLint, Bash, CSS/Tailwind, HTML, YAML + more
 - **SonarLint** — second LSP client surfacing SonarQube/SonarCloud diagnostics for JS/TS, Python, Go, C#, C/C++, PHP, HTML/CSS, IaC, Docker, Secrets. Connected mode auto-enables when `SONARQUBE_TOKEN` + `SONARQUBE_ORG` are in the env; per-project binding via `.sonarlint/connectedMode.json`
-- **Git** — LazyGit (status, blame, diff), gitsigns (inline decorations, hunk navigation)
+- **Git** — LazyGit (status, blame, diff), gitsigns (inline decorations, hunk navigation), Fugitive + Rhubarb (`:Git`, `:Git blame`, `:Gdiffsplit`, `:GBrowse` to open on GitHub)
 - **PR review** — Octo.nvim for GitHub PRs + diffview for side-by-side diffs and merge conflict resolution
 - **Build picker** (`Space q`) — auto-detects Go, TypeScript, .NET, and Makefile projects
 - **Test runner** — Neotest with three adapters: .NET, Go, and Vitest/Bun

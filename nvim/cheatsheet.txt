@@ -130,6 +130,11 @@ Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
 Git modified → diagnostics qf | <leader>xm
+Filter qf list (keep matching) | :Cfilter /pat/
+Filter qf list (drop matching) | :Cfilter! /pat/
+Filter loclist (keep / drop) | :Lfilter[!] /pat/
+Qf stack older (undo filter) | <leader>x[
+Qf stack newer (redo filter) | <leader>x]
 
 ## windows @windows
 Move to window | Ctrl+hjkl
@@ -181,6 +186,28 @@ Diff against last commit | <leader>HD
 Inline hunk diff | <leader>Hi
 Blame line popup | <leader>Hb
 Toggle inline blame | <leader>HB
+
+## fugitive @fugitive
+Status (g? for help) | <leader>Gs
+Blame | <leader>Gb
+Diff against index | <leader>Gd
+File commit log → qf | <leader>Gl
+Stage current buffer | <leader>Gw
+Open on GitHub | <leader>Go (normal/visual)
+Run any git command | :G {args}
+
+## coerce @coerce
+To snake_case | crs
+To camelCase | crc
+To MixedCase | crm
+To kebab-case | crk
+To UPPER_CASE | cru
+To dash-case | cr-
+To dot.case | cr.
+To space case | cr<space>
+To Title Case | crt
+Case-aware substitute | :S/{from}/{to}/g
+Subvert (multi-form sub) | :Subvert/facilit{y,ies}/building{,s}/g
 
 ## diff @diff
 Diffview open (vs index) | <leader>do

@@ -35,10 +35,19 @@ local function read_project_key(root)
   return decoded.projectKey
 end
 
+--- Mason install root. `vim.env.MASON` is only set after `mason.setup()`
+--- runs, which may not have happened by the time sonarlint.nvim's config
+--- fires (sonarlint.nvim doesn't depend on mason.nvim, so lazy-loading via
+--- `ft = FILETYPES` can outrun mason). Fall back to mason's documented
+--- default install location so paths resolve regardless of load order.
+local function mason_root()
+  return vim.env.MASON or (vim.fn.stdpath 'data' .. '/mason')
+end
+
 --- Build the analyzer jar list, filtering out any that aren't on disk so a
 --- partial Mason install doesn't make the language server fail to start.
 local function analyzer_jars()
-  local dir = vim.fn.expand '$MASON/share/sonarlint-analyzers'
+  local dir = mason_root() .. '/share/sonarlint-analyzers'
   local candidates = {
     'sonarpython.jar',
     'sonarcfamily.jar', -- C / C++
@@ -316,6 +325,76 @@ local function run_scan(mode)
   end
 end
 
+-- Suppress sonarlint when entering diff/review contexts (Octo, Diffview).
+-- Strategy: leave existing clients running (they continue analysing the
+-- pre-review buffers), but block new attaches via the FileType-handler gate
+-- installed in config(). This avoids a JVM cold-start cost when leaving
+-- review and dramatically reduces chatter, at the cost of sonarlint
+-- continuing to analyse the small set of files open before the review.
+--
+-- vim.g.sonarlint_suppressed is the source of truth; ui.lua's notify wrap
+-- and fidget's progress.ignore both consult it.
+vim.g.sonarlint_suppressed = false
+
+local function suppress_sonarlint()
+  vim.g.sonarlint_suppressed = true
+end
+
+local function try_restore_sonarlint()
+  if not vim.g.sonarlint_suppressed then
+    return
+  end
+
+  -- Same guard as roslyn: don't restore while still in a review context
+  local dv_ok, dv_lib = pcall(require, 'diffview.lib')
+  if dv_ok and dv_lib.get_current_view() then
+    return
+  end
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
+      return
+    end
+  end
+
+  vim.g.sonarlint_suppressed = false
+
+  local ok, _ = pcall(require, 'sonarlint')
+  if not ok then
+    return
+  end
+
+  -- Re-fire FileType for loaded buffers so sonarlint.nvim reattaches
+  local filetype_set = {}
+  for _, ft in ipairs(FILETYPES) do
+    filetype_set[ft] = true
+  end
+
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and filetype_set[vim.bo[buf].filetype] then
+      vim.api.nvim_exec_autocmds('FileType', { buffer = buf })
+    end
+  end
+end
+
+vim.api.nvim_create_autocmd('FileType', {
+  pattern = { 'octo', 'DiffviewFiles', 'DiffviewFileHistory' },
+  callback = suppress_sonarlint,
+})
+
+-- Re-enable sonarlint when returning to normal buffers after review closes.
+vim.api.nvim_create_autocmd('BufEnter', {
+  callback = function()
+    if vim.g.sonarlint_suppressed then
+      vim.defer_fn(function()
+        if not vim.g.sonarlint_suppressed then
+          return
+        end
+        try_restore_sonarlint()
+      end, 2000)
+    end
+  end,
+})
+
 return {
   {
     'https://gitlab.com/schrieveslaach/sonarlint.nvim',
@@ -341,7 +420,7 @@ return {
       local cmd = { 'sonarlint-language-server', '-stdio', '-analyzers' }
       vim.list_extend(cmd, analyzer_jars())
 
-      local extension_dir = vim.fn.expand '$MASON/packages/sonarlint-language-server/extension'
+      local extension_dir = mason_root() .. '/packages/sonarlint-language-server/extension'
       local opts = {
         server = {
           cmd = cmd,
@@ -351,7 +430,7 @@ return {
           -- spawns omnisharp when actually scanning a .cs file.
           init_options = {
             omnisharpDirectory = extension_dir .. '/omnisharp',
-            csharpOssPath = vim.fn.expand '$MASON/share/sonarlint-analyzers/sonarcsharp.jar',
+            csharpOssPath = mason_root() .. '/share/sonarlint-analyzers/sonarcsharp.jar',
           },
           settings = {
             sonarlint = {},
@@ -449,6 +528,51 @@ return {
       end
 
       require('sonarlint').setup(opts)
+
+      -- Gate sonarlint's FileType autocmd on `vim.g.sonarlint_suppressed`.
+      -- Without this, every `FileType cs` (review buffers, `<leader>de`'s
+      -- `:edit`) runs the handler synchronously -- which calls find_root_dir
+      -- (walks the filesystem) and, on cache miss, start_sonarlint_lsp
+      -- (spawns a JVM-backed client). On large .NET repos that's ~1s warm /
+      -- ~15s cold, blocking the editor on every cs file open during review.
+      --
+      -- sonarlint.nvim registers a single FileType autocmd with
+      -- `pattern = table.concat(FILETYPES, ',')`. nvim_get_autocmds splits
+      -- multi-pattern autocmds into per-pattern entries that share an id and
+      -- callback, so we can't compare patterns directly -- find the id
+      -- whose entries cover the most of FILETYPES (uniquely sonarlint).
+      local filetype_set = {}
+      for _, ft in ipairs(FILETYPES) do
+        filetype_set[ft] = true
+      end
+
+      local id_count, id_callback = {}, {}
+      for _, ac in ipairs(vim.api.nvim_get_autocmds { event = 'FileType' }) do
+        if ac.callback and filetype_set[ac.pattern] then
+          id_count[ac.id] = (id_count[ac.id] or 0) + 1
+          id_callback[ac.id] = ac.callback
+        end
+      end
+
+      local sonar_id, sonar_count, sonar_cb = nil, 0, nil
+      for id, count in pairs(id_count) do
+        if count > sonar_count then
+          sonar_id, sonar_count, sonar_cb = id, count, id_callback[id]
+        end
+      end
+
+      if sonar_id and sonar_count >= math.floor(#FILETYPES / 2) then
+        vim.api.nvim_del_autocmd(sonar_id)
+        vim.api.nvim_create_autocmd('FileType', {
+          pattern = FILETYPES,
+          callback = function(args)
+            if vim.g.sonarlint_suppressed then
+              return
+            end
+            return sonar_cb(args)
+          end,
+        })
+      end
     end,
   },
 }

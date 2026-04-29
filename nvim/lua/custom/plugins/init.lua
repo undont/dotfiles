@@ -18,6 +18,7 @@ return {
   { import = 'custom.plugins.sonarlint' },
   { import = 'custom.plugins.completion' },
   { import = 'custom.plugins.git' },
+  { import = 'custom.plugins.tpope' },
   { import = 'custom.plugins.copilot' },
   { import = 'custom.plugins.pr-review' },
   { import = 'custom.plugins.claude-prompt' },

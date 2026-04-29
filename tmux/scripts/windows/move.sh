@@ -60,6 +60,9 @@ fi
 # Move the window to the target session
 tmux move-window -s "${SOURCE_SESSION}:${WINDOW_INDEX}" -t "${TARGET_SESSION}:"
 
+# Renumber remaining windows in the source session to fill the gap left behind
+tmux move-window -r -s "$SOURCE_SESSION" 2>/dev/null
+
 # Update alert tracking: replace source session name with target in the alerts file.
 # Tmux window options (@*_alert) travel with the window automatically — only the
 # flat file needs updating. Handles both 3-field and 5-field alert formats.

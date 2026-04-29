@@ -10,12 +10,12 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - **windows/**: `list.sh`, `rename.sh`, `kill.sh`, `undo.sh`, `duplicate.sh`, `move.sh` - Window operations
 - **panes/**: `kill.sh`, `undo.sh` - Pane management
 - **launchers/**: `list.sh`, `picker.sh`, `run.sh`, `prompt.sh`, `new.sh`, `new-dir.sh`, `settings.sh`, `duplicate.sh`, `delete.sh` - Session launcher system
-- **instances/**: `claude.sh`, `opencode.sh`, `nvim.sh`, `new.sh`, `kill.sh`, `connect-nvim.sh` - Process instance management (list, create, kill)
-- **alerts/**: `show.sh`, `clear.sh`, `cleanup.sh`, `update-timestamp.sh` - Agent alert system for status bar
+- **instances/**: `claude.sh`, `opencode.sh`, `copilot.sh`, `nvim.sh`, `new.sh`, `kill.sh`, `connect-nvim.sh` - Process instance management (list, create, kill)
+- **alerts/**: `show.sh`, `clear.sh`, `cleanup.sh`, `pick.sh`, `update-timestamp.sh`, `update-rename.sh` - Agent alert system for status bar
 - **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions
-- **themes/**: `pick.sh`, `reload-fzf.sh`, `reload-ghostty.sh` - Runtime theme switching
-- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `dotfiles-status.sh`, `nav.sh` - Shared utilities
-- **_lib/**: `common.sh`, `paths.sh`, `session.sh`, `alerts.sh`, `ui.sh` - Shared libraries
+- **themes/**: `pick.sh`, `picker.sh`, `reload-fzf.sh`, `reload-ghostty.sh` - Runtime theme switching
+- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `dotfiles-status.sh`, `nav.sh`, `reload-shells.sh`, `show-help.sh` - Shared utilities
+- **_lib/**: `common.sh`, `paths.sh`, `session.sh`, `alerts.sh`, `process.sh`, `ui.sh` - Shared libraries
 - **tests/**: `test-*.sh` - Test suites
 
 ## Tmux Libraries
@@ -25,6 +25,7 @@ Scripts are organised into functional subdirectories under `tmux/scripts/`:
 - `paths.sh`: XDG-compliant undo file paths with legacy fallback
 - `session.sh`: Session management functions
 - `alerts.sh`: Multi-agent alert system (Claude, OpenCode)
+- `process.sh`: Graceful process termination (SIGTERM → wait → SIGKILL) shared by `kill.sh` scripts in `sessions/`, `panes/`, `windows/`, `instances/`
 - `ui.sh`: Terminal dialogs and prompts
 
 ## Template Conventions
