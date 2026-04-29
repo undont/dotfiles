@@ -256,12 +256,14 @@ function M.setup()
   vim.keymap.set('n', '<leader>xq', toggle_quickfix, { desc = '[Q]uickfix list toggle' })
   vim.keymap.set('n', '<leader>xl', toggle_loclist, { desc = '[L]ocation list toggle' })
 
-  -- Diagnostics into native lists
+  -- Diagnostics into native lists. Explicit titles let `build.lua`'s
+  -- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
+  -- match these lists and prune resolved entries on DiagnosticChanged.
   vim.keymap.set('n', '<leader>xx', function()
-    vim.diagnostic.setqflist()
+    vim.diagnostic.setqflist { title = 'Diagnostics: all' }
   end, { desc = 'All [D]iagnostics to quickfix' })
   vim.keymap.set('n', '<leader>xX', function()
-    vim.diagnostic.setloclist()
+    vim.diagnostic.setloclist { title = 'Diagnostics: buffer' }
   end, { desc = 'Buffer diagnostics to loclist' })
 
   vim.keymap.set('n', ']q', bracketed_qf 'forward', { desc = 'Next quickfix entry' })
