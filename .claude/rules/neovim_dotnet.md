@@ -59,19 +59,36 @@ in `init`) to prevent `vim.lsp.enable` firing before `lock_target` and
 4. `source_deferred_plugin()` — clears the block, `dofile(plugin/roslyn.lua)`
    which calls `vim.lsp.enable('roslyn')`
 
-## Roslyn Suppress/Restore (Diffview & Octo)
+## Roslyn During Diffview / Octo
 
-Roslyn's solution analysis freezes navigation on large diffs. The suppress/restore
-cycle:
+**Roslyn is NOT suppressed during review.** Earlier iterations called
+`vim.lsp.enable('roslyn', false)` on review entry to block new attaches, but
+that API also stops every running roslyn client (see `lsp.lua` source:
+`"stops related LSP clients and servers"`), forcing a multi-second cold-restart
+on every review entry/exit cycle. Each restart triggered the
+`RoslynInitialized` autocmd which `force_refresh`es semantic tokens on every
+loaded `.cs` buffer — that's what produced the post-`<leader>de` editor freeze.
 
-- **Suppress:** `FileType` autocmd for `octo`/`DiffviewFiles`/`DiffviewFileHistory`
-  → `vim.lsp.enable('roslyn', false)` + `client:stop(true)` + temporary
-  `vim.notify` filter for exit messages (10s timeout for large solutions)
-- **Restore:** `try_restore_roslyn()` checks `diffview.lib.get_current_view()`
-  (NOT buffer filetypes — diffview buffers linger after close and would block
-  restore). Then calls `source_deferred_plugin()` which re-enables roslyn.
-- **Triggers:** `FileType cs` and `BufEnter *.cs` (2s defer) both call
-  `try_restore_roslyn()` to catch different re-entry paths.
+Why we don't need to block attaches: Neovim's built-in `lsp_enable_callback`
+skips buffers whose `buftype` isn't `''` or `'help'`. Octo review buffers use
+`buftype=nofile`, diffview file diff buffers use `buftype=nowrite`. So roslyn
+doesn't auto-attach to them anyway. The "hundreds of diff buffers freezing
+roslyn" concern is handled by Neovim itself.
+
+What we do keep:
+- **`vim.g.roslyn_suppressed` flag** — set on `FileType octo`/`DiffviewFiles`/
+  `DiffviewFileHistory`, cleared by `maybe_clear_roslyn_flag` (deferred 500ms
+  on `BufEnter *.cs`) once `diffview.lib.get_current_view()` is nil and no
+  `octo` buffers remain.
+- **Notify filtering** lives in the wrap inside `ui.lua`'s fidget config (NOT
+  here). Fidget's `override_vim_notify = true` overwrites `vim.notify` at
+  setup time, blowing away wraps installed at module load — so the single
+  source of truth has to live after fidget setup. The wrap consults
+  `vim.g.roslyn_suppressed` and drops messages matching `[Rr]oslyn` (body) or
+  `roslyn` (title, case-insensitive) while the flag is set.
+- **Initial `source_deferred_plugin()`** in `config()` — still needed to
+  unblock roslyn.nvim's plugin file (gated by `vim.g.loaded_roslyn_plugin`)
+  after our `lock_target` / `ignore_target` config is applied.
 
 ## Diffview Edit (`<leader>de`) — No Treesitter Pre-warming
 

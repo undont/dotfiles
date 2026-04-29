@@ -104,6 +104,39 @@ function M.setup()
     end,
   })
 
+  -- Fire `User RealDotnetFile` only for cs/razor outside a review context.
+  -- Lets heavy dotnet plugins (roslyn.nvim) lazy-load on this event instead
+  -- of `ft = 'cs'`, so cold-start `<leader>do` from a dashboard doesn't pay
+  -- their config cost just to render diff buffers. Buftype alone isn't enough
+  -- because diffview's right-pane index buffers use `buftype=''` (they're
+  -- editable for staging) -- we also have to check for an active diffview
+  -- view or any loaded octo buffer.
+  local function in_review_context()
+    local ok, dv_lib = pcall(require, 'diffview.lib')
+    if ok and dv_lib.get_current_view() then
+      return true
+    end
+    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+      if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
+        return true
+      end
+    end
+    return false
+  end
+
+  vim.api.nvim_create_autocmd('FileType', {
+    pattern = { 'cs', 'razor' },
+    callback = function(args)
+      if vim.bo[args.buf].buftype ~= '' then
+        return
+      end
+      if in_review_context() then
+        return
+      end
+      vim.api.nvim_exec_autocmds('User', { pattern = 'RealDotnetFile' })
+    end,
+  })
+
   -- Sort JSON keys (strip trailing commas, sort with jq, reformat with prettier)
   local function sort_json_keys(buf)
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)

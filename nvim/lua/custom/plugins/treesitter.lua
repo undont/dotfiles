@@ -9,6 +9,7 @@ return {
     build = ':TSUpdate',
     config = function()
       local parsers = {
+        'astro',
         'bash',
         'c',
         'c_sharp',

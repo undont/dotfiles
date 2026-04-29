@@ -185,32 +185,25 @@ local function setup_semantic_token_fix()
   })
 end
 
--- Roslyn suppression for Octo PR review. Roslyn's solution analysis
--- freezes navigation on large PRs with hundreds of .cs diff buffers.
-local roslyn_suppressed = false
+-- Roslyn during diff/review contexts (Diffview, Octo).
+-- Strategy: do NOTHING to the LSP client. Neovim's `lsp_enable_callback`
+-- skips buffers with `buftype` other than '' or 'help', and diff buffers
+-- have buftype=nofile (octo, diffview file_history) or buftype=nowrite
+-- (diffview file diffs) -- so roslyn never auto-attaches to them anyway.
+-- We previously called `vim.lsp.enable('roslyn', false)` to "block new
+-- attaches", but that ALSO stops every running roslyn client (per the
+-- vim.lsp.enable contract: "stops related LSP clients and servers"),
+-- which paid a multi-second cold-restart on every review entry/exit cycle.
+--
+-- vim.g.roslyn_suppressed remains as a flag so the notify wrap in ui.lua
+-- and fidget's progress.ignore can still drop residual chatter while in
+-- review (e.g. messages emitted by an unrelated client startup).
+vim.g.roslyn_suppressed = false
 
 --- Source roslyn.nvim's plugin file after our config is applied. We block
 --- it in init (vim.g.loaded_roslyn_plugin) to prevent vim.lsp.enable
 --- firing before lock_target + ignore_target are set.
---- Skips enabling entirely if roslyn_suppressed is set (Octo PR review).
-local roslyn_plugin_sourced = false
-
 local function source_deferred_plugin()
-  if roslyn_suppressed then
-    vim.notify('Roslyn skipped (PR review active) — opens automatically after review', vim.log.levels.INFO)
-    return
-  end
-
-  if roslyn_plugin_sourced then
-    -- Plugin was already sourced before review — just re-enable.
-    -- Scheduled so the editor stays responsive during solution loading.
-    vim.schedule(function()
-      vim.lsp.enable 'roslyn'
-    end)
-    return
-  end
-
-  roslyn_plugin_sourced = true
   vim.g.loaded_roslyn_plugin = nil
   local plugin_file = vim.api.nvim_get_runtime_file('plugin/roslyn.lua', false)[1]
   if plugin_file then
@@ -218,47 +211,20 @@ local function source_deferred_plugin()
   end
 end
 
--- Suppress roslyn when entering diff/review contexts (Octo, Diffview).
--- Roslyn's solution analysis freezes navigation on large diffs.
-local function suppress_roslyn()
-  if roslyn_suppressed then
-    return
-  end
-  roslyn_suppressed = true
-  vim.lsp.enable('roslyn', false)
-
-  -- Silence roslyn exit notifications from the forced stop. The on_exit
-  -- callback fires via vim.schedule after the process exits, which can
-  -- take several seconds for large solutions.
-  local orig_notify = vim.notify
-  vim.notify = function(msg, level, opts)
-    if type(msg) == 'string' and msg:match '[Rr]oslyn' then
-      return
-    end
-    return orig_notify(msg, level, opts)
-  end
-
-  for _, client in ipairs(vim.lsp.get_clients { name = 'roslyn' }) do
-    client:stop(true)
-  end
-
-  vim.defer_fn(function()
-    vim.notify = orig_notify
-  end, 10000)
-end
-
 vim.api.nvim_create_autocmd('FileType', {
   pattern = { 'octo', 'DiffviewFiles', 'DiffviewFileHistory' },
-  callback = suppress_roslyn,
+  callback = function()
+    vim.g.roslyn_suppressed = true
+  end,
 })
 
--- Re-enable roslyn after diff/review contexts close.
-local function try_restore_roslyn()
-  if not roslyn_suppressed then
+-- Clear the flag once the review context is fully torn down. Diffview
+-- buffers can linger after close, so check the active view (not buffer
+-- filetypes) plus any remaining octo buffers.
+local function maybe_clear_roslyn_flag()
+  if not vim.g.roslyn_suppressed then
     return
   end
-  -- Check if an actual diffview/octo context is still active.
-  -- Don't rely on buffer filetypes — diffview buffers can linger after close.
   local dv_ok, dv_lib = pcall(require, 'diffview.lib')
   if dv_ok and dv_lib.get_current_view() then
     return
@@ -268,54 +234,27 @@ local function try_restore_roslyn()
       return
     end
   end
-  roslyn_suppressed = false
-  source_deferred_plugin()
+  vim.g.roslyn_suppressed = false
 end
 
--- Re-enable when opening a real .cs file after review closes.
--- Deferred so <leader>de's :edit returns instantly — Roslyn's solution load
--- blocks the main loop for several seconds and must stay off the hot path.
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'cs',
-  callback = function(args)
-    if not roslyn_suppressed then
-      return
-    end
-    local name = vim.api.nvim_buf_get_name(args.buf)
-    if name ~= '' and vim.bo[args.buf].buftype == '' then
-      vim.defer_fn(function()
-        if roslyn_suppressed then
-          try_restore_roslyn()
-        end
-      end, 500)
-    end
-  end,
-})
-
--- Re-enable when returning to a buffer after diffview/octo closes
--- (handles case where .cs buffer is already loaded — no FileType fires).
--- Deferred so the buffer switch completes and editor stays responsive
--- while roslyn loads the solution in the background.
 vim.api.nvim_create_autocmd('BufEnter', {
   pattern = '*.cs',
   callback = function()
-    if roslyn_suppressed then
-      vim.defer_fn(function()
-        -- Check again — might have re-entered a review context
-        if not roslyn_suppressed then
-          return
-        end
-        try_restore_roslyn()
-      end, 2000)
+    if vim.g.roslyn_suppressed then
+      vim.defer_fn(maybe_clear_roslyn_flag, 500)
     end
   end,
 })
 
 return {
   -- Roslyn LSP via roslyn.nvim (diagnostics, go-to-def, hover, completions)
+  -- Loads on `User RealDotnetFile` (fired by core/autocmds.lua only for
+  -- buftype='' cs/razor buffers). Diff buffers in diffview/octo have
+  -- buftype=nowrite/nofile, so they don't trigger this and roslyn.nvim's
+  -- ~1.8s config cost stays off the cold-`<leader>do` critical path.
   {
     'seblyng/roslyn.nvim',
-    ft = { 'cs' },
+    event = 'User RealDotnetFile',
     dependencies = { 'mason-org/mason.nvim' },
     ---@module 'roslyn.config'
     ---@type RoslynNvimConfig

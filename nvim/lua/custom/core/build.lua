@@ -577,7 +577,43 @@ local AUTO_CLEAR_KINDS = {
   Build = 'Build errors resolved',
   Sonar = 'Sonar issues resolved',
   Modified = 'Modified file diagnostics resolved',
+  Diagnostics = 'Diagnostics resolved',
 }
+
+--- Prune diagnostic-backed items from `list` for `bufnr`. Returns
+--- (kind, label) when the list ends up empty so the caller can close
+--- the window and notify; returns nil when nothing was dropped or the
+--- title isn't in AUTO_CLEAR_KINDS.
+local function prune_diag_list(list, replace, bufnr, lines_with_diag)
+  if not list.title then
+    return
+  end
+  local kind = list.title:match '^(%w+):'
+  local resolved_label = kind and AUTO_CLEAR_KINDS[kind]
+  if not resolved_label then
+    return
+  end
+
+  local kept = {}
+  local dropped = 0
+  for _, item in ipairs(list.items) do
+    if item.bufnr == bufnr and item.valid == 1 and not lines_with_diag[item.lnum] then
+      dropped = dropped + 1
+    else
+      table.insert(kept, item)
+    end
+  end
+
+  if dropped == 0 then
+    return
+  end
+
+  replace { title = list.title, items = kept }
+
+  if #kept == 0 then
+    return kind, resolved_label
+  end
+end
 
 local function setup_auto_clear()
   local group = vim.api.nvim_create_augroup('CustomBuildAutoClear', { clear = true })
@@ -592,41 +628,43 @@ local function setup_auto_clear()
         return
       end
 
-      local qf = vim.fn.getqflist { title = 0, items = 0 }
-      local kind = qf.title and qf.title:match '^(%w+):'
-      local resolved_label = kind and AUTO_CLEAR_KINDS[kind]
-      if not resolved_label then
-        return
-      end
-
       local lines_with_diag = {}
       for _, d in ipairs(vim.diagnostic.get(bufnr)) do
         lines_with_diag[d.lnum + 1] = true
       end
 
-      local kept = {}
-      local dropped = 0
-      for _, item in ipairs(qf.items) do
-        if item.bufnr == bufnr and item.valid == 1 and not lines_with_diag[item.lnum] then
-          dropped = dropped + 1
-        else
-          table.insert(kept, item)
-        end
-      end
-
-      if dropped == 0 then
-        return
-      end
-
-      vim.fn.setqflist({}, 'r', { title = qf.title, items = kept })
-
-      if #kept == 0 then
+      -- Quickfix list
+      local qf = vim.fn.getqflist { title = 0, items = 0 }
+      local qf_kind, qf_label = prune_diag_list(qf, function(d)
+        vim.fn.setqflist({}, 'r', d)
+      end, bufnr, lines_with_diag)
+      if qf_kind then
         for _, win in ipairs(vim.api.nvim_list_wins()) do
-          if vim.bo[vim.api.nvim_win_get_buf(win)].buftype == 'quickfix' then
+          local b = vim.api.nvim_win_get_buf(win)
+          local info = vim.fn.getwininfo(win)[1]
+          if vim.bo[b].buftype == 'quickfix' and info and info.loclist == 0 then
             vim.api.nvim_win_close(win, true)
           end
         end
-        vim.notify(resolved_label, vim.log.levels.INFO, { title = kind, timeout = 3000 })
+        vim.notify(qf_label, vim.log.levels.INFO, { title = qf_kind, timeout = 3000 })
+      end
+
+      -- Per-window location lists. Skip qf/loclist windows themselves to
+      -- avoid double-processing (their getloclist points back to the parent).
+      for _, win in ipairs(vim.api.nvim_list_wins()) do
+        local b = vim.api.nvim_win_get_buf(win)
+        if vim.bo[b].buftype ~= 'quickfix' then
+          local loc = vim.fn.getloclist(win, { title = 0, items = 0 })
+          local loc_kind, loc_label = prune_diag_list(loc, function(d)
+            vim.fn.setloclist(win, {}, 'r', d)
+          end, bufnr, lines_with_diag)
+          if loc_kind then
+            vim.api.nvim_win_call(win, function()
+              vim.cmd 'lclose'
+            end)
+            vim.notify(loc_label, vim.log.levels.INFO, { title = loc_kind, timeout = 3000 })
+          end
+        end
       end
     end,
   })
