@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.87] - 2026-04-29
+
 ### Added
 - Nvim: octo.nvim review cache — session-local snapshot of `PullRequest.get_changed_files` and per-file `FileEntry.fetch` results, keyed by `repo:number:left:right` commit pair. Reopening the same PR review (or `<leader>pe` resume) skips the GraphQL roundtrip and per-file diff fetches, so `Octo review resume` is instant on warm cache instead of a multi-second wait. `:OctoReviewCacheClear` purges manually; stale entries for the same PR (different commits) are pruned automatically when a fresh fetch lands so commit pushes don't bloat memory
 - Nvim: octo.nvim review diff buffers now soft-wrap (`wrap` + `linebreak` + `breakindent`) — `:diffthis` forces `wrap=off` and there's no `diffopt` knob to prevent it, so an `OptionSet diff` autocmd in `pr-review.lua` re-applies the options synchronously for any window backed by an `octo://` buffer (fires inside `:diffthis`, so the unwrapped frame never reaches the screen). Mirrors diffview's default wrap behaviour for long lines
@@ -20,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `sonarlint.nvim` now auto-suppresses when entering PR review buffers (`octo`, `DiffviewFiles`, `DiffviewFileHistory`) and restores when leaving — mirrors the existing `roslyn.nvim` behaviour so heavy SonarLint analysis doesn't run on diff buffers. Logic lives in `sonarlint.lua` (not `pr-review.lua`) to keep review-context handling contained per-plugin
 
 ### Fixed
+- Nvim: sonarlint suppression now hard-gates the plugin's `FileType` autocmd, not just stops its existing clients — without the gate, every `<leader>de` (and every `.cs` review buffer's `FileType` fire) ran `find_root_dir` + spawned a fresh JVM-backed sonarlint client synchronously inside `:edit`, blocking the editor for ~1s warm and ~15s cold on large .NET solutions. The autocmd is replaced after `setup()` with a wrapped callback that no-ops while `sonarlint_suppressed` and delegates otherwise; the deferred restore path is unchanged. ~44× speedup on warm `<leader>de` (1231ms → 28ms), ~500× cold
 - Nvim: built-in `document_color` disabled globally to prevent assertion failures on stale client IDs (`document_color.lua:225: assertion failed!`). The previous `caps.textDocument.colorProvider = nil` workaround was ineffective because Neovim's `document_color` attaches based on the *server's* capability advertisement (e.g. `tailwindcss` on TSX), not the client's. Disabling outright avoids the race condition until upstream fixes the lifecycle bug
 - Nvim: `<leader>xm` skips paths that fail `filereadable` — `git ls-files -m` includes deleted-but-unstaged entries, and creating buffers for non-existent C# files triggered `easy-dotnet.nvim`'s `BootstrapFile` to walk a missing directory and crash with `-32000` (visible as `Crash dump written at /tmp/lua_*` notifications)
 - Nvim: `<leader>xm` Roslyn pull now gates behind `workspace/projectInitializationComplete` — pulling before Roslyn's workspace finishes initialising returned `-30099 Failed to get language`. Wraps the LSP method handler (Roslyn protocol contract, not roslyn.nvim's `User RoslynInitialized` autocmd) so cold-start scans wait for init and warm-start scans pull immediately

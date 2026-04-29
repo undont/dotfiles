@@ -542,6 +542,33 @@ return {
       end
 
       require('sonarlint').setup(opts)
+
+      -- Gate sonarlint's FileType autocmd on `sonarlint_suppressed`. Without
+      -- this, every `FileType cs` (review buffers, `<leader>de`'s `:edit`)
+      -- runs the handler synchronously -- which calls `find_root_dir` (walks
+      -- the filesystem) and, on cache miss, `start_sonarlint_lsp` (spawns
+      -- a JVM-backed client). On large .NET repos that's ~1s warm / ~15s
+      -- cold, blocking the editor on every cs file open during a review.
+      --
+      -- The handler is registered with pattern = table.concat(FILETYPES, ','),
+      -- which is distinctive enough to identify reliably.
+      local sonarlint_pattern = table.concat(FILETYPES, ',')
+      for _, ac in ipairs(vim.api.nvim_get_autocmds { event = 'FileType' }) do
+        if ac.pattern == sonarlint_pattern and ac.callback then
+          local orig = ac.callback
+          vim.api.nvim_del_autocmd(ac.id)
+          vim.api.nvim_create_autocmd('FileType', {
+            pattern = ac.pattern,
+            callback = function(args)
+              if sonarlint_suppressed then
+                return
+              end
+              return orig(args)
+            end,
+          })
+          break
+        end
+      end
     end,
   },
 }
