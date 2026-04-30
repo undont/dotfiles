@@ -1,6 +1,6 @@
 # Agent Alert Hooks
 
-This dotfiles repo includes a hook system that triggers tmux status bar alerts when AI coding agents (Claude Code, OpenCode) need your attention. When an agent stops and waits for input, a bell rings and an icon appears in the tmux status bar showing which session needs you.
+This dotfiles repo includes a hook system that triggers tmux status bar alerts when AI coding agents (Claude Code, Codex CLI, OpenCode) need your attention. When an agent stops and waits for input, a bell rings and an icon appears in the tmux status bar showing which session needs you.
 
 ## How It Works
 
@@ -21,7 +21,8 @@ Each agent has a dedicated icon and colour in the status bar:
 | Agent    | Icon | Colour  |
 |----------|------|---------|
 | Claude   | ⚡   | Yellow  |
-| OpenCode | 🔮   | Purple  |
+| Codex    | ⌘   | Cyan    |
+| OpenCode |    | Purple  |
 
 ## File Layout
 
@@ -35,6 +36,8 @@ scripts/hooks/
 └── wrappers/
     ├── claude-alert.sh      # Calls agent-alert.sh claude
     ├── claude-alert-clear.sh
+    ├── codex-alert.sh       # Calls agent-alert.sh codex
+    ├── codex-alert-clear.sh
     ├── opencode-alert.sh    # Calls agent-alert.sh opencode
     └── opencode-alert-clear.sh
 ```
@@ -157,6 +160,62 @@ export OPENCODE_CLEAR_SCRIPT="$HOME/dotfiles/scripts/hooks/agent-alert-clear.sh"
 ```
 
 Without these env vars, the plugin falls back to its own bundled scripts that set a `@opencode-alert` tmux user option and send a bell character.
+
+### Codex CLI
+
+Codex CLI uses `~/.codex/hooks.json` for lifecycle hooks and requires a feature flag in `~/.codex/config.toml`.
+
+**1. Enable the feature flag** in `~/.codex/config.toml`:
+
+```toml
+[features]
+codex_hooks = true
+```
+
+**2. Create `~/.codex/hooks.json`**:
+
+```json
+{
+  "hooks": {
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/codex-alert.sh"
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/codex-alert.sh"
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/codex-alert-clear.sh"
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+**Hook events explained:**
+
+- **Stop** — Agent finished its turn and is waiting for your next message
+- **PermissionRequest** — Agent needs approval to run a tool (e.g. file edit, bash command)
+- **UserPromptSubmit** — You sent a message, so clear the alert
 
 ## How Alerts Are Stored
 

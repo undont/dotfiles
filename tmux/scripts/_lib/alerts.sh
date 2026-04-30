@@ -36,7 +36,7 @@ get_agent_colour() {
     local agent="$1"
     case "$agent" in
         claude) echo "#f1fa8c" ;;      # Yellow
-        codex) echo "#7dcfff" ;;       # Cyan
+        codex) echo "#50fa7b" ;;       # Dracula green (matches codex logo)
         opencode) echo "#bd93f9" ;;    # Dracula purple
         copilot) echo "#58a6ff" ;;     # GitHub blue
         *) echo "#6272a4" ;;           # Dracula blue
@@ -49,7 +49,7 @@ get_agent_colour() {
 get_agent_display() {
     case "$1" in
         claude)   echo "⚡|#f1fa8c" ;;
-        codex)    echo "⌘|#7dcfff" ;;
+        codex)    echo "⌘|#50fa7b" ;;
         opencode) echo "|#bd93f9" ;;
         copilot)  echo "|#58a6ff" ;;
         *)        echo "󱜙|#6272a4" ;;
