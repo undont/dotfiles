@@ -196,9 +196,12 @@ return {
     event = 'VeryLazy',
     opts = {
       progress = {
-        -- Drop sonarlint/roslyn LSP progress chatter while suppressed (during
-        -- diffview/octo review). Outside review, progress shows normally.
-        -- Flags are owned by sonarlint.lua / dotnet.lua respectively.
+        -- sonarlint.nvim emits LSP progress on every BufEnter for a supported
+        -- filetype, which fidget would otherwise pop up. Drop it unconditionally
+        -- — the manual `<leader>ls` / `<leader>lS` scan uses a separate
+        -- `sonar-scan` client name (see plugins/sonarlint.lua) so its progress
+        -- still shows. Errors flow via vim.notify, not progress.
+        -- Roslyn progress stays gated on `vim.g.roslyn_suppressed` (review only).
         ignore = {
           function(msg)
             if not (msg.lsp_client and msg.lsp_client.name) then
@@ -206,7 +209,7 @@ return {
             end
             local name = msg.lsp_client.name
             if name == 'sonarlint.nvim' then
-              return vim.g.sonarlint_suppressed
+              return true
             end
             if name == 'roslyn' then
               return vim.g.roslyn_suppressed

@@ -36,6 +36,31 @@ local function patch_diagnostic_set()
   local false_positives = { IDE0005 = true, IDE0079 = true, CA1825 = true }
   local buf_owners = {} ---@type table<integer, table<string, integer>>
 
+  --- Suppress Roslyn style/suggestion diagnostics whose span lands inside
+  --- XML doc comments. Roslyn can report simplification-style IDE hints on
+  --- `<see cref="...">` targets, which is technically analyzable but noisy.
+  --- Keep warnings/errors so malformed XML docs and compiler diagnostics still
+  --- surface normally.
+  ---@param bufnr integer
+  ---@param d vim.Diagnostic
+  ---@return boolean
+  local function is_doc_comment_style_hint(bufnr, d)
+    if d.severity ~= vim.diagnostic.severity.HINT and d.severity ~= vim.diagnostic.severity.INFO then
+      return false
+    end
+    if type(d.lnum) ~= 'number' then
+      return false
+    end
+
+    local line = vim.api.nvim_buf_get_lines(bufnr, d.lnum, d.lnum + 1, false)[1]
+    if not line or not line:match '^%s*///' then
+      return false
+    end
+
+    local code = d.code and tostring(d.code) or ''
+    return code:match '^IDE' or (d.source == 'Style') or ((d.message or ''):match 'simplif')
+  end
+
   vim.diagnostic.set = function(namespace, bufnr, diagnostics, diag_opts)
     if not (bufnr and vim.api.nvim_buf_is_valid(bufnr) and vim.bo[bufnr].filetype == 'cs') then
       return orig(namespace, bufnr, diagnostics, diag_opts)
@@ -59,7 +84,7 @@ local function patch_diagnostic_set()
     -- Filter false positives and deduplicate across namespaces
     local deduped = {}
     for _, d in ipairs(diagnostics) do
-      if not false_positives[d.code] then
+      if not false_positives[d.code] and not is_doc_comment_style_hint(bufnr, d) then
         -- Use lnum:col:code when code is present (ignores message variations
         -- between push/pull channels or multi-project contexts).
         -- Fall back to message when code is absent.

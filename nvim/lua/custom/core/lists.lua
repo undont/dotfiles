@@ -52,31 +52,79 @@ local function sync_qf_idx_to_cursor(get_list, set_idx)
   end
 end
 
+-- noice's LSP/docs popups can temporarily take focus, which makes list
+-- navigation run against the popup buffer instead of the underlying editing
+-- window. Resolve back to the last real window first.
+local function resolve_list_nav_win()
+  local current = vim.api.nvim_get_current_win()
+  local cur_buf = vim.api.nvim_win_get_buf(current)
+  if vim.bo[cur_buf].filetype ~= 'noice' then
+    return current
+  end
+
+  local function is_source_win(win)
+    if not win or win == 0 or win == current or not vim.api.nvim_win_is_valid(win) then
+      return false
+    end
+    local buf = vim.api.nvim_win_get_buf(win)
+    return vim.bo[buf].filetype ~= 'noice'
+  end
+
+  local prev = vim.fn.win_getid(vim.fn.winnr '#')
+  if is_source_win(prev) then
+    return prev
+  end
+
+  for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+    if is_source_win(win) then
+      return win
+    end
+  end
+end
+
+local function with_list_nav_win(fn)
+  local win = resolve_list_nav_win()
+  if not win then
+    vim.notify('No source window for list navigation', vim.log.levels.WARN)
+    return
+  end
+  if win == vim.api.nvim_get_current_win() then
+    fn()
+    return
+  end
+  vim.api.nvim_set_current_win(win)
+  fn()
+end
+
 local function bracketed_qf(direction)
   return function()
-    if vim.tbl_isempty(vim.fn.getqflist()) then
-      vim.notify('Quickfix list is empty', vim.log.levels.WARN)
-      return
-    end
-    sync_qf_idx_to_cursor(vim.fn.getqflist, function(idx)
-      vim.fn.setqflist({}, 'a', { idx = idx })
+    with_list_nav_win(function()
+      if vim.tbl_isempty(vim.fn.getqflist()) then
+        vim.notify('Quickfix list is empty', vim.log.levels.WARN)
+        return
+      end
+      sync_qf_idx_to_cursor(vim.fn.getqflist, function(idx)
+        vim.fn.setqflist({}, 'a', { idx = idx })
+      end)
+      vim.cmd(string.format([[silent! lua require('mini.bracketed').quickfix(%q)]], direction))
     end)
-    vim.cmd(string.format([[silent! lua require('mini.bracketed').quickfix(%q)]], direction))
   end
 end
 
 local function bracketed_loc(direction)
   return function()
-    if vim.tbl_isempty(vim.fn.getloclist(0)) then
-      vim.notify('Location list is empty', vim.log.levels.WARN)
-      return
-    end
-    sync_qf_idx_to_cursor(function()
-      return vim.fn.getloclist(0)
-    end, function(idx)
-      vim.fn.setloclist(0, {}, 'a', { idx = idx })
+    with_list_nav_win(function()
+      if vim.tbl_isempty(vim.fn.getloclist(0)) then
+        vim.notify('Location list is empty', vim.log.levels.WARN)
+        return
+      end
+      sync_qf_idx_to_cursor(function()
+        return vim.fn.getloclist(0)
+      end, function(idx)
+        vim.fn.setloclist(0, {}, 'a', { idx = idx })
+      end)
+      vim.cmd(string.format([[silent! lua require('mini.bracketed').location(%q)]], direction))
     end)
-    vim.cmd(string.format([[silent! lua require('mini.bracketed').location(%q)]], direction))
   end
 end
 

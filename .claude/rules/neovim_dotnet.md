@@ -5,6 +5,31 @@ paths:
 
 # C# / Roslyn LSP — Architecture & Debugging
 
+## Diagnostic Filtering
+
+Roslyn diagnostics are post-processed in `patch_diagnostic_set()` in
+`dotnet.lua` before they reach Neovim. This wrapper exists because raw Roslyn
+output is too noisy in a few repo-specific ways.
+
+Current filtering behavior:
+
+- **Known false positives are dropped by code**: `IDE0005`, `IDE0079`,
+  `CA1825`.
+- **Metadata-as-source buffers are silenced entirely**: if the buffer path
+  contains `MetadataAsSource`, diagnostics are replaced with an empty list
+  because read-only decompiled framework code is not actionable.
+- **Suggestion-level XML doc comment style hints are dropped**: Roslyn can emit
+  simplification-style IDE diagnostics on XML doc comment symbol references such
+  as `<see cref="...">`. If the diagnostic severity is `HINT` or `INFO`, the
+  line starts with `///`, and the diagnostic looks style-related (`IDE*`, source
+  `Style`, or a message containing `simplif`), we suppress it. This keeps
+  "Name can be simplified" noise out of doc comments while preserving real
+  warnings/errors for malformed XML docs or compiler issues.
+- **Cross-project duplicates are deduped**: Roslyn can report the same problem
+  from multiple `.csproj` contexts. We key diagnostics by `lnum:col:code` when
+  code is present, otherwise `lnum:col:message`, so message wording differences
+  across push/pull channels do not create duplicates.
+
 ## Semantic Token Flow
 
 Roslyn semantic tokens require careful orchestration on Neovim 0.12+. The setup

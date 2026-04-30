@@ -759,7 +759,7 @@ compdef _dotfiles dot
 # check fails spuriously on every replay. Env-based silencing via
 # _ZO_DOCTOR=0 doesn't survive snapshotting; overriding the function does.
 if command -v zoxide >/dev/null 2>&1; then
-  eval "$(zoxide init zsh)"
+  eval "$(zoxide init --cmd cd zsh)"
   __zoxide_doctor() { :; }
 fi
 
