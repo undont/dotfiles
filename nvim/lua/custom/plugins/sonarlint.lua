@@ -332,8 +332,10 @@ end
 -- review and dramatically reduces chatter, at the cost of sonarlint
 -- continuing to analyse the small set of files open before the review.
 --
--- vim.g.sonarlint_suppressed is the source of truth; ui.lua's notify wrap
--- and fidget's progress.ignore both consult it.
+-- vim.g.sonarlint_suppressed gates the FileType-handler attach-block (below)
+-- and ui.lua's vim.notify chatter filter. Fidget progress for the
+-- `sonarlint.nvim` client is dropped unconditionally in ui.lua — analysis
+-- fires per-BufEnter and would otherwise pop a toast on every file open.
 vim.g.sonarlint_suppressed = false
 
 local function suppress_sonarlint()

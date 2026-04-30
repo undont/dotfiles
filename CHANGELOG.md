@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.88] - 2026-04-30
+
+### Added
+- Tmux: `prefix + C` opens a Codex instance switcher with the same picker UX as Claude/OpenCode — list running instances, create new ones, kill existing ones. Codex CLI hooks now wired up (`Stop`/`PermissionRequest` trigger alert, `UserPromptSubmit` clears it); uses `codex-alert.sh` / `codex-alert-clear.sh` wrappers
+- Nvim: macOS-style cmdline word-movement keymaps — `<M-Left>` / `<M-Right>` and `<M-b>` / `<M-f>` now work in command-line mode (`c` mode) just like they do in insert mode, jumping by word with Option/Alt arrow keys
+
+### Changed
+- Shell: zoxide now initializes via `eval "$(zoxide init --cmd cd zsh)"` instead of plain `zoxide init zsh` — `cd` keeps normal path semantics for real directories while still falling back to zoxide matching for non-path queries; avoids the broken `alias cd="z"` setup that intercepted literals like `.git`
+- Nvim: fidget's `progress.ignore` now drops `sonarlint.nvim` LSP progress unconditionally — sonarlint analyses on every `BufEnter` for one of the 18 supported filetypes, so the per-file progress toast was spammy outside review too. The manual `<leader>ls` / `<leader>lS` scan uses a separate `sonar-scan` client name and stays visible. Errors and the "ready and running" bootup notice still flow through `vim.notify`
+
+### Fixed
+- Nvim: quickfix navigation opened empty buffers for projects with a build subdirectory (e.g. a `web/` TypeScript workspace inside a monorepo git root). `setqflist({lines=...})` resolves tsc's relative paths against neovim's CWD (the git root) rather than `build_dir`, producing absolute paths missing the subdirectory prefix. `repair_qf_paths` / `resolve_real_path` now strip the CWD prefix and re-resolve against `build_dir` as a fallback, and `bufnr` is zeroed on unresolvable items so neovim doesn't navigate to a wrong empty buffer. `open_git_modified` now also wipes scan-created buffers in `on_finalise`, mirroring the sonarlint pattern
+- Nvim: `gra` code actions and `grf` fix-all now explicitly refresh diagnostics after applying edits, so diagnostics-backed quickfix/location lists prune resolved entries immediately instead of waiting for the LSP to republish on its own
+- Nvim: `]q`/`[q` and `]l`/`[l` now work while a `noice` LSP/docs popup is focused — the wrappers in `lists.lua` resolve back to the last non-`noice` window before syncing mini.bracketed's cursor-relative idx, so quickfix/location navigation still follows the underlying editing window
+- Nvim: Roslyn diagnostic noise inside XML doc comments — style/suggestion-level diagnostics (`HINT`/`INFO`) whose span lands on a `///` line are now filtered out in `patch_diagnostic_set()`. This removes "Name can be simplified" hints on `<see cref="...">` targets while keeping real warnings/errors for malformed XML docs or compiler issues
+
 ## [0.2.87] - 2026-04-29
 
 ### Added
