@@ -13,7 +13,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: macOS-style cmdline word-movement keymaps — `<M-Left>` / `<M-Right>` and `<M-b>` / `<M-f>` now work in command-line mode (`c` mode) just like they do in insert mode, jumping by word with Option/Alt arrow keys
 
 ### Changed
-- Shell: zoxide now initializes via `eval "$(zoxide init --cmd cd zsh)"` instead of plain `zoxide init zsh` — `cd` keeps normal path semantics for real directories while still falling back to zoxide matching for non-path queries; avoids the broken `alias cd="z"` setup that intercepted literals like `.git`
+- Shell: zoxide now initializes via `eval "$(zoxide init --cmd cd zsh)"` instead of plain `zoxide init zsh` — `cd` keeps normal path semantics for real directories while still falling back to zoxide matching for non-path queries;
 - Nvim: fidget's `progress.ignore` now drops `sonarlint.nvim` LSP progress unconditionally — sonarlint analyses on every `BufEnter` for one of the 18 supported filetypes, so the per-file progress toast was spammy outside review too. The manual `<leader>ls` / `<leader>lS` scan uses a separate `sonar-scan` client name and stays visible. Errors and the "ready and running" bootup notice still flow through `vim.notify`
 
 ### Fixed

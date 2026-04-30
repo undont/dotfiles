@@ -1,6 +1,6 @@
 # Agent Alert Hooks
 
-This dotfiles repo includes a hook system that triggers tmux status bar alerts when AI coding agents (Claude Code, Codex CLI, OpenCode) need your attention. When an agent stops and waits for input, a bell rings and an icon appears in the tmux status bar showing which session needs you.
+This dotfiles repo includes a hook system that triggers tmux status bar alerts when AI coding agents (Claude Code, Codex CLI, OpenCode, GitHub Copilot CLI) need your attention. When an agent stops and waits for input, a bell rings and an icon appears in the tmux status bar showing which session needs you.
 
 ## How It Works
 
@@ -23,6 +23,7 @@ Each agent has a dedicated icon and colour in the status bar:
 | Claude   | ⚡   | Yellow  |
 | Codex    | ⌘   | Cyan    |
 | OpenCode |    | Purple  |
+| Copilot  |    | Blue    |
 
 ## File Layout
 
@@ -39,7 +40,9 @@ scripts/hooks/
     ├── codex-alert.sh       # Calls agent-alert.sh codex
     ├── codex-alert-clear.sh
     ├── opencode-alert.sh    # Calls agent-alert.sh opencode
-    └── opencode-alert-clear.sh
+    ├── opencode-alert-clear.sh
+    ├── copilot-alert.sh     # Calls agent-alert.sh copilot
+    └── copilot-alert-clear.sh
 ```
 
 The wrappers are thin scripts that pass the agent name to the shared core scripts. Adding a new agent is as simple as creating a new pair of wrappers.
@@ -216,6 +219,43 @@ codex_hooks = true
 - **Stop** — Agent finished its turn and is waiting for your next message
 - **PermissionRequest** — Agent needs approval to run a tool (e.g. file edit, bash command)
 - **UserPromptSubmit** — You sent a message, so clear the alert
+
+### GitHub Copilot CLI
+
+GitHub Copilot CLI uses `~/.copilot/hooks/hooks.json` for lifecycle hooks. The wrappers also short-circuit (`exit 0`) when `$NVIM` is set so they don't fire when Copilot runs as an ACP subprocess inside Neovim (e.g. via `codecompanion.nvim`).
+
+Create `~/.copilot/hooks/hooks.json`:
+
+```json
+{
+  "hooks": {
+    "agentStop": [
+      {
+        "type": "command",
+        "command": "~/dotfiles/scripts/hooks/wrappers/copilot-alert.sh"
+      }
+    ],
+    "preToolUse": [
+      {
+        "type": "command",
+        "command": "~/dotfiles/scripts/hooks/wrappers/copilot-alert.sh"
+      }
+    ],
+    "userPromptSubmitted": [
+      {
+        "type": "command",
+        "command": "~/dotfiles/scripts/hooks/wrappers/copilot-alert-clear.sh"
+      }
+    ]
+  }
+}
+```
+
+**Hook events explained:**
+
+- **agentStop** — Agent finished its turn and is waiting for your next message
+- **preToolUse** — Agent is about to run a tool (covers permission-request style prompts)
+- **userPromptSubmitted** — You sent a message, so clear the alert
 
 ## How Alerts Are Stored
 

@@ -8,13 +8,9 @@ local centredApps = {
     "Ghostty",
     "Arc",
     "Dia",
-    "GoLand",
-    "WebStorm",
-    "PyCharm",
-    "Rider",
     "Discord",
     "Slack",
-    "Notion",
+    "Obsidian",
 }
 
 -- Store filters to prevent garbage collection
