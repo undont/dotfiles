@@ -9,6 +9,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ## [0.2.88] - 2026-04-30
 
 ### Added
+- Tmux: `prefix + C` opens a Codex instance switcher with the same picker UX as Claude/OpenCode — list running instances, create new ones, kill existing ones. Tmux infrastructure is in place (alerts, kill/new scripts, resurrect processes); Codex CLI hooks (`before/after/prompt`) are not yet wired up
 - Nvim: macOS-style cmdline word-movement keymaps — `<M-Left>` / `<M-Right>` and `<M-b>` / `<M-f>` now work in command-line mode (`c` mode) just like they do in insert mode, jumping by word with Option/Alt arrow keys
 
 ### Changed

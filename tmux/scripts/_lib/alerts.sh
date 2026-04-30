@@ -22,6 +22,7 @@ get_agent_icon() {
     local agent="$1"
     case "$agent" in
         claude) echo "⚡" ;;
+        codex) echo "⌘" ;;
         opencode) echo "" ;;
         copilot) echo "" ;;
         *) echo "󱜙" ;;
@@ -35,6 +36,7 @@ get_agent_colour() {
     local agent="$1"
     case "$agent" in
         claude) echo "#f1fa8c" ;;      # Yellow
+        codex) echo "#7dcfff" ;;       # Cyan
         opencode) echo "#bd93f9" ;;    # Dracula purple
         copilot) echo "#58a6ff" ;;     # GitHub blue
         *) echo "#6272a4" ;;           # Dracula blue
@@ -47,6 +49,7 @@ get_agent_colour() {
 get_agent_display() {
     case "$1" in
         claude)   echo "⚡|#f1fa8c" ;;
+        codex)    echo "⌘|#7dcfff" ;;
         opencode) echo "|#bd93f9" ;;
         copilot)  echo "|#58a6ff" ;;
         *)        echo "󱜙|#6272a4" ;;
@@ -107,7 +110,7 @@ get_window_alert_icons() {
 
     # Agent alerts
     local agent
-    for agent in claude opencode copilot; do
+    for agent in claude codex opencode copilot; do
         if printf '%s\n' "$opts" | grep -q "^@${agent}_alert "; then
             display=$(get_agent_display "$agent")
             icon="${display%%|*}"
@@ -250,7 +253,7 @@ set_window_alert() {
 
     # Validate agent name against whitelist
     case "$agent" in
-        claude|opencode|copilot) ;;
+        claude|codex|opencode|copilot) ;;
         *) return 1 ;;
     esac
 

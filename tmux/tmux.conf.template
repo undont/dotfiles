@@ -53,7 +53,7 @@ bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/sessions/list.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
-      --header-lines=7 \
+      --header-lines=5 \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --prompt ': ' \
       --border=rounded \
@@ -125,6 +125,9 @@ unbind -n C-x
 
 # Unbind default new-window (use Opt+t instead)
 unbind c
+
+# Unbind default new-window (Shift variant, reused for Codex picker)
+unbind C
 
 # Unbind default kill-pane (use Opt+s for kill-pane, Opt+x for kill-window)
 unbind x
@@ -203,6 +206,33 @@ bind c display-popup -w 95% -h 95% -E "\
       --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
       --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh claude)+abort' \
       --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) claude)+reload-sync(~/.tmux/scripts/instances/claude.sh)' | \
+  cut -d' ' -f1 | xargs -r tmux switch-client -t"
+
+# ─────────────────────────────────────────
+# Codex instance switcher (prefix + C)
+# Navigation: j/k (↓/↑), g/G (top/bottom)
+# Press / to start searching, Esc to return to navigation mode
+# ─────────────────────────────────────────
+bind C display-popup -w 95% -h 95% -E "\
+  source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
+  ~/.tmux/scripts/instances/codex.sh | \
+  fzf --ansi --reverse --exact --disabled --cycle \
+      --color=label:{{TMUX_FG_PRIMARY}} \
+      --header-lines=5 \
+      --prompt ': ' \
+      --border=rounded \
+      --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
+      --border-label-pos=bottom \
+      --preview 'tmux capture-pane -ep -t \$(echo {} | cut -d\" \" -f1)' \
+      --preview-window='right,70%,<80(bottom,40%)' \
+      --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
+      --bind 'enter:accept' \
+      --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
+      --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,x)' \
+      --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
+      --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+      --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh codex)+abort' \
+      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) codex)+reload-sync(~/.tmux/scripts/instances/codex.sh)' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────
@@ -462,7 +492,7 @@ set -g status-left-length 30
 set -g status-right-length 150
 
 # Window tabs: inactive=grey, active=purple highlight, bell/alert=pink
-setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@copilot_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
+setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@codex_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@copilot_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
 setw -g window-status-current-format '#[fg={{TMUX_STATUS_ACTIVE_FG}},bg={{TMUX_STATUS_ACTIVE_BG}},bold] #I:#W '
 
 # Pane borders: inactive=dark grey, active=purple
@@ -510,7 +540,7 @@ set -g @resurrect-capture-pane-contents 'on'
 # Restore specific programs (space-separated list)
 # Default: vi vim nvim emacs man less more tail top htop irssi weechat mutt ssh
 # Add more as needed:
-set -g @resurrect-processes 'ssh psql mysql sqlite3 claude opencode copilot "~rails server" "~npm start"'
+set -g @resurrect-processes 'ssh psql mysql sqlite3 claude codex opencode copilot "~rails server" "~npm start"'
 
 # Alternative: Restore ALL running programs (use with caution)
 # set -g @resurrect-processes ':all:'
