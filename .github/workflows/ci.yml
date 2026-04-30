@@ -124,7 +124,7 @@ jobs:
 
       - name: Benchmark zsh startup
         id: benchmark
-        run: ./scripts/ci/benchmark-startup.sh 500
+        run: ./scripts/ci/benchmark-startup.sh 125
 
       - name: Update startup badge
         if: github.ref == 'refs/heads/main' && github.event_name == 'push'
@@ -137,9 +137,9 @@ jobs:
           message: ${{ steps.benchmark.outputs.median_ms }}ms
           color: >-
             ${{
-              steps.benchmark.outputs.median_ms < 200 && 'brightgreen' ||
-              steps.benchmark.outputs.median_ms < 350 && 'green' ||
-              steps.benchmark.outputs.median_ms < 500 && 'yellow' ||
+              steps.benchmark.outputs.median_ms < 75 && 'brightgreen' ||
+              steps.benchmark.outputs.median_ms < 100 && 'green' ||
+              steps.benchmark.outputs.median_ms < 125 && 'yellow' ||
               'red'
             }}
 
