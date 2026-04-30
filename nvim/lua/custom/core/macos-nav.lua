@@ -20,6 +20,10 @@ function M.setup()
   vim.keymap.set('i', '<M-Right>', '<C-o>w', { desc = 'Move word right (Opt+Right)' })
   vim.keymap.set('i', '<M-b>', '<C-o>b', { desc = 'Move word left (Opt+Left)' })
   vim.keymap.set('i', '<M-f>', '<C-o>w', { desc = 'Move word right (Opt+Right)' })
+  vim.keymap.set('c', '<M-Left>', '<S-Left>', { desc = 'Move word left in cmdline (Opt+Left)' })
+  vim.keymap.set('c', '<M-Right>', '<S-Right>', { desc = 'Move word right in cmdline (Opt+Right)' })
+  vim.keymap.set('c', '<M-b>', '<S-Left>', { desc = 'Move word left in cmdline (Opt+Left)' })
+  vim.keymap.set('c', '<M-f>', '<S-Right>', { desc = 'Move word right in cmdline (Opt+Right)' })
 
   -- Line ends
   vim.keymap.set('i', '<Home>', '<C-o>0', { desc = 'Beginning of line (Cmd+Left)' })

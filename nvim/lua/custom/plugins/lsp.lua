@@ -163,6 +163,62 @@ local function resolve_and_apply(bufnr, action, client, on_done)
   end
 end
 
+--- Nudge attached LSPs to recompute diagnostics after code actions/fix-all.
+--- Some servers republish on didChange, others only on an explicit pull.
+---@param bufnr integer
+local function refresh_diagnostics_soon(bufnr)
+  local delays = { 100, 300, 800, 1500 }
+
+  for _, delay in ipairs(delays) do
+    vim.defer_fn(function()
+      if not vim.api.nvim_buf_is_valid(bufnr) or not vim.api.nvim_buf_is_loaded(bufnr) then
+        return
+      end
+
+      if next(vim.lsp.get_clients { bufnr = bufnr, method = 'textDocument/diagnostic' }) then
+        pcall(vim.lsp.diagnostic._enable, bufnr)
+        pcall(vim.lsp.diagnostic._refresh, bufnr)
+      end
+    end, delay)
+  end
+end
+
+--- Wrap the built-in code action picker so we can refresh diagnostics after
+--- the chosen action is applied without reimplementing Neovim's selector flow.
+local function code_action_with_refresh()
+  local bufnr = vim.api.nvim_get_current_buf()
+  local orig_select = vim.ui.select
+  local restored = false
+  local wrapped_select
+
+  local function restore()
+    if restored or vim.ui.select ~= wrapped_select then
+      return
+    end
+    vim.ui.select = orig_select
+    restored = true
+  end
+
+  wrapped_select = function(items, opts, on_choice)
+    return orig_select(items, opts, function(choice, ...)
+      if on_choice then
+        on_choice(choice, ...)
+      end
+      refresh_diagnostics_soon(bufnr)
+      restore()
+    end)
+  end
+
+  vim.ui.select = wrapped_select
+  vim.lsp.buf.code_action()
+
+  -- Restore even if the action list was empty or an action applied directly.
+  vim.defer_fn(function()
+    refresh_diagnostics_soon(bufnr)
+    restore()
+  end, 1500)
+end
+
 --- Apply all quickfix code actions for every diagnostic in the current buffer.
 --- Processes bottom-up so line shifts from earlier fixes don't break later ones.
 local function fix_all_in_file()
@@ -176,6 +232,7 @@ local function fix_all_in_file()
   local applied = 0
   local function apply_next(idx)
     if idx > #items then
+      refresh_diagnostics_soon(bufnr)
       vim.notify(string.format('Applied %d fix%s', applied, applied == 1 and '' or 'es'), vim.log.levels.INFO)
       return
     end
@@ -328,7 +385,7 @@ return {
             vim.lsp.buf.hover()
           end, 'Hover')
           map('grn', vim.lsp.buf.rename, 'Re[n]ame')
-          map('gra', vim.lsp.buf.code_action, 'Code [A]ction', { 'n', 'x' })
+          map('gra', code_action_with_refresh, 'Code [A]ction', { 'n', 'x' })
           map('grf', fix_all_in_file, '[F]ix all in file')
           map('grr', lsp_dedup 'references', '[R]eferences')
           map('gri', lsp_dedup 'implementation', '[I]mplementation')

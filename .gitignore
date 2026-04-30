@@ -47,4 +47,4 @@ scratch/*
 /zsh/p10k.zsh
 /Dockerfile.timemachine
 .plans/*
-/nvim/nvim.log
+nvim.log

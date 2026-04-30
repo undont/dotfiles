@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Kill a process (claude, opencode, nvim) running in a specific pane
+# Kill a process (claude, codex, opencode, copilot, nvim) running in a specific pane
 # without killing the pane itself. Shows a confirmation dialog first.
 #
 # Usage: kill-instance.sh <session:window.pane> <process_name>
-#   process_name: claude, opencode, or nvim
+#   process_name: claude, codex, opencode, copilot, or nvim
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -28,7 +28,7 @@ PROCESS="$2"
 
 # Validate process name
 case "$PROCESS" in
-    claude|opencode|copilot|nvim) ;;
+    claude|codex|opencode|copilot|nvim) ;;
     *)
         show_error "Unknown process: $PROCESS"
         exit 1
@@ -76,8 +76,8 @@ fi
 # Graceful shutdown: SIGTERM → wait 2s → SIGKILL
 graceful_kill_pids 2 "$CHILD_PID"
 
-# Clear alerts for claude/opencode/copilot (nvim doesn't use alerts)
-if [[ "$PROCESS" == "claude" || "$PROCESS" == "opencode" || "$PROCESS" == "copilot" ]]; then
+# Clear alerts for agent processes (nvim doesn't use alerts)
+if [[ "$PROCESS" == "claude" || "$PROCESS" == "codex" || "$PROCESS" == "opencode" || "$PROCESS" == "copilot" ]]; then
     SESSION=$(echo "$TARGET" | cut -d: -f1)
     WINDOW_IDX=$(echo "$TARGET" | cut -d: -f2 | cut -d. -f1)
     WINDOW_ID=$(tmux display-message -t "${SESSION}:${WINDOW_IDX}" -p '#{window_id}' 2>/dev/null || echo "")
