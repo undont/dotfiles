@@ -237,13 +237,18 @@ local function open_git_modified()
   -- crash with -32000.
   local bufnrs = {}
   local target = {}
+  local created = {}
   for _, f in ipairs(files) do
     local abs = vim.fn.fnamemodify(f, ':p')
     if vim.fn.filereadable(abs) == 1 then
+      local existed = vim.fn.bufnr(abs) ~= -1
       local bufnr = vim.fn.bufadd(abs)
       pcall(vim.fn.bufload, bufnr)
       table.insert(bufnrs, bufnr)
       target[bufnr] = true
+      if not existed then
+        table.insert(created, bufnr)
+      end
     end
   end
   if #bufnrs == 0 then
@@ -291,6 +296,11 @@ local function open_git_modified()
     augroup_name = 'GitModifiedScan',
     on_finalise = function()
       pcall(vim.api.nvim_del_augroup_by_id, pull_group)
+      for _, b in ipairs(created) do
+        if vim.api.nvim_buf_is_valid(b) then
+          pcall(vim.api.nvim_buf_delete, b, { force = true })
+        end
+      end
     end,
   }
 end

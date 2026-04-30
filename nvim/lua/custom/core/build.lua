@@ -353,6 +353,28 @@ local function resolve_real_path(name, build_dir)
       end
     end
   end
+
+  -- Fallback: when `setqflist({lines=...})` parses build output it resolves relative
+  -- filenames against neovim's CWD, not the build tool's CWD (build_dir). In monorepos
+  -- where the build subdirectory differs from the project root (e.g. a `web/` workspace
+  -- inside the git root) this produces absolute paths missing the subdirectory prefix.
+  -- Strip the neovim CWD prefix to recover the relative portion and re-resolve against
+  -- build_dir.
+  local nvim_cwd = vim.fn.getcwd() .. '/'
+  for _, cand in ipairs(candidates) do
+    if cand:sub(1, #nvim_cwd) == nvim_cwd then
+      local rel = cand:sub(#nvim_cwd + 1)
+      local direct = try(rel)
+      if direct then
+        return direct
+      end
+      local found = search_monorepo(build_dir, rel, 3)
+      if found then
+        return found
+      end
+    end
+  end
+
   return nil
 end
 
@@ -376,6 +398,7 @@ local function repair_qf_paths(items, build_dir)
           item.bufnr = vim.fn.bufadd(fixed)
         else
           item.valid = 0
+          item.bufnr = 0 -- prevent navigation to the wrong empty buffer
         end
       end
     end
