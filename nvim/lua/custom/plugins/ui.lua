@@ -311,7 +311,7 @@ return {
       popupmenu = { enabled = false },
       notify = { enabled = false },
       lsp = {
-        hover = { enabled = true },
+        hover = { enabled = true, silent = true },
         signature = { enabled = true },
         progress = { enabled = false },
         message = { enabled = false },

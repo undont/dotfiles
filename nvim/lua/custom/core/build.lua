@@ -607,7 +607,13 @@ local AUTO_CLEAR_KINDS = {
 --- (kind, label) when the list ends up empty so the caller can close
 --- the window and notify; returns nil when nothing was dropped or the
 --- title isn't in AUTO_CLEAR_KINDS.
-local function prune_diag_list(list, replace, bufnr, lines_with_diag)
+---
+--- Preserves the list's current-entry idx across the rebuild: if the
+--- entry the user was pointed at survives, it stays current; if it was
+--- the one just resolved, idx snaps to the nearest surviving predecessor
+--- so the next ]q advances forward to the next outstanding issue rather
+--- than jumping back to entry 1 (setqflist's default after replace).
+local function prune_diag_list(list, replace, set_idx, bufnr, lines_with_diag)
   if not list.title then
     return
   end
@@ -618,12 +624,14 @@ local function prune_diag_list(list, replace, bufnr, lines_with_diag)
   end
 
   local kept = {}
+  local old_to_new = {}
   local dropped = 0
-  for _, item in ipairs(list.items) do
+  for i, item in ipairs(list.items) do
     if item.bufnr == bufnr and item.valid == 1 and not lines_with_diag[item.lnum] then
       dropped = dropped + 1
     else
       table.insert(kept, item)
+      old_to_new[i] = #kept
     end
   end
 
@@ -636,10 +644,42 @@ local function prune_diag_list(list, replace, bufnr, lines_with_diag)
   if #kept == 0 then
     return kind, resolved_label
   end
+
+  if list.idx and list.idx > 0 then
+    local new_idx = old_to_new[list.idx]
+    if not new_idx then
+      for i = list.idx - 1, 1, -1 do
+        if old_to_new[i] then
+          new_idx = old_to_new[i]
+          break
+        end
+      end
+    end
+    if new_idx then
+      set_idx(new_idx)
+    end
+  end
 end
+
+-- Per-buffer baseline of `changedtick` recorded on the first DiagnosticChanged
+-- we observe. Auto-clear is gated on the tick having advanced past the
+-- baseline — i.e. the user has actually edited the buffer since we first saw
+-- it. Without this, a `]q` jump into a fresh buffer fires the LSP's initial
+-- publish, whose line set may not overlap with the qf entries' source (build
+-- output, sonar scan, modified-scan snapshot), and the prune wipes still-valid
+-- entries that the user hasn't fixed.
+local first_seen_tick = {}
 
 local function setup_auto_clear()
   local group = vim.api.nvim_create_augroup('CustomBuildAutoClear', { clear = true })
+
+  vim.api.nvim_create_autocmd({ 'BufWipeout', 'BufDelete' }, {
+    group = group,
+    callback = function(args)
+      first_seen_tick[args.buf] = nil
+    end,
+  })
+
   vim.api.nvim_create_autocmd('DiagnosticChanged', {
     group = group,
     callback = function(args)
@@ -651,15 +691,27 @@ local function setup_auto_clear()
         return
       end
 
+      local tick = vim.b[bufnr].changedtick
+      local baseline = first_seen_tick[bufnr]
+      if baseline == nil then
+        first_seen_tick[bufnr] = tick
+        return
+      end
+      if tick <= baseline then
+        return
+      end
+
       local lines_with_diag = {}
       for _, d in ipairs(vim.diagnostic.get(bufnr)) do
         lines_with_diag[d.lnum + 1] = true
       end
 
       -- Quickfix list
-      local qf = vim.fn.getqflist { title = 0, items = 0 }
+      local qf = vim.fn.getqflist { title = 0, items = 0, idx = 0 }
       local qf_kind, qf_label = prune_diag_list(qf, function(d)
         vim.fn.setqflist({}, 'r', d)
+      end, function(idx)
+        vim.fn.setqflist({}, 'a', { idx = idx })
       end, bufnr, lines_with_diag)
       if qf_kind then
         for _, win in ipairs(vim.api.nvim_list_wins()) do
@@ -677,9 +729,11 @@ local function setup_auto_clear()
       for _, win in ipairs(vim.api.nvim_list_wins()) do
         local b = vim.api.nvim_win_get_buf(win)
         if vim.bo[b].buftype ~= 'quickfix' then
-          local loc = vim.fn.getloclist(win, { title = 0, items = 0 })
+          local loc = vim.fn.getloclist(win, { title = 0, items = 0, idx = 0 })
           local loc_kind, loc_label = prune_diag_list(loc, function(d)
             vim.fn.setloclist(win, {}, 'r', d)
+          end, function(idx)
+            vim.fn.setloclist(win, {}, 'a', { idx = idx })
           end, bufnr, lines_with_diag)
           if loc_kind then
             vim.api.nvim_win_call(win, function()
