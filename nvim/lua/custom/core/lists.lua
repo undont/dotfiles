@@ -37,14 +37,25 @@ end
 -- stale and ]q/[q skip away from where the cursor actually is. Sync the idx
 -- to the entry matching the cursor's current file:line first — or, if we're
 -- inside the qf window, to the cursor row itself.
-local function sync_qf_idx_to_cursor(get_list, set_idx)
+--
+-- When multiple entries share the cursor's bufnr+lnum (e.g. several
+-- diagnostics on one line), keep the existing idx if it already points at
+-- one of them. Snapping to the first match every press would oscillate
+-- between the first and second entry forever.
+local function sync_list_idx_to_cursor(list, set_idx)
   if vim.bo.buftype == 'quickfix' then
     set_idx(vim.api.nvim_win_get_cursor(0)[1])
     return
   end
   local cur_buf = vim.api.nvim_get_current_buf()
   local cur_line = vim.api.nvim_win_get_cursor(0)[1]
-  for i, entry in ipairs(get_list()) do
+
+  local cur = list.idx and list.items[list.idx]
+  if cur and cur.bufnr == cur_buf and cur.lnum == cur_line then
+    return
+  end
+
+  for i, entry in ipairs(list.items) do
     if entry.bufnr == cur_buf and entry.lnum == cur_line then
       set_idx(i)
       return
@@ -99,11 +110,12 @@ end
 local function bracketed_qf(direction)
   return function()
     with_list_nav_win(function()
-      if vim.tbl_isempty(vim.fn.getqflist()) then
+      local list = vim.fn.getqflist { items = 0, idx = 0 }
+      if #list.items == 0 then
         vim.notify('Quickfix list is empty', vim.log.levels.WARN)
         return
       end
-      sync_qf_idx_to_cursor(vim.fn.getqflist, function(idx)
+      sync_list_idx_to_cursor(list, function(idx)
         vim.fn.setqflist({}, 'a', { idx = idx })
       end)
       vim.cmd(string.format([[silent! lua require('mini.bracketed').quickfix(%q)]], direction))
@@ -114,13 +126,12 @@ end
 local function bracketed_loc(direction)
   return function()
     with_list_nav_win(function()
-      if vim.tbl_isempty(vim.fn.getloclist(0)) then
+      local list = vim.fn.getloclist(0, { items = 0, idx = 0 })
+      if #list.items == 0 then
         vim.notify('Location list is empty', vim.log.levels.WARN)
         return
       end
-      sync_qf_idx_to_cursor(function()
-        return vim.fn.getloclist(0)
-      end, function(idx)
+      sync_list_idx_to_cursor(list, function(idx)
         vim.fn.setloclist(0, {}, 'a', { idx = idx })
       end)
       vim.cmd(string.format([[silent! lua require('mini.bracketed').location(%q)]], direction))

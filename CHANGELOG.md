@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.89] - 2026-05-03
+
+### Added
+- Nvim: tag-pair auto-rename — any edit to a tag name in `markdown`/`html`/`xml`/`svg`/`vue`/`svelte`/`astro`/`jsx`/`tsx`/`php` propagates to the matching opening or closing tag. Motion-agnostic: `c{any motion}` (`ciw`, `cfn`, `c$`, `cit`, ...), `r{char}`, `R`, `s`/`S`, dot-repeat, macros, and multi-cursor edits all flow through. Snapshots on `ModeChanged` (catches the operator the moment it's pressed, before any text is touched) plus `CursorMoved`/`InsertEnter`/`BufEnter`/`FileType` for the cursor-already-on-tag cases; sync runs from `TextChanged`/`TextChangedI`. Regex-based (no treesitter), so it works the same in markdown's html injections as it does in jsx — no parser timing issues, no injection-range fragility. Multi-line tag bodies are supported, so JSX's `<div\n  className="x"\n>` pairs with `</div>`. Lives in `core/tag-rename.lua`, wired from `init.lua`
+
+### Fixed
+- Nvim: `]q`/`[q`/`]l`/`[l` no longer oscillate between two entries that share the cursor's `bufnr+lnum` (e.g. multiple diagnostics on one line) — `sync_list_idx_to_cursor` now keeps the current idx when it already points at one of the matching entries instead of snapping to the first match every press
+- Nvim: `build.lua`'s qf/loclist auto-clear preserves the list's current-entry idx across the rebuild — `setqflist({}, 'r', ...)` reset idx to 1, so the next `]q` jumped back to the top instead of advancing to the next outstanding issue. The pruner now snaps idx to the nearest surviving predecessor when the entry the user was on is the one resolved
+- Nvim: `build.lua`'s auto-clear no longer wipes still-valid qf entries on the LSP's initial `DiagnosticChanged` for a buffer the user hasn't edited yet — pruning is gated on `changedtick` having advanced past a per-buffer baseline recorded the first time we observe diagnostics for the buffer. Without this, a `]q` jump into a fresh buffer fired the initial publish and wiped entries whose source (build output, sonar scan, modified-scan snapshot) didn't overlap with the publish's line set. Baseline is cleared on `BufWipeout`/`BufDelete`
+- Nvim: noice's `lsp.hover` now sets `silent = true` so a successful hover popup no longer fires a redundant "No information available" notification alongside the popup itself
+
 ## [0.2.88] - 2026-04-30
 
 ### Added
