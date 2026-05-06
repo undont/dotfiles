@@ -47,6 +47,10 @@ return {
           MkdnFoldSection = { 'n', 'zc' },
           MkdnUnfoldSection = { 'n', 'zr' },
           MkdnUpdateNumbering = { 'n', '<leader>mn' }, -- renumber ordered list
+          -- Disable +/- heading bumpers: `-` shadows Oil's global parent-dir
+          -- keymap in markdown buffers
+          MkdnIncreaseHeading = false,
+          MkdnDecreaseHeading = false,
           -- Create link from clipboard: moved from <leader>p (conflicts with PR Review)
           MkdnCreateLinkFromClipboard = { { 'n', 'v' }, '<leader>ml' },
           -- Table insert: moved from <leader>i* (orphaned, no group)

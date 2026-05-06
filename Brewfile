@@ -119,6 +119,7 @@ brew "staticcheck"   # Go linter
 brew "golangci-lint" # Go meta-linter
 brew "swift-format"  # macOS-only
 brew "golang-migrate"
+brew "scc"
 
 # =============================================================================
 # @preset: core

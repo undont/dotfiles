@@ -214,6 +214,7 @@ Diffview open (vs index) | <leader>do
 Diffview close | <leader>dc
 Diffview file history | <leader>dh
 Diffview branch total (vs main) | <leader>dt
+Diffview branch by ticket | <leader>dT
 Diffview PR review | <leader>dp
 Diffview edit file | <leader>de
 

@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.90] - 2026-05-06
+
+### Added
+- Nvim: `<leader>dT` opens a Diffview between the oldest and newest commits on the current branch whose messages match a ticket grep — same combined two-rev view as `<leader>do`, but scoped to a ticket. Prompts for the grep string with a default extracted from the branch name (matches an `ACME-1234`-style prefix), runs `git log --grep=<ticket> --fixed-strings` between `merge-base main HEAD` and `HEAD`, then opens `oldest^...newest`. Caveat: non-matching commits sandwiched between matching ones get folded into the diff
+- Brew: `scc` (fast source-code line counter) added to the dev preset
+
+### Fixed
+- Nvim: markdown-nvim's `+`/`-` heading bumpers (`MkdnIncreaseHeading`/`MkdnDecreaseHeading`) are disabled — `-` was shadowing Oil's global parent-directory keymap inside markdown buffers. Renumbering still available via `<leader>mn`
+
 ## [0.2.89] - 2026-05-03
 
 ### Added
