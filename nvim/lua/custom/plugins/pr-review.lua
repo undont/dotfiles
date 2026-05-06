@@ -420,6 +420,36 @@ return {
         end,
         desc = '[D]iff branch [T]otal (vs main)',
       },
+      {
+        '<leader>dT',
+        function()
+          local base = vim.fn.systemlist('git merge-base main HEAD')[1]
+          if not base or base == '' then
+            vim.notify('Could not find merge-base with main', vim.log.levels.WARN)
+            return
+          end
+
+          local branch = vim.fn.systemlist('git rev-parse --abbrev-ref HEAD')[1] or ''
+          local default = branch:match '([A-Za-z]+%-%d+)' or ''
+
+          vim.ui.input({ prompt = 'Ticket / commit grep: ', default = default }, function(input)
+            if not input or input == '' then
+              return
+            end
+
+            local commits =
+              vim.fn.systemlist(string.format('git log --grep=%s --fixed-strings --reverse --format=%%H %s..HEAD', vim.fn.shellescape(input), base))
+            if vim.v.shell_error ~= 0 or #commits == 0 then
+              vim.notify('No commits matching "' .. input .. '"', vim.log.levels.WARN)
+              return
+            end
+
+            local oldest, newest = commits[1], commits[#commits]
+            diffview_open(string.format('DiffviewOpen %s^...%s', oldest, newest))
+          end)
+        end,
+        desc = '[D]iff branch by [T]icket',
+      },
       { '<leader>de', edit_diff_file, desc = '[D]iff [E]dit file' },
       {
         '<leader>dh',
