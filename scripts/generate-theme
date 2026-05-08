@@ -8,6 +8,10 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || re
 # shellcheck source=scripts/_lib/common.sh
 source "$SCRIPT_DIR/_lib/common.sh"
 
+# How the user invoked us — set by parent (dotfiles theme generate) when delegated;
+# falls back to basename for direct invocation.
+invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
+
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 THEMES_GENERATED="$DOTFILES_DIR/themes/generated"
 NVIM_GENERATED="$DOTFILES_DIR/nvim/colors/generated"
@@ -220,9 +224,9 @@ main() {
                 ;;
             help|-h|--help)
                 cat << EOF
-Usage: $(basename "$0") <ghostty-theme-name> [--quiet]
-       $(basename "$0") list
-       $(basename "$0") help
+Usage: $invoked_as <ghostty-theme-name> [--quiet]
+       $invoked_as list
+       $invoked_as help
 
 Generate dotfiles theme files from a Ghostty built-in theme.
 
@@ -234,9 +238,9 @@ OPTIONS:
     --quiet, -q         Suppress output
 
 EXAMPLES:
-    $(basename "$0") zenburn
-    $(basename "$0") "Tomorrow Night"
-    $(basename "$0") list
+    $invoked_as zenburn
+    $invoked_as "Tomorrow Night"
+    $invoked_as list
 EOF
                 exit 0
                 ;;
@@ -263,14 +267,14 @@ EOF
     # Normal generation: resolve Ghostty theme and generate
     if [[ -z "$theme_name" ]]; then
         error "No theme name specified"
-        info "Usage: $(basename "$0") <ghostty-theme-name>"
+        info "Usage: $invoked_as <ghostty-theme-name>"
         exit 1
     fi
 
     local ghostty_path
     if ! ghostty_path=$(resolve_ghostty_theme "$theme_name"); then
         error "Ghostty theme not found: $theme_name"
-        info "Run '$(basename "$0") list-available' to see available themes"
+        info "Run '$invoked_as list' to see available themes"
         exit 1
     fi
 

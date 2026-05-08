@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.91] - 2026-05-08
+
+### Changed
+- CLI: theme application now requires an explicit `switch` subcommand — `dotfiles theme switch dracula` instead of `dotfiles theme dracula`. The bare `dotfiles theme <name>` form is gone, so theme names no longer collide with subcommands (`list`, `current`, `generate`, `delete`) in tab completion. `dotfiles theme` with no args still defaults to `list`
+- CLI: `dotfiles <cmd> help` now works as an alias for `dotfiles <cmd> --help`, mirroring the existing `dotfiles help <cmd>` form — all three forms reach the same per-command help. Excluded for `theme`, whose subcommand dispatcher delegates `help` down to child scripts (`theme delete help`, `theme generate help`)
+- CLI: `dotfiles aliases` cheatsheet now hides aliases without a trailing description comment, so platform-conditional twins (Linux `pbcopy`/`pbpaste`), thin `cl &&` wrappers (`ralph`, `ralf`, `btop`), and shorthand duplicates (`oc`, `dot`, `alerts-clear`) drop out of the rendered cheatsheet rather than appearing twice. The test suite pins the omission set so removing a description by accident re-renders an alias and fails CI
+- Tmux: unbound default `z` (zoom-pane) — clashed with `Opt+z` in the existing keymap
+
+### Added
+- Nvim: Octo review inline word-change highlights (`OctoReviewDiffDeleteText`/`OctoReviewDiffAddText`) now use the diff red/green tints from the active theme — previously they fell through to Octo's defaults and clashed with the surrounding diff palette
+- Themes: generated colourschemes override `@lsp.type.field` to plain `fg_primary` — without this, LSP fields fell through to `@variable.member` (cyan) and rendered identically to properties
+
+### Fixed
+- CLI: `dotfiles links` no longer reports `~/.p10k.zsh` as MISSING — `p10k.zsh` was migrated to a user-owned copy in v0.2.57, but the symlink check lingered and flagged MISSING on every install
+
 ## [0.2.90] - 2026-05-06
 
 ### Added

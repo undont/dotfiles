@@ -5,7 +5,7 @@
 #   ~/.config/tmux/tmux.conf (XDG standard location)
 #
 # A compatibility symlink exists at ~/.tmux.conf for backwards compatibility.
-# Change themes with: dotfiles theme <theme-name>
+# Change themes with: dotfiles theme switch <theme-name>
 #
 # Quick reference:
 #   Prefix: ` (backtick) or Ctrl+b (mobile-friendly)
@@ -143,6 +143,9 @@ unbind p
 
 # Unbind default next-layout (use prefix+Space for thumbs instead)
 unbind Space
+
+# Unbind default zoom-pane (use Opt+z instead)
+unbind z
 
 # ─────────────────────────────────────────
 # Window (tab) navigation

@@ -1,0 +1,112 @@
+#!/usr/bin/env bash
+# CLI helpers shared by the dotfiles dispatcher and any future tools that
+# need to read the changelog or preset state.
+# Source this file: source "${BASH_SOURCE%/*}/cli.sh"
+# Requires: common.sh sourced first (for colour vars + error/warn).
+
+[[ -n "${_DOTFILES_CLI_SH_LOADED:-}" ]] && return 0
+_DOTFILES_CLI_SH_LOADED=1
+
+# Fail fast if common.sh has not been sourced — we rely on its colour vars
+# and error/warn helpers.
+[[ -z "${_DOTFILES_COMMON_SH_LOADED:-}" ]] && {
+    echo "cli.sh requires common.sh to be sourced first" >&2
+    return 1
+}
+
+# DOTFILES_DIR must be set by the caller; CONFIG_DIR derives from XDG.
+: "${DOTFILES_DIR:?DOTFILES_DIR must be set before sourcing cli.sh}"
+CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
+PRESET_FILE="$CONFIG_DIR/preset"
+STATE_DIR="$CONFIG_DIR/.state"
+
+# ── Preset / branch ────────────────────────────────────────────────────
+
+# Get the saved preset, default to "full"
+get_preset() {
+    if [[ -f "$PRESET_FILE" ]]; then
+        cat "$PRESET_FILE"
+    else
+        echo "full"
+    fi
+}
+
+# Get the default remote branch (origin/HEAD, with main/master fallback)
+get_remote_branch() {
+    local ref
+    if ref=$(git -C "$DOTFILES_DIR" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null); then
+        echo "${ref#refs/remotes/}"
+        return
+    fi
+    if git -C "$DOTFILES_DIR" rev-parse --verify origin/main &>/dev/null; then
+        echo "origin/main"
+    elif git -C "$DOTFILES_DIR" rev-parse --verify origin/master &>/dev/null; then
+        echo "origin/master"
+    else
+        echo "origin/main"
+    fi
+}
+
+# ── Changelog ──────────────────────────────────────────────────────────
+
+# Latest non-Unreleased version from CHANGELOG.md
+_changelog_local_version() {
+    sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' "$DOTFILES_DIR/CHANGELOG.md" | head -1
+}
+
+# Latest non-Unreleased version from CHANGELOG.md at a given git ref
+_changelog_version_at_ref() {
+    local ref="$1"
+    git -C "$DOTFILES_DIR" show "$ref:CHANGELOG.md" 2>/dev/null \
+        | sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' | head -1
+}
+
+# Append "-dev" to a version if the matching git tag doesn't exist yet
+_format_version() {
+    local version="$1"
+    [[ -z "$version" ]] && return
+    if git -C "$DOTFILES_DIR" rev-parse "v${version}" &>/dev/null; then
+        printf '%s' "$version"
+    else
+        printf '%s-dev' "$version"
+    fi
+}
+
+# Show changelog entries from $remote_branch newer than the local version
+_changelog_incoming() {
+    local remote_branch="$1"
+    local local_version
+    local_version=$(_changelog_local_version) || return 1
+    [[ -z "$local_version" ]] && return 1
+
+    local remote_changelog
+    remote_changelog=$(git -C "$DOTFILES_DIR" show "$remote_branch:CHANGELOG.md" 2>/dev/null) || return 1
+
+    printf '%s\n' "$remote_changelog" | awk -v ver="$local_version" '
+        /^## \[Unreleased\]/ { next }
+        /^## \[/ {
+            if (index($0, "[" ver "]")) exit
+            found = 1
+        }
+        found { print }
+    '
+}
+
+# Colourise changelog markdown for terminal display
+_changelog_colorise() {
+    local cyan=$'\033[0;36m' green=$'\033[0;32m' magenta=$'\033[0;35m' bold_magenta=$'\033[1;35m'
+    local yellow=$'\033[0;33m' red=$'\033[0;31m' grey=$'\033[0;90m' nc=$'\033[0m'
+    sed \
+        -e "s|^\(## \[.*\]\) ★ current\(.*\)|${magenta}\1 ${bold_magenta}★ current${magenta}\2${nc}|" \
+        -e "s|^## \[.*|${cyan}&${nc}|" \
+        -e "s|^### Added.*|${green}&${nc}|" \
+        -e "s|^### Changed.*|${yellow}&${nc}|" \
+        -e "s|^### Fixed.*|${yellow}&${nc}|" \
+        -e "s|^### Removed.*|${red}&${nc}|" \
+        -e "s|^- |  ${grey}•${nc} |"
+}
+
+# Compare semantic versions: returns 0 if $1 > $2
+_version_gt() {
+    [[ "$1" != "$2" ]] && [[ "$(printf '%s\n%s' "$1" "$2" | sort -V | head -1)" == "$2" ]]
+}

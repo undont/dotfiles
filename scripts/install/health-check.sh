@@ -243,7 +243,7 @@ if [[ -f "$THEME_FILE" ]]; then
     printf '%sOK%s (%s)\n' "${GREEN}" "${NC}" "$(cat "$THEME_FILE")"
 else
     printf '%sMISSING%s\n' "${YELLOW}" "${NC}"
-    printf '  Run: dotfiles theme <theme-name>\n'
+    printf '  Run: dotfiles theme switch <theme-name>\n'
     ISSUES=1
 fi
 

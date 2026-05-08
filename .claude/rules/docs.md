@@ -4,12 +4,19 @@ After completing any code change, check whether relevant documentation needs upd
 
 **Key documentation locations:**
 - `README.md` -- feature summaries, keybindings, aliases
-- `scripts/dotfiles` -- the `cmd_aliases()` function powering `dot aliases`
+- `zsh/dotfiles.zsh` -- shell aliases/functions; `dotfiles aliases` parses this file
 - `CLAUDE.md` -- architecture, conventions, common commands
 - `docs/` -- detailed guides (theme system, agent hooks, troubleshooting, etc.)
 
 **What to check:**
-- New aliases/functions -> update `scripts/dotfiles` (`cmd_aliases`) and `README.md`
+- New aliases -> add the `alias` line in `zsh/dotfiles.zsh` with a trailing
+  `# description` comment; the `dotfiles aliases` cheatsheet picks it up
+  automatically. Aliases without a description are silently skipped (curated).
+- New functions for the cheatsheet -> add a `# @cheat: <description>` directive
+  on the line directly above the function definition.
+- Free-form rows (ZLE bindings, external tools, dotfiles CLI subcommands) ->
+  add a `# @cheat: <name> | <description>` directive.
+- New section -> add `# @section: <NAME>` before the relevant block.
 - New tmux/nvim keybindings -> update `README.md` keybindings section
 - New install behaviour/presets -> update `CLAUDE.md` and `README.md`
 - New test files -> confirm they're discovered by `scripts/run-tests.sh` (auto-discovery)
