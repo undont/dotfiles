@@ -9,9 +9,10 @@ SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # Source shared test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Source the dotfiles CLI to get _version_gt (we need to extract it carefully)
-# Since the CLI has a main() that runs on source, we extract the function directly
-eval "$(sed -n '/_version_gt()/,/^}/p' "$DOTFILES_ROOT/scripts/dotfiles")"
+# Source _version_gt from cli.sh (Plan DOT-031 moved it out of scripts/dotfiles).
+# We extract the function definition directly so we don't have to satisfy the
+# library's load-guard preconditions (DOTFILES_DIR, common.sh, colour vars).
+eval "$(sed -n '/^_version_gt()/,/^}/p' "$DOTFILES_ROOT/scripts/_lib/cli.sh")"
 
 # ═══════════════════════════════════════════════════════════════
 # _version_gt Tests

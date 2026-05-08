@@ -1,1641 +1,515 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unit tests for dotfiles CLI
-# Tests the dotfiles command wrapper
+# Behavioural tests for the dotfiles CLI.
+#
+# These tests assert the CLI's externally observable behaviour: exit codes,
+# stdout/stderr substrings, side effects on a sandbox HOME. They deliberately
+# avoid grepping for internal function names so refactors that preserve
+# behaviour stay green.
+#
+# Other concerns (rollback lib, uninstall, create-symlinks, themes, prereqs,
+# launchers) live in their own test-*.sh files in this directory.
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_CLI="$SCRIPT_DIR/../dotfiles"
-DOTFILES_DIR="$(dirname "$(dirname "$SCRIPT_DIR")")"
+DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
+DOTFILES_CLI="$DOTFILES_DIR/scripts/dotfiles"
 
-# Source shared test helpers (colours, pass/fail/skip/section, assertions)
+# shellcheck source=scripts/tests/_test-helpers.sh
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# ===========================================================================
-# Tests
-# ===========================================================================
+echo "==========================================="
+echo "Dotfiles CLI Behavioural Tests"
+echo "==========================================="
 
-section "Script Exists and Is Executable"
+# ─── 1. Existence and executable ──────────────────────────────────────
+
+section "CLI script existence"
 
 if [[ -f "$DOTFILES_CLI" ]]; then
-    pass "dotfiles CLI exists"
+    pass "scripts/dotfiles exists"
 else
-    fail "dotfiles CLI not found at $DOTFILES_CLI"
-    exit 1
+    fail "scripts/dotfiles not found"
 fi
 
 if [[ -x "$DOTFILES_CLI" ]]; then
-    pass "dotfiles CLI is executable"
+    pass "scripts/dotfiles is executable"
 else
-    fail "dotfiles CLI is not executable"
+    fail "scripts/dotfiles is not executable"
 fi
 
-section "ShellCheck Validation"
+# ─── 2. ShellCheck ─────────────────────────────────────────────────────
+
+section "ShellCheck"
 
 if command -v shellcheck &>/dev/null; then
-    if shellcheck -x -S warning -e SC1091 "$DOTFILES_CLI" 2>/dev/null; then
-        pass "dotfiles CLI passes shellcheck"
-    else
-        fail "dotfiles CLI has shellcheck warnings"
-    fi
+    for f in \
+        "$DOTFILES_DIR/scripts/dotfiles" \
+        "$DOTFILES_DIR/scripts/_lib/cli.sh" \
+        "$DOTFILES_DIR/scripts/_lib/common.sh"; do
+        if [[ -f "$f" ]]; then
+            if shellcheck -x -S warning -e SC1091 "$f" 2>/dev/null; then
+                pass "shellcheck: $(basename "$f")"
+            else
+                fail "shellcheck: $(basename "$f") has warnings"
+            fi
+        fi
+    done
 else
     skip "shellcheck not installed"
 fi
 
-section "Help Command"
+# ─── 3. Help system ────────────────────────────────────────────────────
 
-help_output=$("$DOTFILES_CLI" help 2>&1) || true
+section "Main help"
 
-if [[ "$help_output" == *"Usage:"* ]]; then
-    pass "help shows usage"
-else
-    fail "help should show usage"
-fi
+main_help=$("$DOTFILES_CLI" help 2>&1)
 
-if [[ "$help_output" == *"update"* ]]; then
-    pass "help mentions update command"
-else
-    fail "help should mention update command"
-fi
-
-if [[ "$help_output" == *"status"* ]]; then
-    pass "help mentions status command"
-else
-    fail "help should mention status command"
-fi
-
-if [[ "$help_output" == *"health"* ]]; then
-    pass "help mentions health command"
-else
-    fail "help should mention health command"
-fi
-
-if [[ "$help_output" == *"edit"* ]]; then
-    pass "help mentions edit command"
-else
-    fail "help should mention edit command"
-fi
-
-if [[ "$help_output" == *"cd"* ]]; then
-    pass "help mentions cd command"
-else
-    fail "help should mention cd command"
-fi
-
-if [[ "$help_output" == *"theme"* ]]; then
-    pass "help mentions theme command"
-else
-    fail "help should mention theme command"
-fi
-
-if [[ "$help_output" == *"notes"* ]]; then
-    pass "help mentions notes command"
-else
-    fail "help should mention notes command"
-fi
-
-if [[ "$help_output" == *"links"* ]]; then
-    pass "help mentions links command"
-else
-    fail "help should mention links command"
-fi
-
-if [[ "$help_output" == *"sync"* ]]; then
-    pass "help mentions sync command"
-else
-    fail "help should mention sync command"
-fi
-
-# Test --help flag
-help_flag_output=$("$DOTFILES_CLI" --help 2>&1) || true
-if [[ "$help_flag_output" == *"Usage:"* ]]; then
-    pass "--help flag works"
-else
-    fail "--help flag should show usage"
-fi
-
-if [[ "$help_output" == *"--force"* ]]; then
-    pass "help mentions --force flag"
-else
-    fail "help should mention --force flag"
-fi
-
-if [[ "$help_output" == *"--preview"* ]]; then
-    pass "help mentions --preview flag"
-else
-    fail "help should mention --preview flag"
-fi
-
-# Ensure stale --dry-run reference has been removed
-if [[ "$help_output" != *"--dry-run"* ]]; then
-    pass "help does not reference stale --dry-run flag"
-else
-    fail "help still references --dry-run (should be --preview)"
-fi
-
-section "CD Command"
-
-cd_output=$("$DOTFILES_CLI" cd 2>&1) || true
-
-if [[ "$cd_output" == *"dotfiles"* ]]; then
-    pass "cd command returns dotfiles path"
-else
-    fail "cd command should return dotfiles path"
-fi
-
-if [[ -d "$cd_output" ]]; then
-    pass "cd command returns valid directory"
-else
-    fail "cd command should return valid directory"
-fi
-
-section "Unknown Command Handling"
-
-unknown_output=$("$DOTFILES_CLI" nonexistent_command_12345 2>&1) || true
-
-if echo "$unknown_output" | grep -q "Unknown command"; then
-    pass "Shows error for unknown command"
-else
-    fail "Should show error for unknown command"
-fi
-
-if echo "$unknown_output" | grep -q "Usage:"; then
-    pass "Shows usage after unknown command error"
-else
-    fail "Should show usage after unknown command error"
-fi
-
-section "Script Structure"
-
-script_content=$(cat "$DOTFILES_CLI")
-
-# Check for required functions
-if [[ "$script_content" == *"cmd_update()"* ]]; then
-    pass "cmd_update function defined"
-else
-    fail "cmd_update function not found"
-fi
-
-if [[ "$script_content" == *"cmd_status()"* ]]; then
-    pass "cmd_status function defined"
-else
-    fail "cmd_status function not found"
-fi
-
-if [[ "$script_content" == *"cmd_health()"* ]]; then
-    pass "cmd_health function defined"
-else
-    fail "cmd_health function not found"
-fi
-
-if [[ "$script_content" == *"cmd_notes()"* ]]; then
-    pass "cmd_notes function defined"
-else
-    fail "cmd_notes function not found"
-fi
-
-if [[ "$script_content" == *"cmd_links()"* ]]; then
-    pass "cmd_links function defined"
-else
-    fail "cmd_links function not found"
-fi
-
-if [[ "$script_content" == *"cmd_sync()"* ]]; then
-    pass "cmd_sync function defined"
-else
-    fail "cmd_sync function not found"
-fi
-
-if [[ "$script_content" == *"_copy_pairs()"* ]]; then
-    pass "_copy_pairs helper defined"
-else
-    fail "_copy_pairs helper not found"
-fi
-
-if [[ "$script_content" == *"_changelog_local_version()"* ]]; then
-    pass "_changelog_local_version helper defined"
-else
-    fail "_changelog_local_version helper not found"
-fi
-
-if [[ "$script_content" == *"_changelog_incoming()"* ]]; then
-    pass "_changelog_incoming helper defined"
-else
-    fail "_changelog_incoming helper not found"
-fi
-
-if [[ "$script_content" == *"_changelog_colorise()"* ]]; then
-    pass "_changelog_colorise helper defined"
-else
-    fail "_changelog_colorise helper not found"
-fi
-
-if [[ "$script_content" == *"get_preset()"* ]]; then
-    pass "get_preset function defined"
-else
-    fail "get_preset function not found"
-fi
-
-if [[ "$script_content" == *"get_remote_branch()"* ]]; then
-    pass "get_remote_branch function defined"
-else
-    fail "get_remote_branch function not found"
-fi
-
-# Incremental update helpers
-if [[ "$script_content" == *"_compute_skip_steps()"* ]]; then
-    pass "_compute_skip_steps helper defined"
-else
-    fail "_compute_skip_steps helper not found"
-fi
-
-if [[ "$script_content" == *"_version_gt()"* ]]; then
-    pass "_version_gt helper defined"
-else
-    fail "_version_gt helper not found"
-fi
-
-if [[ "$script_content" == *"_changelog_version_at_ref()"* ]]; then
-    pass "_changelog_version_at_ref helper defined"
-else
-    fail "_changelog_version_at_ref helper not found"
-fi
-
-if [[ "$script_content" == *"_run_pending_migrations()"* ]]; then
-    pass "_run_pending_migrations helper defined"
-else
-    fail "_run_pending_migrations helper not found"
-fi
-
-if [[ "$script_content" == *"_show_pending_migrations()"* ]]; then
-    pass "_show_pending_migrations helper defined"
-else
-    fail "_show_pending_migrations helper not found"
-fi
-
-if [[ "$script_content" == *"_show_step_plan()"* ]]; then
-    pass "_show_step_plan helper defined"
-else
-    fail "_show_step_plan helper not found"
-fi
-
-# State directory pattern — internal files live under .state/
-if [[ "$script_content" == *'$CONFIG_DIR/.state'* ]] || [[ "$script_content" == *'state_dir/migrations'* ]]; then
-    pass "migrations file uses .state directory"
-else
-    fail "migrations file should use .state directory"
-fi
-
-section "Preset Configuration"
-
-# Check that preset file path uses XDG
-if [[ "$script_content" == *'XDG_CONFIG_HOME'* ]]; then
-    pass "Uses XDG_CONFIG_HOME for config directory"
-else
-    fail "Should use XDG_CONFIG_HOME"
-fi
-
-# Check fallback to 'full' preset
-if [[ "$script_content" == *'"full"'* ]]; then
-    pass "Falls back to 'full' preset"
-else
-    fail "Should fall back to 'full' preset"
-fi
-
-section "Sources Common Library"
-
-if [[ "$script_content" == *'source "$DOTFILES_DIR/scripts/_lib/common.sh"'* ]]; then
-    pass "Sources common.sh library"
-else
-    fail "Should source common.sh library"
-fi
-
-section "Install.sh Preset Saving"
-
-install_script="$DOTFILES_DIR/install.sh"
-if [[ -f "$install_script" ]]; then
-    install_content=$(cat "$install_script")
-
-    if [[ "$install_content" == *'echo "$PRESET" >'* ]] || [[ "$install_content" == *'$PRESET_CONFIG_DIR/preset'* ]]; then
-        pass "install.sh saves preset to config file"
+for cmd in update status health set theme links diff sync aliases notes version edit cd; do
+    if [[ "$main_help" == *"$cmd"* ]]; then
+        pass "main help mentions '$cmd'"
     else
-        fail "install.sh should save preset to config file"
+        fail "main help missing '$cmd'"
     fi
+done
 
-    if [[ "$install_content" == *"Step 9"* ]]; then
-        pass "install.sh has Step 9 for saving preset"
+if [[ "$main_help" == *"USAGE"* ]]; then
+    pass "main help shows USAGE section"
+else
+    fail "main help should show USAGE section"
+fi
+
+section "Top-level help/version flags"
+
+if [[ "$("$DOTFILES_CLI" --help 2>&1)" == *"USAGE"* ]]; then
+    pass "--help works"
+else
+    fail "--help broken"
+fi
+
+if [[ "$("$DOTFILES_CLI" -h 2>&1)" == *"USAGE"* ]]; then
+    pass "-h works"
+else
+    fail "-h broken"
+fi
+
+if [[ "$("$DOTFILES_CLI" --version 2>&1)" == *"Version:"* ]]; then
+    pass "--version works"
+else
+    fail "--version broken"
+fi
+
+if [[ "$("$DOTFILES_CLI" -V 2>&1)" == *"Version:"* ]]; then
+    pass "-V works"
+else
+    fail "-V broken"
+fi
+
+section "Per-command help"
+
+for cmd in update status set theme links diff sync notes version aliases health edit cd; do
+    out=$("$DOTFILES_CLI" help "$cmd" 2>&1)
+    if [[ "$out" == *"$cmd"* ]] && [[ "$out" == *"USAGE"* ]]; then
+        pass "dotfiles help $cmd shows per-command help"
     else
-        fail "install.sh should have Step 9 for saving preset"
+        fail "dotfiles help $cmd missing or wrong"
     fi
+done
 
-    if [[ "$install_content" == *'$state_dir/'* ]] || [[ "$install_content" == *'PRESET_CONFIG_DIR/.state'* ]]; then
-        pass "install.sh uses .state directory for internal files"
+# `--help` on a command must short-circuit before performing any side effect
+out=$("$DOTFILES_CLI" update --help 2>&1)
+if [[ "$out" == *"USAGE"* ]] && [[ "$out" != *"Fetching from origin"* ]]; then
+    pass "update --help short-circuits before fetching"
+else
+    fail "update --help leaked into command body"
+fi
+
+# Unknown topic falls back to main help with an error
+if out=$("$DOTFILES_CLI" help no_such_topic_xyz 2>&1); then
+    : # exit code 1 expected — `if` runs negated branch
+fi
+if [[ "$out" == *"No help available"* ]]; then
+    pass "help <unknown> reports a clear error"
+else
+    fail "help <unknown> should print 'No help available'"
+fi
+
+# ─── 4. Per-command behaviour (read-only, no sandbox needed) ──────────
+
+section "cmd_cd"
+
+cd_out=$("$DOTFILES_CLI" cd 2>&1)
+if [[ -d "$cd_out" ]]; then
+    pass "cd outputs a valid directory"
+else
+    fail "cd outputs an invalid directory: $cd_out"
+fi
+
+# Exactly one line of output (no trailing extra)
+cd_lines=$(printf '%s' "$cd_out" | wc -l | tr -d ' ')
+if [[ "$cd_lines" == "0" ]]; then
+    pass "cd output is single-line (no trailing newline noise)"
+else
+    fail "cd output should be single-line, got $((cd_lines + 1)) lines"
+fi
+
+section "cmd_version"
+
+ver_out=$("$DOTFILES_CLI" version 2>&1)
+
+for label in "Version:" "Preset:" "Branch:" "Path:"; do
+    if [[ "$ver_out" == *"$label"* ]]; then
+        pass "version output includes '$label'"
     else
-        fail "install.sh should use .state directory for internal files"
+        fail "version output missing '$label'"
     fi
+done
+
+section "cmd_links"
+
+links_out=$("$DOTFILES_CLI" links 2>&1)
+
+if [[ "$links_out" == *"Managed Symlinks"* ]]; then
+    pass "links shows 'Managed Symlinks' header"
 else
-    skip "install.sh not found"
+    fail "links missing header"
 fi
 
-section "Create Symlinks Integration"
-
-symlinks_script="$DOTFILES_DIR/scripts/install/create-symlinks.sh"
-if [[ -f "$symlinks_script" ]]; then
-    symlinks_content=$(cat "$symlinks_script")
-
-    if [[ "$symlinks_content" == *'scripts/dotfiles'* ]]; then
-        pass "create-symlinks.sh links dotfiles CLI"
+for section_name in Zsh Tmux CLI; do
+    if [[ "$links_out" == *"$section_name"* ]]; then
+        pass "links includes $section_name section"
     else
-        fail "create-symlinks.sh should link dotfiles CLI"
+        fail "links missing $section_name section"
     fi
+done
 
-    if [[ "$symlinks_content" == *'$HOME/.local/bin/dotfiles'* ]]; then
-        pass "dotfiles CLI linked to ~/.local/bin/dotfiles"
+section "cmd_diff"
+
+if "$DOTFILES_CLI" diff >/dev/null 2>&1; then
+    pass "diff exits 0 on a healthy install"
+else
+    # diff exits non-zero only if there are real diffs and `set -e` propagated;
+    # the command itself uses `|| true` internally so this should not happen.
+    fail "diff exited non-zero unexpectedly"
+fi
+
+section "cmd_aliases — real source"
+
+# Run against the real DOTFILES_DIR (no sandbox) — a smoke check that the
+# parser produces a coherent cheatsheet for the actual zsh/dotfiles.zsh.
+aliases_out=$("$DOTFILES_CLI" aliases 2>&1)
+
+if [[ "$aliases_out" == *"SHELL REFERENCE"* ]]; then
+    pass "aliases shows SHELL REFERENCE header"
+else
+    fail "aliases missing header"
+fi
+
+for sect in NAVIGATION FILES GIT TMUX "DOTFILES CLI"; do
+    if [[ "$aliases_out" == *"$sect"* ]]; then
+        pass "aliases includes section: $sect"
     else
-        fail "dotfiles CLI should be linked to ~/.local/bin/dotfiles"
+        fail "aliases missing section: $sect"
     fi
-else
-    skip "create-symlinks.sh not found"
-fi
+done
 
-section "Create Symlinks - ShellCheck"
-
-if command -v shellcheck &>/dev/null; then
-    if shellcheck -x -S warning -e SC1091 "$symlinks_script" 2>/dev/null; then
-        pass "create-symlinks.sh passes shellcheck"
+# A sample of well-known shortcuts must always be present
+for entry in gs gd mkcd brewup; do
+    if [[ "$aliases_out" == *"$entry"* ]]; then
+        pass "aliases includes '$entry'"
     else
-        fail "create-symlinks.sh has shellcheck warnings"
+        fail "aliases missing '$entry'"
     fi
+done
+
+section "cmd_status"
+
+# `status` runs git fetch, so it can take a moment; redirect to /dev/null
+if "$DOTFILES_CLI" status >/dev/null 2>&1; then
+    pass "status exits 0"
 else
-    skip "shellcheck not installed"
+    fail "status exits non-zero"
 fi
 
-section "Create Symlinks - Structure"
+# ─── 5. Flag parsing contract ──────────────────────────────────────────
 
-if [[ "$symlinks_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
-    pass "create-symlinks sources common.sh"
+section "Flag parsing — unknown flag exits 2"
+
+if out=$("$DOTFILES_CLI" update --bogus 2>&1); then
+    fail "update --bogus should fail"
 else
-    fail "create-symlinks should source common.sh"
-fi
-
-if [[ "$symlinks_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
-    pass "create-symlinks sources rollback library"
-else
-    fail "create-symlinks should source rollback library"
-fi
-
-if [[ "$symlinks_content" == *'create_link()'* ]]; then
-    pass "create-symlinks defines create_link function"
-else
-    fail "create-symlinks should define create_link function"
-fi
-
-if [[ "$symlinks_content" == *'record_symlink'* ]]; then
-    pass "create-symlinks records symlinks for rollback"
-else
-    fail "create-symlinks should record symlinks for rollback"
-fi
-
-section "Create Symlinks - Core Configs"
-
-if [[ "$symlinks_content" == *'.zshrc'* ]]; then
-    pass "create-symlinks links .zshrc"
-else
-    fail "create-symlinks should link .zshrc"
-fi
-
-if [[ "$symlinks_content" == *'.zprofile'* ]]; then
-    pass "create-symlinks links .zprofile"
-else
-    fail "create-symlinks should link .zprofile"
-fi
-
-if [[ "$symlinks_content" != *'.p10k.zsh'* ]]; then
-    pass "create-symlinks does not manage .p10k.zsh (user-owned)"
-else
-    fail "create-symlinks should not manage .p10k.zsh"
-fi
-
-if [[ "$symlinks_content" == *'.tmux.conf'* ]]; then
-    pass "create-symlinks links .tmux.conf"
-else
-    fail "create-symlinks should link .tmux.conf"
-fi
-
-section "Create Symlinks - Ghostty and Karabiner"
-
-if [[ "$symlinks_content" == *'ghostty/config'* ]]; then
-    pass "create-symlinks links ghostty/config"
-else
-    fail "create-symlinks should link ghostty/config"
-fi
-
-if [[ "$symlinks_content" == *'karabiner/karabiner.json'* ]]; then
-    pass "create-symlinks links karabiner.json"
-else
-    fail "create-symlinks should link karabiner.json"
-fi
-
-section "Create Symlinks - Launchers"
-
-if [[ "$symlinks_content" == *'.local/launchers'* ]]; then
-    pass "create-symlinks creates launchers directory"
-else
-    fail "create-symlinks should create launchers directory"
-fi
-
-if [[ "$symlinks_content" == *'launchers/dev'* ]]; then
-    pass "create-symlinks links dev launcher"
-else
-    fail "create-symlinks should link dev launcher"
-fi
-
-
-section "Create Symlinks - Preset Hierarchy"
-
-if [[ "$symlinks_content" == *'should_install "core"'* ]]; then
-    pass "create-symlinks uses should_install for core"
-else
-    fail "create-symlinks should use should_install for core"
-fi
-
-if [[ "$symlinks_content" == *'should_install "full"'* ]]; then
-    pass "create-symlinks uses should_install for full"
-else
-    fail "create-symlinks should use should_install for full"
-fi
-
-# ===========================================================================
-# Theme Command Tests
-# ===========================================================================
-
-section "Theme Command - Basic Functionality"
-
-# Test theme list
-theme_list_output=$("$DOTFILES_CLI" theme list 2>&1) || true
-if [[ "$theme_list_output" == *"themes:"* ]]; then
-    pass "theme list shows themes header"
-else
-    fail "theme list should show themes header"
-fi
-
-if [[ "$theme_list_output" == *"dracula"* ]]; then
-    pass "theme list includes dracula theme"
-else
-    fail "theme list should include dracula theme"
-fi
-
-# Test theme current
-theme_current_output=$("$DOTFILES_CLI" theme current 2>&1) || true
-if [[ "$theme_current_output" == *"Current theme"* ]] || [[ "$theme_current_output" == *"No theme set"* ]]; then
-    pass "theme current shows current theme or no-theme message"
-else
-    fail "theme current should show current theme or no-theme message"
-fi
-
-# Test theme command in help output
-if [[ "$help_output" == *"dotfiles theme"* ]]; then
-    pass "help documents theme command usage"
-else
-    fail "help should document theme command usage"
-fi
-
-section "Theme Command - Script Structure"
-
-# Check that cmd_theme function is defined
-if [[ "$script_content" == *"cmd_theme()"* ]]; then
-    pass "cmd_theme function defined"
-else
-    fail "cmd_theme function not found"
-fi
-
-# Check that theme command calls theme-switch script
-if [[ "$script_content" == *'theme-switch'* ]]; then
-    pass "theme command uses theme-switch script"
-else
-    fail "theme command should use theme-switch script"
-fi
-
-# Check that theme command delegates to generate-theme and theme-delete
-if [[ "$script_content" == *'generate-theme'* ]]; then
-    pass "theme command delegates to generate-theme"
-else
-    fail "theme command should delegate to generate-theme"
-fi
-
-if [[ "$script_content" == *'theme-delete'* ]]; then
-    pass "theme command delegates to theme-delete"
-else
-    fail "theme command should delegate to theme-delete"
-fi
-
-# Check that theme command is routed in main case statement
-if [[ "$script_content" == *'theme|'* ]]; then
-    pass "theme command is handled in main case statement"
-else
-    fail "theme command should be in main case statement"
-fi
-
-section "Theme Command - Integration"
-
-# Verify theme-switch script exists
-theme_switch_script="$DOTFILES_DIR/scripts/theme-switch"
-if [[ -f "$theme_switch_script" ]]; then
-    pass "theme-switch script exists"
-else
-    fail "theme-switch script should exist"
-fi
-
-if [[ -x "$theme_switch_script" ]]; then
-    pass "theme-switch script is executable"
-else
-    fail "theme-switch script should be executable"
-fi
-
-# Verify generate-theme and theme-delete scripts exist
-generate_theme_script="$DOTFILES_DIR/scripts/generate-theme"
-theme_delete_script="$DOTFILES_DIR/scripts/theme-delete"
-
-if [[ -x "$generate_theme_script" ]]; then
-    pass "generate-theme script exists and is executable"
-else
-    fail "generate-theme script should exist and be executable"
-fi
-
-if [[ -x "$theme_delete_script" ]]; then
-    pass "theme-delete script exists and is executable"
-else
-    fail "theme-delete script should exist and be executable"
-fi
-
-# Test generate help via dotfiles theme
-gen_help_output=$("$DOTFILES_CLI" theme generate help 2>&1) || true
-if [[ "$gen_help_output" == *"generate-theme"* ]]; then
-    pass "dotfiles theme generate help works"
-else
-    fail "dotfiles theme generate help should show generate-theme usage"
-fi
-
-# Test delete help via dotfiles theme
-del_help_output=$("$DOTFILES_CLI" theme delete help 2>&1) || true
-if [[ "$del_help_output" == *"theme-delete"* ]]; then
-    pass "dotfiles theme delete help works"
-else
-    fail "dotfiles theme delete help should show theme-delete usage"
-fi
-
-# Test help mentions generate and delete subcommands
-if [[ "$help_output" == *"generate"* ]]; then
-    pass "help documents generate subcommand"
-else
-    fail "help should document generate subcommand"
-fi
-
-if [[ "$help_output" == *"delete"* ]]; then
-    pass "help documents delete subcommand"
-else
-    fail "help should document delete subcommand"
-fi
-
-# Verify themes directory exists
-themes_dir="$DOTFILES_DIR/themes"
-if [[ -d "$themes_dir" ]]; then
-    pass "themes directory exists"
-else
-    fail "themes directory should exist"
-fi
-
-# Verify at least one theme file exists
-if ls "$themes_dir"/*.theme &>/dev/null; then
-    pass "theme files exist in themes directory"
-else
-    fail "at least one theme file should exist"
-fi
-
-# ===========================================================================
-# Uninstall Script Tests
-# ===========================================================================
-
-UNINSTALL_SCRIPT="$DOTFILES_DIR/scripts/install/uninstall.sh"
-
-section "Uninstall Script - Existence and Executable"
-
-if [[ -f "$UNINSTALL_SCRIPT" ]]; then
-    pass "uninstall.sh exists"
-else
-    fail "uninstall.sh not found at $UNINSTALL_SCRIPT"
-fi
-
-if [[ -x "$UNINSTALL_SCRIPT" ]]; then
-    pass "uninstall.sh is executable"
-else
-    fail "uninstall.sh is not executable"
-fi
-
-section "Uninstall Script - ShellCheck"
-
-if command -v shellcheck &>/dev/null; then
-    if shellcheck -x -S warning -e SC1091 "$UNINSTALL_SCRIPT" 2>/dev/null; then
-        pass "uninstall.sh passes shellcheck"
+    code=$?
+    if [[ $code -eq 2 ]]; then
+        pass "update --bogus exits with code 2"
     else
-        fail "uninstall.sh has shellcheck warnings"
+        fail "update --bogus exited $code, expected 2"
     fi
-else
-    skip "shellcheck not installed"
-fi
-
-section "Uninstall Script - Help"
-
-uninstall_help=$("$UNINSTALL_SCRIPT" --help 2>&1) || true
-
-if [[ "$uninstall_help" == *"USAGE:"* ]]; then
-    pass "uninstall help shows USAGE section"
-else
-    fail "uninstall help should show USAGE section"
-fi
-
-if [[ "$uninstall_help" == *"--restore-backup"* ]]; then
-    pass "uninstall help documents --restore-backup"
-else
-    fail "uninstall help should document --restore-backup"
-fi
-
-if [[ "$uninstall_help" == *"--remove-brew-packages"* ]]; then
-    pass "uninstall help documents --remove-brew-packages"
-else
-    fail "uninstall help should document --remove-brew-packages"
-fi
-
-section "Uninstall Script - Structure"
-
-uninstall_content=$(cat "$UNINSTALL_SCRIPT")
-
-if [[ "$uninstall_content" == *'SYMLINKS=('* ]]; then
-    pass "uninstall defines SYMLINKS array"
-else
-    fail "uninstall should define SYMLINKS array"
-fi
-
-if [[ "$uninstall_content" == *'$HOME/.zshrc'* ]]; then
-    pass "uninstall includes .zshrc in symlinks"
-else
-    fail "uninstall should include .zshrc"
-fi
-
-if [[ "$uninstall_content" == *'$HOME/.config/nvim'* ]]; then
-    pass "uninstall includes nvim config"
-else
-    fail "uninstall should include nvim config"
-fi
-
-if [[ "$uninstall_content" == *'.zprofile'* ]]; then
-    pass "uninstall includes .zprofile"
-else
-    fail "uninstall should include .zprofile"
-fi
-
-if [[ "$uninstall_content" == *'.p10k.zsh'* ]]; then
-    pass "uninstall mentions .p10k.zsh (preserve warning)"
-else
-    fail "uninstall should mention .p10k.zsh"
-fi
-
-if [[ "$uninstall_content" == *'ghostty/config'* ]]; then
-    pass "uninstall includes ghostty/config"
-else
-    fail "uninstall should include ghostty/config"
-fi
-
-if [[ "$uninstall_content" == *'karabiner.json'* ]]; then
-    pass "uninstall includes karabiner.json"
-else
-    fail "uninstall should include karabiner.json"
-fi
-
-if [[ "$uninstall_content" == *'.local/launchers'* ]]; then
-    pass "uninstall includes launchers"
-else
-    fail "uninstall should include launchers"
-fi
-
-if [[ "$uninstall_content" == *'-L "$link"'* ]]; then
-    pass "uninstall checks symlink before removal"
-else
-    fail "uninstall should check symlink before removal"
-fi
-
-if [[ "$uninstall_content" == *'confirm'* ]]; then
-    pass "uninstall uses confirmation prompt"
-else
-    fail "uninstall should use confirmation prompt"
-fi
-
-if [[ "$uninstall_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
-    pass "uninstall sources rollback.sh for restore_from_backup"
-else
-    fail "uninstall should source rollback.sh"
-fi
-
-if [[ "$uninstall_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
-    pass "uninstall sources common.sh"
-else
-    fail "uninstall should source common.sh"
-fi
-
-section "Uninstall Script - Brew Package Removal"
-
-if [[ "$uninstall_content" == *'source "$SCRIPT_DIR/../_lib/brewfile.sh"'* ]]; then
-    pass "uninstall sources brewfile.sh for filter_brewfile"
-else
-    fail "uninstall should source brewfile.sh"
-fi
-
-if [[ "$uninstall_content" == *'FILTERED_BREWFILE'* ]]; then
-    pass "uninstall creates filtered Brewfile"
-else
-    fail "uninstall should create filtered Brewfile"
-fi
-
-# Check that uninstall calls create_filtered_brewfile (from brewfile.sh)
-if [[ "$uninstall_content" == *'create_filtered_brewfile'* ]]; then
-    pass "uninstall calls create_filtered_brewfile helper"
-else
-    fail "uninstall should call create_filtered_brewfile"
-fi
-
-if [[ "$uninstall_content" == *'brew uninstall'* ]]; then
-    pass "uninstall removes brew packages"
-else
-    fail "uninstall should remove brew packages"
-fi
-
-if [[ "$uninstall_content" == *'brew uninstall --cask'* ]]; then
-    pass "uninstall removes cask packages"
-else
-    fail "uninstall should remove cask packages"
-fi
-
-section "Uninstall Script - Cleanup"
-
-if [[ "$uninstall_content" == *'XDG_CONFIG_HOME'* ]]; then
-    pass "uninstall uses XDG_CONFIG_HOME"
-else
-    fail "uninstall should use XDG_CONFIG_HOME"
-fi
-
-if [[ "$uninstall_content" == *'dotfiles/preset'* ]]; then
-    pass "uninstall handles preset config file"
-else
-    fail "uninstall should handle preset config file"
-fi
-
-if [[ "$uninstall_content" == *'secrets.zsh'* ]]; then
-    pass "uninstall handles secrets file"
-else
-    fail "uninstall should handle secrets file"
-fi
-
-if [[ "$uninstall_content" == *'-s "$ZSH_CONFIG_DIR/secrets.zsh"'* ]]; then
-    pass "uninstall checks if secrets file has content"
-else
-    fail "uninstall should check secrets file content"
-fi
-
-if [[ "$uninstall_content" == *'.tmux/plugins/tpm'* ]]; then
-    pass "uninstall handles TPM cleanup"
-else
-    fail "uninstall should handle TPM cleanup"
-fi
-
-if [[ "$uninstall_content" == *'rmdir'* ]]; then
-    pass "uninstall cleans up empty directories"
-else
-    fail "uninstall should clean up empty directories"
-fi
-
-section "Uninstall Script - Safety"
-
-if [[ "$uninstall_content" == *'readlink "$link"'* ]]; then
-    pass "uninstall shows symlink targets before removal"
-else
-    fail "uninstall should show symlink targets"
-fi
-
-if [[ "$uninstall_content" == *'exists but not a symlink'* ]]; then
-    pass "uninstall warns about non-symlink files"
-else
-    fail "uninstall should warn about non-symlink files"
-fi
-
-if [[ "$uninstall_content" == *'--ignore-dependencies'* ]]; then
-    pass "uninstall uses --ignore-dependencies for brew"
-else
-    fail "uninstall should use --ignore-dependencies"
-fi
-
-if [[ "$uninstall_content" == *'Backups are preserved'* ]]; then
-    pass "uninstall reminds about preserved backups"
-else
-    fail "uninstall should remind about preserved backups"
-fi
-
-# ===========================================================================
-# Rollback Script Tests
-# ===========================================================================
-
-ROLLBACK_SCRIPT="$DOTFILES_DIR/scripts/install/rollback.sh"
-
-section "Rollback Script - Existence and Executable"
-
-if [[ -f "$ROLLBACK_SCRIPT" ]]; then
-    pass "rollback.sh exists"
-else
-    fail "rollback.sh not found"
-fi
-
-if [[ -x "$ROLLBACK_SCRIPT" ]]; then
-    pass "rollback.sh is executable"
-else
-    fail "rollback.sh is not executable"
-fi
-
-section "Rollback Script - ShellCheck"
-
-if command -v shellcheck &>/dev/null; then
-    if shellcheck -x -S warning -e SC1091 "$ROLLBACK_SCRIPT" 2>/dev/null; then
-        pass "rollback.sh passes shellcheck"
+    if [[ "$out" == *"Unknown option"* ]]; then
+        pass "unknown-flag error message"
     else
-        fail "rollback.sh has shellcheck warnings"
+        fail "unknown-flag message missing 'Unknown option'"
     fi
-else
-    skip "shellcheck not installed"
+    if [[ "$out" == *"dotfiles help update"* ]]; then
+        pass "unknown-flag points to per-command help"
+    else
+        fail "unknown-flag does not point to help"
+    fi
 fi
 
-section "Rollback Script - Structure"
+section "Flag parsing — unknown command exits 1"
 
-rollback_content=$(cat "$ROLLBACK_SCRIPT")
-
-if [[ "$rollback_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
-    pass "rollback sources common.sh"
+if out=$("$DOTFILES_CLI" no_such_command_xyz 2>&1); then
+    fail "unknown command should fail"
 else
-    fail "rollback should source common.sh"
+    code=$?
+    if [[ $code -eq 1 ]]; then
+        pass "unknown command exits 1"
+    else
+        fail "unknown command exited $code, expected 1"
+    fi
+    if [[ "$out" == *"Unknown command"* ]]; then
+        pass "unknown-command error message"
+    else
+        fail "unknown-command message missing 'Unknown command'"
+    fi
 fi
 
-if [[ "$rollback_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
-    pass "rollback sources rollback library"
+section "Flag parsing — sync --force / -f"
+
+# Just verifies parsing doesn't error; sync is read-only without --force
+if "$DOTFILES_CLI" sync >/dev/null 2>&1; then
+    pass "sync (no flags) parses and runs"
 else
-    fail "rollback should source rollback library"
+    fail "sync (no flags) failed unexpectedly"
 fi
 
-if [[ "$rollback_content" == *'has_rollback_state'* ]]; then
-    pass "rollback checks for rollback state"
+# ─── 6. Side effects in a sandbox ──────────────────────────────────────
+
+section "cmd_set side effects (sandboxed)"
+
+setup_cli_sandbox
+
+cat > "$HOME/.zshrc" << 'EOF'
+# YOUR PERSONAL CONFIGURATION
+EOF
+
+mkdir -p "$TEST_HOME/src"
+"$TEST_DOTFILES_DIR/scripts/dotfiles" set dev "$TEST_HOME/src" >/dev/null
+
+if grep -q '^export DEV_ROOT=' "$HOME/.zshrc"; then
+    pass "set dev wrote DEV_ROOT export"
 else
-    fail "rollback should check for rollback state"
+    fail "set dev did not write DEV_ROOT"
 fi
 
-if [[ "$rollback_content" == *'perform_rollback'* ]]; then
-    pass "rollback calls perform_rollback"
+if grep -qF "$TEST_HOME/src" "$HOME/.zshrc" || grep -qF '$HOME/src' "$HOME/.zshrc"; then
+    pass "set dev wrote a path matching the input"
 else
-    fail "rollback should call perform_rollback"
+    fail "set dev wrote an unexpected path"
 fi
 
-if [[ "$rollback_content" == *'--force'* ]]; then
-    pass "rollback supports --force flag"
+# Setting projects too should also write PROJECT_DIRS automatically
+mkdir -p "$TEST_HOME/playground"
+"$TEST_DOTFILES_DIR/scripts/dotfiles" set projects "$TEST_HOME/playground" >/dev/null
+
+if grep -q '^export PROJECTS_ROOT=' "$HOME/.zshrc"; then
+    pass "set projects wrote PROJECTS_ROOT"
 else
-    fail "rollback should support --force flag"
+    fail "set projects did not write PROJECTS_ROOT"
 fi
 
-if [[ "$rollback_content" == *'confirm'* ]]; then
-    pass "rollback uses confirmation prompt"
+if grep -q '^export PROJECT_DIRS=' "$HOME/.zshrc"; then
+    pass "set auto-derives PROJECT_DIRS"
 else
-    fail "rollback should use confirmation prompt"
+    fail "set should auto-derive PROJECT_DIRS"
 fi
 
-if [[ "$rollback_content" == *'.dotfiles-backup'* ]]; then
-    pass "rollback references backup directory"
+# Missing argument → exit 2 with hint
+if "$TEST_DOTFILES_DIR/scripts/dotfiles" set 2>/dev/null; then
+    fail "set with no arg should fail"
 else
-    fail "rollback should reference backup directory"
+    code=$?
+    if [[ $code -eq 2 ]]; then
+        pass "set with no arg exits with code 2"
+    else
+        fail "set with no arg exited $code, expected 2"
+    fi
 fi
 
-if [[ "$rollback_content" == *'restore_from_backup'* ]]; then
-    pass "rollback can restore from backup without state"
+cleanup_sandbox
+
+# ─── 7. Theme command delegation (Plan 1 fix) ──────────────────────────
+
+section "Theme delegation — child help renders parent name"
+
+# Plan 1 added DOTFILES_INVOKED_AS so child scripts render the canonical
+# user-facing command name in their help text instead of the raw basename.
+out=$("$DOTFILES_CLI" theme delete help 2>&1)
+if [[ "$out" == *"dotfiles theme delete"* ]]; then
+    pass "theme delete help shows canonical command name"
 else
-    fail "rollback should restore from backup without state"
+    fail "theme delete help should show 'dotfiles theme delete'"
 fi
 
-# ===========================================================================
-# Rollback Library Tests
-# ===========================================================================
+if [[ "$out" != *"theme-delete <theme-name>"* ]]; then
+    pass "theme delete help no longer leaks 'theme-delete' basename"
+else
+    fail "theme delete help still leaks internal basename"
+fi
+
+out=$("$DOTFILES_CLI" theme generate help 2>&1)
+if [[ "$out" == *"dotfiles theme generate"* ]]; then
+    pass "theme generate help shows canonical command name"
+else
+    fail "theme generate help should show 'dotfiles theme generate'"
+fi
+
+# Sanity: theme list works
+if "$DOTFILES_CLI" theme list >/dev/null 2>&1; then
+    pass "theme list runs cleanly"
+else
+    fail "theme list failed"
+fi
+
+# ─── 8. Library API (rollback lib) ─────────────────────────────────────
+# Functional behaviour for the rollback library lives in test-rollback-lib.sh;
+# here we just assert the public API is present and callable.
+
+section "Rollback library — public API"
 
 ROLLBACK_LIB="$DOTFILES_DIR/scripts/_lib/rollback.sh"
 
-section "Rollback Library - Existence"
-
 if [[ -f "$ROLLBACK_LIB" ]]; then
-    pass "rollback library exists"
-else
-    fail "rollback library not found"
-fi
-
-section "Rollback Library - ShellCheck"
-
-if command -v shellcheck &>/dev/null; then
-    if shellcheck -x -S warning -e SC1091 "$ROLLBACK_LIB" 2>/dev/null; then
-        pass "rollback library passes shellcheck"
-    else
-        fail "rollback library has shellcheck warnings"
-    fi
-else
-    skip "shellcheck not installed"
-fi
-
-section "Rollback Library - Functions"
-
-rollback_lib_content=$(cat "$ROLLBACK_LIB")
-
-if [[ "$rollback_lib_content" == *'init_rollback_state()'* ]]; then
-    pass "rollback lib defines init_rollback_state"
-else
-    fail "rollback lib should define init_rollback_state"
-fi
-
-if [[ "$rollback_lib_content" == *'record_step()'* ]]; then
-    pass "rollback lib defines record_step"
-else
-    fail "rollback lib should define record_step"
-fi
-
-if [[ "$rollback_lib_content" == *'get_last_step()'* ]]; then
-    pass "rollback lib defines get_last_step"
-else
-    fail "rollback lib should define get_last_step"
-fi
-
-if [[ "$rollback_lib_content" == *'record_backup_location()'* ]]; then
-    pass "rollback lib defines record_backup_location"
-else
-    fail "rollback lib should define record_backup_location"
-fi
-
-if [[ "$rollback_lib_content" == *'get_backup_location()'* ]]; then
-    pass "rollback lib defines get_backup_location"
-else
-    fail "rollback lib should define get_backup_location"
-fi
-
-if [[ "$rollback_lib_content" == *'record_symlink()'* ]]; then
-    pass "rollback lib defines record_symlink"
-else
-    fail "rollback lib should define record_symlink"
-fi
-
-if [[ "$rollback_lib_content" == *'get_created_symlinks()'* ]]; then
-    pass "rollback lib defines get_created_symlinks"
-else
-    fail "rollback lib should define get_created_symlinks"
-fi
-
-if [[ "$rollback_lib_content" == *'has_rollback_state()'* ]]; then
-    pass "rollback lib defines has_rollback_state"
-else
-    fail "rollback lib should define has_rollback_state"
-fi
-
-if [[ "$rollback_lib_content" == *'cleanup_rollback_state()'* ]]; then
-    pass "rollback lib defines cleanup_rollback_state"
-else
-    fail "rollback lib should define cleanup_rollback_state"
-fi
-
-if [[ "$rollback_lib_content" == *'restore_from_backup()'* ]]; then
-    pass "rollback lib defines restore_from_backup"
-else
-    fail "rollback lib should define restore_from_backup"
-fi
-
-if [[ "$rollback_lib_content" == *'perform_rollback()'* ]]; then
-    pass "rollback lib defines perform_rollback"
-else
-    fail "rollback lib should define perform_rollback"
-fi
-
-section "Rollback Library - State Files"
-
-if [[ "$rollback_lib_content" == *'ROLLBACK_STATE_DIR'* ]]; then
-    pass "rollback lib defines state directory"
-else
-    fail "rollback lib should define state directory"
-fi
-
-if [[ "$rollback_lib_content" == *'.install-state'* ]]; then
-    pass "rollback lib uses .install-state directory"
-else
-    fail "rollback lib should use .install-state directory"
-fi
-
-if [[ "$rollback_lib_content" == *'state.txt'* ]]; then
-    pass "rollback lib uses state.txt"
-else
-    fail "rollback lib should use state.txt"
-fi
-
-if [[ "$rollback_lib_content" == *'symlinks.txt'* ]]; then
-    pass "rollback lib uses symlinks.txt"
-else
-    fail "rollback lib should use symlinks.txt"
-fi
-
-if [[ "$rollback_lib_content" == *'backup-location.txt'* ]]; then
-    pass "rollback lib uses backup-location.txt"
-else
-    fail "rollback lib should use backup-location.txt"
-fi
-
-section "Rollback Library - Security"
-
-if [[ "$rollback_lib_content" == *'chmod 700'* ]]; then
-    pass "rollback lib sets secure permissions on state dir"
-else
-    fail "rollback lib should set secure permissions"
-fi
-
-if [[ "$rollback_lib_content" == *'../*'* ]] && [[ "$rollback_lib_content" == *'/../'* ]]; then
-    pass "rollback lib has path traversal protection"
-else
-    fail "rollback lib should have path traversal protection"
-fi
-
-if [[ "$rollback_lib_content" == *'resolved_dir'* ]] || [[ "$rollback_lib_content" == *'$HOME'* ]]; then
-    pass "rollback lib validates paths are under HOME"
-else
-    fail "rollback lib should validate paths"
-fi
-
-# ===========================================================================
-# Check Prerequisites Script Tests
-# ===========================================================================
-
-PREREQ_SCRIPT="$DOTFILES_DIR/scripts/install/check-prerequisites.sh"
-
-section "Check Prerequisites - Existence and Executable"
-
-if [[ -f "$PREREQ_SCRIPT" ]]; then
-    pass "check-prerequisites.sh exists"
-else
-    fail "check-prerequisites.sh not found"
-fi
-
-if [[ -x "$PREREQ_SCRIPT" ]]; then
-    pass "check-prerequisites.sh is executable"
-else
-    fail "check-prerequisites.sh is not executable"
-fi
-
-section "Check Prerequisites - ShellCheck"
-
-if command -v shellcheck &>/dev/null; then
-    if shellcheck -x -S warning -e SC1091 "$PREREQ_SCRIPT" 2>/dev/null; then
-        pass "check-prerequisites.sh passes shellcheck"
-    else
-        fail "check-prerequisites.sh has shellcheck warnings"
-    fi
-else
-    skip "shellcheck not installed"
-fi
-
-section "Check Prerequisites - Help"
-
-prereq_help=$("$PREREQ_SCRIPT" --help 2>&1) || true
-
-if [[ "$prereq_help" == *"USAGE:"* ]]; then
-    pass "prerequisites help shows USAGE"
-else
-    fail "prerequisites help should show USAGE"
-fi
-
-if [[ "$prereq_help" == *"DESCRIPTION:"* ]]; then
-    pass "prerequisites help shows DESCRIPTION"
-else
-    fail "prerequisites help should show DESCRIPTION"
-fi
-
-prereq_help_short=$("$PREREQ_SCRIPT" -h 2>&1) || true
-if [[ "$prereq_help_short" == *"USAGE:"* ]]; then
-    pass "prerequisites -h flag works"
-else
-    fail "prerequisites -h should work"
-fi
-
-section "Check Prerequisites - Structure"
-
-prereq_content=$(cat "$PREREQ_SCRIPT")
-
-if [[ "$prereq_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
-    pass "prerequisites sources common.sh"
-else
-    fail "prerequisites should source common.sh"
-fi
-
-if [[ "$prereq_content" == *'set -euo pipefail'* ]]; then
-    pass "prerequisites uses strict mode"
-else
-    fail "prerequisites should use strict mode"
-fi
-
-if [[ "$prereq_content" == *'PRESET='* ]] || [[ "$prereq_content" == *'DOTFILES_PRESET'* ]]; then
-    pass "prerequisites supports preset configuration"
-else
-    fail "prerequisites should support preset configuration"
-fi
-
-if [[ "$prereq_content" == *'check()'* ]] || [[ "$prereq_content" == *'check_command'* ]]; then
-    pass "prerequisites defines check function"
-else
-    fail "prerequisites should define check function"
-fi
-
-if [[ "$prereq_content" == *'check_optional'* ]]; then
-    pass "prerequisites supports optional checks"
-else
-    fail "prerequisites should support optional checks"
-fi
-
-section "Check Prerequisites - Required Tools"
-
-if [[ "$prereq_content" == *'"git"'* ]]; then
-    pass "prerequisites checks for git"
-else
-    fail "prerequisites should check for git"
-fi
-
-if [[ "$prereq_content" == *'"zsh"'* ]]; then
-    pass "prerequisites checks for zsh"
-else
-    fail "prerequisites should check for zsh"
-fi
-
-if [[ "$prereq_content" == *'"tmux"'* ]]; then
-    pass "prerequisites checks for tmux"
-else
-    fail "prerequisites should check for tmux"
-fi
-
-if [[ "$prereq_content" == *'"neovim"'* ]] || [[ "$prereq_content" == *'"nvim"'* ]]; then
-    pass "prerequisites checks for neovim"
-else
-    fail "prerequisites should check for neovim"
-fi
-
-if [[ "$prereq_content" == *'"fzf"'* ]]; then
-    pass "prerequisites checks for fzf"
-else
-    fail "prerequisites should check for fzf"
-fi
-
-section "Check Prerequisites - Preset Hierarchy"
-
-if [[ "$prereq_content" == *'should_install "core"'* ]]; then
-    pass "prerequisites uses should_install for core"
-else
-    fail "prerequisites should use should_install for core"
-fi
-
-if [[ "$prereq_content" == *'should_install "full"'* ]]; then
-    pass "prerequisites uses should_install for full"
-else
-    fail "prerequisites should use should_install for full"
-fi
-
-section "Check Prerequisites - macOS Checks"
-
-if [[ "$prereq_content" == *'is_macos'* ]]; then
-    pass "prerequisites has macOS-specific checks"
-else
-    fail "prerequisites should have macOS-specific checks"
-fi
-
-if [[ "$prereq_content" == *'Ghostty.app'* ]]; then
-    pass "prerequisites checks for Ghostty app"
-else
-    fail "prerequisites should check for Ghostty app"
-fi
-
-if [[ "$prereq_content" == *'Karabiner'* ]]; then
-    pass "prerequisites checks for Karabiner"
-else
-    fail "prerequisites should check for Karabiner"
-fi
-
-section "Check Prerequisites - Exit Codes"
-
-if [[ "$prereq_content" == *'FAILED=0'* ]] || [[ "$prereq_content" == *'FAILED='* ]]; then
-    pass "prerequisites tracks failure state"
-else
-    fail "prerequisites should track failure state"
-fi
-
-if [[ "$prereq_content" == *'exit 0'* ]] && [[ "$prereq_content" == *'exit 1'* ]]; then
-    pass "prerequisites has proper exit codes"
-else
-    fail "prerequisites should have proper exit codes"
-fi
-
-# ===========================================================================
-# Release Notes Command Tests
-# ===========================================================================
-
-section "Notes Command - Structure"
-
-# Check that notes command is routed in main case statement
-if [[ "$script_content" == *'notes|'* ]]; then
-    pass "notes command is handled in main case statement"
-else
-    fail "notes command should be in main case statement"
-fi
-
-# Check -n shorthand
-if [[ "$script_content" == *'-n)'* ]]; then
-    pass "notes command supports -n shorthand"
-else
-    fail "notes command should support -n shorthand"
-fi
-
-# Check that cmd_notes references CHANGELOG.md
-if [[ "$script_content" == *'CHANGELOG.md'* ]]; then
-    pass "notes references CHANGELOG.md"
-else
-    fail "notes should reference CHANGELOG.md"
-fi
-
-# Check that cmd_notes fetches from remote
-if [[ "$script_content" == *'git show'*'CHANGELOG.md'* ]]; then
-    pass "notes fetches remote changelog via git show"
-else
-    fail "notes should fetch remote changelog via git show"
-fi
-
-# Check that cmd_notes falls back to local
-if [[ "$script_content" == *'Fall back to local'* ]]; then
-    pass "notes falls back to local changelog when remote unavailable"
-else
-    fail "notes should fall back to local changelog"
-fi
-
-# Check that changelog helpers use awk for parsing
-if [[ "$script_content" == *'_changelog_incoming'* ]]; then
-    pass "status/update uses _changelog_incoming helper"
-else
-    fail "status/update should use _changelog_incoming helper"
-fi
-
-# ===========================================================================
-# Links Command Tests
-# ===========================================================================
-
-section "Links Command - Structure"
-
-# Check that links command is routed in main case statement
-if [[ "$script_content" == *'links|'* ]]; then
-    pass "links command is handled in main case statement"
-else
-    fail "links command should be in main case statement"
-fi
-
-# Check -l shorthand
-if [[ "$script_content" == *'-l)'* ]]; then
-    pass "links command supports -l shorthand"
-else
-    fail "links command should support -l shorthand"
-fi
-
-# Check that cmd_links uses _check_link helper
-if [[ "$script_content" == *'_check_link()'* ]]; then
-    pass "cmd_links defines _check_link helper"
-else
-    fail "cmd_links should define _check_link helper"
-fi
-
-# Check that cmd_links uses preset detection
-if [[ "$script_content" == *'cmd_links'*'get_preset'* ]] || grep -q 'get_preset' <<< "$(sed -n '/cmd_links()/,/^}/p' "$DOTFILES_CLI")"; then
-    pass "cmd_links uses get_preset"
-else
-    fail "cmd_links should use get_preset"
-fi
-
-# Check that cmd_links uses should_install for preset hierarchy
-if grep -q 'should_install' <<< "$(sed -n '/cmd_links()/,/^}/p' "$DOTFILES_CLI")"; then
-    pass "cmd_links uses should_install for preset filtering"
-else
-    fail "cmd_links should use should_install for preset filtering"
-fi
-
-# Check that help documents links command usage
-if [[ "$help_output" == *"symlinks"* ]] || [[ "$help_output" == *"links"* ]]; then
-    pass "help documents links command"
-else
-    fail "help should document links command"
-fi
-
-# ===========================================================================
-# Aliases Command Tests
-# ===========================================================================
-
-section "Aliases Command - Column Separator Consistency"
-
-# _2col renders two-column rows with a │ separator. When a call has an odd
-# number of entry pairs, the last row renders single-column (no │), breaking
-# visual consistency. Each _2col call should have an even number of pairs.
-_2col_check_failed=0
-while IFS= read -r info; do
-    start_line="${info%%:*}"
-    pair_count="${info#*:}"
-    if (( pair_count % 2 != 0 )); then
-        fail "_2col near line $start_line: $pair_count pairs (odd) — last row lacks │ separator"
-        _2col_check_failed=$(( _2col_check_failed + 1 ))
-    fi
-done < <(awk '
-    /^[[:space:]]*_2col[[:space:]]*\\[[:space:]]*$/ {
-        in_block = 1; n = 0; s = NR; next
-    }
-    in_block {
-        n++
-        if (!/\\[[:space:]]*$/) {
-            in_block = 0
-            print s ":" n
-        }
-    }
-' "$DOTFILES_CLI")
-
-# Array-based _2col calls (e.g. _2col "${arr[@]}"): conditional +=() additions
-# must add an even number of pairs so │ parity is preserved in all code paths
-while IFS= read -r arr_var; do
-    [[ -z "$arr_var" ]] && continue
-    while IFS= read -r line; do
-        [[ -z "$line" ]] && continue
-        quotes="${line//[^\"]/}"
-        pairs=$(( ${#quotes} / 4 ))
-        if (( pairs % 2 != 0 )); then
-            fail "${arr_var}+=(): adds $pairs pair(s) (odd) — flips │ column parity"
-            _2col_check_failed=$(( _2col_check_failed + 1 ))
+    # shellcheck source=scripts/_lib/rollback.sh
+    source "$ROLLBACK_LIB"
+    for fn in \
+        init_rollback_state \
+        record_step \
+        get_last_step \
+        record_backup_location \
+        get_backup_location \
+        record_symlink \
+        get_created_symlinks \
+        has_rollback_state \
+        cleanup_rollback_state \
+        restore_from_backup \
+        perform_rollback; do
+        if declare -F "$fn" >/dev/null; then
+            pass "rollback lib defines $fn"
+        else
+            fail "rollback lib missing $fn"
         fi
-    done < <(grep "${arr_var}+=(" "$DOTFILES_CLI")
-done < <(grep '_2col "\${' "$DOTFILES_CLI" | sed 's/.*\${\([a-zA-Z_]*\)\[.*/\1/')
-
-if (( _2col_check_failed == 0 )); then
-    pass "all _2col calls have even pair counts (consistent │ separators)"
-fi
-
-section "Aliases Command - User Alias Quote Stripping"
-
-# The user alias parser in cmd_aliases strips inline comments and surrounding
-# quotes. Verify the logic handles all quoting styles without leaving stray
-# characters. We extract the stripping logic and test it in isolation.
-
-_test_strip_alias_value() {
-    local value="$1"
-    # Mirror the logic from cmd_aliases
-    value="${value%%[[:space:]]# *}"
-    local trailing="${value##*[^[:space:]]}"
-    value="${value%"$trailing"}"
-    value="${value#[\"\']}"
-    value="${value%[\"\']}"
-    printf '%s' "$value"
-}
-
-# Double-quoted alias with inline comment (the original bug)
-result=$(_test_strip_alias_value '"cd $ACME_ROOT"  # Acme project')
-if [[ "$result" == 'cd $ACME_ROOT' ]]; then
-    pass "double-quoted alias with inline comment"
+    done
 else
-    fail "double-quoted alias with inline comment: got '$result'"
+    skip "rollback library not found"
 fi
 
-# Double-quoted alias without comment
-result=$(_test_strip_alias_value '"cd $DEV_ROOT"')
-if [[ "$result" == 'cd $DEV_ROOT' ]]; then
-    pass "double-quoted alias without comment"
+# ─── 9. Cheatsheet parser tests (Plan 2) ───────────────────────────────
+
+section "Cheatsheet — parser behaviour (synthetic source)"
+
+setup_cli_sandbox
+
+# Synthesise a minimal dotfiles.zsh that exercises every parse rule.
+cat > "$TEST_DOTFILES_DIR/zsh/dotfiles.zsh" << 'EOF'
+# @section: Navigation
+alias c="clear"                          # clear screen
+alias cl="printf '\033[2J'"              # clear + scrollback
+alias _internal="some-thing"             # internal — convention says skip
+alias undescribed="thing"
+
+# @section: Git
+alias gs="git status -sb"                # short status
+# @cheat: mkdir + cd into <dir>
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+# @cheat: Opt+A | cd from history (fzf)
+bindkey '\ea' fzf-cd-from-history-widget
+EOF
+
+aliases_out=$("$TEST_DOTFILES_DIR/scripts/dotfiles" aliases 2>&1)
+
+# Section detection
+if [[ "$aliases_out" == *"NAVIGATION"* ]]; then
+    pass "section 'NAVIGATION' rendered (uppercased)"
 else
-    fail "double-quoted alias without comment: got '$result'"
+    fail "missing section NAVIGATION"
 fi
-
-# Single-quoted alias without comment
-result=$(_test_strip_alias_value "'cd \$DEV_ROOT'")
-if [[ "$result" == 'cd $DEV_ROOT' ]]; then
-    pass "single-quoted alias without comment"
+if [[ "$aliases_out" == *"GIT"* ]]; then
+    pass "section 'GIT' rendered"
 else
-    fail "single-quoted alias without comment: got '$result'"
+    fail "missing section GIT"
 fi
 
-# Single-quoted alias with inline comment
-result=$(_test_strip_alias_value "'cd \$HOME'  # Home dir")
-if [[ "$result" == 'cd $HOME' ]]; then
-    pass "single-quoted alias with inline comment"
+# Alias with description renders
+if [[ "$aliases_out" == *"clear screen"* ]]; then
+    pass "alias-with-description rendered"
 else
-    fail "single-quoted alias with inline comment: got '$result'"
+    fail "alias 'c' with description should render"
 fi
-
-# Double-quoted alias with escaped inner quotes and comment
-result=$(_test_strip_alias_value '"pkill -f \"vite\" 2>/dev/null"  # Kill vite')
-if [[ "$result" == 'pkill -f \"vite\" 2>/dev/null' ]]; then
-    pass "double-quoted alias with escaped inner quotes and comment"
+if [[ "$aliases_out" == *"short status"* ]]; then
+    pass "git alias rendered"
 else
-    fail "double-quoted alias with escaped inner quotes and comment: got '$result'"
+    fail "alias 'gs' should render"
 fi
 
-# Unquoted alias (e.g. simple command without spaces in value)
-result=$(_test_strip_alias_value 'dotfiles')
-if [[ "$result" == 'dotfiles' ]]; then
-    pass "unquoted alias value"
+# Alias without description is silently skipped
+if [[ "$aliases_out" != *"undescribed"* ]]; then
+    pass "alias without description is skipped"
 else
-    fail "unquoted alias value: got '$result'"
+    fail "alias without description leaked into output"
 fi
 
-# ===========================================================================
-# Launcher Scripts Tests
-# ===========================================================================
-
-LAUNCHERS_DIR="$DOTFILES_DIR/launchers"
-
-section "Launcher Scripts - Config"
-
-config_launcher="$LAUNCHERS_DIR/config"
-if [[ -f "$config_launcher" ]]; then
-    pass "config launcher exists"
+# Function with @cheat directive
+if [[ "$aliases_out" == *"mkcd"* ]] && [[ "$aliases_out" == *"mkdir + cd into"* ]]; then
+    pass "function with @cheat rendered"
 else
-    fail "config launcher not found at $config_launcher"
+    fail "function 'mkcd' should render with description"
 fi
 
-if [[ -x "$config_launcher" ]]; then
-    pass "config launcher is executable"
+# Free-form @cheat: <name> | <description>
+if [[ "$aliases_out" == *"Opt+A"* ]] && [[ "$aliases_out" == *"cd from history"* ]]; then
+    pass "free-form @cheat rendered"
 else
-    fail "config launcher is not executable"
+    fail "Opt+A free-form @cheat should render"
 fi
 
-section "Launcher Scripts - Dotfiles"
-
-dotfiles_launcher="$LAUNCHERS_DIR/dotfiles"
-if [[ -f "$dotfiles_launcher" ]]; then
-    pass "dotfiles launcher exists"
+# Missing source file → clear error and exit 1
+rm -f "$TEST_DOTFILES_DIR/zsh/dotfiles.zsh"
+if out=$("$TEST_DOTFILES_DIR/scripts/dotfiles" aliases 2>&1); then
+    fail "aliases should fail when source missing"
 else
-    fail "dotfiles launcher not found at $dotfiles_launcher"
-fi
-
-if [[ -x "$dotfiles_launcher" ]]; then
-    pass "dotfiles launcher is executable"
-else
-    fail "dotfiles launcher is not executable"
-fi
-
-section "Launcher Scripts - ShellCheck"
-
-if command -v shellcheck &>/dev/null; then
-    if shellcheck -x -S warning -e SC1091 "$config_launcher" 2>/dev/null; then
-        pass "config launcher passes shellcheck"
+    if [[ "$out" == *"Shell source not found"* ]]; then
+        pass "missing source produces a clear error"
     else
-        fail "config launcher has shellcheck warnings"
+        fail "missing-source error should mention 'Shell source not found'"
     fi
-
-    if shellcheck -x -S warning -e SC1091 "$dotfiles_launcher" 2>/dev/null; then
-        pass "dotfiles launcher passes shellcheck"
-    else
-        fail "dotfiles launcher has shellcheck warnings"
-    fi
-else
-    skip "shellcheck not installed"
 fi
 
-section "Launcher Scripts - Structure"
+cleanup_sandbox
 
-config_content=$(cat "$config_launcher")
-dotfiles_content=$(cat "$dotfiles_launcher")
+section "Cheatsheet — soft lint (warnings, not failures)"
 
-if [[ "$config_content" == *'set -euo pipefail'* ]]; then
-    pass "config launcher uses strict mode"
+# Scan the real dotfiles.zsh for user-facing aliases without a trailing
+# description comment. Heuristic: alias closes with " or ' and the line
+# contains no "#" after the closing quote. Names starting with _ are
+# treated as internal and excluded.
+missing=$(awk '
+    /^[[:space:]]*alias[[:space:]]+_/ { next }
+    /^[[:space:]]*alias[[:space:]]+[a-zA-Z][a-zA-Z0-9_-]*=.*["\x27][[:space:]]*$/ {
+        printf "%s:%d: %s\n", FILENAME, NR, $0
+    }
+' "$DOTFILES_DIR/zsh/dotfiles.zsh")
+
+if [[ -z "$missing" ]]; then
+    pass "every user-facing alias in dotfiles.zsh has a description"
 else
-    fail "config launcher should use strict mode"
+    count=$(printf '%s\n' "$missing" | grep -c .)
+    skip "$(printf '%d alias(es) without description (warning):\n%s' "$count" "$missing")"
 fi
 
-if [[ "$dotfiles_content" == *'set -euo pipefail'* ]]; then
-    pass "dotfiles launcher uses strict mode"
-else
-    fail "dotfiles launcher should use strict mode"
-fi
-
-if [[ "$config_content" == *'@description:'* ]]; then
-    pass "config launcher has @description metadata"
-else
-    fail "config launcher should have @description metadata"
-fi
-
-if [[ "$dotfiles_content" == *'@description:'* ]]; then
-    pass "dotfiles launcher has @description metadata"
-else
-    fail "dotfiles launcher should have @description metadata"
-fi
-
-if [[ "$config_content" == *'--help'* ]]; then
-    pass "config launcher supports --help flag"
-else
-    fail "config launcher should support --help flag"
-fi
-
-if [[ "$dotfiles_content" == *'--help'* ]]; then
-    pass "dotfiles launcher supports --help flag"
-else
-    fail "dotfiles launcher should support --help flag"
-fi
-
-# Check help output
-config_help=$("$config_launcher" --help 2>&1) || true
-if [[ "$config_help" == *"USAGE:"* ]]; then
-    pass "config launcher --help shows USAGE"
-else
-    fail "config launcher --help should show USAGE"
-fi
-
-dotfiles_help=$("$dotfiles_launcher" --help 2>&1) || true
-if [[ "$dotfiles_help" == *"USAGE:"* ]]; then
-    pass "dotfiles launcher --help shows USAGE"
-else
-    fail "dotfiles launcher --help should show USAGE"
-fi
-
-# Check tmux session handling
-if [[ "$config_content" == *'tmux has-session'* ]]; then
-    pass "config launcher checks for existing session"
-else
-    fail "config launcher should check for existing session"
-fi
-
-if [[ "$dotfiles_content" == *'tmux has-session'* ]]; then
-    pass "dotfiles launcher checks for existing session"
-else
-    fail "dotfiles launcher should check for existing session"
-fi
-
-if [[ "$config_content" == *'tmux new-session'* ]]; then
-    pass "config launcher creates tmux session"
-else
-    fail "config launcher should create tmux session"
-fi
-
-if [[ "$dotfiles_content" == *'tmux new-session'* ]]; then
-    pass "dotfiles launcher creates tmux session"
-else
-    fail "dotfiles launcher should create tmux session"
-fi
-
-# ===========================================================================
-# Incremental Update Unit Tests
-# ===========================================================================
-
-section "Version Comparison - _version_gt"
-
-# Extract _version_gt from the dotfiles CLI for isolated testing
-eval "$(sed -n '/_version_gt()/,/^}/p' "$DOTFILES_CLI")"
-
-if _version_gt "1.1.0" "1.0.0"; then
-    pass "1.1.0 > 1.0.0"
-else
-    fail "1.1.0 should be greater than 1.0.0"
-fi
-
-if ! _version_gt "1.0.0" "1.1.0"; then
-    pass "1.0.0 is not > 1.1.0"
-else
-    fail "1.0.0 should not be greater than 1.1.0"
-fi
-
-if ! _version_gt "1.0.0" "1.0.0"; then
-    pass "equal versions return false"
-else
-    fail "equal versions should return false"
-fi
-
-if _version_gt "1.10.0" "1.9.0"; then
-    pass "1.10.0 > 1.9.0 (sort -V edge case)"
-else
-    fail "1.10.0 should be greater than 1.9.0"
-fi
-
-if _version_gt "2.0.0" "1.99.0"; then
-    pass "2.0.0 > 1.99.0"
-else
-    fail "2.0.0 should be greater than 1.99.0"
-fi
-
-if _version_gt "1.0.1" "1.0.0"; then
-    pass "1.0.1 > 1.0.0 (patch version)"
-else
-    fail "1.0.1 should be greater than 1.0.0"
-fi
-
-# ===========================================================================
-# Summary
-# ===========================================================================
+# ─── Summary ───────────────────────────────────────────────────────────
 
 print_summary
-
-if [[ $FAIL -gt 0 ]]; then
-    exit 1
-fi
+[[ $FAIL -gt 0 ]] && exit 1
+exit 0
