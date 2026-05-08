@@ -428,51 +428,77 @@ ssh() {
 # =============================================================================
 # ALIASES & FUNCTIONS
 # =============================================================================
-# Editor
-export EDITOR="nvim"                   # Default editor for git, etc.
-alias v="cl && nvim"                   # Clear scrollback + launch Neovim
-alias opencode="cl && opencode"        # Clear scrollback + launch OpenCode editor
-alias oc="opencode"                    # Shorthand for OpenCode editor
-alias claude="cl && claude"            # Clear scrollback + launch Claude AI CLI
-alias ralph="cl && ralph"              # Clear scrollback + launch Ralph => Claude Code
-alias ralf="cl && ralf"                # Clear scrollback + launch Ralf => Claude Code
-alias gemini="cl && gemini"            # Clear scrollback + launch Gemini AI CLI
-alias copilot="cl && copilot"          # Clear scrollback + launch GitHub Copilot CLI
-alias btop="cl && btop"                # Clear scrollback + launch btop system monitor
-alias dash="cl && gh dash"             # Clear scrollback + launch GitHub Dash
-alias dot="dotfiles"                   # Shorthand for dotfiles CLI
-alias drs="dash-repo-sync"             # Sync local repo paths into gh-dash config
-alias ff="fastfetch"                   # Fastfetch system info
-alias ac="alerts-clear"                # Clear tmux alerts (see alias below)
-alias j="cl && jiru"                   # Jiru CLI alias (cl to clear scrollback first)
-alias lg="cl && lazygit"               # LazyGit alias (cl to clear scrollback first)
-alias ld="cl && lazydocker"            # LazyDocker alias (cl to clear scrollback first)
-alias lc="cl && lazycron"              # LazyCron alias (cl to clear scrollback first)
+# The `dotfiles aliases` cheatsheet renders this section by parsing:
+#   # @section: <Name>                       — section header (uppercased for display)
+#   alias name="..."  # description           — alias entry (description required)
+#   # @cheat: <name> | <description>          — free-form entry (any line)
+#   # @cheat: <description>                   — function entry, paired with the
+#   followed by `name() { ... }`                 next function definition
+# Aliases without trailing descriptions are silently skipped — keeps the
+# cheatsheet curated. See cmd_aliases / _aliases_parse in scripts/dotfiles.
 
-# Tmux session management
-alias tls="~/.tmux/scripts/resurrect/restore.sh --list"
-alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"
-alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts"  # Clear all tmux alerts
-alias ta="tattach" # Attach to tmux session, restoring from backup if needed (see tattach function below)
+# Editor (used as default $EDITOR for git, etc.)
+export EDITOR="nvim"
 
-# Asciinema demo recording
-alias demo-rec='asciinema rec --idle-time-limit 2 --cols 120 --rows 35'
+# @section: NAVIGATION
 
-# Navigation
-alias c="clear"
-alias cl="printf '\033[2J\033[3J\033[H'; [[ -n \$TMUX ]] && tmux clear-history || true"  # clear screen + scrollback
+alias c="clear"                                                                # clear
+alias cl="printf '\033[2J\033[3J\033[H'; [[ -n \$TMUX ]] && tmux clear-history || true"   # clear + scrollback
+# @cheat: ..  | cd ..
 alias ..="cd .."
+# @cheat: ... | cd ../..
 alias ...="cd ../.."
 
-# File listing (colour-aware: BSD ls uses -G, GNU ls uses --color=auto)
-if [[ "$IS_MACOS" == "1" ]]; then
-  alias ls="ls -G"
-else
-  alias ls="ls --color=auto"
-fi
-alias ll="ls -alF"
-alias la="ls -A"
-alias l="ls -CF"
+# @cheat: mkcd <dir> | mkdir + cd
+mkcd() { mkdir -p "$1" && cd "$1"; }
+
+# Directory back/forward navigation (browser-style).
+# cdb: previous directory; cdf: forward (after going back).
+typeset -ga _dir_back_stack _dir_forward_stack
+_dir_nav_active=0
+
+_dir_track_chpwd() {
+  # Skip tracking when cdb/cdf triggered the change
+  if (( _dir_nav_active )); then return; fi
+  _dir_back_stack+=("$OLDPWD")
+  _dir_forward_stack=()
+  # Cap stack size at 50 entries
+  (( ${#_dir_back_stack} > 50 )) && _dir_back_stack=("${_dir_back_stack[@]: -50}")
+}
+chpwd_functions+=(_dir_track_chpwd)
+
+# @cheat: cd back (browser)
+cdb() {
+  if (( ${#_dir_back_stack} == 0 )); then
+    echo "No previous directory" >&2
+    return 1
+  fi
+  local dest="${_dir_back_stack[-1]}"
+  _dir_back_stack[-1]=()
+  _dir_forward_stack+=("$PWD")
+  _dir_nav_active=1
+  cd "$dest"
+  _dir_nav_active=0
+}
+
+# @cheat: cd forward (after cdb)
+cdf() {
+  if (( ${#_dir_forward_stack} == 0 )); then
+    echo "No forward directory" >&2
+    return 1
+  fi
+  local dest="${_dir_forward_stack[-1]}"
+  _dir_forward_stack[-1]=()
+  _dir_back_stack+=("$PWD")
+  _dir_nav_active=1
+  cd "$dest"
+  _dir_nav_active=0
+}
+
+# Directory history picker (autoloaded; bound to Opt+A via _cdl-widget earlier in this file)
+autoload -Uz _cdl
+
+# @cheat: Opt+A | cd from history (fzf)
 
 # Open buffer line in editor
 autoload -Uz edit-command-line
@@ -480,60 +506,111 @@ zle -N edit-command-line
 bindkey '^g' edit-command-line  # Ctrl+G to open current command line in $EDITOR (e.g. nvim)
 
 # Magic space binding to spacebar
-bindkey ' ' magic-space  # Spacebar to expand aliases and re-evaluate the command line (e.g. `gs` → `git status -sb`)
+bindkey ' ' magic-space  # Spacebar to expand aliases and re-evaluate the command line
 
-# Search
-alias grep="grep --color=auto"
+# @section: FILES
 
-# Shell shortcuts
-alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'
-alias nuke-nvim='ps -eo pid,ppid,args | awk "/nvim --embed/ && \$2 == 1 {print \$1}" | xargs kill 2>/dev/null && echo "done" || echo "no stale nvim processes"'
-alias nuke-dotnet='dotnet build-server shutdown 2>/dev/null; pkill -f "OmniSharp.dll" 2>/dev/null; pkill -f "EasyDotnet.BuildServer.dll" 2>/dev/null; pkill -f "dotnet-easydotnet" 2>/dev/null; pkill -f "VBCSCompiler" 2>/dev/null; pkill -f "vstest.console.dll" 2>/dev/null; echo "done"'
-
-# Clipboard — Linux only (macOS has pbcopy/pbpaste natively)
-if [[ "$IS_MACOS" != "1" ]]; then
-  alias pbcopy="xclip -selection clipboard"
-  alias pbpaste="xclip -selection clipboard -o"
+# File listing (colour-aware: BSD ls uses -G, GNU ls uses --color=auto)
+if [[ "$IS_MACOS" == "1" ]]; then
+  alias ls="ls -G"                                                             # ls (colour-aware)
+else
+  alias ls="ls --color=auto"
 fi
+alias ll="ls -alF"                                                             # ls -alF
+alias la="ls -A"                                                               # ls -A
+alias l="ls -CF"                                                               # ls -CF
 
 # Safer file operations
-alias cp="cp -i"
-alias mv="mv -i"
-
-# System
-alias df="df -h"
-alias du="du -sh"
-alias psg="ps aux | grep -v grep | grep"   # e.g. psg nvim
-alias ports="lsof -i -P -n | grep LISTEN"
-
-# Networking
-alias myip="curl -s ifconfig.me"
-
-# Quick access to config files
-alias secrets="v ~/.config/zsh/secrets.zsh"  # Edit API keys and credentials
-alias config="v ~/.config"                   # Edit general config files
-alias zshrc="v ~/.zshrc"                     # Edit personal shell config
+alias cp="cp -i"                                                               # cp -i (safe overwrite)
+alias mv="mv -i"                                                               # mv -i (safe overwrite)
 
 # Suffix aliases
 alias -s md='-t glow' # View markdown files with syntax highlighting using glow (if installed)
 
-# Open — platform-aware (macOS: open, Linux: xdg-open)
-if [[ "$IS_MACOS" == "1" ]]; then
-  alias o="open"
-  alias finder="open ."
-else
-  alias o="xdg-open"
-fi
+# @section: SEARCH & PROCESS
+
+alias grep="grep --color=auto"                                                 # grep --color=auto
+# @cheat: rg | ripgrep (fast search)
+# @cheat: psg <name> | ps aux | grep
+alias psg="ps aux | grep -v grep | grep"
+alias ports="lsof -i -P -n | grep LISTEN"                                      # lsof ports (local)
+
+# @section: GIT
+
+alias gs="git status -sb"                                                      # git status -sb
+alias gd="git diff"                                                            # git diff
+alias gdn="git diff | diffnav"                                                 # git diff (diffnav)
+alias gds="git diff --stat"                                                    # git diff --stat
+alias gl="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ar, %an)%C(reset)' -20"                          # git log (last 20)
+alias glf="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ad, %an)%C(reset)' --date=format:'%d %B %Y %H:%M'"  # git log (full)
+alias gco="git checkout"                                                       # git checkout
+alias gsw="git switch"                                                         # git switch
+alias gb="git branch -vv"                                                      # git branch -vv
+alias gp="git push"                                                            # git push
+alias gpl="git pull"                                                           # git pull
+alias gst="git stash"                                                          # git stash
+alias gfp="git fetch -pf"                                                      # git fetch --prune
+alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # prune local branches
+alias grmc="git rm --cached"                                                   # git rm --cached
+alias gca="git commit --amend"                                                 # git commit --amend
+
+# Make: forward to repo root when no Makefile in current directory
+make() {
+  if [[ ! -f Makefile && ! -f makefile && ! -f GNUmakefile ]]; then
+    local root
+    root=$(git rev-parse --show-toplevel 2>/dev/null)
+    if [[ -n "$root" && -f "$root/Makefile" ]]; then
+      command make -C "$root" "$@"
+      return
+    fi
+  fi
+  command make "$@"
+}
+
+# @section: TMUX
+
+alias tls="~/.tmux/scripts/resurrect/restore.sh --list"                        # list session backups
+# @cheat: ta/tattach | attach/restore session
+alias ta="tattach"
+# @cheat: ac/alerts-clear | clear all tmux alerts
+alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts"
+alias ac="alerts-clear"
+alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"                        # clean test resources
+
+# Asciinema demo recording (no cheatsheet entry)
+alias demo-rec='asciinema rec --idle-time-limit 2 --cols 120 --rows 35'
 
 # Functions (instead of aliases) for tab completion support
+# @cheat: restore from backup
 trestore() {
   ~/.tmux/scripts/resurrect/restore.sh "$@"
 }
 
+# @cheat: delete session backup
 tkill() {
   ~/.tmux/scripts/resurrect/delete.sh "$@"
 }
 
+# Attach to tmux session, restoring from backup if needed
+tattach() {
+  # Try to attach to running session
+  if tmux a -t "$1" 2>/dev/null; then return 0; fi
+
+  # Not running - try to restore from backup
+  local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
+  if [[ -f "$backup" ]]; then
+    echo "Restoring '$1' from backup..."
+    if ~/.tmux/scripts/resurrect/restore.sh --session "$1" && tmux a -t "$1"; then
+      return 0
+    fi
+    # Restore failed - backup is stale
+    echo "Backup stale, removing: $1"
+    rm -f "$backup"
+    return 1
+  fi
+  echo "No session or backup found: $1"
+  return 1
+}
 
 # Tab completion for tmux commands
 _trestore_complete() {
@@ -572,122 +649,69 @@ compdef _trestore_complete trestore
 compdef _tmux_sessions_running tkill
 compdef _tmux_sessions_running tattach
 
-# Make directory and cd into it
-mkcd() { mkdir -p "$1" && cd "$1"; }
+# @section: SYSTEM & NETWORK
 
-# Directory back/forward navigation (browser-style)
-# cdb: go back to previous directory
-# cdf: go forward (after going back)
-typeset -ga _dir_back_stack _dir_forward_stack
-_dir_nav_active=0
+alias df="df -h"                                                               # df -h
+alias du="du -sh"                                                              # du -sh
+alias myip="curl -s ifconfig.me"                                               # curl ifconfig.me
+alias v="cl && nvim"                                                           # clear + nvim
 
-_dir_track_chpwd() {
-  # Skip tracking when cdb/cdf triggered the change
-  if (( _dir_nav_active )); then return; fi
-  _dir_back_stack+=("$OLDPWD")
-  _dir_forward_stack=()
-  # Cap stack size at 50 entries
-  (( ${#_dir_back_stack} > 50 )) && _dir_back_stack=("${_dir_back_stack[@]: -50}")
-}
-chpwd_functions+=(_dir_track_chpwd)
+# Open — platform-aware (macOS: open, Linux: xdg-open)
+if [[ "$IS_MACOS" == "1" ]]; then
+  alias o="open"                                                               # open file/dir
+  alias finder="open ."                                                        # open in Finder (macOS)
+else
+  alias o="xdg-open"
+fi
 
-cdb() {
-  if (( ${#_dir_back_stack} == 0 )); then
-    echo "No previous directory" >&2
-    return 1
-  fi
-  local dest="${_dir_back_stack[-1]}"
-  _dir_back_stack[-1]=()
-  _dir_forward_stack+=("$PWD")
-  _dir_nav_active=1
-  cd "$dest"
-  _dir_nav_active=0
-}
-
-cdf() {
-  if (( ${#_dir_forward_stack} == 0 )); then
-    echo "No forward directory" >&2
-    return 1
-  fi
-  local dest="${_dir_forward_stack[-1]}"
-  _dir_forward_stack[-1]=()
-  _dir_back_stack+=("$PWD")
-  _dir_nav_active=1
-  cd "$dest"
-  _dir_nav_active=0
-}
-
-# Directory history picker (autoloaded from zsh/functions/_cdl, bound to Opt+A via ZLE widget)
-autoload -Uz _cdl
+# Quick access to config files
+alias secrets="v ~/.config/zsh/secrets.zsh"                                    # edit secrets.zsh
+alias config="v ~/.config"                                                     # edit ~/.config
+alias zshrc="v ~/.zshrc"                                                       # edit ~/.zshrc
 
 # Font preview (figlet/toilet font browser with fzf)
+# @cheat: font-preview | font browser (fzf)
 autoload -Uz font-preview
 
-# Attach to tmux session, restoring from backup if needed
-tattach() {
-  # Try to attach to running session
-  if tmux a -t "$1" 2>/dev/null; then return 0; fi
+# Clipboard — Linux only (macOS has pbcopy/pbpaste natively, no cheatsheet entry)
+if [[ "$IS_MACOS" != "1" ]]; then
+  alias pbcopy="xclip -selection clipboard"
+  alias pbpaste="xclip -selection clipboard -o"
+fi
 
-  # Not running - try to restore from backup
-  local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
-  if [[ -f "$backup" ]]; then
-    echo "Restoring '$1' from backup..."
-    if ~/.tmux/scripts/resurrect/restore.sh --session "$1" && tmux a -t "$1"; then
-      return 0
-    fi
-    # Restore failed - backup is stale
-    echo "Backup stale, removing: $1"
-    rm -f "$backup"
-    return 1
-  fi
-  echo "No session or backup found: $1"
-  return 1
-}
+# @section: DEVELOPMENT
 
-# Git
-alias gs="git status -sb"
-alias gd="git diff"
-alias gdn="git diff | diffnav" # View git diffs in diffnav
-alias gds="git diff --stat"
-alias gl="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ar, %an)%C(reset)' -20"
-alias glf="git log --graph --decorate --format='%C(yellow)%h%C(reset) %s %C(dim)(%ad, %an)%C(reset)' --date=format:'%d %B %Y %H:%M'"
-alias gco="git checkout"
-alias gsw="git switch"
-alias gb="git branch -vv"
-alias gp="git push"
-alias gpl="git pull"
-alias gst="git stash"
-alias gfp="git fetch -pf"              # Fetch and prune remote-tracking branches
-alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # Prune local branches removed from remote
-alias grmc="git rm --cached"           # Untrack file(s) without deleting from disk
-alias gca="git commit --amend"         # Amend the last commit
-
-# Make: forward to repo root when no Makefile in current directory
-make() {
-  if [[ ! -f Makefile && ! -f makefile && ! -f GNUmakefile ]]; then
-    local root
-    root=$(git rev-parse --show-toplevel 2>/dev/null)
-    if [[ -n "$root" && -f "$root/Makefile" ]]; then
-      command make -C "$root" "$@"
-      return
-    fi
-  fi
-  command make "$@"
-}
-
-# Development tools
-alias gols="ls ~/go/bin"               # List installed Go binaries
-alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"  # Fix stale plugin cache
+alias opencode="cl && opencode"                                                # cl + opencode
+alias oc="opencode"                                                            # opencode (shorthand)
+alias claude="cl && claude"                                                    # cl + claude
+alias ralph="cl && ralph"                                                      # cl + ralph
+alias ralf="cl && ralf"                                                        # cl + ralf
+alias gemini="cl && gemini"                                                    # cl + gemini
+alias copilot="cl && copilot"                                                  # cl + copilot
+alias btop="cl && btop"                                                        # cl + btop
+alias drs="dash-repo-sync"                                                     # sync repo paths
+alias ff="fastfetch"                                                           # fastfetch system info
+alias dash="cl && gh dash"                                                     # cl + gh dash
+alias j="cl && jiru"                                                           # cl + jiru (Jira TUI)
+alias lg="cl && lazygit"                                                       # cl + lazygit
+alias ld="cl && lazydocker"                                                    # cl + lazydocker
+alias lc="cl && lazycron"                                                      # cl + lazycron
+alias gols="ls ~/go/bin"                                                       # list Go binaries
+alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"   # clear nvim cache
 
 # Sync all Lazy.nvim plugins (headless)
+# @cheat: nvim-sync | sync Lazy.nvim plugins
 nvim-sync() {
   printf "Syncing Neovim plugins...\n"
   nvim --headless "+Lazy! sync" +qa
   printf "\033[0;32m✔\033[0m Neovim plugins synced\n"
 }
 
-# Homebrew update
-alias brewup="brew update && brew upgrade"
+alias brewup="brew update && brew upgrade"                                     # brew update + upgrade
+alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'                                                                                            # kill all node procs
+alias nuke-nvim='ps -eo pid,ppid,args | awk "/nvim --embed/ && \$2 == 1 {print \$1}" | xargs kill 2>/dev/null && echo "done" || echo "no stale nvim processes"'                       # kill stale nvim procs
+alias nuke-dotnet='dotnet build-server shutdown 2>/dev/null; pkill -f "OmniSharp.dll" 2>/dev/null; pkill -f "EasyDotnet.BuildServer.dll" 2>/dev/null; pkill -f "dotnet-easydotnet" 2>/dev/null; pkill -f "VBCSCompiler" 2>/dev/null; pkill -f "vstest.console.dll" 2>/dev/null; echo "done"'   # kill stale dotnet procs
+alias dot="dotfiles"                                                           # shorthand for dotfiles
 
 # =============================================================================
 # ZSH LINE EDITOR (ZLE) KEYBINDINGS
@@ -766,7 +790,10 @@ fi
 # =============================================================================
 # SHELL STARTUP PROFILING
 # =============================================================================
+# @section: PROFILING
+
 # Quick benchmark: runs zsh 5 times and shows startup time
+# @cheat: benchmark startup (5x)
 zsh-profile() {
   echo "Running 5 iterations..."
   for i in {1..5}; do
@@ -775,9 +802,32 @@ zsh-profile() {
 }
 
 # Detailed profiling: shows what's taking time during startup
+# @cheat: detailed (ZPROF)
 zsh-profile-detailed() {
   ZPROF=1 zsh -i -c exit
 }
+
+# =============================================================================
+# DOTFILES CLI CHEATSHEET
+# =============================================================================
+# These rows describe `dotfiles` subcommands (not zsh aliases) — declared as
+# free-form @cheat directives so `dotfiles aliases` can render them alongside
+# the shell shortcuts above.
+# @section: DOTFILES CLI
+# @cheat: update  -u | smart update
+# @cheat: status  -s | version + sync + changes
+# @cheat: health | full health check
+# @cheat: links   -l | managed symlinks
+# @cheat: theme   -t | colour themes
+# @cheat: set dev <d> | set DEV_ROOT
+# @cheat: diff    -d | copy-on-install diffs
+# @cheat: sync | sync copy-on-install
+# @cheat: notes   -n | browse changelog
+# @cheat: version -v | version, preset, theme
+# @cheat: edit    -e | open in $EDITOR
+# @cheat: aliases -a | show this reference
+# @cheat: dot | shorthand for dotfiles
+# @cheat: help | show help message
 
 # =============================================================================
 # ZPROF OUTPUT (end of startup)

@@ -293,6 +293,8 @@ _check_link() {
 
 # ─── Commands (cmd_*) ─────────────────────────────────────────────────
 
+# Cheatsheet renderer. The static section/entry data is parsed from
+# zsh/dotfiles.zsh — see _aliases_parse for the source conventions.
 cmd_aliases() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -304,174 +306,183 @@ cmd_aliases() {
         shift
     done
 
-    local BOLD='\033[1m'
+    local source_file="$DOTFILES_DIR/zsh/dotfiles.zsh"
+    if [[ ! -f "$source_file" ]]; then
+        error "Shell source not found: $source_file"
+        return 1
+    fi
 
-    # Print entries in two columns (pairs of name/description)
-    _2col() {
-        local -a items=("$@")
-        local i=0 count=${#items[@]}
-        while (( i < count )); do
-            if (( i + 3 < count )); then
-                printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%-12s${NC} ${GREY}%s${NC}\n" \
-                    "${items[$i]}" "${items[$((i+1))]}" \
-                    "${items[$((i+2))]}" "${items[$((i+3))]}"
-                (( i += 4 ))
-            else
-                printf "  ${YELLOW}%-12s${NC} ${GREY}%s${NC}\n" "${items[$i]}" "${items[$((i+1))]}"
-                (( i += 2 ))
-            fi
-        done
-    }
+    local BOLD='\033[1m'
 
     printf "${BOLD}SHELL REFERENCE${NC}\n"
     printf '%0.s─' {1..80}; printf '\n'
 
-    printf "\n${CYAN}NAVIGATION${NC}\n"
-    _2col \
-        "c"           "clear" \
-        "cl"          "clear + scrollback" \
-        ".."          "cd .." \
-        "..."         "cd ../.." \
-        "mkcd <dir>"  "mkdir + cd" \
-        "cdb"         "cd back (browser)" \
-        "cdf"         "cd forward (after cdb)" \
-        "Opt+A"       "cd from history (fzf)"
+    # Parser emits tab-separated records:
+    #   SECTION<tab><name>            — start a new section (flush pending pair first)
+    #   ENTRY<tab><name><tab><desc>   — emit a row in the current section
+    while IFS=$'\t' read -r kind a b; do
+        case "$kind" in
+            SECTION)
+                _aliases_flush_pending
+                printf "\n${CYAN}%s${NC}\n" "$a"
+                ;;
+            ENTRY)
+                _aliases_emit "$a" "$b"
+                ;;
+        esac
+    done < <(_aliases_parse "$source_file")
+    _aliases_flush_pending
 
-    printf "\n${CYAN}FILES${NC}\n"
-    _2col \
-        "ls"  "ls (colour-aware)" \
-        "ll"  "ls -alF" \
-        "la"  "ls -A" \
-        "l"   "ls -CF" \
-        "cp"  "cp -i (safe overwrite)" \
-        "mv"  "mv -i (safe overwrite)"
+    _aliases_render_zshrc
 
-    printf "\n${CYAN}SEARCH & PROCESS${NC}\n"
-    _2col \
-        "grep"        "grep --color=auto" \
-        "rg"          "ripgrep (fast search)" \
-        "psg <name>"  "ps aux | grep" \
-        "ports"       "lsof ports (local)"
-
-    printf "\n${CYAN}GIT${NC}\n"
-    _2col \
-        "gs"   "git status -sb" \
-        "gd"   "git diff" \
-        "gdn"  "git diff (diffnav)" \
-        "gds"  "git diff --stat" \
-        "gl"   "git log (last 20)" \
-        "glf"  "git log (full)" \
-        "gco"  "git checkout" \
-        "gsw"  "git switch" \
-        "gb"   "git branch -vv" \
-        "gp"   "git push" \
-        "gpl"  "git pull" \
-        "gst"  "git stash" \
-        "gfp"  "git fetch --prune" \
-        "gpr"  "prune local branches" \
-        "grmc" "git rm --cached" \
-        "gca"  "git commit --amend"
-
-    printf "\n${CYAN}TMUX${NC}\n"
-    _2col \
-        "tls"          "list session backups" \
-        "ta/tattach"   "attach/restore session" \
-        "trestore"     "restore from backup" \
-        "tkill"        "delete session backup" \
-        "tcleanup"     "clean test resources" \
-        "ac/alerts-clear" "clear all tmux alerts"
-
-    printf "\n${CYAN}SYSTEM & NETWORK${NC}\n"
-    _2col \
-        "df"      "df -h" \
-        "du"      "du -sh" \
-        "myip"    "curl ifconfig.me" \
-        "v"       "clear + nvim" \
-        "o"       "open file/dir" \
-        "finder"  "open in Finder (macOS)" \
-        "secrets" "edit secrets.zsh" \
-        "config"  "edit ~/.config" \
-        "zshrc"   "edit ~/.zshrc" \
-        "font-preview" "font browser (fzf)"
-
-    printf "\n${CYAN}DEVELOPMENT${NC}\n"
-    _2col \
-        "opencode"   "cl + opencode" \
-        "oc"         "opencode (shorthand)" \
-        "claude"     "cl + claude" \
-        "gemini"     "cl + gemini" \
-        "copilot"    "cl + copilot" \
-        "drs"        "sync repo paths" \
-        "ff"         "fastfetch system info" \
-        "dash"       "cl + gh dash" \
-        "j"          "cl + jiru (Jira TUI)" \
-        "lg"         "cl + lazygit" \
-        "ld"         "cl + lazydocker" \
-        "gols"       "list Go binaries" \
-        "nvim-clear" "clear nvim cache" \
-        "nvim-sync"  "sync Lazy.nvim plugins" \
-        "brewup"     "brew update + upgrade" \
-        "nuke-node"  "kill all node procs" \
-        "nuke-nvim"  "kill stale nvim procs" \
-        "nuke-dotnet" "kill stale dotnet procs"
-
-    printf "\n${CYAN}PROFILING${NC}\n"
-    printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%s${NC} ${GREY}%s${NC}\n" \
-        "zsh-profile" "benchmark startup (5x)" \
-        "zsh-profile-detailed" "detailed (ZPROF)"
-
-    printf "\n${CYAN}DOTFILES CLI${NC}\n"
-    _2col \
-        "update  -u"  "smart update" \
-        "status  -s"  "version + sync + changes" \
-        "health"      "full health check" \
-        "links   -l"  "managed symlinks" \
-        "theme   -t"  "colour themes" \
-        "set dev <d>" "set DEV_ROOT" \
-        "diff    -d"  "copy-on-install diffs" \
-        "sync"        "sync copy-on-install" \
-        "notes   -n"  "browse changelog" \
-        "version -v"  "version, preset, theme" \
-        "edit    -e"  "open in \$EDITOR" \
-        "aliases -a"  "show this reference" \
-        "dot"         "shorthand for dotfiles" \
-        "help"        "show help message"
-
-    # Dotfiles-managed directories from ~/.zshrc
-    local zshrc="$HOME/.zshrc"
-    if [[ -f "$zshrc" ]]; then
-        local dev_root projects_root
-        dev_root=$(grep -E '^\s*export\s+DEV_ROOT=' "$zshrc" 2>/dev/null | head -1 | sed 's/.*=//; s/^"//; s/"$//' || true)
-        projects_root=$(grep -E '^\s*export\s+PROJECTS_ROOT=' "$zshrc" 2>/dev/null | head -1 | sed 's/.*=//; s/^"//; s/"$//' || true)
-        if [[ -n "$dev_root" || -n "$projects_root" ]]; then
-            printf "\n${CYAN}DOTFILES DIRECTORIES${NC}  ${GREY}(set via dotfiles set)${NC}\n"
-            [[ -n "$dev_root" ]] && printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "DEV_ROOT" "$dev_root"
-            [[ -n "$projects_root" ]] && printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "PROJECTS_ROOT" "$projects_root"
-        fi
-    fi
-
-    # User-defined aliases from ~/.zshrc
-    if [[ -f "$zshrc" ]]; then
-        local user_aliases
-        user_aliases=$(grep -E '^\s*alias\s+' "$zshrc" 2>/dev/null | sed 's/^[[:space:]]*alias[[:space:]]*//' || true)
-        if [[ -n "$user_aliases" ]]; then
-            printf "\n${CYAN}USER ALIASES${NC}  ${GREY}(~/.zshrc)${NC}\n"
-            while IFS= read -r line; do
-                local name="${line%%=*}"
-                local value="${line#*=}"
-                # Strip inline comment (everything from whitespace+# onwards)
-                value="${value%%[[:space:]]# *}"
-                local trailing="${value##*[^[:space:]]}"
-                value="${value%"$trailing"}"
-                value="${value#[\"\']}"
-                value="${value%[\"\']}"
-                printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "$name" "$value"
-            done <<< "$user_aliases"
-        fi
-    fi
-
-    printf '\n'; printf '%0.s─' {1..80}; printf '\n'
+    printf '\n'
+    printf '%0.s─' {1..80}; printf '\n'
     printf "${GREEN}Tip:${NC} run ${YELLOW}dotfiles help${NC} for CLI usage, ${YELLOW}dotfiles health${NC} to verify your install.\n\n"
+}
+
+# Parse the shell source and emit SECTION/ENTRY records.
+# Conventions (in zsh/dotfiles.zsh):
+#   "# @section: <Name>"                       → SECTION (display name, uppercased)
+#   "alias <name>=\"...\"  # <description>"    → ENTRY (alias name + trailing description)
+#   "# @cheat: <name> | <description>"         → ENTRY (free-form name + description)
+#   "# @cheat: <description>" then "name() {"  → ENTRY (function name + directive description)
+# Aliases without a trailing description comment are skipped — the cheatsheet is curated.
+_aliases_parse() {
+    local file="$1"
+    awk '
+        # Section header: "# @section: <Name>"
+        /^# @section: / {
+            name = substr($0, 13)
+            sub(/^[[:space:]]+/, "", name)
+            sub(/[[:space:]]+$/, "", name)
+            print "SECTION\t" toupper(name)
+            pending_cheat = ""
+            next
+        }
+
+        # Free-form cheat row: "# @cheat: <name> | <description>"
+        # Splits on the FIRST "|" only (descriptions may contain "|").
+        /^# @cheat:.*\|/ {
+            line = substr($0, 10)
+            sub(/^[[:space:]]+/, "", line)
+            if (match(line, /[[:space:]]*\|[[:space:]]*/)) {
+                name = substr(line, 1, RSTART - 1)
+                desc = substr(line, RSTART + RLENGTH)
+                sub(/[[:space:]]+$/, "", name)
+                sub(/[[:space:]]+$/, "", desc)
+                print "ENTRY\t" name "\t" desc
+            }
+            pending_cheat = ""
+            next
+        }
+
+        # Function-attached cheat directive: "# @cheat: <description>"
+        /^# @cheat: / {
+            pending_cheat = substr($0, 10)
+            sub(/^[[:space:]]+/, "", pending_cheat)
+            next
+        }
+
+        # Function definition (with or without "function" keyword).
+        # Pairs with the preceding pending_cheat.
+        /^(function )?[a-zA-Z_][a-zA-Z0-9_-]*\(\)[[:space:]]*\{/ {
+            if (pending_cheat != "") {
+                fname = $0
+                sub(/^function /, "", fname)
+                sub(/\(\).*/, "", fname)
+                print "ENTRY\t" fname "\t" pending_cheat
+            }
+            pending_cheat = ""
+            next
+        }
+
+        # Alias definition with trailing description comment.
+        # Match a closing quote followed by whitespace then "# <desc>".
+        # Leading whitespace allowed (handles aliases inside if/else blocks).
+        /^[[:space:]]*alias [a-zA-Z_][a-zA-Z0-9_-]*=/ {
+            name = $0
+            sub(/^[[:space:]]*alias /, "", name)
+            sub(/=.*/, "", name)
+
+            desc = $0
+            if (match(desc, /"[[:space:]]+#[[:space:]]*/)) {
+                desc = substr(desc, RSTART + RLENGTH)
+            } else if (match(desc, /'\''[[:space:]]+#[[:space:]]*/)) {
+                desc = substr(desc, RSTART + RLENGTH)
+            } else {
+                pending_cheat = ""
+                next
+            }
+            sub(/[[:space:]]+$/, "", desc)
+            print "ENTRY\t" name "\t" desc
+            pending_cheat = ""
+            next
+        }
+
+        # Any other non-comment, non-blank line clears pending_cheat so the
+        # directive only attaches to the immediately following function.
+        /^[^#[:space:]]/ { pending_cheat = "" }
+    ' "$file"
+}
+
+# Two-column emit: buffers one pair, flushes when paired.
+_ALIASES_PENDING_NAME=""
+_ALIASES_PENDING_DESC=""
+
+_aliases_emit() {
+    local name="$1" desc="$2"
+    if [[ -z "$_ALIASES_PENDING_NAME" ]]; then
+        _ALIASES_PENDING_NAME="$name"
+        _ALIASES_PENDING_DESC="$desc"
+        return
+    fi
+    printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%-12s${NC} ${GREY}%s${NC}\n" \
+        "$_ALIASES_PENDING_NAME" "$_ALIASES_PENDING_DESC" "$name" "$desc"
+    _ALIASES_PENDING_NAME=""
+    _ALIASES_PENDING_DESC=""
+}
+
+_aliases_flush_pending() {
+    if [[ -n "$_ALIASES_PENDING_NAME" ]]; then
+        printf "  ${YELLOW}%-12s${NC} ${GREY}%s${NC}\n" \
+            "$_ALIASES_PENDING_NAME" "$_ALIASES_PENDING_DESC"
+        _ALIASES_PENDING_NAME=""
+        _ALIASES_PENDING_DESC=""
+    fi
+}
+
+# Render dynamic sections (project dirs + user aliases from ~/.zshrc).
+_aliases_render_zshrc() {
+    local zshrc="$HOME/.zshrc"
+    [[ -f "$zshrc" ]] || return 0
+
+    local dev_root projects_root
+    dev_root=$(grep -E '^\s*export\s+DEV_ROOT=' "$zshrc" 2>/dev/null \
+        | head -1 | sed 's/.*=//; s/^"//; s/"$//' || true)
+    projects_root=$(grep -E '^\s*export\s+PROJECTS_ROOT=' "$zshrc" 2>/dev/null \
+        | head -1 | sed 's/.*=//; s/^"//; s/"$//' || true)
+    if [[ -n "$dev_root" || -n "$projects_root" ]]; then
+        printf "\n${CYAN}DOTFILES DIRECTORIES${NC}  ${GREY}(set via dotfiles set)${NC}\n"
+        [[ -n "$dev_root" ]]      && printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "DEV_ROOT" "$dev_root"
+        [[ -n "$projects_root" ]] && printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "PROJECTS_ROOT" "$projects_root"
+    fi
+
+    local user_aliases
+    user_aliases=$(grep -E '^\s*alias\s+' "$zshrc" 2>/dev/null \
+        | sed 's/^[[:space:]]*alias[[:space:]]*//' || true)
+    if [[ -n "$user_aliases" ]]; then
+        printf "\n${CYAN}USER ALIASES${NC}  ${GREY}(~/.zshrc)${NC}\n"
+        while IFS= read -r line; do
+            local name="${line%%=*}"
+            local value="${line#*=}"
+            value="${value%%[[:space:]]# *}"
+            local trailing="${value##*[^[:space:]]}"
+            value="${value%"$trailing"}"
+            value="${value#[\"\']}"
+            value="${value%[\"\']}"
+            printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "$name" "$value"
+        done <<< "$user_aliases"
+    fi
 }
 
 cmd_cd() {
