@@ -621,6 +621,13 @@ function M.generate_nvim_colourscheme(name, colours)
     end
     add("")
 
+    -- LSP semantic tokens override treesitter where defaults aren't useful.
+    -- Fields would otherwise fall through to @variable.member (cyan) and look
+    -- identical to properties; render them as plain fg instead.
+    add("-- LSP semantic tokens")
+    add("hl('@lsp.type.field', { fg = colors.fg_primary })")
+    add("")
+
     -- Plugin highlights (Telescope, Neo-tree, Which-key, Mini)
     add("-- Telescope")
     add("hl('TelescopeBorder', { fg = colors.purple, bg = colors.bg_secondary })")

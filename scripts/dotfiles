@@ -609,7 +609,6 @@ cmd_links() {
     # Zsh (minimal)
     printf "${CYAN}Zsh${NC}\n"
     _check_link "$HOME/.zprofile"
-    _check_link "$HOME/.p10k.zsh"
 
     # Tmux (minimal)
     printf "\n${CYAN}Tmux${NC}\n"

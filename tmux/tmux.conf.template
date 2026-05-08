@@ -144,6 +144,9 @@ unbind p
 # Unbind default next-layout (use prefix+Space for thumbs instead)
 unbind Space
 
+# Unbind default zoom-pane (use Opt+z instead)
+unbind z
+
 # ─────────────────────────────────────────
 # Window (tab) navigation
 # ─────────────────────────────────────────
