@@ -178,7 +178,7 @@ list_generated() {
 
     if [[ "$found" == "false" ]]; then
         printf "\n  No generated themes.\n"
-        printf "  Run ${CYAN}dotfiles theme <name>${NC} to create one.\n"
+        printf "  Run ${CYAN}dotfiles theme switch <name>${NC} to create one.\n"
     fi
     printf "\n"
 }

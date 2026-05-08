@@ -5,7 +5,7 @@
 #   ~/.config/tmux/tmux.conf (XDG standard location)
 #
 # A compatibility symlink exists at ~/.tmux.conf for backwards compatibility.
-# Change themes with: dotfiles theme <theme-name>
+# Change themes with: dotfiles theme switch <theme-name>
 #
 # Quick reference:
 #   Prefix: ` (backtick) or Ctrl+b (mobile-friendly)

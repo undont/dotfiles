@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+- CLI: theme application now requires an explicit `switch` subcommand — `dotfiles theme switch dracula` instead of `dotfiles theme dracula`. The bare `dotfiles theme <name>` form is gone, so theme names no longer collide with subcommands (`list`, `current`, `generate`, `delete`) in tab completion. `dotfiles theme` with no args still defaults to `list`
+- CLI: `dotfiles <cmd> help` now works as an alias for `dotfiles <cmd> --help`, mirroring the existing `dotfiles help <cmd>` form — all three forms reach the same per-command help. Excluded for `theme`, whose subcommand dispatcher delegates `help` down to child scripts (`theme delete help`, `theme generate help`)
+- CLI: `dotfiles aliases` cheatsheet now hides aliases without a trailing description comment, so platform-conditional twins (Linux `pbcopy`/`pbpaste`), thin `cl &&` wrappers (`ralph`, `ralf`, `btop`), and shorthand duplicates (`oc`, `dot`, `alerts-clear`) drop out of the rendered cheatsheet rather than appearing twice. The test suite pins the omission set so removing a description by accident re-renders an alias and fails CI
+
 ## [0.2.90] - 2026-05-06
 
 ### Added

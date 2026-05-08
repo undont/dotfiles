@@ -111,7 +111,7 @@ list_themes() {
         local available_count
         available_count=$("$SCRIPT_DIR/generate-theme" list 2>/dev/null | wc -l | tr -d ' ' || true)
         if [[ "$available_count" -gt 0 ]]; then
-            printf "\n  ${CYAN}%s Ghostty themes available.${NC} Use 'dotfiles theme <name>' to auto-generate.\n" "$available_count"
+            printf "\n  ${CYAN}%s Ghostty themes available.${NC} Use 'dotfiles theme switch <name>' to auto-generate.\n" "$available_count"
             printf "  Run 'dotfiles theme generate list' for the full list.\n"
         fi
     fi
@@ -437,7 +437,8 @@ main() {
             ;;
         "")
             theme_error "No theme specified"
-            theme_info "Usage: dotfiles theme <theme-name|list|current> [--no-reload]"
+            theme_info "Usage: dotfiles theme switch <theme-name> [--no-reload]"
+            theme_info "       dotfiles theme list | current"
             exit 1
             ;;
         *)

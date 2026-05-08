@@ -572,7 +572,7 @@ make() {
 alias tls="~/.tmux/scripts/resurrect/restore.sh --list"                        # list session backups
 # @cheat: ta/tattach | attach/restore session
 alias ta="tattach"
-# @cheat: ac/alerts-clear | clear all tmux alerts
+# @cheat: ac | clear all tmux alerts
 alias alerts-clear="rm -rf ${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts"
 alias ac="alerts-clear"
 alias tcleanup="~/.tmux/scripts/tests/cleanup-tests.sh"                        # clean test resources
@@ -682,13 +682,13 @@ fi
 # @section: DEVELOPMENT
 
 alias opencode="cl && opencode"                                                # cl + opencode
-alias oc="opencode"                                                            # opencode (shorthand)
+alias oc="opencode"
 alias claude="cl && claude"                                                    # cl + claude
-alias ralph="cl && ralph"                                                      # cl + ralph
-alias ralf="cl && ralf"                                                        # cl + ralf
+alias ralph="cl && ralph"
+alias ralf="cl && ralf"
 alias gemini="cl && gemini"                                                    # cl + gemini
 alias copilot="cl && copilot"                                                  # cl + copilot
-alias btop="cl && btop"                                                        # cl + btop
+alias btop="cl && btop"
 alias drs="dash-repo-sync"                                                     # sync repo paths
 alias ff="fastfetch"                                                           # fastfetch system info
 alias dash="cl && gh dash"                                                     # cl + gh dash
@@ -711,7 +711,7 @@ alias brewup="brew update && brew upgrade"                                     #
 alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'                                                                                            # kill all node procs
 alias nuke-nvim='ps -eo pid,ppid,args | awk "/nvim --embed/ && \$2 == 1 {print \$1}" | xargs kill 2>/dev/null && echo "done" || echo "no stale nvim processes"'                       # kill stale nvim procs
 alias nuke-dotnet='dotnet build-server shutdown 2>/dev/null; pkill -f "OmniSharp.dll" 2>/dev/null; pkill -f "EasyDotnet.BuildServer.dll" 2>/dev/null; pkill -f "dotnet-easydotnet" 2>/dev/null; pkill -f "VBCSCompiler" 2>/dev/null; pkill -f "vstest.console.dll" 2>/dev/null; echo "done"'   # kill stale dotnet procs
-alias dot="dotfiles"                                                           # shorthand for dotfiles
+alias dot="dotfiles"
 
 # =============================================================================
 # ZSH LINE EDITOR (ZLE) KEYBINDINGS

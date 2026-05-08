@@ -124,6 +124,16 @@ else
     fail "update --help leaked into command body"
 fi
 
+# `dotfiles <cmd> help` should behave like `dotfiles <cmd> --help`
+for cmd in update status set links diff sync notes version aliases health edit cd theme; do
+    out=$("$DOTFILES_CLI" "$cmd" help 2>&1)
+    if [[ "$out" == *"USAGE"* ]]; then
+        pass "$cmd help shows usage"
+    else
+        fail "$cmd help did not show usage"
+    fi
+done
+
 # Unknown topic falls back to main help with an error
 if out=$("$DOTFILES_CLI" help no_such_topic_xyz 2>&1); then
     : # exit code 1 expected — `if` runs negated branch
@@ -371,6 +381,38 @@ else
     fail "theme list failed"
 fi
 
+# theme help advertises the 'switch' subcommand
+out=$("$DOTFILES_CLI" theme --help 2>&1)
+if [[ "$out" == *"switch <name>"* ]]; then
+    pass "theme help documents 'switch' subcommand"
+else
+    fail "theme help should document 'switch <name>'"
+fi
+
+# 'theme switch' with no arg → exit 2 with hint
+if "$DOTFILES_CLI" theme switch >/dev/null 2>&1; then
+    fail "theme switch with no arg should fail"
+else
+    code=$?
+    if [[ $code -eq 2 ]]; then
+        pass "theme switch with no arg exits with code 2"
+    else
+        fail "theme switch with no arg exited $code, expected 2"
+    fi
+fi
+
+# Bare 'theme <name>' is no longer accepted (must use 'theme switch <name>')
+if "$DOTFILES_CLI" theme nonexistent-theme-bogus >/dev/null 2>&1; then
+    fail "bare 'theme <name>' should be rejected"
+else
+    code=$?
+    if [[ $code -eq 2 ]]; then
+        pass "bare 'theme <name>' exits with code 2 (unknown subcommand)"
+    else
+        fail "bare 'theme <name>' exited $code, expected 2"
+    fi
+fi
+
 # ─── 8. Library API (rollback lib) ─────────────────────────────────────
 # Functional behaviour for the rollback library lives in test-rollback-lib.sh;
 # here we just assert the public API is present and callable.
@@ -488,25 +530,56 @@ fi
 
 cleanup_sandbox
 
-section "Cheatsheet — soft lint (warnings, not failures)"
+section "Cheatsheet — intentional omissions stay omitted"
 
-# Scan the real dotfiles.zsh for user-facing aliases without a trailing
-# description comment. Heuristic: alias closes with " or ' and the line
-# contains no "#" after the closing quote. Names starting with _ are
-# treated as internal and excluded.
-missing=$(awk '
-    /^[[:space:]]*alias[[:space:]]+_/ { next }
-    /^[[:space:]]*alias[[:space:]]+[a-zA-Z][a-zA-Z0-9_-]*=.*["\x27][[:space:]]*$/ {
-        printf "%s:%d: %s\n", FILENAME, NR, $0
+# Aliases that live in zsh/dotfiles.zsh but are deliberately kept out of
+# `dotfiles aliases`. Reasons vary: platform-conditional twins of an already
+# described alias, internal implementations behind a shorter public alias,
+# or thin wrappers that just prepend `cl &&`.
+#
+# If you remove an entry, ensure the alias gains a description so it renders.
+# If you add one, leave a brief note explaining why it's hidden.
+omitted_aliases=(
+    "demo-rec"      # asciinema recording (developer-only)
+    "pbcopy"        # Linux only — macOS has it natively
+    "pbpaste"       # Linux only — macOS has it natively
+    "alerts-clear"  # implementation behind the user-facing 'ac'
+    "oc"            # opencode shorthand; opencode is already listed
+    "ralph"         # cl && ralph wrapper
+    "ralf"          # cl && ralf wrapper
+    "btop"          # cl && btop wrapper
+)
+
+# Run with an empty HOME so the user's real ~/.zshrc can't leak aliases
+# into the rendered output.
+isolated_home=$(mktemp -d)
+aliases_out=$(HOME="$isolated_home" "$DOTFILES_CLI" aliases 2>&1)
+rm -rf "$isolated_home"
+
+# Strip ANSI escapes so our column-anchored parsing sees plain text.
+stripped=$(printf '%s\n' "$aliases_out" | sed -E $'s/\x1b\\[[0-9;]*m//g')
+
+# Pull the leading word from each rendered column. Cheatsheet rows start with
+# two spaces and are separated by " │ "; section headings have no leading
+# whitespace, so the regex excludes them.
+rendered_names=$(printf '%s\n' "$stripped" | awk -F'│' '
+    /^[[:space:]]+[a-zA-Z]/ {
+        for (i = 1; i <= NF; i++) {
+            field = $i
+            sub(/^[[:space:]]+/, "", field)
+            split(field, parts, /[[:space:]]+/)
+            if (parts[1] ~ /^[a-zA-Z]/) print parts[1]
+        }
     }
-' "$DOTFILES_DIR/zsh/dotfiles.zsh")
+')
 
-if [[ -z "$missing" ]]; then
-    pass "every user-facing alias in dotfiles.zsh has a description"
-else
-    count=$(printf '%s\n' "$missing" | grep -c .)
-    skip "$(printf '%d alias(es) without description (warning):\n%s' "$count" "$missing")"
-fi
+for name in "${omitted_aliases[@]}"; do
+    if grep -qFx "$name" <<<"$rendered_names"; then
+        fail "alias '$name' rendered in cheatsheet (should be intentionally omitted)"
+    else
+        pass "alias '$name' kept out of cheatsheet"
+    fi
+done
 
 # ─── Summary ───────────────────────────────────────────────────────────
 

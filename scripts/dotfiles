@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# dotfiles — manage your dotfiles installation.
+# dotfiles — manage your dots
 # For per-command details: dotfiles help <command>  (or: dotfiles <command> --help)
 
 set -euo pipefail
@@ -887,9 +887,10 @@ cmd_sync() {
 }
 
 cmd_theme() {
-    # Top-level --help is handled here. Subcommands (list, current, generate,
-    # delete, <theme>) are delegated to scripts/theme-* — pass DOTFILES_INVOKED_AS
-    # so child scripts render the user-facing parent name in their help text.
+    # Top-level --help is handled here. Subcommands (list, current, switch,
+    # generate, delete) are delegated to scripts/theme-* — pass
+    # DOTFILES_INVOKED_AS so child scripts render the user-facing parent name
+    # in their help text.
     if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         _help_theme
         return 0
@@ -899,11 +900,31 @@ cmd_theme() {
     shift || true
 
     case "$theme_cmd" in
+        help)
+            # `dotfiles theme help` (no further args) shows theme help.
+            # `theme <sub> help` is intentionally NOT intercepted here so it
+            # reaches the child script (theme-delete, theme-generate, etc.).
+            if [[ $# -eq 0 ]]; then
+                _help_theme
+                return 0
+            fi
+            error "Unknown theme subcommand: help"
+            printf "  Run: ${CYAN}dotfiles help theme${NC}\n" >&2
+            return 2
+            ;;
         list)
             "$DOTFILES_DIR/scripts/theme-switch" list
             ;;
         current)
             "$DOTFILES_DIR/scripts/theme-switch" current
+            ;;
+        switch)
+            if [[ $# -eq 0 ]]; then
+                error "'switch' requires a theme name"
+                printf "  Run: ${CYAN}dotfiles help theme${NC}\n" >&2
+                return 2
+            fi
+            "$DOTFILES_DIR/scripts/theme-switch" "$@"
             ;;
         generate)
             DOTFILES_INVOKED_AS="dotfiles theme generate" \
@@ -914,7 +935,9 @@ cmd_theme() {
                 "$DOTFILES_DIR/scripts/theme-delete" "$@"
             ;;
         *)
-            "$DOTFILES_DIR/scripts/theme-switch" "$theme_cmd"
+            error "Unknown theme subcommand: $theme_cmd"
+            printf "  Run: ${CYAN}dotfiles help theme${NC}\n" >&2
+            return 2
             ;;
     esac
 }
@@ -1256,9 +1279,9 @@ USAGE
   dotfiles -t
 
 SUBCOMMANDS
-  list                 List available themes
+  list                 List available themes (default)
   current              Show the current theme
-  <name>               Switch to a named theme
+  switch <name>        Switch to a named theme
   generate <ghostty>   Generate a theme from a Ghostty preset
   delete <name>        Remove a generated theme
 
@@ -1268,7 +1291,7 @@ OPTIONS
 EXAMPLES
   dotfiles theme list
   dotfiles theme current
-  dotfiles theme dracula
+  dotfiles theme switch dracula
   dotfiles theme generate zenburn
   dotfiles theme delete zenburn
 EOF
@@ -1314,7 +1337,7 @@ EOF
 _help_main() {
     print_logo
     cat << 'EOF'
-dotfiles — manage your dotfiles installation
+dotfiles — manage your dots
 
 USAGE
   dotfiles <command> [options]    (shorthand: dot)
@@ -1352,6 +1375,14 @@ main() {
         --help|-h)    cmd=help ;;
         --version|-V) cmd=version ;;
     esac
+
+    # Treat `dotfiles <cmd> help` as an alias for `dotfiles <cmd> --help`,
+    # mirroring the existing `dotfiles help <cmd>` path. Skipped for the
+    # `help` command itself (which already takes a topic) and for `theme`,
+    # whose subcommand dispatcher delegates `help` to child scripts.
+    if [[ "$cmd" != "help" && "$cmd" != "theme" && "$cmd" != "-t" && "${1:-}" == "help" ]]; then
+        set -- "--help" "${@:2}"
+    fi
 
     case "$cmd" in
         update|-u)              cmd_update    "$@" ;;

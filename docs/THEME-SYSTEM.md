@@ -70,7 +70,7 @@ Generated themes integrate transparently — `dotfiles theme` resolves themes wi
 
 ### Theme Switching Flow
 
-1. User runs `dotfiles theme catppuccin-mocha`
+1. User runs `dotfiles theme switch catppuccin-mocha`
 2. Script sources `themes/catppuccin-mocha.theme` for colour variables
 3. Script processes templates, replacing `{{PLACEHOLDERS}}` with actual values
 4. Generated configs are written to XDG locations
@@ -100,9 +100,9 @@ The Neovim theme loader (`nvim/lua/custom/core/theme.lua`) reads `~/.config/dotf
 
 ```bash
 # Switch to a theme (hand-crafted or generated)
-dotfiles theme dracula
-dotfiles theme catppuccin-mocha
-dotfiles theme zenburn           # generated theme
+dotfiles theme switch dracula
+dotfiles theme switch catppuccin-mocha
+dotfiles theme switch zenburn    # generated theme
 
 # List available themes
 dotfiles theme list
@@ -111,10 +111,10 @@ dotfiles theme list
 dotfiles theme current
 
 # Switch without reloading (for scripting)
-dotfiles theme <theme> --no-reload
+dotfiles theme switch <theme> --no-reload
 
 # Switch quietly (for automation)
-dotfiles theme <theme> --quiet
+dotfiles theme switch <theme> --quiet
 ```
 
 ### Theme Generation
@@ -164,13 +164,13 @@ TMUX_FG_PRIMARY="#cdd6f4"
 ```
 
 2. Add all required colour variables (see existing themes for reference)
-3. Test: `dotfiles theme my-theme`
+3. Test: `dotfiles theme switch my-theme`
 
 ### Generated from Ghostty
 
 ```bash
 # Generate and immediately switch to it
-dotfiles theme generate zenburn && dotfiles theme zenburn
+dotfiles theme generate zenburn && dotfiles theme switch zenburn
 ```
 
 The generator handles everything: parsing, colour extraction, WCAG corrections, and file output. Generated `.theme` files follow the same format as hand-crafted ones.
