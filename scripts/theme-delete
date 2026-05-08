@@ -10,6 +10,10 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || re
 # shellcheck source=scripts/_lib/common.sh
 source "$SCRIPT_DIR/_lib/common.sh"
 
+# How the user invoked us — set by parent (dotfiles theme delete) when delegated;
+# falls back to basename for direct invocation.
+invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
+
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 THEMES_GENERATED="$DOTFILES_DIR/themes/generated"
 NVIM_GENERATED="$DOTFILES_DIR/nvim/colors/generated"
@@ -174,7 +178,7 @@ list_generated() {
 
     if [[ "$found" == "false" ]]; then
         printf "\n  No generated themes.\n"
-        printf "  Run ${CYAN}dotfiles theme <name>${NC} to create one.\n"
+        printf "  Run ${CYAN}dotfiles theme switch <name>${NC} to create one.\n"
     fi
     printf "\n"
 }
@@ -201,11 +205,11 @@ main() {
             ;;
         help|-h|--help|"")
             cat << EOF
-Usage: $(basename "$0") <theme-name>    Remove a specific generated theme
-       $(basename "$0") all             Remove all generated themes
-       $(basename "$0") all --yes       Remove all (non-interactive)
-       $(basename "$0") list            List generated themes
-       $(basename "$0") help            Show this help
+Usage: $invoked_as <theme-name>    Remove a specific generated theme
+       $invoked_as all             Remove all generated themes
+       $invoked_as all --yes       Remove all (non-interactive)
+       $invoked_as list            List generated themes
+       $invoked_as help            Show this help
 EOF
             ;;
         *)

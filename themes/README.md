@@ -111,7 +111,7 @@ scripts/theme-contrast-check --fix themes/my-theme.theme
 - **FG_SECONDARY** is the most common failure — it needs to pass 4.5:1 on *both* BG_PRIMARY and BG_SECONDARY
 - **GHOSTTY_PALETTE_8** should match or be close to FG_SECONDARY
 - Use [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) for quick manual checks
-- Test visually with `dotfiles theme <name>` and open Neovim, LazyGit, and Neo-tree
+- Test visually with `dotfiles theme switch <name>` and open Neovim, LazyGit, and Neo-tree
 
 ## Theme Architecture
 
@@ -151,7 +151,7 @@ Both scripts source the `.theme` file, then `theme-defaults.sh`, then call `appl
 dotfiles theme list
 
 # Apply the theme
-dotfiles theme <theme-name>
+dotfiles theme switch <theme-name>
 
 # Run contrast checks
 scripts/theme-contrast-check themes/<theme-name>.theme

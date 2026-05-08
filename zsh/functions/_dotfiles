@@ -55,16 +55,10 @@ elif (( CURRENT == 3 )); then
       theme_opts=(
         'list:List available themes'
         'current:Show current theme'
+        'switch:Switch to a theme'
         'generate:Generate theme from Ghostty'
         'delete:Delete a generated theme'
       )
-      # Add available theme names from themes/ directory
-      local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
-      local theme_file
-      for theme_file in "$dotfiles_dir"/themes/*.theme(N); do
-        local name="${theme_file:t:r}"
-        theme_opts+=("${name}:Switch to ${name} theme")
-      done
       _describe 'theme' theme_opts
       ;;
   esac
@@ -75,6 +69,20 @@ elif (( CURRENT == 4 )); then
       ;;
     theme|-t)
       case "${words[3]}" in
+        switch)
+          local -a switch_opts
+          local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
+          local theme_file
+          for theme_file in "$dotfiles_dir"/themes/*.theme(N); do
+            local name="${theme_file:t:r}"
+            switch_opts+=("${name}:Switch to ${name} theme")
+          done
+          for theme_file in "$dotfiles_dir"/themes/generated/*.theme(N); do
+            local name="${theme_file:t:r}"
+            switch_opts+=("${name}:Switch to ${name} (generated)")
+          done
+          _describe 'theme' switch_opts
+          ;;
         generate)
           local -a gen_opts
           gen_opts=(

@@ -38,6 +38,12 @@ function M.apply()
   vim.api.nvim_set_hl(0, 'DiffDelete', { bg = del_bg })
   vim.api.nvim_set_hl(0, 'DiffText', { bg = text_bg, bold = true })
 
+  -- Octo review inline word-change highlights (per-pane DiffText override).
+  -- Octo links these from its left/right namespaces; we colour them from the
+  -- theme palette so they match the rest of our diff tinting.
+  vim.api.nvim_set_hl(0, 'OctoReviewDiffDeleteText', { bg = tint(red_fg, 0.35), bold = true })
+  vim.api.nvim_set_hl(0, 'OctoReviewDiffAddText', { bg = tint(green_fg, 0.35), bold = true })
+
   -- GitSigns line highlights
   vim.api.nvim_set_hl(0, 'GitSignsAddLn', { bg = add_bg })
   vim.api.nvim_set_hl(0, 'GitSignsChangeLn', { bg = change_bg })
