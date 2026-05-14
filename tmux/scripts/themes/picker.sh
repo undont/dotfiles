@@ -20,7 +20,21 @@ require_fzf
 main() {
     local theme_list theme_pos
     theme_list=$("$SCRIPT_DIR/pick.sh")
-    theme_pos=$(echo "$theme_list" | "$SCRIPT_DIR/pick.sh" --pos)
+    theme_pos=1
+    local line idx=0
+    while IFS= read -r line; do
+        if (( idx < 5 )); then
+            idx=$((idx + 1))
+            continue
+        fi
+        idx=$((idx + 1))
+        case "$line" in
+            (*'● '*)
+                theme_pos=$((idx - 5))
+                break
+                ;;
+        esac
+    done <<< "$theme_list"
 
     local selected
     selected=$(echo "$theme_list" | fzf \
@@ -47,8 +61,7 @@ main() {
         --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
         2>/dev/null) || return 0
 
-    local theme
-    theme=$(echo "$selected" | awk '{print $1}')
+    local theme="${selected%% *}"
     [[ -n "$theme" ]] || return 0
 
     "$DOTFILES_ROOT/scripts/theme-switch" "$theme" --no-reload --quiet \

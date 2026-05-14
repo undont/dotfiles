@@ -92,6 +92,9 @@ keybindings:
         - key: A
           name: actions
           command: gh enhance --repo {{.RepoName}} {{.PrNumber}}
+        - key: m
+          name: squash & merge
+          command: gh pr merge --squash --repo {{.RepoName}} {{.PrNumber}}
     issues: {}
 repoPaths: {}
 theme:

@@ -291,6 +291,22 @@ else
     fail "reload-ghostty.sh should be executable"
 fi
 
+section "Theme Picker Wrapper Performance"
+
+if [[ -f "$PICKER_SCRIPT" ]]; then
+    if grep -q 'pick.sh" --pos' "$PICKER_SCRIPT"; then
+        fail "theme picker wrapper should not invoke pick.sh twice for --pos"
+    else
+        pass "theme picker wrapper avoids redundant pick.sh --pos call"
+    fi
+
+    if grep -q 'awk .*\$selected' "$PICKER_SCRIPT"; then
+        fail "theme picker wrapper should parse selected theme without awk"
+    else
+        pass "theme picker wrapper avoids awk for selected theme parsing"
+    fi
+fi
+
 section "Error Handling"
 
 # Test with missing themes directory

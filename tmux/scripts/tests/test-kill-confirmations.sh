@@ -223,10 +223,8 @@ section "save_undo_state resilience"
 # again before the auto-save cycle captures it.
 if bash -c '
     set -euo pipefail
-    # Minimal stubs for save_undo_state dependencies
-    get_session_undo_file()    { echo "/tmp/test-kill-undo-$$"; }
-    get_session_undo_backup()  { echo "/tmp/test-kill-backup-$$"; }
-    cleanup_undo_files()       { rm -f "/tmp/test-kill-undo-$$" "/tmp/test-kill-backup-$$"; }
+    TEST_XDG_CACHE=$(mktemp -d)
+    export XDG_CACHE_HOME="$TEST_XDG_CACHE"
     # Stub tmux to simulate a session with no windows/panes (empty output)
     tmux() { return 1; }
     export -f tmux
@@ -236,6 +234,7 @@ if bash -c '
     save_undo_state "nonexistent_session_$$"
     # If we reach here, set -e did not kill us
     cleanup_undo_files "session"
+    rm -rf "$TEST_XDG_CACHE"
     exit 0
 ' 2>/dev/null; then
     pass "save_undo_state returns 0 when no backup exists"

@@ -1,6 +1,6 @@
 #!/bin/bash
 # Move a tmux window to a different session
-# Usage: move-window.sh <session:window_index>
+# Usage: move.sh <session:window_index>
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"

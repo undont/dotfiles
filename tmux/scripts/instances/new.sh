@@ -3,7 +3,7 @@ set -euo pipefail
 
 # Create a new window in the current session and launch a process
 #
-# Usage: new-instance.sh <process_name>
+# Usage: new.sh <process_name>
 #   process_name: claude, codex, opencode, copilot, or nvim
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -12,7 +12,7 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 require_tmux
 
 if [[ $# -lt 1 ]]; then
-    show_error "Usage: new-instance.sh <process_name>"
+    show_error "Usage: new.sh <process_name>"
     exit 1
 fi
 

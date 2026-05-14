@@ -70,14 +70,15 @@ dir=$(cd "$dir" && pwd)
 # Use SESSION_NAME if provided (e.g. from collision handler), otherwise derive from directory basename
 # Suffixed with -dev to avoid collisions with fixed-session launchers (e.g. acme vs acme-dev)
 # Dots are replaced because tmux uses '.' as a separator in target syntax (session:window.pane)
-session="${SESSION_NAME:-$(basename "$dir" | tr -c '[:alnum:]_\-\n' '-' | sed 's/-*$//')-dev}"
+session="${SESSION_NAME:-$(basename "$dir" | tr -c '[:alnum:]_\-\n' '-' | sed 's/-*$//')}"
 
-# Check if session already exists
-if tmux has-session -t "$session" 2>/dev/null; then
+# Check if session already exists (= forces exact match; bare names would
+# prefix-match e.g. "foo-15" against an existing "foo-1533")
+if tmux has-session -t "=$session" 2>/dev/null; then
     if [[ -n "${TMUX:-}" ]]; then
-        tmux switch-client -t "$session"
+        tmux switch-client -t "=$session"
     else
-        tmux attach-session -t "$session"
+        tmux attach-session -t "=$session"
     fi
     exit 0
 fi
@@ -99,7 +100,7 @@ tmux select-pane -t "$session:1.1"
 
 # Attach to session
 if [[ -n "${TMUX:-}" ]]; then
-    tmux switch-client -t "$session"
+    tmux switch-client -t "=$session"
 else
-    tmux attach-session -t "$session"
+    tmux attach-session -t "=$session"
 fi

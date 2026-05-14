@@ -32,6 +32,9 @@ return {
         'typescript',
         'xml',
         'yaml',
+        'zig',
+        'awk',
+        'toml',
       }
 
       -- Purge compiled parsers when nvim-treesitter updates to prevent ABI crashes.

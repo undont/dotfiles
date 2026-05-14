@@ -19,9 +19,13 @@ function M.setup()
     end,
   })
 
-  -- Auto-reload: Check for external changes on focus/buffer events
+  -- Auto-reload: Check for external changes on focus/cursor events.
+  -- BufEnter is deliberately omitted: it cascades :checktime across every
+  -- loaded buffer each time a plugin (e.g. diffview) spawns buffers, which
+  -- can race with the autosave below and surface a `(L)oad File` prompt
+  -- when `autoread` is bypassed by a transiently modified buffer.
   local reload_group = vim.api.nvim_create_augroup('auto-reload', { clear = true })
-  vim.api.nvim_create_autocmd({ 'FocusGained', 'BufEnter', 'CursorHold' }, {
+  vim.api.nvim_create_autocmd({ 'FocusGained', 'CursorHold' }, {
     desc = 'Check for external file changes',
     group = reload_group,
     callback = function()
@@ -31,10 +35,25 @@ function M.setup()
     end,
   })
 
-  -- Auto-save: Write buffer on change (with debounce via CursorHold)
+  -- Force reload on external change. `autoread` is silently bypassed when a
+  -- buffer is `modified` (e.g. diffview's transient mid-layout buffers), which
+  -- surfaces the `(L)oad File` prompt. Auto-save below flushes local edits to
+  -- disk on focus/buffer leave, so discarding the in-memory copy is safe.
+  vim.api.nvim_create_autocmd('FileChangedShell', {
+    desc = 'Always reload externally-changed files without prompting',
+    group = reload_group,
+    callback = function()
+      vim.v.fcs_choice = 'reload'
+    end,
+  })
+
+  -- Auto-save: Write buffer on text change and on focus/buffer leave.
+  -- FocusLost/BufLeave guarantee the buffer is clean before an external
+  -- agent edits the file, so the FocusGained checktime above can silently
+  -- reload via `autoread` instead of prompting.
   local autosave_group = vim.api.nvim_create_augroup('auto-save', { clear = true })
-  vim.api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged' }, {
-    desc = 'Auto-save on text change',
+  vim.api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged', 'FocusLost', 'BufLeave' }, {
+    desc = 'Auto-save on text change or focus loss',
     group = autosave_group,
     callback = function(ev)
       local buf = ev.buf
@@ -92,6 +111,19 @@ function M.setup()
   })
   -- Apply immediately for the current colourscheme
   vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
+
+  -- Lazy.nvim links `LazyDimmed` to `Conceal` for low-value commits
+  -- (chore/deps bumps). Conceal is built for hiding chars, so on most dark
+  -- themes the dimmed lines are effectively invisible. Re-link to Comment,
+  -- which is tuned for legible-but-subdued text.
+  vim.api.nvim_create_autocmd('ColorScheme', {
+    desc = 'Make Lazy.nvim dimmed commit lines legible',
+    group = vim.api.nvim_create_augroup('lazy-dimmed-readable', { clear = true }),
+    callback = function()
+      vim.api.nvim_set_hl(0, 'LazyDimmed', { link = 'Comment' })
+    end,
+  })
+  vim.api.nvim_set_hl(0, 'LazyDimmed', { link = 'Comment' })
 
   -- Dynamic diff highlights (diffview, octo)
   require('custom.core.diff-highlights').setup()

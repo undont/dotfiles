@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 # ══════════════════════════════════════════════════════════════
-# resurrect-kill-session.sh
+# resurrect/delete.sh
 # ══════════════════════════════════════════════════════════════
 # Kills a tmux session and removes its backup file.
 #
 # Usage:
-#   resurrect-kill-session.sh <session-name>   # Kill session
+#   resurrect/delete.sh <session-name>   # Kill session
 #
 # Session files are stored in: ~/.tmux/resurrect/sessions/
 # ══════════════════════════════════════════════════════════════

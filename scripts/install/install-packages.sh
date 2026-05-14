@@ -34,21 +34,30 @@ FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 cleanup() { rm -f "$FILTERED_BREWFILE"; }
 trap cleanup EXIT
 
-# Install packages from Brewfile
-echo "Installing packages from Brewfile..."
-echo "This may take a while on first run."
+# Skip the install entirely if everything in the Brewfile is already present
+# and up to date. `brew bundle check` exits 0 when nothing needs installing or
+# upgrading (it checks for outdated entries by default).
+echo "Checking Brewfile state..."
 echo ""
 
-if brew bundle install --file="$FILTERED_BREWFILE"; then
-    echo ""
-    success "All packages installed successfully"
+if brew bundle check --file="$FILTERED_BREWFILE" --quiet; then
+    success "All Brewfile packages already installed and up to date"
 else
+    echo "Installing/upgrading packages from Brewfile..."
+    echo "This may take a while on first run."
     echo ""
-    warn "Some packages may have failed to install."
-    echo "Check the output above for details."
-    echo ""
-    echo "You can retry failed packages with:"
-    echo "  brew bundle install --file=$DOTFILES_DIR/Brewfile"
+
+    if brew bundle install --upgrade --file="$FILTERED_BREWFILE"; then
+        echo ""
+        success "All packages installed successfully"
+    else
+        echo ""
+        warn "Some packages may have failed to install."
+        echo "Check the output above for details."
+        echo ""
+        echo "You can retry failed packages with:"
+        echo "  brew bundle install --upgrade --file=$DOTFILES_DIR/Brewfile"
+    fi
 fi
 
 # Post-installation setup for specific tools

@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Restore the last killed session from its preserved backup
-# Usage: undo-session.sh [--quick]
+# Usage: undo.sh [--quick]
 #   --quick: Skip UI messages and delays (for use from fzf/scripts)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"

@@ -6,9 +6,22 @@
 [[ -n "${_DOTFILES_COMMON_SH_LOADED:-}" ]] && return 0
 _DOTFILES_COMMON_SH_LOADED=1
 
+# Resolve this file's directory once. BASH_SOURCE works when sourced from
+# bash; zsh leaves it empty inside the sourced file, so fall back to zsh's
+# `%x` prompt expansion. Lets ad-hoc `source scripts/_lib/common.sh` work
+# from either shell instead of failing with "no such file: /colours.sh".
+if [[ -n "${BASH_VERSION:-}" ]]; then
+    _COMMON_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+elif [[ -n "${ZSH_VERSION:-}" ]]; then
+    eval '_COMMON_LIB_DIR="${${(%):-%x}:A:h}"'
+else
+    echo "Error: scripts/_lib/common.sh requires bash or zsh" >&2
+    return 1
+fi
+
 # Source colour definitions
 # shellcheck source=scripts/_lib/colours.sh
-source "${BASH_SOURCE%/*}/colours.sh"
+source "$_COMMON_LIB_DIR/colours.sh"
 
 # Print error message to stderr
 error() {
@@ -319,7 +332,7 @@ should_install() {
 # Uses active theme colours when available, red gradient as default
 # Usage: print_logo
 print_logo() {
-    local logo_file="${BASH_SOURCE%/*}/logo.txt"
+    local logo_file="$_COMMON_LIB_DIR/logo.txt"
 
     if [[ -f "$logo_file" ]]; then
         echo ""
@@ -333,7 +346,7 @@ print_logo() {
 
         # Load theme colours if a theme is active (skip on first install)
         if [[ -z "${TMUX_ACCENT_CYAN:-}" ]]; then
-            local fzf_theme="${BASH_SOURCE%/*}/../fzf-theme.sh"
+            local fzf_theme="$_COMMON_LIB_DIR/../fzf-theme.sh"
             local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
             if [[ -f "$config_dir/current-theme" && -f "$fzf_theme" ]]; then
                 # shellcheck disable=SC1090

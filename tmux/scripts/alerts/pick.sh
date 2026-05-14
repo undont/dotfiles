@@ -86,6 +86,20 @@ if [[ $count -eq 0 ]]; then
     exit 0
 fi
 
+# Single alert: jump directly instead of paying for an fzf startup.
+if [[ $count -eq 1 ]]; then
+    target=$(_extract_target "$entry_list")
+    if [[ -n "$target" ]]; then
+        target_session="${target%%:*}"
+        if [[ "$target_session" != "$CURRENT_SESSION" ]]; then
+            tmux switch-client -t "$target" 2>/dev/null || tmux select-window -t "$target" 2>/dev/null || true
+        else
+            tmux select-window -t "$target" 2>/dev/null || true
+        fi
+    fi
+    exit 0
+fi
+
 # Show fzf picker (handles single or multiple alerts)
 selected=$(printf '%s\n' "$entry_list" | fzf \
     --ansi --reverse --exact --cycle \
