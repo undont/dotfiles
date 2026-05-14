@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.93] - 2026-05-15
+
+### Removed
+- Installer: `postgresql` dropped from the prerequisites check — the dotfiles install doesn't need postgres to be present, so gating on `psql` just produced false-MISSING noise. Postgres is still in the brew preset (`postgresql@17`) for users who want it.
+
 ## [0.2.92] - 2026-05-15
 
 ### Added

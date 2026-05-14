@@ -143,7 +143,6 @@ if should_install "core"; then
     echo ""
     echo "Required - Databases:"
     echo "---------------------"
-    check "postgresql" "psql" "brew install postgresql@14"
     check "mongosh" "mongosh" "brew install mongosh"
     check "sqld" "sqld" "brew install libsql/sqld/sqld"
 
