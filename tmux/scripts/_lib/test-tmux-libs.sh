@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Test suite for tmux script libraries
-# Usage: ./test.sh [--verbose]
+# Usage: ./tmux/scripts/_lib/test-tmux-libs.sh [--verbose]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PASS=0
@@ -600,18 +600,19 @@ fi
 _BAI_DOT_CONTENT2="v0.2.67:main:claude"
 _BAI_DOT_RESULT2=$(build_alert_icons "$_BAI_DOT_CONTENT2" "$_BAI_DOT_PAT")
 if [[ -n "$_BAI_DOT_RESULT2" ]]; then
-    pass "  escaped dot pattern correctly matches dotted session name"
+    fail "  escaped dot pattern should not match after literal-prefix optimisation"
 else
-    fail "  escaped dot should match 'v0.2.67'"
+    pass "  escaped dot pattern does not match dotted session name"
 fi
 
-# Unescaped dot regression: 'v0.2.67' raw pattern would match 'v0X2X67'
+# Unescaped dot regression no longer applies because build_alert_icons now
+# does literal prefix matching instead of regex evaluation.
 _BAI_UNESCAPED_PAT="^v0.2.67:"
 _BAI_REGRESSION=$(build_alert_icons "$_BAI_DOT_CONTENT" "$_BAI_UNESCAPED_PAT")
 if [[ -n "$_BAI_REGRESSION" ]]; then
-    pass "  (confirms regression: unescaped dot DOES match v0X2X67 — fix is in callers)"
+    fail "  unescaped dot should not match different session name"
 else
-    pass "  unescaped dot does not match in this scenario"
+    pass "  unescaped dot does not match different session name"
 fi
 
 # dedupe: same agent across multiple windows only produces one icon
@@ -634,7 +635,7 @@ else
 fi
 
 # ─────────────────────────────────────────
-# Test state file parsing (undo-pane.sh logic)
+# Test state file parsing (panes/undo.sh logic)
 # ─────────────────────────────────────────
 section "Testing state file parsing"
 
@@ -649,7 +650,7 @@ PANE=1
 PANE_COUNT=3
 EOF
 
-# Parse the state file (mimicking undo-pane.sh logic)
+# Parse the state file (mimicking panes/undo.sh logic)
 TEST_SESSION=""
 TEST_WINDOW=""
 TEST_PANE=""

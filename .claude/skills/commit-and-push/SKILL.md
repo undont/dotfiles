@@ -104,16 +104,32 @@ description: Commit staged changes and push. Offer to create a PR if none exists
     - Update `CHANGELOG.md` for user-facing changes
     - **When to update**: `fix:`, `add:`, `update:`, `breaking:` commits
     - **Skip for**: `refactor:`, `test:`, `docs:`, `chore:` commits
-    - **Version Bumping**:
-      - Bump the version number when adding changelog entries
-      - Use semantic versioning: `MAJOR.MINOR.PATCH`
-        - `PATCH`: Bug fixes, minor improvements (`fix:`)
-        - `MINOR`: New features, enhancements (`add:`, `update:`)
-        - `MAJOR`: Breaking changes (`breaking:`)
-      - Change `## [Unreleased]` to `## [X.Y.Z] - YYYY-MM-DD` with today's date
-      - Add a new empty `## [Unreleased]` section above the new version
-    - **Format**: Add entry under the new version section:
+
+    - **MANDATORY pre-commit gate — a dated version heading MUST exist**:
+      Before running `git commit`, the topmost numbered heading in `CHANGELOG.md`
+      MUST be `## [X.Y.Z] - YYYY-MM-DD` with today's date — not `## [Unreleased]`,
+      not a stale date from a previous session. Verify with:
+      ```bash
+      # First numbered heading (skips [Unreleased]) — this is what auto-tag will tag
+      grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1
+      # Must show today's date AND a version that isn't already tagged:
+      git tag --list 'v*' | sort -V | tail -3
+      ```
+      **Why this matters:** the `auto-tag` CI job runs on every push to `main` and
+      extracts the topmost dated version from CHANGELOG.md (it skips `[Unreleased]`).
+      If that heading is missing, stale, or already tagged, the new code lands on
+      `main` with no `vX.Y.Z` tag — and there's no way to re-trigger the job
+      without another push.
+
+    - **CHANGELOG layout convention for this repo**:
+      `[Unreleased]` is kept as an empty placeholder at the top, and a new dated
+      `## [X.Y.Z] - YYYY-MM-DD` heading is added immediately below it. Do **not**
+      rename `[Unreleased]` to the new version — leave it as a persistent header.
       ```markdown
+      ## [Unreleased]
+
+      ## [0.2.92] - 2026-05-15
+
       ### Added
       - New feature or capability
 
@@ -125,7 +141,25 @@ description: Commit staged changes and push. Offer to create a PR if none exists
 
       ### Removed
       - Removed features
+
+      ## [0.2.91] - 2026-05-08
+      ...
       ```
+
+    - **Version Bumping**:
+      - Use semantic versioning: `MAJOR.MINOR.PATCH`
+        - `PATCH`: Bug fixes, minor improvements (`fix:`)
+        - `MINOR`: New features, enhancements (`add:`, `update:`)
+        - `MAJOR`: Breaking changes (`breaking:`)
+      - **During work on a feature branch:** entries may be appended under the
+        existing top dated heading (don't create a new one for every iteration).
+      - **At commit-and-push time:** if the topmost dated heading is already
+        tagged (`git tag --list 'v<that-version>'` returns it), insert a new
+        `## [X.Y.Z] - YYYY-MM-DD` heading below `[Unreleased]` and move the
+        accumulated entries under it.
+      - If the user has already added a fresh dated heading, leave it alone —
+        just confirm the date is today's and that the version isn't tagged yet.
+
     - Stage CHANGELOG.md with your other changes
 
 ## Commit Process

@@ -4,7 +4,7 @@ set -euo pipefail
 # Kill a process (claude, codex, opencode, copilot, nvim) running in a specific pane
 # without killing the pane itself. Shows a confirmation dialog first.
 #
-# Usage: kill-instance.sh <session:window.pane> <process_name>
+# Usage: kill.sh <session:window.pane> <process_name>
 #   process_name: claude, codex, opencode, copilot, or nvim
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -15,11 +15,8 @@ source "$SCRIPT_DIR/../_lib/process.sh"
 
 require_tmux
 
-# Load current theme colours for fzf
-load_fzf_theme
-
 if [[ $# -lt 2 ]]; then
-    show_error "Usage: kill-instance.sh <target> <process_name>"
+    show_error "Usage: kill.sh <target> <process_name>"
     exit 1
 fi
 
@@ -35,14 +32,13 @@ case "$PROCESS" in
         ;;
 esac
 
-# Get pane PID
-PANE_PID=$(tmux display-message -t "$TARGET" -p '#{pane_pid}' 2>/dev/null) || {
+# Get pane PID and window metadata in one tmux round-trip
+target_info=$(tmux display-message -t "$TARGET" -p '#{pane_pid}|#{session_name}|#{window_index}|#{window_name}|#{window_id}' 2>/dev/null) || {
     show_error "Cannot find pane: $TARGET"
     exit 1
 }
-
-# Get window name for confirmation message
-WINDOW_NAME=$(tmux display-message -t "$TARGET" -p '#{window_name}' 2>/dev/null || echo "$TARGET")
+IFS='|' read -r PANE_PID SESSION WINDOW_IDX WINDOW_NAME WINDOW_ID <<< "$target_info"
+[[ -n "$WINDOW_NAME" ]] || WINDOW_NAME="$TARGET"
 
 # Find the child process matching process name
 MATCH_FLAG="-x"
@@ -78,8 +74,5 @@ graceful_kill_pids 2 "$CHILD_PID"
 
 # Clear alerts for agent processes (nvim doesn't use alerts)
 if [[ "$PROCESS" == "claude" || "$PROCESS" == "codex" || "$PROCESS" == "opencode" || "$PROCESS" == "copilot" ]]; then
-    SESSION=$(echo "$TARGET" | cut -d: -f1)
-    WINDOW_IDX=$(echo "$TARGET" | cut -d: -f2 | cut -d. -f1)
-    WINDOW_ID=$(tmux display-message -t "${SESSION}:${WINDOW_IDX}" -p '#{window_id}' 2>/dev/null || echo "")
     clear_window_alerts "$SESSION" "$WINDOW_NAME" "$WINDOW_ID"
 fi

@@ -68,10 +68,11 @@ fi
 # =============================================================================
 # PATH CONFIGURATION
 # =============================================================================
-# Note: Additional PATH entries may exist in ~/.zprofile (added by installers)
-
-# Deduplicate PATH entries (zsh built-in — removes duplicates automatically)
-typeset -U path
+# Note: Additional PATH entries may exist in ~/.zprofile (added by installers).
+# ~/.zprofile already sets `typeset -U path PATH` so these appends auto-dedupe;
+# we re-assert it here so non-login shells (sourcing dotfiles.zsh standalone)
+# still benefit from deduplication.
+typeset -U path PATH
 
 # Go workspace (GOPATH is where go install puts binaries)
 export GOPATH=$HOME/go

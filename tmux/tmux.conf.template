@@ -25,10 +25,16 @@ bind ` send-prefix
 bind C-b send-prefix -2
 
 # Terminal colours: enable 256-colour and true colour (RGB) support
+# Use terminal-features wildcard so RGB works regardless of outer TERM
+# (xterm-ghostty under Ghostty, xterm-256color under other emulators, etc.)
 set -g default-terminal "tmux-256color"
-set -ag terminal-overrides ",xterm-256color:RGB"
+set -ag terminal-features "*:RGB"
 # Remap Home/End to CSI sequences so cmd+left/right work in all pane apps
 set -ag terminal-overrides ",xterm-256color:khome=\E[H,kend=\E[F"
+# Claude Code (>=2.1.77) clamps chalk to 256-colour whenever $TMUX is set,
+# regardless of true terminal capability. Opt out via this env var so the
+# TUI emits real 24-bit RGB. See anthropics/claude-code#36785, #46146.
+set-environment -g CLAUDE_CODE_TMUX_TRUECOLOR 1
 
 # Cursor: default to block (local.conf can override)
 set -g cursor-style block
@@ -39,6 +45,7 @@ set -g mouse on
 # Extended key and mouse support for apps like glow
 set -ga terminal-features 'xterm*:extkeys:mouse'
 set -g extended-keys always
+set -s extended-keys-format csi-u    # emit kitty u-form (matches Ghostty + zsh bindkey)
 
 # Forward terminal focus events into panes (nvim :checktime autoreload,
 # Claude Code focus tracking, TUIs that pause when unfocused)
@@ -152,8 +159,11 @@ unbind z
 # ─────────────────────────────────────────
 bind -n M-[ previous-window          # Opt+[
 bind -n M-] next-window              # Opt+]
-bind -n C-Enter next-window          # Ctrl+Enter
-bind -n C-S-Enter previous-window    # Ctrl+Shift+Enter
+
+# Pass Ctrl+Enter / Ctrl+Shift+Enter through to the inner program
+# (extended-keys would otherwise consume them and leak the tail bytes)
+bind -n C-Enter   send-keys C-Enter
+bind -n C-S-Enter send-keys C-S-Enter
 
 # Previous/next window (prefix variants for mobile)
 bind , next-window                    # prefix + ,
@@ -704,6 +714,10 @@ set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/utils/nav.sh reco
 
 # Track pane switches within the same window (doesn't fire after-select-window)
 set-hook -g after-select-pane 'run-shell -b "tmux set-option -pt \"#{pane_id}\" @pane-viewed \"$(date +%s)\" 2>/dev/null || true"'
+
+# Clear alerts when the terminal window gains OS focus. Covers cmd+` between multiple
+# Ghostty clients attached to the same tmux server, where after-select-window doesn't fire.
+set-hook -g pane-focus-in 'run-shell -b "~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 
 # Clean up stale alerts when window is renamed (catches native tmux renames)
 # Note: Our rename script (windows/rename.sh) handles the update directly;

@@ -55,6 +55,17 @@ return {
         ['<C-space>'] = { 'show', 'show_documentation', 'hide_documentation' },
         ['<C-e>'] = { 'hide', 'fallback' },
         ['<CR>'] = { 'select_and_accept', 'fallback' },
+        -- Shift+Enter (Ghostty sends ESC+CR = M-CR) inserts a literal newline
+        -- without accepting the visible completion item.
+        ['<M-CR>'] = {
+          function(cmp)
+            if cmp.is_visible() then
+              cmp.hide()
+            end
+            vim.api.nvim_feedkeys(vim.api.nvim_replace_termcodes('<CR>', true, false, true), 'n', false)
+            return true
+          end,
+        },
         ['<Tab>'] = {
           function(cmp)
             local ok, suggestion = pcall(require, 'copilot.suggestion')

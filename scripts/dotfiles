@@ -53,10 +53,9 @@ _compute_skip_steps() {
 
     local skippable=()
 
-    # Brewfile not changed → skip homebrew + packages
-    if ! printf '%s\n' "$changed_files" | grep -q '^Brewfile'; then
-        skippable+=(homebrew packages)
-    fi
+    # Homebrew + packages always run so upstream upgrades flow in.
+    # install-packages.sh has its own `brew bundle check` fast path that skips
+    # the actual install when nothing in the Brewfile is missing or outdated.
 
     # No config/symlink-related files changed → skip symlinks
     local symlink_patterns='^scripts/install/create-symlinks\.sh|\.template$|^zsh/|^tmux/|^nvim/|^ghostty/|^hammerspoon/|^karabiner/|^launchers/|^lazygit/|^lazydocker/|^formatters/|^gh-dash/|^btop/|^themes/|^keyd/'

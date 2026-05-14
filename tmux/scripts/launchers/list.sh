@@ -3,10 +3,10 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Tmux Launcher Picker (fzf)
+# Tmux Launcher List Provider
 # ══════════════════════════════════════════════════════════════
-# Lists available session launchers with descriptions and status
-# Called from tmux keybinding: prefix + p
+# Lists available session launchers with descriptions and status.
+# Tab-delimited output; called from picker.sh to feed fzf.
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
@@ -16,20 +16,45 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 # Load current theme colours for fzf
 load_fzf_theme
 
+# Check whether a newline-delimited list contains an exact entry.
+contains_line() {
+    local needle="$1"
+    local haystack="$2"
+    while IFS= read -r line; do
+        [[ "$line" == "$needle" ]] && return 0
+    done <<< "$haystack"
+    return 1
+}
+
+# Extract the first description tag from a launcher file.
+extract_description() {
+    local file="$1"
+    local line
+    while IFS= read -r line; do
+        case "$line" in
+            ("# @description:"*)
+                line="${line#"# @description:"}"
+                line="${line#"${line%%[![:space:]]*}"}"
+                printf '%s\n' "$line"
+                return 0
+                ;;
+        esac
+    done < "$file"
+    return 1
+}
+
 # List launchers in fzf-compatible format, sorted by most recently used
 list_launchers_for_fzf() {
     # Header (consumed by fzf --header-lines)
     # Prefix with tab so --with-nth=2 in picker.sh still displays the logo
-    print_dotfiles_logo | sed $'s/^/\t/'
+    local logo_line
+    while IFS= read -r logo_line; do
+        printf '\t%s\n' "$logo_line"
+    done < <(print_dotfiles_logo)
 
-    # Collect all launchers into temporary files (Bash 3.2 compatible)
+    # Collect all launchers in memory.
     # Format: name|description|source
-    local tmpdir
-    tmpdir=$(mktemp -d)
-
-    local all_launchers="$tmpdir/all"
-    local seen_names="$tmpdir/seen"
-    touch "$all_launchers" "$seen_names"
+    local all_launchers="" seen_names=""
 
     # Helper: collect a single launcher entry
     collect_launcher() {
@@ -40,12 +65,12 @@ list_launchers_for_fzf() {
         name=$(basename "$file")
 
         # Extract @description tag
-        description=$(grep -m1 '# @description:' "$file" 2>/dev/null | sed 's/.*# @description: *//' || true)
+        description=$(extract_description "$file" || true)
         [[ -n "$description" ]] || return 0
 
         # Store: name|description|source
-        printf '%s|%s|%s\n' "$name" "$description" "$source" >> "$all_launchers"
-        printf '%s\n' "$name" >> "$seen_names"
+        all_launchers+="${name}|${description}|${source}"$'\n'
+        seen_names+="${name}"$'\n'
     }
 
     # User launchers first (they take priority on name collision)
@@ -67,36 +92,45 @@ list_launchers_for_fzf() {
             local name
             name=$(basename "$file")
             # Skip if already seen (user override)
-            grep -qxF "$name" "$seen_names" 2>/dev/null && continue
+            contains_line "$name" "$seen_names" && continue
             collect_launcher "$file" "system"
         done
     fi
 
     # Build MRU list from history (most recent first, deduplicated)
-    local mru_file="$tmpdir/mru"
-    touch "$mru_file"
-    if [[ -f "$LAUNCHER_HISTORY" ]]; then
-        awk '{ lines[NR] = $0; count = NR } END { for (i = count; i >= 1; i--) print lines[i] }' "$LAUNCHER_HISTORY" \
-            | awk '!seen[$0]++' > "$mru_file"
+    local mru_list="" history_lines=()
+    if [[ -f "$LAUNCHER_HISTORY" ]] && [[ -s "$LAUNCHER_HISTORY" ]]; then
+        local hist_line idx
+        while IFS= read -r hist_line; do
+            [[ -n "$hist_line" ]] || continue
+            history_lines+=("$hist_line")
+        done < "$LAUNCHER_HISTORY"
+
+        for (( idx=${#history_lines[@]}-1; idx>=0; idx-- )); do
+            hist_line="${history_lines[$idx]}"
+            contains_line "$hist_line" "$mru_list" && continue
+            mru_list+="${hist_line}"$'\n'
+        done
     fi
 
     # Track which launchers have been output
-    local outputted="$tmpdir/outputted"
-    touch "$outputted"
+    local outputted=""
 
     # Output MRU launchers first
     while IFS= read -r hist_name; do
         [[ -n "$hist_name" ]] || continue
         # Find this launcher in all_launchers
-        local entry
-        entry=$(grep -m1 "^${hist_name}|" "$all_launchers" 2>/dev/null || true)
+        local entry="" scan_entry
+        while IFS= read -r scan_entry; do
+            [[ "$scan_entry" == "$hist_name|"* ]] || continue
+            entry="$scan_entry"
+            break
+        done <<< "$all_launchers"
         [[ -n "$entry" ]] || continue
 
         # Parse entry: name|description|source
         local name desc source suffix=""
-        name=$(printf '%s' "$entry" | cut -d'|' -f1)
-        desc=$(printf '%s' "$entry" | cut -d'|' -f2)
-        source=$(printf '%s' "$entry" | cut -d'|' -f3)
+        IFS='|' read -r name desc source <<< "$entry"
 
         if [[ "$source" == "user" ]]; then
             suffix=" ${GREY}(user)${NC}"
@@ -105,18 +139,17 @@ list_launchers_for_fzf() {
         fi
 
         printf "%s\t    %-16s ${GREY}%s${NC}%s\n" "$name" "$name" "$desc" "$suffix"
-        printf '%s\n' "$name" >> "$outputted"
-    done < "$mru_file"
+        outputted+="${name}"$'\n'
+    done <<< "$mru_list"
 
     # Output remaining launchers alphabetically
-    local remaining="$tmpdir/remaining"
-    touch "$remaining"
+    local remaining=""
     while IFS='|' read -r name desc source; do
         [[ -n "$name" ]] || continue
         # Skip if already output
-        grep -qxF "$name" "$outputted" 2>/dev/null && continue
-        printf '%s|%s|%s\n' "$name" "$desc" "$source" >> "$remaining"
-    done < "$all_launchers"
+        contains_line "$name" "$outputted" && continue
+        remaining+="${name}|${desc}|${source}"$'\n'
+    done <<< "$all_launchers"
 
     # Sort and output remaining
     while IFS='|' read -r name desc source; do
@@ -130,10 +163,7 @@ list_launchers_for_fzf() {
         fi
 
         printf "%s\t    %-16s ${GREY}%s${NC}%s\n" "$name" "$name" "$desc" "$suffix"
-    done < <(sort "$remaining")
-
-    # Cleanup
-    rm -rf "$tmpdir"
+    done < <(printf '%s' "$remaining" | sort)
 }
 
 # Main

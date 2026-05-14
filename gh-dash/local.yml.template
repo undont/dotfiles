@@ -55,16 +55,12 @@
 # ---------------------------------------------------------------------------
 # Extra Keybindings
 # These are APPENDED to the base keybindings from config.yml.
-# Use different keys to avoid conflicts with D and A (defined in base config).
+# Use different keys to avoid conflicts with C, D, A, m (defined in base config).
 #
 # The commands below require repoPaths to be configured (they use RepoPath).
 # Uncomment repoPaths above first, then uncomment the keybindings.
 # ---------------------------------------------------------------------------
-keybindings:
-    prs:
-        - key: m
-          name: squash & merge
-          command: gh pr merge --squash --delete-branch --repo {{.RepoName}} {{.PrNumber}}
+# keybindings:
 #     universal:
 #         - key: g
 #           name: lazygit

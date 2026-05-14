@@ -9,6 +9,15 @@
 # For interactive shell config (aliases, functions, prompt), use ~/.zshrc
 #
 # Load order: .zshenv → .zprofile (login) → .zshrc (interactive) → .zlogin
+#
+# Conventions:
+#   - This file is for PATH entries added by third-party installers (per machine).
+#   - PATH entries the dotfiles framework owns live in zsh/dotfiles.zsh.
+#   - Don't duplicate framework entries here; typeset -U below dedupes anyway.
+
+# Keep $path (and therefore $PATH) deduplicated across all later additions,
+# including any made by the framework in zsh/dotfiles.zsh.
+typeset -U path PATH
 
 # Homebrew environment (PATH, MANPATH, INFOPATH, FPATH for completions)
 # Sets HOMEBREW_PREFIX and adds site-functions to fpath (needed by compinit).
@@ -23,8 +32,5 @@ fi
 # JetBrains Toolbox CLI tools (added by Toolbox App installer)
 export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 
-# Python pipx (added by pipx installer - 2025-07-15)
-export PATH="$PATH:$HOME/.local/bin"
-
-# Dotfiles session launchers
-export PATH="$PATH:$HOME/.local/launchers"
+# Bun global packages (bun install -g)
+export PATH="$HOME/.bun/bin:$PATH"

@@ -6,6 +6,47 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.92] - 2026-05-15
+
+### Added
+- Brew: `watch` (GNU procps) added to the core preset — flicker-free re-renderer for periodic commands
+- Brew: `gpk` (from `neur0map/tap`) added to the core preset — TUI dashboard that unifies 34 package managers into one searchable view
+- Brew: `httpyac` added to the dev preset — `.http`/`.rest` file runner
+- Ghostty: `cursor-warp.glsl` (corner-aware easing — leading corners snap, trailing ease) replaces the deleted `cursor-trail.glsl`. `tft.glsl` (scanline + grille) added alongside. Activate via `custom-shader =` in `~/.config/ghostty/local`
+- Karabiner: cmd+ctrl chords are absorbed while Ghostty is frontmost, except `cmd+ctrl(+shift)+space/left/right` which pass through. Stops macOS Spaces shortcuts leaking into the terminal. `karabiner/karabiner.json` is copy-on-install, so existing users must patch the installed JSON by hand
+- Tmux: `pane-focus-in` hook clears the alert on the focused agent — covers `cmd+`` swaps between Ghostty clients attached to the same tmux server, where `after-select-window` doesn't fire. Documented in `docs/AGENT-HOOKS.md`
+- Tmux: `CLAUDE_CODE_TMUX_TRUECOLOR=1` exported to children — Claude Code ≥2.1.77 clamps chalk to 256 colours under `$TMUX`; the env var opts back into 24-bit RGB (anthropics/claude-code#36785, #46146)
+- Tmux: `alerts/pick.sh` jumps directly to the target window when there's only one pending alert, skipping fzf
+- Tmux: `instances/claude.sh` ghost renders Anthropic's terracotta (`#D77757`) in 24-bit RGB instead of the closest 256-colour approximation (`174`)
+- Nvim: `<M-CR>` at blink.cmp prompts inserts a literal newline without accepting the visible completion — Ghostty sends Shift+Enter as `ESC+CR`, so multi-line input in Claude/Octo/comment buffers no longer commits a stray suggestion
+- Nvim: `<leader>sr` (Telescope resume) refreshes the resumed picker once it's ready, so the list reflects current workspace state instead of cached entries
+- Nvim: `LazyDimmed` re-linked to `Comment` — lazy.nvim's default link to `Conceal` rendered chore-bump commit lines effectively invisible on dark themes
+- Nvim: `zig`, `awk`, `toml` added to the treesitter parser list
+
+### Fixed
+- Launchers: tmux session lookups now use exact-match targets (`=$SESSION`) instead of bare names. The previous form silently prefix-matched — creating a `dana-15` instance while `dana-1533` was running would re-attach to `dana-1533` instead of creating a new session. Fixed in the wizard template (`tmux/scripts/launchers/new.sh`), the shared `launchers/dev` script, and migration `0.2.92-fix-launcher-prefix-match.sh` patches existing user-owned launchers in `~/.config/dotfiles/launchers/`
+- Nvim: `<leader>do` no longer surfaces Vim's `(L)oad File` prompt after an external agent edits files mid-cascade — `autoread` is silently bypassed whenever any buffer is transiently `modified=true` (diffview's mid-layout buffers, etc.). Three changes in `core/autocmds.lua`: dropped `BufEnter` from the reload trigger list, added `FocusLost`/`BufLeave` to autosave so buffers are clean before the agent's edit lands, and a `FileChangedShell` handler that pins `vim.v.fcs_choice = 'reload'` as a fallback
+- Nvim: `:lsp restart roslyn` / `:Roslyn restart` no longer hang or silently fail to re-attach. (1) Roslyn's `on_exit` nils `g:roslyn_nvim_selected_solution` as a side effect, so the restart bailed on the multi-target prompt — a one-shot `LspDetach` autocmd now preserves the solution across detach/re-init. (2) `exit_timeout = 5000` force-kills the old client after 5s instead of waiting for the next LSP request to nudge the pipe
+- Tmux: `_lib/alerts.sh`'s `build_alert_icons` now uses literal prefix matching instead of `grep`, so callers don't have to escape `.` in session/window names — the previous form silently dropped alerts on dotted names like `v0.2.67`. `sessions/list.sh` and `windows/list.sh` updated to pass the unescaped prefix
+- Installer: `scripts/_lib/common.sh` is now safe to source from zsh — the `${BASH_SOURCE%/*}` idiom expanded to empty under zsh and broke ad-hoc sourcing. Resolves the lib dir once via `BASH_SOURCE` (bash) or `${(%):-%x}` (zsh)
+
+### Removed
+- Brew: `postgresql@14` is now uninstalled by migration `0.2.92-uninstall-postgresql-14.sh`. Replaced by `postgresql@17` in the brew preset; v14 became deprecated in homebrew so I dropped support for it
+- Ghostty: `shaders/cursor-trail.glsl` deleted — superseded by `cursor-warp.glsl`
+
+### Changed
+- Installer: `dotfiles update` now keeps Brewfile packages current — runs `brew bundle install --upgrade` (scoped to Brewfile entries, not system-wide), gated by a `brew bundle check` precheck that no-ops when nothing is missing or outdated. Homebrew and packages steps no longer auto-skip on Brewfile-unchanged updates so upstream releases flow in
+- Lazydocker: log timestamps in the project Logs tab and both popped-out viewers (`viewServiceLogs`, `viewAllLogs`) are now reformatted from RFC3339Nano (`2026-05-14T16:16:11.814096093Z`) to `05-14 16:16:11.814` by a sibling `format-logs.awk` symlinked next to `config.yml`. The single-container Logs tab still renders without timestamps because it streams directly from the Docker API and can't be piped — `logs.timestamps` stays `false` to avoid the ugly raw format there. Since `lazydocker/config.yml` is copy-on-install, existing users must apply the new `commandTemplates` block by hand (the `format-logs.awk` symlink is created automatically on next `dotfiles update`)
+- gh-dash: `m` squash & merge keybinding moved from `local.yml.template` to `config.yml.template` so it ships as part of the base config. Leaving the binding in both files would have caused yq's `*+` array-merge to duplicate it. Migration `0.2.92-ghdash-squash-promote.sh` strips the entry from existing `local.yml` files (preserving any sibling keybindings the user added) and cleans up empty `keybindings`/`prs` containers it leaves behind
+- Tmux: `terminal-features "*:RGB"` (was a hand-rolled `terminal-overrides`) plus `extended-keys-format csi-u` so tmux re-emits Ghostty's kitty u-form sequences instead of xterm form, which was leaking tail bytes like `3~` into zsh
+- Tmux: `Ctrl+Enter` / `Ctrl+Shift+Enter` are passed through to the inner program instead of bound to prev/next window. `M-[` / `M-]` (Opt+`[`/`]`) remain the navigation chord — extended-keys consumed both forms and leaked tail bytes when only the navigation form was bound
+- Nvim: Telescope clear-prompt moved from `<C-u>` to `<C-l>` — frees `<C-u>` for native delete-to-start-of-line and matches shell behaviour
+- Nvim: Oil `-` closes the buffer and `<BS>` walks up a directory (was `q` for close, no `<BS>`). Keeps `-` symmetric with the global open-Oil binding
+- Nvim: cheatsheet reflects the new Oil bindings and the corrected `<leader>pP` (was `<leader>pp`) for PR approve
+- Scripts: `fzf-theme.sh` caches its baked exports to `$XDG_CACHE_HOME/dotfiles/fzf-env` and source-fasts on subsequent calls (~1ms vs ~10ms). Invalidated by mtime against the active theme, `theme-defaults.sh`, and ghostty config. `TMUX_ACCENT_*` and `NVIM_COLORSCHEME` are now exported so popup-spawned tmux scripts pick them up without re-sourcing
+- Zsh: PATH dedupe (`typeset -U path PATH`) moved to the top of `~/.zprofile`; dropped the redundant `~/.local/bin` and `~/.local/launchers` exports — the framework already adds both, and the duplicates were leaking into `$PATH`
+- btop: `save_config_on_exit` flipped to `true`. `btop/btop.conf` is copy-on-install, so existing users must apply the flip by hand
+
 ## [0.2.91] - 2026-05-08
 
 ### Changed

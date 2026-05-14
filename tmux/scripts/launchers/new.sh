@@ -6,10 +6,10 @@ set -euo pipefail
 # New Launcher Wizard
 # ══════════════════════════════════════════════════════════════
 # Step-based wizard for creating/editing session launchers.
-# Supports ctrl+z to go back a step.
+# Supports ctrl+b to go back a step.
 #
-# Usage: new-launcher.sh [name]
-#        new-launcher.sh --edit SOURCE [name]
+# Usage: new.sh [name]
+#        new.sh --edit SOURCE [name]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
@@ -255,9 +255,9 @@ show_context() {
     fi
 }
 
-# Prompt for input with default value, respects ctrl+z
+# Prompt for input with default value, respects ctrl+b
 # Usage: ask "label" "default_value" result_var
-# Returns 1 if ctrl+z was pressed (go back)
+# Returns 1 if ctrl+b was pressed (go back)
 ask() {
     local label="$1"
     local default="$2"
@@ -275,7 +275,7 @@ ask() {
         read -er -p "$prompt" _result || true
     fi
 
-    # Detect literal ctrl+z in input (tmux popup doesn't send SIGTSTP)
+    # Detect the back marker injected by the ctrl+b readline binding
     if [[ "$_result" == *"$BACK_MARKER"* ]]; then
         return 1
     fi
@@ -286,9 +286,9 @@ ask() {
     return 0
 }
 
-# Prompt for yes/no with default, respects ctrl+z
+# Prompt for yes/no with default, respects ctrl+b
 # Usage: ask_yn "label" "default" result_var
-# Returns 1 if ctrl+z was pressed (go back)
+# Returns 1 if ctrl+b was pressed (go back)
 ask_yn() {
     local label="$1"
     local default="$2"
@@ -308,7 +308,7 @@ ask_yn() {
 
     read -er -p "$prompt" _yn_result || true
 
-    # Detect literal ctrl+z in input (tmux popup doesn't send SIGTSTP)
+    # Detect the back marker injected by the ctrl+b readline binding
     if [[ "$_yn_result" == *"$BACK_MARKER"* ]]; then
         return 1
     fi
@@ -858,12 +858,13 @@ if [[ ! -d "$PROJECT_DIR" ]]; then
     exit 1
 fi
 
-# Check if session already exists
-if tmux has-session -t "$SESSION" 2>/dev/null; then
+# Check if session already exists (= forces exact match; bare names would
+# prefix-match e.g. "foo-15" against an existing "foo-1533")
+if tmux has-session -t "=$SESSION" 2>/dev/null; then
     if [[ -n "${TMUX:-}" ]]; then
-        tmux switch-client -t "$SESSION"
+        tmux switch-client -t "=$SESSION"
     else
-        tmux attach-session -t "$SESSION"
+        tmux attach-session -t "=$SESSION"
     fi
     exit 0
 fi
@@ -910,9 +911,9 @@ tmux select-pane -t "$SESSION:1.1"
 
 # Attach to session
 if [[ -n "${TMUX:-}" ]]; then
-    tmux switch-client -t "$SESSION"
+    tmux switch-client -t "=$SESSION"
 else
-    tmux attach-session -t "$SESSION"
+    tmux attach-session -t "=$SESSION"
 fi
 FOOTER
 } > "$target_path"

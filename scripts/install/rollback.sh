@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # Rollback a failed or unwanted dotfiles installation
-# Usage: ./scripts/rollback.sh [--force]
+# Usage: ./scripts/install/rollback.sh [--force]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 DOTFILES_DIR="$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)"

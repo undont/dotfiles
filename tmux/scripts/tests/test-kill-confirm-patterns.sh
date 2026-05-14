@@ -51,6 +51,12 @@ for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     fi
 done
 
+if [[ -f "$SCRIPTS_DIR/instances/kill.sh" ]] && [[ -x "$SCRIPTS_DIR/instances/kill.sh" ]]; then
+    pass "instances/kill.sh exists and is executable"
+else
+    fail "instances/kill.sh missing or not executable"
+fi
+
 section "Using standardized visual confirmation"
 for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     if grep -q "show_visual_confirm\|tmux_confirm_last_item" "$SCRIPTS_DIR/$script"; then
@@ -80,6 +86,29 @@ for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     fi
 done
 
+section "Confirm-only kill scripts should not preload fzf theme"
+for script in panes/kill.sh sessions/kill.sh instances/kill.sh; do
+    if grep -q "^load_fzf_theme" "$SCRIPTS_DIR/$script"; then
+        fail "$script preloads fzf theme before show_visual_confirm"
+    else
+        pass "$script avoids redundant top-level fzf theme load"
+    fi
+done
+
+section "Instance kill hot path"
+INSTANCE_KILL="$SCRIPTS_DIR/instances/kill.sh"
+if grep -q "#{pane_pid}|#{session_name}|#{window_index}|#{window_name}|#{window_id}" "$INSTANCE_KILL"; then
+    pass "instances/kill.sh fetches pane and window metadata in one tmux query"
+else
+    fail "instances/kill.sh should fetch target metadata in a single tmux query"
+fi
+
+if grep -q "cut -d:" "$INSTANCE_KILL"; then
+    fail "instances/kill.sh reparses target with cut after metadata fetch"
+else
+    pass "instances/kill.sh avoids reparsing target with cut"
+fi
+
 section "Instance pickers must not use fzf become() in pipelines"
 # Regression: fzf become() is unreliable when fzf is piped to another
 # process (cut | xargs). Use execute-silent()+abort instead.
@@ -96,7 +125,7 @@ else
 fi
 
 section "Agent-agnostic terminology"
-for file in sessions/kill.sh rename-session.sh rename-window.sh update-timestamp.sh; do
+for file in sessions/kill.sh sessions/rename.sh windows/rename.sh alerts/update-timestamp.sh; do
     if grep -i "claude.*alert" "$SCRIPTS_DIR/$file" | grep -qv "ALERTS_FILE\|^#"; then
         fail "$file has claude-specific alert references"
     else

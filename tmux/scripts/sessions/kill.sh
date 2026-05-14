@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # Kill a tmux session with confirmation dialog and undo capability
-# Usage: kill-session.sh <session_name> [--no-confirm]
+# Usage: kill.sh <session_name> [--no-confirm]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -70,9 +70,6 @@ if [[ "${SOURCING_FOR_TEST:-0}" == "1" ]]; then
 fi
 
 require_tmux
-
-# Load current theme colours for fzf
-load_fzf_theme
 
 SESSION_NAME="${1:-$(get_current_session)}"
 NO_CONFIRM="${2:-}"

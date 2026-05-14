@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 # Agent alert clear hook: Clear alert when user interacts
-# Called by Claude Code PreToolCall hook
+# Called from agent hook wrappers when the user sends a message
+# (e.g. Claude Code UserPromptSubmit)
 
 [[ -z "$TMUX" ]] && exit 0
 

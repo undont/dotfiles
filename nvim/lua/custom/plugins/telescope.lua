@@ -58,7 +58,7 @@ return {
               ['<M-BS>'] = function()
                 vim.api.nvim_input '<C-w>'
               end,
-              ['<C-u>'] = function(prompt_bufnr)
+              ['<C-l>'] = function(prompt_bufnr)
                 require('telescope.actions.state').get_current_picker(prompt_bufnr):set_prompt ''
               end,
               ['<C-g>'] = function(prompt_bufnr)
@@ -143,7 +143,28 @@ return {
       end, { desc = 'Search [G]rep (literal)' })
       vim.keymap.set('n', '<leader>sm', builtin.git_status, { desc = 'Search git [M]odified files' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = 'Search [D]iagnostics' })
-      vim.keymap.set('n', '<leader>sr', builtin.resume, { desc = 'Search [R]esume' })
+      vim.keymap.set('n', '<leader>sr', function()
+        -- Resume re-uses cached entries from the previous picker; we want a
+        -- fresh run against the current state of the workspace, so trigger a
+        -- finder refresh once the resumed picker is ready.
+        vim.api.nvim_create_autocmd('User', {
+          pattern = 'TelescopeResumePost',
+          once = true,
+          callback = function()
+            vim.schedule(function()
+              local ok_state, action_state = pcall(require, 'telescope.actions.state')
+              if not ok_state then
+                return
+              end
+              local picker = action_state.get_current_picker(vim.api.nvim_get_current_buf())
+              if picker and picker.finder then
+                picker:refresh(nil, { reset_prompt = false })
+              end
+            end)
+          end,
+        })
+        builtin.resume()
+      end, { desc = 'Search [R]esume (fresh)' })
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = 'Recent files [.]' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = 'Buffers' })
 

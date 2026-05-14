@@ -5,12 +5,12 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # New Launcher Prompt (fzf become target)
 # ══════════════════════════════════════════════════════════════
-# Prompts for a launcher name, then hands off to new-launcher.sh
+# Prompts for a launcher name, then hands off to new.sh
 # Called via fzf become() from the launcher picker (prefix + p)
 #
 # Usage:
-#   new-launcher-prompt.sh              # Create mode
-#   new-launcher-prompt.sh --edit NAME  # Edit mode (pre-fills name)
+#   prompt.sh              # Create mode
+#   prompt.sh --edit NAME  # Edit mode (pre-fills name)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 

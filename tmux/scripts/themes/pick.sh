@@ -3,10 +3,10 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Tmux Theme Picker (fzf)
+# Tmux Theme List Provider
 # ══════════════════════════════════════════════════════════════
-# Interactive theme selector using fzf
-# Called from tmux keybinding: prefix + t
+# Lists themes (with current/favourite markers) for the picker.
+# Called by picker.sh to feed fzf; also handles --reload/--pos/--toggle-fav.
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 

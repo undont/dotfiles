@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Test suite for rename-session.sh
+# Test suite for sessions/rename.sh
 # Tests the session renaming functionality including edge cases with alerts
 
 set -euo pipefail
