@@ -257,6 +257,7 @@ if should_install "core"; then
         lazydocker_dir="$HOME/.config/lazydocker"
     fi
     copy_config "$DOTFILES_DIR/lazydocker/config.yml" "$lazydocker_dir/config.yml"
+    create_link "$DOTFILES_DIR/lazydocker/format-logs.awk" "$lazydocker_dir/format-logs.awk"
 fi
 
 # ─────────────────────────────────────────

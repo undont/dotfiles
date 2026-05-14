@@ -54,8 +54,8 @@ if [[ "$newname" == "$CURRENT_NAME" ]]; then
 fi
 
 # Update alerts file BEFORE the rename — tmux rename-window triggers the
-# after-rename-window hook asynchronously (cleanup.sh), which would delete
-# entries for the old name if the file hasn't been updated yet.
+# after-rename-window hook asynchronously (alerts/cleanup.sh), which would
+# delete entries for the old name if the file hasn't been updated yet.
 update_window_name_in_alerts "$SESSION_NAME" "$CURRENT_NAME" "$newname"
 
 # Rename the window and disable automatic-rename to preserve the name

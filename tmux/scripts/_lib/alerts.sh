@@ -144,9 +144,18 @@ build_alert_icons() {
 
     [[ -z "$alerts_content" ]] && return
 
-    local icons="" seen_agents="" display icon colour
+    local icons="" seen_agents="" display icon colour line prefix
 
-    while IFS=: read -r _sess _win field3 rest; do
+    case "$pattern" in
+        (^*:*) prefix="${pattern#^}" ; prefix="${prefix%:}" ;;
+        (*) prefix="" ;;
+    esac
+
+    while IFS= read -r line; do
+        [[ -n "$line" ]] || continue
+        [[ -n "$prefix" && "$line" != "$prefix:"* ]] && continue
+
+        IFS=: read -r _sess _win field3 rest <<< "$line"
         if [[ "$field3" == "exit" ]]; then
             # Exit alert: rest is "code:label"
             local code="${rest%%:*}"
@@ -176,7 +185,7 @@ build_alert_icons() {
                     ;;
             esac
         fi
-    done < <(printf '%s\n' "$alerts_content" | grep "$pattern" 2>/dev/null || true)
+    done <<< "$alerts_content"
 
     printf '%s' "$icons"
 }

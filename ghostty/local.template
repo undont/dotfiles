@@ -26,5 +26,6 @@
 # Custom shaders (GPU post-processing effects):
 #   custom-shader = ~/dotfiles/ghostty/shaders/bloom.glsl
 #   custom-shader = ~/dotfiles/ghostty/shaders/starfield.glsl
-#   custom-shader = ~/dotfiles/ghostty/shaders/crt.glsl
+#   custom-shader = ~/dotfiles/ghostty/shaders/tft.glsl
+#   custom-shader = ~/dotfiles/ghostty/shaders/cursor-warp.glsl
 #   custom-shader-animation = true

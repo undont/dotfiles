@@ -7,7 +7,7 @@ set -euo pipefail
 # Deletes a user-created launcher file after showing a
 # confirmation dialog. Repo launchers cannot be deleted.
 #
-# Usage: delete-launcher.sh <launcher_name>
+# Usage: delete.sh <launcher_name>
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 

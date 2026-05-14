@@ -6,7 +6,7 @@ source "$(dirname "${BASH_SOURCE[0]}")/brewfile.sh"
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
 # Test suite for installation script libraries
-# Usage: ./test.sh [--verbose]
+# Usage: ./scripts/_lib/test-install-libs.sh [--verbose]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC2034

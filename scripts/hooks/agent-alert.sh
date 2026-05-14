@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 # Agent alert hook: Set tmux alert when an agent needs attention
 # Usage: agent-alert.sh [agent_name]
-# Called by Claude Code PostToolCall hook
+# Called from agent hook wrappers when the agent needs attention
+# (e.g. Claude Code Stop / PostToolUse, codex agentStop)
 
 [[ -z "$TMUX" ]] && exit 0
 

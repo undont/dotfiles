@@ -280,6 +280,7 @@ Alerts are cleared automatically when:
 
 - You send a message to the agent (via the clear hook)
 - You switch to the tmux window containing the agent (`after-select-window` hook in tmux)
+- The terminal window gains OS focus (`pane-focus-in` hook — covers cmd+` between multiple Ghostty windows attached to the same tmux server)
 - The session or window is killed (stale alert cleanup)
 
 You can also manually clear alerts by running:

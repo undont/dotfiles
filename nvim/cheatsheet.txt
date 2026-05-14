@@ -24,6 +24,12 @@ Remove current file | <leader>hd
 Clear all marks | <leader>hX
 Search in Telescope | <leader>hs
 
+## oil @oil
+Toggle Oil (parent directory) | -
+Up one directory | <BS>
+Select entry / enter directory | <CR>
+Show help (all default bindings) | g?
+
 ## search @search
 Find files | <leader>sf
 Live grep | <leader>sg
@@ -114,7 +120,6 @@ Sonar scan whole project | <leader>lS
 ## tools @tools
 Toggle file tree | <leader>e
 NeoTree reveal | |
-Oil parent directory | -
 Open LazyGit | <leader>g
 Format file | <leader>f
 Build project / pick Make target | <leader>q
@@ -226,7 +231,7 @@ Open PR by number | <leader>po
 Start review | <leader>pr
 Resume review | <leader>pe
 Submit review | <leader>pm
-Approve PR | <leader>pp
+Approve PR | <leader>pP
 Add comment | <leader>pa
 PR comments | <leader>pc
 Close review | <leader>pC

@@ -4,7 +4,7 @@ set -euo pipefail
 # Kill a window with undo capability
 # Saves all pane states before killing for later restoration
 #
-# Usage: kill-window.sh [session:window] [--no-confirm|--force]
+# Usage: kill.sh [session:window] [--no-confirm|--force]
 #   If no argument provided, kills the current window
 #   --force: Skip last window confirmation (confirmation already happened in tmux keybinding)
 

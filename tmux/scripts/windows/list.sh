@@ -3,7 +3,7 @@
 # Used by the window switcher (prefix + f)
 # Shows agent-specific indicators for windows with alerts
 #
-# Usage: list-windows.sh [--all]
+# Usage: list.sh [--all]
 #   --all: List windows from all sessions (default: current session only)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -20,14 +20,10 @@ _all_alerts=""
 [[ -f "$ALERTS_FILE" ]] && _all_alerts=$(< "$ALERTS_FILE")
 
 # Get windows sorted by last-viewed, then add alert indicator
+FORMAT='#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index} #{window_name}'
 if [[ "$1" == "--all" ]]; then
-    # All sessions: session_name:window_index window_name
-    FORMAT='#{?#{@last-viewed},#{@last-viewed},0} #{session_name}:#{window_index} #{window_name}'
     tmux list-windows -a -F "$FORMAT"
 else
-    # Current session only
-    SESSION=$(tmux display-message -p '#S')
-    FORMAT="#{?#{@last-viewed},#{@last-viewed},0} ${SESSION}:#{window_index} #{window_name}"
     tmux list-windows -F "$FORMAT"
 fi | sort -rn | cut -d' ' -f2- | while read -r display_line; do
     # display_line: "session:window_index window_name"
@@ -35,11 +31,8 @@ fi | sort -rn | cut -d' ' -f2- | while read -r display_line; do
     local_target="${display_line%% *}"          # session:window_index
     local_session="${local_target%%:*}"         # session
     local_window="${display_line#* }"           # window_name
-    # Escape '.' — valid in tmux names but a regex wildcard
-    local_session_pat="${local_session//./\\.}"
-    local_window_pat="${local_window//./\\.}"
 
-    icons=$(build_alert_icons "$_all_alerts" "^${local_session_pat}:${local_window_pat}:")
+    icons=$(build_alert_icons "$_all_alerts" "^${local_session}:${local_window}:")
 
     if [[ -n "$icons" ]]; then
         printf "%s %b\n" "$display_line" "${icons}"

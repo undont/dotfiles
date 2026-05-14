@@ -13,7 +13,8 @@ return {
       columns = { 'icon' },
       view_options = { show_hidden = true },
       keymaps = {
-        ['q'] = { 'actions.close', mode = 'n' },
+        ['-'] = { 'actions.close', mode = 'n' },
+        ['<BS>'] = { 'actions.parent', mode = 'n' },
       },
     },
   },

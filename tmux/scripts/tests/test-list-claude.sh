@@ -102,10 +102,10 @@ else
     fail "Should include Claude Code ghost decoration"
 fi
 
-if [[ "$script_content" == *'38;5;174'* ]]; then
-    pass "Ghost uses Anthropic orange colour (174)"
+if [[ "$script_content" == *'38;2;215;119;87'* ]]; then
+    pass "Ghost uses Anthropic terracotta truecolor (#D77757)"
 else
-    fail "Ghost should use Anthropic orange (colour 174)"
+    fail "Ghost should use Anthropic terracotta truecolor (#D77757 = 215;119;87)"
 fi
 
 section "Error Handling"

@@ -29,39 +29,24 @@ source "$SCRIPT_DIR/../_lib/process.sh"
 
 require_tmux
 
-# Load current theme colours for fzf
-load_fzf_theme
-
-# Get current state
+# Load all pane/window metadata in one tmux round-trip.
 if [[ -n "$PANE_TARGET" ]]; then
-    # Target specified - parse session:window.pane format
-    CURRENT_SESSION="${PANE_TARGET%%:*}"
-    REST="${PANE_TARGET#*:}"
-    CURRENT_WINDOW="${REST%%.*}"
-    CURRENT_PANE="${REST#*.}"
-
-    # Verify the target exists
-    if ! tmux list-panes -t "${CURRENT_SESSION}:${CURRENT_WINDOW}" 2>/dev/null | grep -q "^${CURRENT_PANE}:"; then
-        exit 1
-    fi
-
-    PANE_DIR=$(tmux display-message -t "$PANE_TARGET" -p '#{pane_current_path}')
-    WINDOW_LAYOUT=$(tmux display-message -t "$PANE_TARGET" -p '#{window_layout}')
+    pane_info=$(tmux display-message -t "$PANE_TARGET" -p \
+        '#{session_name}|#{window_index}|#{pane_index}|#{pane_current_path}|#{window_layout}|#{window_name}|#{window_id}|#{window_panes}|#{session_windows}' \
+        2>/dev/null) || exit 1
 else
-    # No target - use current pane
-    CURRENT_SESSION=$(get_current_session)
-    CURRENT_WINDOW=$(get_current_window)
-    CURRENT_PANE=$(get_current_pane)
-    PANE_TARGET="${CURRENT_SESSION}:${CURRENT_WINDOW}.${CURRENT_PANE}"
-    PANE_DIR=$(get_pane_directory)
-    WINDOW_LAYOUT=$(get_window_layout)
+    pane_info=$(tmux display-message -p \
+        '#{session_name}|#{window_index}|#{pane_index}|#{pane_current_path}|#{window_layout}|#{window_name}|#{window_id}|#{window_panes}|#{session_windows}' \
+        2>/dev/null) || exit 1
 fi
 
-# Check if this is the last pane/window to customise the message
-PANE_COUNT=$(tmux list-panes -t "${CURRENT_SESSION}:${CURRENT_WINDOW}" 2>/dev/null | wc -l | tr -d ' ')
-WINDOW_COUNT=$(tmux list-windows -t "$CURRENT_SESSION" 2>/dev/null | wc -l | tr -d ' ')
-IS_LAST_PANE=$([[ "$PANE_COUNT" -eq 1 ]] && echo "yes" || echo "no")
-IS_LAST_WINDOW=$([[ "$WINDOW_COUNT" -eq 1 ]] && echo "yes" || echo "no")
+IFS='|' read -r CURRENT_SESSION CURRENT_WINDOW CURRENT_PANE PANE_DIR WINDOW_LAYOUT WINDOW_NAME WINDOW_ID PANE_COUNT WINDOW_COUNT <<< "$pane_info"
+PANE_TARGET="${CURRENT_SESSION}:${CURRENT_WINDOW}.${CURRENT_PANE}"
+
+IS_LAST_PANE="no"
+[[ "$PANE_COUNT" -eq 1 ]] && IS_LAST_PANE="yes"
+IS_LAST_WINDOW="no"
+[[ "$WINDOW_COUNT" -eq 1 ]] && IS_LAST_WINDOW="yes"
 
 # Show confirmation unless --force flag is set
 if ! $FORCE_KILL; then
@@ -104,13 +89,6 @@ chmod 600 "$UNDO_STATE"
 # Capture pane contents
 tmux capture-pane -t "$PANE_TARGET" -p -S -32768 > "$UNDO_CONTENT" 2>/dev/null || true
 chmod 600 "$UNDO_CONTENT"
-
-# Capture window name/ID before the kill for alert cleanup
-# (killing the last pane destroys the window, so we need these beforehand)
-if [[ "$IS_LAST_PANE" == "yes" ]]; then
-    WINDOW_NAME=$(tmux display-message -t "${CURRENT_SESSION}:${CURRENT_WINDOW}" -p '#{window_name}' 2>/dev/null || echo "")
-    WINDOW_ID=$(tmux display-message -t "${CURRENT_SESSION}:${CURRENT_WINDOW}" -p '#{window_id}' 2>/dev/null || echo "")
-fi
 
 # Gracefully terminate running processes before killing the pane
 terminate_pane_processes "$PANE_TARGET"

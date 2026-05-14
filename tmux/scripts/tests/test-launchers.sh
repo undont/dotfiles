@@ -5,7 +5,7 @@ set -euo pipefail
 #   - launchers/list.sh (output format, launcher discovery, dedup)
 #   - launchers/run.sh (get_base_session_name, is_fixed_session, metadata)
 #   - launchers/delete.sh (repo protection, path traversal guard)
-#   - new-launcher.sh (name validation)
+#   - launchers/new.sh (name validation)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -143,6 +143,20 @@ else
 fi
 
 rm -rf "$TEST_XDG"
+
+section "launchers/list.sh: Performance Guardrails"
+
+if grep -q "mktemp -d" "$LIST_LAUNCHERS"; then
+    fail "launchers/list.sh should avoid temp-dir churn on hot path"
+else
+    pass "launchers/list.sh avoids temp-dir churn"
+fi
+
+if grep -q "grep -m1 '# @description:'" "$LIST_LAUNCHERS"; then
+    fail "launchers/list.sh should not fork grep for each launcher description"
+else
+    pass "launchers/list.sh parses descriptions without per-file grep"
+fi
 
 # ===========================================================================
 # launchers/run.sh tests (pure function logic)
@@ -351,36 +365,36 @@ else
 fi
 
 # ===========================================================================
-# new-launcher.sh tests (name validation)
+# launchers/new.sh tests (name validation)
 # ===========================================================================
 
-section "new-launcher.sh: Script Exists and Is Executable"
+section "launchers/new.sh: Script Exists and Is Executable"
 
 if [[ -f "$NEW_LAUNCHER" ]]; then
-    pass "new-launcher.sh exists"
+    pass "launchers/new.sh exists"
 else
-    fail "new-launcher.sh not found"
+    fail "launchers/new.sh not found"
 fi
 
 if [[ -x "$NEW_LAUNCHER" ]]; then
-    pass "new-launcher.sh is executable"
+    pass "launchers/new.sh is executable"
 else
-    fail "new-launcher.sh is not executable"
+    fail "launchers/new.sh is not executable"
 fi
 
-section "new-launcher.sh: ShellCheck Validation"
+section "launchers/new.sh: ShellCheck Validation"
 
 if command -v shellcheck &>/dev/null; then
     if shellcheck -x -e SC1091 -e SC2059 -e SC2155 -e SC2015 -e SC2016 -e SC2034 "$NEW_LAUNCHER" 2>/dev/null; then
-        pass "new-launcher.sh passes shellcheck"
+        pass "launchers/new.sh passes shellcheck"
     else
-        fail "new-launcher.sh has shellcheck warnings"
+        fail "launchers/new.sh has shellcheck warnings"
     fi
 else
     skip "shellcheck not installed"
 fi
 
-section "new-launcher.sh: Name Validation"
+section "launchers/new.sh: Name Validation"
 
 nl_content=$(cat "$NEW_LAUNCHER")
 
@@ -388,7 +402,7 @@ nl_content=$(cat "$NEW_LAUNCHER")
 COMMON_LIB="$DOTFILES_ROOT/tmux/scripts/_lib/common.sh"
 common_lib_content=$(cat "$COMMON_LIB")
 
-# new-launcher.sh should call sanitise_launcher_name (from common.sh)
+# launchers/new.sh should call sanitise_launcher_name (from common.sh)
 if [[ "$nl_content" == *"sanitise_launcher_name"* ]]; then
     pass "calls sanitise_launcher_name from shared library"
 else
@@ -430,7 +444,7 @@ else
     fail "should block shell reserved words (test, cd, ls, etc.)"
 fi
 
-section "new-launcher.sh: Window Count Cap"
+section "launchers/new.sh: Window Count Cap"
 
 if [[ "$nl_content" == *"-gt 20"* ]]; then
     pass "caps maximum window count at 20"
@@ -438,7 +452,7 @@ else
     fail "should cap window count at 20"
 fi
 
-section "new-launcher.sh: Single-Quote Escaping in Generated Scripts"
+section "launchers/new.sh: Single-Quote Escaping in Generated Scripts"
 
 if [[ "$nl_content" == *"wcmd=\"\${wcmd//\\'/"* ]] || [[ "$nl_content" == *"Escape single quotes"* ]]; then
     pass "escapes single quotes in generated send-keys commands"
@@ -446,7 +460,46 @@ else
     fail "should escape single quotes in user commands for generated scripts"
 fi
 
-section "new-launcher.sh: exec < /dev/tty Documentation"
+section "launchers/new.sh: Tmux Exact-Match Session Targets"
+
+# Regression guard: the wizard template must emit `=$SESSION` for tmux
+# session targets. Bare `"$SESSION"` triggers tmux's prefix-matching,
+# so launching "foo-15" would silently re-attach to a running "foo-1533"
+# instead of creating a new session.
+if [[ "$nl_content" == *'tmux has-session -t "=$SESSION"'* ]]; then
+    pass "generated has-session uses exact-match (=\$SESSION)"
+else
+    fail "generated has-session should use =\$SESSION (prefix-match bug)"
+fi
+
+if [[ "$nl_content" == *'tmux switch-client -t "=$SESSION"'* ]]; then
+    pass "generated switch-client uses exact-match (=\$SESSION)"
+else
+    fail "generated switch-client should use =\$SESSION (prefix-match bug)"
+fi
+
+if [[ "$nl_content" == *'tmux attach-session -t "=$SESSION"'* ]]; then
+    pass "generated attach-session uses exact-match (=\$SESSION)"
+else
+    fail "generated attach-session should use =\$SESSION (prefix-match bug)"
+fi
+
+# Same guard for the shared `dev` launcher (uses lowercase $session)
+dev_launcher="$DOTFILES_ROOT/launchers/dev"
+if [[ -f "$dev_launcher" ]]; then
+    dev_content=$(cat "$dev_launcher")
+    if [[ "$dev_content" == *'tmux has-session -t "=$session"'* ]] \
+        && [[ "$dev_content" == *'tmux switch-client -t "=$session"'* ]] \
+        && [[ "$dev_content" == *'tmux attach-session -t "=$session"'* ]]; then
+        pass "launchers/dev uses exact-match for all tmux session targets"
+    else
+        fail "launchers/dev should use =\$session for all tmux session targets"
+    fi
+else
+    skip "launchers/dev not found"
+fi
+
+section "launchers/new.sh: exec < /dev/tty Documentation"
 
 if [[ "$nl_content" == *"Security note"* ]] || [[ "$nl_content" == *"controlling terminal"* ]]; then
     pass "documents exec < /dev/tty security implications"

@@ -10,6 +10,7 @@
 tap "Adembc/homebrew-tap"
 tap "libsql/sqld"
 tap "morantron/tmux-fingers"
+tap "neur0map/tap"
 tap "oven-sh/bun"
 tap "seanhalberthal/tap"
 tap "teamookla/speedtest"
@@ -102,7 +103,7 @@ brew "seanhalberthal/tap/supplyscan" # Supply chain vulnerability scanner
 brew "sonar-scanner"
 
 # Database
-brew "postgresql@14"
+brew "postgresql@17"
 brew "mongosh"
 brew "libsql/sqld/sqld"
 brew "seanhalberthal/tap/seeql"     # SQL client TUI
@@ -120,6 +121,7 @@ brew "golangci-lint" # Go meta-linter
 brew "swift-format"  # macOS-only
 brew "golang-migrate"
 brew "scc"
+brew "httpyac"
 
 # =============================================================================
 # @preset: core
@@ -129,6 +131,7 @@ brew "scc"
 brew "ffmpeg"
 brew "imagemagick"
 brew "btop"                          # System monitor (htop replacement)
+brew "watch"                         # Periodic command refresh (flicker-free re-render)
 brew "fastfetch"                     # neofetch replacement (faster, maintained)
 brew "teamookla/speedtest/speedtest" # Speedtest CLI from Ookla
 brew "glow"                          # Markdown renderer
@@ -138,6 +141,7 @@ brew "toilet"                        # Unicode/colour text banners (figlet-compa
 brew "chafa"                         # Terminal image renderer (used by music.nvim)
 brew "seanhalberthal/tap/lazycron"   # Cron job manager TUI
 brew "seanhalberthal/tap/jiru"       # Jira TUI app
+brew "neur0map/tap/gpk"              # Unified package manager TUI
 brew "snitch" unless OS.linux? && Hardware::CPU.arm? # No Linux ARM bottle
 
 # =============================================================================

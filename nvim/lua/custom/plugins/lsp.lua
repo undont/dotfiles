@@ -291,6 +291,36 @@ end
 --- Restart all LSP servers attached to the given buffer.
 local function restart_lsp_clients(bufnr)
   local clients = vim.lsp.get_clients { bufnr = bufnr }
+
+  -- Roslyn's on_exit calls roslyn.store.set(client_id, nil), which nils
+  -- vim.g.roslyn_nvim_selected_solution as a side effect. The restarted
+  -- client's on_init then misses the lock_target fast path and falls back
+  -- to broad search -- with multiple candidates it bails on the multi-target
+  -- prompt (suppressed by ui.lua), so the LSP silently fails to re-attach.
+  -- Preserve the solution across the LspDetach window: that fires after
+  -- on_exit nils the var but before the scheduled new-client start runs
+  -- on_init, so restoring here lets the new client hit the fast path.
+  local has_roslyn = false
+  for _, c in ipairs(clients) do
+    if c.name == 'roslyn' then
+      has_roslyn = true
+      break
+    end
+  end
+  if has_roslyn and vim.g.roslyn_nvim_selected_solution then
+    local saved = vim.g.roslyn_nvim_selected_solution
+    local id
+    id = vim.api.nvim_create_autocmd('LspDetach', {
+      callback = function(ev)
+        local detached = vim.lsp.get_client_by_id(ev.data.client_id)
+        if detached and detached.name == 'roslyn' then
+          vim.g.roslyn_nvim_selected_solution = saved
+          vim.api.nvim_del_autocmd(id)
+        end
+      end,
+    })
+  end
+
   local count = 0
   for _, client in ipairs(clients) do
     if client.server_capabilities then
@@ -487,6 +517,16 @@ return {
             completion = { callSnippet = 'Replace' },
           },
         },
+      })
+
+      -- Roslyn is sluggish to acknowledge `shutdown`, so `:lsp restart roslyn`
+      -- (and `:Roslyn restart`, which delegates to it) hangs indefinitely with
+      -- the default `exit_timeout = false` -- the old client only actually
+      -- dies once some subsequent LSP request nudges traffic on the pipe.
+      -- Force-terminate after 5s so restarts are reliable. roslyn.nvim's own
+      -- `:Roslyn target` command documents the same quirk in commands.lua.
+      vim.lsp.config('roslyn', {
+        exit_timeout = 5000,
       })
 
       vim.lsp.config('gopls', {
