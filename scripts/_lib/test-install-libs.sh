@@ -433,7 +433,9 @@ check_reads_preset "$SCRIPT_DIR/../install/install-packages.sh" "install-package
 check_reads_preset "$SCRIPT_DIR/../install/create-symlinks.sh" "create-symlinks.sh"
 check_reads_preset "$SCRIPT_DIR/../install/backup-existing.sh" "backup-existing.sh"
 check_reads_preset "$SCRIPT_DIR/../install/health-check.sh" "health-check.sh"
-check_reads_preset "$SCRIPT_DIR/../install/check-prerequisites.sh" "check-prerequisites.sh"
+# check-prerequisites.sh is intentionally preset-agnostic: it only verifies
+# the two tools the install bootstrap needs (git, brew). Preset-aware checks
+# happen later in install-packages.sh / health-check.sh.
 
 # ===========================================================================
 # Zshrc Quick Wins Tests

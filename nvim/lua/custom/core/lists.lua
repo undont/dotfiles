@@ -340,6 +340,20 @@ function M.setup()
   vim.keymap.set('n', ']l', bracketed_loc 'forward', { desc = 'Next location entry' })
   vim.keymap.set('n', '[l', bracketed_loc 'backward', { desc = 'Previous location entry' })
 
+  -- Shadow mini.bracketed (]b/[b ]f/[f ]d/[d ...) inside qf/loclist buffers —
+  -- those target the underlying editing window but fire against the list
+  -- buffer when it's focused, which is confusing. ]q/[q and ]l/[l stay live.
+  vim.api.nvim_create_autocmd('FileType', {
+    group = vim.api.nvim_create_augroup('QfDisableBracketed', { clear = true }),
+    pattern = 'qf',
+    callback = function(ev)
+      for _, s in ipairs { 'b', 'd', 'f', 'i', 'j', 'o', 'u', 'w', 'x', 'y' } do
+        vim.keymap.set('n', ']' .. s, '<Nop>', { buffer = ev.buf, silent = true })
+        vim.keymap.set('n', '[' .. s, '<Nop>', { buffer = ev.buf, silent = true })
+      end
+    end,
+  })
+
   -- Walk the qf stack — each :Cfilter pushes a new list, so <leader>x[ undoes
   -- the last filter (or any other push). Counts honoured: 3<leader>x[ → :3colder.
   local function qf_history(cmd, edge_msg)

@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.94] - 2026-05-15
+
+### Added
+- Nvim: `razor` added to the treesitter parser list
+
+### Fixed
+- Nvim: `vim.g.obsidian_vault_root` set in `~/.config/nvim/local.lua` is now honoured. `local.lua` was loaded at the end of `init.lua`, after `lazy.setup` had already imported plugin specs — so `nvim/lua/custom/plugins/obsidian.lua` resolved the vault root before the user's override existed and silently fell back (or returned an empty spec on non-iCloud machines). `local.lua` is now loaded before `lazy.setup` so plugin specs see user-set `vim.g.*`. Plugin-dependent calls in `local.lua` (e.g. mutating `require('music.config').options`) must now be wrapped in `vim.schedule(...)` — template updated to show this
+- Nvim: C# semantic tokens on `.cs` open now settle to correct colours on their own. The flicker itself is unchanged — Roslyn emits partial classifications while it loads — but tokens no longer get stuck on stale warmup state until a manual `<leader>lt`. Three changes in `nvim/lua/custom/plugins/dotnet.lua`. (1) Roslyn 5.8.0 declares `semanticTokensProvider.range` statically in `initialize`, so Neovim 0.12's viewport-only range requests race the full-document requests and overwrite them with whatever's classified at that moment — an `LspAttach` hook now disables `server_capabilities.semanticTokensProvider.range` for roslyn clients (`stp.range = false`) before `STHighlighter:on_attach` caches `supports_range`, killing the range/full race. (2) The `client/registerCapability` filter that previously tried to do this was dead code (Roslyn declares range statically, not dynamically) and has been removed. (3) The `RoslynInitialized → force_refresh` handler is replaced with an `LspProgress` listener that debounces (300ms) and refreshes when Roslyn emits `kind == 'end'` — `workspace/projectInitializationComplete` fires before per-file analysis is done, so the old single-shot refresh landed on stale tokens; progress 'end' events are emitted after actual analysis chunks complete
+- Nvim: Quitting with `.cs` buffers open is now instant. `exit_timeout = 5000` was needed to make `:lsp restart roslyn` work (Roslyn is sluggish to ack `shutdown`), but it also made `VimLeavePre` wait up to 5s on actual exit. An `ExitPre` autocmd in `nvim/lua/custom/plugins/lsp.lua` zeros every roslyn client's `exit_timeout` and force-stops it before `VimLeavePre` runs; runtime restarts still get the 5s grace
+- Nvim: Roslyn no longer exits on startup against Razor projects. `roslyn.nvim` was still passing `--razorSourceGenerator` / `--razorDesignTimePath` to the server, but Roslyn 5.8.0-1.26262.10 (Mason 2026-05-14) bundles Razor natively and rejects those flags. `extensions.razor.enabled = false` in the plugin opts stops the flags being added (seblyng/roslyn.nvim#360)
+- Nvim: `mini.bracketed` mappings (`]b`/`[b`, `]f`/`[f`, `]d`/`[d`, …) are now no-ops inside qf/loclist buffers — those operate on the underlying editing window but fire against the list buffer when it's focused, which was confusing. `]q`/`[q` and `]l`/`[l` (real list navigation) stay live
+
+### Changed
+- Installer: `scripts/install/check-prerequisites.sh` slimmed to the two tools the install bootstrap actually needs — `git` and `brew`. The full toolchain (nvim, tmux, fzf, language SDKs, …) is installed by `brew bundle` during `install.sh`, so pre-gating on it just produced false-MISSING noise on a fresh machine. Use `health-check.sh` post-install for the wider toolchain audit
+- Scripts: `theme-contrast-check` now reports the bright-black/background ratio but doesn't count it as a failure. ANSI 8 is conventionally a dim/decorative colour and many palettes (Monokai Pro family, etc.) intentionally place it below WCAG AA
+
 ## [0.2.93] - 2026-05-15
 
 ### Removed

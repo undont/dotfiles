@@ -147,7 +147,10 @@ check_theme() {
     check_pair "$GHOSTTY_PALETTE_4" "$GHOSTTY_BACKGROUND" "4.5" "Palette 4 (blue)" || ((failures++))
     check_pair "$GHOSTTY_PALETTE_5" "$GHOSTTY_BACKGROUND" "4.5" "Palette 5 (magenta)" || ((failures++))
     check_pair "$GHOSTTY_PALETTE_6" "$GHOSTTY_BACKGROUND" "4.5" "Palette 6 (cyan)" || ((failures++))
-    check_pair "$GHOSTTY_PALETTE_8" "$GHOSTTY_BACKGROUND" "4.5" "Bright black" || ((failures++))
+    # Bright black (ANSI 8) is conventionally a dim/decorative colour — many
+    # palettes (e.g. Monokai Pro family) intentionally place it below WCAG AA.
+    # Report the ratio for visibility but don't count it as a failure.
+    check_pair "$GHOSTTY_PALETTE_8" "$GHOSTTY_BACKGROUND" "4.5" "Bright black" || true
 
     # Cross-check palette colours: terminal apps (LazyGit, fzf, etc.) can use any
     # ANSI colour as foreground or background. Check that each colour works both ways:
