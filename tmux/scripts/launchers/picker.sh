@@ -18,14 +18,49 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 load_fzf_theme
 require_fzf
 
+# Argument parsing + auto-detection
+#
+# The dotfiles ASCII logo eats 7 rows of header space, which is fine on a
+# spacious popup but crowds out launchers when the popup is narrow OR short.
+# We query the popup pty directly via `stty size` (env vars from the parent
+# shell can lie about the popup's real dimensions) and drop the logo when:
+#   - width  < 80 rows — matches the session picker's `<80(bottom,40%)`
+#     vertical-preview threshold, so both pickers compact at the same size
+#   - height < 20 rows — leaves at least ~8 visible launcher rows after the
+#     logo + border + prompt chrome (~12 rows) are accounted for
+# `--no-logo` forces it off regardless.
+LIST_ARGS=()
+HEADER_LINES=7
+NO_LOGO=0
+
+for arg in "$@"; do
+    case "$arg" in
+        --no-logo) NO_LOGO=1 ;;
+    esac
+done
+
+if (( ! NO_LOGO )); then
+    popup_height=24
+    popup_width=80
+    read -r popup_height popup_width < <(stty size 2>/dev/null) || true
+    if (( popup_width < 80 )) || (( popup_height < 20 )); then
+        NO_LOGO=1
+    fi
+fi
+
+if (( NO_LOGO )); then
+    LIST_ARGS+=(--no-logo)
+    HEADER_LINES=0
+fi
+
 main() {
     while true; do
         local action
-        action=$("$SCRIPT_DIR/list.sh" | fzf \
+        action=$("$SCRIPT_DIR/list.sh" "${LIST_ARGS[@]}" | fzf \
             --ansi --reverse --exact --disabled --cycle \
             --delimiter=$'\t' --with-nth=2 --tiebreak=begin,length \
             --color="label:${TMUX_FG_PRIMARY:-#ffffff}" \
-            --header-lines=7 \
+            --header-lines="$HEADER_LINES" \
             --padding=0,0,1,0 \
             --prompt=': ' \
             --border=rounded \
@@ -39,7 +74,7 @@ main() {
             --bind 'n:become(printf "ACTION:new")' \
             --bind 's:become(printf "ACTION:set")' \
             --bind 'e:become(printf "ACTION:edit:%s" {1})' \
-            --bind "x:execute($SCRIPT_DIR/delete.sh {1})+reload-sync($SCRIPT_DIR/list.sh)" \
+            --bind "x:execute($SCRIPT_DIR/delete.sh {1})+reload-sync($SCRIPT_DIR/list.sh ${LIST_ARGS[*]})" \
             --bind "D:become(printf 'ACTION:dup:%s' \$($SCRIPT_DIR/duplicate.sh {1}))" \
             --bind 'enter:become(printf "ACTION:run:%s" {1})' \
             --bind 'space:become(printf "ACTION:run:%s" {1})' \
