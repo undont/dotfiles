@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.95] - 2026-05-15
+
+### Fixed
+- Nvim: `vim.g.obsidian_vault_root` now works for single-vault layouts (e.g. `~/notes` with `.obsidian/` directly inside). `nvim/lua/custom/plugins/obsidian.lua` only scanned *subdirectories* of the root for `.obsidian/`, which fit the "parent of multiple vaults" layout but not the more common case where the root **is** the vault — obsidian.nvim then crashed with `At least one workspace is required!`. Discovery now treats the root as a workspace if it has `.obsidian/` directly, and falls back to scanning immediate subdirectories otherwise. If neither yields any vaults the plugin spec is skipped with a `vim.notify` warning, so a mistyped path never crashes startup. Template (`nvim/local.lua.template`) updated to show both layouts
+
+### Changed
+- Nvim: `<leader>on` / `<leader>oN` swapped so the easier-to-press lowercase binding is the more common action. `<leader>on` now creates a note from a template if the active vault has a `templates/` folder, otherwise falls back to the blank-note title prompt — picked at keypress time, so it honours `<leader>ow` workspace switches. `<leader>oN` is always the blank-note title prompt. Users without a `templates/` folder see no behavioural change on `<leader>on`
+- Tmux: Launcher picker (`prefix + p`) hides the dotfiles ASCII logo when the popup itself is cramped, not just when the host terminal is in mobile mode. `tmux/scripts/launchers/picker.sh` queries the popup pty via `stty size` and drops the logo when popup width < 80 cols (matching the session picker's `<80(bottom,40%)` vertical-preview threshold) or popup height < 20 rows. `tmux/scripts/launchers/list.sh` honours an explicit `--no-logo` override; the `bind p` `if-shell` in `tmux/tmux.conf.template` no longer needs to pass it. Wide+tall popups still show the logo
+- Tmux: `prefix + h` (help) no longer fails with `Height too large` on short terminals, and the popup now snaps to whichever help variant will fit instead of leaving the compact text marooned in the top-left of a 95%×95% popup. `bind h` in `tmux/tmux.conf.template` delegates to a new `tmux/scripts/utils/show-help-popup.sh` wrapper, which receives `#{client_width}` / `#{client_height}` as args from the binding (querying them via `tmux display-message` inside `run-shell` produced a `returned 129` / SIGHUP error) and picks one of: `74×40` (full template), `74×24` (compact, wide enough), `95%×24` (compact, narrow), or `95%×95%` (tiny terminal fallback). A new 21-row `tmux/tmux-help-compact.template` covers the same shortcuts in roughly half the rows, and `tmux/scripts/utils/show-help.sh` picks it via `stty size` when popup height < 38
+
 ## [0.2.94] - 2026-05-15
 
 ### Added

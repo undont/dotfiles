@@ -24,6 +24,9 @@
 --     require('music.config').options.preferred_backend = 'spotify'
 --   end)
 --
--- Obsidian vault root (default: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents):
---   vim.g.obsidian_vault_root = '~/notes'
---   If unset and the default path doesn't exist, obsidian.nvim is skipped.
+-- Obsidian vault root (default: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents).
+-- Either point at a single vault (the directory has `.obsidian/` directly
+-- inside) or at a parent directory containing one or more vaults:
+--   vim.g.obsidian_vault_root = '~/notes'        -- ~/notes/.obsidian exists
+--   vim.g.obsidian_vault_root = '~/vaults'       -- ~/vaults/<vault>/.obsidian exists
+-- If unset and the default path doesn't exist, obsidian.nvim is skipped.
