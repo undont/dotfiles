@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.94] - 2026-05-15
+
+### Added
+- Nvim: `razor` added to the treesitter parser list
+
+### Fixed
+- Nvim: Roslyn no longer exits on startup against Razor projects. `roslyn.nvim` was still passing `--razorSourceGenerator` / `--razorDesignTimePath` to the server, but Roslyn 5.8.0-1.26262.10 (Mason 2026-05-14) bundles Razor natively and rejects those flags. `extensions.razor.enabled = false` in the plugin opts stops the flags being added (seblyng/roslyn.nvim#360)
+- Nvim: `mini.bracketed` mappings (`]b`/`[b`, `]f`/`[f`, `]d`/`[d`, …) are now no-ops inside qf/loclist buffers — those operate on the underlying editing window but fire against the list buffer when it's focused, which was confusing. `]q`/`[q` and `]l`/`[l` (real list navigation) stay live
+
+### Changed
+- Installer: `scripts/install/check-prerequisites.sh` slimmed to the two tools the install bootstrap actually needs — `git` and `brew`. The full toolchain (nvim, tmux, fzf, language SDKs, …) is installed by `brew bundle` during `install.sh`, so pre-gating on it just produced false-MISSING noise on a fresh machine. Use `health-check.sh` post-install for the wider toolchain audit
+- Scripts: `theme-contrast-check` now reports the bright-black/background ratio but doesn't count it as a failure. ANSI 8 is conventionally a dim/decorative colour and many palettes (Monokai Pro family, etc.) intentionally place it below WCAG AA
+
 ## [0.2.93] - 2026-05-15
 
 ### Removed

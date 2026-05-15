@@ -35,6 +35,7 @@ return {
         'zig',
         'awk',
         'toml',
+        'razor',
       }
 
       -- Purge compiled parsers when nvim-treesitter updates to prevent ABI crashes.
