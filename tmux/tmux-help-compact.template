@@ -1,0 +1,21 @@
+╔══════════════════════════════════════════════════════════════════════╗
+║                       TMUX KEYBOARD SHORTCUTS                        ║
+╠═ TABS ═══════════════════════════════════════════════════════════════╣
+║  {{M}}+[/] prev/next · ` 1-5 goto · {{M}}+t new · {{M}}+x kill             ║
+║  {{M}}+r rename · {{M}}+Sh+[/] swap · {{M}}+Sh+d duplicate                 ║
+╠═ PANES ══════════════════════════════════════════════════════════════╣
+║  {{M}}+hjkl nav · {{M}}+Sh+hjkl resize · Ctrl+,/. left/down              ║
+║  {{M}}+'\-= splits · {{M}}+s close · {{M}}+z zoom · {{M}}+Sh+0 eq            ║
+║  ` Sh+e break · ` [/] layout · ` \ rotate                            ║
+╠═ SCROLL ═════════════════════════════════════════════════════════════╣
+║  {{M}}+v / ` v enter · hjkl/f/b/d/u nav · g/G top/bottom               ║
+║  / ? n N search · v V select · y Y yank · m M bol/eol · q exit       ║
+╠═ SESSION ════════════════════════════════════════════════════════════╣
+║  ` s session · ` f window · ` w save · ` d detach · {{M}}+q kill       ║
+║  ` r / ` R reload · {{M}}+u undo · ` -/= back/fwd · ` h help           ║
+╠═ PICKERS / TOOLS ════════════════════════════════════════════════════╣
+║  ` c Claude · ` o OpenCode · ` a Copilot · ` n nvim · ` u URL        ║
+║  ` A alerts · ` t theme · ` p launchers · ` Space fingers · ` I      ║
+╚══════════════════════════════════════════════════════════════════════╝
+
+                    Press Esc to close this help

@@ -285,14 +285,14 @@ Next/prev heading | ]] / [[
 Open today's daily note | <leader>oo
 Open yesterday's daily note | <leader>oy
 Open tomorrow's daily note | <leader>oT
-New note | <leader>on
+New note (from template if available) | <leader>on
 Find note (quick switch) | <leader>of
 Search vault (grep) | <leader>os
 Tags | <leader>ot
 Backlinks | <leader>ob
 Links in current note | <leader>ol
 Insert template into note | <leader>oi
-New note from template | <leader>oN
+New blank note (no template) | <leader>oN
 Switch workspace | <leader>ow
 Rename note | <leader>or
 Extract selection to new note | <leader>oe (normal/visual)

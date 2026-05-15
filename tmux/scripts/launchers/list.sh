@@ -16,6 +16,14 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 # Load current theme colours for fzf
 load_fzf_theme
 
+# Argument parsing
+SHOW_LOGO=1
+for arg in "$@"; do
+    case "$arg" in
+        --no-logo) SHOW_LOGO=0 ;;
+    esac
+done
+
 # Check whether a newline-delimited list contains an exact entry.
 contains_line() {
     local needle="$1"
@@ -47,10 +55,12 @@ extract_description() {
 list_launchers_for_fzf() {
     # Header (consumed by fzf --header-lines)
     # Prefix with tab so --with-nth=2 in picker.sh still displays the logo
-    local logo_line
-    while IFS= read -r logo_line; do
-        printf '\t%s\n' "$logo_line"
-    done < <(print_dotfiles_logo)
+    if (( SHOW_LOGO )); then
+        local logo_line
+        while IFS= read -r logo_line; do
+            printf '\t%s\n' "$logo_line"
+        done < <(print_dotfiles_logo)
+    fi
 
     # Collect all launchers in memory.
     # Format: name|description|source

@@ -6,6 +6,10 @@
 --   1. `vim.g.obsidian_vault_root` — set in ~/.config/nvim/local.lua to override
 --   2. ~/Library/Mobile Documents/iCloud~md~obsidian/Documents — default iCloud path
 --   3. Neither exists — plugin spec is empty, obsidian.nvim is not loaded
+--
+-- The resolved root can either be a vault itself (has `.obsidian/` directly
+-- inside, e.g. `~/notes/.obsidian`) or a parent directory containing one or
+-- more vaults (e.g. `~/vaults/work/.obsidian`, `~/vaults/personal/.obsidian`).
 
 local function resolve_vault_root()
   local override = vim.g.obsidian_vault_root
@@ -30,8 +34,14 @@ if not vault_root then
   return {}
 end
 
+-- `vault_root` can either be a vault itself (has `.obsidian/` directly inside)
+-- or a parent directory containing one or more vaults. Handle both.
 local function discover_workspaces()
   local workspaces = {}
+  if vim.fn.isdirectory(vault_root .. '/.obsidian') == 1 then
+    table.insert(workspaces, { name = vim.fn.fnamemodify(vault_root, ':t'), path = vault_root })
+    return workspaces
+  end
   for _, dir in ipairs(vim.fn.glob(vault_root .. '/*', false, true)) do
     local name = vim.fn.fnamemodify(dir, ':t')
     if vim.fn.isdirectory(dir) == 1 and vim.fn.isdirectory(dir .. '/.obsidian') == 1 and not name:match '%.backup' then
@@ -39,6 +49,15 @@ local function discover_workspaces()
     end
   end
   return workspaces
+end
+
+local workspaces = discover_workspaces()
+if #workspaces == 0 then
+  vim.notify(
+    ('obsidian.nvim: no vaults found under %q (expected `.obsidian/` directly inside, or in an immediate subdirectory) — skipping'):format(vault_root),
+    vim.log.levels.WARN
+  )
+  return {}
 end
 
 return {
@@ -54,13 +73,29 @@ return {
       {
         '<leader>on',
         function()
+          local ok, api = pcall(require, 'obsidian.api')
+          if ok and api.templates_dir() then
+            vim.cmd 'Obsidian new_from_template'
+          else
+            vim.ui.input({ prompt = 'New note title: ' }, function(title)
+              if title and title ~= '' then
+                vim.cmd('Obsidian new ' .. vim.fn.fnameescape(title))
+              end
+            end)
+          end
+        end,
+        desc = '[N]ew note (from template if available)',
+      },
+      {
+        '<leader>oN',
+        function()
           vim.ui.input({ prompt = 'New note title: ' }, function(title)
             if title and title ~= '' then
               vim.cmd('Obsidian new ' .. vim.fn.fnameescape(title))
             end
           end)
         end,
-        desc = '[N]ew note',
+        desc = '[N]ew blank note (no template)',
       },
       { '<leader>of', '<cmd>Obsidian quick_switch<cr>', desc = '[F]ind note' },
       { '<leader>os', '<cmd>Obsidian search<cr>', desc = '[S]earch vault' },
@@ -68,7 +103,6 @@ return {
       { '<leader>ob', '<cmd>Obsidian backlinks<cr>', desc = '[B]acklinks' },
       { '<leader>ol', '<cmd>Obsidian links<cr>', desc = '[L]inks in note' },
       { '<leader>oi', '<cmd>Obsidian template<cr>', desc = '[I]nsert template into note' },
-      { '<leader>oN', '<cmd>Obsidian new_from_template<cr>', desc = '[N]ew note from template' },
       { '<leader>ow', '<cmd>Obsidian workspace<cr>', desc = '[W]orkspace switch' },
       { '<leader>or', '<cmd>Obsidian rename<cr>', desc = '[R]ename note' },
       { '<leader>oe', '<cmd>Obsidian extract_note<cr>', mode = { 'n', 'v' }, desc = '[E]xtract to new note' },
@@ -81,7 +115,7 @@ return {
     ---@type obsidian.config
     opts = {
       legacy_commands = false,
-      workspaces = discover_workspaces(),
+      workspaces = workspaces,
 
       -- Matches .obsidian/daily-notes.json (folder, format, template).
       daily_notes = {
