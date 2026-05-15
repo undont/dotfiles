@@ -90,7 +90,7 @@ Configured as a clean input layer rather than a productivity surface: keybind re
 - **Custom dashboard** plus a searchable cheatsheet (`Space ?`) for the keybindings
 - **Self-contained colourschemes** with no plugin dependencies, so generated themes drop in as plain Lua files
 - **GitHub Copilot** configured to refuse `.env`, credentials, and other secret files
-- `~/.config/nvim/local.lua` is loaded at the end of init and survives updates
+- `~/.config/nvim/local.lua` is loaded before plugin specs (so `vim.g.*` is visible to them) and survives updates
 
 ### Tmux
 

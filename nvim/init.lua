@@ -23,6 +23,16 @@ require('custom.lazy-bootstrap').setup()
 -- pick up the correct highlight groups during their own setup.
 require('custom.core.theme').setup()
 
+-- User overrides (not managed by dotfiles — survives dotfiles update).
+-- Loaded BEFORE lazy.setup so plugin specs can read user-set `vim.g.*`
+-- (e.g. `vim.g.obsidian_vault_root`). Things that depend on a plugin being
+-- loaded (`require('plugin')...`) should be wrapped in `vim.schedule(...)`
+-- or a `VimEnter` autocmd inside local.lua.
+local local_config = vim.fn.stdpath 'config' .. '/local.lua'
+if vim.uv.fs_stat(local_config) then
+  dofile(local_config)
+end
+
 require('lazy').setup({
   -- Custom plugins
   { import = 'custom.plugins' },
@@ -52,10 +62,3 @@ require('lazy').setup({
     },
   },
 })
-
--- User overrides (not managed by dotfiles — survives dotfiles update)
--- Edit ~/.config/nvim/local.lua to personalise options, keymaps, etc.
-local local_config = vim.fn.stdpath 'config' .. '/local.lua'
-if vim.uv.fs_stat(local_config) then
-  dofile(local_config)
-end

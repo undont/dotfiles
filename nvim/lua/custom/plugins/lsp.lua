@@ -529,6 +529,21 @@ return {
         exit_timeout = 5000,
       })
 
+      -- Override `exit_timeout` to 0 on actual nvim exit so closing the
+      -- editor is instant when .cs buffers are open. VimLeavePre computes
+      -- `max_timeout` from every client's `exit_timeout`; if it's > 100
+      -- it schedules a deferred warning and `vim.wait`s on it. Runtime
+      -- `:lsp restart roslyn` still gets the 5s timeout above.
+      vim.api.nvim_create_autocmd('ExitPre', {
+        desc = 'force-kill roslyn so nvim does not wait on exit',
+        callback = function()
+          for _, c in pairs(vim.lsp.get_clients { name = 'roslyn' }) do
+            c.exit_timeout = 0
+            c:stop(true)
+          end
+        end,
+      })
+
       vim.lsp.config('gopls', {
         settings = {
           gopls = {
