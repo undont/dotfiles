@@ -142,20 +142,27 @@ local function setup_semantic_token_fix()
   end
 
   -- Disable Neovim 0.12's viewport-only semantic token range requests.
-  -- Roslyn dynamically registers range support via client/registerCapability
-  -- after on_init, so we intercept the registration handler and strip it.
-  -- Range responses cause tokens to flash then disappear as they get
-  -- replaced by subsequent full-document responses.
-  local orig_register = vim.lsp.handlers['client/registerCapability']
-  vim.lsp.handlers['client/registerCapability'] = function(err, res, ctx)
-    local client = vim.lsp.get_client_by_id(ctx.client_id)
-    if client and client.name == 'roslyn' then
-      res.registrations = vim.tbl_filter(function(reg)
-        return reg.method ~= 'textDocument/semanticTokens/range'
-      end, res.registrations)
-    end
-    return orig_register(err, res, ctx)
-  end
+  -- Roslyn 5.8.0 declares semanticTokensProvider.range statically in
+  -- the initialize response, so STHighlighter:on_attach caches
+  -- supports_range = true before our config runs. Range responses arrive
+  -- with stale/partial classifications during Roslyn warmup and replace
+  -- the full-document tokens, causing visible flicker on .cs open.
+  --
+  -- Neovim's Client:on_attach schedules STHighlighter:on_attach after
+  -- LspAttach callbacks finish (client.lua:1159) precisely so we can
+  -- mutate server_capabilities here as an opt-out hook.
+  vim.api.nvim_create_autocmd('LspAttach', {
+    callback = function(ev)
+      local client = vim.lsp.get_client_by_id(ev.data.client_id)
+      if not (client and client.name == 'roslyn') then
+        return
+      end
+      local stp = client.server_capabilities and client.server_capabilities.semanticTokensProvider
+      if stp then
+        stp.range = false
+      end
+    end,
+  })
 
   vim.api.nvim_create_autocmd('LspTokenUpdate', {
     callback = function(ev)
@@ -194,18 +201,38 @@ local function setup_semantic_token_fix()
     end,
   })
 
-  -- Refresh semantic tokens after roslyn finishes loading the solution.
-  -- Roslyn's initial token response is empty/stale while the project loads.
-  -- roslyn.nvim fires RoslynInitialized when workspace/projectInitializationComplete
-  -- arrives — that's exactly when correct tokens become available.
-  vim.api.nvim_create_autocmd('User', {
-    pattern = 'RoslynInitialized',
-    callback = function()
-      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'cs' then
-          vim.lsp.semantic_tokens.force_refresh(buf)
-        end
+  -- Refresh semantic tokens whenever Roslyn finishes a background task.
+  -- workspace/projectInitializationComplete (RoslynInitialized) fires *before*
+  -- per-file semantic analysis is done, so a single refresh there lands stale
+  -- (requiring a manual <leader>lt ~1s later to settle). Roslyn emits LSP
+  -- progress 'end' notifications when its background analysis chunks finish;
+  -- a debounced refresh on those catches the moment fresh tokens are ready.
+  -- Debounce keeps cost bounded during warmup (many 'end' events fire close
+  -- together) while still picking up post-warmup analyses (branch switches,
+  -- dep restores, etc.).
+  local refresh_pending = false
+  vim.api.nvim_create_autocmd('LspProgress', {
+    callback = function(ev)
+      local client = vim.lsp.get_client_by_id(ev.data.client_id)
+      if not (client and client.name == 'roslyn') then
+        return
       end
+      local val = ev.data.params and ev.data.params.value
+      if not (val and val.kind == 'end') then
+        return
+      end
+      if refresh_pending then
+        return
+      end
+      refresh_pending = true
+      vim.defer_fn(function()
+        refresh_pending = false
+        for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+          if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'cs' then
+            vim.lsp.semantic_tokens.force_refresh(buf)
+          end
+        end
+      end, 300)
     end,
   })
 end

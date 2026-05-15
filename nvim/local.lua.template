@@ -2,12 +2,15 @@
 -- NEOVIM LOCAL OVERRIDES
 -- =============================================================================
 -- Your personal Neovim settings. This file is yours — add anything you want.
--- It is loaded AFTER the base config and all plugins, so your values take
--- priority.
+-- It is loaded AFTER the base config but BEFORE plugin specs are imported, so
+-- `vim.g.*` values set here are visible to plugin specs at load time.
 --
 -- This file survives dotfiles update (it's gitignored).
 -- After making changes, reload with: prefix + r (in tmux)
 --
+-- Anything that depends on a plugin already being loaded (e.g.
+-- `require('some_plugin')...`) must be deferred — wrap it in
+-- `vim.schedule(function() ... end)` or a `VimEnter` autocmd.
 
 -- Examples:
 --   vim.opt.guicursor = 'a:ver25'  -- bar cursor in all modes
@@ -16,8 +19,10 @@
 --   vim.o.wrap = true
 --   vim.keymap.set('n', '<leader>xx', ':!echo hello<CR>')
 --
--- Music player backend (default: apple_music):
---   require('music.config').options.preferred_backend = 'spotify'
+-- Music player backend (default: apple_music) — deferred until plugin loads:
+--   vim.schedule(function()
+--     require('music.config').options.preferred_backend = 'spotify'
+--   end)
 --
 -- Obsidian vault root (default: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents):
 --   vim.g.obsidian_vault_root = '~/notes'
