@@ -6,6 +6,7 @@ return {
     config = function()
       local lint = require 'lint'
       lint.linters_by_ft = {
+        python = { 'ruff' },
         -- markdown = { 'markdownlint' },  -- Requires: npm install -g markdownlint-cli
       }
 
@@ -50,8 +51,19 @@ return {
           -- Only run the linter in buffers that you can modify in order to
           -- avoid superfluous noise, notably within the handy LSP pop-ups that
           -- describe the hovered symbol using Markdown.
-          if vim.bo.modifiable then
-            lint.try_lint()
+          if not vim.bo.modifiable then
+            return
+          end
+          local runnable = {}
+          for _, name in ipairs(lint.linters_by_ft[vim.bo.filetype] or {}) do
+            local linter = lint.linters[name]
+            local cmd = type(linter) == 'table' and (type(linter.cmd) == 'function' and linter.cmd() or linter.cmd)
+            if cmd and vim.fn.executable(cmd) == 1 then
+              table.insert(runnable, name)
+            end
+          end
+          if #runnable > 0 then
+            lint.try_lint(runnable)
           end
         end,
       })
