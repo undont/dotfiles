@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.96] - 2026-05-16
+
+### Added
+- Nvim: Python toolchain. `nvim/lua/custom/plugins/test.lua` registers the `neotest-python` adapter with `runner = 'pytest'` and `dap.justMyCode = false` so test debugging steps through dependencies. `nvim/lua/kickstart/plugins/debug.lua` adds `nvim-dap-python` as a dependency, adds `debugpy` to `mason-nvim-dap`'s `ensure_installed`, and points `dap-python` at Mason's debugpy venv (`stdpath('data') .. '/mason/packages/debugpy/venv/bin/python'`) so debugging doesn't depend on a project-local venv being active — `nvim-dap-python` still falls back to a project venv automatically when one is detected. `nvim/lua/custom/plugins/lsp.lua` adds `ruff` to Mason's `ensure_installed` and registers it as the python conform formatter (`ruff_organize_imports`, then `ruff_format`). `nvim/lua/kickstart/plugins/lint.lua` declares `ruff` as the python linter. README testing bullet updated to mention pytest alongside Go and Vitest/Bun
+- Nvim: Quickfix entries now carry a `[source]` prefix so each warning shows which LSP it came from (sonarlint → `[sonar]`, tsserver → `[ts]`, lua_ls → `[lua]`, roslyn → `[cs]`, etc.). A `SOURCE_LABEL` table at the top of `nvim/lua/custom/core/scan_runner.lua` shortens the raw `d.source` strings to 3–5 char labels — unmapped sources fall through unchanged so new LSPs degrade gracefully. Applied automatically to project sonar scans (`<leader>ls` / `<leader>lS`), the git-modified scan (`<leader>xm`), and the native diagnostic dumps (`<leader>xx` / `<leader>xX`). `<leader>xx` / `<leader>xX` were rewritten to bypass `vim.diagnostic.setqflist` / `setloclist` and route through `scan_runner.diag_to_item` so they get the same prefix
+- Zsh: `cache` alias to open `~/.cache` in nvim, mirroring the existing `config` shortcut for `~/.config` 
+
+### Changed
+- Nvim: Quickfix auto-clear no longer drops stale entries just because *any* diagnostic happens to land on the same line. `build.lua`'s `prune_diag_list` now matches diagnostic-sourced lists (`Sonar:`, `Modified:`, `Diagnostics:`) on `(lnum, text)` — comparing against the same `[source] message` produced by `scan_runner.qf_text(d)` — so a tsserver warning landing where a fixed sonar issue used to live no longer keeps the resolved entry alive. `Build:` qf entries keep the old line-only match because compiler output doesn't carry a `[source]` prefix to compare against. `AUTO_CLEAR_KINDS` was refactored from `{kind = label}` to `{kind = {label, match}}` so each list type picks its own strategy
+- Nvim: `nvim/lua/kickstart/plugins/lint.lua`'s `BufWritePost` / `BufEnter` autocmd now filters `linters_by_ft` through `vim.fn.executable()` before calling `lint.try_lint()`, so missing linter binaries no longer surface `cmd '<linter>' is not executable` errors on every save — relevant for machines that haven't installed ruff/markdownlint/etc yet
+
 ## [0.2.95] - 2026-05-15
 
 ### Fixed

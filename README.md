@@ -86,7 +86,7 @@ Configured as a clean input layer rather than a productivity surface: keybind re
 - **PR review and diffs** via Octo.nvim for GitHub PRs, diffview for local side-by-side diffs and merge conflict resolution, and gitsigns for inline hunk decorations
 - **The tpope suite:** fugitive (git wrapper), rhubarb (GitHub adapter for fugitive), abolish (case-aware substitution and coercion), repeat (extend `.` to plugin maps), and sleuth (auto-detect indent settings)
 - **Build picker** (`Space q`) auto-detects Go, TypeScript, .NET, and Makefile projects and runs the appropriate build into the quickfix list
-- **Tests** via Neotest (Go and Vitest/Bun adapters), with .NET handled separately by easy-dotnet's dedicated test runner (`<leader>te` opens its Test Explorer)
+- **Tests** via Neotest (Go, Vitest/Bun, and pytest adapters), with .NET handled separately by easy-dotnet's dedicated test runner (`<leader>te` opens its Test Explorer)
 - **Custom dashboard** plus a searchable cheatsheet (`Space ?`) for the keybindings
 - **Self-contained colourschemes** with no plugin dependencies, so generated themes drop in as plain Lua files
 - **GitHub Copilot** configured to refuse `.env`, credentials, and other secret files

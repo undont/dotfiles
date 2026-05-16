@@ -2,6 +2,8 @@
 
 local M = {}
 
+local scan_runner = require 'custom.core.scan_runner'
+
 --- Detect package manager from lockfile in a directory
 ---@param dir string
 ---@return string runner 'bun', 'pnpm', 'yarn', or 'npm'
@@ -593,14 +595,24 @@ end
 
 --- Prune diagnostics-backed qf entries as the underlying issues are fixed.
 --- Fires on DiagnosticChanged — for a loaded buffer with an LSP attached,
---- drop qf items on lines that no longer carry a diagnostic. Triggers on
---- titles starting with "<Kind>:" where Kind is in AUTO_CLEAR_KINDS; the
---- kind's value drives the "all clear" notification text.
+--- drops qf items that no longer have a matching live diagnostic. Triggers
+--- on titles starting with "<Kind>:" where Kind is in AUTO_CLEAR_KINDS.
+---
+--- The `match` field selects how an item is matched against live diagnostics:
+---   - 'line'      : drop if no diagnostic exists on the same line. Used for
+---                   Build entries, which come from compiler output and don't
+---                   carry the `[source]` text prefix that the diagnostic
+---                   lists use.
+---   - 'line_text' : drop unless a live diagnostic has the same (lnum, text)
+---                   tuple. Used for Sonar/Modified/Diagnostics, where items
+---                   are built via scan_runner.diag_to_item and carry a
+---                   `[source] message` text. Stops stale entries surviving
+---                   just because an unrelated diagnostic landed on the row.
 local AUTO_CLEAR_KINDS = {
-  Build = 'Build errors resolved',
-  Sonar = 'Sonar issues resolved',
-  Modified = 'Modified file diagnostics resolved',
-  Diagnostics = 'Diagnostics resolved',
+  Build = { label = 'Build errors resolved', match = 'line' },
+  Sonar = { label = 'Sonar issues resolved', match = 'line_text' },
+  Modified = { label = 'Modified file diagnostics resolved', match = 'line_text' },
+  Diagnostics = { label = 'Diagnostics resolved', match = 'line_text' },
 }
 
 --- Prune diagnostic-backed items from `list` for `bufnr`. Returns
@@ -613,21 +625,23 @@ local AUTO_CLEAR_KINDS = {
 --- the one just resolved, idx snaps to the nearest surviving predecessor
 --- so the next ]q advances forward to the next outstanding issue rather
 --- than jumping back to entry 1 (setqflist's default after replace).
-local function prune_diag_list(list, replace, set_idx, bufnr, lines_with_diag)
+local function prune_diag_list(list, replace, set_idx, bufnr, lookups)
   if not list.title then
     return
   end
   local kind = list.title:match '^(%w+):'
-  local resolved_label = kind and AUTO_CLEAR_KINDS[kind]
-  if not resolved_label then
+  local info = kind and AUTO_CLEAR_KINDS[kind]
+  if not info then
     return
   end
+  local lookup = lookups[info.match]
 
   local kept = {}
   local old_to_new = {}
   local dropped = 0
   for i, item in ipairs(list.items) do
-    if item.bufnr == bufnr and item.valid == 1 and not lines_with_diag[item.lnum] then
+    local key = info.match == 'line_text' and (item.lnum .. '\0' .. (item.text or '')) or item.lnum
+    if item.bufnr == bufnr and item.valid == 1 and not lookup[key] then
       dropped = dropped + 1
     else
       table.insert(kept, item)
@@ -642,7 +656,7 @@ local function prune_diag_list(list, replace, set_idx, bufnr, lines_with_diag)
   replace { title = list.title, items = kept }
 
   if #kept == 0 then
-    return kind, resolved_label
+    return kind, info.label
   end
 
   if list.idx and list.idx > 0 then
@@ -702,9 +716,13 @@ local function setup_auto_clear()
       end
 
       local lines_with_diag = {}
+      local diag_keys = {}
       for _, d in ipairs(vim.diagnostic.get(bufnr)) do
-        lines_with_diag[d.lnum + 1] = true
+        local lnum = d.lnum + 1
+        lines_with_diag[lnum] = true
+        diag_keys[lnum .. '\0' .. scan_runner.qf_text(d)] = true
       end
+      local lookups = { line = lines_with_diag, line_text = diag_keys }
 
       -- Quickfix list
       local qf = vim.fn.getqflist { title = 0, items = 0, idx = 0 }
@@ -712,7 +730,7 @@ local function setup_auto_clear()
         vim.fn.setqflist({}, 'r', d)
       end, function(idx)
         vim.fn.setqflist({}, 'a', { idx = idx })
-      end, bufnr, lines_with_diag)
+      end, bufnr, lookups)
       if qf_kind then
         for _, win in ipairs(vim.api.nvim_list_wins()) do
           local b = vim.api.nvim_win_get_buf(win)
@@ -734,7 +752,7 @@ local function setup_auto_clear()
             vim.fn.setloclist(win, {}, 'r', d)
           end, function(idx)
             vim.fn.setloclist(win, {}, 'a', { idx = idx })
-          end, bufnr, lines_with_diag)
+          end, bufnr, lookups)
           if loc_kind then
             vim.api.nvim_win_call(win, function()
               vim.cmd 'lclose'

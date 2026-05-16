@@ -617,6 +617,7 @@ return {
             'stylua',
             -- Linters
             'golangci-lint',
+            'ruff', -- Python lint + format
           },
         }
       end)
@@ -662,6 +663,7 @@ return {
         javascriptreact = { 'prettier' },
         json = { 'prettier' },
         lua = { 'stylua' },
+        python = { 'ruff_organize_imports', 'ruff_format' },
         typescript = { 'prettier' },
         typescriptreact = { 'prettier' },
         yaml = { 'prettier' },

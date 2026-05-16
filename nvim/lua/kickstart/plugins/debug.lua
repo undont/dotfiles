@@ -11,6 +11,7 @@ return {
     'mason-org/mason.nvim',
     'jay-babu/mason-nvim-dap.nvim',
     'leoluz/nvim-dap-go',
+    'mfussenegger/nvim-dap-python',
     'theHamsta/nvim-dap-virtual-text',
   },
   keys = {
@@ -158,7 +159,7 @@ return {
     require('mason-nvim-dap').setup {
       automatic_installation = true,
       handlers = {},
-      ensure_installed = { 'delve', 'coreclr' },
+      ensure_installed = { 'delve', 'coreclr', 'debugpy' },
     }
 
     -- Inline variable values next to code (like Rider/GoLand)
@@ -218,5 +219,10 @@ return {
         detached = vim.fn.has 'win32' == 0,
       },
     }
+
+    -- Point dap-python at Mason's debugpy venv so it doesn't depend on a
+    -- project-local venv being active. nvim-dap-python falls back to the
+    -- project venv automatically when one is detected.
+    require('dap-python').setup(vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python')
   end,
 }

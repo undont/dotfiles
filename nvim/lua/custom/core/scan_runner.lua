@@ -10,6 +10,77 @@
 
 local M = {}
 
+-- vim.diagnostic.severity values (1=ERROR, 2=WARN, 3=INFO, 4=HINT) → qf type letters.
+local SEVERITY_TYPE = { 'E', 'W', 'I', 'N' }
+
+-- Map raw `d.source` strings (what each LSP reports) to short labels used
+-- as the `[label]` prefix in qf text. Unmapped sources fall through to the
+-- raw value, so new LSPs degrade gracefully — add an entry here if a fresh
+-- one shows up with a noisy label.
+local SOURCE_LABEL = {
+  sonarlint = 'sonar',
+  sonarqube = 'sonar',
+  typescript = 'ts',
+  tsserver = 'ts',
+  ['typescript-eslint'] = 'eslint',
+  eslint = 'eslint',
+  ['Lua Diagnostics.'] = 'lua',
+  ['Lua Syntax Check.'] = 'lua',
+  ['Lua Type Check.'] = 'lua',
+  lua_ls = 'lua',
+  luacheck = 'lua',
+  roslyn = 'cs',
+  omnisharp = 'cs',
+  rust_analyzer = 'rust',
+  rustc = 'rust',
+  pyright = 'py',
+  pylsp = 'py',
+  ruff = 'py',
+  pylint = 'py',
+  gopls = 'go',
+  golangci_lint = 'go',
+  clangd = 'c',
+  ['clang-tidy'] = 'c',
+}
+
+--- Short label for a diagnostic's source — looked up in SOURCE_LABEL, with
+--- the raw source as fallback. Returns nil when the diagnostic carries no
+--- source.
+function M.source_label(d)
+  local src = d.source
+  if not src or src == '' then
+    return nil
+  end
+  return SOURCE_LABEL[src] or src
+end
+
+--- Render a diagnostic's text with a `[label] ` prefix when the source is
+--- known, so qf entries surface which LSP each warning came from
+--- (sonar, ts, roslyn, …). build.lua's auto-clear keys its live-diagnostic
+--- lookups by this same function so prune matches stay consistent with
+--- what's displayed.
+function M.qf_text(d)
+  local label = M.source_label(d)
+  if label then
+    return '[' .. label .. '] ' .. (d.message or '')
+  end
+  return d.message or ''
+end
+
+--- Convert a vim.Diagnostic into a qf item. Used in place of
+--- vim.diagnostic.toqflist so we can inject the source prefix into `text`.
+function M.diag_to_item(d)
+  return {
+    bufnr = d.bufnr,
+    lnum = (d.lnum or 0) + 1,
+    end_lnum = (d.end_lnum or d.lnum or 0) + 1,
+    col = d.col and (d.col + 1) or nil,
+    end_col = d.end_col and (d.end_col + 1) or nil,
+    text = M.qf_text(d),
+    type = SEVERITY_TYPE[d.severity] or 'E',
+  }
+end
+
 local state = nil
 
 local function clear_timer(t)
@@ -58,14 +129,16 @@ function M.start(opts)
       end
       seen_bufnr[bufnr] = true
       local fname = vim.api.nvim_buf_get_name(bufnr)
-      local out = vim.diagnostic.toqflist(get_diagnostics(bufnr))
-      for _, item in ipairs(out) do
-        if fname ~= '' then
-          item.filename = fname
+      for _, d in ipairs(get_diagnostics(bufnr)) do
+        if d.lnum then
+          local item = M.diag_to_item(d)
+          if fname ~= '' then
+            item.filename = fname
+          end
+          item.bufnr = nil
+          table.insert(items, item)
         end
-        item.bufnr = nil
       end
-      vim.list_extend(items, out)
     end
     for _, bufnr in ipairs(opts.collect_bufnrs or opts.bufnrs) do
       pull(bufnr)
