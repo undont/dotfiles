@@ -328,11 +328,39 @@ function M.setup()
   -- Diagnostics into native lists. Explicit titles let `build.lua`'s
   -- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
   -- match these lists and prune resolved entries on DiagnosticChanged.
+  -- We bypass `vim.diagnostic.setqflist` so we can route through
+  -- `scan_runner.diag_to_item`, which prefixes text with `[source]` (the
+  -- originating LSP). The same prefix is used by the auto-clear's
+  -- (lnum, text) match so pruning stays accurate.
+  local function diags_to_items(diagnostics)
+    local scan_runner = require 'custom.core.scan_runner'
+    local items = {}
+    for _, d in ipairs(diagnostics) do
+      if d.bufnr and d.lnum then
+        table.insert(items, scan_runner.diag_to_item(d))
+      end
+    end
+    table.sort(items, function(a, b)
+      if a.bufnr ~= b.bufnr then
+        return (a.bufnr or 0) < (b.bufnr or 0)
+      end
+      if a.lnum ~= b.lnum then
+        return a.lnum < b.lnum
+      end
+      return (a.col or 0) < (b.col or 0)
+    end)
+    return items
+  end
+
   vim.keymap.set('n', '<leader>xx', function()
-    vim.diagnostic.setqflist { title = 'Diagnostics: all' }
+    local items = diags_to_items(vim.diagnostic.get(nil))
+    vim.fn.setqflist({}, ' ', { title = 'Diagnostics: all', items = items })
+    vim.cmd 'botright cwindow'
   end, { desc = 'All [D]iagnostics to quickfix' })
   vim.keymap.set('n', '<leader>xX', function()
-    vim.diagnostic.setloclist { title = 'Diagnostics: buffer' }
+    local items = diags_to_items(vim.diagnostic.get(0))
+    vim.fn.setloclist(0, {}, ' ', { title = 'Diagnostics: buffer', items = items })
+    vim.cmd 'lwindow'
   end, { desc = 'Buffer diagnostics to loclist' })
 
   vim.keymap.set('n', ']q', bracketed_qf 'forward', { desc = 'Next quickfix entry' })

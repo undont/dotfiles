@@ -666,9 +666,10 @@ else
 fi
 
 # Quick access to config files
-alias secrets="v ~/.config/zsh/secrets.zsh"                                    # edit secrets.zsh
-alias config="v ~/.config"                                                     # edit ~/.config
-alias zshrc="v ~/.zshrc"                                                       # edit ~/.zshrc
+alias config="v ~/.config"                                                     # open nvim in ~/.config (dir)
+alias cache="v ~/.cache"                                                       # open nvim in ~/.cache (dir)
+alias zshrc="v ~/.zshrc"                                                       # open nvim in ~/.zshrc (file)
+alias secrets="v ~/.config/zsh/secrets.zsh"                                    # open nvim in secrets.zsh (file)
 
 # Font preview (figlet/toilet font browser with fzf)
 # @cheat: font-preview | font browser (fzf)

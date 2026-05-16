@@ -50,6 +50,7 @@ return {
     -- Adapters
     'fredrikaverpil/neotest-golang', -- Go
     'marilari88/neotest-vitest', -- Vitest/Bun test runner
+    'nvim-neotest/neotest-python', -- pytest/unittest
   },
   keys = {
     { '<leader>tt', neotest_fn(function()
@@ -112,6 +113,11 @@ return {
           filter_dir = function(name)
             return name ~= 'node_modules' and name ~= 'dist' and name ~= '.git' and name ~= 'coverage'
           end,
+        },
+        require 'neotest-python' {
+          runner = 'pytest',
+          args = { '-v' },
+          dap = { justMyCode = false },
         },
       },
       summary = {
