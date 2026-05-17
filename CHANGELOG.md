@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Nvim: `neotest-jest` adapter for Jest projects (React Native, RTL, plain JS/TS). `nvim/lua/custom/plugins/test.lua` registers `haydenmeade/neotest-jest` alongside the existing vitest/golang/python adapters, resolving `node_modules/.bin/jest` with the same walk-up + monorepo-subdir lookup the vitest adapter uses. `find_vitest_root` was generalised to `find_node_bin_root(path, bin)` with thin `find_vitest_root` / `find_jest_root` wrappers, and the bin-root cache is now keyed per `(path, bin)`. The jest adapter's `is_test_file` requires `find_jest_root` to return non-nil, so vitest projects keep using vitest even though both adapters claim `.test.`/`.spec.` files by default. README testing bullet updated to mention Jest/React Native
+
 ## [0.2.96] - 2026-05-16
 
 ### Added

@@ -43,15 +43,27 @@ local SOURCE_LABEL = {
   ['clang-tidy'] = 'c',
 }
 
---- Short label for a diagnostic's source — looked up in SOURCE_LABEL, with
---- the raw source as fallback. Returns nil when the diagnostic carries no
---- source.
+--- Short label for a diagnostic's source. Explicit SOURCE_LABEL mapping wins;
+--- otherwise we fall back to the buffer's filetype so subanalyzer sources
+--- (e.g. gopls modernize: stringscut, minmax, stringsseq) collapse under the
+--- language label rather than leaking their internal analyzer names. The raw
+--- source is the last resort.
 function M.source_label(d)
   local src = d.source
   if not src or src == '' then
     return nil
   end
-  return SOURCE_LABEL[src] or src
+  local mapped = SOURCE_LABEL[src]
+  if mapped then
+    return mapped
+  end
+  if d.bufnr and vim.api.nvim_buf_is_valid(d.bufnr) then
+    local ft = vim.bo[d.bufnr].filetype
+    if ft and ft ~= '' then
+      return ft
+    end
+  end
+  return src
 end
 
 --- Render a diagnostic's text with a `[label] ` prefix when the source is
