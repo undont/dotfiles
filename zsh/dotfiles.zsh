@@ -374,8 +374,12 @@ if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
   source "$ZSH_CONFIG_DIR/secrets.zsh"
 fi
 
-# Android SDK platform tools (adb, fastboot)
-[[ -n "$ANDROID_HOME" ]] && export PATH=$PATH:$ANDROID_HOME/platform-tools
+# Android SDK (installed via Homebrew cask: android-commandlinetools)
+# Provides sdkmanager, avdmanager, adb, fastboot, emulator.
+if [[ -d "$HOMEBREW_PREFIX/share/android-commandlinetools" ]]; then
+  export ANDROID_HOME="$HOMEBREW_PREFIX/share/android-commandlinetools"
+  export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
+fi
 
 # =============================================================================
 # .NET

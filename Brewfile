@@ -88,6 +88,9 @@ brew "pipx"
 brew "openjdk"
 cask "zulu@17"
 
+# Android (commandline tools — SDK manager, emulator, adb)
+cask "android-commandlinetools"
+
 # .NET
 cask "dotnet-sdk"
 

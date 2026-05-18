@@ -1,6 +1,7 @@
 -- Obsidian vault integration: daily notes, backlinks, tags, templates.
 -- Markdown rendering and list/link editing stay in markdown-ui.lua
--- (mkdnflow + conceallevel); obsidian.nvim is kept to vault-aware features.
+-- (render-markdown + mkdnflow + conceallevel); obsidian.nvim is kept to
+-- vault-aware features.
 --
 -- Vault root resolution (in order):
 --   1. `vim.g.obsidian_vault_root` — set in ~/.config/nvim/local.lua to override
@@ -98,7 +99,7 @@ return {
         desc = '[N]ew blank note (no template)',
       },
       { '<leader>of', '<cmd>Obsidian quick_switch<cr>', desc = '[F]ind note' },
-      { '<leader>os', '<cmd>Obsidian search<cr>', desc = '[S]earch vault' },
+      { '<leader>og', '<cmd>Obsidian search<cr>', desc = '[G]rep vault' },
       { '<leader>ot', '<cmd>Obsidian tags<cr>', desc = '[T]ags' },
       { '<leader>ob', '<cmd>Obsidian backlinks<cr>', desc = '[B]acklinks' },
       { '<leader>ol', '<cmd>Obsidian links<cr>', desc = '[L]inks in note' },
@@ -149,11 +150,14 @@ return {
       new_notes_location = 'notes_subdir',
       notes_subdir = 'scratchpad',
 
-      -- Keep `aliases:` as a placeholder but don't auto-fill it with the
-      -- note title — the filename already is the title.
+      -- Filename already is the title for this vault (human-readable names,
+      -- wiki+shortest links), so the builtin's `id` and auto-filled `aliases`
+      -- are just noise. Strip `id` entirely; keep `aliases` as an empty
+      -- placeholder so it's easy to drop in alternate titles when needed.
       frontmatter = {
         func = function(note)
           local out = require('obsidian.builtin').frontmatter(note)
+          out.id = nil
           out.aliases = {}
           return out
         end,
@@ -169,10 +173,32 @@ return {
         return os.date '%Y-%m-%d-%H%M%S'
       end,
 
-      -- mkdnflow + conceallevel already handle display.
+      -- render-markdown + mkdnflow + conceallevel already handle display.
       ui = { enable = false },
 
       attachments = { folder = 'attachments' },
+
+      -- For vault notes only: rebind `gf` to obsidian.nvim's link-follow
+      -- action, matching what `<CR>` does. Two non-obvious things about
+      -- the call:
+      --   1. `follow_link` doesn't grab the cursor link itself — it
+      --      requires the raw link string, otherwise its internal
+      --      `parse_link` crashes on a nil.
+      --   2. `open_strategy` is used as a literal vim command, not as a
+      --      strategy enum (despite what some docs imply), so pass
+      --      'edit' / 'vsplit' / 'split', not 'current'.
+      callbacks = {
+        enter_note = function(note)
+          vim.keymap.set('n', 'gf', function()
+            local link = require('obsidian.api').cursor_link()
+            if not link then
+              vim.notify('No link under cursor', vim.log.levels.INFO)
+              return
+            end
+            require('obsidian.actions').follow_link(link, { open_strategy = 'edit' })
+          end, { buffer = note.bufnr or 0, desc = 'Follow link (in nvim)' })
+        end,
+      },
     },
   },
 }
