@@ -2,33 +2,42 @@
 -- https://github.com/nvim-neotest/neotest
 -- .NET tests handled by easy-dotnet.nvim (see dotnet.lua)
 
---- Find the nearest directory containing node_modules/.bin/vitest.
+--- Find the nearest directory containing node_modules/.bin/<bin>.
 --- Walks up from the path, then checks immediate subdirectories as fallback (monorepo root).
---- Results are cached per session since vitest root doesn't change.
-local vitest_root_cache = {} ---@type table<string, string|false>
-local function find_vitest_root(path)
-  local key = vim.fn.isdirectory(path) == 1 and path or vim.fn.fnamemodify(path, ':h')
-  if vitest_root_cache[key] ~= nil then
-    return vitest_root_cache[key] or nil
+--- Results are cached per (path, bin) since binary locations don't change in a session.
+local node_bin_root_cache = {} ---@type table<string, string|false>
+local function find_node_bin_root(path, bin)
+  local start = vim.fn.isdirectory(path) == 1 and path or vim.fn.fnamemodify(path, ':h')
+  local key = start .. ':' .. bin
+  if node_bin_root_cache[key] ~= nil then
+    return node_bin_root_cache[key] or nil
   end
-  local dir = key
+  local dir = start
   while dir and dir ~= '/' do
-    if vim.uv.fs_stat(dir .. '/node_modules/.bin/vitest') then
-      vitest_root_cache[key] = dir
+    if vim.uv.fs_stat(dir .. '/node_modules/.bin/' .. bin) then
+      node_bin_root_cache[key] = dir
       return dir
     end
     dir = vim.fn.fnamemodify(dir, ':h')
   end
   -- Walk-up failed (e.g. monorepo root) — check immediate subdirectories
-  for name, type in vim.fs.dir(key) do
+  for name, type in vim.fs.dir(start) do
     if type == 'directory' and name ~= 'node_modules' then
-      if vim.uv.fs_stat(key .. '/' .. name .. '/node_modules/.bin/vitest') then
-        vitest_root_cache[key] = key .. '/' .. name
-        return vitest_root_cache[key]
+      if vim.uv.fs_stat(start .. '/' .. name .. '/node_modules/.bin/' .. bin) then
+        node_bin_root_cache[key] = start .. '/' .. name
+        return node_bin_root_cache[key]
       end
     end
   end
-  vitest_root_cache[key] = false
+  node_bin_root_cache[key] = false
+end
+
+local function find_vitest_root(path)
+  return find_node_bin_root(path, 'vitest')
+end
+
+local function find_jest_root(path)
+  return find_node_bin_root(path, 'jest')
 end
 
 --- Wrap a neotest function to skip .cs files (handled by easy-dotnet).
@@ -50,6 +59,7 @@ return {
     -- Adapters
     'fredrikaverpil/neotest-golang', -- Go
     'marilari88/neotest-vitest', -- Vitest/Bun test runner
+    'haydenmeade/neotest-jest', -- Jest (React Native, RTL, plain JS/TS)
     'nvim-neotest/neotest-python', -- pytest/unittest
   },
   keys = {
@@ -112,6 +122,21 @@ return {
           cwd = find_vitest_root,
           filter_dir = function(name)
             return name ~= 'node_modules' and name ~= 'dist' and name ~= '.git' and name ~= 'coverage'
+          end,
+        },
+        require 'neotest-jest' {
+          jestCommand = function(path)
+            local dir = find_jest_root(path)
+            return dir and (dir .. '/node_modules/.bin/jest') or 'jest'
+          end,
+          cwd = find_jest_root,
+          -- Only claim files when a jest binary is reachable, so this adapter stays
+          -- out of vitest projects (which use the same .test./.spec. naming).
+          is_test_file = function(path)
+            if not path:match '%.test%.[jt]sx?$' and not path:match '%.spec%.[jt]sx?$' then
+              return false
+            end
+            return find_jest_root(path) ~= nil
           end,
         },
         require 'neotest-python' {

@@ -1,6 +1,30 @@
--- Markdown editing: Obsidian-like rendering and interactive list/link management
+-- Markdown editing stack:
+--   * mkdnflow.nvim         — interactive editing (list continuation, table editing, link follow)
+--   * render-markdown.nvim  — anti-conceal in-buffer rendering (headings, bullets, code blocks, tables)
+--   * markdown-preview.nvim — browser preview window
+-- ftplugin/markdown.lua sets conceallevel=2 + wrap; render-markdown lifts to
+-- conceallevel=3 while rendered and restores on insert/unrender.
 
 return {
+  -- In-buffer rendering: heading backgrounds, bullet glyphs, code-block tint,
+  -- table borders, checkboxes. Render-only — un-renders in insert mode so
+  -- mkdnflow can edit raw text underneath.
+  {
+    'MeanderingProgrammer/render-markdown.nvim',
+    ft = { 'markdown' },
+    dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' },
+    opts = {
+      heading = {
+        sign = false,
+        icons = {},
+        backgrounds = {},
+        width = 'block',
+      },
+      bullet = { enabled = false },
+      sign = { enabled = false },
+    },
+  },
+
   -- Interactive editing: list continuation, auto-renumbering, link following, table formatting
   {
     'jakewvincent/mkdnflow.nvim',
