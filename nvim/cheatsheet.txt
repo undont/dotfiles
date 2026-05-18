@@ -287,7 +287,7 @@ Open yesterday's daily note | <leader>oy
 Open tomorrow's daily note | <leader>oT
 New note (from template if available) | <leader>on
 Find note (quick switch) | <leader>of
-Search vault (grep) | <leader>os
+Grep vault | <leader>og
 Tags | <leader>ot
 Backlinks | <leader>ob
 Links in current note | <leader>ol
@@ -296,6 +296,7 @@ New blank note (no template) | <leader>oN
 Switch workspace | <leader>ow
 Rename note | <leader>or
 Extract selection to new note | <leader>oe (normal/visual)
+Follow link under cursor (same as <CR>, vault buffers) | gf
 
 ## test @test
 Run nearest test | <leader>tt
