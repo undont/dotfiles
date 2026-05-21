@@ -117,9 +117,23 @@ return {
         require 'neotest-vitest' {
           vitestCommand = function(path)
             local dir = find_vitest_root(path)
-            return dir and (dir .. '/node_modules/.bin/vitest') or 'vitest'
+            if not dir then
+              return 'vitest'
+            end
+            -- Return `node <vitest.mjs>` rather than the .bin/vitest wrapper:
+            -- neotest-vitest passes command[1] as DAP's `runtimeExecutable`,
+            -- which must be a node-equivalent runtime. Using `.bin/vitest`
+            -- directly breaks package.json resolution under js-debug-adapter.
+            local vitest_mjs = dir .. '/node_modules/vitest/vitest.mjs'
+            if vim.uv.fs_stat(vitest_mjs) then
+              return 'node ' .. vitest_mjs
+            end
+            return dir .. '/node_modules/.bin/vitest'
           end,
-          cwd = find_vitest_root,
+          -- Don't override cwd: neotest-vitest defaults to the dir of the
+          -- nearest vitest.config.*, which is the per-project root in a
+          -- monorepo. Forcing the hoisted-node_modules root here causes
+          -- vitest's per-project `include` globs to miss the test file.
           filter_dir = function(name)
             return name ~= 'node_modules' and name ~= 'dist' and name ~= '.git' and name ~= 'coverage'
           end,

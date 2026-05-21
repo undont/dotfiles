@@ -274,12 +274,21 @@ export ${var_name}=\"${value}\"
         fi
     fi
 
-    # Auto-update PROJECT_DIRS when DEV_ROOT or PROJECTS_ROOT changes
+    # Auto-update PROJECT_DIRS when DEV_ROOT or PROJECTS_ROOT changes — but
+    # preserve a customised line that already references both vars (e.g. a
+    # user appended a third root: `$DEV_ROOT:$PROJECTS_ROOT:$HOME/work`).
     if [[ "$var_name" == "DEV_ROOT" || "$var_name" == "PROJECTS_ROOT" ]]; then
         # shellcheck disable=SC2016
         local project_dirs_line='export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT"'
-        if grep -q '^export PROJECT_DIRS=' "$zshrc"; then
-            sed_inplace "s|^export PROJECT_DIRS=.*|${project_dirs_line}|" "$zshrc"
+        local existing
+        existing=$(grep -m1 '^export PROJECT_DIRS=' "$zshrc" || true)
+        if [[ -n "$existing" ]]; then
+            # Rewrite only if the existing line is missing one of the refs —
+            # otherwise the user's customisation already picks up the change.
+            if ! { [[ "$existing" == *'$DEV_ROOT'* || "$existing" == *'${DEV_ROOT}'* ]] \
+                && [[ "$existing" == *'$PROJECTS_ROOT'* || "$existing" == *'${PROJECTS_ROOT}'* ]]; }; then
+                sed_inplace "s|^export PROJECT_DIRS=.*|${project_dirs_line}|" "$zshrc"
+            fi
         else
             # Add PROJECT_DIRS after the last of DEV_ROOT/PROJECTS_ROOT
             local last_root_line

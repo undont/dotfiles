@@ -14,6 +14,11 @@ return {
     ft = { 'markdown' },
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' },
     opts = {
+      anti_conceal = {
+        ignore = {
+          code_background = false,
+        },
+      },
       heading = {
         sign = false,
         icons = {},

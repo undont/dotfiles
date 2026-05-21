@@ -14,8 +14,9 @@
 ║  ` s session · ` f window · ` w save · ` d detach · {{M}}+q kill       ║
 ║  ` r / ` R reload · {{M}}+u undo · ` -/= back/fwd · ` h help           ║
 ╠═ PICKERS / TOOLS ════════════════════════════════════════════════════╣
-║  ` c Claude · ` o OpenCode · ` a Copilot · ` n nvim · ` u URL        ║
-║  ` A alerts · ` t theme · ` p launchers · ` Space fingers · ` I      ║
+║  ` c Claude · ` C Codex · ` o OpenCode · ` a Copilot                 ║
+║  ` n nvim · ` u URL · ` A alerts · ` t theme · ` p launchers         ║
+║  ` Space fingers · ` I install                                       ║
 ╚══════════════════════════════════════════════════════════════════════╝
 
                     Press Esc to close this help
