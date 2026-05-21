@@ -12,11 +12,17 @@ return {
       local template_icon = vim.fn.nr2char(0xf05c0) -- nf-md-file_code_outline
       local gopher_icon = vim.fn.nr2char(0xe627) -- nf-seti-go (gopher)
       local yaml_icon = vim.fn.nr2char(0xf013) -- nf-fa-cog
+      local csharp_icon = vim.fn.nr2char(0xf031b) -- nf-md-language_csharp (matches `cs` extension)
       require('mini.icons').setup {
         filetype = {
           yaml = { glyph = yaml_icon },
           template = { glyph = template_icon },
           go = { glyph = gopher_icon },
+          -- render-markdown looks up code-block languages as filetypes; without
+          -- this `csharp` falls back to the generic file glyph instead of the
+          -- C# icon that mini.icons ships for the `cs` extension.
+          cs = { glyph = csharp_icon, hl = 'MiniIconsGreen' },
+          csharp = { glyph = csharp_icon, hl = 'MiniIconsGreen' },
         },
         os = {
           git = { glyph = '' }, -- nf-oct-git_branch

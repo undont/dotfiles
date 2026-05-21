@@ -88,19 +88,29 @@ load_existing_launcher() {
     else
         instance_mode="n"
     fi
-    project_dir=$(grep -m1 '^PROJECT_DIR=' "$file" 2>/dev/null | sed 's/^PROJECT_DIR=//' | tr -d '"' || true)
-    # Extract fallback from ${VAR:-default} pattern
-    if [[ "$project_dir" =~ :-(.+)\}$ ]]; then
-        project_dir="${BASH_REMATCH[1]}"
+    # New format: separate `_<SESSION>_ROOT_DEFAULT="$HOME/path"` line — handles
+    # paths containing apostrophes (which break `"${VAR:-default}"` parsing).
+    # Old format (kept for backward compat): `PROJECT_DIR="${VAR:-default}"`.
+    project_dir=$(grep -m1 '^_[A-Z0-9_]*_ROOT_DEFAULT=' "$file" 2>/dev/null \
+        | sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
+    if [[ -z "$project_dir" ]]; then
+        project_dir=$(grep -m1 '^PROJECT_DIR=' "$file" 2>/dev/null | sed 's/^PROJECT_DIR=//' | tr -d '"' || true)
+        if [[ "$project_dir" =~ :-(.+)\}$ ]]; then
+            project_dir="${BASH_REMATCH[1]}"
+        fi
     fi
     project_dir="${project_dir/#\$HOME/\~}"
 
     # Detect worktree configuration
-    if grep -q 'WORKTREES_DIR=' "$file" 2>/dev/null; then
+    if grep -q '^WORKTREES_DIR=\|^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null; then
         worktree_aware="y"
-        worktrees_dir=$(grep -m1 '^WORKTREES_DIR=' "$file" 2>/dev/null | sed 's/^WORKTREES_DIR=//' | tr -d '"' || true)
-        if [[ "$worktrees_dir" =~ :-(.+)\}$ ]]; then
-            worktrees_dir="${BASH_REMATCH[1]}"
+        worktrees_dir=$(grep -m1 '^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null \
+            | sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
+        if [[ -z "$worktrees_dir" ]]; then
+            worktrees_dir=$(grep -m1 '^WORKTREES_DIR=' "$file" 2>/dev/null | sed 's/^WORKTREES_DIR=//' | tr -d '"' || true)
+            if [[ "$worktrees_dir" =~ :-(.+)\}$ ]]; then
+                worktrees_dir="${BASH_REMATCH[1]}"
+            fi
         fi
         worktrees_dir="${worktrees_dir/#\$HOME/\~}"
     else
@@ -824,12 +834,24 @@ fi
 PREAMBLE
 
     # Generate SESSION and PROJECT_DIR (worktree-aware or simple)
+    #
+    # Path defaults are staged in `_<SESSION>_…_DEFAULT` variables rather than
+    # embedded inline as `${VAR:-/path}`, because single quotes inside a
+    # parameter-expansion default (e.g. `${VAR:-/foo's/bar}`) trip bash's
+    # quoter even within `"…"`. A regular `VAR="…"` assignment handles
+    # apostrophes natively; the `${VAR:-$_DEFAULT}` then references it safely.
+    # The `${PATH/#\~/$HOME}` lines expand a leading `~` in case an env-var
+    # override (e.g. `FOO_ROOT="~/x"`) ships a literal tilde.
     if [[ "$worktree_aware" == "y" ]]; then
         worktree_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
         cat << WTBLOCK
 SESSION="\${SESSION_NAME:-$session_name}"
-WORKTREES_DIR="\${${session_var}_WORKTREES:-$worktrees_dir}"
-BASE_DIR="\${${session_var}_ROOT:-$project_dir}"
+_${session_var}_WORKTREES_DEFAULT="$worktrees_dir"
+_${session_var}_ROOT_DEFAULT="$project_dir"
+WORKTREES_DIR="\${${session_var}_WORKTREES:-\$_${session_var}_WORKTREES_DEFAULT}"
+BASE_DIR="\${${session_var}_ROOT:-\$_${session_var}_ROOT_DEFAULT}"
+WORKTREES_DIR="\${WORKTREES_DIR/#\\~/\$HOME}"
+BASE_DIR="\${BASE_DIR/#\\~/\$HOME}"
 
 # Resolve project directory — check for a matching worktree when session has a suffix
 PROJECT_DIR="\$BASE_DIR"
@@ -846,7 +868,9 @@ WTBLOCK
     else
         cat << SIMPLE
 SESSION="\${SESSION_NAME:-$session_name}"
-PROJECT_DIR="\${${session_var}_ROOT:-$project_dir}"
+_${session_var}_ROOT_DEFAULT="$project_dir"
+PROJECT_DIR="\${${session_var}_ROOT:-\$_${session_var}_ROOT_DEFAULT}"
+PROJECT_DIR="\${PROJECT_DIR/#\\~/\$HOME}"
 SIMPLE
     fi
 

@@ -129,7 +129,7 @@ unset _ghostty_file _ghostty_line _ghostty_opacity
 # Export FZF_DEFAULT_OPTS with theme colours
 # Format: --color=element:colour
 # Use ${VAR:-} to avoid unbound variable errors if theme doesn't define all vars
-export FZF_DEFAULT_OPTS="--color=bg:${FZF_BG:-#1e1e1e},fg:${FZF_FG:-#d4d4d4},bg+:${FZF_BG_PLUS:-#2e2e2e},fg+:${FZF_FG_PLUS:-#ffffff},hl:${FZF_HL:-#569cd6},hl+:${FZF_HL_PLUS:-#4fc1ff},border:${FZF_BORDER:-#3e3e3e},prompt:${FZF_PROMPT:-#ce9178},pointer:${FZF_POINTER:-#4ec9b0},marker:${FZF_MARKER:-#c586c0},spinner:${FZF_SPINNER:-#4ec9b0},header:${FZF_HEADER:-#569cd6},info:${FZF_INFO:-#d4d4d4},separator:${FZF_SEPARATOR:-#3e3e3e},scrollbar:${FZF_SCROLLBAR:-#569cd6},label:${FZF_LABEL:-#ffffff},preview-bg:${FZF_PREVIEW_BG:-#1e1e1e},preview-fg:${FZF_PREVIEW_FG:-#d4d4d4}"
+export FZF_DEFAULT_OPTS="--color=bg:${FZF_BG:-#1e1e1e},fg:${FZF_FG:-#d4d4d4},bg+:${FZF_BG_PLUS:-#2e2e2e},fg+:${FZF_FG_PLUS:-#ffffff},hl:${FZF_HL:-#569cd6},hl+:${FZF_HL_PLUS:-#4fc1ff},border:${FZF_BORDER:-#3e3e3e},prompt:${FZF_PROMPT:-#ce9178},pointer:${FZF_POINTER:-#4ec9b0},marker:${FZF_MARKER:-#c586c0},spinner:${FZF_SPINNER:-#4ec9b0},header:${FZF_HEADER:-#569cd6},info:${FZF_INFO:-#d4d4d4},separator:${FZF_SEPARATOR:-#3e3e3e},scrollbar:${FZF_SCROLLBAR:-#569cd6},label:${FZF_LABEL:-#ffffff},preview-bg:${FZF_PREVIEW_BG:-#1e1e1e},preview-fg:${FZF_PREVIEW_FG:-#d4d4d4} --bind=ctrl-d:half-page-down,ctrl-u:half-page-up,ctrl-l:clear-query"
 
 # Also export individual colours for scripts that need direct access
 export FZF_THEME_BG="$FZF_BG"

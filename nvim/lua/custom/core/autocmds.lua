@@ -126,7 +126,36 @@ function M.setup()
   vim.api.nvim_set_hl(0, 'LazyDimmed', { link = 'Comment' })
 
   -- Dynamic diff highlights (diffview, octo)
-  require('custom.core.diff-highlights').setup()
+  local diff_highlights = require 'custom.core.diff-highlights'
+  diff_highlights.setup()
+
+  -- render-markdown links code blocks to ColorColumn by default, which
+  -- collides with our CursorLine tint. Give markdown code its own subtle
+  -- background derived from the active theme palette.
+  local function apply_markdown_code_highlights()
+    local function get(group, fallback)
+      local hl = vim.api.nvim_get_hl(0, { name = group, link = false })
+      return hl.bg or hl.fg or fallback
+    end
+
+    local cursorline_bg = get('CursorLine', 0x2a2a2a)
+    local colorcolumn_bg = get('ColorColumn', cursorline_bg)
+    local normal_fg = get('Normal', 0xd4d4d4)
+    local code_bg = diff_highlights.tint_bg(colorcolumn_bg, 0.35)
+    local inline_bg = diff_highlights.tint_bg(normal_fg, 0.10)
+
+    vim.api.nvim_set_hl(0, 'RenderMarkdownCode', { bg = code_bg })
+    vim.api.nvim_set_hl(0, 'RenderMarkdownCodeBorder', { bg = code_bg })
+    vim.api.nvim_set_hl(0, 'RenderMarkdownCodeInline', { bg = inline_bg })
+    vim.api.nvim_set_hl(0, 'RenderMarkdownInlineHighlight', { bg = inline_bg })
+  end
+
+  vim.api.nvim_create_autocmd('ColorScheme', {
+    desc = 'Make render-markdown code blocks distinct from CursorLine',
+    group = vim.api.nvim_create_augroup('render-markdown-highlights', { clear = true }),
+    callback = apply_markdown_code_highlights,
+  })
+  apply_markdown_code_highlights()
 
   -- Disable swap file for Octo buffers (not needed and causes warnings)
   vim.api.nvim_create_autocmd('FileType', {

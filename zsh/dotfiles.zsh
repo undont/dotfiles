@@ -207,6 +207,11 @@ bindkey -e                             # Force emacs mode (Ctrl+A, Ctrl+E, etc.)
 # will be processed correctly, and tools like fzf can still use ESC to exit.
 export KEYTIMEOUT=1                    # Wait 10ms for more chars after ESC
 
+# Inside tmux, ignore EOF (Ctrl+D) at the prompt so an accidental press doesn't
+# close the shell — which would tear down the pane and, if last, the window.
+# Outside tmux, Ctrl+D still exits normally.
+[[ -n "$TMUX" ]] && setopt IGNORE_EOF
+
 # Treat hyphens, dots, underscores, and slashes as word separators so
 # Opt+Backspace and Ctrl+W delete one segment at a time for kebab-case,
 # snake_case, dotted.name, and file/paths.

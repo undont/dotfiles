@@ -436,6 +436,7 @@ return {
       }
 
       vim.keymap.set('n', '<leader>nd', '<cmd>Dotnet debug<cr>', { desc = '[D]ebug project' })
+      vim.keymap.set('n', '<leader>na', '<cmd>Dotnet attach<cr>', { desc = '[A]ttach to running .NET process' })
       vim.keymap.set('n', '<leader>nr', '<cmd>Dotnet run<cr>', { desc = '[R]un project' })
       vim.keymap.set('n', '<leader>nb', '<cmd>Dotnet build<cr>', { desc = '[B]uild project' })
       vim.keymap.set('n', '<leader>nc', '<cmd>Dotnet clean<cr>', { desc = '[C]lean project' })

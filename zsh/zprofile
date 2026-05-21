@@ -34,3 +34,7 @@ export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
 
 # Bun global packages (bun install -g)
 export PATH="$HOME/.bun/bin:$PATH"
+
+# User-local binaries (~/.local/bin) — common install target for pipx,
+# `cargo install`, Antigravity CLI, etc.
+export PATH="$HOME/.local/bin:$PATH"

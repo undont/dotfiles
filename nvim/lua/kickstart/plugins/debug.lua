@@ -157,9 +157,12 @@ return {
     local dapui = require 'dapui'
 
     require('mason-nvim-dap').setup {
-      automatic_installation = true,
+      -- ensure_installed handles upfront install; automatic_installation races
+      -- with it whenever an adapter is registered via dap.adapters[...] in the
+      -- same session, leaving installs stuck mid-flight (lockfile collision).
+      automatic_installation = false,
       handlers = {},
-      ensure_installed = { 'delve', 'coreclr', 'debugpy' },
+      ensure_installed = { 'delve', 'coreclr', 'debugpy', 'js' },
     }
 
     -- Inline variable values next to code (like Rider/GoLand)
@@ -220,9 +223,48 @@ return {
       },
     }
 
+    -- Attach to an already-running process via a headless delve. Start it
+    -- yourself with one of:
+    --   dlv attach <pid> --headless --listen=127.0.0.1:38697 --api-version=2
+    --   dlv exec ./binary --headless --listen=127.0.0.1:38697 --api-version=2
+    -- This is the only working path for TUI binaries — delve's DAP server
+    -- ignores `console: integratedTerminal` when actually debugging (only
+    -- honoured for noDebug runs), and `dlv dap` has no `--tty` flag, so a
+    -- pure-launch flow always gives the debuggee pipe-based stdio. Using
+    -- `dlv debug --tty=<pty>` in headless mode + this attach config is the
+    -- workaround if you want delve to launch the binary against a real PTY.
+    dap.configurations.go = dap.configurations.go or {}
+    table.insert(dap.configurations.go, {
+      type = 'go',
+      name = 'Attach (remote dlv)',
+      request = 'attach',
+      mode = 'remote',
+      host = '127.0.0.1',
+      port = function()
+        return tonumber(vim.fn.input 'dlv headless port: ' or '') or 38697
+      end,
+    })
+
     -- Point dap-python at Mason's debugpy venv so it doesn't depend on a
     -- project-local venv being active. nvim-dap-python falls back to the
     -- project venv automatically when one is detected.
     require('dap-python').setup(vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python')
+
+    -- JS/TS debugger (vscode-js-debug via Mason). `${port}` makes nvim-dap
+    -- pick a free port per session and spawn the adapter as a child — so a
+    -- crashed session can't leave an orphan squatting on a fixed port.
+    -- neotest-vitest's `strategy = 'dap'` picks this up automatically.
+    local js_debug_server = vim.fn.stdpath 'data' .. '/mason/packages/js-debug-adapter/js-debug/src/dapDebugServer.js'
+    for _, adapter in ipairs { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' } do
+      dap.adapters[adapter] = {
+        type = 'server',
+        host = 'localhost',
+        port = '${port}',
+        executable = {
+          command = 'node',
+          args = { js_debug_server, '${port}' },
+        },
+      }
+    end
   end,
 }
