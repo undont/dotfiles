@@ -151,14 +151,17 @@ return {
       notes_subdir = 'scratchpad',
 
       -- Filename already is the title for this vault (human-readable names,
-      -- wiki+shortest links), so the builtin's `id` and auto-filled `aliases`
-      -- are just noise. Strip `id` entirely; keep `aliases` as an empty
-      -- placeholder so it's easy to drop in alternate titles when needed.
+      -- wiki+shortest links), so the builtin's `id` field is pure noise —
+      -- strip it. Aliases are kept only when the note actually has them in
+      -- its frontmatter; otherwise the builtin would emit an empty `aliases:`
+      -- line on every save.
       frontmatter = {
         func = function(note)
           local out = require('obsidian.builtin').frontmatter(note)
           out.id = nil
-          out.aliases = {}
+          if not note.aliases or #note.aliases == 0 then
+            out.aliases = nil
+          end
           return out
         end,
       },

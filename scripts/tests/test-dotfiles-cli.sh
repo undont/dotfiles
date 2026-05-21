@@ -334,6 +334,39 @@ else
     fail "set should auto-derive PROJECT_DIRS"
 fi
 
+# Customised PROJECT_DIRS (extra roots appended) is preserved across re-set
+# shellcheck disable=SC2016
+custom_line='export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT:$HOME/work"'
+# Use awk to replace the auto-generated line with the customised one
+awk -v new="$custom_line" '/^export PROJECT_DIRS=/ {print new; next} {print}' "$HOME/.zshrc" > "$HOME/.zshrc.tmp" \
+    && mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
+
+mkdir -p "$TEST_HOME/code"
+"$TEST_DOTFILES_DIR/scripts/dotfiles" set dev "$TEST_HOME/code" >/dev/null
+
+if grep -qF '$HOME/work' "$HOME/.zshrc"; then
+    pass "set preserves customised PROJECT_DIRS (extra roots intact)"
+else
+    fail "set should preserve customised PROJECT_DIRS when both refs are present"
+fi
+
+# A stale PROJECT_DIRS that doesn't reference both vars should still be rewritten
+cat > "$HOME/.zshrc" << 'EOF'
+# YOUR PERSONAL CONFIGURATION
+export DEV_ROOT="$HOME/src"
+export PROJECTS_ROOT="$HOME/playground"
+export PROJECT_DIRS="/some/hardcoded/path"
+EOF
+
+"$TEST_DOTFILES_DIR/scripts/dotfiles" set dev "$TEST_HOME/src" >/dev/null
+
+# shellcheck disable=SC2016
+if grep -qF 'PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT"' "$HOME/.zshrc"; then
+    pass "set rewrites stale PROJECT_DIRS missing both refs"
+else
+    fail "set should rewrite stale PROJECT_DIRS that does not reference both vars"
+fi
+
 # Missing argument → exit 2 with hint
 if "$TEST_DOTFILES_DIR/scripts/dotfiles" set 2>/dev/null; then
     fail "set with no arg should fail"

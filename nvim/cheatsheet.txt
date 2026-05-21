@@ -338,6 +338,7 @@ Watch project | <leader>nw
 New item | <leader>nn
 Outdated packages | <leader>no
 Debug project | <leader>nd
+Attach to running .NET process | <leader>na
 
 ## buffers @buffers
 Delete buffer | <leader>bd
