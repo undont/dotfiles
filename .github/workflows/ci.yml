@@ -143,11 +143,22 @@ jobs:
               'red'
             }}
 
+  release-guard:
+    name: Release Guard
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Check CHANGELOG version was bumped
+        run: ./scripts/ci/check-release-version.sh
+
   auto-tag:
     name: Auto Tag
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [shellcheck, test-all, syntax-check, lua-check, startup-benchmark]
+    needs: [shellcheck, test-all, syntax-check, lua-check, startup-benchmark, release-guard]
     permissions:
       contents: write
     steps:
