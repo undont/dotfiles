@@ -104,6 +104,11 @@ description: Commit staged changes and push. Offer to create a PR if none exists
     - Update `CHANGELOG.md` for user-facing changes
     - **When to update**: `fix:`, `add:`, `update:`, `breaking:` commits
     - **Skip for**: `refactor:`, `test:`, `docs:`, `chore:` commits
+      — but when you skip the bump, the `release-guard` CI job will fail the
+      push/PR (commits past the latest tag with no new dated heading) **unless**
+      a commit message in the range contains `[skip release]`. Add that marker
+      to the commit subject for genuinely non-release changes, e.g.
+      `docs: tidy README [skip release]`.
 
     - **MANDATORY pre-commit gate — a dated version heading MUST exist**:
       Before running `git commit`, the topmost numbered heading in `CHANGELOG.md`
@@ -325,10 +330,13 @@ The following checks run on push/PR to main (see `.github/workflows/ci.yml`):
 2. **Library Tests** - Runs tmux and installation library tests
 3. **Syntax Check** - Validates bash and zsh syntax
 4. **Lua Check** - Advisory luacheck on nvim config
-5. **Auto Tag** - On push to main only: creates a git tag from CHANGELOG.md version if new
+5. **Release Guard** - On push and PR: fails if commits have landed past the latest tag with no new dated CHANGELOG heading (see below)
+6. **Auto Tag** - On push to main only: creates a git tag from CHANGELOG.md version if new
 
 ### Release Management
 Tags are created automatically by the `auto-tag` CI job when changes are merged to main. The job extracts the latest version from CHANGELOG.md and creates a `vX.Y.Z` tag if it doesn't already exist. Do NOT create tags manually.
+
+The `release-guard` job (`scripts/ci/check-release-version.sh`) backs this up: it fails any push or PR that adds commits on top of the latest release tag without a new dated `## [X.Y.Z]` heading — catching the case where entries are left under `[Unreleased]` and silently never released. For changes that intentionally ship no release (docs/tooling housekeeping), put `[skip release]` in a commit message in the range to bypass it.
 
 ### Files to Never Commit
 - `zsh/.zsh/.secrets.zsh` - Contains API keys
