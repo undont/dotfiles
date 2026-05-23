@@ -358,11 +358,22 @@ clipboard_copy() {
     fi
 }
 
-# Open a URL or file with the system handler (works on macOS and Linux)
+# Open a URL or file with the system handler (works on macOS and Linux).
+# On macOS, the tmux user option `@browser-app` overrides the default browser —
+# when set, URLs open via `open -a <app>` instead of the LaunchServices default.
+# Set in ~/.config/tmux/local.conf, e.g.:  set -g @browser-app 'Arc'
 open_url() {
     local url="$1"
     if [[ "$(uname)" == "Darwin" ]]; then
-        open "$url"
+        local browser_app=""
+        if command -v tmux &>/dev/null; then
+            browser_app=$(tmux show-options -gv "@browser-app" 2>/dev/null || true)
+        fi
+        if [[ -n "$browser_app" ]]; then
+            open -a "$browser_app" "$url"
+        else
+            open "$url"
+        fi
     elif command -v xdg-open &>/dev/null; then
         xdg-open "$url" &>/dev/null &
     elif command -v wslview &>/dev/null; then

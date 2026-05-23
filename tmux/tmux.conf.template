@@ -345,6 +345,7 @@ bind -n M-L resize-pane -R 5           # Opt+Shift+l = grow right
 # URL picker
 # ─────────────────────────────────────────
 # prefix+u = find all URLs in scrollback and open selected one
+# macOS: override the browser via local.conf, e.g.  set -g @browser-app 'Arc'
 unbind u
 bind u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
 

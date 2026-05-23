@@ -24,3 +24,8 @@
 #
 # Extra keybindings:
 #   bind M display-popup -E "man tmux"
+#
+# URL picker (prefix + u) — open URLs in a specific macOS app:
+#   set -g @browser-app 'Arc'           # opens via: open -a Arc <url>
+#   set -g @browser-app 'Google Chrome'
+#   set -g @browser-app 'Safari'
