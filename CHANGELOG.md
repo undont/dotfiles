@@ -6,6 +6,9 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Tmux: `@browser-app` user option to send URLs from the `prefix + u` picker to a specific macOS app instead of the LaunchServices default. `tmux/scripts/_lib/common.sh`'s `open_url()` now reads `tmux show-options -gv "@browser-app"` on Darwin and, when non-empty, invokes `open -a "$app" "$url"` instead of plain `open "$url"`; unset value preserves the existing behaviour exactly, so the change is a no-op for users who don't opt in. The lookup is gated behind `command -v tmux` so the function still works for callers outside a tmux context. Set in `~/.config/tmux/local.conf`, e.g. `set -g @browser-app 'Arc'` (or `'Google Chrome'`, `'Safari'`). Example added to `tmux/local.conf.template` and a one-line pointer added to the URL picker section in `tmux/tmux.conf.template`. Linux/WSL branches (`xdg-open`/`wslview`) are unchanged — those already respect their own system-level default-browser settings
+
 ## [0.2.98] - 2026-05-21
 
 ### Added
