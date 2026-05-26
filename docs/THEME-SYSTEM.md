@@ -4,7 +4,7 @@
 
 The dotfiles theme system uses XDG Base Directory standard to prevent git conflicts when users change themes. Themes come in two flavours:
 
-- **Hand-crafted themes** — curated `.theme` files in `themes/` (15 built-in)
+- **Hand-crafted themes** — curated `.theme` files in `themes/` (14 built-in)
 - **Generated themes** — auto-generated from any Ghostty built-in theme via `dotfiles theme generate`
 
 Both types produce identical `.theme` files and work seamlessly with `dotfiles theme`.
@@ -21,7 +21,7 @@ Both types produce identical `.theme` files and work seamlessly with `dotfiles t
 
 ```
 Repository (tracked in git):
-  themes/*.theme                   - Hand-crafted theme definitions (15 themes)
+  themes/*.theme                   - Hand-crafted theme definitions (14 themes)
   tmux/tmux.conf.template          - Tmux config template with {{PLACEHOLDERS}}
   ghostty/config.template          - Ghostty config template with {{PLACEHOLDERS}}
   gh-dash/config.yml.template      - gh-dash config template with {{PLACEHOLDERS}}
@@ -56,7 +56,7 @@ Located in `themes/*.theme`. These are curated theme files with carefully chosen
 
 #### Generated Themes
 
-Created by `scripts/generate-theme` from Ghostty's 438 built-in themes. The generator:
+Created by `scripts/generate-theme` from Ghostty's ~460 built-in themes. The generator:
 
 1. Parses a Ghostty theme file (key-value format with ANSI palette)
 2. Extracts a semantic colour palette (bg, fg, accents mapped from ANSI roles)
@@ -93,7 +93,7 @@ The Neovim theme loader (`nvim/lua/custom/core/theme.lua`) reads `~/.config/dotf
 3. **Clean Templates**: Repository templates remain readable and portable
 4. **Backwards Compatible**: Symlink at `~/.tmux.conf` for legacy tools
 5. **Multi-User Friendly**: Each user can have different themes
-6. **438 Themes Available**: Any Ghostty built-in theme can be generated instantly
+6. **~460 Themes Available**: Any Ghostty built-in theme can be generated instantly
 7. **WCAG Accessible**: Generated themes auto-correct for 4.5:1 contrast ratio
 
 ## Theme Commands

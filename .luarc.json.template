@@ -3,6 +3,7 @@
     "globals": ["vim", "hs",
             "Snacks",
             "MiniIcons",
+            "MiniBracketed",
             "read_globals",
             "globals",
             "max_line_length",

@@ -137,8 +137,9 @@ ls -la ~/.zshrc ~/.tmux.conf ~/.config/nvim
 # Re-run installation
 ./install.sh
 
-# Or manually fix a symlink
-ln -sf ~/dotfiles/zsh/.zshrc ~/.zshrc
+# Or manually fix a symlink (example for .zprofile — ~/.zshrc is a user-owned
+# copy created from zsh/zshrc.template, not a symlink)
+ln -sf ~/dotfiles/zsh/zprofile ~/.zprofile
 ```
 
 ### Permission Denied on Scripts
@@ -723,6 +724,6 @@ If you're still experiencing issues:
 3. Check tool versions match requirements:
    ```bash
    tmux -V    # 3.3+
-   nvim -v    # 0.9+
+   nvim -v    # 0.11+
    zsh --version  # 5.8+
    ```

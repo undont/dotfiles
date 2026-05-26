@@ -590,3 +590,18 @@ if [[ ${#STEPS[@]} -le 2 ]]; then
         success "Everything looks good — you're all set!"
     fi
 fi
+
+# Post-update notices left by migrations. install.sh is invoked fresh
+# from disk after `dotfiles update` pulls, so this path is the new
+# version even on the upgrade hop where the running `dotfiles`
+# dispatcher is still the pre-pull copy parsed in memory. The
+# cmd_update dispatcher also calls a notice helper as a safety net
+# for the "already up-to-date" branch on subsequent runs; this clears
+# the file so it doesn't double-print.
+notice_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/.state/update-notices.txt"
+if [[ -s "$notice_file" ]]; then
+    echo ""
+    printf "%sNotices from this update:%s\n" "${YELLOW:-}" "${NC:-}"
+    sed 's/^/  /' "$notice_file"
+    rm -f "$notice_file"
+fi
