@@ -2,17 +2,23 @@
 
 local M = {}
 
--- In-tab zoom state, keyed by tabpage. Diffview can't use the `tab split` zoom:
--- it scopes its view (and every panel keymap, e.g. j/k -> next/prev entry) to
--- the tabpage, so a new tab detaches them and the keys go dead. For diffview we
--- maximise the window in place instead, stashing the layout to restore later.
+-- In-tab zoom state, keyed by tabpage. Diffview (and octo's review, a diffview
+-- fork) can't use the `tab split` zoom: each scopes its view -- and every panel
+-- keymap, e.g. j/k -> next/prev entry -- to the tabpage, so a new tab detaches
+-- them and the keys go dead. For those we maximise the window in place instead,
+-- stashing the layout to restore later.
 local zoom_state = {}
 
---- The diffview view for the current tabpage, or nil. Reads `package.loaded`
---- so checking never forces diffview to load.
-local function current_diffview()
-  local lib = package.loaded['diffview.lib']
-  return lib and lib.get_current_view()
+--- True when the current tabpage hosts a view that scopes its keymaps to the
+--- tabpage (diffview, or octo's review). Reads `package.loaded` so the check
+--- never forces either plugin to load.
+local function in_scoped_view()
+  local dv = package.loaded['diffview.lib']
+  if dv and dv.get_current_view() then
+    return true
+  end
+  local octo = package.loaded['octo.reviews']
+  return octo ~= nil and octo.get_current_review() ~= nil
 end
 
 local function toggle_zoom()
@@ -35,7 +41,7 @@ local function toggle_zoom()
       -- Tab-split zoom: closing the tab discards its `zoomed` flag.
       vim.cmd 'tab close'
     end
-  elseif current_diffview() then
+  elseif in_scoped_view() then
     -- winfixwidth/height pin the panel size, so lift them before maximising.
     zoom_state[tab] = {
       win = vim.api.nvim_get_current_win(),
