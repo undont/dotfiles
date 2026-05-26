@@ -53,6 +53,47 @@ function M.apply()
   vim.api.nvim_set_hl(0, 'GitSignsAddNr', { fg = green_fg, bg = add_bg })
   vim.api.nvim_set_hl(0, 'GitSignsChangeNr', { fg = yellow_fg, bg = change_bg })
   vim.api.nvim_set_hl(0, 'GitSignsDeleteNr', { fg = red_fg, bg = del_bg })
+
+  -- Diffview file panel: pin insertion/deletion counts to theme green/red
+  -- regardless of how the theme defines diffAdded/diffRemoved.
+  vim.api.nvim_set_hl(0, 'DiffviewFilePanelInsertions', { fg = green_fg })
+  vim.api.nvim_set_hl(0, 'DiffviewFilePanelDeletions', { fg = red_fg })
+
+  -- Octo: same treatment for review file panel + PR diffstats
+  vim.api.nvim_set_hl(0, 'OctoDiffstatAdditions', { fg = green_fg })
+  vim.api.nvim_set_hl(0, 'OctoDiffstatDeletions', { fg = red_fg })
+  vim.api.nvim_set_hl(0, 'OctoPullAdditions', { fg = green_fg })
+  vim.api.nvim_set_hl(0, 'OctoPullDeletions', { fg = red_fg })
+
+  -- Status markers (A/D/M/?/R/C/U/T/X/B/!) → semantic git-status colours,
+  -- shared across the diffview and octo file panels. Mirrors the diffstat-bar
+  -- palette (green add / red delete) so the letter agrees with the bar:
+  --   added/untracked → green, modified → yellow, renamed/copied/typechange →
+  --   blue, deleted/broken → red, unmerged (conflict) → orange, unknown/ignored
+  --   → grey.
+  -- Note: both plugins render type-changes via `…StatusTypeChanged` (with a 'd')
+  -- even though their defaults link the 'd'-less name, so we key off the former.
+  local blue_fg = get_fg('Function', 0x89b4fa)
+  local orange_fg = get_fg('Number', 0xfab387)
+  local grey_fg = get_fg('Comment', 0x6c7086)
+
+  local status_colours = {
+    Added = green_fg,
+    Untracked = green_fg,
+    Modified = yellow_fg,
+    Renamed = blue_fg,
+    Copied = blue_fg,
+    TypeChanged = blue_fg,
+    Unmerged = orange_fg,
+    Unknown = grey_fg,
+    Deleted = red_fg,
+    Broken = red_fg,
+    Ignored = grey_fg,
+  }
+  for suffix, fg in pairs(status_colours) do
+    vim.api.nvim_set_hl(0, 'DiffviewStatus' .. suffix, { fg = fg })
+    vim.api.nvim_set_hl(0, 'OctoStatus' .. suffix, { fg = fg })
+  end
 end
 
 function M.setup()

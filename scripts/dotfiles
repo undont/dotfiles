@@ -154,6 +154,21 @@ _show_step_plan() {
     done
 }
 
+# Print and clear any post-update notices left by migrations. Migrations
+# append blocks to $STATE_DIR/update-notices.txt when they do something
+# the user should see after the rest of `dotfiles update` has scrolled
+# past (e.g. apps removed, files relocated). Cleared after printing so a
+# subsequent update doesn't replay stale notices.
+_print_update_notices() {
+    local notice_file="$STATE_DIR/update-notices.txt"
+    [[ -s "$notice_file" ]] || return 0
+
+    echo ""
+    printf "  ${YELLOW}Notices from this update:${NC}\n"
+    sed 's/^/  /' "$notice_file"
+    rm -f "$notice_file"
+}
+
 # Run pending migration scripts between two versions
 _run_pending_migrations() {
     local old_head="$1" new_head="$2"
@@ -1066,9 +1081,12 @@ cmd_update() {
     [[ -n "$skip_steps" ]] && install_args+=(--skip-steps "$skip_steps")
 
     if ! "$DOTFILES_DIR/install.sh" "${install_args[@]}"; then
+        _print_update_notices
         error "Update failed — check output above"
         return 1
     fi
+
+    _print_update_notices
 }
 
 cmd_version() {

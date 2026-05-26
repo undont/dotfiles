@@ -135,6 +135,29 @@ return {
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = 'Search [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = 'Search [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = 'Search [F]iles' })
+      vim.keymap.set('n', '<leader>sF', function()
+        -- Live regex find: re-run `fd --regex <prompt>` on every keystroke.
+        -- The fuzzy sorter would re-filter rg/fd output and reject regex
+        -- metacharacters like `.*`, so use highlighter_only to preserve order.
+        local pickers = require 'telescope.pickers'
+        local finders = require 'telescope.finders'
+        local make_entry = require 'telescope.make_entry'
+        local sorters = require 'telescope.sorters'
+        local values = require('telescope.config').values
+        pickers
+          .new({}, {
+            prompt_title = 'Find Files (regex)',
+            finder = finders.new_job(function(prompt)
+              if not prompt or prompt == '' then
+                return nil
+              end
+              return { 'fd', '--type', 'f', '--hidden', '--exclude', '.git', '--regex', prompt }
+            end, make_entry.gen_from_file {}, nil, vim.uv.cwd()),
+            sorter = sorters.highlighter_only {},
+            previewer = values.file_previewer {},
+          })
+          :find()
+      end, { desc = 'Search [F]iles (regex)' })
       vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = 'Telescope built-in[S]' })
       vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = 'Search [W]ord' })
       vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = 'Search [G]rep' })

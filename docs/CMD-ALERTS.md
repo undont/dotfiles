@@ -59,16 +59,20 @@ Interactive commands (pagers, editors) never trigger alerts regardless of how lo
 Defaults:
 
 ```
-git gd gdn gh claude opencode oc btop htop top
-lazydocker lazygit ssh less more man vim nvim v vi nano
-bat diffnav psql sqlite3 tmux
+git gdn gh
+claude opencode oc
+btop htop top
+docker lazydocker lazygit ssh
+less more man
+vim nvim v vi nano bat diffnav
+psql sqlite3 tmux
 ```
 
 | Exclude entry | Matches | Doesn't match |
 |---|---|---|
 | `git` | `git diff`, `git push`, `git log` | `gitk` |
 | `gdn` | `gdn` | — |
-| `docker compose` | `docker compose up` | `docker run` |
+| `docker` | `docker compose up`, `docker run` | `dockerd` |
 
 **Override** before sourcing:
 ```zsh

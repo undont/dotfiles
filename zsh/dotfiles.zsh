@@ -84,7 +84,7 @@ export PATH="$PATH:$HOME/.cargo/bin"
 # Java (OpenJDK via Homebrew)
 export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
 
-# Python pipx (isolated CLI tool installation)
+# Python uv tool install (isolated CLI tool installation)
 export PATH="$PATH:$HOME/.local/bin"
 
 # Launchers (tmux session launchers, VS Code launcher, etc.)

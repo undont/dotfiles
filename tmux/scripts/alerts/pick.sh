@@ -3,25 +3,30 @@
 # If only one alert exists, jumps directly without showing a picker.
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
-source "$SCRIPT_DIR/../_lib/ui.sh"
 
-# Load current theme colours for fzf
-load_fzf_theme
+# --list mode: output entries only (used by fzf reload-sync).
+# Detect this early so the hot reload path can skip the picker-only
+# initialisation (common.sh, ui.sh, load_fzf_theme) — those together
+# add ~100ms of bash sourcing that visibly stalls the UI on every `x`.
+LIST_MODE=0
+[[ "${1:-}" == "--list" ]] && LIST_MODE=1
+
+if [[ $LIST_MODE -eq 0 ]]; then
+    source "$SCRIPT_DIR/../_lib/common.sh"
+    source "$SCRIPT_DIR/../_lib/ui.sh"
+    load_fzf_theme
+fi
 
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 CURRENT_WINDOW=$(tmux display-message -p '#W' 2>/dev/null)
 
 if [[ ! -f "$ALERTS_FILE" ]] || [[ ! -s "$ALERTS_FILE" ]]; then
+    [[ $LIST_MODE -eq 1 ]] && exit 0
     show_centered_message "Alerts" "No active alerts"
     read -rsn1
     exit 0
 fi
-
-# --list mode: output entries only (used by fzf reload-sync)
-LIST_MODE=0
-[[ "${1:-}" == "--list" ]] && LIST_MODE=1
 
 # Load entries from alerts file
 _load_entries() {

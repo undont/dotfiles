@@ -81,7 +81,7 @@ brew "go"
 
 # Python
 brew "python@3.13"
-brew "pipx"
+brew "uv"            # Python package + tool manager (replaces pipx; `uv tool install`, `uvx`)
 
 
 # Java

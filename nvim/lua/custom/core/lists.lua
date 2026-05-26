@@ -353,6 +353,12 @@ function M.setup()
   end
 
   vim.keymap.set('n', '<leader>xx', function()
+    -- Refresh stale buffers from disk first. Catches the case where an
+    -- external writer (Claude Code, another nvim instance, a script) has
+    -- changed an open buffer's file but neither FocusGained nor CursorHold
+    -- has fired to trigger autoread. LSP picks up the reload via on_lines
+    -- and republishes diagnostics — a second <leader>xx will pick them up.
+    pcall(vim.cmd, 'checktime')
     local items = diags_to_items(vim.diagnostic.get(nil))
     vim.fn.setqflist({}, ' ', { title = 'Diagnostics: all', items = items })
     vim.cmd 'botright cwindow'

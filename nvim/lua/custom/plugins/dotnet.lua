@@ -316,13 +316,6 @@ return {
       end,
       broad_search = true,
       lock_target = true,
-      -- Roslyn 5.8.0-1.26262.10 (Mason 2026-05-14) bundles Razor natively and
-      -- no longer accepts roslyn.nvim's --razorSourceGenerator /
-      -- --razorDesignTimePath flags, which causes the server to exit on
-      -- startup. See seblyng/roslyn.nvim#360.
-      extensions = {
-        razor = { enabled = false },
-      },
     },
     init = function()
       vim.g.loaded_roslyn_plugin = true
@@ -386,7 +379,7 @@ return {
         },
         test_runner = {
           enable_buffer_test_execution = true,
-          auto_start_testrunner = true,
+          auto_start_testrunner = false,
           viewmode = 'float',
           mappings = {
             -- Buffer keymaps (active in .cs files with tests)

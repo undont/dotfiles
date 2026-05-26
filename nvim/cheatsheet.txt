@@ -32,6 +32,7 @@ Show help (all default bindings) | g?
 
 ## search @search
 Find files | <leader>sf
+Find files (regex) | <leader>sF
 Live grep | <leader>sg
 Search keymaps | <leader>sk
 Search help | <leader>sh

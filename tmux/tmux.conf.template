@@ -60,7 +60,7 @@ bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/sessions/list.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
-      --header-lines=5 \
+      --header-lines=7 \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --prompt ': ' \
       --border=rounded \
