@@ -2,9 +2,52 @@
 
 local M = {}
 
+-- In-tab zoom state, keyed by tabpage. Diffview can't use the `tab split` zoom:
+-- it scopes its view (and every panel keymap, e.g. j/k -> next/prev entry) to
+-- the tabpage, so a new tab detaches them and the keys go dead. For diffview we
+-- maximise the window in place instead, stashing the layout to restore later.
+local zoom_state = {}
+
+--- The diffview view for the current tabpage, or nil. Reads `package.loaded`
+--- so checking never forces diffview to load.
+local function current_diffview()
+  local lib = package.loaded['diffview.lib']
+  return lib and lib.get_current_view()
+end
+
 local function toggle_zoom()
+  local tab = vim.api.nvim_get_current_tabpage()
+
   if vim.t.zoomed then
-    vim.cmd 'tab close'
+    local st = zoom_state[tab]
+    if st then
+      -- In-tab zoom: restore saved window sizes and winfix options.
+      if vim.api.nvim_win_is_valid(st.win) then
+        vim.api.nvim_win_call(st.win, function()
+          vim.cmd(st.restore)
+          vim.wo.winfixwidth = st.fixw
+          vim.wo.winfixheight = st.fixh
+        end)
+      end
+      zoom_state[tab] = nil
+      vim.t.zoomed = false
+    else
+      -- Tab-split zoom: closing the tab discards its `zoomed` flag.
+      vim.cmd 'tab close'
+    end
+  elseif current_diffview() then
+    -- winfixwidth/height pin the panel size, so lift them before maximising.
+    zoom_state[tab] = {
+      win = vim.api.nvim_get_current_win(),
+      restore = vim.fn.winrestcmd(),
+      fixw = vim.wo.winfixwidth,
+      fixh = vim.wo.winfixheight,
+    }
+    vim.wo.winfixwidth = false
+    vim.wo.winfixheight = false
+    vim.cmd.wincmd '_'
+    vim.cmd.wincmd '|'
+    vim.t.zoomed = true
   elseif vim.fn.winnr '$' > 1 then
     vim.cmd 'tab split'
     vim.t.zoomed = true

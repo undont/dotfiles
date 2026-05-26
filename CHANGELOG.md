@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.101] - 2026-05-26
+
+### Added
+- Nvim: LSP rename (`grn`) now writes the files it changed to disk. `vim.lsp.buf.rename` applies the workspace edit to every affected file, but the ones not already open are edited in unsaved background buffers — they never fire the auto-save autocmd (programmatic edits to a non-current buffer raise no `TextChanged`, and the buffers are never entered/left for `BufLeave`), so renamed symbols in other modules stayed off disk: invisible to Diffview (which diffs against disk) and surfacing only as a "save changes?" cascade on `:qa`. `nvim/lua/custom/plugins/lsp.lua` overrides `vim.lsp.handlers['textDocument/rename']` with a handler that mirrors the default (applies the edit) then writes every touched buffer — walking `result.documentChanges` (array of edits, skipping create/rename/delete resource ops that carry no `textDocument`) or `result.changes` (URI-keyed map), writing only loaded, modified, modifiable, normal-`buftype` buffers. `vim.lsp.buf.rename` already dispatches through this handler (`client.handlers[...] or vim.lsp.handlers[...]`), so it covers renames from any trigger, not just `grn`
+
+### Fixed
+- Nvim: `<leader>z` zoom no longer kills `j`/`k` (and the rest of the panel keymaps) inside Diffview file panels. The zoom does `tab split`, but Diffview scopes its view — and every panel action, which dispatches via `lib.get_current_view()` keyed on `nvim_get_current_tabpage()` — to the original tab, so in the new zoom tab `next_entry`/`prev_entry` and friends silently no-op (plain motions like `^d`/`gg` kept working precisely because they don't route through Diffview). A float-based zoom doesn't help either: Diffview's entry navigation moves the cursor in the panel's own tracked `winid`, not the focused window. `nvim/lua/custom/core/windows.lua` now detects a Diffview view (`package.loaded['diffview.lib'].get_current_view()`, read without forcing the module to load) and maximises the window in place instead — lifting the panel's `winfixwidth`/`winfixheight` pins, `wincmd _` then `wincmd |`, and stashing `winrestcmd()` plus the winfix values (in a module-local table keyed by tabpage) to restore on toggle-off. Ordinary splits keep the tab-split zoom and its bit-for-bit `tab close` restore
+
 ## [0.2.100] - 2026-05-26
 
 ### Added
