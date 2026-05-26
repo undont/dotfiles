@@ -2,9 +2,58 @@
 
 local M = {}
 
+-- In-tab zoom state, keyed by tabpage. Diffview (and octo's review, a diffview
+-- fork) can't use the `tab split` zoom: each scopes its view -- and every panel
+-- keymap, e.g. j/k -> next/prev entry -- to the tabpage, so a new tab detaches
+-- them and the keys go dead. For those we maximise the window in place instead,
+-- stashing the layout to restore later.
+local zoom_state = {}
+
+--- True when the current tabpage hosts a view that scopes its keymaps to the
+--- tabpage (diffview, or octo's review). Reads `package.loaded` so the check
+--- never forces either plugin to load.
+local function in_scoped_view()
+  local dv = package.loaded['diffview.lib']
+  if dv and dv.get_current_view() then
+    return true
+  end
+  local octo = package.loaded['octo.reviews']
+  return octo ~= nil and octo.get_current_review() ~= nil
+end
+
 local function toggle_zoom()
+  local tab = vim.api.nvim_get_current_tabpage()
+
   if vim.t.zoomed then
-    vim.cmd 'tab close'
+    local st = zoom_state[tab]
+    if st then
+      -- In-tab zoom: restore saved window sizes and winfix options.
+      if vim.api.nvim_win_is_valid(st.win) then
+        vim.api.nvim_win_call(st.win, function()
+          vim.cmd(st.restore)
+          vim.wo.winfixwidth = st.fixw
+          vim.wo.winfixheight = st.fixh
+        end)
+      end
+      zoom_state[tab] = nil
+      vim.t.zoomed = false
+    else
+      -- Tab-split zoom: closing the tab discards its `zoomed` flag.
+      vim.cmd 'tab close'
+    end
+  elseif in_scoped_view() then
+    -- winfixwidth/height pin the panel size, so lift them before maximising.
+    zoom_state[tab] = {
+      win = vim.api.nvim_get_current_win(),
+      restore = vim.fn.winrestcmd(),
+      fixw = vim.wo.winfixwidth,
+      fixh = vim.wo.winfixheight,
+    }
+    vim.wo.winfixwidth = false
+    vim.wo.winfixheight = false
+    vim.cmd.wincmd '_'
+    vim.cmd.wincmd '|'
+    vim.t.zoomed = true
   elseif vim.fn.winnr '$' > 1 then
     vim.cmd 'tab split'
     vim.t.zoomed = true

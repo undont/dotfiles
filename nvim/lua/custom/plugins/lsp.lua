@@ -381,6 +381,46 @@ local function patch_show_document()
   end
 end
 
+--- Rename handler that writes the files it touched.
+--- The default handler applies the workspace edit to every affected file but
+--- leaves the ones that weren't already open as unsaved background buffers.
+--- Those never fire the autosave (no TextChanged/BufLeave), so renamed symbols
+--- in other modules stay off disk -- invisible to Diffview (which diffs disk)
+--- and piling up as a "save changes?" cascade on :qa. Mirror the default, then
+--- flush every touched buffer, consistent with the auto-save autocmd.
+local function rename_and_save(_, result, ctx)
+  if not result then
+    vim.notify("Language server couldn't provide rename result", vim.log.levels.INFO)
+    return
+  end
+  local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
+  vim.lsp.util.apply_workspace_edit(result, client.offset_encoding)
+
+  -- documentChanges is an array of edits; changes is a map keyed by URI.
+  local uris = {}
+  if result.documentChanges then
+    for _, change in ipairs(result.documentChanges) do
+      -- Skip create/rename/delete resource ops, which have no textDocument.
+      if change.textDocument and change.textDocument.uri then
+        uris[change.textDocument.uri] = true
+      end
+    end
+  elseif result.changes then
+    for uri in pairs(result.changes) do
+      uris[uri] = true
+    end
+  end
+
+  for uri in pairs(uris) do
+    local buf = vim.uri_to_bufnr(uri)
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].modified and vim.bo[buf].modifiable and vim.bo[buf].buftype == '' then
+      vim.api.nvim_buf_call(buf, function()
+        vim.cmd 'silent! write'
+      end)
+    end
+  end
+end
+
 return {
   -- Main LSP Configuration
   {
@@ -495,6 +535,9 @@ return {
       }
 
       -- Hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
+
+      -- Write files touched by an LSP rename so they land on disk (see above).
+      vim.lsp.handlers['textDocument/rename'] = rename_and_save
 
       -- Merge blink.cmp completion capabilities with Neovim defaults so that
       -- semantic tokens, document highlights, and other standard capabilities
