@@ -82,8 +82,8 @@ The installer supports three presets to customise what gets installed:
 - Everything in Minimal, plus:
 - Editor: Neovim with LSP, Telescope, and plugins
 - Terminal: Ghostty configuration
-- AI Tools: Claude Code, development CLI tools
-- Custom scripts: `dev`
+- AI Tools: OpenCode (brewed); Claude Code, Codex, Copilot CLIs install separately
+- Session launchers (`dev`, `github`, `btop`, `docker`, `dotfiles`, `config`)
 - Ideal for: Linux desktops, cross-platform setups
 
 **Full** (`--full`, default):
@@ -161,7 +161,7 @@ Homebrew is the package manager used to install all other tools. Without it, you
 - Runs post-installation setup for specific tools:
   - **fzf**: Installs shell keybindings (Ctrl+R for history, Ctrl+T for files)
   - **fnm**: Reminds you to install Node.js (macOS via brew; Linux via manual install)
-  - **pipx**: Ensures Python package manager is configured
+  - **uv**: Python package + tool manager (`uv tool install`, `uvx`)
 - On Linux: fixes gcc/cc symlinks for native builds, installs Ghostty and fnm via system package manager or manual install
 
 **Why this matters**:
@@ -171,14 +171,14 @@ The Brewfile is a declarative list of all tools needed for the development envir
 
 | Category | Examples |
 |----------|----------|
-| Shell & Terminal | zsh, tmux, powerlevel10k, fzf, direnv |
+| Shell & Terminal | zsh, tmux, powerlevel10k, fzf, direnv, carapace, zoxide |
 | Editors | neovim |
-| AI Tools | claude (Claude Code) |
-| Git Tools | gh (GitHub CLI), lazygit |
-| Search & Navigation | ripgrep, fd, tree, jq, bat |
-| Languages | fnm (Node.js), bun, Go, Python 3.13 |
-| Databases | PostgreSQL, mongosh, sqld |
-| macOS Apps | ghostty, hammerspoon, karabiner-elements |
+| AI Tools | opencode (Claude/Codex/Copilot install separately) |
+| Git Tools | gh (GitHub CLI), lazygit, diffnav, act |
+| Search & Navigation | ripgrep, fd, tree, jq, yq, bat, zoxide |
+| Languages | fnm (Node.js), bun, Go, Python 3.13 + uv, openjdk, dotnet-sdk |
+| Databases | postgresql@17, mongosh, sqld |
+| macOS Apps | ghostty, hammerspoon, karabiner-elements, raycast, music-presence |
 | Fonts | Meslo LG Nerd Font, JetBrains Mono Nerd Font |
 
 **What you'll see**:
@@ -199,35 +199,26 @@ The Brewfile is a declarative list of all tools needed for the development envir
 **Script**: `scripts/install/check-prerequisites.sh`
 
 **What it does**:
-- Verifies all required tools are installed and accessible in PATH
-- Categorises tools as required or optional
-- Provides installation hints for any missing tools
-- Returns success only if all required tools are present
+- Verifies the two tools needed to bootstrap the install: `git` and `brew`
+- Provides installation hints if either is missing
+- Returns success only if both are present
 
 **Why this matters**:
-This step catches configuration issues early. If a required tool isn't properly installed (perhaps due to PATH issues), you'll know immediately rather than encountering cryptic errors later.
+The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, language toolchains, etc.) is installed by `brew bundle` in Step 2, so gating on them here would just produce false-MISSING noise on a fresh machine. The full toolchain is audited later by Step 10 (`health-check.sh`).
 
 **Tools checked**:
 
-| Category | Preset | Required | Optional |
-|----------|--------|----------|----------|
-| Shell & Terminal | minimal | git, zsh, tmux, fzf, direnv | - |
-| Editor & Dev Tools | core | nvim, tree-sitter, bun, go, rg, lazygit, gh, jq, tree, shellcheck, luacheck | fd, bat, ghostty (Linux) |
-| AI & Dev Tools | core | claude, act, cmake, staticcheck, swift-format (macOS), golang-migrate | - |
-| Databases | core | psql, mongosh, sqld | - |
-| Utilities | core | fastfetch, speedtest, glow | fnm, python3, gcloud |
-| macOS Apps | full | Karabiner Elements | Hammerspoon |
-| Linux Keyboard | full | keyd | - |
+| Tool | Hint if missing |
+|------|-----------------|
+| `git` | macOS: `xcode-select --install`; Linux: system package manager |
+| `brew` | See https://brew.sh |
 
 **What you'll see**:
 ```
 [3/12] Checking prerequisites...
   ✓ git
-  ✓ zsh
-  ✓ tmux
-  ✓ nvim
-  ...
-  ✓ All prerequisites satisfied
+  ✓ Homebrew
+  ✓ Bootstrap prerequisites present — install can proceed.
 ```
 
 ---
@@ -488,13 +479,14 @@ The health check confirms the installation completed successfully. It catches is
 
 | Check | Preset | What it verifies |
 |-------|--------|------------------|
-| Symlinks | minimal | `.zshrc`, `.zprofile`, `.p10k.zsh`, `.tmux.conf`, `.tmux` point to correct locations |
-| Symlinks | core | `nvim config`, `ghostty config` exist |
-| Symlinks | full | `hammerspoon`, `karabiner config` point to correct locations |
+| Symlinks | minimal | `.zprofile`, `.prettierrc`, `.editorconfig`, `.tmux`, `.tmux.conf`, dotfiles CLI |
+| Files | minimal | `.p10k.zsh` and generated `tmux.conf` exist |
+| Symlinks | core | `nvim` config, `lazygit` config, `dash-repo-sync` |
+| Files | core | generated `ghostty/config`, `ghostty/local`, `gh-dash/config.yml` |
+| Symlinks | full | `hammerspoon/init.lua`; `karabiner.json` (file check) |
 | TPM | minimal | `~/.tmux/plugins/tpm` exists |
 | lazy.nvim | core | `~/.local/share/nvim/lazy` exists (after first nvim launch) |
 | Secrets | minimal | `~/.config/zsh/secrets.zsh` exists |
-| Scripts | core | `dev` command is in PATH |
 
 **What you'll see**:
 ```
@@ -519,9 +511,7 @@ When you run `dotfiles update` later, it reads the saved preset so it can run th
 **What you'll see**:
 ```
 [11/12] Saving preset configuration...
-  ✓ Saved preset: core
-
-Installation complete!
+  ✓ Preset 'core' saved to ~/.config/dotfiles/preset
 ```
 
 ---
@@ -575,7 +565,10 @@ dotfiles set projects ~/playground
 |--------|-------------|
 | `--skip-brew` | Skip Homebrew installation and package installation (steps 1-2) |
 | `--skip-backup` | Skip backing up existing configuration (step 4) |
+| `--skip-steps L` | Skip a comma-separated list of steps (`homebrew,packages,symlinks,keyd`) — used by `dotfiles update` for incremental runs |
 | `--check-only` | Only run prerequisite and health checks, make no changes |
+| `--update` | Update mode (skips logo, uses update terminology) |
+| `--yes`, `-y` | Skip the preset confirmation prompt |
 | `-h`, `--help` | Show help message |
 
 **Examples**:
@@ -676,7 +669,9 @@ dotfiles set projects ~/playground
 
 - **Powerlevel10k**: Fast, customisable prompt with git status, execution time, etc.
 - **zsh-autosuggestions**: Fish-like autosuggestions based on history
-- **fzf integration**: Fuzzy finding for history (Ctrl+R), files (Ctrl+T), directories (Alt+C)
+- **carapace**: Multi-shell completion bridge (so modern completion specs work in zsh)
+- **zoxide**: Frecency-based `cd` replacement
+- **fzf integration**: Ctrl+R history, Ctrl+T files, Alt+A directory history
 - **direnv**: Automatic environment variable loading per directory
 
 ### Terminal Multiplexer (Tmux)
@@ -684,16 +679,19 @@ dotfiles set projects ~/playground
 - **Prefix key**: Backtick (`` ` ``) for single-keystroke access
 - **Mouse support**: Click to select panes, drag to resize
 - **Vim-style navigation**: hjkl keys for pane movement
-- **Session persistence**: Survives terminal restarts (via tmux-resurrect)
-- **Agent alerts**: Visual indicators for AI agent activity (⚡ Claude, 🔮 OpenCode)
+- **Session persistence**: Survives terminal restarts (via tmux-resurrect + continuum)
+- **Agent alerts**: Visual indicators for AI agent activity (Claude, OpenCode, Codex, Copilot)
+- **Command exit alerts**: ✓/✗ markers when long commands finish in other windows
 
 ### Editor (Neovim)
 
 - **lazy.nvim**: Plugin manager with lazy loading
-- **LSP support**: Autocomplete, go-to-definition, error checking
+- **LSP support**: Autocomplete, go-to-definition, error checking (Mason-managed servers)
+- **SonarLint**: SonarQube/SonarCloud diagnostics as a second LSP client
 - **Treesitter**: Advanced syntax highlighting
 - **Telescope**: Fuzzy finder for files, grep, buffers
 - **GitHub Copilot**: AI code completion (requires authentication)
+- **PR review**: Octo.nvim + diffview for GitHub PR review in-editor
 
 ### Desktop Applications
 

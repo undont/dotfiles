@@ -86,10 +86,13 @@ local function lsp_dedup(method)
       end
 
       if #items == 1 then
+        local line = items[1].lnum - 1
+        local character = items[1].col - 1
         vim.lsp.util.show_document({
           uri = vim.uri_from_fname(items[1].filename),
           range = {
-            start = { line = items[1].lnum - 1, character = items[1].col - 1 },
+            start = { line = line, character = character },
+            ['end'] = { line = line, character = character },
           },
         }, 'utf-8', { reuse_win = true, focus = true })
       else
