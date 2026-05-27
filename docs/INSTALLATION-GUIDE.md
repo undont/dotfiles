@@ -89,7 +89,7 @@ The installer supports three presets to customise what gets installed:
 **Full** (`--full`, default):
 - Everything in Core, plus:
 - macOS: Hammerspoon (window automation), Karabiner Elements (keyboard customisation)
-- Linux: keyd (keyboard remapping daemon — Karabiner equivalent)
+- Linux: keyd (keyboard remapping daemon, Karabiner equivalent)
 - Ideal for: Primary workstations (macOS or Linux)
 
 ### How Presets Work
@@ -218,7 +218,7 @@ The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, 
 [3/12] Checking prerequisites...
   ✓ git
   ✓ Homebrew
-  ✓ Bootstrap prerequisites present — install can proceed.
+  ✓ Bootstrap prerequisites present: install can proceed.
 ```
 
 ---
@@ -376,7 +376,7 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 - Reloads the config if the service was already running
 
 **Why this matters**:
-keyd is a Linux keyboard remapping daemon — the equivalent of Karabiner Elements on macOS. It provides system-level key remapping that works across all applications, including:
+keyd is a Linux keyboard remapping daemon, the equivalent of Karabiner Elements on macOS. It provides system-level key remapping that works across all applications, including:
 - Caps Lock → Escape
 - Right Alt → Control
 - Grave/Tilde ↔ Non-US Backslash (Apple keyboard layout fix)
@@ -519,8 +519,8 @@ When you run `dotfiles update` later, it reads the saved preset so it can run th
 ### Step 12: Configure Project Directories
 
 **What it does**:
-- Prompts you to set `DEV_ROOT` — your main development directory (default: `~/src`)
-- Optionally prompts for `PROJECTS_ROOT` — a secondary directory for side projects, playgrounds, etc.
+- Prompts you to set `DEV_ROOT`, your main development directory (default: `~/src`)
+- Optionally prompts for `PROJECTS_ROOT`, a secondary directory for side projects, playgrounds, etc.
 - Writes the exports to your `~/.zshrc` using `update_zshrc_export()`
 - Creates the directories if they don't exist
 - Skips the prompt if either variable is already configured
@@ -565,7 +565,7 @@ dotfiles set projects ~/playground
 |--------|-------------|
 | `--skip-brew` | Skip Homebrew installation and package installation (steps 1-2) |
 | `--skip-backup` | Skip backing up existing configuration (step 4) |
-| `--skip-steps L` | Skip a comma-separated list of steps (`homebrew,packages,symlinks,keyd`) — used by `dotfiles update` for incremental runs |
+| `--skip-steps L` | Skip a comma-separated list of steps (`homebrew,packages,symlinks,keyd`), used by `dotfiles update` for incremental runs |
 | `--check-only` | Only run prerequisite and health checks, make no changes |
 | `--update` | Update mode (skips logo, uses update terminology) |
 | `--yes`, `-y` | Skip the preset confirmation prompt |

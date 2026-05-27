@@ -137,7 +137,7 @@ ls -la ~/.zshrc ~/.tmux.conf ~/.config/nvim
 # Re-run installation
 ./install.sh
 
-# Or manually fix a symlink (example for .zprofile — ~/.zshrc is a user-owned
+# Or manually fix a symlink (example for .zprofile; ~/.zshrc is a user-owned
 # copy created from zsh/zshrc.template, not a symlink)
 ln -sf ~/dotfiles/zsh/zprofile ~/.zprofile
 ```

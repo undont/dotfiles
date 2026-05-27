@@ -20,3 +20,12 @@ After completing any code change, check whether relevant documentation needs upd
 - New tmux/nvim keybindings -> update `README.md` keybindings section
 - New install behaviour/presets -> update `CLAUDE.md` and `README.md`
 - New test files -> confirm they're discovered by `scripts/run-tests.sh` (auto-discovery)
+
+## Style
+
+- **No em-dashes (`—`) in `docs/` or `README.md`.** Use a colon for
+  definition lists and headings (`- **Term**: description`), a semicolon or
+  comma to join clauses in prose, or split into separate sentences. This scope
+  is `docs/**` and `README.md` only -- leave `CHANGELOG.md`, `.claude/`, and
+  code/comments as they are. If a doc shows literal CLI output that contains an
+  em-dash, fix the source string so the transcript stays accurate.
