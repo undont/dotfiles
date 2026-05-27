@@ -60,7 +60,7 @@ check_command "Homebrew" "brew" "see https://brew.sh" || FAILED=1
 echo ""
 
 if [[ $FAILED -eq 0 ]]; then
-    success "Bootstrap prerequisites present — install can proceed."
+    success "Bootstrap prerequisites present: install can proceed."
     exit 0
 else
     error "Install git and brew, then re-run."

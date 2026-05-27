@@ -260,6 +260,15 @@ if should_install "core"; then
     create_link "$DOTFILES_DIR/lazydocker/format-logs.awk" "$lazydocker_dir/format-logs.awk"
 fi
 
+# Statusline theme resolver (core) — sourced by an AI CLI coding agent's
+# statusline (Claude Code, Copilot CLI, Antigravity CLI) to colour it from the
+# active dotfiles theme. See docs/THEME-SYSTEM.md.
+if should_install "core"; then
+    echo ""
+    echo "Statusline theme resolver:"
+    create_link "$DOTFILES_DIR/scripts/_lib/statusline-theme.sh" "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/statusline-theme.sh"
+fi
+
 # ─────────────────────────────────────────
 # Generate themed configurations
 # ─────────────────────────────────────────

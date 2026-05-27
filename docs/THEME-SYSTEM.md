@@ -4,8 +4,8 @@
 
 The dotfiles theme system uses XDG Base Directory standard to prevent git conflicts when users change themes. Themes come in two flavours:
 
-- **Hand-crafted themes** — curated `.theme` files in `themes/` (14 built-in)
-- **Generated themes** — auto-generated from any Ghostty built-in theme via `dotfiles theme generate`
+- **Hand-crafted themes**: curated `.theme` files in `themes/` (14 built-in)
+- **Generated themes**: auto-generated from any Ghostty built-in theme via `dotfiles theme generate`
 
 Both types produce identical `.theme` files and work seamlessly with `dotfiles theme`.
 
@@ -66,7 +66,7 @@ Created by `scripts/generate-theme` from Ghostty's ~460 built-in themes. The gen
 6. Outputs a `.theme` file to `themes/generated/`
 7. Outputs a Neovim colourscheme to `nvim/colors/generated/`
 
-Generated themes integrate transparently — `dotfiles theme` resolves themes with a tiered lookup: hand-crafted first, then generated.
+Generated themes integrate transparently. `dotfiles theme` resolves themes with a tiered lookup: hand-crafted first, then generated.
 
 ### Theme Switching Flow
 
@@ -85,6 +85,54 @@ The Neovim theme loader (`nvim/lua/custom/core/theme.lua`) reads `~/.config/dotf
 2. **Generated themes** fall through to `nvim/colors/generated/<name>.lua` via `dofile()`
 3. A `vim.uv` file watcher monitors `current-theme` for live reload
 4. Scheme names are validated (`^[a-z0-9%-]+$`) before path construction to prevent traversal
+
+### Statusline Integration
+
+`scripts/_lib/statusline-theme.sh` lets an AI CLI coding agent's statusline
+colour itself from the active theme. It targets agents that render their
+statusline by running a script: currently Claude Code, GitHub Copilot CLI, and
+Antigravity CLI. It is symlinked to `~/.config/dotfiles/statusline-theme.sh` on
+install (core preset). Sourcing it reads `current-theme`, parses the matching
+`.theme` file, and sets `SL_*` variables holding ANSI 24-bit foreground escapes
+mapped from the theme palette:
+
+| Variable | Theme source | Role |
+|---|---|---|
+| `SL_MODEL` | pink | model name |
+| `SL_DIR` / `SL_REMAINING` | fg_primary | directory, remaining % |
+| `SL_BRANCH` | cyan | git branch |
+| `SL_TIME` | yellow | duration |
+| `SL_CONTEXT` | purple | context metrics |
+| `SL_STAGED` / `SL_LINES_ADD` | green † | staged files, additions |
+| `SL_MODIFIED` | yellow → orange † | modified files |
+| `SL_DELETED` / `SL_LINES_DEL` | red † | deleted files, removals |
+| `SL_WARNING` | yellow → amber † | warnings, context pressure |
+| `SL_UNTRACKED` / `SL_BRACKET` | fg_secondary | untracked files, brackets |
+| `SL_SEP` | fg_secondary→bg blend | separators |
+
+**† Hue-locked.** Additions/deletions/modifications and warnings carry universal
+meaning (add = green, delete = red, modify/warn = amber), so these roles keep the
+theme accent's brightness and saturation but are pinned to a green/red/amber hue.
+A theme whose "green" slot is actually teal (Rosé Pine) or grey (n0tch2k), or
+whose "red" is a washed-out pink (Catppuccin Frappé), still renders the git `+/-`
+diff and status markers with the correct add/delete cue. The remaining roles
+follow the palette directly so the statusline still reflects the active theme.
+
+Raw hexes are also exposed as `SL_HEX_*` for custom mapping. It is opt-in: a
+statusline enables it by sourcing the resolver and reading the `SL_*` values
+behind its own defaults, so it stays safe when no theme is active or the file
+is absent:
+
+```bash
+# In the statusline script, before its colour definitions:
+. "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/statusline-theme.sh"
+
+COL_BRANCH="${SL_BRANCH:-$'\033[38;2;139;233;253m'}"   # falls back to a default
+```
+
+The resolver parses the theme file by pattern (it never executes it) and reads
+`current-theme` live, so the statusline follows `dotfiles theme switch` on the
+next render with no regeneration step.
 
 ## Benefits
 
@@ -204,22 +252,22 @@ generate_nvim_colourscheme()  -- Output nvim/colors/generated/<name>.lua
 ### Lua Libraries
 
 **`scripts/_lib/colour-utils.lua`**: Core colour manipulation
-- `hex_to_rgb` / `rgb_to_hex` — Hex string <-> RGB conversion (validates input)
-- `rgb_to_hsl` / `hsl_to_rgb` — HSL colour space conversion
-- `luminance()` — WCAG 2.1 relative luminance
-- `contrast_ratio()` — WCAG 2.1 contrast ratio between two colours
-- `ensure_contrast()` — Adjust lightness to meet minimum contrast ratio
-- `lighten()` / `darken()` — HSL lightness adjustment
-- `blend()` — Linear interpolation between two colours
+- `hex_to_rgb` / `rgb_to_hex`: Hex string <-> RGB conversion (validates input)
+- `rgb_to_hsl` / `hsl_to_rgb`: HSL colour space conversion
+- `luminance()`: WCAG 2.1 relative luminance
+- `contrast_ratio()`: WCAG 2.1 contrast ratio between two colours
+- `ensure_contrast()`: Adjust lightness to meet minimum contrast ratio
+- `lighten()` / `darken()`: HSL lightness adjustment
+- `blend()`: Linear interpolation between two colours
 
 **`scripts/_lib/generate-theme.lua`**: Theme generation engine
-- `parse_ghostty_theme()` — Parse Ghostty theme files
-- `extract_colours()` — Soften ANSI black, map palette to semantic colour roles
-- `apply_wcag_corrections()` — Auto-correct for accessibility
-- `generate_theme_file()` — Produce `.theme` shell variable files
-- `generate_nvim_colourscheme()` — Produce Neovim `colors/*.lua` files
-- `display_name()` — Sanitise filenames for safe shell sourcing
-- `kebab_name()` — Convert filenames to kebab-case identifiers
+- `parse_ghostty_theme()`: Parse Ghostty theme files
+- `extract_colours()`: Soften ANSI black, map palette to semantic colour roles
+- `apply_wcag_corrections()`: Auto-correct for accessibility
+- `generate_theme_file()`: Produce `.theme` shell variable files
+- `generate_nvim_colourscheme()`: Produce Neovim `colors/*.lua` files
+- `display_name()`: Sanitise filenames for safe shell sourcing
+- `kebab_name()`: Convert filenames to kebab-case identifiers
 
 ### Security
 
@@ -301,11 +349,11 @@ Tmux config is generated to `~/.config/tmux/tmux.conf` and should not affect the
 
 ## See Also
 
-- `CLAUDE.md` — Full architecture documentation
-- `themes/` — Hand-crafted theme definitions
-- `themes/generated/` — Auto-generated themes (gitignored)
-- `scripts/generate-theme` — Theme generation CLI
-- `scripts/theme-switch` — Theme switching implementation
-- `scripts/theme-delete` — Generated theme removal
-- `scripts/_lib/colour-utils.lua` — Colour utility library
-- `scripts/_lib/generate-theme.lua` — Generation engine
+- `CLAUDE.md`: Full architecture documentation
+- `themes/`: Hand-crafted theme definitions
+- `themes/generated/`: Auto-generated themes (gitignored)
+- `scripts/generate-theme`: Theme generation CLI
+- `scripts/theme-switch`: Theme switching implementation
+- `scripts/theme-delete`: Generated theme removal
+- `scripts/_lib/colour-utils.lua`: Colour utility library
+- `scripts/_lib/generate-theme.lua`: Generation engine

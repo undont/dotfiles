@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.102] - 2026-05-27
+
+### Added
+- AI agent statusline theme integration. New `scripts/_lib/statusline-theme.sh` (symlinked to `~/.config/dotfiles/statusline-theme.sh`, core preset) is sourced by an AI CLI coding agent's statusline command — anything that renders its statusline by running a script (Claude Code, GitHub Copilot CLI, Antigravity CLI) — to colour it from the active `dotfiles theme`. It resolves the dotfiles checkout (via `DOTFILES_DIR`/`DOTFILES_ROOT` or by walking up its own real path through the `~/.config/dotfiles` symlink), reads `current-theme`, and parses the theme file's `TMUX_*` palette assignments with `sed` without sourcing it (hand-crafted themes call shell functions that shouldn't run here). It exports `SL_*` ANSI 24-bit foreground escapes for each statusline role plus the raw `SL_HEX_*` hexes; callers keep their own defaults behind `${SL_*:-…}`, so sourcing is always safe — it sets nothing when no theme resolves. Role colours (model, dir, branch, time, context, separators) follow the palette directly, while the semantic roles carrying universal add/delete/modify/warn meaning (`SL_STAGED`, `SL_LINES_ADD`, `SL_MODIFIED`, `SL_DELETED`, `SL_LINES_DEL`, `SL_WARNING`) are hue-locked: `__sl_huelock` converts the source accent to HSL, clamps the hue into a green/red/orange/amber band — keeping the theme's own lightness and saturation, with a saturation floor and lightness window to rescue grey or washed-out accents — and converts back, so the git +/- diff and status markers always read correctly even under a theme whose "green" slot is teal or whose "red" is a washed-out pink. Reads the theme live, so the statusline re-colours on the next render after `dotfiles theme switch`. Documented in `docs/THEME-SYSTEM.md`, `README.md`, and `CLAUDE.md`
+- CI: the startup-benchmark job accepts a manual `workflow_dispatch` trigger that forces a re-measure and badge update regardless of which files changed. The badge only updates on push when a zsh-affecting file changed (so it doesn't flap on unrelated CI-runner noise), which left a bad cold-run number stuck until the next zsh change; a manual run from the Actions tab now re-rolls it without touching any file. The `paths-filter` step is skipped on dispatch (no base to diff against) and the badge-update step gates on `main` and `(push + zsh change) || workflow_dispatch`
+
+### Changed
+- Theme generation: the `CursorLine`/`ColorColumn` line-highlight colour now lifts very dark backgrounds a little more — `+7` lightness below 0.03 background luminance, `+5` otherwise, where it was previously a flat `+4` — so the cursor-line band registers the same visual step on near-black palettes instead of washing out. `scripts/_lib/generate-theme.lua`
+- Docs: stripped em-dashes from `docs/**` and `README.md` (replaced with colons, semicolons, or split sentences) and added a `.claude/rules/docs.md` style rule mandating it for those paths going forward (`CHANGELOG.md`, `.claude/`, and code/comments stay out of scope)
+
 ## [0.2.101] - 2026-05-26
 
 ### Added

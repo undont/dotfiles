@@ -98,7 +98,7 @@ Configured as a clean input layer rather than a productivity surface: keybind re
 
 - **Session save and restore** with tmux-resurrect + continuum, plus a custom extension that splits the combined save into per-session backups, so you can restore one session without bringing back everything else (and sessions survive reboots)
 - **fzf pickers everywhere:** sessions (`` ` s ``), windows (`` ` f ``), running nvim instances, AI agent instances (Claude / OpenCode / Copilot / Codex), themes (`` ` t ``), and URLs from scrollback (`` ` u ``); popups auto-size between compact and full-screen depending on terminal width
-- **Multi-agent alerts** show coloured indicators in the session list when Claude, OpenCode, Copilot, or Codex need attention, clearing automatically when you switch to the session; all four CLIs are wired in via dedicated hooks under `scripts/hooks/wrappers/` (each CLI needs its hooks set up — see [docs/AGENT-HOOKS.md](docs/AGENT-HOOKS.md))
+- **Multi-agent alerts** show coloured indicators in the session list when Claude, OpenCode, Copilot, or Codex need attention, clearing automatically when you switch to the session; all four CLIs are wired in via dedicated hooks under `scripts/hooks/wrappers/` (each CLI needs its hooks set up; see [docs/AGENT-HOOKS.md](docs/AGENT-HOOKS.md))
 - **Command exit alerts** flag the result with ✓ or ✗ when a long-running command finishes in a pane you've switched away from
 - **Undo system** (`Opt/Alt+u`) restores the most recently closed pane or window with full directory, scrollback, and layout intact
 - **Session launchers** (`` ` p ``) cover `dev`, `github` (gh-dash), `btop`, `docker` (lazydocker), `dotfiles`, and `config`; an interactive wizard (`n`) scaffolds new ones, and user launchers in `~/.config/dotfiles/launchers/` override repo launchers by name
@@ -151,6 +151,8 @@ Two sources feed the picker:
 
 - **14 hand-crafted themes** with tuned palettes, all checked against WCAG 2.1 contrast ratios: Dracula, Catppuccin Mocha, Tokyo Night, Nord, Rosé Pine, Kanagawa, Gruvbox, Synthwave, One Dark, Monokai, Nightfox, Everforest, Ayu Dark, Solarized.
 - **~460 Ghostty themes** generatable on the fly: the Lua pipeline parses a Ghostty palette (16 ANSI colours + foreground/background), derives semantic roles (six accents, selection, secondary surfaces), corrects for WCAG 2.1 (4.5:1 minimum contrast), and outputs a `.theme` file plus a self-contained neovim colourscheme
+
+An AI CLI coding agent's statusline can follow the active theme too, for agents that render their statusline by running a script (Claude Code, GitHub Copilot CLI, Antigravity CLI). Source `~/.config/dotfiles/statusline-theme.sh` to get `SL_*` ANSI colour variables mapped from the current palette, then use them behind your own defaults (e.g. `${SL_BRANCH:-…}`); semantic roles (the git `+/-` diff and status markers) are hue-locked so additions/deletions always read green/red whatever the theme. It reads the theme live, so the statusline re-colours on the next render after `dotfiles theme switch`. See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md#statusline-integration).
 
 Themes are pure colour palettes; anything else you want to customise (fonts, cursor style, extra keybindings, per-machine settings) goes in the per-tool `local.*` files, which sit alongside the theme-generated configs and never get touched by `dotfiles update`:
 

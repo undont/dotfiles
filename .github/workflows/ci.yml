@@ -5,6 +5,7 @@ on:
     branches: [main]
   pull_request:
     branches: [main]
+  workflow_dispatch: # manual re-run, e.g. to re-roll the startup badge
 
 env:
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
@@ -95,7 +96,6 @@ jobs:
             bash -n "$file" || exit 1
           done
 
-
   lua-check:
     name: Lua Check
     runs-on: ubuntu-latest
@@ -119,15 +119,41 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      # Only benchmark when files sourced at zsh startup change. The job still
+      # runs (and succeeds) on every push so auto-tag's `needs` stays satisfied,
+      # but the expensive steps below are skipped — and the badge keeps its last
+      # real measurement instead of flapping on an unrelated CI runner's noise.
+      # A manual workflow_dispatch forces a re-measure regardless of changes,
+      # so a bad cold-run number can be re-rolled without touching any file.
+      - name: Detect zsh-affecting changes
+        id: changes
+        if: github.event_name != 'workflow_dispatch'
+        uses: dorny/paths-filter@v4
+        with:
+          filters: |
+            zsh:
+              - 'zsh/**'
+              - 'scripts/fzf-theme.sh'
+              - 'scripts/hooks/cmd-alert-hook.zsh'
+              - 'scripts/ci/benchmark-startup.sh'
+              - '.github/workflows/ci.yml'
+
       - name: Install benchmark dependencies
+        if: steps.changes.outputs.zsh == 'true' || github.event_name == 'workflow_dispatch'
         run: brew install hyperfine fzf direnv fnm
 
       - name: Benchmark zsh startup
         id: benchmark
+        if: steps.changes.outputs.zsh == 'true' || github.event_name == 'workflow_dispatch'
         run: ./scripts/ci/benchmark-startup.sh 125
 
       - name: Update startup badge
-        if: github.ref == 'refs/heads/main' && github.event_name == 'push'
+        if: >-
+          github.ref == 'refs/heads/main' &&
+          (
+            (github.event_name == 'push' && steps.changes.outputs.zsh == 'true') ||
+            github.event_name == 'workflow_dispatch'
+          )
         uses: schneegans/dynamic-badges-action@v1.7.0
         with:
           auth: ${{ secrets.GIST_SECRET }}
@@ -158,7 +184,15 @@ jobs:
     name: Auto Tag
     runs-on: ubuntu-latest
     if: github.ref == 'refs/heads/main' && github.event_name == 'push'
-    needs: [shellcheck, test-all, syntax-check, lua-check, startup-benchmark, release-guard]
+    needs:
+      [
+        shellcheck,
+        test-all,
+        syntax-check,
+        lua-check,
+        startup-benchmark,
+        release-guard
+      ]
     permissions:
       contents: write
     steps:

@@ -105,10 +105,10 @@ Add the following to your `settings.json`:
 
 **Hook events explained:**
 
-- **Stop** — Agent finished its turn and is waiting for your next message
-- **PermissionRequest** — Agent needs approval to run a tool (e.g. file edit, bash command)
-- **PostToolUse** (`AskUserQuestion`) — Agent asked you a question via the AskUserQuestion tool
-- **UserPromptSubmit** — You sent a message, so clear the alert
+- **Stop**: Agent finished its turn and is waiting for your next message
+- **PermissionRequest**: Agent needs approval to run a tool (e.g. file edit, bash command)
+- **PostToolUse** (`AskUserQuestion`): Agent asked you a question via the AskUserQuestion tool
+- **UserPromptSubmit**: You sent a message, so clear the alert
 
 #### Optional: Nvim Buffer Sync (Beta feature)
 
@@ -136,7 +136,7 @@ This reads the `NVIM_SOCKET` environment variable (set by `nvim-pair`) and calls
 
 ### OpenCode
 
-OpenCode uses the [`opencode-tmux-alert`](https://github.com/seanhalberthal/opencode-tmux-alert) plugin. The plugin triggers alerts on session idle, permission requests, tool pending, and prompt appends — and clears when the user sends a message.
+OpenCode uses the [`opencode-tmux-alert`](https://github.com/seanhalberthal/opencode-tmux-alert) plugin. The plugin triggers alerts on session idle, permission requests, tool pending, and prompt appends, and clears when the user sends a message.
 
 **1. Install the plugin:**
 
@@ -216,9 +216,9 @@ codex_hooks = true
 
 **Hook events explained:**
 
-- **Stop** — Agent finished its turn and is waiting for your next message
-- **PermissionRequest** — Agent needs approval to run a tool (e.g. file edit, bash command)
-- **UserPromptSubmit** — You sent a message, so clear the alert
+- **Stop**: Agent finished its turn and is waiting for your next message
+- **PermissionRequest**: Agent needs approval to run a tool (e.g. file edit, bash command)
+- **UserPromptSubmit**: You sent a message, so clear the alert
 
 ### GitHub Copilot CLI
 
@@ -253,9 +253,9 @@ Create `~/.copilot/hooks/hooks.json`:
 
 **Hook events explained:**
 
-- **agentStop** — Agent finished its turn and is waiting for your next message
-- **preToolUse** — Agent is about to run a tool (covers permission-request style prompts)
-- **userPromptSubmitted** — You sent a message, so clear the alert
+- **agentStop**: Agent finished its turn and is waiting for your next message
+- **preToolUse**: Agent is about to run a tool (covers permission-request style prompts)
+- **userPromptSubmitted**: You sent a message, so clear the alert
 
 ## How Alerts Are Stored
 
@@ -280,7 +280,7 @@ Alerts are cleared automatically when:
 
 - You send a message to the agent (via the clear hook)
 - You switch to the tmux window containing the agent (`after-select-window` hook in tmux)
-- The terminal window gains OS focus (`pane-focus-in` hook — covers cmd+` between multiple Ghostty windows attached to the same tmux server)
+- The terminal window gains OS focus (`pane-focus-in` hook, covers cmd+` between multiple Ghostty windows attached to the same tmux server)
 - The session or window is killed (stale alert cleanup)
 
 You can also manually clear alerts by running:
@@ -318,7 +318,7 @@ The alert system also supports command exit code notifications via the `notify` 
 
 **Alerts not appearing:**
 
-1. Check the hooks are registered — run the wrapper directly and verify it writes to the alerts file:
+1. Check the hooks are registered: run the wrapper directly and verify it writes to the alerts file:
    ```bash
    bash ~/dotfiles/scripts/hooks/wrappers/claude-alert.sh
    cat ~/.config/tmux-alerts/alerts
