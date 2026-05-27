@@ -1,6 +1,6 @@
 # Command Exit Alerts
 
-Run a long command in a tmux window, switch away, and get notified automatically when it finishes. Pass/fail results show as icons in the tmux status bar — the same system used for agent alerts.
+Run a long command in a tmux window, switch away, and get notified automatically when it finishes. Pass/fail results show as icons in the tmux status bar; the same system used for agent alerts.
 
 No wrapping required. Any command that completes while you're in a different window will trigger an alert.
 
@@ -21,7 +21,7 @@ You switch back to the window
     → Alert clears automatically
 ```
 
-The hooks (`preexec`/`precmd`) are registered in `zsh/dotfiles.zsh` and run transparently — zero overhead on the command itself.
+The hooks (`preexec`/`precmd`) are registered in `zsh/dotfiles.zsh` and run transparently; zero overhead on the command itself.
 
 ## Alert Display
 
@@ -33,8 +33,8 @@ The hooks (`preexec`/`precmd`) are registered in `zsh/dotfiles.zsh` and run tran
 
 ### Status bar
 Icons appear in the right side of the status bar for commands in **other sessions**, showing `session:command` for context:
-- `✓ dev:make test` — tests passed in the `dev` session
-- `✗ build:npm run lint` — linting failed in the `build` session
+- `✓ dev:make test`: tests passed in the `dev` session
+- `✗ build:npm run lint`: linting failed in the `build` session
 
 Same-session alerts only highlight the window tab (no status bar entry).
 
@@ -50,7 +50,7 @@ An alert fires only when **all** of the following are true:
 2. You switched to a different window before the command finished
 3. The command is not in the exclude list
 
-If you're still watching the command, no alert fires — it would just be noise.
+If you're still watching the command, no alert fires; it would just be noise.
 
 ## Excluded Commands
 
@@ -71,7 +71,7 @@ psql sqlite3 tmux
 | Exclude entry | Matches | Doesn't match |
 |---|---|---|
 | `git` | `git diff`, `git push`, `git log` | `gitk` |
-| `gdn` | `gdn` | — |
+| `gdn` | `gdn` | - |
 | `docker` | `docker compose up`, `docker run` | `dockerd` |
 
 **Override** before sourcing:

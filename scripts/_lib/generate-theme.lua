@@ -117,8 +117,16 @@ function M.extract_colours(ghostty)
     local fg_variable = colour.blend(fg, p[6], 0.10)
     fg_variable = colour.ensure_contrast(fg_variable, bg, 4.5)
 
-    -- Line highlight: subtle lighten of bg
-    local line_highlight = colour.lighten(bg, 4)
+    -- Line highlight (CursorLine/ColorColumn): a subtle lift of bg, kept below
+    -- bg_secondary so the cursor line reads as a band rather than a panel. Very
+    -- dark backgrounds need a larger lightness delta to register the same visual
+    -- step (e.g. near-black greys), so lift those a touch more.
+    local line_highlight
+    if bg_lum < 0.03 then
+        line_highlight = colour.lighten(bg, 7)
+    else
+        line_highlight = colour.lighten(bg, 5)
+    end
 
     -- Selection: use Ghostty's selection_bg if present, else bg_secondary
     local selection = ghostty["selection-background"] or bg_secondary
