@@ -73,6 +73,7 @@ function M.setup()
   require('custom.core.refresh').setup()
   require('custom.core.spellcheck').setup()
   require('custom.core.build').setup()
+  require('custom.core.binary-view').setup()
 end
 
 return M

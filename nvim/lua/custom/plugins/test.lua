@@ -176,7 +176,7 @@ return {
         max_width = 0.7,
       },
       status = {
-        virtual_text = true,
+        virtual_text = false,
         signs = true,
       },
       icons = {

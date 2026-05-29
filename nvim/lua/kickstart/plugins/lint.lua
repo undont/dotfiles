@@ -7,6 +7,7 @@ return {
       local lint = require 'lint'
       lint.linters_by_ft = {
         python = { 'ruff' },
+        swift = { 'swiftlint' },
         -- markdown = { 'markdownlint' },  -- Requires: npm install -g markdownlint-cli
       }
 

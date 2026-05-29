@@ -375,7 +375,18 @@ end
 function M.generate_nvim_colourscheme(name, colours)
     local neotree_cursor = colour.lighten(colours.bg_secondary, 12)
 
-    -- Semantic role mapping (strings=green, functions=cyan, keywords=purple, types=yellow)
+    -- Comments sit dimmer than fg_secondary (which @variable.parameter, LineNr and
+    -- the UI chrome use) so doc comments don't read as loud as parameter names —
+    -- previously both shared fg_secondary verbatim and became indistinguishable.
+    -- Blend toward the background for the dim, with a contrast floor so comments
+    -- stay legible against the editor background across all generated themes.
+    local comment = colour.blend(colours.fg_secondary, colours.bg_primary, 0.30)
+    comment = colour.ensure_contrast(comment, colours.bg_primary, 4.0)
+
+    -- Semantic role mapping (strings=green, functions=cyan, types=yellow).
+    -- Keywords/control-flow use pink; number/constant literals keep purple so the
+    -- two read distinctly (they previously both sat on purple). Symbolic operators
+    -- drop to plain fg_primary to de-emphasise punctuation against function calls.
     local c = {
         constant = "colors.purple",
         string = "colors.green",
@@ -384,20 +395,20 @@ function M.generate_nvim_colourscheme(name, colours)
         boolean = "colors.purple",
         float = "colors.purple",
         func = "colors.cyan",
-        statement = "colors.purple",
-        conditional = "colors.purple",
-        ["repeat"] = "colors.purple",
-        label = "colors.purple",
-        operator = "colors.cyan",
-        keyword = "colors.purple",
-        exception = "colors.purple",
+        statement = "colors.pink",
+        conditional = "colors.pink",
+        ["repeat"] = "colors.pink",
+        label = "colors.pink",
+        operator = "colors.fg_primary",
+        keyword = "colors.pink",
+        exception = "colors.pink",
         preproc = "colors.pink",
         include = "colors.pink",
         define = "colors.pink",
         macro = "colors.purple",
         precondit = "colors.pink",
         type = "colors.yellow",
-        storageclass = "colors.purple",
+        storageclass = "colors.pink",
         structure = "colors.yellow",
         typedef = "colors.yellow",
         special = "colors.pink",
@@ -438,7 +449,7 @@ function M.generate_nvim_colourscheme(name, colours)
     add(string.format("  red = '%s',", colours.red))
     add("")
     add(string.format("  selection = '%s',", colours.selection))
-    add(string.format("  comment = '%s',", colours.fg_secondary))
+    add(string.format("  comment = '%s',", comment))
     add(string.format("  ghost = '%s',", colour.blend(colours.fg_secondary, colours.bg_primary, 0.40)))
     add(string.format("  line_highlight = '%s',", colours.line_highlight))
     add("}")
@@ -568,7 +579,7 @@ function M.generate_nvim_colourscheme(name, colours)
 
     -- Treesitter groups (use role mapping)
     local ts = {
-        { "@variable", "fg = colors.fg_variable" },
+        { "@variable", "fg = colors.fg_primary" }, -- plain text; swap to colors.fg_variable for a subtle tint
         { "@variable.builtin", "fg = colors.purple" },
         { "@variable.parameter", "fg = colors.fg_secondary" },
         { "@variable.member", "fg = colors.cyan" },

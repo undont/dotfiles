@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.103] - 2026-05-29
+
+### Added
+- Nvim: C/C++/Objective-C/Swift language support rounded out. Swift gets a new LSP client — `sourcekit-lsp`, launched via `xcrun sourcekit-lsp` on macOS (so it resolves against the active Xcode/Swift toolchain) and the PATH binary on Linux, configured and `vim.lsp.enable`d directly because it ships with the toolchain rather than Mason. Its filetypes are restricted to `swift` so it doesn't double-attach over the C family alongside clangd, which keeps ownership of c/cpp/objc and now duplicates no diagnostics. Formatting via conform: `clang-format` for c/cpp/objc/objcpp and `swift-format` for swift, and `format_on_save` no longer skips c/cpp. Linting via nvim-lint: `swiftlint` for swift (added to the Brewfile). Treesitter parsers added for `cpp`, `objc`, and `swift`. Debugging via a Mason-installed `codelldb` adapter (spawned per-session on `${port}` so a crash can't orphan a fixed port) with shared launch configs for c/cpp/objc/swift that prompt for the compiled binary. `nvim/lua/custom/plugins/lsp.lua`, `lint.lua`, `treesitter.lua`, `kickstart/plugins/debug.lua`, `Brewfile`
+- Nvim: binary object/library viewer. Opening a `.o`/`.a`/`.dylib`/`.so` no longer shows raw binary noise — a `BufReadCmd` autocmd renders a decoded, read-only view instead: demangled symbol table (`nm` piped through `c++filt`) by default, with disassembly (`otool` on macOS, `objdump` elsewhere) and a hex dump (`xxd`, capped at 128 KiB) a keypress away via buffer-local `s`/`d`/`x`. The buffer is `nowrite` with no swap and undo disabled so the decoded text can never be flushed back over the binary; output is capped at 50k lines and each view degrades gracefully when its tool isn't installed. `nvim/lua/custom/core/binary-view.lua`, `core/keymaps.lua`
+- Nvim: `<leader>x/` greps the yank register (register `0`, untouched by deletes) as a literal string (`grep! -F`) into the quickfix list via `grepprg` (rg), collapsing a multiline yank to its first line. `nvim/lua/custom/core/lists.lua`
+
+### Changed
+- Nvim: debugger UI migrated from nvim-dap-ui to nvim-dap-view. A single bottom panel with a winbar switches between scopes (the landing view), watches, threads, breakpoints, exceptions, and repl, with the debuggee terminal in a side split (hidden for Go, whose delve uses an external terminal). dap-view's built-in inline virtual-text values replace the separate nvim-dap-virtual-text plugin, and `auto_toggle` opens the panel on session start / closes it when sessions end, replacing the manual `event_initialized`/`event_terminated` listeners. `codelldb` added to `ensure_installed`; `nvim-dap-ui`, `nvim-nio`, and `nvim-dap-virtual-text` dropped as dependencies. `nvim/lua/kickstart/plugins/debug.lua`
+- Theme generation: syntax palette refined. Comments now blend 30% toward the background with a 4.0 contrast floor, where they previously shared `fg_secondary` verbatim with `@variable.parameter`/`LineNr` and read just as loud as parameter names. Keywords, conditionals, loops, labels, exceptions, and storage-class move to pink while number/constant literals keep purple so the two read distinctly; symbolic operators drop to plain `fg_primary` to de-emphasise punctuation; and `@variable` renders as plain `fg_primary`. `scripts/_lib/generate-theme.lua`
+- Nvim: neotest status virtual text disabled (signs only). `nvim/lua/custom/plugins/test.lua`
+- CI: dropped `.github/workflows/ci.yml` from the startup-benchmark paths filter, so editing the workflow no longer triggers a benchmark re-run. `.github/workflows/ci.yml`
+
 ## [0.2.102] - 2026-05-27
 
 ### Added

@@ -369,6 +369,24 @@ function M.setup()
     vim.cmd 'lwindow'
   end, { desc = 'Buffer diagnostics to loclist' })
 
+  -- Grep the yank register (0 = last yank, untouched by deletes) as a literal
+  -- string into the quickfix list. -F keeps regex metacharacters in the yanked
+  -- text literal; grep! fills the list without jumping. Flows through grepprg
+  -- (rg --vimgrep --smart-case), so ]q/[q navigate the result.
+  vim.keymap.set('n', '<leader>x/', function()
+    local pat = vim.fn.getreg '0'
+    -- rg matches per-line, so collapse a multiline yank to its first line
+    pat = pat:gsub('\n.*', ''):gsub('^%s+', ''):gsub('%s+$', '')
+    if pat == '' then
+      vim.notify('Yank register empty', vim.log.levels.WARN)
+      return
+    end
+    -- shellescape for the shell; escape %/# so vim's cmdline doesn't expand them
+    local arg = vim.fn.shellescape(pat):gsub('[%%#]', '\\%0')
+    vim.cmd('silent grep! -F ' .. arg)
+    vim.cmd 'botright copen'
+  end, { desc = 'Grep [/] yanked text → quickfix' })
+
   vim.keymap.set('n', ']q', bracketed_qf 'forward', { desc = 'Next quickfix entry' })
   vim.keymap.set('n', '[q', bracketed_qf 'backward', { desc = 'Previous quickfix entry' })
   vim.keymap.set('n', ']l', bracketed_loc 'forward', { desc = 'Next location entry' })
