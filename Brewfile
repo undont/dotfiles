@@ -122,6 +122,7 @@ brew "cmake"
 brew "staticcheck"   # Go linter
 brew "golangci-lint" # Go meta-linter
 brew "swift-format"  # macOS-only
+brew "swiftlint"     # macOS-only; Swift linter (nvim-lint)
 brew "golang-migrate"
 brew "scc"
 brew "httpyac"

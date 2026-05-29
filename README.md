@@ -81,12 +81,13 @@ Configured as a clean input layer rather than a productivity surface: keybind re
 
 > Modular config based on kickstart.nvim with lazy.nvim, Treesitter, and Mason-managed language servers. Startup is roughly 100ms.
 
-- **LSP** for TypeScript, Go, Python, Lua, C#/.NET (Roslyn), ESLint, Bash, CSS/Tailwind, HTML, YAML and more
+- **LSP** for TypeScript, Go, Python, Lua, C#/.NET (Roslyn), C/C++/Objective-C (clangd), Swift (sourcekit-lsp), ESLint, Bash, CSS/Tailwind, HTML, YAML and more, with formatting (clang-format, swift-format), linting (swiftlint), and codelldb debugging wired up for the C family and Swift
 - **SonarLint** as a second LSP client surfacing SonarQube/SonarCloud diagnostics for JS/TS, Python, Go, C#, C/C++, PHP, HTML/CSS, IaC (Terraform/HCL), Docker, YAML, and XML; connected mode auto-enables when `SONARQUBE_TOKEN` and `SONARQUBE_ORG` are set, with per-project binding via `.sonarlint/connectedMode.json` and ESLint-style rule overrides via `.sonarlint/localRules.json` (see [docs/SONARLINT.md](docs/SONARLINT.md))
 - **PR review and diffs** via Octo.nvim for GitHub PRs, diffview for local side-by-side diffs and merge conflict resolution, and gitsigns for inline hunk decorations
 - **The tpope suite:** fugitive (git wrapper), rhubarb (GitHub adapter for fugitive), abolish (case-aware substitution and coercion), repeat (extend `.` to plugin maps), and sleuth (auto-detect indent settings)
 - **Build picker** (`Space q`) auto-detects Go, TypeScript, .NET, and Makefile projects and runs the appropriate build into the quickfix list
 - **Tests** via Neotest (Go, Vitest/Bun, Jest/React Native, and pytest adapters), with .NET handled separately by easy-dotnet's dedicated test runner (`<leader>te` opens its Test Explorer)
+- **Binary object viewer**: opening a `.o`, `.a`, `.dylib`, or `.so` renders a decoded read-only view (demangled symbols, disassembly, hex dump) instead of raw bytes, with `s`/`d`/`x` to switch between them
 - **Custom dashboard** plus a searchable cheatsheet (`Space ?`) for the keybindings
 - **Self-contained colourschemes** with no plugin dependencies, so generated themes drop in as plain Lua files
 - **GitHub Copilot** configured to refuse `.env`, credentials, and other secret files
@@ -262,6 +263,7 @@ Bundled helper: **`dash-repo-sync`** (in `~/.local/bin/`) scans `DEV_ROOT` and `
 | Format | <kbd>Space</kbd> <kbd>f</kbd> |
 | Test nearest | <kbd>Space</kbd> <kbd>t</kbd> <kbd>t</kbd> |
 | Diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>x</kbd> |
+| Grep yank to quickfix | <kbd>Space</kbd> <kbd>x</kbd> <kbd>/</kbd> |
 | PR diff review | <kbd>Space</kbd> <kbd>d</kbd> <kbd>p</kbd> |
 
 </td><td>

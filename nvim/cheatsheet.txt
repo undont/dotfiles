@@ -127,6 +127,11 @@ Build project / pick Make target | <leader>q
 Pick Make target | <leader>Q
 Notification history | <leader>Nn
 
+## binary-view @binary-view
+Symbols (nm, demangled) | s
+Disassembly (otool/objdump) | d
+Hex dump (xxd) | x
+
 ## diagnostics @diagnostics
 All diagnostics to quickfix | <leader>xx
 Buffer diagnostics to loclist | <leader>xX
@@ -136,6 +141,7 @@ Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
 Git modified → diagnostics qf | <leader>xm
+Grep yank register → quickfix | <leader>x/
 Filter qf list (keep matching) | :Cfilter /pat/
 Filter qf list (drop matching) | :Cfilter! /pat/
 Filter loclist (keep / drop) | :Lfilter[!] /pat/

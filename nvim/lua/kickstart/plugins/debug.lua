@@ -6,13 +6,11 @@
 return {
   'mfussenegger/nvim-dap',
   dependencies = {
-    'rcarriga/nvim-dap-ui',
-    'nvim-neotest/nvim-nio',
+    'igorlfs/nvim-dap-view',
     'mason-org/mason.nvim',
     'jay-babu/mason-nvim-dap.nvim',
     'leoluz/nvim-dap-go',
     'mfussenegger/nvim-dap-python',
-    'theHamsta/nvim-dap-virtual-text',
   },
   keys = {
     {
@@ -46,7 +44,7 @@ return {
     {
       '<F7>',
       function()
-        require('dapui').toggle()
+        require('dap-view').toggle()
       end,
       desc = 'Debug: Toggle UI',
     },
@@ -154,7 +152,7 @@ return {
   },
   config = function()
     local dap = require 'dap'
-    local dapui = require 'dapui'
+    local dapview = require 'dap-view'
 
     require('mason-nvim-dap').setup {
       -- ensure_installed handles upfront install; automatic_installation races
@@ -162,44 +160,42 @@ return {
       -- same session, leaving installs stuck mid-flight (lockfile collision).
       automatic_installation = false,
       handlers = {},
-      ensure_installed = { 'delve', 'coreclr', 'debugpy', 'js' },
+      ensure_installed = { 'delve', 'coreclr', 'debugpy', 'js', 'codelldb' },
     }
 
-    -- Inline variable values next to code (like Rider/GoLand)
-    require('nvim-dap-virtual-text').setup {
-      commented = true,
-    }
-
-    -- UI layout: scopes-heavy sidebar + REPL-focused bottom
-    dapui.setup {
-      icons = { expanded = '▾', collapsed = '▸', current_frame = '' },
-      element_mappings = {
-        scopes = {
-          expand = { '<CR>', 'o', '<2-LeftMouse>' },
-          edit = {},
-          open = {},
+    -- Single bottom panel with a winbar to switch sections (scopes is the
+    -- landing view, matching the old scopes-heavy sidebar). The debuggee
+    -- terminal/console sits in its own split alongside. `auto_toggle` opens
+    -- the panel on session start and closes it when all sessions finish,
+    -- replacing the manual event listeners dap-ui needed.
+    dapview.setup {
+      winbar = {
+        show = true,
+        sections = { 'watches', 'scopes', 'threads', 'breakpoints', 'exceptions', 'repl' },
+        default_section = 'scopes',
+        controls = {
+          enabled = true,
+          position = 'right',
         },
       },
-      layouts = {
-        {
-          elements = {
-            { id = 'scopes', size = 0.50 },
-            { id = 'stacks', size = 0.20 },
-            { id = 'breakpoints', size = 0.15 },
-            { id = 'watches', size = 0.15 },
-          },
+      windows = {
+        size = 0.3,
+        position = 'below',
+        terminal = {
+          size = 0.5,
           position = 'left',
-          size = 50,
-        },
-        {
-          elements = {
-            { id = 'repl', size = 0.65 },
-            { id = 'console', size = 0.35 },
-          },
-          position = 'bottom',
-          size = 12,
+          -- Go's delve uses an external terminal; no point reserving a split.
+          hide = { 'go' },
         },
       },
+      -- Inline variable values next to code (like Rider/GoLand). dap-view's
+      -- own implementation, registered against dap's `variables` event, so it
+      -- replaces the separate nvim-dap-virtual-text plugin. Requires nvim 0.12+
+      -- and auto-clears when the session terminates.
+      virtual_text = {
+        enabled = true,
+      },
+      auto_toggle = true,
     }
 
     -- Breakpoint icons
@@ -212,10 +208,6 @@ return {
       local hl = (type == 'Stopped') and 'DapStop' or 'DapBreak'
       vim.fn.sign_define(tp, { text = icon, texthl = hl, numhl = hl })
     end
-
-    dap.listeners.after.event_initialized['dapui_config'] = dapui.open
-    dap.listeners.before.event_terminated['dapui_config'] = dapui.close
-    dap.listeners.before.event_exited['dapui_config'] = dapui.close
 
     require('dap-go').setup {
       delve = {
@@ -266,5 +258,39 @@ return {
         },
       }
     end
+
+    -- codelldb (via Mason) debugs the native C family and Swift. `${port}` lets
+    -- nvim-dap pick a free port per session and spawn the adapter as a child, so
+    -- a crashed session can't leave an orphan squatting on a fixed port (same
+    -- pattern as the JS adapters above).
+    dap.adapters.codelldb = {
+      type = 'server',
+      port = '${port}',
+      executable = {
+        command = vim.fn.stdpath 'data' .. '/mason/packages/codelldb/extension/adapter/codelldb',
+        args = { '--port', '${port}' },
+      },
+    }
+
+    -- Shared launch config: prompt for the compiled binary. Point this at the
+    -- product of your build (e.g. `.build/debug/<target>` for SwiftPM, or the
+    -- binary clang/cmake emits). Compile with debug symbols (`-g`).
+    local codelldb_launch = {
+      {
+        name = 'Launch (codelldb)',
+        type = 'codelldb',
+        request = 'launch',
+        program = function()
+          return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
+        end,
+        cwd = '${workspaceFolder}',
+        stopOnEntry = false,
+        args = {},
+      },
+    }
+    dap.configurations.c = codelldb_launch
+    dap.configurations.cpp = codelldb_launch
+    dap.configurations.objc = codelldb_launch
+    dap.configurations.swift = codelldb_launch
   end,
 }
