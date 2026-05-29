@@ -606,6 +606,23 @@ return {
         },
       })
 
+      -- sourcekit-lsp (Swift) ships with the Xcode/Swift toolchain, not Mason,
+      -- so it can't ride the mason-lspconfig ensure_installed/automatic_enable
+      -- flow below -- configure and enable it directly. Launch via `xcrun` on
+      -- macOS so it resolves against the active toolchain; fall back to the
+      -- PATH binary on Linux. Restrict filetypes to `swift`: lspconfig's
+      -- default sourcekit config also claims c/cpp/objc/objcpp, which would
+      -- double-attach alongside clangd and duplicate diagnostics. clangd keeps
+      -- ownership of the C family (including Objective-C).
+      local sourcekit_cmd = vim.fn.has 'mac' == 1 and { 'xcrun', 'sourcekit-lsp' } or { 'sourcekit-lsp' }
+      if vim.fn.executable(sourcekit_cmd[1]) == 1 then
+        vim.lsp.config('sourcekit', {
+          cmd = sourcekit_cmd,
+          filetypes = { 'swift' },
+        })
+        vim.lsp.enable 'sourcekit'
+      end
+
       -- Server configurations
       local servers = {
         astro = {},
@@ -656,6 +673,7 @@ return {
             -- SonarLint LSP (analyzers + bundled omnisharp for C#); driven by sonarlint.lua
             'sonarlint-language-server',
             -- Formatters
+            'clang-format', -- c / cpp / objc
             'csharpier',
             'gofumpt',
             'goimports',
@@ -691,11 +709,7 @@ return {
     },
     opts = {
       notify_on_error = true,
-      format_on_save = function(bufnr)
-        local disable_filetypes = { c = true, cpp = true }
-        if disable_filetypes[vim.bo[bufnr].filetype] then
-          return nil
-        end
+      format_on_save = function()
         return {
           timeout_ms = 500,
           lsp_format = 'fallback',
@@ -703,7 +717,12 @@ return {
       end,
       formatters_by_ft = {
         astro = { 'prettier' },
+        c = { 'clang_format' },
+        cpp = { 'clang_format' },
         cs = { 'csharpier' },
+        objc = { 'clang_format' },
+        objcpp = { 'clang_format' },
+        swift = { 'swift_format' },
         go = { 'goimports', 'gofumpt' },
         javascript = { 'prettier' },
         javascriptreact = { 'prettier' },

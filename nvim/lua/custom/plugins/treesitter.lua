@@ -13,6 +13,7 @@ return {
         'bash',
         'c',
         'c_sharp',
+        'cpp',
         'css',
         'diff',
         'dockerfile',
@@ -25,9 +26,11 @@ return {
         'json5',
         'jsonc',
         'make',
+        'objc',
         'python',
         -- lua, luadoc, vim, vimdoc, query, markdown, markdown_inline are bundled
         -- with Neovim 0.11+ — let Neovim manage them to avoid query/parser mismatches
+        'swift',
         'tsx',
         'typescript',
         'xml',

@@ -136,7 +136,6 @@ jobs:
               - 'scripts/fzf-theme.sh'
               - 'scripts/hooks/cmd-alert-hook.zsh'
               - 'scripts/ci/benchmark-startup.sh'
-              - '.github/workflows/ci.yml'
 
       - name: Install benchmark dependencies
         if: steps.changes.outputs.zsh == 'true' || github.event_name == 'workflow_dispatch'
