@@ -37,6 +37,10 @@ _load_entries() {
         IFS=':' read -r session window field3 field4 field5 <<< "$line"
         [[ -z "$session" || -z "$window" || -z "$field3" ]] && continue
 
+        # Window names are stored percent-encoded; decode for display, the
+        # current-window check, and the tmux navigation target.
+        window=$(alerts_decode_window "$window")
+
         # Skip alerts for the current window (already visible)
         [[ "$session" == "$CURRENT_SESSION" && "$window" == "$CURRENT_WINDOW" ]] && continue
 

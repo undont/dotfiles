@@ -15,6 +15,30 @@ fi
 # Future enhancement: Add timestamp field for age-based sorting and auto-expiry
 # Proposed format: session:window:agent:timestamp
 
+# Percent-encode a window name for safe storage in the colon-delimited alerts
+# file. tmux allows colons in window names (e.g. via automatic-rename from a
+# process title), and a literal colon would be mistaken for the field
+# separator and corrupt parsing. Encode '%' first so the transform is
+# reversible, then ':'. Sessions use a restricted charset and never need
+# encoding; labels are always the trailing field so their colons are harmless.
+# Usage: encoded=$(alerts_encode_window "$window_name")
+alerts_encode_window() {
+    local s="$1"
+    s="${s//%/%25}"
+    s="${s//:/%3A}"
+    printf '%s' "$s"
+}
+
+# Inverse of alerts_encode_window. Decode ':' before '%' to mirror the encode
+# order so a literal "%3A" in the original name survives the round-trip.
+# Usage: name=$(alerts_decode_window "$encoded")
+alerts_decode_window() {
+    local s="$1"
+    s="${s//%3A/:}"
+    s="${s//%25/%}"
+    printf '%s' "$s"
+}
+
 # Get agent icon (compatible with bash 3.2 - no associative arrays)
 # Usage: get_agent_icon "agent_name"
 # Returns: icon symbol
@@ -226,20 +250,27 @@ set_exit_alert() {
         tmux set-option -wt "$target" "@exit_alert_label" "$label" 2>/dev/null
     fi
 
-    # Resolve session:window name for the alerts file (needed for show.sh / list.sh)
-    local win=""
+    # Resolve session and window names for the alerts file (needed for
+    # show.sh / list.sh). Fetch them separately so a colon in the window name
+    # can't be confused with the session:window join.
+    local sess="" win=""
     if [[ -n "${TMUX_PANE:-}" ]]; then
-        win=$(tmux display-message -t "$TMUX_PANE" -p '#S:#W' 2>/dev/null || true)
+        sess=$(tmux display-message -t "$TMUX_PANE" -p '#S' 2>/dev/null || true)
+        win=$(tmux display-message -t "$TMUX_PANE" -p '#W' 2>/dev/null || true)
     fi
-    if [[ -z "$win" && -n "${TMUX:-}" ]]; then
-        win=$(tmux display-message -p '#S:#W' 2>/dev/null || true)
+    if [[ -z "$sess" && -n "${TMUX:-}" ]]; then
+        sess=$(tmux display-message -p '#S' 2>/dev/null || true)
+        win=$(tmux display-message -p '#W' 2>/dev/null || true)
     fi
 
-    # Add window to alerts file with exit code and label (5-field format)
+    # Add window to alerts file with exit code and label (5-field format).
     # Session: project convention (alnum, dot, underscore, hyphen).
-    # Window: any non-colon, non-control chars (allows spaces in names).
-    if [[ "$win" =~ ^[a-zA-Z0-9._-]+:[^:[:cntrl:]]+$ ]]; then
-        local entry="${win}:exit:${code}:${label}"
+    # Window: any non-control chars (allows spaces and colons); colons are
+    # percent-encoded so they don't collide with the field separator.
+    if [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
+        local enc_win
+        enc_win=$(alerts_encode_window "$win")
+        local entry="${sess}:${enc_win}:exit:${code}:${label}"
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
 
@@ -274,27 +305,34 @@ set_window_alert() {
         chmod 700 "$alerts_dir"
     fi
 
-    # Get current tmux window identifier
-    local win=""
+    # Get current tmux session and window names separately, so a colon in the
+    # window name can't be confused with the session:window join.
+    local sess="" win=""
     if [[ -n "${TMUX_PANE:-}" ]]; then
-        win=$(tmux display-message -t "$TMUX_PANE" -p '#S:#W' 2>/dev/null)
+        sess=$(tmux display-message -t "$TMUX_PANE" -p '#S' 2>/dev/null)
+        win=$(tmux display-message -t "$TMUX_PANE" -p '#W' 2>/dev/null)
     fi
-    if [[ -z "$win" && -n "${TMUX:-}" ]]; then
-        win=$(tmux display-message -p '#S:#W' 2>/dev/null)
+    if [[ -z "$sess" && -n "${TMUX:-}" ]]; then
+        sess=$(tmux display-message -p '#S' 2>/dev/null)
+        win=$(tmux display-message -p '#W' 2>/dev/null)
     fi
 
-    # Set the @agent_alert window option
-    if [[ -n "$win" ]]; then
-        tmux set-option -wt "$win" "@${agent}_alert" 1 2>/dev/null
-    elif [[ -n "${TMUX_PANE:-}" ]]; then
+    # Set the @agent_alert window option. Prefer the origin pane id — it's
+    # unambiguous even when the window name contains a colon or spaces.
+    if [[ -n "${TMUX_PANE:-}" ]]; then
         tmux set-option -wt "$TMUX_PANE" "@${agent}_alert" 1 2>/dev/null
+    elif [[ -n "$sess" ]]; then
+        tmux set-option -wt "${sess}:${win}" "@${agent}_alert" 1 2>/dev/null
     fi
 
-    # Add window to alerts file with agent type if not already present
+    # Add window to alerts file with agent type if not already present.
     # Session: project convention (alnum, dot, underscore, hyphen).
-    # Window: any non-colon, non-control chars (allows spaces in names).
-    if [[ "$win" =~ ^[a-zA-Z0-9._-]+:[^:[:cntrl:]]+$ ]]; then
-        local entry="${win}:${agent}"
+    # Window: any non-control chars (allows spaces and colons); colons are
+    # percent-encoded so they don't collide with the field separator.
+    if [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
+        local enc_win
+        enc_win=$(alerts_encode_window "$win")
+        local entry="${sess}:${enc_win}:${agent}"
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
 
@@ -368,7 +406,8 @@ clear_window_alerts() {
         local tmp_file
         tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
         local grep_exit=0
-        grep -vF "${session}:${window}:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
+        # Window names are stored percent-encoded; encode the lookup to match.
+        grep -vF "${session}:$(alerts_encode_window "$window"):" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
 
         # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
         if [[ $grep_exit -le 1 ]]; then
@@ -427,8 +466,11 @@ cleanup_stale_alerts() {
             continue
         fi
 
-        # Check if window exists in session
-        if ! tmux list-windows -t "$session" -F '#{window_name}' 2>/dev/null | grep -qxF "$window"; then
+        # Check if window exists in session. The stored name is percent-encoded;
+        # decode it before comparing against the real tmux window names.
+        local decoded_window
+        decoded_window=$(alerts_decode_window "$window")
+        if ! tmux list-windows -t "$session" -F '#{window_name}' 2>/dev/null | grep -qxF "$decoded_window"; then
             cleaned=1
             continue
         fi
@@ -459,8 +501,13 @@ update_window_name_in_alerts() {
 
     [[ ! -f "$ALERTS_FILE" ]] && return 0
 
+    # Window names are stored percent-encoded; encode both sides to match.
+    local enc_old enc_new
+    enc_old=$(alerts_encode_window "$old_window")
+    enc_new=$(alerts_encode_window "$new_window")
+
     # Check if there are any alerts for this window before locking
-    grep -qF "${session}:${old_window}:" "$ALERTS_FILE" 2>/dev/null || return 0
+    grep -qF "${session}:${enc_old}:" "$ALERTS_FILE" 2>/dev/null || return 0
 
     if ! _acquire_alerts_lock; then
         return 0
@@ -470,7 +517,7 @@ update_window_name_in_alerts() {
     tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
     local update_success=0
 
-    if sed "s|^${session}:${old_window}:|${session}:${new_window}:|" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
+    if sed "s|^${session}:${enc_old}:|${session}:${enc_new}:|" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
         if mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null; then
             update_success=1
         fi

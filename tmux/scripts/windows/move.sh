@@ -66,10 +66,12 @@ tmux move-window -r -s "$SOURCE_SESSION" 2>/dev/null
 # Update alert tracking: replace source session name with target in the alerts file.
 # Tmux window options (@*_alert) travel with the window automatically — only the
 # flat file needs updating. Handles both 3-field and 5-field alert formats.
-if [[ -f "$ALERTS_FILE" ]] && grep -qF "${SOURCE_SESSION}:${WINDOW_NAME}:" "$ALERTS_FILE" 2>/dev/null; then
+# Window names are stored percent-encoded, so encode before matching.
+ENC_WINDOW_NAME=$(alerts_encode_window "$WINDOW_NAME")
+if [[ -f "$ALERTS_FILE" ]] && grep -qF "${SOURCE_SESSION}:${ENC_WINDOW_NAME}:" "$ALERTS_FILE" 2>/dev/null; then
     if _acquire_alerts_lock; then
         tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
-        if sed "s|^${SOURCE_SESSION}:${WINDOW_NAME}:|${TARGET_SESSION}:${WINDOW_NAME}:|" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
+        if sed "s|^${SOURCE_SESSION}:${ENC_WINDOW_NAME}:|${TARGET_SESSION}:${ENC_WINDOW_NAME}:|" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
             mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
         else
             rm -f "$tmp_file" 2>/dev/null

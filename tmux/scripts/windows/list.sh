@@ -32,7 +32,8 @@ fi | sort -rn | cut -d' ' -f2- | while read -r display_line; do
     local_session="${local_target%%:*}"         # session
     local_window="${display_line#* }"           # window_name
 
-    icons=$(build_alert_icons "$_all_alerts" "^${local_session}:${local_window}:")
+    # Window names are stored percent-encoded in the alerts file.
+    icons=$(build_alert_icons "$_all_alerts" "^${local_session}:$(alerts_encode_window "$local_window"):")
 
     if [[ -n "$icons" ]]; then
         printf "%s %b\n" "$display_line" "${icons}"

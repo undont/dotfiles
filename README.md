@@ -207,6 +207,10 @@ Bundled helper: **`dash-repo-sync`** (in `~/.local/bin/`) scans `DEV_ROOT` and `
 | Terminal extras | `asciinema`, `figlet`, `toilet`, `tmux-fingers` |
 | Languages | `fnm`, `bun` (Node), `go`, `python@3.13`, `openjdk` (Java), `dotnet-sdk` (.NET) |
 
+### Tap trust
+
+Homebrew is set to require explicit trust for non-official taps (`HOMEBREW_REQUIRE_TAP_TRUST=1`). The taps these tools come from are trusted automatically during install, and any taps you already had are trusted on update. To add a new third-party tap yourself, approve it once with `brew trust --tap <user/repo>` before installing from it.
+
 ### macOS-only (full preset)
 
 - **Hammerspoon:** centres and resizes windows to 70% of the screen on creation for Ghostty, Arc, Dia, Discord, Slack, and Obsidian (skipping if already roughly centred); CLI access via the `hs` IPC binary, with a `~/.hammerspoon/local.lua` override

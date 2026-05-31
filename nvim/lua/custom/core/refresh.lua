@@ -83,9 +83,15 @@ local function refresh_treesitter()
   vim.notify('Refreshed tree-sitter', vim.log.levels.INFO)
 end
 
+-- Re-render the dashboard in the current window without touching LSP/buffers.
+local function open_dashboard()
+  Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
+end
+
 function M.setup()
   vim.keymap.set('n', '<leader>lR', refresh_nvim, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })
   vim.keymap.set('n', '<leader>lt', refresh_treesitter, { desc = 'Refresh [T]reesitter' })
+  vim.keymap.set('n', '<leader>ld', open_dashboard, { desc = '[D]ashboard (re-render in current window)' })
 end
 
 return M
