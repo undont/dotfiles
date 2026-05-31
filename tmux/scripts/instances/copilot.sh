@@ -68,10 +68,12 @@ while IFS= read -r line; do
 
     window_name="${window_names["${session}:${window_idx}"]:-}"
 
-    # Check if this window has an alert for copilot
-    # Escape '.' — valid in tmux names but a regex wildcard
+    # Check if this window has an alert for copilot.
+    # Window names are stored percent-encoded; encode first, then escape '.'
+    # (valid in tmux names but a regex wildcard).
     _session_pat="${session//./\\.}"
-    _window_pat="${window_name//./\\.}"
+    _window_pat="$(alerts_encode_window "$window_name")"
+    _window_pat="${_window_pat//./\\.}"
     if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${_session_pat}:${_window_pat}:copilot$" 2>/dev/null; then
         display=$(get_agent_display "copilot")
         icon="${display%%|*}"

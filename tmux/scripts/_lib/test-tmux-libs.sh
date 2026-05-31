@@ -530,6 +530,76 @@ else
     fail "    should preserve valid alerts"
 fi
 
+# ─────────────────────────────────────────
+# Colon-in-window-name handling (percent-encoding round-trip)
+# Regression: window names like "FOO:BAR" contain tmux's ':' which is
+# also the alerts-file field separator. They must be encoded on write and
+# decoded on read, otherwise clear.sh and friends reject or corrupt them.
+# ─────────────────────────────────────────
+echo ""
+echo "  colon-in-window encoding:"
+
+COLON_WIN='FOO:BAR'
+ENC_WIN=$(alerts_encode_window "$COLON_WIN")
+
+if [[ "$ENC_WIN" == 'FOO%3ABAR' ]]; then
+    pass "    encodes ':' to %3A"
+else
+    fail "    should encode ':' to %3A, got: $ENC_WIN"
+fi
+
+if [[ "$(alerts_decode_window "$ENC_WIN")" == "$COLON_WIN" ]]; then
+    pass "    decodes back to the original name"
+else
+    fail "    decode should round-trip the original name"
+fi
+
+# A literal '%' must survive the round-trip ('%' is encoded first).
+if [[ "$(alerts_decode_window "$(alerts_encode_window 'a%3Ab:c')")" == 'a%3Ab:c' ]]; then
+    pass "    round-trips a literal percent sequence"
+else
+    fail "    literal '%' should round-trip"
+fi
+
+# End-to-end against the isolated server: create a colon-named window, set an
+# alert via its pane, and confirm the file stores the encoded form.
+: > "$ALERTS_FILE"
+tmux new-window -t "$CURRENT_SESSION" -n "$COLON_WIN" 2>/dev/null
+COLON_WIN_ID=$(tmux list-windows -t "$CURRENT_SESSION" -F '#{window_name}|#{window_id}' 2>/dev/null | grep -F "${COLON_WIN}|" | head -1 | cut -d'|' -f2)
+tmux set-window-option -t "$COLON_WIN_ID" automatic-rename off 2>/dev/null || true
+COLON_PANE_ID=$(tmux list-panes -t "$COLON_WIN_ID" -F '#{pane_id}' 2>/dev/null | head -1)
+
+TMUX_PANE="$COLON_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
+if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
+    pass "    set_window_alert stores the encoded window name"
+else
+    fail "    set_window_alert should store the encoded name (file: $(cat "$ALERTS_FILE"))"
+fi
+
+if grep -qF "${CURRENT_SESSION}:${COLON_WIN}:" "$ALERTS_FILE" 2>/dev/null; then
+    fail "    raw colon name must not be written verbatim"
+else
+    pass "    raw colon name is not written verbatim"
+fi
+
+# cleanup_stale_alerts must keep it (decode matches the real tmux window name).
+cleanup_stale_alerts
+if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
+    pass "    cleanup_stale_alerts preserves the colon-named window"
+else
+    fail "    cleanup_stale_alerts should preserve the colon-named window"
+fi
+
+# clear_window_alerts with the RAW colon name removes the encoded entry.
+clear_window_alerts "$CURRENT_SESSION" "$COLON_WIN" "$COLON_WIN_ID"
+if grep -qF "${CURRENT_SESSION}:${ENC_WIN}:" "$ALERTS_FILE" 2>/dev/null; then
+    fail "    clear_window_alerts should clear the encoded entry"
+else
+    pass "    clear_window_alerts clears via the raw colon name"
+fi
+
+tmux kill-window -t "$COLON_WIN_ID" 2>/dev/null || true
+
 # Clean up isolated server (trap also handles this on exit)
 cleanup_test_server
 

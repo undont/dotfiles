@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.104] - 2026-05-31
+
+### Added
+- Homebrew now requires explicit trust for non-official taps. `zsh/dotfiles.zsh` exports `HOMEBREW_REQUIRE_TAP_TRUST=1`, so a newly tapped third-party repo must be approved with `brew trust --tap <user/repo>` before brew will load its formulae or casks, rather than being trusted by default (Homebrew 5.x deprecates the old implicit-trust behaviour and warns once per tap until a future release turns it into an error). To keep existing setups working under the stricter mode, migration `0.2.104-trust-homebrew-taps.sh` records every currently-installed tap in Homebrew's trust store (`$HOMEBREW_PREFIX/var/homebrew/trust.json`) on update, and `scripts/install/install-packages.sh` trusts the Brewfile's own taps before `brew bundle` so a fresh install isn't blocked. Both guard on the presence of `brew trust` (Homebrew 5.x+) and no-op on older versions. `zsh/dotfiles.zsh`, `scripts/migrations/0.2.104-trust-homebrew-taps.sh`, `scripts/install/install-packages.sh`
+- Nvim: `<leader>ld` re-renders the snacks dashboard in the current window without touching LSP or buffers. Closing oil with `-` now also restores the dashboard when oil was launched over it: the dashboard buffer is `bufhidden=wipe`, so oil wipes it and falls back to a blank `enew`; `oil_close` detects that empty landing buffer and re-renders the dashboard instead. `nvim/lua/custom/core/refresh.lua`, `nvim/lua/custom/plugins/navigation.lua`
+
+### Fixed
+- Tmux: agent alerts no longer corrupt or drop windows whose name contains a colon (tmux derives names from process titles, which can include `:`, and `:` is also the alerts-file field separator). Window names are now percent-encoded (`%`→`%25`, `:`→`%3A`) on write and decoded on read across the alert lifecycle — set, clear, rename, move, stale-cleanup, the per-agent instance pickers, and the window list — and session/window are fetched separately rather than via a `#S:#W` join. Validation in `clear.sh` and `update-rename.sh` loosened accordingly to accept colons. Adds a round-trip regression test. `tmux/scripts/_lib/alerts.sh`, `tmux/scripts/_lib/test-tmux-libs.sh`, `tmux/scripts/alerts/clear.sh`, `tmux/scripts/alerts/pick.sh`, `tmux/scripts/alerts/update-rename.sh`, `tmux/scripts/instances/*.sh`, `tmux/scripts/windows/list.sh`, `tmux/scripts/windows/move.sh`
+
 ## [0.2.103] - 2026-05-29
 
 ### Added

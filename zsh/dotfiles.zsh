@@ -42,6 +42,12 @@ case "$(uname)" in
     ;;
 esac
 
+# Require explicit trust for non-official Homebrew taps. Newly tapped third-party
+# repos must be approved with `brew trust --tap <user/repo>` before brew will load
+# their formulae or casks, instead of being trusted by default. Existing taps were
+# trusted by the 0.2.104 migration; the Brewfile's taps are trusted during install.
+export HOMEBREW_REQUIRE_TAP_TRUST=1
+
 # =============================================================================
 # FILE DESCRIPTOR LIMIT
 # =============================================================================

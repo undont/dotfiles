@@ -62,8 +62,8 @@ while IFS= read -r line; do
 
     window_name="${window_names["${session}:${window_idx}"]:-}"
 
-    # Check if this window has an alert for opencode
-    if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${session}:${window_name}:opencode$" 2>/dev/null; then
+    # Check if this window has an alert for opencode (names stored percent-encoded)
+    if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${session}:$(alerts_encode_window "$window_name"):opencode$" 2>/dev/null; then
         display=$(get_agent_display "opencode")
         icon="${display%%|*}"
         opencode_panes+=("${target} ${window_name} ${icon}")

@@ -20,9 +20,10 @@ fi
 # Validate session and window names. Sessions follow project convention
 # (alphanumerics, dots, underscores, hyphens — see validate_session_name).
 # Windows are looser because tmux assigns names from running commands and
-# user-rename can include spaces; reject only colons (alerts file delimiter)
-# and control characters.
-if [[ ! "$SESSION" =~ ^[a-zA-Z0-9._-]+$ ]] || [[ ! "$WINDOW" =~ ^[^:[:cntrl:]]+$ ]]; then
+# user-rename can include spaces and colons; reject only control characters.
+# clear_window_alerts percent-encodes the window name before touching the
+# alerts file, so a literal colon (the file delimiter) is handled safely.
+if [[ ! "$SESSION" =~ ^[a-zA-Z0-9._-]+$ ]] || [[ ! "$WINDOW" =~ ^[^[:cntrl:]]+$ ]]; then
     exit 1
 fi
 

@@ -1,5 +1,22 @@
 -- File navigation: Harpoon2 for quick marks, Oil for filesystem-as-buffer.
 
+-- Close oil, restoring the dashboard if oil was opened from it. oil.close()
+-- restores `oil_original_buffer`, but the snacks dashboard is bufhidden=wipe,
+-- so launching oil over it wipes it; oil then falls back to a blank `enew`
+-- buffer. Detect that empty landing buffer and re-render the dashboard,
+-- matching snacks' own "empty buffer on startup" behaviour.
+local function oil_close()
+  require('oil').close()
+  local buf = vim.api.nvim_get_current_buf()
+  local empty = vim.api.nvim_buf_get_name(buf) == ''
+    and vim.bo[buf].buftype == ''
+    and vim.api.nvim_buf_line_count(buf) == 1
+    and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ''
+  if empty and Snacks and Snacks.dashboard then
+    Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
+  end
+end
+
 return {
   -- Oil: filesystem-as-buffer
   {
@@ -13,7 +30,7 @@ return {
       columns = { 'icon' },
       view_options = { show_hidden = true },
       keymaps = {
-        ['-'] = { 'actions.close', mode = 'n' },
+        ['-'] = { mode = 'n', callback = oil_close },
         ['<BS>'] = { 'actions.parent', mode = 'n' },
       },
     },
