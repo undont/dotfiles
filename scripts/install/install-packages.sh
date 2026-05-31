@@ -34,6 +34,17 @@ FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 cleanup() { rm -f "$FILTERED_BREWFILE"; }
 trap cleanup EXIT
 
+# Trust the Brewfile's third-party taps before bundling. The shell exports
+# HOMEBREW_REQUIRE_TAP_TRUST=1, so without this `brew bundle` would refuse to
+# load formulae/casks from these taps on a fresh machine. `brew trust` is a
+# no-op on Homebrew versions that predate the command.
+if brew trust --help >/dev/null 2>&1; then
+    while read -r _ tap_name; do
+        tap_name="${tap_name%\"}"; tap_name="${tap_name#\"}"
+        [[ -n "$tap_name" ]] && brew trust --tap "$tap_name" >/dev/null 2>&1 || true
+    done < <(grep -E '^tap "' "$FILTERED_BREWFILE")
+fi
+
 # Skip the install entirely if everything in the Brewfile is already present
 # and up to date. `brew bundle check` exits 0 when nothing needs installing or
 # upgrading (it checks for outdated entries by default).

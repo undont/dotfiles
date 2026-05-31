@@ -115,6 +115,7 @@ Format buffer | <leader>f
 LSP restart | <leader>lr
 Refresh Neovim | <leader>lR
 Refresh Treesitter + semantic tokens | <leader>lt
+Re-render dashboard in current window | <leader>ld
 Sonar scan changed files | <leader>ls
 Sonar scan whole project | <leader>lS
 
