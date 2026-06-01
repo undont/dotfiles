@@ -50,6 +50,7 @@ local function refresh_nvim()
     end)
 
     real_notify('Neovim refreshed', vim.log.levels.INFO)
+    ---@diagnostic disable-next-line: missing-fields
     Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
   end, 200)
 
@@ -83,15 +84,35 @@ local function refresh_treesitter()
   vim.notify('Refreshed tree-sitter', vim.log.levels.INFO)
 end
 
--- Re-render the dashboard in the current window without touching LSP/buffers.
-local function open_dashboard()
+-- Toggle the dashboard in the current window without touching LSP/buffers.
+-- On a non-dashboard buffer it stashes the current buffer and renders the
+-- dashboard; pressing the key again on the dashboard restores that buffer
+-- (falling back to the alternate buffer if the stash is gone).
+local dashboard_prev_buf = nil
+
+local function toggle_dashboard()
+  if vim.bo.filetype == 'snacks_dashboard' then
+    local target = dashboard_prev_buf
+    if not (target and vim.api.nvim_buf_is_valid(target)) then
+      local alt = vim.fn.bufnr '#'
+      target = alt > 0 and vim.api.nvim_buf_is_valid(alt) and alt or nil
+    end
+    if target then
+      vim.api.nvim_set_current_buf(target)
+    end
+    dashboard_prev_buf = nil
+    return
+  end
+
+  dashboard_prev_buf = vim.api.nvim_get_current_buf()
+  ---@diagnostic disable-next-line: missing-fields
   Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
 end
 
 function M.setup()
   vim.keymap.set('n', '<leader>lR', refresh_nvim, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })
   vim.keymap.set('n', '<leader>lt', refresh_treesitter, { desc = 'Refresh [T]reesitter' })
-  vim.keymap.set('n', '<leader>ld', open_dashboard, { desc = '[D]ashboard (re-render in current window)' })
+  vim.keymap.set('n', '<leader>ld', toggle_dashboard, { desc = '[D]ashboard (toggle in current window)' })
 end
 
 return M

@@ -627,8 +627,11 @@ set -g @fingers-ctrl-action ':open:'
 set -g @fingers-shift-action ':paste:'
 set -g @fingers-show-copied-notification 1
 
-# Built-in patterns: disable noisy path matcher, keep the rest
-set -g @fingers-enabled-builtin-patterns 'ip,uuid,sha,digit,url,hex,kubernetes,git-status,git-status-branch,diff'
+# Built-in patterns: enable all. 2.7.0 turned this option into an enum whose
+# validator rejects comma-separated subset lists (the documented form), so a
+# curated list silently breaks prefix+Space. 'all' is the only multi-pattern
+# value that validates on both 2.6.x and 2.7.x.
+set -g @fingers-enabled-builtin-patterns 'all'
 
 # Custom patterns (stricter replacements + extras)
 set -g @fingers-pattern-0 '(~?(/[a-zA-Z0-9._-]+){2,})/?'

@@ -378,7 +378,6 @@ return {
           enabled = false,
         },
         test_runner = {
-          enable_buffer_test_execution = true,
           auto_start_testrunner = false,
           viewmode = 'float',
           mappings = {
@@ -402,34 +401,10 @@ return {
             collapse_all = { lhs = 'W', desc = 'collapse all' },
           },
         },
-        terminal = function(path, action, args)
-          args = args or ''
-          local commands = {
-            run = function()
-              return string.format('dotnet run --project %s %s', path, args)
-            end,
-            test = function()
-              return string.format('dotnet test %s %s', path, args)
-            end,
-            restore = function()
-              return string.format('dotnet restore %s %s', path, args)
-            end,
-            build = function()
-              return string.format('dotnet build %s %s', path, args)
-            end,
-            watch = function()
-              return string.format('dotnet watch --project %s %s', path, args)
-            end,
-          }
-          local command = commands[action]()
-          vim.cmd 'botright vsplit'
-          vim.cmd 'vertical resize 40'
-          vim.cmd('term ' .. command)
-        end,
       }
 
       vim.keymap.set('n', '<leader>nd', '<cmd>Dotnet debug<cr>', { desc = '[D]ebug project' })
-      vim.keymap.set('n', '<leader>na', '<cmd>Dotnet attach<cr>', { desc = '[A]ttach to running .NET process' })
+      vim.keymap.set('n', '<leader>na', '<cmd>Dotnet debug attach<cr>', { desc = '[A]ttach to running .NET process' })
       vim.keymap.set('n', '<leader>nr', '<cmd>Dotnet run<cr>', { desc = '[R]un project' })
       vim.keymap.set('n', '<leader>nb', '<cmd>Dotnet build<cr>', { desc = '[B]uild project' })
       vim.keymap.set('n', '<leader>nc', '<cmd>Dotnet clean<cr>', { desc = '[C]lean project' })

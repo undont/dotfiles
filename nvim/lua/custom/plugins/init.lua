@@ -14,6 +14,7 @@ return {
   { import = 'custom.plugins.dial' },
   { import = 'custom.plugins.markdown-ui' },
   { import = 'custom.plugins.telescope' },
+  { import = 'custom.plugins.lazydev' },
   { import = 'custom.plugins.lsp' },
   { import = 'custom.plugins.sonarlint' },
   { import = 'custom.plugins.completion' },

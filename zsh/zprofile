@@ -29,9 +29,6 @@ elif [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
-# JetBrains Toolbox CLI tools (added by Toolbox App installer)
-export PATH="$PATH:$HOME/Library/Application Support/JetBrains/Toolbox/scripts"
-
 # Bun global packages (bun install -g)
 export PATH="$HOME/.bun/bin:$PATH"
 

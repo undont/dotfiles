@@ -13,6 +13,9 @@ local function oil_close()
     and vim.api.nvim_buf_line_count(buf) == 1
     and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ''
   if empty and Snacks and Snacks.dashboard then
+    -- open() merges partial opts with the configured dashboard defaults, so the
+    -- "missing sections/formats" check on snacks.dashboard.Opts is a false positive.
+    ---@diagnostic disable-next-line: missing-fields
     Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
   end
 end
