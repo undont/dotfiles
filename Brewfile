@@ -63,6 +63,7 @@ brew "binutils" # GNU binary utilities
 brew "gcc"      # GNU compiler collection
 brew "nasm"     # Netwide assembler
 brew "nano"     # Text editor
+brew "bear"     # Generates compile_commands.json for clang tooling (C/C++/ObjC)
 
 # Tmux Extras
 brew "morantron/tmux-fingers/tmux-fingers" # Quick pattern copy (requires gcc on Linux)
@@ -135,6 +136,7 @@ brew "httpyac"
 brew "ffmpeg"
 brew "imagemagick"
 brew "btop"                          # System monitor (htop replacement)
+brew "gdu"                           # Disk usage analyzer TUI (du replacement)
 brew "watch"                         # Periodic command refresh (flicker-free re-render)
 brew "fastfetch"                     # neofetch replacement (faster, maintained)
 brew "teamookla/speedtest/speedtest" # Speedtest CLI from Ookla

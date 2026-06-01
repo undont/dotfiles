@@ -160,19 +160,13 @@ if should_install "core"; then
 
     install_local "$DOTFILES_DIR/nvim/local.lua.template" "$HOME/.config/nvim/local.lua"
 
-    # Generate .luarc.json from template with the current machine's VIMRUNTIME
-    # path. The dotfiles repo root is lua_ls's workspace, so .luarc.json lives
-    # there. Kept machine-local (gitignored) because the path differs by OS/install.
-    if command_exists nvim; then
-        nvim_runtime=$(nvim --clean --headless -c 'lua io.write(vim.env.VIMRUNTIME)' -c 'quit' 2>/dev/null)
-        if [[ -n "$nvim_runtime" && -d "$nvim_runtime/lua" ]]; then
-            sed "s|{{NVIM_RUNTIME_LUA}}|$nvim_runtime/lua|" \
-                "$DOTFILES_DIR/.luarc.json.template" > "$DOTFILES_DIR/.luarc.json"
-            success "Generated $DOTFILES_DIR/.luarc.json (lua_ls workspace config)"
-        else
-            warn "Could not detect nvim runtime path, skipping .luarc.json generation"
-        fi
-    fi
+    # Install .luarc.json (lua_ls workspace config) from the template. The
+    # dotfiles repo root is lua_ls's workspace, so .luarc.json lives there.
+    # Kept machine-local (gitignored) so diagnostics can be tweaked per machine.
+    # Plugin and Neovim runtime type libraries are supplied on demand by
+    # lazydev.nvim, so there is no machine-specific path to substitute.
+    cp "$DOTFILES_DIR/.luarc.json.template" "$DOTFILES_DIR/.luarc.json"
+    success "Installed $DOTFILES_DIR/.luarc.json (lua_ls workspace config)"
 
     # User spell dictionary (zg adds words here, repo dictionary has shared terms)
     user_spell_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/spell"

@@ -1,9 +1,6 @@
 {
   "diagnostics": {
     "globals": ["vim", "hs",
-            "Snacks",
-            "MiniIcons",
-            "MiniBracketed",
             "read_globals",
             "globals",
             "max_line_length",
@@ -19,7 +16,6 @@
     "path": ["?.lua", "?/init.lua"]
   },
   "workspace": {
-    "library": ["{{NVIM_RUNTIME_LUA}}"],
     "checkThirdParty": false
   }
 }

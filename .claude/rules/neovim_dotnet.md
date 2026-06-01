@@ -5,6 +5,19 @@ paths:
 
 # C# / Roslyn LSP — Architecture & Debugging
 
+## Why both roslyn.nvim and easy-dotnet
+
+roslyn.nvim drives the LSP; easy-dotnet drives build/run/test/debug with its own
+LSP disabled (`lsp.enabled = false`). easy-dotnet ships a bundled Roslyn LSP now,
+but it is NOT a drop-in replacement for roslyn.nvim here: it has no
+`ignore_target` / `lock_target` / `choose_target` / `broad_search`, so it cannot
+exclude build-variant solutions (`*.ci.slnx`) or pin a target in multi-solution
+repos — exactly what this config depends on. Both wrap the same Microsoft
+`Microsoft.CodeAnalysis.LanguageServer`, so enabling easy-dotnet's LSP alongside
+roslyn.nvim would attach two roslyn servers to every `.cs` buffer (duplicate
+diagnostics/completion). `lsp.enabled = false` is therefore load-bearing, not
+cruft. Re-evaluate only if easy-dotnet gains target-exclusion/locking.
+
 ## Diagnostic Filtering
 
 Roslyn diagnostics are post-processed in `patch_diagnostic_set()` in
@@ -38,25 +51,37 @@ lives in `setup_semantic_token_fix()` in `dotnet.lua` and handles three issues:
 ### 1. Range request filtering
 
 Neovim 0.12 added `textDocument/semanticTokens/range` (viewport-only tokens).
-Roslyn dynamically registers range support via `client/registerCapability` AFTER
-`on_init`, so modifying `server_capabilities` there doesn't stick. We intercept
-the `client/registerCapability` handler and filter out range registrations for
-roslyn. Without this, tokens flash then disappear as range responses replace
-full-document responses.
+Roslyn 5.8.0 declares `semanticTokensProvider.range` statically in its
+`initialize` response, so `STHighlighter:on_attach` caches `supports_range = true`
+before our config runs. During warmup the range responses arrive with
+stale/partial classifications and replace the full-document tokens, causing
+visible flicker on `.cs` open.
 
-**Why other approaches failed:**
-- `on_init` with `caps.range = false` — roslyn re-registers range dynamically
-- `LspAttach` — too late, semantic token handler already read capabilities
-- Client `capabilities` override — shallow merge on `textDocument` wiped other
-  capabilities (completion, hover, etc.), breaking LSP entirely
+We disable it by setting `server_capabilities.semanticTokensProvider.range =
+false` in an `LspAttach` autocmd for the roslyn client. `LspAttach` is the
+correct hook: Neovim's `Client:on_attach` schedules `STHighlighter:on_attach`
+*after* the `LspAttach` callbacks finish (`client.lua:1159`), so the capability
+is flipped before the semantic-token handler reads it.
 
-### 2. Token refresh on project init
+**Why other approaches don't work:**
+- A client-level `capabilities` override at config time — the shallow merge on
+  `textDocument` wipes sibling capabilities (completion, hover, etc.) and breaks
+  the LSP entirely.
+- Mutating `server_capabilities` in `on_init` — fragile relative to when the
+  handler caches caps; `LspAttach` (above) is the reliable opt-out point.
 
-Neovim requests tokens on attach (before the solution loads), gets empty/stale
-tokens. Roslyn doesn't send `workspace/semanticTokens/refresh` when done loading.
-We listen for the `RoslynInitialized` user event (fired by roslyn.nvim when
-`workspace/projectInitializationComplete` arrives) and `force_refresh` all `.cs`
-buffers.
+### 2. Token refresh after background analysis
+
+Neovim requests tokens on attach (before the solution loads) and gets
+empty/stale tokens; Roslyn never sends `workspace/semanticTokens/refresh` when
+analysis completes. `workspace/projectInitializationComplete` (the
+`RoslynInitialized` user event) fires *before* per-file semantic analysis is
+done, so refreshing there lands stale and needs a manual `<leader>lt` a second
+later to settle. Instead we debounce-refresh (300ms) all `.cs` buffers on
+Roslyn's LSP progress `end` notifications, which fire as each background-analysis
+chunk finishes. The debounce bounds cost during warmup (many `end` events
+cluster) while still catching later analyses (branch switches, dependency
+restores).
 
 ### 3. Token classification fixes
 
@@ -83,6 +108,20 @@ in `init`) to prevent `vim.lsp.enable` firing before `lock_target` and
 3. `require('roslyn').setup(opts)` — stores roslyn.nvim config
 4. `source_deferred_plugin()` — clears the block, `dofile(plugin/roslyn.lua)`
    which calls `vim.lsp.enable('roslyn')`
+
+**Load-bearing on Neovim 0.12 — do not remove (verified 2026-06-01).** It looks
+like the 0.12 lazy native-config model makes this redundant; it does not.
+lazy.nvim sources a plugin's `plugin/*.lua` *before* running its `config`
+(`loader.lua` `_load`: `packadd` then `config`), so without the
+`vim.g.loaded_roslyn_plugin` block, `vim.lsp.enable('roslyn')` fires before
+`resolve_solution_target()` / `setup(opts)` / `vim.lsp.config()`. And because we
+load on `User RealDotnetFile` (the `.cs` buffer already exists), `vim.lsp.enable`
+synchronously runs `doautoall('nvim.lsp.enable FileType')` (`lsp.lua`, gated by
+`did_filetype()`), which deep-copies the config and resolves `root_dir` right
+then — with roslyn's defaults (`lock_target = false`, `ignore_target = nil`) and
+no `csharp|...` settings. Result: wrong solution target (or a multi-solution
+picker) and an unconfigured client. The deferred `dofile` is what forces
+`vim.lsp.enable` to run *after* our config.
 
 ## Roslyn During Diffview / Octo
 
