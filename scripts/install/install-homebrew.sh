@@ -17,10 +17,20 @@ if command_exists brew; then
     echo ""
 
     info "Updating Homebrew..."
-    brew update
-
-    echo ""
-    success "Homebrew updated successfully"
+    # `brew update` is only a metadata refresh -- a failure here does not block
+    # the package install below, so it must not be fatal under `set -e`. It can
+    # also crash with its own internal bugs the first time Homebrew self-updates
+    # (e.g. "uninitialized constant DescriptionCacheStore::FormulaVersions" on
+    # 5.x), which then self-clear on the next run. Retry once to recover from
+    # that, then warn and continue rather than aborting the whole update.
+    if brew update || brew update; then
+        echo ""
+        success "Homebrew updated successfully"
+    else
+        echo ""
+        warn "brew update reported an error (often a transient Homebrew self-update bug); skipping the metadata refresh and continuing."
+        warn "Run 'brew update' again later if needed. This does not affect package installation below."
+    fi
 else
     warn "Homebrew not found. Installing..."
     echo ""
