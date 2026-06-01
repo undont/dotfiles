@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.106] - 2026-06-01
+
+### Fixed
+- Install: `brew update` is no longer fatal during `dotfiles update`. Homebrew can crash on the run where it self-updates (e.g. `uninitialized constant DescriptionCacheStore::FormulaVersions` on 5.x, reached when `HOMEBREW_REQUIRE_TAP_TRUST` is set), which under `set -e` aborted the entire update before symlinks or packages were applied. The step now retries `brew update` once (the bug self-clears on the second run, since Homebrew has already updated itself) and, if it still fails, warns and continues rather than aborting. `brew update` is only a metadata refresh and does not gate the package install that follows. `scripts/install/install-homebrew.sh`
+
 ## [0.2.105] - 2026-06-01
 
 ### Added
