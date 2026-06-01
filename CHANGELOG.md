@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.105] - 2026-06-01
+
+### Added
+- Nvim: lazydev.nvim supplies lua_ls type libraries on demand. It loads a plugin's annotations when its trigger word appears in a lua buffer (`Snacks`, `Mini*`, and the luvit types behind `vim.uv`), so `K` hover and completion now work for those globals where `.luarc.json`'s `diagnostics.globals` previously only silenced the undefined-global warning without giving them a type. Also wired in as a blink completion source (`score_offset = 100`) for `require()` paths and plugin module annotations. `nvim/lua/custom/plugins/lazydev.lua`, `nvim/lua/custom/plugins/completion.lua`, `nvim/lua/custom/plugins/init.lua`
+- `bear` (generates `compile_commands.json` so clang tooling works on C/C++/ObjC projects) and `gdu` (disk-usage analyser TUI, a `du` replacement) added to the Brewfile. `Brewfile`, `README.md`
+
+### Changed
+- Nvim: `<leader>ld` now toggles the snacks dashboard rather than only rendering it. On a normal buffer it stashes the current buffer and opens the dashboard in that window; pressing it again on the dashboard restores the stashed buffer (falling back to the alternate buffer `#` if the stash is gone). `nvim/lua/custom/core/refresh.lua`
+- Nvim: `.luarc.json` no longer carries type libraries. With lazydev supplying plugin and Neovim-runtime types on demand, `.luarc.json.template` drops `workspace.library` and the `Snacks`/`Mini*` globals (a static `workspace.library` would override what lazydev pushes through the client and break hover), and `create-symlinks.sh` now installs it as a plain copy rather than detecting VIMRUNTIME and substituting `{{NVIM_RUNTIME_LUA}}`. `.luarc.json.template`, `scripts/install/create-symlinks.sh`
+- Nvim: `<leader>na` (.NET attach) now maps to `Dotnet debug attach`, and the custom easy-dotnet `terminal` command builder plus `enable_buffer_test_execution` were removed in favour of the plugin defaults. `nvim/lua/custom/plugins/dotnet.lua`
+- Removed the JetBrains Toolbox CLI `PATH` entry from `zsh/zprofile`.
+
+### Fixed
+- Tmux: `prefix+Space` (tmux-fingers) restored. tmux-fingers 2.7.0 turned `@fingers-enabled-builtin-patterns` into an enum whose validator silently rejects the documented comma-separated subset list, which killed the keybinding; set to `all`, the only multi-pattern value that validates on both 2.6.x and 2.7.x. `tmux/tmux.conf.template`
+
 ## [0.2.104] - 2026-05-31
 
 ### Added

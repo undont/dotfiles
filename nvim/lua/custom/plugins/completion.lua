@@ -119,8 +119,14 @@ return {
         },
       },
       sources = {
-        default = { 'lsp', 'path', 'snippets', 'buffer', 'copilot' },
+        default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'copilot' },
         providers = {
+          -- require() paths and plugin module annotations, types served by lazydev
+          lazydev = {
+            name = 'LazyDev',
+            module = 'lazydev.integrations.blink',
+            score_offset = 100,
+          },
           copilot = {
             name = 'copilot',
             module = 'blink-cmp-copilot',
