@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.107] - 2026-06-02
+
+### Added
+- Nvim: explicit mini.icons glyphs for the `sh`/`bash`/`zsh` extensions. mini has no built-in extension entry for these and resolves them through `vim.filetype.match()`, which returns nil during the dashboard's first paint at startup, so mini cached the generic glyph for the session; pinning the glyphs (and matching highlights: sh/bash grey, zsh green) makes resolution independent of filetype-match timing. `nvim/lua/custom/plugins/mini.lua`
+
+### Changed
+- Nvim: statusline redesign. The filename is now shown relative to the git/project root (falling back to a `~`-relative path outside a repo) and adapts to the available width: it stays in full while it fits and only collapses parent dirs to initials when the rest of the line leaves no room, keeping the filename intact rather than mini's mid-word left-cut on deep paths. The git branch sits in a theme-accent block; diff counts (`+`/`~`/`-`) and per-severity diagnostics (`E`/`W`/`I`/`H`) are colour-coded inline on the neutral middle so they follow terminal transparency; fileinfo shows the filetype glyph tinted by its mini.icons highlight and surfaces encoding/line-ending only when they deviate from utf-8/unix. All section colours are derived from groups the active theme already defines and re-derived on `ColorScheme`, so every hand-crafted and generated theme stays consistent. `nvim/lua/custom/plugins/mini.lua`
+
+### Fixed
+- Nvim: an empty filename section (quickfix, `[No Name]`, terminal) no longer floods the statusline with the mode colour; the neutral filename group is pinned right before `%=` so the expanding gap always fills neutral. `nvim/lua/custom/plugins/mini.lua`
+- Tmux: tmux-fingers no longer fires its install/update wizard at config-load time. The binary is supplied by brew and kept current by `dotfiles update`, but the loader compared the brew binary's version against the TPM clone's `shard.yml` on every reload and, when they drifted, ran the update wizard, which fails non-interactively (`install-wizard.sh ... returned 1`). `@fingers-skip-wizard 1` gates only the update wizard, not the first-run bootstrap, so fresh installs still work. `tmux/tmux.conf.template`
+
 ## [0.2.106] - 2026-06-01
 
 ### Fixed

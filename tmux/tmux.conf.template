@@ -633,6 +633,15 @@ set -g @fingers-show-copied-notification 1
 # value that validates on both 2.6.x and 2.7.x.
 set -g @fingers-enabled-builtin-patterns 'all'
 
+# Skip the install/update wizard. The binary is supplied by brew (Brewfile) and
+# kept current by `dotfiles update` (brew bundle --upgrade), so the loader never
+# needs to bootstrap or rebuild it. Without this, the loader compares the brew
+# binary's version against the TPM clone's shard.yml on every reload; when they
+# drift it fires the update wizard, which fails non-interactively at config-load
+# time (`install-wizard.sh ... returned 1`). This gates only the update wizard,
+# not the first-run "no binary found" bootstrap, so fresh installs still work.
+set -g @fingers-skip-wizard 1
+
 # Custom patterns (stricter replacements + extras)
 set -g @fingers-pattern-0 '(~?(/[a-zA-Z0-9._-]+){2,})/?'
 set -g @fingers-pattern-1 '[A-Z][A-Z0-9_]+-[0-9]+'
