@@ -7,6 +7,7 @@ paths:
   - "scripts/theme-contrast-check"
   - "tmux/tmux.conf.template"
   - "ghostty/config.template"
+  - "yazi/theme.toml.template"
 ---
 
 # Theme System
@@ -21,6 +22,8 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts.
 4. `~/.config/tmux/tmux.conf` - Generated config (XDG location)
 5. `~/.tmux.conf` - Compatibility symlink -> `~/.config/tmux/tmux.conf`
 6. `~/.config/ghostty/config` - Generated ghostty config (XDG location, read natively on all platforms)
+7. `yazi/theme.toml.template` - Yazi theme template with `{{PLACEHOLDERS}}` (in repo); reuses the `{{TMUX_*}}` palette vars
+8. `~/.config/yazi/theme.toml` - Generated yazi theme (XDG location). yazi is symlinked per-file (`yazi.toml`, `keymap.toml`) so the generated theme can sit alongside without being tracked. theme-switch skips generation if the dir is still a legacy whole-dir symlink (the 0.2.109 migration converts it).
 
 ## Local Override Files (user-owned, survive theme changes)
 

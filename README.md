@@ -201,7 +201,7 @@ Bundled helper: **`dash-repo-sync`** (in `~/.local/bin/`) scans `DEV_ROOT` and `
 | Shell completion | `carapace` (multi-shell completion bridge), `zsh-autosuggestions`, `direnv` |
 | Git & GitHub | `gh`, `lazygit`, `diffnav`, `act` (run GitHub Actions locally) |
 | Containers & shells | `lazydocker`, `lazyssh`, `cloudflared` |
-| Search & files | `fd`, `ripgrep`, `bat`, `jq`, `yq`, `zoxide`, `fzf`, `yazi` (file manager), `poppler` (PDF previews) |
+| Search & files | `fd`, `ripgrep`, `bat`, `jq`, `yq`, `zoxide`, `fzf`, `yazi` (file manager), `poppler` (PDF previews), `ffmpegthumbnailer` (video previews), `resvg` (SVG previews), `sevenzip` (archive previews) |
 | System | `btop`, `gdu` (disk usage TUI), `fastfetch` |
 | Media & display | `ffmpeg`, `imagemagick`, `chafa`, `glow` |
 | Terminal extras | `asciinema`, `figlet`, `toilet`, `tmux-fingers` |

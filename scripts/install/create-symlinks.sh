@@ -227,10 +227,19 @@ if should_install "core"; then
 fi
 
 # Yazi (core)
+# Per-file symlinks (not a whole-dir symlink) so theme-switch can write a
+# generated theme.toml into ~/.config/yazi without it landing back in the repo.
 if should_install "core"; then
     echo ""
     echo "Yazi configuration:"
-    create_link "$DOTFILES_DIR/yazi" "$HOME/.config/yazi"
+    # Drop any legacy whole-dir symlink first so we own a real directory
+    # (the 0.2.109 migration also handles this; this keeps it idempotent here).
+    if [[ -L "$HOME/.config/yazi" ]]; then
+        rm "$HOME/.config/yazi"
+    fi
+    mkdir -p "$HOME/.config/yazi"
+    create_link "$DOTFILES_DIR/yazi/yazi.toml" "$HOME/.config/yazi/yazi.toml"
+    create_link "$DOTFILES_DIR/yazi/keymap.toml" "$HOME/.config/yazi/keymap.toml"
 fi
 # Launchers (core)
 if should_install "core"; then

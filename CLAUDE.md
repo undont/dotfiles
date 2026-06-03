@@ -20,9 +20,14 @@ supports a local override mechanism and how personal the config tends to be.
 Config lives in the repo. The installed path is a symlink. Changes committed to
 the repo propagate on next `dotfiles update`.
 
-**Used for:** zprofile, tmux scripts, nvim plugins, launchers, yazi
-(`yazi/` -> `~/.config/yazi`, whole directory), the statusline
+**Used for:** zprofile, tmux scripts, nvim plugins, launchers, the statusline
 theme resolver (`scripts/_lib/statusline-theme.sh` -> `~/.config/dotfiles/statusline-theme.sh`).
+
+yazi is symlinked **per file** (`yazi/yazi.toml`, `yazi/keymap.toml` ->
+`~/.config/yazi/`), not as a whole directory, so theme-switch can write a
+generated `~/.config/yazi/theme.toml` alongside without it landing back in the
+repo. The 0.2.109 migration converts older whole-dir symlinks. See the theme
+flavour note under Layered + the theme system.
 
 ### 2. Layered (symlink + local override)
 

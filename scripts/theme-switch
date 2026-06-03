@@ -48,6 +48,8 @@ GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 GHOSTTY_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 GH_DASH_TEMPLATE="$DOTFILES_ROOT/gh-dash/config.yml.template"
 GH_DASH_OUTPUT="$GHDASH_BASE"
+YAZI_TEMPLATE="$DOTFILES_ROOT/yazi/theme.toml.template"
+YAZI_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/yazi/theme.toml"
 
 # ══════════════════════════════════════════════════════════════
 # Theme Output Functions (different style from common.sh)
@@ -336,6 +338,36 @@ PLATFORM
         fi
 
         [[ "$quiet" != "true" ]] && theme_success "Generated gh-dash configuration"
+    fi
+
+    # Process yazi theme template using sed
+    if [[ -f "$YAZI_TEMPLATE" ]]; then
+        local yazi_dir
+        yazi_dir="$(dirname "$YAZI_OUTPUT")"
+        # Only write when the yazi config dir is a real directory (per-file
+        # symlinks). If it's still a legacy whole-dir symlink into the repo, skip
+        # rather than write the generated theme back into version control; the
+        # 0.2.109 migration converts it on the next `dotfiles update`.
+        if [[ -d "$yazi_dir" && ! -L "$yazi_dir" ]]; then
+            local yazi_tmp="${YAZI_OUTPUT}.tmp.$$"
+            sed -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
+                -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
+                -e "s|{{TMUX_BG_SECONDARY}}|$TMUX_BG_SECONDARY|g" \
+                -e "s|{{TMUX_FG_SECONDARY}}|$TMUX_FG_SECONDARY|g" \
+                -e "s|{{TMUX_STATUS_ACTIVE_BG}}|$TMUX_STATUS_ACTIVE_BG|g" \
+                -e "s|{{TMUX_STATUS_ACTIVE_FG}}|$TMUX_STATUS_ACTIVE_FG|g" \
+                -e "s|{{TMUX_ACCENT_CYAN}}|$TMUX_ACCENT_CYAN|g" \
+                -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
+                -e "s|{{TMUX_ACCENT_GREEN}}|$TMUX_ACCENT_GREEN|g" \
+                -e "s|{{TMUX_ACCENT_YELLOW}}|$TMUX_ACCENT_YELLOW|g" \
+                -e "s|{{TMUX_ACCENT_RED}}|$TMUX_ACCENT_RED|g" \
+                -e "s|{{TMUX_ACCENT_PURPLE}}|$TMUX_ACCENT_PURPLE|g" \
+                "$YAZI_TEMPLATE" > "$yazi_tmp" || { rm -f "$yazi_tmp"; return 1; }
+            mv "$yazi_tmp" "$YAZI_OUTPUT"
+            [[ "$quiet" != "true" ]] && theme_success "Generated yazi theme"
+        else
+            [[ "$quiet" != "true" ]] && theme_warn "Yazi config dir is a legacy symlink; run 'dotfiles update' to migrate"
+        fi
     fi
 
     # Save current theme preference
