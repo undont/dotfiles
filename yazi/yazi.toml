@@ -1,0 +1,11 @@
+# Yazi file manager configuration
+# Docs: https://yazi-rs.github.io/docs/configuration/yazi
+
+[preview]
+# The bundled PDF previewer renders pages with `pdftoppm` (poppler) and then
+# precaches the image capped to these dimensions. Yazi will not upscale past the
+# cached size, so the defaults (600x900) make PDF/image previews look small on a
+# large terminal. Larger caps render bigger, sharper previews at the cost of a
+# bit more cache space.
+max_width = 1200
+max_height = 1800

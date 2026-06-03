@@ -243,6 +243,7 @@ If you have existing configurations (especially customised ones), this step ensu
 | Tmux | minimal | `.tmux.conf`, `.tmux/` |
 | Neovim | core | `.config/nvim/` |
 | Ghostty | core | `.config/ghostty/` |
+| Yazi | core | `.config/yazi/` |
 | Hammerspoon | full | `.hammerspoon/` |
 | Karabiner | full | `.config/karabiner/` |
 
@@ -304,6 +305,9 @@ Ghostty (core):
 
 btop (core):
   ~/.config/btop/btop.conf -> ~/dotfiles/btop/btop.conf
+
+Yazi (core):
+  ~/.config/yazi           -> ~/dotfiles/yazi
 
 LazyGit (core):
   ~/.config/lazygit/config.yml  -> ~/dotfiles/lazygit/config.yml   (all platforms)
