@@ -10,6 +10,10 @@ tmux/resurrect/
 # Generated ghostty config (template is tracked, generated config is not)
 ghostty/config
 
+# Generated yazi theme (template is tracked; output lives in ~/.config/yazi).
+# Defensive: only relevant if a pre-migration whole-dir symlink wrote it here.
+yazi/theme.toml
+
 # System files
 .DS_Store
 *.swp

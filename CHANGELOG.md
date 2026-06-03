@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.109] - 2026-06-03
+
+### Added
+- Yazi: theme flavour generated from the active dotfiles theme. `dotfiles theme` now renders `yazi/theme.toml.template` to `~/.config/yazi/theme.toml`, recolouring the manager, tabs, mode line, status bar, which-key, pickers, tasks, help and filetype rules from the theme's palette (reusing the existing `{{TMUX_*}}` colour variables), so yazi matches tmux/ghostty/gh-dash on every theme switch. Only colour-bearing keys are overridden; icons and layout fall through to yazi's bundled preset. `scripts/theme-switch`, `yazi/theme.toml.template`
+- Yazi: new keymaps in `yazi/keymap.toml`. `o` opens the selection in the system file explorer (Finder via `open`, Linux via `xdg-open`) and `<C-g>` opens lazygit in the current directory. `<Enter>` keeps the default open (directories still open in `$EDITOR`).
+- Yazi: `y()` shell wrapper (`zsh/dotfiles.zsh`) launches yazi via `--cwd-file` and cd's the shell to the last-browsed directory on quit. Picked up by the `dotfiles aliases` cheatsheet.
+- Yazi: `ffmpegthumbnailer` (video thumbnails), `resvg` (SVG previews) and `sevenzip` (archive previews via `7zz`) added to the `Brewfile` to fill the preview backends yazi was missing.
+
+### Changed
+- Yazi: `~/.config/yazi` is now symlinked **per file** (`yazi.toml`, `keymap.toml`) instead of as a whole directory, so the generated `theme.toml` can live in the XDG config dir without landing back in the repo. `scripts/install/create-symlinks.sh` creates the per-file links and `scripts/install/uninstall.sh` removes them plus the generated theme. The `0.2.109-yazi-perfile-symlinks.sh` migration converts existing whole-dir symlinks on `dotfiles update` (it runs before the symlinks step, which then recreates the per-file links). `yazi/theme.toml` is gitignored defensively.
+
 ## [0.2.108] - 2026-06-03
 
 ### Added
