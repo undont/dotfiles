@@ -201,7 +201,7 @@ Bundled helper: **`dash-repo-sync`** (in `~/.local/bin/`) scans `DEV_ROOT` and `
 | Shell completion | `carapace` (multi-shell completion bridge), `zsh-autosuggestions`, `direnv` |
 | Git & GitHub | `gh`, `lazygit`, `diffnav`, `act` (run GitHub Actions locally) |
 | Containers & shells | `lazydocker`, `lazyssh`, `cloudflared` |
-| Search & files | `fd`, `ripgrep`, `bat`, `jq`, `yq`, `zoxide`, `fzf` |
+| Search & files | `fd`, `ripgrep`, `bat`, `jq`, `yq`, `zoxide`, `fzf`, `yazi` (file manager), `poppler` (PDF previews) |
 | System | `btop`, `gdu` (disk usage TUI), `fastfetch` |
 | Media & display | `ffmpeg`, `imagemagick`, `chafa`, `glow` |
 | Terminal extras | `asciinema`, `figlet`, `toilet`, `tmux-fingers` |
@@ -326,6 +326,7 @@ dotfiles/
 ├── lazygit/          # LazyGit configuration
 ├── lazydocker/       # LazyDocker configuration
 ├── btop/             # System monitor configuration
+├── yazi/             # Terminal file manager (larger PDF/image previews)
 ├── launchers/        # Session launch scripts (picker: prefix + p)
 ├── hammerspoon/      # macOS automation (auto-centre windows)
 ├── gh-dash/          # GitHub dashboard (themed, keybindings, local overrides)

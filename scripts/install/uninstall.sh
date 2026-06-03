@@ -83,6 +83,7 @@ SYMLINKS=(
     "$HOME/.local/bin/dash-repo-sync"
     "$HOME/.local/launchers/dev"
     "$HOME/.config/lazygit/config.yml"
+    "$HOME/.config/yazi"
     # Full
     "$HOME/.hammerspoon/init.lua"
 )

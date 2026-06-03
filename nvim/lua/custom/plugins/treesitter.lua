@@ -24,7 +24,6 @@ return {
         'jsdoc',
         'json',
         'json5',
-        'jsonc',
         'make',
         'objc',
         'python',

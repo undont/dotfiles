@@ -58,6 +58,10 @@ brew "diffnav"       # Diff navigator for GitHub PRs
 brew "monolith" unless OS.linux? && Hardware::CPU.arm?  # No Linux ARM bottle
 brew "zoxide"        # smart cd replacement
 
+# File Manager
+brew "yazi"          # Terminal file manager
+brew "poppler"       # PDF rendering (pdftoppm) for yazi file previews
+
 # Build Tools
 brew "binutils" # GNU binary utilities
 brew "gcc"      # GNU compiler collection
