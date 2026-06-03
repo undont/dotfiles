@@ -543,6 +543,19 @@ alias mv="mv -i"                                                               #
 # Suffix aliases
 alias -s md='-t glow' # View markdown files with syntax highlighting using glow (if installed)
 
+# yazi: launch the file manager, then cd the shell to wherever you quit.
+# Uses --cwd-file so a plain `q` lands you in the last-browsed directory.
+# @cheat: yazi file manager (cd to last dir on quit)
+y() {
+  local tmp cwd
+  tmp="$(mktemp -t yazi-cwd.XXXXXX)"
+  yazi "$@" --cwd-file="$tmp"
+  if cwd="$(command cat -- "$tmp")" && [[ -n "$cwd" && "$cwd" != "$PWD" ]]; then
+    builtin cd -- "$cwd"
+  fi
+  rm -f -- "$tmp"
+}
+
 # @section: SEARCH & PROCESS
 
 alias grep="grep --color=auto"                                                 # grep --color=auto

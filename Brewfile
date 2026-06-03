@@ -61,6 +61,9 @@ brew "zoxide"        # smart cd replacement
 # File Manager
 brew "yazi"          # Terminal file manager
 brew "poppler"       # PDF rendering (pdftoppm) for yazi file previews
+brew "ffmpegthumbnailer"  # Video thumbnails for yazi file previews
+brew "resvg"         # SVG rendering for yazi file previews
+brew "sevenzip"      # Archive previews (7zz) for yazi file previews
 
 # Build Tools
 brew "binutils" # GNU binary utilities

@@ -1,0 +1,195 @@
+# Yazi theme - GENERATED from the active dotfiles theme by `dotfiles theme`.
+# Do not edit directly: edit this template (yazi/theme.toml.template) or the
+# theme files (themes/*.theme). The generated output lives at
+# ~/.config/yazi/theme.toml and is not tracked in the repo.
+#
+# Only colour-bearing keys are overridden here; everything else (icons, symbols,
+# layout) falls through to yazi's bundled preset theme. Colours are real hex
+# values substituted from the theme's palette, so they apply in both yazi's
+# dark and light startup modes.
+#:schema https://yazi-rs.github.io/schemas/theme.json
+
+# : Manager {{{
+
+[mgr]
+cwd = { fg = "{{TMUX_ACCENT_CYAN}}" }
+
+# Find
+find_keyword  = { fg = "{{TMUX_ACCENT_YELLOW}}", bold = true, italic = true, underline = true }
+find_position = { fg = "{{TMUX_ACCENT_PINK}}", bg = "reset", bold = true, italic = true }
+
+# Symlink
+symlink_target = { fg = "{{TMUX_FG_SECONDARY}}", italic = true }
+
+# Marker
+marker_copied   = { fg = "{{TMUX_ACCENT_GREEN}}",  bg = "{{TMUX_ACCENT_GREEN}}" }
+marker_cut      = { fg = "{{TMUX_ACCENT_RED}}",    bg = "{{TMUX_ACCENT_RED}}" }
+marker_marked   = { fg = "{{TMUX_ACCENT_CYAN}}",   bg = "{{TMUX_ACCENT_CYAN}}" }
+marker_selected = { fg = "{{TMUX_ACCENT_YELLOW}}", bg = "{{TMUX_ACCENT_YELLOW}}" }
+
+# Count
+count_copied   = { fg = "{{TMUX_FG_PRIMARY}}", bg = "{{TMUX_ACCENT_GREEN}}" }
+count_cut      = { fg = "{{TMUX_FG_PRIMARY}}", bg = "{{TMUX_ACCENT_RED}}" }
+count_selected = { fg = "{{TMUX_STATUS_ACTIVE_FG}}", bg = "{{TMUX_ACCENT_YELLOW}}" }
+
+# Border
+border_style = { fg = "{{TMUX_BG_SECONDARY}}" }
+
+# : }}}
+
+
+# : Tabs {{{
+
+[tabs]
+active   = { fg = "{{TMUX_STATUS_ACTIVE_FG}}", bg = "{{TMUX_STATUS_ACTIVE_BG}}", bold = true }
+inactive = { fg = "{{TMUX_FG_SECONDARY}}", bg = "{{TMUX_BG_SECONDARY}}" }
+
+# : }}}
+
+
+# : Mode {{{
+
+[mode]
+normal_main = { fg = "{{TMUX_STATUS_ACTIVE_FG}}", bg = "{{TMUX_STATUS_ACTIVE_BG}}", bold = true }
+normal_alt  = { fg = "{{TMUX_STATUS_ACTIVE_BG}}", bg = "{{TMUX_BG_SECONDARY}}" }
+
+# Select mode
+select_main = { fg = "{{TMUX_STATUS_ACTIVE_FG}}", bg = "{{TMUX_ACCENT_GREEN}}", bold = true }
+select_alt  = { fg = "{{TMUX_ACCENT_GREEN}}", bg = "{{TMUX_BG_SECONDARY}}" }
+
+# Unset mode
+unset_main = { fg = "{{TMUX_STATUS_ACTIVE_FG}}", bg = "{{TMUX_ACCENT_RED}}", bold = true }
+unset_alt  = { fg = "{{TMUX_ACCENT_RED}}", bg = "{{TMUX_BG_SECONDARY}}" }
+
+# : }}}
+
+
+# : Status bar {{{
+
+[status]
+# Permissions
+perm_sep   = { fg = "{{TMUX_FG_SECONDARY}}" }
+perm_type  = { fg = "{{TMUX_ACCENT_GREEN}}" }
+perm_read  = { fg = "{{TMUX_ACCENT_YELLOW}}" }
+perm_write = { fg = "{{TMUX_ACCENT_RED}}" }
+perm_exec  = { fg = "{{TMUX_ACCENT_CYAN}}" }
+
+# Progress
+progress_label  = { fg = "{{TMUX_FG_PRIMARY}}", bold = true }
+progress_normal = { fg = "{{TMUX_STATUS_ACTIVE_BG}}", bg = "{{TMUX_BG_SECONDARY}}" }
+progress_error  = { fg = "{{TMUX_ACCENT_RED}}", bg = "{{TMUX_BG_SECONDARY}}" }
+
+# : }}}
+
+
+# : Which {{{
+
+[which]
+mask            = { bg = "{{TMUX_BG_SECONDARY}}" }
+cand            = { fg = "{{TMUX_ACCENT_CYAN}}" }
+rest            = { fg = "{{TMUX_FG_SECONDARY}}" }
+desc            = { fg = "{{TMUX_ACCENT_PINK}}" }
+separator_style = { fg = "{{TMUX_FG_SECONDARY}}" }
+
+# : }}}
+
+
+# : Confirmation {{{
+
+[confirm]
+border  = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+title   = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+btn_yes = { fg = "{{TMUX_STATUS_ACTIVE_FG}}", bg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+
+# : }}}
+
+
+# : Spotter {{{
+
+[spot]
+border   = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+title    = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+tbl_col  = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+tbl_cell = { fg = "{{TMUX_ACCENT_YELLOW}}", reversed = true }
+
+# : }}}
+
+
+# : Notification {{{
+
+[notify]
+title_info  = { fg = "{{TMUX_ACCENT_GREEN}}" }
+title_warn  = { fg = "{{TMUX_ACCENT_YELLOW}}" }
+title_error = { fg = "{{TMUX_ACCENT_RED}}" }
+
+# : }}}
+
+
+# : Picker {{{
+
+[pick]
+border = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+active = { fg = "{{TMUX_ACCENT_PINK}}", bold = true }
+
+# : }}}
+
+
+# : Input {{{
+
+[input]
+border = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+
+# : }}}
+
+
+# : Completion {{{
+
+[cmp]
+border = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+
+# : }}}
+
+
+# : Task manager {{{
+
+[tasks]
+border  = { fg = "{{TMUX_STATUS_ACTIVE_BG}}" }
+hovered = { fg = "{{TMUX_ACCENT_PINK}}", bold = true }
+
+# : }}}
+
+
+# : Help menu {{{
+
+[help]
+on     = { fg = "{{TMUX_ACCENT_CYAN}}" }
+run    = { fg = "{{TMUX_ACCENT_PINK}}" }
+footer = { fg = "{{TMUX_BG_PRIMARY}}", bg = "{{TMUX_FG_PRIMARY}}" }
+
+# : }}}
+
+
+# : File-specific styles {{{
+
+[filetype]
+rules = [
+	# Image
+	{ mime = "image/*", fg = "{{TMUX_ACCENT_YELLOW}}" },
+	# Media
+	{ mime = "{audio,video}/*", fg = "{{TMUX_ACCENT_PINK}}" },
+	# Archive
+	{ mime = "application/{zip,rar,7z*,tar,gzip,xz,zstd,bzip*,lzma,compress,archive,cpio,arj,xar,ms-cab*}", fg = "{{TMUX_ACCENT_RED}}" },
+	# Document
+	{ mime = "application/{pdf,doc,rtf}", fg = "{{TMUX_ACCENT_CYAN}}" },
+	# Virtual file system
+	{ mime = "vfs/{absent,stale}", fg = "{{TMUX_FG_SECONDARY}}" },
+	# Special files
+	{ url = "*", is = "orphan", bg = "{{TMUX_ACCENT_RED}}" },
+	{ url = "*", is = "exec", fg = "{{TMUX_ACCENT_GREEN}}" },
+	{ url = "*", is = "dummy", bg = "{{TMUX_ACCENT_RED}}" },
+	{ url = "*/", is = "dummy", bg = "{{TMUX_ACCENT_RED}}" },
+	# Directories use the theme's active accent
+	{ url = "*/", fg = "{{TMUX_STATUS_ACTIVE_BG}}" },
+]
+
+# : }}}

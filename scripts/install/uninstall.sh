@@ -83,7 +83,8 @@ SYMLINKS=(
     "$HOME/.local/bin/dash-repo-sync"
     "$HOME/.local/launchers/dev"
     "$HOME/.config/lazygit/config.yml"
-    "$HOME/.config/yazi"
+    "$HOME/.config/yazi/yazi.toml"
+    "$HOME/.config/yazi/keymap.toml"
     # Full
     "$HOME/.hammerspoon/init.lua"
 )
@@ -170,6 +171,17 @@ fi
 # Step 3: Remove additional created files/directories
 echo ""
 info "Cleaning up additional files..."
+
+# Remove the yazi config dir: a real directory holds the generated theme.toml
+# (per-file symlinks removed above); a legacy install may still have a whole-dir
+# symlink.
+if [[ -L "$HOME/.config/yazi" ]]; then
+    rm -f "$HOME/.config/yazi"
+    success "Removed: ~/.config/yazi (legacy symlink)"
+elif [[ -d "$HOME/.config/yazi" ]]; then
+    rm -rf "$HOME/.config/yazi"
+    success "Removed: ~/.config/yazi (config dir + generated theme)"
+fi
 
 # Remove TPM if installed by us
 if [[ -d "$HOME/.tmux/plugins/tpm" ]]; then

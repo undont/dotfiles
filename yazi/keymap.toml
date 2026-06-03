@@ -1,0 +1,18 @@
+# Yazi keymap overrides
+# Docs: https://yazi-rs.github.io/docs/configuration/keymap
+
+# Reserve <Enter> for the default open (directories -> $EDITOR) and use `o` to
+# hand the selection to the system file explorer (directories open in
+# Finder/Files; files open with their default app). Tries xdg-open (Linux) and
+# falls back to open (macOS). prepend_keymap shadows the built-in `o` binding.
+[[mgr.prepend_keymap]]
+on = "o"
+run = 'shell -- { command -v xdg-open >/dev/null && xdg-open %s; } || open %s'
+desc = "Open in system file explorer"
+
+# lazygit in the current directory; --block hands the terminal over and returns
+# to yazi on quit.
+[[mgr.prepend_keymap]]
+on = "<C-g>"
+run = 'shell --block -- lazygit'
+desc = "lazygit (cwd)"
