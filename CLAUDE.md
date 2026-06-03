@@ -20,7 +20,8 @@ supports a local override mechanism and how personal the config tends to be.
 Config lives in the repo. The installed path is a symlink. Changes committed to
 the repo propagate on next `dotfiles update`.
 
-**Used for:** zprofile, tmux scripts, nvim plugins, launchers, the statusline
+**Used for:** zprofile, tmux scripts, nvim plugins, launchers, yazi
+(`yazi/` -> `~/.config/yazi`, whole directory), the statusline
 theme resolver (`scripts/_lib/statusline-theme.sh` -> `~/.config/dotfiles/statusline-theme.sh`).
 
 ### 2. Layered (symlink + local override)

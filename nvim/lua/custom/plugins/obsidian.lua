@@ -132,9 +132,10 @@ return {
         time_format = 'HH:mm',
       },
 
+      -- Completion is served by obsidian.nvim's built-in `obsidian-ls` LSP
+      -- server (since v3.16); the old `nvim_cmp`/`blink` switches are
+      -- deprecated and removed in 4.0. blink.cmp's `lsp` source picks it up.
       completion = {
-        nvim_cmp = false,
-        blink = true,
         min_chars = 2,
       },
 

@@ -6,10 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.3.0] - 2026-06-03
+## [0.2.108] - 2026-06-03
 
 ### Added
 - Yazi: the terminal file manager is now a managed tool. `yazi/yazi.toml` raises the image preview caps to `max_width = 1200` / `max_height = 1800` (yazi's defaults are 600x900). The bundled PDF previewer renders pages with `pdftoppm` and precaches the image capped to those dimensions, and yazi won't upscale past the cached size, so on a large terminal PDFs and images previewed noticeably small; the larger caps render bigger, sharper previews. `yazi` and `poppler` (which provides `pdftoppm`) are added to the `Brewfile`, and `~/.config/yazi` is symlinked as a whole directory (the nvim pattern) by `scripts/install/create-symlinks.sh` and removed by `scripts/install/uninstall.sh`.
+
+### Changed
+- Nvim: obsidian.nvim completion now flows through its built-in `obsidian-ls` LSP server (added in v3.16) rather than the `nvim_cmp`/`blink` opt-in switches, which are deprecated and removed in obsidian.nvim 4.0. blink.cmp's `lsp` source picks the server up automatically, so the explicit `nvim_cmp = false` / `blink = true` flags are dropped and only `min_chars` remains. `nvim/lua/custom/plugins/obsidian.lua`
+
+### Fixed
+- Nvim: treesitter no longer retries (and fails) to install `jsonc` on every startup. `jsonc` was removed from nvim-treesitter's `main`-branch parser registry, so the startup install loop kept it permanently in the "missing" set and ran `install('jsonc')` each launch, which errored with "couldn't install jsonc" for anyone without a stale `jsonc.so` left over from an older revision. Dropped `jsonc` from the parsers list; the `json` parser highlights JSON-with-comments files and `json5` covers stricter cases. `nvim/lua/custom/plugins/treesitter.lua`
 
 ## [0.2.107] - 2026-06-02
 
