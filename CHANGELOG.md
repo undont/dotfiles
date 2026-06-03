@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.3.0] - 2026-06-03
+
+### Added
+- Yazi: the terminal file manager is now a managed tool. `yazi/yazi.toml` raises the image preview caps to `max_width = 1200` / `max_height = 1800` (yazi's defaults are 600x900). The bundled PDF previewer renders pages with `pdftoppm` and precaches the image capped to those dimensions, and yazi won't upscale past the cached size, so on a large terminal PDFs and images previewed noticeably small; the larger caps render bigger, sharper previews. `yazi` and `poppler` (which provides `pdftoppm`) are added to the `Brewfile`, and `~/.config/yazi` is symlinked as a whole directory (the nvim pattern) by `scripts/install/create-symlinks.sh` and removed by `scripts/install/uninstall.sh`.
+
 ## [0.2.107] - 2026-06-02
 
 ### Added
