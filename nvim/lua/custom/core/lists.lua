@@ -208,7 +208,14 @@ end
 -- Pull diagnostics, gating C#-family files behind Roslyn's project-init
 -- notification. Non-C# buffers pull immediately. If Roslyn hasn't attached
 -- yet, the LspAttach handler picks it up.
+--
+-- The validity guard matters: the LspAttach handler defers this by 500ms,
+-- and the scan can finalise (deleting its created buffers) in that window —
+-- e.g. via the 500ms settled debounce. vim.bo on a deleted buffer throws.
 local function pull_gated(bufnr)
+  if not vim.api.nvim_buf_is_valid(bufnr) then
+    return
+  end
   if ROSLYN_FTS[vim.bo[bufnr].filetype] then
     local roslyn = vim.lsp.get_clients({ bufnr = bufnr, name = 'roslyn' })[1]
     if roslyn then
@@ -221,36 +228,57 @@ local function pull_gated(bufnr)
   pull_diagnostics(bufnr)
 end
 
-local function open_git_modified()
+--- Run `git <args>` and return stdout lines, or nil on failure.
+local function git_lines(args)
+  local result = vim.system(vim.list_extend({ 'git' }, args), { text = true }):wait()
+  if result.code ~= 0 then
+    return nil
+  end
+  local lines = {}
+  for line in (result.stdout or ''):gmatch '[^\r\n]+' do
+    table.insert(lines, line)
+  end
+  return lines
+end
+
+-- Diagnostic codes excluded from scan snapshots (not from in-editor
+-- diagnostics). Roslyn's pull for hidden-loaded buffers reports IDE0079
+-- ("Suppression is unnecessary") false positives: judging a suppression
+-- needs the suppressed analyzer (e.g. Sonar's S-rules) to run, and the
+-- scan-time pull analyses with a reduced pass — a long-standing roslyn
+-- defect (dotnet/roslyn#47288, #75887). Opening the file for real runs the
+-- full pass and the IDE0079s vanish, so in-editor they self-correct; in a
+-- scan snapshot they'd sit in the quickfix as phantom entries until each
+-- file is visited.
+local SCAN_IGNORED_CODES = { IDE0079 = true }
+
+local function scan_diagnostics(bufnr)
+  return vim.tbl_filter(function(d)
+    return not SCAN_IGNORED_CODES[d.code]
+  end, vim.diagnostic.get(bufnr))
+end
+
+--- Shared scan driver behind <leader>xm and <leader>xt: hidden-load the
+--- given absolute paths so LSPs attach, pull/await diagnostics and dump
+--- them into a titled quickfix via scan_runner.
+--- @param paths string[] absolute paths
+--- @param opts { qf_title: string, qf_label: string, augroup_name: string, empty_message: string }
+local function scan_files(paths, opts)
   local scan_runner = require 'custom.core.scan_runner'
   if scan_runner.is_active() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
     return
   end
 
-  local result = vim.system({ 'git', 'ls-files', '-m', '-o', '--exclude-standard' }, { text = true }):wait()
-  if result.code ~= 0 then
-    vim.notify('Not a git repo', vim.log.levels.WARN)
-    return
-  end
-  local files = {}
-  for line in (result.stdout or ''):gmatch '[^\r\n]+' do
-    table.insert(files, line)
-  end
-  if #files == 0 then
-    vim.notify('No modified files', vim.log.levels.INFO)
-    return
-  end
-
-  -- Skip paths that don't exist on disk: `git ls-files -m` includes
-  -- deleted-but-unstaged entries, and creating buffers for missing files
+  -- Skip paths that don't exist on disk: the sources include deleted files
+  -- (`git ls-files -m` lists deleted-but-unstaged entries; ticket commits
+  -- may touch since-deleted files), and creating buffers for missing files
   -- triggers easy-dotnet's BootstrapFile to walk a missing directory and
   -- crash with -32000.
   local bufnrs = {}
   local target = {}
   local created = {}
-  for _, f in ipairs(files) do
-    local abs = vim.fn.fnamemodify(f, ':p')
+  for _, abs in ipairs(paths) do
     if vim.fn.filereadable(abs) == 1 then
       local existed = vim.fn.bufnr(abs) ~= -1
       local bufnr = vim.fn.bufadd(abs)
@@ -263,7 +291,7 @@ local function open_git_modified()
     end
   end
   if #bufnrs == 0 then
-    vim.notify('No readable modified files', vim.log.levels.INFO)
+    vim.notify(opts.empty_message, vim.log.levels.INFO)
     return
   end
 
@@ -275,7 +303,7 @@ local function open_git_modified()
   -- Late-attaching clients — sonarlint via filetype lazy-load, roslyn via
   -- file-association autostart. Roslyn pulls go through the init-gate; other
   -- clients get a small defer so dynamic capability registration can settle.
-  local pull_group = vim.api.nvim_create_augroup('GitModifiedScanPull', { clear = true })
+  local pull_group = vim.api.nvim_create_augroup(opts.augroup_name .. 'Pull', { clear = true })
   vim.api.nvim_create_autocmd('LspAttach', {
     group = pull_group,
     callback = function(args)
@@ -296,15 +324,52 @@ local function open_git_modified()
     end,
   })
 
-  vim.notify('Scanning ' .. #bufnrs .. ' modified file(s)…', vim.log.levels.INFO)
+  -- Fidget progress (same shape as the sonarlint scan): counts up as each
+  -- watched buffer first reports a DiagnosticChanged, so a slow scan is
+  -- visibly working rather than a black box. Falls back to a plain notify.
+  local fidget_ok, fidget = pcall(require, 'fidget.progress')
+  local progress = fidget_ok
+      and fidget.handle.create {
+        title = opts.qf_label,
+        message = 'scanning ' .. #bufnrs .. ' file(s)',
+        lsp_client = { name = opts.qf_label:lower() .. '-scan' },
+      }
+    or nil
+  if not progress then
+    vim.notify('Scanning ' .. #bufnrs .. ' file(s)…', vim.log.levels.INFO)
+  end
 
   scan_runner.start {
     bufnrs = bufnrs,
+    get_diagnostics = scan_diagnostics,
     debounce_ms = 5000,
+    -- Once every watched buffer has reported, the long debounce is dead
+    -- air — finalise after a short settle instead.
+    settled_debounce_ms = 500,
+    -- ...unless a sonarlint client is attached to a scanned buffer: a
+    -- buffer's *first* report comes from its fastest LSP, while sonarlint's
+    -- java analyzers publish seconds later — the 5s debounce exists for
+    -- exactly that gap, so keep it. A cold sonarlint JVM isn't attached by
+    -- settle time, but its results arrive long after the old 5s window too,
+    -- so the fast path loses nothing there.
+    settle_check = function()
+      for _, client in ipairs(vim.lsp.get_clients { name = 'sonarlint.nvim' }) do
+        for _, b in ipairs(bufnrs) do
+          if (client.attached_buffers or {})[b] then
+            return false
+          end
+        end
+      end
+      return true
+    end,
     hard_timeout_ms = 5 * 60 * 1000,
-    qf_title = 'Modified: diagnostics',
-    qf_label = 'Modified',
-    augroup_name = 'GitModifiedScan',
+    qf_title = opts.qf_title,
+    qf_label = opts.qf_label,
+    augroup_name = opts.augroup_name,
+    progress = progress,
+    on_report = progress and function(reported, total)
+      progress:report { message = reported .. '/' .. total .. ' file(s) reported' }
+    end or nil,
     on_finalise = function()
       pcall(vim.api.nvim_del_augroup_by_id, pull_group)
       for _, b in ipairs(created) do
@@ -316,6 +381,188 @@ local function open_git_modified()
   }
 end
 
+local function open_git_modified()
+  local files = git_lines { 'ls-files', '-m', '-o', '--exclude-standard' }
+  if not files then
+    vim.notify('Not a git repo', vim.log.levels.WARN)
+    return
+  end
+  if #files == 0 then
+    vim.notify('No modified files', vim.log.levels.INFO)
+    return
+  end
+  local paths = {}
+  for _, f in ipairs(files) do
+    table.insert(paths, vim.fn.fnamemodify(f, ':p'))
+  end
+  scan_files(paths, {
+    qf_title = 'Modified: diagnostics',
+    qf_label = 'Modified',
+    augroup_name = 'GitModifiedScan',
+    empty_message = 'No readable modified files',
+  })
+end
+
+-- Ticket-scoped scan: mirrors <leader>dT's commit discovery (pr-review.lua)
+-- — merge-base with main, ticket default pulled from the branch name, commit
+-- subjects grepped in base..HEAD — but instead of opening a diffview it
+-- scans the union of files touched by exactly the matched commits and dumps
+-- their diagnostics into the quickfix. Per-commit diff-tree (not a range
+-- diff) so interleaved non-matching commits don't drag their files in.
+local function open_ticket_scan()
+  if require('custom.core.scan_runner').is_active() then
+    vim.notify('A scan is already running', vim.log.levels.WARN)
+    return
+  end
+
+  local base = (git_lines { 'merge-base', 'main', 'HEAD' } or {})[1]
+  if not base or base == '' then
+    vim.notify('Could not find merge-base with main', vim.log.levels.WARN)
+    return
+  end
+
+  local branch = (git_lines { 'rev-parse', '--abbrev-ref', 'HEAD' } or {})[1] or ''
+  local default = branch:match '([A-Za-z]+%-%d+)' or ''
+
+  vim.ui.input({ prompt = 'Ticket / commit grep: ', default = default }, function(input)
+    if not input or input == '' then
+      return
+    end
+
+    local commits = git_lines { 'log', '--grep=' .. input, '--fixed-strings', '--format=%H', base .. '..HEAD' }
+    if not commits or #commits == 0 then
+      vim.notify('No commits matching "' .. input .. '"', vim.log.levels.WARN)
+      return
+    end
+
+    local toplevel = (git_lines { 'rev-parse', '--show-toplevel' } or {})[1]
+    if not toplevel then
+      vim.notify('Not a git repo', vim.log.levels.WARN)
+      return
+    end
+
+    -- diff-tree paths are repo-root-relative (unlike cwd-relative ls-files)
+    local seen = {}
+    local paths = {}
+    for _, hash in ipairs(commits) do
+      for _, f in ipairs(git_lines { 'diff-tree', '--no-commit-id', '--name-only', '-r', hash } or {}) do
+        if not seen[f] then
+          seen[f] = true
+          table.insert(paths, toplevel .. '/' .. f)
+        end
+      end
+    end
+
+    vim.notify(#commits .. ' commit(s) matching "' .. input .. '", ' .. #paths .. ' file(s)', vim.log.levels.INFO)
+    scan_files(paths, {
+      qf_title = 'Ticket: diagnostics',
+      qf_label = 'Ticket',
+      augroup_name = 'GitTicketScan',
+      empty_message = 'No readable files in matching commits',
+    })
+  end)
+end
+
+-- Diagnostics into native lists. Explicit titles let `build.lua`'s
+-- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
+-- match these lists and prune resolved entries on DiagnosticChanged.
+-- We bypass `vim.diagnostic.setqflist` so we can route through
+-- `scan_runner.diag_to_item`, which prefixes text with `[source]` (the
+-- originating LSP). The same prefix is used by the auto-clear's
+-- (lnum, text) match so pruning stays accurate.
+local function diags_to_items(diagnostics)
+  local scan_runner = require 'custom.core.scan_runner'
+  local items = {}
+  for _, d in ipairs(diagnostics) do
+    if d.bufnr and d.lnum then
+      table.insert(items, scan_runner.diag_to_item(d))
+    end
+  end
+  table.sort(items, function(a, b)
+    if a.bufnr ~= b.bufnr then
+      return (a.bufnr or 0) < (b.bufnr or 0)
+    end
+    if a.lnum ~= b.lnum then
+      return a.lnum < b.lnum
+    end
+    return (a.col or 0) < (b.col or 0)
+  end)
+  return items
+end
+
+local DIAG_QF_TITLE = 'Diagnostics: all'
+
+-- Live sync for the <leader>xx list: while the *current* qf list's title is
+-- DIAG_QF_TITLE, a debounced DiagnosticChanged rebuild keeps it current in
+-- both directions — fixed entries drop out (auto-clear already did that) and
+-- new diagnostics flow in, so re-pressing <leader>xx after each round of
+-- fixes is no longer needed. Any list push with a different title (:Cfilter,
+-- a build, a scan) pauses the sync; <leader>x[ back to the live list resumes.
+local function rebuild_live_qf()
+  local qf = vim.fn.getqflist { title = 0, idx = 0, items = 0 }
+  if qf.title ~= DIAG_QF_TITLE then
+    return
+  end
+  local items = diags_to_items(vim.diagnostic.get(nil))
+
+  if #items == 0 then
+    if #qf.items == 0 then
+      return
+    end
+    vim.fn.setqflist({}, 'r', { title = DIAG_QF_TITLE, items = {} })
+    -- Close + notify only if build.lua's auto-clear prune hasn't already
+    -- (it fires undebounced on the same DiagnosticChanged and closes the
+    -- window itself when its prune empties the list).
+    for _, win in ipairs(vim.fn.getwininfo()) do
+      if win.quickfix == 1 and win.loclist == 0 then
+        vim.api.nvim_win_close(win.winid, true)
+        vim.notify('Diagnostics: clean', vim.log.levels.INFO)
+        break
+      end
+    end
+    return
+  end
+
+  -- Preserve the current entry across the rebuild (same idea as build.lua's
+  -- prune-idx logic): if the entry the user is pointed at survives, it stays
+  -- current; if it was the one just resolved, snap to the nearest surviving
+  -- predecessor so the next ]q advances forward rather than jumping to
+  -- entry 1 (setqflist's default after replace). Items are sorted by
+  -- (bufnr, lnum, col) on both sides, so "predecessor" is positional.
+  local new_idx
+  local cur = qf.idx and qf.idx > 0 and qf.items[qf.idx] or nil
+  if cur then
+    for i, item in ipairs(items) do
+      if item.bufnr == cur.bufnr and item.lnum == cur.lnum and item.text == cur.text then
+        new_idx = i
+        break
+      end
+    end
+    if not new_idx then
+      for i, item in ipairs(items) do
+        local before = (item.bufnr or 0) < (cur.bufnr or 0)
+          or (item.bufnr == cur.bufnr and (item.lnum < cur.lnum or (item.lnum == cur.lnum and (item.col or 0) <= (cur.col or 0))))
+        if before then
+          new_idx = i
+        else
+          break
+        end
+      end
+    end
+  end
+  vim.fn.setqflist({}, 'r', { title = DIAG_QF_TITLE, items = items, idx = new_idx })
+end
+
+local live_timer
+
+local function schedule_live_rebuild()
+  if not live_timer then
+    live_timer = assert(vim.uv.new_timer())
+  end
+  live_timer:stop()
+  live_timer:start(300, 0, vim.schedule_wrap(rebuild_live_qf))
+end
+
 function M.setup()
   -- Built-in filter plugin: :Cfilter /pat/ keeps matching qf entries,
   -- :Cfilter! /pat/ drops them. Same for :Lfilter on loclists.
@@ -325,47 +572,44 @@ function M.setup()
   vim.keymap.set('n', '<leader>xq', toggle_quickfix, { desc = '[Q]uickfix list toggle' })
   vim.keymap.set('n', '<leader>xl', toggle_loclist, { desc = '[L]ocation list toggle' })
 
-  -- Diagnostics into native lists. Explicit titles let `build.lua`'s
-  -- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
-  -- match these lists and prune resolved entries on DiagnosticChanged.
-  -- We bypass `vim.diagnostic.setqflist` so we can route through
-  -- `scan_runner.diag_to_item`, which prefixes text with `[source]` (the
-  -- originating LSP). The same prefix is used by the auto-clear's
-  -- (lnum, text) match so pruning stays accurate.
-  local function diags_to_items(diagnostics)
-    local scan_runner = require 'custom.core.scan_runner'
-    local items = {}
-    for _, d in ipairs(diagnostics) do
-      if d.bufnr and d.lnum then
-        table.insert(items, scan_runner.diag_to_item(d))
+  vim.api.nvim_create_autocmd('DiagnosticChanged', {
+    group = vim.api.nvim_create_augroup('DiagnosticsLiveQf', { clear = true }),
+    callback = schedule_live_rebuild,
+  })
+
+  -- <leader>xx toggles a *live* list: if the qf window is already showing
+  -- the live diagnostics list, close it; otherwise (re)build and open. While
+  -- the list is current, the DiagnosticChanged sync above keeps it fresh —
+  -- including diagnostics republished after `checktime` reloads buffers an
+  -- external writer (Claude Code, another nvim instance, a script) changed,
+  -- which previously needed a second press.
+  vim.keymap.set('n', '<leader>xx', function()
+    local qf = vim.fn.getqflist { title = 0 }
+    if qf.title == DIAG_QF_TITLE then
+      for _, win in ipairs(vim.fn.getwininfo()) do
+        if win.quickfix == 1 and win.loclist == 0 then
+          vim.cmd 'cclose'
+          return
+        end
       end
     end
-    table.sort(items, function(a, b)
-      if a.bufnr ~= b.bufnr then
-        return (a.bufnr or 0) < (b.bufnr or 0)
-      end
-      if a.lnum ~= b.lnum then
-        return a.lnum < b.lnum
-      end
-      return (a.col or 0) < (b.col or 0)
-    end)
-    return items
-  end
-
-  vim.keymap.set('n', '<leader>xx', function()
-    -- Refresh stale buffers from disk first. Catches the case where an
-    -- external writer (Claude Code, another nvim instance, a script) has
-    -- changed an open buffer's file but neither FocusGained nor CursorHold
-    -- has fired to trigger autoread. LSP picks up the reload via on_lines
-    -- and republishes diagnostics — a second <leader>xx will pick them up.
     pcall(vim.cmd, 'checktime')
     local items = diags_to_items(vim.diagnostic.get(nil))
-    vim.fn.setqflist({}, ' ', { title = 'Diagnostics: all', items = items })
+    -- Replace in place when the live list is already current, so repeated
+    -- presses don't push duplicate lists onto the qf stack.
+    local action = qf.title == DIAG_QF_TITLE and 'r' or ' '
+    vim.fn.setqflist({}, action, { title = DIAG_QF_TITLE, items = items })
+    if #items == 0 then
+      vim.notify('Diagnostics: clean', vim.log.levels.INFO)
+    end
     vim.cmd 'botright cwindow'
-  end, { desc = 'All [D]iagnostics to quickfix' })
+  end, { desc = 'All [D]iagnostics to quickfix (live)' })
   vim.keymap.set('n', '<leader>xX', function()
     local items = diags_to_items(vim.diagnostic.get(0))
     vim.fn.setloclist(0, {}, ' ', { title = 'Diagnostics: buffer', items = items })
+    if #items == 0 then
+      vim.notify('Buffer diagnostics: clean', vim.log.levels.INFO)
+    end
     vim.cmd 'lwindow'
   end, { desc = 'Buffer diagnostics to loclist' })
 
@@ -437,8 +681,10 @@ function M.setup()
   end, { desc = '[C]lear both quickfix and location lists' })
 
   vim.keymap.set('n', '<leader>xm', open_git_modified, { desc = 'Git [M]odified → diagnostics qf' })
+  vim.keymap.set('n', '<leader>xt', open_ticket_scan, { desc = 'Git [T]icket commits → diagnostics qf' })
 
   vim.api.nvim_create_user_command('GitModified', open_git_modified, { desc = 'Open git-modified files and dump diagnostics to quickfix' })
+  vim.api.nvim_create_user_command('TicketScan', open_ticket_scan, { desc = 'Scan files from ticket-matching commits and dump diagnostics to quickfix' })
 
   -- Wrap every roslyn client at attach so `workspace/projectInitializationComplete`
   -- is observed even on warm-start scans (the notification only fires once per

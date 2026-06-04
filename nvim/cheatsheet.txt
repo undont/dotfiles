@@ -118,6 +118,7 @@ Refresh Treesitter + semantic tokens | <leader>lt
 Toggle dashboard in current window | <leader>ld
 Sonar scan changed files | <leader>ls
 Sonar scan whole project | <leader>lS
+Sonar issue details / silence rule | gra (on sonar finding)
 
 ## tools @tools
 Toggle file tree | <leader>e
@@ -134,7 +135,7 @@ Disassembly (otool/objdump) | d
 Hex dump (xxd) | x
 
 ## diagnostics @diagnostics
-All diagnostics to quickfix | <leader>xx
+All diagnostics to quickfix (live, toggle) | <leader>xx
 Buffer diagnostics to loclist | <leader>xX
 Quickfix list toggle | <leader>xq
 Location list toggle | <leader>xl
@@ -142,6 +143,7 @@ Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
 Git modified → diagnostics qf | <leader>xm
+Git ticket commits → diagnostics qf | <leader>xt
 Grep yank register → quickfix | <leader>x/
 Filter qf list (keep matching) | :Cfilter /pat/
 Filter qf list (drop matching) | :Cfilter! /pat/

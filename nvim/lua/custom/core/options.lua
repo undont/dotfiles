@@ -31,6 +31,10 @@ function M.setup()
   vim.o.tabstop = 4
   vim.o.breakindent = true
 
+  -- Project-local config: source a trusted .nvim.lua from the working
+  -- directory (prompts to trust on first load; see :help 'exrc')
+  vim.o.exrc = true
+
   -- Persistent undo
   vim.o.undofile = true
 
