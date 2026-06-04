@@ -565,6 +565,611 @@ vim.api.nvim_create_autocmd('BufEnter', {
   end,
 })
 
+-- ---------------------------------------------------------------------------
+-- Silence-rule code actions
+--
+-- Surface "silence this rule" quick fixes in the native code-action picker
+-- (gra) for any sonar diagnostic under the cursor. Two variants per rule:
+--   * project-wide  -> sets `rules["<code>"] = "off"` in localRules.json
+--   * in test files -> adds (or extends) an `overrides` entry whose `files`
+--                       are the test globs for the buffer's language and
+--                       silences the rule only there
+-- Both write `.sonarlint/localRules.json` (creating the dir/file if needed),
+-- then apply the change to the running server immediately so the warning
+-- disappears without a restart.
+--
+-- The actions are served by a tiny in-process LSP client (no JVM) rather than
+-- by monkeypatching the sonar client: `vim.lsp.buf.code_action` builds each
+-- client's `context.diagnostics` from that client's own namespace, so a
+-- separate source that ignores the passed context and queries sonar
+-- diagnostics directly is both simpler and independent of whatever the sonar
+-- server itself offers for the line. Each action carries a Command (not a
+-- workspace edit); execution is handled locally via vim.lsp.commands.
+-- ---------------------------------------------------------------------------
+
+local SILENCE_COMMAND = 'sonarlint.silenceRule'
+
+-- Test-file globs per filetype. Languages without a settled test-naming
+-- convention are omitted -- they simply don't get the "in test files" action.
+local TEST_GLOBS = {
+  go = { '**/*_test.go' },
+  python = { '**/test_*.py', '**/*_test.py' },
+  javascript = { '**/*.test.js', '**/*.spec.js' },
+  javascriptreact = { '**/*.test.jsx', '**/*.spec.jsx' },
+  typescript = { '**/*.test.ts', '**/*.spec.ts' },
+  typescriptreact = { '**/*.test.tsx', '**/*.spec.tsx' },
+  cs = { '**/*Tests.cs', '**/*Test.cs' },
+  cpp = { '**/*_test.cpp', '**/*_test.cc' },
+  c = { '**/*_test.c' },
+  php = { '**/*Test.php' },
+}
+
+--- The rule key for a diagnostic (e.g. "go:S3776"), or nil. Mirrors how the
+--- override filter reads `d.code`, with a fallback to the raw LSP payload.
+local function diagnostic_code(d)
+  local code = d.code
+  if code == nil and d.user_data and d.user_data.lsp then
+    code = d.user_data.lsp.code
+  end
+  return code ~= nil and tostring(code) or nil
+end
+
+--- Resolve the project root for writing localRules.json. Prefer the attached
+--- sonar client's root (so the file lands where before_init will read it on
+--- the next start), then the nearest `.sonarlint`/`.git` ancestor, then cwd.
+local function project_root_for_buf(bufnr)
+  for _, client in ipairs(vim.lsp.get_clients { bufnr = bufnr, name = SONARLINT_CLIENT_NAME }) do
+    local root = (client.config and (client.config._sonarlint_root or client.config.root_dir)) or client.root_dir
+    if root and root ~= '' then
+      return root
+    end
+  end
+  local name = vim.api.nvim_buf_get_name(bufnr)
+  local dir = name ~= '' and vim.fs.dirname(name) or vim.fn.getcwd()
+  return vim.fs.root(dir, { '.sonarlint', '.git' }) or vim.fn.getcwd()
+end
+
+--- Read localRules.json as a raw decoded table (preserving every field), or {}.
+local function read_local_rules(path)
+  if vim.fn.filereadable(path) == 0 then
+    return {}
+  end
+  local ok, content = pcall(vim.fn.readfile, path)
+  if not ok then
+    return {}
+  end
+  local decoded
+  ok, decoded = pcall(vim.json.decode, table.concat(content, '\n'))
+  if ok and type(decoded) == 'table' then
+    return decoded
+  end
+  return {}
+end
+
+--- Pretty-print a Lua value as JSON (2-space indent, sorted object keys) so the
+--- hand-edited localRules.json stays readable. Strings are escaped via
+--- vim.json.encode; empty tables serialise as `{}`.
+local function encode_json(value, indent)
+  indent = indent or ''
+  local child = indent .. '  '
+  local t = type(value)
+  if t == 'table' then
+    if vim.islist(value) and #value > 0 then
+      local parts = {}
+      for _, item in ipairs(value) do
+        table.insert(parts, child .. encode_json(item, child))
+      end
+      return '[\n' .. table.concat(parts, ',\n') .. '\n' .. indent .. ']'
+    elseif next(value) == nil then
+      return '{}'
+    end
+    local keys = {}
+    for k in pairs(value) do
+      table.insert(keys, tostring(k))
+    end
+    table.sort(keys)
+    local parts = {}
+    for _, k in ipairs(keys) do
+      table.insert(parts, child .. vim.json.encode(k) .. ': ' .. encode_json(value[k], child))
+    end
+    return '{\n' .. table.concat(parts, ',\n') .. '\n' .. indent .. '}'
+  elseif t == 'string' then
+    return vim.json.encode(value)
+  elseif t == 'number' or t == 'boolean' then
+    return tostring(value)
+  end
+  return 'null'
+end
+
+--- True if two glob lists hold the same entries (order-insensitive). Used to
+--- fold a test-scope silence into an existing matching `overrides` entry
+--- instead of appending a duplicate.
+local function same_globs(a, b)
+  if type(a) ~= 'table' or type(b) ~= 'table' or #a ~= #b then
+    return false
+  end
+  local sa, sb = vim.deepcopy(a), vim.deepcopy(b)
+  table.sort(sa)
+  table.sort(sb)
+  for i = 1, #sa do
+    if sa[i] ~= sb[i] then
+      return false
+    end
+  end
+  return true
+end
+
+--- Immediately drop sonar diagnostics carrying `code` so the silenced warning
+--- vanishes before the server's next publish. `only_bufnr` limits the sweep to
+--- one buffer (test-scope only applies in test files, so we don't clear others).
+local function drop_diagnostics_with_code(code, only_bufnr)
+  for _, client in ipairs(vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }) do
+    local ok, ns = pcall(vim.lsp.diagnostic.get_namespace, client.id)
+    if ok and ns then
+      local bufs = only_bufnr and { only_bufnr } or vim.api.nvim_list_bufs()
+      for _, bufnr in ipairs(bufs) do
+        if vim.api.nvim_buf_is_loaded(bufnr) then
+          local kept, changed = {}, false
+          for _, d in ipairs(vim.diagnostic.get(bufnr, { namespace = ns })) do
+            if diagnostic_code(d) == code then
+              changed = true
+            else
+              table.insert(kept, d)
+            end
+          end
+          if changed then
+            vim.diagnostic.set(ns, bufnr, kept)
+          end
+        end
+      end
+    end
+  end
+end
+
+--- Push the just-written rule change to running sonar clients so the warning
+--- clears without a restart.
+local function apply_silence_live(scope, code, root, bufnr)
+  local clients = vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }
+  if scope == 'global' then
+    for _, client in ipairs(clients) do
+      local cfg = client.config
+      if cfg then
+        cfg.settings = cfg.settings or {}
+        cfg.settings.sonarlint = cfg.settings.sonarlint or {}
+        cfg.settings.sonarlint.rules = cfg.settings.sonarlint.rules or {}
+        cfg.settings.sonarlint.rules[code] = { level = 'off' }
+        -- sonarlint re-pulls config via workspace/configuration after this
+        -- notify; nvim's default handler answers from the (now updated)
+        -- client.config.settings, so the server stops emitting the rule.
+        client:notify('workspace/didChangeConfiguration', { settings = cfg.settings })
+      end
+    end
+    drop_diagnostics_with_code(code)
+    return
+  end
+
+  -- Test scope: recompile overrides from the updated file so the always-on
+  -- publishDiagnostics wrapper filters future emits, then clear the current
+  -- buffer if it now matches a test glob.
+  for _, client in ipairs(clients) do
+    local r = (client.config and client.config._sonarlint_root) or root
+    local cfg = read_project_config(r)
+    if cfg then
+      client.config._sonarlint_overrides = compile_overrides(cfg.overrides)
+    end
+  end
+  local compiled = clients[1] and clients[1].config and clients[1].config._sonarlint_overrides
+  if compiled and bufnr and vim.api.nvim_buf_is_loaded(bufnr) then
+    local path = vim.api.nvim_buf_get_name(bufnr)
+    if is_overridden(compiled, root, path, code) then
+      drop_diagnostics_with_code(code, bufnr)
+    end
+  end
+end
+
+--- Add a silence to .sonarlint/localRules.json and apply it live.
+--- `args` = { root, code, scope = 'global'|'test', globs?, bufnr? }
+local function silence_rule(args)
+  local root, code, scope = args.root, args.code, args.scope
+  if not root or not code then
+    return
+  end
+  local dir = root .. '/.sonarlint'
+  local path = dir .. '/localRules.json'
+  if vim.fn.isdirectory(dir) == 0 and vim.fn.mkdir(dir, 'p') == 0 then
+    vim.notify('Sonar: could not create ' .. dir, vim.log.levels.ERROR)
+    return
+  end
+
+  local data = read_local_rules(path)
+  if scope == 'global' then
+    data.rules = type(data.rules) == 'table' and data.rules or {}
+    data.rules[code] = 'off'
+  else
+    local globs = args.globs or {}
+    data.overrides = type(data.overrides) == 'table' and data.overrides or {}
+    local entry
+    for _, ov in ipairs(data.overrides) do
+      if type(ov) == 'table' and same_globs(ov.files, globs) then
+        entry = ov
+        break
+      end
+    end
+    if not entry then
+      entry = { files = globs, rules = {} }
+      table.insert(data.overrides, entry)
+    end
+    entry.rules = type(entry.rules) == 'table' and entry.rules or {}
+    entry.rules[code] = 'off'
+  end
+
+  local lines = vim.split(encode_json(data, ''), '\n')
+  if not pcall(vim.fn.writefile, lines, path) then
+    vim.notify('Sonar: could not write ' .. path, vim.log.levels.ERROR)
+    return
+  end
+
+  apply_silence_live(scope, code, root, args.bufnr)
+  local where = scope == 'global' and 'project-wide' or 'in test files'
+  vim.notify('Sonar: silenced ' .. code .. ' ' .. where, vim.log.levels.INFO)
+end
+
+--- Build silence code actions for the sonar diagnostics overlapping a
+--- codeAction request's range. Returns LSP CodeAction objects whose Command is
+--- handled locally by vim.lsp.commands[SILENCE_COMMAND].
+local function build_silence_actions(params)
+  local uri = params.textDocument and params.textDocument.uri
+  if not uri then
+    return {}
+  end
+  local bufnr = vim.uri_to_bufnr(uri)
+  if not vim.api.nvim_buf_is_loaded(bufnr) then
+    return {}
+  end
+  local range = params.range or {}
+  local first = (range.start and range.start.line) or 0
+  local last = (range['end'] and range['end'].line) or first
+  local root = project_root_for_buf(bufnr)
+  local globs = TEST_GLOBS[vim.bo[bufnr].filetype]
+
+  local actions, seen = {}, {}
+  for _, d in ipairs(sonarlint_diagnostics(bufnr)) do
+    local dfirst = d.lnum or 0
+    local dlast = d.end_lnum or dfirst
+    if dfirst <= last and dlast >= first then
+      local code = diagnostic_code(d)
+      if code and not seen[code] then
+        seen[code] = true
+        table.insert(actions, {
+          title = 'Sonar: silence ' .. code .. ' (project)',
+          kind = 'quickfix',
+          command = {
+            title = 'Silence ' .. code,
+            command = SILENCE_COMMAND,
+            arguments = { { root = root, code = code, scope = 'global', bufnr = bufnr } },
+          },
+        })
+        if globs then
+          table.insert(actions, {
+            title = 'Sonar: silence ' .. code .. ' in test files',
+            kind = 'quickfix',
+            command = {
+              title = 'Silence ' .. code .. ' in tests',
+              command = SILENCE_COMMAND,
+              arguments = { { root = root, code = code, scope = 'test', globs = globs, bufnr = bufnr } },
+            },
+          })
+        end
+      end
+    end
+  end
+  return actions
+end
+
+-- Command id sonar attaches to its "Show issue details for '<rule>'" code
+-- action. Used to float that action to the top of gra. (The OpenRuleDesc /
+-- OpenStandaloneRuleDesc commands are internal executeCommand targets, not the
+-- code-action command -- verified against the running server.)
+local DETAILS_COMMANDS = {
+  ['SonarLint.ShowIssueDetailsCodeAction'] = true,
+}
+
+--- The command id carried by a code action, whether it's a bare Command or a
+--- CodeAction with a nested `command`. Returns nil when there's none.
+local function action_command(action)
+  local c = action and action.command
+  if type(c) == 'table' then
+    return c.command
+  end
+  return c -- bare Command string, or nil
+end
+
+--- Reorder a sonar codeAction result so the "Show issue details" action sits
+--- first, preserving the relative order of everything else. Returns the
+--- (possibly new) list; a no-op when the action isn't present.
+local function details_first(result)
+  if type(result) ~= 'table' or #result < 2 then
+    return result
+  end
+  local head, tail = {}, {}
+  for _, action in ipairs(result) do
+    local cmd = action_command(action)
+    if cmd and DETAILS_COMMANDS[cmd] then
+      table.insert(head, action)
+    else
+      table.insert(tail, action)
+    end
+  end
+  if #head == 0 then
+    return result
+  end
+  return vim.list_extend(head, tail)
+end
+
+--- Wrap a sonar client's request method once so its codeAction responses carry
+--- the silence actions, placing them immediately after sonar's own actions in
+--- the gra picker. Neovim aggregates code actions per responding client (v0.12
+--- `on_code_action_results` iterates `pairs(results)`), so riding inside the
+--- sonar client's result is the only way to control where ours appear; a
+--- separate code-action source would land in its own group at the bottom.
+local function wrap_sonar_codeaction(client)
+  if not client or client._sonarlint_codeaction_wrapped then
+    return
+  end
+  client._sonarlint_codeaction_wrapped = true
+  local orig_request = client.request
+  client.request = function(self, method, params, handler, req_bufnr)
+    if method == 'textDocument/codeAction' and type(handler) == 'function' then
+      local function wrapped(err, result, ctx, hcfg)
+        if not err then
+          result = result or {}
+          if type(result) == 'table' then
+            -- Float sonar's own "Show issue details" action to the top, then
+            -- append our silence actions after sonar's remaining entries.
+            result = details_first(result)
+            for _, action in ipairs(build_silence_actions(params)) do
+              table.insert(result, action)
+            end
+          end
+        end
+        return handler(err, result, ctx, hcfg)
+      end
+      return orig_request(self, method, params, wrapped, req_bufnr)
+    end
+    return orig_request(self, method, params, handler, req_bufnr)
+  end
+end
+
+-- ---------------------------------------------------------------------------
+-- Rich "issue details" popup
+--
+-- Selecting sonar's "Show issue details for '<rule>'" code action makes the
+-- server push sonarlint/showRuleDescription, which sonarlint.nvim renders as a
+-- generic full-screen popup of the rule's HTML description. We replace that
+-- rendering with our own popup that, for deprecation findings, leads with the
+-- deprecated symbol's signature and its "@deprecated -> use X instead" note --
+-- the specific guidance sonar's own (generic) S1874 text explicitly defers to
+-- ("check the deprecation message ... what the recommended alternative is").
+--
+-- That note is pulled from the editor-facing language server's hover at the
+-- finding. Deprecation is detected language-agnostically via a co-located
+-- diagnostic carrying the LSP `Deprecated` tag (e.g. ts_ls reports
+-- "'X' is deprecated" tagged Deprecated alongside sonar's S1874), so it extends
+-- to any language whose server tags deprecated usages -- no rule-key list.
+--
+-- The action-reordering helpers (DETAILS_COMMANDS / details_first) live above
+-- wrap_sonar_codeaction, which consumes them.
+-- ---------------------------------------------------------------------------
+
+--- The editor-facing LSP diagnostic at `lnum` carrying the `Deprecated` tag, or
+--- nil. Neovim normalises LSP `tags: [2]` to `_tags.deprecated`; we also accept
+--- the raw payload form. Sonar's own diagnostics never set the tag, so a match
+--- always comes from a language server (ts_ls, gopls, roslyn, ...).
+local function deprecated_diagnostic_at(bufnr, lnum)
+  for _, d in ipairs(vim.diagnostic.get(bufnr, { lnum = lnum })) do
+    if d._tags and d._tags.deprecated then
+      return d
+    end
+    local tags = d.user_data and d.user_data.lsp and d.user_data.lsp.tags
+    if type(tags) == 'table' then
+      for _, t in ipairs(tags) do
+        if t == 2 then
+          return d
+        end
+      end
+    end
+  end
+  return nil
+end
+
+--- Request hover at `position` from every editor-facing (non-sonar) LSP client
+--- on `bufnr`, returning the first non-empty result as markdown lines via `cb`.
+--- Falls back to `cb(nil)` if nothing useful answers within the timeout.
+local function deprecation_hover(bufnr, position, cb)
+  local clients = vim.tbl_filter(function(c)
+    return c.name ~= SONARLINT_CLIENT_NAME and c:supports_method 'textDocument/hover'
+  end, vim.lsp.get_clients { bufnr = bufnr })
+
+  local done = false
+  local function finish(lines)
+    if done then
+      return
+    end
+    done = true
+    cb(lines)
+  end
+
+  if #clients == 0 then
+    return finish(nil)
+  end
+
+  local params = { textDocument = { uri = vim.uri_from_bufnr(bufnr) }, position = position }
+  local remaining = #clients
+  for _, client in ipairs(clients) do
+    client:request('textDocument/hover', params, function(_, result)
+      remaining = remaining - 1
+      if not done and result and result.contents then
+        local md = vim.lsp.util.convert_input_to_markdown_lines(result.contents)
+        if md and #md > 0 then
+          return finish(md)
+        end
+      end
+      if remaining == 0 then
+        finish(nil)
+      end
+    end, bufnr)
+  end
+
+  -- Safety net: never leave the popup unshown if a server stalls.
+  vim.defer_fn(function()
+    finish(nil)
+  end, 2000)
+end
+
+--- SonarLint appends a generic "others" fallback context (resource
+--- `others_section_html_content.html`: "How can I fix it in another component
+--- or framework?" + "Help us improve") to contextual tabs when it has no
+--- framework-specific guidance. It carries no real fix, so we drop it; if a tab
+--- has nothing left, the tab is skipped entirely (see rule_description_lines).
+local function is_fallback_context(ctx)
+  local key = ctx.contextKey and ctx.contextKey:lower()
+  return key == 'others' or ctx.displayName == 'Others'
+end
+
+--- Render one rule-description tab's body. A tab is either non-contextual
+--- (`ruleDescriptionTabNonContextual.htmlContent`) or contextual, where
+--- `ruleDescriptionTabContextual` is a *list* of per-context variants
+--- ({ htmlContent, contextKey, displayName }), e.g. "How to fix it in PropTypes"
+--- vs "...in TypeScript". sonarlint.nvim's own renderer reads `.htmlContent` off
+--- that list and so shows contextual tabs (S6767's "How can I fix it?") empty;
+--- we render every real context, default first, each under its displayName.
+--- Returns {} when the tab has no useful content (e.g. only the "others"
+--- fallback) so the caller can omit it.
+local function tab_body_lines(tab, filetype)
+  local utils = require 'sonarlint.utils'
+
+  local nonctx = tab.ruleDescriptionTabNonContextual
+  if type(nonctx) == 'table' and nonctx.htmlContent and nonctx.htmlContent ~= '' then
+    return utils.html_to_markdown_lines(nonctx.htmlContent, filetype)
+  end
+
+  local contexts = tab.ruleDescriptionTabContextual
+  if type(contexts) ~= 'table' then
+    return {}
+  end
+
+  -- Drop the generic fallback, then put the default context first.
+  local useful = {}
+  for _, ctx in ipairs(contexts) do
+    if not is_fallback_context(ctx) then
+      if ctx.contextKey and ctx.contextKey == tab.defaultContextKey then
+        table.insert(useful, 1, ctx)
+      else
+        table.insert(useful, ctx)
+      end
+    end
+  end
+  if #useful == 0 then
+    return {}
+  end
+
+  local lines = {}
+  for i, ctx in ipairs(useful) do
+    if i > 1 then
+      table.insert(lines, '')
+    end
+    if ctx.displayName and ctx.displayName ~= '' then
+      vim.list_extend(lines, { '### ' .. ctx.displayName, '' })
+    end
+    if ctx.htmlContent and ctx.htmlContent ~= '' then
+      vim.list_extend(lines, utils.html_to_markdown_lines(ctx.htmlContent, filetype))
+    end
+  end
+  return lines
+end
+
+--- Build the rule-description body (markdown lines) from a showRuleDescription
+--- payload: a single htmlDescription, or the tabbed form ("Why is this an
+--- issue?", "How can I fix it?", ...). Tabs with no useful body (e.g. a "How can
+--- I fix it?" that only held the generic fallback) are omitted entirely.
+local function rule_description_lines(result, filetype)
+  local html = result.htmlDescription
+  if html ~= nil and html ~= '' then
+    return require('sonarlint.utils').html_to_markdown_lines(html, filetype)
+  end
+  local lines = {}
+  for _, tab in ipairs(result.htmlDescriptionTabs or {}) do
+    local body = tab_body_lines(tab, filetype)
+    if #body > 0 then
+      if #lines > 0 then
+        table.insert(lines, '')
+      end
+      vim.list_extend(lines, { '## ' .. (tab.title or ''), '' })
+      vim.list_extend(lines, body)
+    end
+  end
+  return lines
+end
+
+--- Open a centred, read-only markdown popup. `q`/`<Esc>` close it.
+local function show_details_popup(lines)
+  local width = math.floor(vim.o.columns * 0.8)
+  local height = math.floor(vim.o.lines * 0.8)
+  local buf = vim.api.nvim_create_buf(false, true)
+  vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
+  vim.bo[buf].filetype = 'markdown'
+  vim.bo[buf].modifiable = false
+  vim.bo[buf].readonly = true
+  local win = vim.api.nvim_open_win(buf, true, {
+    style = 'minimal',
+    relative = 'editor',
+    width = width,
+    height = height,
+    row = math.floor((vim.o.lines - height) / 2),
+    col = math.floor((vim.o.columns - width) / 2),
+    border = 'rounded',
+  })
+  vim.wo[win].wrap = true
+  vim.wo[win].linebreak = true
+  vim.wo[win].conceallevel = 2
+  for _, key in ipairs { 'q', '<Esc>' } do
+    vim.keymap.set('n', key, '<cmd>close<cr>', { buffer = buf, silent = true })
+  end
+end
+
+--- showRuleDescription handler: render the rule description in our popup, led
+--- by the deprecated symbol's hover note when the finding under the cursor is a
+--- deprecation. Replaces sonarlint.nvim's generic renderer. Context (which
+--- buffer/finding) is read from the current window -- focus stays on the source
+--- buffer until this popup opens.
+local function rich_rule_handler(_, result, _)
+  if type(result) ~= 'table' then
+    return
+  end
+  local bufnr = vim.api.nvim_get_current_buf()
+  local filetype = vim.bo[bufnr].filetype
+  local title = { '# ' .. (result.key or '') .. ': ' .. (result.name or ''), '' }
+  local body = rule_description_lines(result, filetype)
+
+  local cursor = vim.api.nvim_win_get_cursor(0)
+  local depr = deprecated_diagnostic_at(bufnr, cursor[1] - 1)
+  if not depr then
+    vim.list_extend(title, body)
+    return show_details_popup(title)
+  end
+
+  deprecation_hover(bufnr, { line = depr.lnum, character = depr.col }, function(hover_lines)
+    local lines = title
+    if hover_lines and #hover_lines > 0 then
+      vim.list_extend(lines, { '## Deprecated API', '' })
+      vim.list_extend(lines, hover_lines)
+      vim.list_extend(lines, { '', '---', '' })
+    end
+    vim.list_extend(lines, body)
+    show_details_popup(lines)
+  end)
+end
+
 return {
   {
     'https://gitlab.com/schrieveslaach/sonarlint.nvim',
@@ -613,7 +1218,12 @@ return {
           -- wraps this to additionally bind the project key when SonarCloud
           -- creds are present.
           before_init = function(params, config)
-            local cfg = read_project_config(params.rootPath)
+            -- Always stash the root so the silence-rule writer and the
+            -- override recompile can find the project even before any
+            -- localRules.json exists.
+            local root = params.rootPath or config.root_dir
+            config._sonarlint_root = root
+            local cfg = read_project_config(root)
             if not cfg then
               return
             end
@@ -624,7 +1234,6 @@ return {
               config.settings.sonarlint.rules = vim.tbl_deep_extend('force', config.settings.sonarlint.rules or {}, rules)
             end
             config._sonarlint_overrides = compile_overrides(cfg.overrides)
-            config._sonarlint_root = params.rootPath
           end,
         },
         filetypes = FILETYPES,
@@ -727,28 +1336,37 @@ return {
       -- Apply project-local `overrides` from .sonarlint/localRules.json at
       -- diagnostic publish time. We wrap the sonarlint client's
       -- publishDiagnostics handler once on first attach so each diagnostic
-      -- gets filtered against the compiled glob+rule matchers stashed in
-      -- before_init. Filtering is subtractive only -- a rule that's off
-      -- globally can't be re-enabled per-glob because the server has already
-      -- stopped emitting those diagnostics.
+      -- gets filtered against the compiled glob+rule matchers. The compiled
+      -- overrides and root are read from `client.config` *inside* the handler
+      -- rather than captured up front, so a silence-rule code action that adds
+      -- an override at runtime takes effect on the next publish without a
+      -- restart. Filtering is subtractive only -- a rule that's off globally
+      -- can't be re-enabled per-glob because the server has already stopped
+      -- emitting those diagnostics.
       vim.api.nvim_create_autocmd('LspAttach', {
         callback = function(args)
           local client = vim.lsp.get_client_by_id(args.data.client_id)
           if not client or client.name ~= SONARLINT_CLIENT_NAME then
             return
           end
+          -- Make sonar's own codeAction responses carry our silence actions,
+          -- so they appear right after sonar's entries in the gra picker.
+          wrap_sonar_codeaction(client)
+
           if client._sonarlint_overrides_wrapped then
             return
           end
-          local compiled = client.config and client.config._sonarlint_overrides
-          if not compiled then
-            return
-          end
           client._sonarlint_overrides_wrapped = true
-          local root = client.config._sonarlint_root
+
+          -- Replace sonar's generic rule-description popup with our richer one
+          -- (deprecation note + full description). See rich_rule_handler.
+          client.handlers['sonarlint/showRuleDescription'] = rich_rule_handler
+
           local default = client.handlers['textDocument/publishDiagnostics'] or vim.lsp.handlers['textDocument/publishDiagnostics']
           client.handlers['textDocument/publishDiagnostics'] = function(err, result, ctx, hcfg)
-            if result and result.uri and result.diagnostics then
+            local compiled = client.config and client.config._sonarlint_overrides
+            if compiled and result and result.uri and result.diagnostics then
+              local root = client.config._sonarlint_root
               local path = vim.uri_to_fname(result.uri)
               local kept = {}
               for _, d in ipairs(result.diagnostics) do
@@ -806,6 +1424,22 @@ return {
             return sonar_cb(args)
           end,
         })
+      end
+
+      -- Silence-rule code actions: execute the action's Command locally (no
+      -- round-trip to a server). The codeAction wrap is installed from the
+      -- LspAttach hook above; here we register the command handler and wrap any
+      -- sonar client that already attached before the hook existed (e.g. the ft
+      -- buffer that loaded this plugin).
+      vim.lsp.commands[SILENCE_COMMAND] = function(command)
+        local arg = command.arguments and command.arguments[1]
+        if arg then
+          silence_rule(arg)
+        end
+      end
+
+      for _, client in ipairs(vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }) do
+        wrap_sonar_codeaction(client)
       end
     end,
   },

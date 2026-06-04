@@ -612,6 +612,7 @@ local AUTO_CLEAR_KINDS = {
   Build = { label = 'Build errors resolved', match = 'line' },
   Sonar = { label = 'Sonar issues resolved', match = 'line_text' },
   Modified = { label = 'Modified file diagnostics resolved', match = 'line_text' },
+  Ticket = { label = 'Ticket diagnostics resolved', match = 'line_text' },
   Diagnostics = { label = 'Diagnostics resolved', match = 'line_text' },
 }
 
