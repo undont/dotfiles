@@ -43,6 +43,35 @@ Current filtering behavior:
   code is present, otherwise `lnum:col:message`, so message wording differences
   across push/pull channels do not create duplicates.
 
+### Scan snapshots have a second IDE0079 filter (lists.lua)
+
+The diagnostics scans (`<leader>xm` / `<leader>xt`, `custom/core/lists.lua`)
+snapshot `vim.diagnostic.get` for hidden-loaded buffers into the quickfix.
+IDE0079 ("Suppression is unnecessary") false positives were observed in those
+snapshots despite `patch_diagnostic_set` — they vanish when the file is opened
+for real, and because the scan deletes its hidden buffers at finalise, no LSP
+remains attached to publish a correction, so the phantom entries sit in the qf
+until each file is visited. `SCAN_IGNORED_CODES` in lists.lua drops them at
+snapshot-collection time as a second line of defence.
+
+**Why they evade `patch_diagnostic_set` — partially resolved.** Field evidence
+(2026-06): the snapshot filter eliminated the phantoms, so the diagnostics do
+carry `code == 'IDE0079'` and the bypass is real. Eliminated explanations:
+`bufload()` *does* run filetype detection (so the `filetype == 'cs'` gate
+passes for scan buffers); the pull path resolves `vim.diagnostic.set`
+dynamically (`$VIMRUNTIME/lua/vim/lsp/diagnostic.lua`); roslyn.nvim holds no
+cached reference to it. One unconfirmed suspect: `RealDotnetFile` (which
+loads the roslyn plugin and installs this patch) is suppressed inside review
+contexts (`in_review_context()` in `core/autocmds.lua`), so a
+review-then-scan session delays patch install — though an unloaded plugin
+should also mean no roslyn client to report anything. If IDE0079 ever shows
+up **in-editor** (gutter / `<leader>xx` list, not just a scan), the wrapper
+failed there too — inspect the live diagnostic:
+
+```vim
+:lua for _, d in ipairs(vim.diagnostic.get()) do if (d.message or ''):find('uppression') then print(vim.inspect({ code = d.code, source = d.source, severity = d.severity, ns = (vim.diagnostic.get_namespaces()[d.namespace] or {}).name })) break end end
+```
+
 ## Semantic Token Flow
 
 Roslyn semantic tokens require careful orchestration on Neovim 0.12+. The setup

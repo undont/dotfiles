@@ -114,6 +114,9 @@ end
 --- @field qf_label string                                        shown in finalise notify ("X: clean" / "X: N issue(s)")
 --- @field augroup_name string                                    unique per caller (e.g. "SonarlintScan")
 --- @field on_finalise? fun(items: table[])                       post-collection hook (e.g. unload created buffers)
+--- @field on_report? fun(reported: integer, total: integer)      fired the first time each watched buffer reports a DiagnosticChanged
+--- @field settled_debounce_ms? integer                           shorter debounce once every watched buffer has reported at least once
+--- @field settle_check? fun(): boolean                           extra gate on the settled fast path, re-evaluated at every debounce reset (e.g. "no slow analyzer attached")
 --- @field progress? { finish: fun() }                            optional fidget-shaped handle (must expose :finish())
 --- @field hard_timeout_message? string                           shown on hard-timeout fire (default: no notify)
 
@@ -125,7 +128,11 @@ function M.start(opts)
   end
   local get_diagnostics = opts.get_diagnostics or vim.diagnostic.get
   local watched = {}
+  local total = 0
   for _, bufnr in ipairs(opts.bufnrs) do
+    if not watched[bufnr] then
+      total = total + 1
+    end
     watched[bufnr] = true
   end
 
@@ -189,22 +196,40 @@ function M.start(opts)
     end
   end
 
+  -- Adaptive debounce: the full debounce_ms covers slow analyzers that
+  -- haven't published anything yet, but once *every* watched buffer has
+  -- reported at least one DiagnosticChanged, the remaining quiet time is
+  -- usually dead air — drop to settled_debounce_ms (when set) so small,
+  -- fast changesets finalise quickly.
   local function reset_debounce()
     clear_timer(state.debounce)
+    local ms = opts.debounce_ms
+    if opts.settled_debounce_ms and state.reported_count >= total and (not opts.settle_check or opts.settle_check()) then
+      ms = opts.settled_debounce_ms
+    end
     state.debounce = vim.uv.new_timer()
-    state.debounce:start(opts.debounce_ms, 0, vim.schedule_wrap(finalise))
+    state.debounce:start(ms, 0, vim.schedule_wrap(finalise))
   end
 
   state = {
     augroup = vim.api.nvim_create_augroup(opts.augroup_name, { clear = true }),
     debounce = nil,
     hard_timeout = nil,
+    reported = {},
+    reported_count = 0,
   }
 
   vim.api.nvim_create_autocmd('DiagnosticChanged', {
     group = state.augroup,
     callback = function(args)
       if state and watched[args.buf] then
+        if not state.reported[args.buf] then
+          state.reported[args.buf] = true
+          state.reported_count = state.reported_count + 1
+          if opts.on_report then
+            pcall(opts.on_report, state.reported_count, total)
+          end
+        end
         reset_debounce()
       end
     end,

@@ -112,6 +112,76 @@ JS max-line-length to 120, and turn off a noisy naming rule project-wide:
 }
 ```
 
+## Issue details popup
+
+The first code action on any sonar finding is **"Show issue details for
+`<rule>`"**. Selecting it opens a popup with the rule's full description: the
+"Why is this an issue?" and "How can I fix it?" sections with their code
+examples, rather than the one-line message shown inline. `q` or `<Esc>` closes
+it.
+
+Where a rule ships framework-specific fixes (sonar's contextual tabs, for
+example "How to fix it in PropTypes" versus "in TypeScript"), each is rendered
+under its own subheading, default context first. Sonar's generic "others"
+fallback ("How can I fix it in another component or framework?" / "Help us
+improve") is dropped, and if that leaves a section empty it is omitted entirely
+rather than shown as a bare heading.
+
+For **deprecation findings** (`typescript:S1874` and equivalents) the popup
+leads with the specific API instead of the generic rule text. It shows the
+deprecated symbol's signature and its `@deprecated` note (the recommended
+replacement), pulled from the editor-facing language server's hover at the
+finding:
+
+```text
+## Deprecated API
+
+function oldFunction(): void
+
+@deprecated: Use newFunction instead.
+```
+
+Sonar's own S1874 text is generic and explicitly defers to "the deprecation
+message" for the specific alternative, which is why that part comes from the
+language server (`ts_ls`, `gopls`, `roslyn`, and so on) rather than from sonar.
+Deprecation is detected from a co-located diagnostic carrying the LSP
+`Deprecated` tag, so it works for any language whose server tags deprecated
+usages, with no per-rule list. When no such tag is present the popup shows the
+rule description on its own.
+
+## Silencing from code actions
+
+When hovering over diagnostics, the code-action menu (`gra`) offers up to two quick fixes per rule:
+
+- **Sonar: silence `<rule>` (project)**: adds `"<rule>": "off"` to the
+  top-level `rules` map.
+- **Sonar: silence `<rule>` in test files**: adds (or extends) an `overrides`
+  entry whose `files` are the test globs for the buffer's language, silencing
+  the rule only there.
+
+They create `.sonarlint/` and `localRules.json` if they don't exist, preserve
+any existing entries, and apply immediately: the project-wide variant pushes
+the updated rule config to the running server, and the test variant recompiles
+the override matchers, so the warning clears without a restart.
+
+The test globs are per language, so the "in test files" action only appears for
+languages with a settled test-naming convention:
+
+| Language | Test globs |
+|---|---|
+| Go | `**/*_test.go` |
+| Python | `**/test_*.py`, `**/*_test.py` |
+| JavaScript | `**/*.test.js`, `**/*.spec.js` (+ `.jsx` for React) |
+| TypeScript | `**/*.test.ts`, `**/*.spec.ts` (+ `.tsx` for React) |
+| C# | `**/*Tests.cs`, `**/*Test.cs` |
+| C / C++ | `**/*_test.c`, `**/*_test.cpp`, `**/*_test.cc` |
+| PHP | `**/*Test.php` |
+
+The actions are injected into SonarLint's own code-action response, so they sit
+directly under its "Show issue details" / "Deactivate rule" entries rather than
+at the bottom of the picker. Selecting one runs locally (via `vim.lsp.commands`)
+without a server round-trip.
+
 ## Scanning
 
 SonarLint only analyses open buffers. Two LSP keymaps run a project scan that
