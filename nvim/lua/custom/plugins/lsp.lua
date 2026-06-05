@@ -381,6 +381,26 @@ local function patch_show_document()
   end
 end
 
+--- Guard the pull-diagnostics response handler against a missing bufstate.
+--- roslyn.nvim's `workspace/projectInitializationComplete` handler calls
+--- `vim.lsp.diagnostic._refresh()` with no bufnr; core resolves the nil to
+--- the *current* buffer and sends a pull request keyed to it. If that buffer
+--- was never pull-enabled (any non-C# buffer when roslyn finishes project
+--- init), the response crashes with "attempt to index local 'bufstate'
+--- (a nil value)" (diagnostic.lua:296). Enable pull state for the buffer
+--- before delegating, mirroring what the LspAttach path does. Remove once
+--- seblyng/roslyn.nvim#371 is fixed.
+local function patch_pull_diagnostics_bufstate()
+  local orig = vim.lsp.diagnostic.on_diagnostic
+  ---@diagnostic disable-next-line: duplicate-set-field
+  vim.lsp.diagnostic.on_diagnostic = function(err, result, ctx)
+    if ctx and ctx.bufnr and vim.api.nvim_buf_is_valid(ctx.bufnr) then
+      pcall(vim.lsp.diagnostic._enable, ctx.bufnr)
+    end
+    return orig(err, result, ctx)
+  end
+end
+
 --- Rename handler that writes the files it touched.
 --- The default handler applies the workspace edit to every affected file but
 --- leaves the ones that weren't already open as unsaved background buffers.
@@ -550,6 +570,7 @@ return {
 
       patch_lsp_start()
       patch_show_document()
+      patch_pull_diagnostics_bufstate()
 
       vim.lsp.config('cssls', {
         settings = {
