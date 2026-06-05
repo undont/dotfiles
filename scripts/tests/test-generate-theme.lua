@@ -281,50 +281,43 @@ end
 -- ═══════════════════════════════════════════════
 section("generate_theme_file")
 
-local theme_content = gen.generate_theme_file(
-    "test-theme",
-    "Test Theme",
-    {
-        bg_primary = "#282a36",
-        fg_primary = "#f8f8f2",
-        bg_secondary = "#44475a",
-        fg_secondary = "#6272a4",
-        fg_variable = "#eeeee0",
-        line_highlight = "#303340",
-        red = "#ff5555",
-        green = "#50fa7b",
-        yellow = "#f1fa8c",
-        purple = "#bd93f9",
-        pink = "#ff79c6",
-        cyan = "#8be9fd",
-        cursor_colour = "#f8f8f2",
-        cursor_text = "#282a36",
-        selection = "#44475a",
-        selection_fg = "#ffffff",
-        palette = {
-            [0] = "#282a36",
-            [1] = "#ff5555",
-            [2] = "#50fa7b",
-            [3] = "#f1fa8c",
-            [4] = "#bd93f9",
-            [5] = "#ff79c6",
-            [6] = "#8be9fd",
-            [7] = "#f8f8f2",
-        },
+local theme_content = gen.generate_theme_file("test-theme", "Test Theme", {
+    bg_primary = "#282a36",
+    fg_primary = "#f8f8f2",
+    bg_secondary = "#44475a",
+    fg_secondary = "#6272a4",
+    fg_variable = "#eeeee0",
+    line_highlight = "#303340",
+    red = "#ff5555",
+    green = "#50fa7b",
+    yellow = "#f1fa8c",
+    purple = "#bd93f9",
+    pink = "#ff79c6",
+    cyan = "#8be9fd",
+    cursor_colour = "#f8f8f2",
+    cursor_text = "#282a36",
+    selection = "#44475a",
+    selection_fg = "#ffffff",
+    palette = {
+        [0] = "#282a36",
+        [1] = "#ff5555",
+        [2] = "#50fa7b",
+        [3] = "#f1fa8c",
+        [4] = "#bd93f9",
+        [5] = "#ff79c6",
+        [6] = "#8be9fd",
+        [7] = "#f8f8f2",
     },
-    {
-        cpu_low_bg = "#2a3040",
-        cpu_medium_bg = "#2a3040",
-        cpu_high_bg = "#2a3040",
-        ram_low_bg = "#2a3040",
-        ram_medium_bg = "#2a3040",
-        ram_high_bg = "#2a3040",
-        battery_normal_bg = "#2a3040",
-        battery_low_bg = "#2a3040",
-    },
-    "purple",
-    {}
-)
+}, {
+    cpu_low_bg = "#2a3040",
+    cpu_medium_bg = "#2a3040",
+    cpu_high_bg = "#2a3040",
+    ram_low_bg = "#2a3040",
+    ram_medium_bg = "#2a3040",
+    ram_high_bg = "#2a3040",
+    battery_normal_bg = "#2a3040",
+    battery_low_bg = "#2a3040",
+}, "purple", {})
 
 if theme_content:find('THEME_NAME="Test Theme"') then
     pass("theme file has THEME_NAME")
@@ -342,6 +335,197 @@ if theme_content:find("GHOSTTY_BACKGROUND") then
     pass("theme file has Ghostty section")
 else
     fail("theme file Ghostty section")
+end
+
+-- ═══════════════════════════════════════════════
+section("apply_wcag_corrections: bright variant preference")
+
+-- Bluloco Dark-style palette: dim normal row, identity colours in bright row
+local bluloco_colours = {
+    bg_primary = "#282c34",
+    bg_secondary = "#41444d",
+    line_highlight = "#343943",
+    fg_primary = "#b9c0cb",
+    fg_secondary = "#8f9aae",
+    red = "#fc2f52",
+    green = "#25a45c",
+    yellow = "#ff936a",
+    purple = "#3476ff",
+    pink = "#7a82da",
+    cyan = "#4483aa",
+    palette = {
+        [9] = "#ff6480",
+        [10] = "#3fc56b",
+        [11] = "#f9c859",
+        [12] = "#10b1fe",
+        [13] = "#ff78f8",
+        [14] = "#5fb9bc",
+    },
+}
+
+local bright_adjustments = gen.apply_wcag_corrections(bluloco_colours)
+
+-- yellow's bright variant passes all surfaces outright, so it should be
+-- adopted verbatim rather than lightening the dim orange
+if bluloco_colours.yellow == "#f9c859" then
+    pass("yellow swapped to bright variant verbatim")
+else
+    fail("yellow bright swap", "got " .. bluloco_colours.yellow)
+end
+
+local purple_swapped = false
+for _, adj in ipairs(bright_adjustments) do
+    if adj.name == "purple" and adj.swapped then
+        purple_swapped = true
+    end
+end
+if purple_swapped then
+    pass("purple swap recorded in adjustments")
+else
+    fail("purple swap not recorded")
+end
+
+-- All accents must still meet 4.5:1 against the hardest surface
+local all_pass = true
+for _, name in ipairs({ "red", "green", "yellow", "purple", "pink", "cyan" }) do
+    if colour_utils.contrast_ratio(bluloco_colours[name], bluloco_colours.bg_secondary) < 4.5 then
+        all_pass = false
+        fail("accent below 4.5:1 after correction", name)
+    end
+end
+if all_pass then
+    pass("all accents meet 4.5:1 on bg_secondary after correction")
+end
+
+-- ═══════════════════════════════════════════════
+section("apply_wcag_corrections: dull theme fidelity")
+
+-- Spacegray Eighties Dull-style palette: muted dim row that passes the
+-- real backgrounds but not 4.5:1 against line_highlight. The relaxed
+-- 3:1 line_highlight minimum must leave those colours untouched so the
+-- nvim scheme matches Ghostty's rendering of the theme.
+local dull_colours = {
+    bg_primary = "#222222",
+    bg_secondary = "#15171c",
+    line_highlight = "#343434",
+    fg_primary = "#c9c6bc",
+    fg_secondary = "#94928b",
+    red = "#b24a56",
+    green = "#92b477",
+    yellow = "#c6735a",
+    purple = "#7c8fa5",
+    pink = "#a5789e",
+    cyan = "#80cdcb",
+    palette = {
+        [9] = "#ec5f67",
+        [10] = "#89e986",
+        [11] = "#fec254",
+        [12] = "#5486c0",
+        [13] = "#bf83c1",
+        [14] = "#58c2c1",
+    },
+}
+
+gen.apply_wcag_corrections(dull_colours)
+
+-- yellow passes bg (4.55:1) and line_highlight at the 3:1 bar (3.56:1):
+-- it must stay the designer's dull orange, not swap to the bright gold
+if dull_colours.yellow == "#c6735a" then
+    pass("passing dull yellow left verbatim")
+else
+    fail("dull yellow changed", "got " .. dull_colours.yellow)
+end
+
+if dull_colours.purple == "#7c8fa5" then
+    pass("passing dull purple left verbatim")
+else
+    fail("dull purple changed", "got " .. dull_colours.purple)
+end
+
+-- red genuinely fails on bg_primary (3.04:1), so it should adopt the
+-- bright variant verbatim with no synthetic lightening on top
+if dull_colours.red == "#ec5f67" then
+    pass("failing dull red swapped to bright variant verbatim")
+else
+    fail("dull red correction", "got " .. dull_colours.red)
+end
+
+-- ═══════════════════════════════════════════════
+section("generate_nvim_colourscheme: inverted selection")
+
+local function nvim_fixture(overrides)
+    local base = {
+        bg_primary = "#282c34",
+        fg_primary = "#b9c0cb",
+        bg_secondary = "#41444d",
+        fg_secondary = "#8f9aae",
+        fg_variable = "#adbac8",
+        line_highlight = "#343943",
+        red = "#ff6480",
+        green = "#3fc56b",
+        yellow = "#f9c859",
+        purple = "#10b1fe",
+        pink = "#ff78f8",
+        cyan = "#5fb9bc",
+        selection = "#41444d",
+        selection_fg = "#ffffff",
+    }
+    for k, v in pairs(overrides or {}) do
+        base[k] = v
+    end
+    return base
+end
+
+-- Inverted: light selection bg with dark selection fg (Bluloco Dark)
+local inverted =
+    gen.generate_nvim_colourscheme("test-inverted", nvim_fixture({ selection = "#b9c0ca", selection_fg = "#272b33" }))
+
+if inverted:find("hl('Visual', { fg = colors.selection_fg, bg = colors.selection })", 1, true) then
+    pass("Visual gets selection_fg when selection is inverted")
+else
+    fail("Visual missing selection_fg on inverted selection")
+end
+
+if inverted:find("selection_fg = '#272b33'", 1, true) then
+    pass("selection_fg passes through when readable")
+else
+    fail("selection_fg not passed through")
+end
+
+local ref = inverted:match("reference = '(#%x%x%x%x%x%x)'")
+if ref and ref ~= "#b9c0ca" and colour_utils.luminance(ref) < 0.2 then
+    pass("reference bg derived dark instead of inverted selection")
+else
+    fail("reference bg", tostring(ref))
+end
+
+if inverted:find("hl('LspReferenceText', { bg = colors.reference })", 1, true) then
+    pass("LspReference uses reference bg")
+else
+    fail("LspReference should use reference bg")
+end
+
+-- Inverted with unreadable selection_fg: falls back to bg_primary
+local fallback =
+    gen.generate_nvim_colourscheme("test-fallback", nvim_fixture({ selection = "#b9c0ca", selection_fg = "#ffffff" }))
+if fallback:find("selection_fg = '#282c34'", 1, true) then
+    pass("unreadable selection_fg falls back to bg_primary")
+else
+    fail("selection_fg fallback")
+end
+
+-- Normal dark selection: Visual stays bg-only, reference equals selection
+local normal = gen.generate_nvim_colourscheme("test-normal", nvim_fixture())
+if normal:find("hl('Visual', { bg = colors.selection })", 1, true) then
+    pass("Visual stays bg-only for normal selection")
+else
+    fail("Visual should stay bg-only for normal selection")
+end
+
+if normal:find("reference = '#41444d'", 1, true) then
+    pass("reference equals selection for normal selection")
+else
+    fail("reference should equal selection for normal selection")
 end
 
 -- ═══════════════════════════════════════════════

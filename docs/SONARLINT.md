@@ -184,12 +184,23 @@ without a server round-trip.
 
 ## Scanning
 
-SonarLint only analyses open buffers. Two LSP keymaps run a project scan that
-hidden-loads files, snapshots the diagnostics into the quickfix list, then unloads what
-it opened: one scoped to changed/untracked files (needs a git repo), one for the whole
-project (with a confirmation prompt above 500 files). The exact bindings live in the
-`lsp` section of `nvim/cheatsheet.txt` (and `<leader>?` in the editor) so they stay in
-one place.
+SonarLint only analyses open buffers. Three LSP keymaps run a scan that hidden-loads
+files, snapshots the diagnostics into the quickfix list, then unloads what it opened:
+one scoped to changed/untracked files (needs a git repo), one scoped to the files
+touched by ticket-matching commits (prompts for a commit grep with a default pulled
+from the branch name; the same commit discovery as the diff-by-ticket and ticket
+diagnostics-scan bindings), and one for the whole project (with a confirmation prompt
+above 500 files). The exact bindings live in the `lsp` section of
+`nvim/cheatsheet.txt` (and `<leader>?` in the editor) so they stay in one place.
+
+## C# is not analysed locally
+
+The analyzer list deliberately ships no C# plugin: SonarLint's C# analysis
+runs through a bundled omnisharp whose second solution load conflicts with
+the roslyn.nvim setup. `.cs` files only get the text-and-secrets sensor
+locally; `csharpsquid` rules (cognitive complexity and friends) surface on
+SonarCloud only. The full investigation and the conditions under which this
+could be revisited live in `.claude/rules/sonarlint.md`.
 
 ## Troubleshooting
 

@@ -198,7 +198,7 @@ return {
       progress = {
         -- sonarlint.nvim emits LSP progress on every BufEnter for a supported
         -- filetype, which fidget would otherwise pop up. Drop it unconditionally
-        -- — the manual `<leader>ls` / `<leader>lS` scan uses a separate
+        -- — the manual `<leader>lm` / `<leader>lS` scan uses a separate
         -- `sonar-scan` client name (see plugins/sonarlint.lua) so its progress
         -- still shows. Errors flow via vim.notify, not progress.
         -- Roslyn progress stays gated on `vim.g.roslyn_suppressed` (review only).
@@ -257,6 +257,18 @@ return {
         end
 
         if msg:match '^Multiple potential target files found' then
+          return
+        end
+
+        -- Transient roslyn pre-init noise: nvim core auto-pulls
+        -- textDocument/diagnostic the moment roslyn attaches to a buffer,
+        -- but roslyn can't resolve a file's language until its project has
+        -- loaded, so each early pull errors -30099 ("Failed to get
+        -- language"). Scans hidden-loading many cs files during a cold
+        -- solution load burst one per file. Harmless: diagnostics arrive
+        -- once init completes (the scans' own explicit pulls are
+        -- init-gated in core/lists.lua). Still recorded in lsp.log.
+        if msg:match '^roslyn: %-30099: Failed to get language' then
           return
         end
 
