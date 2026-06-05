@@ -18,6 +18,10 @@ roslyn.nvim would attach two roslyn servers to every `.cs` buffer (duplicate
 diagnostics/completion). `lsp.enabled = false` is therefore load-bearing, not
 cruft. Re-evaluate only if easy-dotnet gains target-exclusion/locking.
 
+The same one-roslyn-only principle is why SonarLint's C# analysis is
+deliberately disabled: it would spawn a bundled omnisharp doing a second
+MSBuild solution load alongside roslyn's. See `sonarlint.md`.
+
 ## Diagnostic Filtering
 
 Roslyn diagnostics are post-processed in `patch_diagnostic_set()` in
@@ -45,7 +49,7 @@ Current filtering behavior:
 
 ### Scan snapshots have a second IDE0079 filter (lists.lua)
 
-The diagnostics scans (`<leader>xm` / `<leader>xt`, `custom/core/lists.lua`)
+The diagnostics scans (`<leader>xm` / `<leader>xT`, `custom/core/lists.lua`)
 snapshot `vim.diagnostic.get` for hidden-loaded buffers into the quickfix.
 IDE0079 ("Suppression is unnecessary") false positives were observed in those
 snapshots despite `patch_diagnostic_set` — they vanish when the file is opened

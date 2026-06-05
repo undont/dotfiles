@@ -189,9 +189,12 @@ local function start_watcher()
         if watch_err then
           return
         end
-        -- Small delay to ensure file write is complete
+        -- Small delay to ensure file write is complete.
+        -- Force the reload: the file only changes on an explicit theme apply,
+        -- and a regenerated scheme keeps the same name, so the
+        -- skip-if-unchanged guard would otherwise leave stale highlights.
         vim.defer_fn(function()
-          M.reload()
+          M.reload(true)
         end, 50)
       end)
     )
@@ -208,7 +211,7 @@ local function start_watcher()
         end
         if filename == 'current-theme' then
           vim.defer_fn(function()
-            M.reload()
+            M.reload(true)
           end, 50)
         end
       end)

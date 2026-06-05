@@ -164,7 +164,32 @@ return {
       vim.keymap.set('n', '<leader>sG', function()
         builtin.live_grep { additional_args = { '--hidden', '--fixed-strings' } }
       end, { desc = 'Search [G]rep (literal)' })
-      vim.keymap.set('n', '<leader>sm', builtin.git_status, { desc = 'Search git [M]odified files' })
+      vim.keymap.set('n', '<leader>sm', function()
+        -- Same file set as the <leader>xm / <leader>lm scans (core/ticket.lua):
+        -- staged or unstaged changes vs HEAD plus untracked files. A plain
+        -- file picker rather than builtin.git_status, so no status letters or
+        -- <Tab> staging -- in exchange the three always agree on "modified".
+        local files = require('custom.core.ticket').modified_files()
+        if not files then
+          return
+        end
+        if #files == 0 then
+          vim.notify('No modified files', vim.log.levels.INFO)
+          return
+        end
+        local pickers = require 'telescope.pickers'
+        local finders = require 'telescope.finders'
+        local make_entry = require 'telescope.make_entry'
+        local values = require('telescope.config').values
+        pickers
+          .new({}, {
+            prompt_title = 'Git Modified Files',
+            finder = finders.new_table { results = files, entry_maker = make_entry.gen_from_file {} },
+            sorter = values.file_sorter {},
+            previewer = values.file_previewer {},
+          })
+          :find()
+      end, { desc = 'Search git [M]odified files' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = 'Search [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', function()
         -- Resume re-uses cached entries from the previous picker; we want a

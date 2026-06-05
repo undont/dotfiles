@@ -7,7 +7,7 @@ paths:
 # Neovim Configuration
 
 Based on kickstart.nvim with modular organisation:
-- `lua/custom/core/`: autocmds.lua, build.lua, diff-highlights.lua, folding.lua, keymaps.lua, lists.lua, macos-nav.lua, options.lua, refresh.lua, scan_runner.lua, spellcheck.lua, tag-rename.lua, theme.lua, windows.lua
+- `lua/custom/core/`: autocmds.lua, build.lua, diff-highlights.lua, folding.lua, keymaps.lua, lists.lua, macos-nav.lua, options.lua, refresh.lua, scan_runner.lua, spellcheck.lua, tag-rename.lua, theme.lua, ticket.lua, windows.lua
 - `lua/custom/plugins/`: init.lua, buffers.lua, claude-prompt.lua, codecompanion.lua, completion.lua, copilot.lua, dashboard.lua, dial.lua, dotnet.lua, git.lua, lazydev.lua, lsp.lua, markdown-ui.lua, mini.lua, multi-cursor.lua, music.lua, navigation.lua, obsidian.lua, paste.lua, pr-review.lua, search.lua, sonarlint.lua, telescope.lua, test.lua, tpope.lua, treesitter.lua, ui.lua
 - `lua/kickstart/plugins/`: neo-tree.lua, gitsigns.lua, autopairs.lua, debug.lua, lint.lua, indent_line.lua
 

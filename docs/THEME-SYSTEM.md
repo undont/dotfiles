@@ -60,11 +60,13 @@ Created by `scripts/generate-theme` from Ghostty's ~460 built-in themes. The gen
 
 1. Parses a Ghostty theme file (key-value format with ANSI palette)
 2. Extracts a semantic colour palette (bg, fg, accents mapped from ANSI roles)
-3. Applies WCAG 2.1 contrast corrections to ensure 4.5:1 minimum ratio
+3. Applies WCAG 2.1 contrast corrections: 4.5:1 minimum against the background surfaces, 3:1 against the cursor-line highlight (a transient emphasis surface where the large-text minimum applies; demanding 4.5:1 there would brighten deliberately muted themes away from the designer's palette). Accents that fail prefer the theme's own bright palette variant before falling back to synthetic lightening
 4. Chooses the best active accent (highest contrast from purple/cyan/green)
 5. Derives plugin status indicator colours (CPU, RAM, battery blends)
 6. Outputs a `.theme` file to `themes/generated/`
 7. Outputs a Neovim colourscheme to `nvim/colors/generated/`
+
+Themes with an inverted selection (a light `selection-background` paired with a dark `selection-foreground`, e.g. Bluloco Dark) get special handling in the Neovim output: `Visual` forces the selection foreground so selected text flips dark, matching Ghostty, and reference-style highlights (`LspReference*`, `TelescopeSelection`) use a derived dark band so syntax colours stay readable.
 
 Generated themes integrate transparently. `dotfiles theme` resolves themes with a tiered lookup: hand-crafted first, then generated.
 
@@ -240,6 +242,7 @@ extract_colours()         -- Soften ANSI black on dark themes (darken bg 3%)
         |                    Derive bg_secondary, fg_secondary, selection
         v
 apply_wcag_corrections()  -- Ensure 4.5:1 contrast against bg surfaces
+        |                    (3:1 against the cursor-line highlight)
         |                    Lighten/darken in HSL space preserving hue
         v
 choose_active_accent()    -- Pick highest-contrast accent for UI elements
