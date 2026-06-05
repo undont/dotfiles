@@ -221,7 +221,12 @@ local function analyzer_jars()
     'sonarcfamily.jar', -- C / C++
     'sonarjs.jar', -- JavaScript / TypeScript
     'sonargo.jar',
-    'sonarcsharp.jar',
+    -- No C# analyzer, deliberately. sonarcsharp.jar is the server-side
+    -- plugin (`SonarLint-Supported: false` in its manifest -- the language
+    -- server silently skips it), and the real sonarlint C# path
+    -- (sonarlintomnisharp.jar) spawns a bundled omnisharp that does a second
+    -- MSBuild solution load competing with roslyn.nvim. Read
+    -- .claude/rules/sonarlint.md before re-adding either.
     'sonarphp.jar',
     'sonarhtml.jar', -- HTML + CSS
     'sonariac.jar', -- Terraform, Kubernetes, Docker, CloudFormation
@@ -263,6 +268,10 @@ local FILETYPES = {
 -- SonarLint only analyses opened buffers, so we walk the project, hidden-load
 -- each scannable file, debounce on quiet diagnostic activity to detect "done",
 -- snapshot diagnostics into quickfix, and unload the buffers we created.
+-- Three scopes, mirroring the all-LSP scans in core/lists.lua:
+--   <leader>lm  changed/untracked files   (~ <leader>xm)
+--   <leader>lT  ticket-matching commits   (~ <leader>xT, via core/ticket.lua)
+--   <leader>lS  whole project
 
 local SONARLINT_CLIENT_NAME = 'sonarlint.nvim'
 local SCAN_FILE_CAP = 500
@@ -340,64 +349,153 @@ local function git_lines(args, cwd)
   return lines
 end
 
---- @param mode 'changed' | 'all'
-local function list_scan_targets(mode)
-  local cwd = vim.fn.getcwd()
-  local raw
-
-  if mode == 'changed' then
-    -- Modified tracked files (staged + unstaged vs HEAD), excluding deletions,
-    -- plus untracked files that aren't gitignored.
-    local modified = git_lines({ 'git', 'diff', '--name-only', '--diff-filter=ACMR', 'HEAD' }, cwd)
-    local untracked = git_lines({ 'git', 'ls-files', '--others', '--exclude-standard' }, cwd)
-    if not modified and not untracked then
-      vim.notify('Not a git repo — `<leader>ls` (changed-only) needs git', vim.log.levels.WARN)
-      return {}
-    end
-    raw = {}
-    local seen = {}
-    for _, list in ipairs { modified or {}, untracked or {} } do
-      for _, p in ipairs(list) do
-        if not seen[p] then
-          seen[p] = true
-          table.insert(raw, p)
-        end
-      end
-    end
-  else
-    raw = git_lines({ 'git', 'ls-files', '-co', '--exclude-standard' }, cwd)
-    if not raw then
-      raw = vim.fs.find(function(name, _)
-        return is_scannable_path(name)
-      end, { type = 'file', limit = math.huge, path = cwd })
-      local prefix = cwd .. '/'
-      for i, p in ipairs(raw) do
-        raw[i] = (p:sub(1, #prefix) == prefix) and p:sub(#prefix + 1) or p
-      end
-    end
-  end
-
+--- Keep only sonarlint-scannable files that exist on disk.
+--- @param paths string[] absolute paths
+local function scannable(paths)
   local files = {}
-  for _, rel in ipairs(raw) do
-    if is_scannable_path(rel) then
-      local abs = cwd .. '/' .. rel
-      if vim.fn.filereadable(abs) == 1 then
-        table.insert(files, abs)
-      end
+  for _, abs in ipairs(paths) do
+    if is_scannable_path(abs) and vim.fn.filereadable(abs) == 1 then
+      table.insert(files, abs)
     end
   end
   return files
 end
 
 --- @param mode 'changed' | 'all'
+local function list_scan_targets(mode)
+  if mode == 'changed' then
+    -- Same file set as <leader>xm / <leader>sm (core/ticket.lua): staged or
+    -- unstaged changes vs HEAD plus untracked files. nil (already notified)
+    -- outside a git repo.
+    local paths = require('custom.core.ticket').modified_files()
+    return paths and scannable(paths) or nil
+  end
+
+  local cwd = vim.fn.getcwd()
+  local raw = git_lines({ 'git', 'ls-files', '-co', '--exclude-standard' }, cwd)
+  if not raw then
+    raw = vim.fs.find(function(name, _)
+      return is_scannable_path(name)
+    end, { type = 'file', limit = math.huge, path = cwd })
+    local prefix = cwd .. '/'
+    for i, p in ipairs(raw) do
+      raw[i] = (p:sub(1, #prefix) == prefix) and p:sub(#prefix + 1) or p
+    end
+  end
+
+  local abs = {}
+  for _, rel in ipairs(raw) do
+    table.insert(abs, cwd .. '/' .. rel)
+  end
+  return scannable(abs)
+end
+
+--- Hidden-load `files`, debounce on their diagnostic activity and snapshot
+--- sonar findings into the quickfix. `label` is shown in the fidget message.
+local function start_scan(files, label)
+  -- Track the buffers we open so we can unload only those in on_finalise.
+  local created = {}
+  for _, path in ipairs(files) do
+    local existed = vim.fn.bufnr(path) ~= -1
+    local bufnr = vim.fn.bufadd(path)
+    if not vim.api.nvim_buf_is_loaded(bufnr) then
+      pcall(vim.fn.bufload, bufnr)
+      local ft = vim.filetype.match { buf = bufnr, filename = path }
+      if ft then
+        vim.bo[bufnr].filetype = ft
+      end
+    end
+    if not existed then
+      table.insert(created, bufnr)
+    end
+  end
+
+  -- Pre-existing sonarlint buffers should still surface in the qf even
+  -- though they don't drive the debounce.
+  local extra = {}
+  for _, client in ipairs(vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }) do
+    for bufnr, _ in pairs(client.attached_buffers or {}) do
+      table.insert(extra, bufnr)
+    end
+  end
+
+  local ok, fidget = pcall(require, 'fidget.progress')
+  local progress = ok
+      and fidget.handle.create {
+        title = 'SonarLint',
+        message = 'scanning ' .. #files .. ' ' .. label .. ' file(s)',
+        lsp_client = { name = 'sonar-scan' },
+      }
+    or nil
+
+  local watched = {}
+  for _, b in ipairs(created) do
+    table.insert(watched, b)
+  end
+  -- Also watch already-loaded buffers from `files` so debounce reacts to
+  -- them; they're not in `created` because they pre-existed.
+  for _, path in ipairs(files) do
+    local b = vim.fn.bufnr(path)
+    if b ~= -1 then
+      table.insert(watched, b)
+    end
+  end
+
+  local collect = vim.list_extend(vim.list_extend({}, watched), extra)
+
+  require('custom.core.scan_runner').start {
+    bufnrs = watched,
+    collect_bufnrs = collect,
+    get_diagnostics = sonarlint_diagnostics,
+    debounce_ms = SCAN_DEBOUNCE_MS,
+    hard_timeout_ms = SCAN_HARD_TIMEOUT_MS,
+    qf_title = 'Sonar: scan',
+    qf_label = 'Sonar scan',
+    augroup_name = 'SonarlintScan',
+    progress = progress,
+    hard_timeout_message = 'Sonar scan: hit ' .. (SCAN_HARD_TIMEOUT_MS / 60000) .. 'min hard timeout',
+    on_finalise = function()
+      for _, b in ipairs(created) do
+        if vim.api.nvim_buf_is_valid(b) then
+          pcall(vim.api.nvim_buf_delete, b, { force = true })
+        end
+      end
+    end,
+  }
+end
+
+--- @param mode 'changed' | 'ticket' | 'all'
 local function run_scan(mode)
-  local scan_runner = require 'custom.core.scan_runner'
-  if scan_runner.is_active() then
+  if require('custom.core.scan_runner').is_active() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
     return
   end
 
+  -- Ticket mode resolves its file list asynchronously: same commit
+  -- discovery as <leader>dT / <leader>xT (core/ticket.lua), filtered to
+  -- sonarlint-scannable files.
+  if mode == 'ticket' then
+    local ticket = require 'custom.core.ticket'
+    ticket.prompt_commits(function(ctx)
+      local paths = ticket.commit_files(ctx)
+      if not paths then
+        return
+      end
+      local files = scannable(paths)
+      if #files == 0 then
+        vim.notify('No sonarlint-scannable files in matching commits', vim.log.levels.INFO)
+        return
+      end
+      vim.notify(#ctx.commits .. ' commit(s) matching "' .. ctx.input .. '", ' .. #files .. ' scannable file(s)', vim.log.levels.INFO)
+      start_scan(files, 'ticket')
+    end)
+    return
+  end
+
   local files = list_scan_targets(mode)
+  if not files then
+    return -- not a git repo; modified_files already notified
+  end
   if #files == 0 then
     local msg = mode == 'changed' and 'No changed sonarlint-scannable files' or 'No sonarlint-scannable files in ' .. vim.fn.getcwd()
     vim.notify(msg, vim.log.levels.INFO)
@@ -406,90 +504,18 @@ local function run_scan(mode)
 
   local label = mode == 'changed' and 'changed' or 'project'
 
-  local function proceed()
-    -- Track the buffers we open so we can unload only those in on_finalise.
-    local created = {}
-    for _, path in ipairs(files) do
-      local existed = vim.fn.bufnr(path) ~= -1
-      local bufnr = vim.fn.bufadd(path)
-      if not vim.api.nvim_buf_is_loaded(bufnr) then
-        pcall(vim.fn.bufload, bufnr)
-        local ft = vim.filetype.match { buf = bufnr, filename = path }
-        if ft then
-          vim.bo[bufnr].filetype = ft
-        end
-      end
-      if not existed then
-        table.insert(created, bufnr)
-      end
-    end
-
-    -- Pre-existing sonarlint buffers should still surface in the qf even
-    -- though they don't drive the debounce.
-    local extra = {}
-    for _, client in ipairs(vim.lsp.get_clients { name = SONARLINT_CLIENT_NAME }) do
-      for bufnr, _ in pairs(client.attached_buffers or {}) do
-        table.insert(extra, bufnr)
-      end
-    end
-
-    local ok, fidget = pcall(require, 'fidget.progress')
-    local progress = ok
-        and fidget.handle.create {
-          title = 'SonarLint',
-          message = 'scanning ' .. #files .. ' ' .. label .. ' file(s)',
-          lsp_client = { name = 'sonar-scan' },
-        }
-      or nil
-
-    local watched = {}
-    for _, b in ipairs(created) do
-      table.insert(watched, b)
-    end
-    -- Also watch already-loaded buffers from `files` so debounce reacts to
-    -- them; they're not in `created` because they pre-existed.
-    for _, path in ipairs(files) do
-      local b = vim.fn.bufnr(path)
-      if b ~= -1 then
-        table.insert(watched, b)
-      end
-    end
-
-    local collect = vim.list_extend(vim.list_extend({}, watched), extra)
-
-    scan_runner.start {
-      bufnrs = watched,
-      collect_bufnrs = collect,
-      get_diagnostics = sonarlint_diagnostics,
-      debounce_ms = SCAN_DEBOUNCE_MS,
-      hard_timeout_ms = SCAN_HARD_TIMEOUT_MS,
-      qf_title = 'Sonar: scan',
-      qf_label = 'Sonar scan',
-      augroup_name = 'SonarlintScan',
-      progress = progress,
-      hard_timeout_message = 'Sonar scan: hit ' .. (SCAN_HARD_TIMEOUT_MS / 60000) .. 'min hard timeout',
-      on_finalise = function()
-        for _, b in ipairs(created) do
-          if vim.api.nvim_buf_is_valid(b) then
-            pcall(vim.api.nvim_buf_delete, b, { force = true })
-          end
-        end
-      end,
-    }
-  end
-
   -- Only the full-project scan asks for confirmation above the cap; the
-  -- changed-files mode is naturally bounded by your working tree.
+  -- changed-files and ticket modes are naturally bounded.
   if mode == 'all' and #files > SCAN_FILE_CAP then
     vim.ui.select({ 'Yes', 'No' }, {
       prompt = 'Scan ' .. #files .. ' files (>' .. SCAN_FILE_CAP .. ')?',
     }, function(choice)
       if choice == 'Yes' then
-        proceed()
+        start_scan(files, label)
       end
     end)
   else
-    proceed()
+    start_scan(files, label)
   end
 end
 
@@ -1176,11 +1202,18 @@ return {
     ft = FILETYPES,
     keys = {
       {
-        '<leader>ls',
+        '<leader>lm',
         function()
           run_scan 'changed'
         end,
-        desc = 'LSP: [S]onar scan changed files',
+        desc = 'LSP: Sonar scan [M]odified files',
+      },
+      {
+        '<leader>lT',
+        function()
+          run_scan 'ticket'
+        end,
+        desc = 'LSP: Sonar scan [T]icket commits',
       },
       {
         '<leader>lS',
@@ -1195,18 +1228,9 @@ return {
       local cmd = { 'sonarlint-language-server', '-stdio', '-analyzers' }
       vim.list_extend(cmd, analyzer_jars())
 
-      local extension_dir = mason_root() .. '/packages/sonarlint-language-server/extension'
       local opts = {
         server = {
           cmd = cmd,
-          -- C# analysis runs through omnisharp bundled inside the sonarlint
-          -- vsix -- it doesn't replace roslyn (which keeps providing the
-          -- editor-facing LSP). Safe to set unconditionally; sonarlint only
-          -- spawns omnisharp when actually scanning a .cs file.
-          init_options = {
-            omnisharpDirectory = extension_dir .. '/omnisharp',
-            csharpOssPath = mason_root() .. '/share/sonarlint-analyzers/sonarcsharp.jar',
-          },
           settings = {
             sonarlint = {},
           },
@@ -1413,7 +1437,7 @@ return {
         end
       end
 
-      if sonar_id and sonar_count >= math.floor(#FILETYPES / 2) then
+      if sonar_id and sonar_cb and sonar_count >= math.floor(#FILETYPES / 2) then
         vim.api.nvim_del_autocmd(sonar_id)
         vim.api.nvim_create_autocmd('FileType', {
           pattern = FILETYPES,

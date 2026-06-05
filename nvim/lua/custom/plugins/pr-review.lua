@@ -423,29 +423,18 @@ return {
       {
         '<leader>dT',
         function()
-          local base = vim.fn.systemlist('git merge-base main HEAD')[1]
-          if not base or base == '' then
-            vim.notify('Could not find merge-base with main', vim.log.levels.WARN)
-            return
-          end
-
-          local branch = vim.fn.systemlist('git rev-parse --abbrev-ref HEAD')[1] or ''
-          local default = branch:match '([A-Za-z]+%-%d+)' or ''
-
-          vim.ui.input({ prompt = 'Ticket / commit grep: ', default = default }, function(input)
-            if not input or input == '' then
-              return
+          -- Commit discovery shared with <leader>xT / <leader>lT (core/ticket.lua)
+          require('custom.core.ticket').prompt_commits(function(ctx)
+            local oldest, newest = ctx.commits[#ctx.commits], ctx.commits[1]
+            if newest == ctx.head then
+              -- Single-rev form diffs against the working tree, so
+              -- uncommitted changes are included in the review.
+              diffview_open(string.format('DiffviewOpen %s^', oldest))
+            else
+              -- Commits exist after the newest match; a working-tree diff
+              -- would include them, so stick to the fixed range.
+              diffview_open(string.format('DiffviewOpen %s^...%s', oldest, newest))
             end
-
-            local commits =
-              vim.fn.systemlist(string.format('git log --grep=%s --fixed-strings --reverse --format=%%H %s..HEAD', vim.fn.shellescape(input), base))
-            if vim.v.shell_error ~= 0 or #commits == 0 then
-              vim.notify('No commits matching "' .. input .. '"', vim.log.levels.WARN)
-              return
-            end
-
-            local oldest, newest = commits[1], commits[#commits]
-            diffview_open(string.format('DiffviewOpen %s^...%s', oldest, newest))
           end)
         end,
         desc = '[D]iff branch by [T]icket',

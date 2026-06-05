@@ -145,7 +145,9 @@ end
 -- after a hard timeout if nothing publishes.
 --
 -- The 5s debounce / 5min timeout is generous enough for sonarlint's java
--- analyzers (which auto-attach via the plugin's `ft` lazy-load on bufload).
+-- analyzers (which auto-attach via the plugin's `ft` lazy-load when the
+-- scan sets the hidden buffer's filetype — bufload alone doesn't reliably
+-- fire detection, see scan_files).
 --
 -- Roslyn (and other LSPs that only push diagnostics for visible documents)
 -- need an explicit pull via `textDocument/diagnostic`. Pulling before
@@ -228,37 +230,40 @@ local function pull_gated(bufnr)
   pull_diagnostics(bufnr)
 end
 
---- Run `git <args>` and return stdout lines, or nil on failure.
-local function git_lines(args)
-  local result = vim.system(vim.list_extend({ 'git' }, args), { text = true }):wait()
-  if result.code ~= 0 then
-    return nil
-  end
-  local lines = {}
-  for line in (result.stdout or ''):gmatch '[^\r\n]+' do
-    table.insert(lines, line)
-  end
-  return lines
-end
-
 -- Diagnostic codes excluded from scan snapshots (not from in-editor
--- diagnostics). Roslyn's pull for hidden-loaded buffers reports IDE0079
--- ("Suppression is unnecessary") false positives: judging a suppression
--- needs the suppressed analyzer (e.g. Sonar's S-rules) to run, and the
--- scan-time pull analyses with a reduced pass — a long-standing roslyn
--- defect (dotnet/roslyn#47288, #75887). Opening the file for real runs the
--- full pass and the IDE0079s vanish, so in-editor they self-correct; in a
--- scan snapshot they'd sit in the quickfix as phantom entries until each
--- file is visited.
-local SCAN_IGNORED_CODES = { IDE0079 = true }
+-- diagnostics). Roslyn's pull for hidden-loaded buffers reports false
+-- positives for rules that need a full compilation/analyzer pass, while
+-- the scan-time pull analyses with a reduced one — a long-standing roslyn
+-- defect (dotnet/roslyn#47288, #75887):
+--   IDE0079 ("Remove unnecessary suppression") — judging a suppression
+--     needs the suppressed analyzer (e.g. Sonar's S-rules) to run.
+--   IDE0005 ("Using directive is unnecessary") — needs full reference
+--     resolution to know what each using actually binds.
+-- Opening the file for real runs the full pass and these vanish, so
+-- in-editor they self-correct; in a scan snapshot they'd sit in the
+-- quickfix as phantom entries until each file is visited. The live
+-- <leader>xx list applies the same filter to buffers hidden from every
+-- window (diags_to_items), where that self-correction can never happen.
+local SCAN_IGNORED_CODES = { IDE0079 = true, IDE0005 = true }
+
+-- `code` can land as a string, a number, or only inside the raw LSP
+-- diagnostic (`user_data.lsp.code`) depending on the producing path —
+-- normalise before the lookup.
+local function scan_ignored(d)
+  local code = d.code
+  if code == nil and d.user_data and d.user_data.lsp then
+    code = d.user_data.lsp.code
+  end
+  return code ~= nil and SCAN_IGNORED_CODES[tostring(code)] == true
+end
 
 local function scan_diagnostics(bufnr)
   return vim.tbl_filter(function(d)
-    return not SCAN_IGNORED_CODES[d.code]
+    return not scan_ignored(d)
   end, vim.diagnostic.get(bufnr))
 end
 
---- Shared scan driver behind <leader>xm and <leader>xt: hidden-load the
+--- Shared scan driver behind <leader>xm and <leader>xT: hidden-load the
 --- given absolute paths so LSPs attach, pull/await diagnostics and dump
 --- them into a titled quickfix via scan_runner.
 --- @param paths string[] absolute paths
@@ -283,6 +288,18 @@ local function scan_files(paths, opts)
       local existed = vim.fn.bufnr(abs) ~= -1
       local bufnr = vim.fn.bufadd(abs)
       pcall(vim.fn.bufload, bufnr)
+      -- bufload doesn't reliably run filetype detection for hidden buffers
+      -- (scanned buffers were observed with ft = ""). Without a filetype,
+      -- sonarlint's FileType attach never fires (so scans silently miss
+      -- sonar findings), pull_gated misses the ROSLYN_FTS init gate, and
+      -- the qf [source] filetype fallback label is lost. Detect and set it
+      -- explicitly, mirroring the sonar project scan in sonarlint.lua.
+      if vim.bo[bufnr].filetype == '' then
+        local ft = vim.filetype.match { buf = bufnr, filename = abs }
+        if ft then
+          vim.bo[bufnr].filetype = ft
+        end
+      end
       table.insert(bufnrs, bufnr)
       target[bufnr] = true
       if not existed then
@@ -381,19 +398,16 @@ local function scan_files(paths, opts)
   }
 end
 
+-- Modified-file discovery shared with <leader>lm and <leader>sm
+-- (core/ticket.lua), so scan and picker operate on the same set.
 local function open_git_modified()
-  local files = git_lines { 'ls-files', '-m', '-o', '--exclude-standard' }
-  if not files then
-    vim.notify('Not a git repo', vim.log.levels.WARN)
+  local paths = require('custom.core.ticket').modified_files()
+  if not paths then
     return
   end
-  if #files == 0 then
+  if #paths == 0 then
     vim.notify('No modified files', vim.log.levels.INFO)
     return
-  end
-  local paths = {}
-  for _, f in ipairs(files) do
-    table.insert(paths, vim.fn.fnamemodify(f, ':p'))
   end
   scan_files(paths, {
     qf_title = 'Modified: diagnostics',
@@ -403,57 +417,24 @@ local function open_git_modified()
   })
 end
 
--- Ticket-scoped scan: mirrors <leader>dT's commit discovery (pr-review.lua)
--- — merge-base with main, ticket default pulled from the branch name, commit
--- subjects grepped in base..HEAD — but instead of opening a diffview it
--- scans the union of files touched by exactly the matched commits and dumps
--- their diagnostics into the quickfix. Per-commit diff-tree (not a range
--- diff) so interleaved non-matching commits don't drag their files in.
+-- Ticket-scoped scan: same commit discovery as <leader>dT and <leader>lT
+-- (shared via core/ticket.lua) — but instead of opening a diffview it scans
+-- the union of files touched by exactly the matched commits and dumps their
+-- diagnostics into the quickfix.
 local function open_ticket_scan()
   if require('custom.core.scan_runner').is_active() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
     return
   end
 
-  local base = (git_lines { 'merge-base', 'main', 'HEAD' } or {})[1]
-  if not base or base == '' then
-    vim.notify('Could not find merge-base with main', vim.log.levels.WARN)
-    return
-  end
-
-  local branch = (git_lines { 'rev-parse', '--abbrev-ref', 'HEAD' } or {})[1] or ''
-  local default = branch:match '([A-Za-z]+%-%d+)' or ''
-
-  vim.ui.input({ prompt = 'Ticket / commit grep: ', default = default }, function(input)
-    if not input or input == '' then
+  local ticket = require 'custom.core.ticket'
+  ticket.prompt_commits(function(ctx)
+    local paths = ticket.commit_files(ctx)
+    if not paths then
       return
     end
 
-    local commits = git_lines { 'log', '--grep=' .. input, '--fixed-strings', '--format=%H', base .. '..HEAD' }
-    if not commits or #commits == 0 then
-      vim.notify('No commits matching "' .. input .. '"', vim.log.levels.WARN)
-      return
-    end
-
-    local toplevel = (git_lines { 'rev-parse', '--show-toplevel' } or {})[1]
-    if not toplevel then
-      vim.notify('Not a git repo', vim.log.levels.WARN)
-      return
-    end
-
-    -- diff-tree paths are repo-root-relative (unlike cwd-relative ls-files)
-    local seen = {}
-    local paths = {}
-    for _, hash in ipairs(commits) do
-      for _, f in ipairs(git_lines { 'diff-tree', '--no-commit-id', '--name-only', '-r', hash } or {}) do
-        if not seen[f] then
-          seen[f] = true
-          table.insert(paths, toplevel .. '/' .. f)
-        end
-      end
-    end
-
-    vim.notify(#commits .. ' commit(s) matching "' .. input .. '", ' .. #paths .. ' file(s)', vim.log.levels.INFO)
+    vim.notify(#ctx.commits .. ' commit(s) matching "' .. ctx.input .. '", ' .. #paths .. ' file(s)', vim.log.levels.INFO)
     scan_files(paths, {
       qf_title = 'Ticket: diagnostics',
       qf_label = 'Ticket',
@@ -474,8 +455,16 @@ local function diags_to_items(diagnostics)
   local scan_runner = require 'custom.core.scan_runner'
   local items = {}
   for _, d in ipairs(diagnostics) do
+    -- Drop SCAN_IGNORED_CODES phantoms from buffers not shown in any
+    -- window: hidden buffers only ever got the reduced-pass pull, and
+    -- with no window they never get the full pass that self-corrects
+    -- in-editor — they'd sit in the live list indefinitely. Displayed
+    -- buffers keep theirs (the full pass has run; entries are real).
     if d.bufnr and d.lnum then
-      table.insert(items, scan_runner.diag_to_item(d))
+      local hidden_phantom = scan_ignored(d) and #vim.fn.win_findbuf(d.bufnr) == 0
+      if not hidden_phantom then
+        table.insert(items, scan_runner.diag_to_item(d))
+      end
     end
   end
   table.sort(items, function(a, b)
@@ -681,7 +670,7 @@ function M.setup()
   end, { desc = '[C]lear both quickfix and location lists' })
 
   vim.keymap.set('n', '<leader>xm', open_git_modified, { desc = 'Git [M]odified → diagnostics qf' })
-  vim.keymap.set('n', '<leader>xt', open_ticket_scan, { desc = 'Git [T]icket commits → diagnostics qf' })
+  vim.keymap.set('n', '<leader>xT', open_ticket_scan, { desc = 'Git [T]icket commits → diagnostics qf' })
 
   vim.api.nvim_create_user_command('GitModified', open_git_modified, { desc = 'Open git-modified files and dump diagnostics to quickfix' })
   vim.api.nvim_create_user_command('TicketScan', open_ticket_scan, { desc = 'Scan files from ticket-matching commits and dump diagnostics to quickfix' })

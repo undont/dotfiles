@@ -22,6 +22,16 @@ local function assert_hex(val, field)
     return val
 end
 
+--- Format a WCAG adjustment entry for reporting
+--- @param adj table adjustment entry {name, delta, surface} or {name, swapped}
+--- @return string human-readable description
+local function format_adjustment(adj)
+    if adj.swapped then
+        return string.format("%s swapped to bright palette variant", adj.name)
+    end
+    return string.format("%s lightened +%.0f%% (against %s)", adj.name, adj.delta, adj.surface)
+end
+
 -- ══════════════════════════════════════════════════════════════
 -- Ghostty Theme Parsing
 -- ══════════════════════════════════════════════════════════════
@@ -168,16 +178,54 @@ function M.apply_wcag_corrections(colours)
     local adjustments = {}
     local accents = { "red", "green", "yellow", "purple", "pink", "cyan" }
 
-    -- Surfaces that accents must be readable on (ordered hardest-first)
+    -- ANSI palette index for each accent role; bright variant = index + 8
+    local accent_index = { red = 1, green = 2, yellow = 3, purple = 4, pink = 5, cyan = 6 }
+
+    -- Surfaces that accents must be readable on (ordered hardest-first).
+    -- line_highlight only needs WCAG's 3:1 large-text/UI minimum: CursorLine
+    -- is a transient emphasis surface, not body text, and demanding 4.5:1
+    -- there brightens every dim-row colour in deliberately dull themes
+    -- (e.g. Spacegray Eighties Dull) away from the designer's palette.
     local accent_surfaces = {
-        { name = "bg_secondary", colour = colours.bg_secondary },
-        { name = "line_highlight", colour = colours.line_highlight },
-        { name = "bg_primary", colour = colours.bg_primary },
+        { name = "bg_secondary", colour = colours.bg_secondary, min = 4.5 },
+        { name = "line_highlight", colour = colours.line_highlight, min = 3.0 },
+        { name = "bg_primary", colour = colours.bg_primary, min = 4.5 },
     }
 
-    for _, accent_name in ipairs(accents) do
+    -- Worst-case contrast margin of a colour across all accent surfaces,
+    -- normalised by each surface's required minimum (1.0 = exactly passing)
+    local function worst_margin(hex)
+        local worst = math.huge
         for _, surface in ipairs(accent_surfaces) do
-            local corrected, delta = colour.ensure_contrast(colours[accent_name], surface.colour, 4.5)
+            local margin = colour.contrast_ratio(hex, surface.colour) / surface.min
+            if margin < worst then
+                worst = margin
+            end
+        end
+        return worst
+    end
+
+    for _, accent_name in ipairs(accents) do
+        -- Prefer the theme's own bright variant over synthetic lightening:
+        -- themes that keep dim normal-row colours (e.g. Bluloco Dark's
+        -- #3476ff blue) usually carry their real identity colours in the
+        -- bright row. Lightening the dim row invents pastels the designer
+        -- never chose, so swap to the bright variant first when it reads
+        -- better, then let ensure_contrast top up any remaining shortfall.
+        if worst_margin(colours[accent_name]) < 1 then
+            local bright = colours.palette and colours.palette[accent_index[accent_name] + 8]
+            if
+                bright
+                and bright:match("^#%x%x%x%x%x%x$")
+                and worst_margin(bright) > worst_margin(colours[accent_name])
+            then
+                colours[accent_name] = bright
+                table.insert(adjustments, { name = accent_name, swapped = true })
+            end
+        end
+
+        for _, surface in ipairs(accent_surfaces) do
+            local corrected, delta = colour.ensure_contrast(colours[accent_name], surface.colour, surface.min)
             if delta > 0 then
                 colours[accent_name] = corrected
                 table.insert(adjustments, { name = accent_name, delta = delta, surface = surface.name })
@@ -269,6 +317,7 @@ function M.generate_theme_file(name, display_name, colours, status, active_accen
     assert_hex(colours.fg_variable, "fg_variable")
     assert_hex(colours.line_highlight, "line_highlight")
     assert_hex(colours.selection, "selection")
+    assert_hex(colours.selection_fg, "selection_fg")
     assert_hex(colours.cursor_colour, "cursor_colour")
     assert_hex(colours.red, "red")
     assert_hex(colours.green, "green")
@@ -294,7 +343,7 @@ function M.generate_theme_file(name, display_name, colours, status, active_accen
     if #adjustments > 0 then
         add("# WCAG adjustments applied:")
         for _, adj in ipairs(adjustments) do
-            add(string.format("#   %s lightened +%.0f%% (against %s)", adj.name, adj.delta, adj.surface))
+            add("#   " .. format_adjustment(adj))
         end
     end
     add("")
@@ -375,6 +424,20 @@ end
 function M.generate_nvim_colourscheme(name, colours)
     local neotree_cursor = colour.lighten(colours.bg_secondary, 12)
 
+    -- Inverted selections: some Ghostty themes (e.g. Bluloco Dark) pair a
+    -- light selection background with a dark selection foreground. In nvim,
+    -- syntax colours would sit on that light bg at ~1:1 contrast and vanish,
+    -- so mirror Ghostty's behaviour by forcing the selection fg on Visual.
+    -- Reference-style highlights (LspReference*, TelescopeSelection) must
+    -- preserve per-token syntax colours, so they get a derived dark band
+    -- instead of the inverted selection colour.
+    local selection_inverted = colour.contrast_ratio(colours.fg_primary, colours.selection) < 2.5
+    local visual_fg = colours.selection_fg
+    if colour.contrast_ratio(visual_fg, colours.selection) < 4.5 then
+        visual_fg = colours.bg_primary
+    end
+    local reference_bg = selection_inverted and colour.lighten(colours.bg_primary, 12) or colours.selection
+
     -- Comments sit dimmer than fg_secondary (which @variable.parameter, LineNr and
     -- the UI chrome use) so doc comments don't read as loud as parameter names —
     -- previously both shared fg_secondary verbatim and became indistinguishable.
@@ -449,6 +512,8 @@ function M.generate_nvim_colourscheme(name, colours)
     add(string.format("  red = '%s',", colours.red))
     add("")
     add(string.format("  selection = '%s',", colours.selection))
+    add(string.format("  selection_fg = '%s',", visual_fg))
+    add(string.format("  reference = '%s',", reference_bg))
     add(string.format("  comment = '%s',", comment))
     add(string.format("  ghost = '%s',", colour.blend(colours.fg_secondary, colours.bg_primary, 0.40)))
     add(string.format("  line_highlight = '%s',", colours.line_highlight))
@@ -472,8 +537,14 @@ function M.generate_nvim_colourscheme(name, colours)
         { "CursorLineNr", "fg = colors.purple, bold = true" },
         { "LineNr", "fg = colors.comment" },
         { "SignColumn", "bg = colors.bg_primary" },
-        { "Visual", "bg = colors.selection" },
-        { "VisualNOS", "bg = colors.selection" },
+        {
+            "Visual",
+            selection_inverted and "fg = colors.selection_fg, bg = colors.selection" or "bg = colors.selection",
+        },
+        {
+            "VisualNOS",
+            selection_inverted and "fg = colors.selection_fg, bg = colors.selection" or "bg = colors.selection",
+        },
         { "Search", "fg = colors.bg_primary, bg = colors.yellow" },
         { "IncSearch", "fg = colors.bg_primary, bg = colors.pink" },
         { "MatchParen", "fg = colors.green, bold = true" },
@@ -572,9 +643,9 @@ function M.generate_nvim_colourscheme(name, colours)
     add("hl('DiagnosticUnderlineHint', { undercurl = true, sp = colors.purple })")
     add("")
     add("-- LSP")
-    add("hl('LspReferenceText', { bg = colors.selection })")
-    add("hl('LspReferenceRead', { bg = colors.selection })")
-    add("hl('LspReferenceWrite', { bg = colors.selection })")
+    add("hl('LspReferenceText', { bg = colors.reference })")
+    add("hl('LspReferenceRead', { bg = colors.reference })")
+    add("hl('LspReferenceWrite', { bg = colors.reference })")
     add("")
 
     -- Treesitter groups (use role mapping)
@@ -654,7 +725,7 @@ function M.generate_nvim_colourscheme(name, colours)
     add("hl('TelescopePromptTitle', { fg = colors.pink, bold = true })")
     add("hl('TelescopePreviewTitle', { fg = colors.purple, bold = true })")
     add("hl('TelescopeResultsTitle', { fg = colors.purple, bold = true })")
-    add("hl('TelescopeSelection', { fg = colors.purple, bg = colors.selection, bold = true })")
+    add("hl('TelescopeSelection', { fg = colors.purple, bg = colors.reference, bold = true })")
     add("hl('TelescopeMatching', { fg = colors.green, bold = true })")
     add("")
     add("-- Neo-tree")
@@ -818,9 +889,7 @@ function M.generate(ghostty_path, themes_dir, nvim_dir, opts)
         if #adjustments > 0 then
             io.stderr:write("WCAG adjustments:\n")
             for _, adj in ipairs(adjustments) do
-                io.stderr:write(
-                    string.format("  %s lightened +%.0f%% (against %s)\n", adj.name, adj.delta, adj.surface)
-                )
+                io.stderr:write("  " .. format_adjustment(adj) .. "\n")
             end
         end
     end
