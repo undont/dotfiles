@@ -97,6 +97,17 @@ return {
           { '<leader>g', hidden = true },
           { '<leader>i', hidden = true },
 
+          -- ── macOS-style navigation (core/macos-nav.lua) — muscle memory, kept out of which-key ──
+          { '<M-CR>', hidden = true },
+          { '<M-BS>', hidden = true },
+          { '<D-BS>', hidden = true },
+          { '<M-Right>', hidden = true },
+          { '<M-Left>', hidden = true },
+          { '<M-f>', hidden = true },
+          { '<M-b>', hidden = true },
+          { '<Home>', hidden = true },
+          { '<End>', hidden = true },
+
           { '<leader>?', icon = { icon = '', color = 'blue' } },
           { '<leader><leader>', icon = { icon = '', color = 'blue' } },
           { '<leader>z', icon = { icon = '', color = 'red' } },

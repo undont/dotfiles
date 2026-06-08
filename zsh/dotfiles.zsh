@@ -698,6 +698,7 @@ alias config="v ~/.config"                                                     #
 alias cache="v ~/.cache"                                                       # open nvim in ~/.cache (dir)
 alias zshrc="v ~/.zshrc"                                                       # open nvim in ~/.zshrc (file)
 alias secrets="v ~/.config/zsh/secrets.zsh"                                    # open nvim in secrets.zsh (file)
+alias launchers="v ~/.config/dotfiles/launchers" # open launcher configs
 
 # Font preview (figlet/toilet font browser with fzf)
 # @cheat: font-preview | font browser (fzf)

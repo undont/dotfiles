@@ -1,5 +1,16 @@
 -- LSP configuration
 
+--- True only for ordinary on-disk file buffers. Diffview/fugitive views and
+--- other plugin buffers carry a `scheme://` name and/or a non-empty `buftype`;
+--- formatting them is meaningless and crashes formatters like csharpier, which
+--- tries to resolve a config directory from the bogus URI path.
+local function is_real_file(bufnr)
+  if vim.bo[bufnr].buftype ~= '' then
+    return false
+  end
+  return vim.api.nvim_buf_get_name(bufnr):match '^%w+://' == nil
+end
+
 --- Deduplicate LSP results and display with Telescope.
 --- Drives the request directly (instead of `vim.lsp.buf.<method>`) so empty
 --- results reach our on_list path; the built-in handlers short-circuit on
@@ -722,6 +733,10 @@ return {
             vim.notify('Buffer is not modifiable', vim.log.levels.WARN)
             return
           end
+          if not is_real_file(0) then
+            vim.notify('Not a file buffer; nothing to format', vim.log.levels.WARN)
+            return
+          end
           require('conform').format { async = true, lsp_format = 'fallback' }
         end,
         mode = '',
@@ -730,7 +745,10 @@ return {
     },
     opts = {
       notify_on_error = true,
-      format_on_save = function()
+      format_on_save = function(bufnr)
+        if not is_real_file(bufnr) then
+          return
+        end
         return {
           timeout_ms = 500,
           lsp_format = 'fallback',
