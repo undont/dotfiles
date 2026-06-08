@@ -70,6 +70,18 @@ function M.setup()
   local diag_float_group = vim.api.nvim_create_augroup('diagnostic-float', { clear = true })
   local vtext_hidden = false
 
+  -- Close any diagnostic float we previously opened. open_float's own
+  -- close_events are racy (they miss window/buffer switches and can orphan the
+  -- window if a new CursorHold re-opens before the one-shot close fires), so we
+  -- track the handle ourselves and close it deterministically.
+  local function close_diag_float()
+    local win = vim.b._diag_float_win
+    if win and vim.api.nvim_win_is_valid(win) then
+      pcall(vim.api.nvim_win_close, win, true)
+    end
+    vim.b._diag_float_win = nil
+  end
+
   vim.api.nvim_create_autocmd('CursorHold', {
     desc = 'Show diagnostic float and suppress virtual text',
     group = diag_float_group,
@@ -78,6 +90,7 @@ function M.setup()
       if vim.b._hover_open then
         return
       end
+      close_diag_float()
       local _, win = vim.diagnostic.open_float(nil, { focusable = false, scope = 'cursor' })
       if win then
         vim.b._diag_float_win = win
@@ -87,11 +100,12 @@ function M.setup()
     end,
   })
 
-  vim.api.nvim_create_autocmd('CursorMoved', {
-    desc = 'Restore virtual text after diagnostic float closes',
+  vim.api.nvim_create_autocmd({ 'CursorMoved', 'CursorMovedI', 'InsertEnter', 'BufLeave', 'WinLeave' }, {
+    desc = 'Close diagnostic float and restore virtual text',
     group = diag_float_group,
     callback = function()
       vim.b._hover_open = nil
+      close_diag_float()
       if vtext_hidden then
         vtext_hidden = false
         vim.diagnostic.config { virtual_text = { source = 'if_many', spacing = 2 } }

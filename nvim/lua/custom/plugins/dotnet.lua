@@ -235,6 +235,44 @@ local function setup_semantic_token_fix()
       end, 300)
     end,
   })
+
+  -- The progress-'end' refresh above is keyed to project-wide timing, which can
+  -- race a given buffer's analysis: under fast warmup it fires before that
+  -- buffer's semantic tokens are ready, leaving colours stale until a manual
+  -- <leader>lt. A buffer's DiagnosticChanged is the per-file signal we actually
+  -- want — roslyn publishes diagnostics (empty or not) once it has a semantic
+  -- model for the file, which is exactly when its tokens are ready too. Force a
+  -- token refresh then, debounced per buffer (last-scheduled-wins) and gated to
+  -- *visible* roslyn .cs buffers so a 100-file <leader>xm scan doesn't pile
+  -- refreshes onto hidden buffers. Re-requesting identical tokens is a no-op
+  -- repaint, so this can't reintroduce flicker as DiagnosticChanged settles.
+  local token_refresh_seq = {}
+  vim.api.nvim_create_autocmd('DiagnosticChanged', {
+    callback = function(ev)
+      local buf = ev.buf
+      if not vim.api.nvim_buf_is_valid(buf) or vim.bo[buf].filetype ~= 'cs' then
+        return
+      end
+      local seq = (token_refresh_seq[buf] or 0) + 1
+      token_refresh_seq[buf] = seq
+      vim.defer_fn(function()
+        -- Superseded by a later DiagnosticChanged for this buffer — let the
+        -- newest scheduled refresh win.
+        if token_refresh_seq[buf] ~= seq then
+          return
+        end
+        token_refresh_seq[buf] = nil
+        if
+          vim.api.nvim_buf_is_valid(buf)
+          and vim.bo[buf].filetype == 'cs'
+          and vim.fn.bufwinid(buf) ~= -1
+          and vim.lsp.get_clients({ bufnr = buf, name = 'roslyn' })[1]
+        then
+          pcall(vim.lsp.semantic_tokens.force_refresh, buf)
+        end
+      end, 250)
+    end,
+  })
 end
 
 -- Roslyn during diff/review contexts (Diffview, Octo).
@@ -326,6 +364,20 @@ return {
       setup_semantic_token_fix()
 
       vim.lsp.config('roslyn', {
+        -- Roslyn's runtimeconfig.json pins System.GC.Server=true, which gives
+        -- the .NET runtime ~one GC heap per core — a heavy idle footprint on
+        -- many-core machines (and a big chunk of roslyn's thread count). The
+        -- language server targets net10.0, and on .NET 9+ environment variables
+        -- override runtimeconfig settings, so DOTNET_gcServer=0 forces
+        -- workstation GC: far fewer heaps and lower memory, at a modest
+        -- throughput cost on background full-solution analysis (kept off the hot
+        -- path by the batched scans in core/lists.lua). Scoped to the roslyn
+        -- process via cmd_env, which roslyn.nvim's lsp/roslyn.lua passes through
+        -- as the spawn env (merging with its own Configuration/TMPDIR), so
+        -- easy-dotnet's builds/tests/BuildHost are unaffected.
+        cmd_env = {
+          DOTNET_gcServer = '0',
+        },
         settings = {
           ['csharp|background_analysis'] = {
             dotnet_analyzer_diagnostics_scope = 'openFiles',

@@ -47,6 +47,61 @@ Current filtering behavior:
   code is present, otherwise `lnum:col:message`, so message wording differences
   across push/pull channels do not create duplicates.
 
+### Scans batch buffer loads to bound roslyn memory (lists.lua)
+
+`scan_files` does NOT hidden-load the whole changeset at once. Roslyn's analyzer
+scope is `openFiles` (`dotnet.lua`), and on Sonar-adopted branches (DANA-1729:
+`SonarAnalyzer.CSharp` in `backend/Directory.Build.props`, applied to every
+`.csproj`) every compilation hosts the full Sonar ruleset. So analyzer memory
+scales with how many `.cs` files are open simultaneously — a 100-file diff
+loaded in one go drove `Microsoft.CodeAnalysis.LanguageServer` to ~4GB / ~112
+threads. (A single `.cs` open never reproduces this: one open doc = analyzers on
+one file. `<leader>xm` is what opens 100 at once.)
+
+Fix: `scan_files` partitions the readable paths into chunks of `SCAN_BATCH_SIZE`
+(default 12) and runs them strictly sequentially — load chunk, snapshot its
+diagnostics via `scan_runner`, delete the chunk's *created* buffers (the
+`nvim_buf_delete` sends `didClose`, dropping them from roslyn's open-doc set),
+then `vim.schedule` the next chunk so the close round-trips before the next
+`didOpen`. Peak open-file count, and thus analyzer memory, stays bounded
+regardless of diff size; the solution stays loaded across chunks so only
+per-file analyzer cost is re-paid, not a workspace reload. Buffers the user
+already had open aren't created and aren't torn down.
+
+Mechanics: `scan_runner.start` gained an `on_complete(items)` exit mode that
+suppresses its own qf-write/notify/copen tail and hands the batch's items back;
+`scan_files` accumulates across batches and writes one merged quickfix in
+`finish_all`. A whole-operation `scanning` lock (`scan_in_progress()`) guards
+re-entry because `scan_runner.is_active()` is momentarily false between chunks.
+Raise `SCAN_BATCH_SIZE` to trade peak memory for fewer chunks (faster); lower it
+if scans still balloon. Watch peak RSS in btop on the first run after changing
+it — if peak still walks toward 4GB, `didClose` isn't releasing fast enough and
+the next escalation is a GC nudge or killing the roslyn client between batches.
+
+### Roslyn runs under workstation GC (dotnet.lua cmd_env)
+
+`dotnet.lua`'s `vim.lsp.config('roslyn', ...)` sets `cmd_env = { DOTNET_gcServer
+= '0' }`. The language server's `runtimeconfig.json`
+(`mason/packages/roslyn/libexec/...`) pins `System.GC.Server: true`, which makes
+the .NET runtime allocate ~one GC heap per core — a heavy idle footprint and a
+large share of roslyn's thread count on many-core machines. The server targets
+`net10.0`, and **on .NET 9+ environment variables override `runtimeconfig.json`
+`configProperties`** (a documented breaking change; pre-9 the file won), so
+`DOTNET_gcServer=0` forces workstation GC: fewer heaps, lower memory, at a modest
+throughput cost on background full-solution analysis.
+
+Mechanism: roslyn.nvim's `lsp/roslyn.lua` builds `cmd` as a function that passes
+`config.cmd_env` through as the spawn `env` (merged onto the parent env, not
+replacing it — that's why the server still finds `dotnet`/`PATH`), and seeds
+`cmd_env` with its own `Configuration`/`TMPDIR`. Our `vim.lsp.config` call
+deep-merges `DOTNET_gcServer` alongside those, scoped to the roslyn process only
+— easy-dotnet's builds/tests/BuildHost (separate processes) are unaffected. This
+is the global-footprint lever; the per-scan spike is bounded separately by
+batching (above). Fallback ladder if responsiveness regresses: revert to server
+GC + `DOTNET_GCHeapCount=N` to cap heaps, optionally stack
+`DOTNET_GCConserveMemory=1..9`. Changing `cmd_env` only takes effect on a roslyn
+restart (`:Roslyn restart` / kill the running server).
+
 ### Scan snapshots have a second IDE0079 filter (lists.lua)
 
 The diagnostics scans (`<leader>xm` / `<leader>xT`, `custom/core/lists.lua`)
@@ -115,6 +170,24 @@ Roslyn's LSP progress `end` notifications, which fire as each background-analysi
 chunk finishes. The debounce bounds cost during warmup (many `end` events
 cluster) while still catching later analyses (branch switches, dependency
 restores).
+
+The progress-`end` refresh is keyed to *project-wide* timing, so it races any
+given buffer's analysis: if the last relevant `end` fires before the visible
+buffer's tokens are ready, colours sit stale until a manual `<leader>lt`. That
+race has always existed; its margin shrank noticeably under workstation GC
+(`DOTNET_gcServer=0`, above) because faster warmup makes the `end` events finish
+sooner relative to per-file analysis — surfacing as flaky semantic colours that
+"sometimes work". So there's a *second*, per-file refresh trigger:
+`force_refresh` on a buffer's `DiagnosticChanged`, debounced 250ms
+(last-scheduled-wins via a per-buffer seq token) and gated to **visible** roslyn
+`.cs` buffers. A file's `DiagnosticChanged` is the reliable per-file signal —
+roslyn publishes diagnostics (empty or not) once it has a semantic model for the
+file, which is exactly when its tokens are ready. The visible-buffer gate keeps
+it from piling `force_refresh` onto the 100 hidden buffers during an
+`<leader>xm` scan; re-requesting identical tokens is a no-op repaint, so it
+can't reintroduce flicker. The two triggers are complementary: progress-`end`
+covers project-wide re-settles, DiagnosticChanged covers the per-file initial
+population that the global timer races.
 
 ### 3. Token classification fixes
 
