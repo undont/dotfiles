@@ -114,6 +114,7 @@ end
 --- @field qf_label string                                        shown in finalise notify ("X: clean" / "X: N issue(s)")
 --- @field augroup_name string                                    unique per caller (e.g. "SonarlintScan")
 --- @field on_finalise? fun(items: table[])                       post-collection hook (e.g. unload created buffers)
+--- @field on_complete? fun(items: table[])                        when set, replaces the qf-write/notify/copen/progress-finish tail and hands the collected items back instead (caller owns the final list — used to merge batched scans into one quickfix)
 --- @field on_report? fun(reported: integer, total: integer)      fired the first time each watched buffer reports a DiagnosticChanged
 --- @field settled_debounce_ms? integer                           shorter debounce once every watched buffer has reported at least once
 --- @field settle_check? fun(): boolean                           extra gate on the settled fast path, re-evaluated at every debounce reset (e.g. "no slow analyzer attached")
@@ -176,6 +177,16 @@ function M.start(opts)
     local items = collect()
     if opts.on_finalise then
       pcall(opts.on_finalise, items)
+    end
+
+    -- Batched mode: the caller drives buffer teardown and the final quickfix
+    -- across multiple sequential runs, so skip the qf-write/notify/copen tail
+    -- and hand this batch's items back. Clear state first so the caller can
+    -- start the next batch's scan from inside the callback.
+    if opts.on_complete then
+      state = nil
+      pcall(opts.on_complete, items)
+      return
     end
 
     vim.fn.setqflist({}, 'r', { title = opts.qf_title, items = items })

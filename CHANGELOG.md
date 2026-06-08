@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.112] - 2026-06-08
+
+### Added
+- Zsh: `launchers` alias opens `~/.config/dotfiles/launchers` in nvim. `zsh/dotfiles.zsh`
+
+### Changed
+- Nvim: diagnostic scans (`<leader>xm`/`<leader>xT`) now hidden-load files in bounded batches (12 at a time) instead of opening the whole changeset at once. Roslyn's analyzer scope is `openFiles` and on Sonar-adopted branches every compilation hosts the full SonarAnalyzer.CSharp ruleset, so a 100-file diff loaded in one go drove the language server to ~4GB. Each batch is loaded, snapshotted, then its created buffers are torn down (the `didClose` drops them from roslyn's open-doc set) before the next batch loads, so peak open-file count and analyzer memory stay bounded regardless of diff size; the solution stays loaded across batches. `scan_runner.start` gained an `on_complete` mode that hands a batch's items back for merging into one quickfix. `nvim/lua/custom/core/lists.lua`, `nvim/lua/custom/core/scan_runner.lua`
+- Nvim: roslyn now runs under workstation GC (`DOTNET_gcServer=0` via `cmd_env`). Its `runtimeconfig.json` pins server GC, which allocates roughly one GC heap per core — a heavy idle memory and thread footprint on many-core machines. The server targets net10.0 and on .NET 9+ environment variables override `runtimeconfig` settings, so the env var forces fewer heaps and lower memory at a modest background-analysis throughput cost. Scoped to the roslyn process only, so easy-dotnet's builds/tests/BuildHost are unaffected. `nvim/lua/custom/plugins/dotnet.lua`
+- Nvim: which-key hides the macOS-style navigation keymaps (`<M-CR>`, `<M-BS>`, `<D-BS>`, `<M-Right>`/`<M-Left>`, `<M-f>`/`<M-b>`, `<Home>`/`<End>`) so they stay out of the popup. `nvim/lua/custom/plugins/ui.lua`
+
+### Fixed
+- Nvim: roslyn semantic colours no longer sit stale after a buffer's analysis settles. The existing project-wide progress-`end` token refresh can fire before a given buffer's tokens are ready (the race tightened under workstation GC), so a per-buffer `DiagnosticChanged` refresh was added — debounced, last-scheduled-wins, gated to visible roslyn `.cs` buffers so a 100-file scan doesn't pile refreshes onto hidden buffers. `nvim/lua/custom/plugins/dotnet.lua`
+- Nvim: the diagnostic float is now closed deterministically. `open_float`'s own `close_events` miss window/buffer switches and can orphan the float when a new `CursorHold` re-opens before the one-shot close fires, so the window handle is tracked and closed explicitly on `CursorMoved`/`CursorMovedI`/`InsertEnter`/`BufLeave`/`WinLeave`. `nvim/lua/custom/core/autocmds.lua`
+- Nvim: formatting (`<leader>f` and format-on-save) now skips non-file buffers. Diffview/fugitive views carry a `scheme://` name or non-empty `buftype`; formatting them is meaningless and crashed csharpier, which tried to resolve a config dir from the bogus URI path. `nvim/lua/custom/plugins/lsp.lua`
+
 ## [0.2.111] - 2026-06-05
 
 ### Added
