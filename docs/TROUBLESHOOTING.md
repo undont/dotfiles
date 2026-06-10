@@ -635,6 +635,44 @@ nvim
 :echo &filetype
 ```
 
+**No inline suggestions at all (silent)**: copilot.lua needs the language
+server to start. The config uses the standalone binary server (`server.type =
+'binary'`), which auto-downloads and has no Node dependency, so a missing or
+out-of-shell `node` no longer breaks completions. If you previously relied on
+the Node server and it stopped working, confirm the binary downloaded:
+```vim
+:checkhealth copilot
+```
+
+### CodeCompanion: "Authorization header is badly formatted"
+
+**Symptom**: every CodeCompanion chat submit fails with a 400 and
+`bad request: Authorization header is badly formatted`.
+
+**Cause**: `~/.config/github-copilot/apps.json` holds more than one
+`github.com:*` entry (common once you have also signed into the gh CLI, Copilot
+CLI, or VS Code). The Copilot adapter picks the first entry it finds; if that is
+a stale entry, its token exchange returns 401 and the chat request goes out with
+an empty bearer.
+
+**Solution**: the config pins the copilot.vim app token (the `Iv1.*` entry) so
+duplicates no longer break it; restart Neovim to pick up a fresh token. To check
+which entries are still valid without printing secrets:
+```bash
+python3 - <<'PY'
+import json, urllib.request
+d = json.load(open(__import__('os').path.expanduser('~/.config/github-copilot/apps.json')))
+for k, v in d.items():
+    req = urllib.request.Request("https://api.github.com/copilot_internal/v2/token",
+        headers={"Authorization": "Bearer " + v["oauth_token"], "User-Agent": "check"})
+    try:
+        r = urllib.request.urlopen(req, timeout=10)
+        print(k, "OK" if json.load(r).get("token") else "no token")
+    except Exception as e:
+        print(k, "FAIL", e)
+PY
+```
+
 ---
 
 ## Debugging Commands

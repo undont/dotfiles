@@ -70,7 +70,7 @@ main() {
             --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
             --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,n,e,x,s,D)' \
             --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,n,e,x,s,D)" || echo "abort"' \
-            --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+            --bind 'ctrl-k:up,ctrl-l:clear-query' \
             --bind 'n:become(printf "ACTION:new")' \
             --bind 's:become(printf "ACTION:set")' \
             --bind 'e:become(printf "ACTION:edit:%s" {1})' \

@@ -163,7 +163,7 @@ handle_fixed_session() {
         --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
         --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space,n)' \
         --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space,n)" || echo "abort"' \
-        --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+        --bind 'ctrl-k:up,ctrl-l:clear-query' \
         --bind "n:become($new_cmd)" \
         2>/dev/null) || exit 130
 
@@ -271,7 +271,7 @@ handle_parameterised() {
         --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
         --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space,n)' \
         --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space,n)" || echo "abort"' \
-        --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+        --bind 'ctrl-k:up,ctrl-l:clear-query' \
         --bind "n:become($SCRIPT_DIR/new-dir.sh '${LAUNCHER}')" \
         2>/dev/null) || exit 130
 

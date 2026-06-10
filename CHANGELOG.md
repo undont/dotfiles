@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.113] - 2026-06-10
+
+### Added
+- Nvim: oil conceal autocmd re-asserts `conceallevel=3`/`concealcursor=nvic` on `BufWinEnter`/`WinEnter` for `oil://` buffers, so entry IDs stay hidden when an oil buffer is displayed in a split or session-restored window that never ran oil's own set_win_options. `nvim/lua/custom/plugins/navigation.lua`
+
+### Changed
+- Nvim: copilot.lua switches to the standalone binary language server (`server = { type = 'binary' }`). The Node server requires `node` ≥ 22 on PATH at Neovim launch; on machines where nvim starts outside an fnm/nvm shell (GUI, launcher, bare login) that silently produces zero completions. The binary auto-downloads from GitHub releases and has no Node dependency. `nvim/lua/custom/plugins/copilot.lua`
+- Nvim: codecompanion copilot adapter pre-seeds the `Iv1.*` (copilot.vim) oauth token on startup. `~/.config/github-copilot/apps.json` can hold several `github.com:*` entries (gh CLI, Copilot CLI, VS Code); the upstream adapter returns whichever `pairs()` yields first, often a stale entry whose token exchange 401s and produces an empty bearer, triggering a 400 "Authorization header is badly formatted" on every chat. `nvim/lua/custom/plugins/codecompanion.lua`
+- Nvim: `<leader>dT` (diff branch total) switched from three-dot to single-rev `DiffviewOpen` form. The two-dot `base...HEAD` form diffed merge-base against HEAD only; the single-rev form includes uncommitted and unstaged working-tree changes, matching what the tooltip describes. `nvim/lua/custom/plugins/pr-review.lua`
+- Tmux/fzf pickers: `ctrl-k` rebound from `kill-line` to `up` (move up the list); `ctrl-l` added as `clear-query`. Applies to all tmux popup pickers: sessions, windows, AI instances, alerts, launchers, themes, and the URL picker. `tmux/tmux.conf.template`, `tmux/scripts/**`
+- Ghostty: default font size bumped from 13 to 18 in the template. `ghostty/config.template`
+
+### Fixed
+- Docs: added troubleshooting entries for copilot binary server (no inline suggestions when `node` is absent from the launch environment) and codecompanion "Authorization header is badly formatted" (multi-entry apps.json token selection). `docs/TROUBLESHOOTING.md`
+
 ## [0.2.112] - 2026-06-08
 
 ### Added
