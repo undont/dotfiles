@@ -8,6 +8,13 @@ return {
     cmd = 'Copilot',
     event = 'InsertEnter',
     opts = {
+      -- Use the standalone copilot-language-server binary instead of the
+      -- bundled Node server. The Node path requires `node` (>= 22) on PATH at
+      -- launch; on machines where nvim starts outside an fnm/nvm shell (GUI
+      -- app, launcher, bare login shell) that silently yields zero completions.
+      -- The binary server auto-downloads from GitHub releases and has no Node
+      -- dependency. See lsp/binary.lua in copilot.lua.
+      server = { type = 'binary' },
       suggestion = {
         enabled = true,
         auto_trigger = true,

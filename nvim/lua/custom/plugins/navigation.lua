@@ -20,6 +20,21 @@ local function oil_close()
   end
 end
 
+-- Re-assert oil's conceal window options whenever an oil buffer becomes visible.
+-- Oil hides its per-line entry IDs (the `/006 ` prefix) with a buffer-local
+-- `oilId` syntax match plus the window-local `conceallevel`/`concealcursor` it
+-- sets when rendering. Because conceal is window-scoped, showing an existing oil
+-- buffer in a window that never ran oil's set_win_options (a split, a reused
+-- window, a session-restored layout) leaves conceallevel at 0 and the IDs leak.
+-- Reapplying on entry covers every such case.
+vim.api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter' }, {
+  pattern = 'oil://*',
+  callback = function()
+    vim.wo.conceallevel = 3
+    vim.wo.concealcursor = 'nvic'
+  end,
+})
+
 return {
   -- Oil: filesystem-as-buffer
   {

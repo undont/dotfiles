@@ -123,7 +123,7 @@ selected=$(printf '%s\n' "$entry_list" | fzf \
     --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
     --bind '/:enable-search+change-prompt(> )+unbind(j,k,q,space,x)' \
     --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,q,space,x)" || echo "abort"' \
-    --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+    --bind 'ctrl-k:up,ctrl-l:clear-query' \
     --bind "x:execute-silent(
         target=\$(echo {} | sed 's/\x1b\[[0-9;]*m//g' | awk '{print \$2}')
         session=\${target%%:*}

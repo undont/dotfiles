@@ -416,7 +416,9 @@ return {
             return
           end
 
-          diffview_open('DiffviewOpen ' .. base .. '...HEAD')
+          -- Single-rev form diffs the merge-base against the working tree, so
+          -- both branch commits and uncommitted/unstaged changes are included.
+          diffview_open('DiffviewOpen ' .. base)
         end,
         desc = '[D]iff branch [T]otal (vs main)',
       },
