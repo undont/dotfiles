@@ -58,7 +58,7 @@ main() {
         --bind "r:become($SCRIPT_DIR/pick.sh --random)" \
         --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space,f,r)' \
         --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space,f,r)" || echo "abort"' \
-        --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+        --bind 'ctrl-k:up,ctrl-l:clear-query' \
         2>/dev/null) || return 0
 
     local theme="${selected%% *}"

@@ -55,7 +55,7 @@ selected=$(echo "$urls" | fzf \
     --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
     --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,f,b,d,u,q,space,y,o)' \
     --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,f,b,d,u,q,space,y,o)" || echo "abort"' \
-    --bind 'ctrl-k:kill-line,ctrl-w:unix-line-discard' \
+    --bind 'ctrl-k:up,ctrl-l:clear-query' \
     --bind "y:execute-silent(echo -n {} | $CLIPBOARD_CMD)+abort" \
 ) || true
 

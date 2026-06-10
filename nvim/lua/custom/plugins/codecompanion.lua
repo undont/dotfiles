@@ -27,6 +27,28 @@ return {
       adapters = {
         http = {
           copilot = function()
+            -- Force the copilot.vim oauth token. apps.json can hold several
+            -- `github.com:*` entries (gh CLI, Copilot CLI, VS Code), and the
+            -- upstream adapter returns the first one `pairs()` yields -- often a
+            -- stale entry whose token exchange 401s, producing an empty bearer
+            -- and a 400 "Authorization header is badly formatted" on every chat.
+            -- Pre-seeding `_oauth_token` short-circuits that pick (token.lua
+            -- returns it directly), so duplicates never break the adapter.
+            pcall(function()
+              local token = require 'codecompanion.adapters.http.copilot.token'
+              local apps = vim.fn.expand '~/.config/github-copilot/apps.json'
+              if vim.fn.filereadable(apps) == 0 then
+                return
+              end
+              local data = vim.json.decode(table.concat(vim.fn.readfile(apps), ' '))
+              for key, value in pairs(data) do
+                -- `Iv1.*` is the copilot.vim / copilot.lua GitHub App
+                if type(value) == 'table' and value.oauth_token and key:find 'Iv1%.' then
+                  token._oauth_token = value.oauth_token
+                  return
+                end
+              end
+            end)
             return require('codecompanion.adapters').extend('copilot', {})
           end,
           anthropic = function()
