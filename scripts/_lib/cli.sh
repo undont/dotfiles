@@ -54,6 +54,38 @@ _changelog_local_version() {
     sed -n 's/^## \[\([0-9][^]]*\)\].*/\1/p' "$DOTFILES_DIR/CHANGELOG.md" | head -1
 }
 
+# Release date (YYYY-MM-DD) for the latest non-Unreleased version. Reads the
+# "## [X.Y.Z] - YYYY-MM-DD" heading; empty if the heading carries no date.
+_changelog_local_date() {
+    sed -n 's/^## \[[0-9][^]]*\][[:space:]]*-[[:space:]]*\([0-9]\{4\}-[0-9]\{2\}-[0-9]\{2\}\).*/\1/p' \
+        "$DOTFILES_DIR/CHANGELOG.md" | head -1
+}
+
+# Release timestamp for a version. When the matching "vX.Y.Z" tag exists, use
+# its commit time (YYYY-MM-DD HH:MM). Untagged (-dev) versions have no tag, so
+# fall back to the date-only CHANGELOG heading.
+_release_datetime() {
+    local version="$1"
+    [[ -z "$version" ]] && return
+    local tag="v${version}"
+    if git -C "$DOTFILES_DIR" rev-parse "$tag" &>/dev/null; then
+        git -C "$DOTFILES_DIR" log -1 --date=format:'%Y-%m-%d %H:%M' --format=%cd "$tag" 2>/dev/null
+    else
+        _changelog_local_date
+    fi
+}
+
+# Path to the last-update marker. install.sh writes a pre-formatted local
+# timestamp here at the end of every install/update apply (see UPDATE_STAMP_FILE
+# below); cmd_update reaches install.sh only when changes are actually applied.
+UPDATE_STAMP_FILE="$STATE_DIR/last-update"
+
+# Timestamp (YYYY-MM-DD HH:MM) of the last successful install/update. Empty if
+# install.sh has never completed on this machine.
+_last_update_datetime() {
+    [[ -f "$UPDATE_STAMP_FILE" ]] && head -1 "$UPDATE_STAMP_FILE"
+}
+
 # Latest non-Unreleased version from CHANGELOG.md at a given git ref
 _changelog_version_at_ref() {
     local ref="$1"

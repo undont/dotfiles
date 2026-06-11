@@ -26,8 +26,8 @@ Search in Telescope | <leader>hs
 
 ## oil @oil
 Toggle Oil (parent directory) | -
-Up one directory | <BS>
-Select entry / enter directory | <CR>
+Up one directory | <BS> / go
+Select entry / enter directory | <CR> / gi
 Show help (all default bindings) | g?
 
 ## search @search

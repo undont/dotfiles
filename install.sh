@@ -605,3 +605,11 @@ if [[ -s "$notice_file" ]]; then
     sed 's/^/  /' "$notice_file"
     rm -f "$notice_file"
 fi
+
+# Stamp the last install/update time. Reaching here means the apply succeeded.
+# `dotfiles update` early-returns before invoking install.sh when nothing is to
+# be applied, so this only advances on a real install or update. Read back by
+# `dotfiles version`/`status` as the "Updated" field (UPDATE_STAMP_FILE in cli.sh).
+update_stamp_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/.state"
+mkdir -p "$update_stamp_dir"
+date '+%Y-%m-%d %H:%M' > "$update_stamp_dir/last-update"

@@ -7,15 +7,18 @@
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
+
+# Bail before spawning tmux or sourcing libs — this runs every status-interval
+# and the common case is no alerts at all.
+if [[ ! -f "$ALERTS_FILE" ]] || [[ ! -s "$ALERTS_FILE" ]]; then
+    exit 0
+fi
+
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 
 # Source the alerts library for agent configuration
 [[ -f "$SCRIPT_DIR/../_lib/alerts.sh" ]] || exit 0
 source "$SCRIPT_DIR/../_lib/alerts.sh"
-
-if [[ ! -f "$ALERTS_FILE" ]] || [[ ! -s "$ALERTS_FILE" ]]; then
-    exit 0
-fi
 
 # Parallel arrays for bash 3.2 compatibility (no associative arrays)
 # sessions[i]     — unique session name

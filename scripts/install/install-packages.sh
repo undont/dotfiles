@@ -48,10 +48,16 @@ fi
 # Skip the install entirely if everything in the Brewfile is already present
 # and up to date. `brew bundle check` exits 0 when nothing needs installing or
 # upgrading (it checks for outdated entries by default).
+#
+# We only care about its exit code here, so its output is discarded: on a fresh
+# or out-of-date machine it prints an alarming "brew bundle can't satisfy your
+# Brewfile's dependencies" summary (even with --quiet, which only suppresses the
+# per-package lines). That's not a failure — it's exactly what triggers the
+# install below — so silencing it keeps the install output clean.
 echo "Checking Brewfile state..."
 echo ""
 
-if brew bundle check --file="$FILTERED_BREWFILE" --quiet; then
+if brew bundle check --file="$FILTERED_BREWFILE" --quiet >/dev/null 2>&1; then
     success "All Brewfile packages already installed and up to date"
 else
     echo "Installing/upgrading packages from Brewfile..."

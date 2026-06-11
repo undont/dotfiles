@@ -2,22 +2,36 @@
 # GHOSTTY LOCAL OVERRIDES
 # =============================================================================
 # Your personal Ghostty settings. This file is yours — add anything you want.
-# It is loaded AFTER the base config, so your values override the defaults.
+# It is loaded AFTER the base config via `config-file`, so your values layer
+# on top of the defaults.
 #
 # This file survives dotfiles theme and dotfiles update.
-# After making changes, reload with: prefix + r (in tmux)
+# After making changes, reload Ghostty's config with Cmd+Shift+, (or fully quit
+# and reopen). Note: a tmux reload (prefix + r) does NOT reload Ghostty.
 #
 # File structure:
 #   ~/.config/ghostty/config   - Generated config (managed by dotfiles theme)
 #   ~/.config/ghostty/local    - This file (your personal overrides)
 #
-# Ghostty uses last-value-wins, so any setting here takes priority.
+# Most options are last-value-wins, so setting one here takes priority. The
+# exception is font-family (see the Font section below): Ghostty *chains*
+# repeated font-family values into a fallback list rather than overwriting, so
+# the base config's font would stay primary unless you reset it first.
 #
 
-# Examples:
+# Font
+# Ghostty appends repeated font-family values into a fallback chain, with the
+# FIRST entry as the primary font. The base config already sets one, so the
+# leading `font-family = ""` clears the inherited value and makes the line below
+# your primary font. To change the font: edit the family on the second line and
+# keep the empty reset above it. (Same applies if you set font-family-bold etc.,
+# but bold/italic auto-derive from font-family, so usually you only need this.)
+font-family = ""
+font-family = JetBrainsMono Nerd Font Mono
+
+# Other examples:
 #   cursor-style = bar
 #   font-size = 14
-#   font-family = JetBrains Mono
 #   background-opacity = 0.95
 #   window-padding-x = 4
 #   window-padding-y = 4

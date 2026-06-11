@@ -25,12 +25,15 @@ bail() {
     exit 0
 }
 
-# Serve from result cache if fresh (avoids all git forks)
+# Serve from result cache if fresh. This is the hot path (runs every
+# status-interval), so it uses bash builtins only — no date/stat/cat forks.
+# Cache format: line 1 = epoch written, line 2 = payload.
+now="${EPOCHSECONDS:-$(date +%s)}"
 if [[ -f "$CACHE_FILE" ]]; then
-    now=$(date +%s)
-    cache_mtime=$(stat -f %m "$CACHE_FILE" 2>/dev/null) || cache_mtime=0
-    if (( now - cache_mtime < RESULT_TTL_SECONDS )); then
-        cat "$CACHE_FILE"
+    { IFS= read -r cache_ts && IFS= read -r cache_payload; } < "$CACHE_FILE" 2>/dev/null \
+        || { cache_ts=0; cache_payload=""; }
+    if [[ "$cache_ts" =~ ^[0-9]+$ ]] && (( now - cache_ts < RESULT_TTL_SECONDS )); then
+        printf '%s' "$cache_payload"
         exit 0
     fi
 fi
@@ -109,8 +112,9 @@ main() {
         output="↑ "
     fi
 
-    # Cache the result (file mtime is used for TTL)
-    printf "%s" "$output" > "$CACHE_FILE"
+    # Cache the result (line 1 = epoch, line 2 = payload; read by the
+    # builtin-only hot path above)
+    printf '%s\n%s\n' "$now" "$output" > "$CACHE_FILE"
 
     # Output for tmux
     printf "%s" "$output"

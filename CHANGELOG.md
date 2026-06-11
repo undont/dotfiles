@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.114] - 2026-06-11
+
+### Added
+- Tmux: the battery/cpu/ram status-right segment is now rendered by a cached wrapper `tmux/scripts/utils/sysinfo.sh` (TTL ~5s) instead of being inlined. With `status-interval 1` the clock ticks every second, but the stock tmux-battery/tmux-cpu plugin scripts (which exec ~22 tmux option reads each) only run once per TTL; the segment is served from a cache in between, cutting hundreds of process spawns per minute. Plugins stay unpatched upstream clones; icons and colour pass via `@sysinfo_*` options to avoid tmux format-expanding `#rrggbb` colour arguments. `tmux/scripts/utils/sysinfo.sh`, `tmux/tmux.conf.template`
+- CLI: `dotfiles version` and `dotfiles status` now show `Released:` (commit time of the matching `vX.Y.Z` tag, or the dated CHANGELOG heading for untagged `-dev` builds) and `Updated:` (timestamp of the last successful install/update apply). `install.sh` stamps the apply time to `~/.config/dotfiles/.state/last-update` on completion. `scripts/dotfiles`, `scripts/_lib/cli.sh`, `install.sh`
+- Nvim: oil gains `gi` (select/enter) and `go` (parent directory) as alternates to `<CR>`/`<BS>`. `nvim/lua/custom/plugins/navigation.lua`
+
+### Changed
+- Ghostty: `ghostty/local.template` now ships a `font-family = ""` reset followed by the default `JetBrainsMono Nerd Font Mono`, so changing the single font line in `~/.config/ghostty/local` takes effect. Ghostty chains repeated `font-family` values into a fallback list (first entry = primary) rather than last-value-wins, so a bare `font-family = MyFont` in the local override was landing as a fallback behind the base config's font, not replacing it. The misleading "last-value-wins" and "reload with prefix + r" comments in the template are corrected (Ghostty config reloads with `Cmd+Shift+,`, not a tmux reload). `ghostty/local.template`
+- Tmux: `dotfiles-status.sh` reads its result cache with bash builtins only (no `date`/`stat`/`cat` forks) on the hot path, storing the epoch on line 1 and the payload on line 2; `alerts/show.sh` bails on an empty/missing alerts file before spawning tmux or sourcing libs. `tmux/scripts/utils/dotfiles-status.sh`, `tmux/scripts/alerts/show.sh`
+- Install: `brew bundle check` output is discarded (exit code only) so the alarming "can't satisfy your Brewfile's dependencies" summary no longer prints on an out-of-date machine, where it just means the install below will run. `scripts/install/install-packages.sh`
+
+### Fixed
+- Zsh: `Ctrl+-` now triggers `redo` (mirroring `Ctrl+Shift+-` → undo) and `Ctrl+=` is swallowed cleanly. With `extended-keys-format csi-u` these combos arrive as CSI-u sequences; binding the actual csi-u form makes ZLE consume the whole sequence instead of leaking the tail (e.g. `;5u`) as literal text. The legacy modifyOtherKeys form is kept as a fallback. `zsh/dotfiles.zsh`
+- Ghostty: migration `0.2.114-ghostty-font-family-reset.sh` patches existing `~/.config/ghostty/local` files (copy-on-install, never overwritten) by inserting the `font-family = ""` reset ahead of an existing font-family override so the chosen font becomes primary. Idempotent and a no-op when no override is set or a reset already exists. `scripts/migrations/0.2.114-ghostty-font-family-reset.sh`
+
 ## [0.2.113] - 2026-06-10
 
 ### Added
