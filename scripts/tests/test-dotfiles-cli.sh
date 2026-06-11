@@ -167,13 +167,26 @@ section "cmd_version"
 
 ver_out=$("$DOTFILES_CLI" version 2>&1)
 
-for label in "Version:" "Preset:" "Branch:" "Path:"; do
+for label in "Version:" "Released:" "Preset:" "Branch:" "Path:"; do
     if [[ "$ver_out" == *"$label"* ]]; then
         pass "version output includes '$label'"
     else
         fail "version output missing '$label'"
     fi
 done
+
+# "Updated:" only renders once install.sh has stamped a last-update time, so it
+# is environment-dependent (absent on a fresh clone / CI). Assert conditionally.
+update_stamp="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/.state/last-update"
+if [[ -f "$update_stamp" ]]; then
+    if [[ "$ver_out" == *"Updated:"* ]]; then
+        pass "version output includes 'Updated:' (stamp present)"
+    else
+        fail "version output missing 'Updated:' despite a last-update stamp"
+    fi
+else
+    skip "Updated: shown only after an install/update has stamped a time"
+fi
 
 section "cmd_links"
 

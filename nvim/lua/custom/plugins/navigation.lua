@@ -50,6 +50,8 @@ return {
       keymaps = {
         ['-'] = { mode = 'n', callback = oil_close },
         ['<BS>'] = { 'actions.parent', mode = 'n' },
+        ['gi'] = { 'actions.select', mode = 'n' },
+        ['go'] = { 'actions.parent', mode = 'n' },
       },
     },
   },

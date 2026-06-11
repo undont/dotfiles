@@ -194,10 +194,8 @@ section "Result Caching"
 # Set a long result TTL and verify cache is used
 export DOTFILES_RESULT_CACHE_TTL=300  # 5 minutes
 
-# Write a known value to cache
-printf "CACHED" > "$XDG_CACHE_HOME/dotfiles/sync-status"
-# Touch with current timestamp
-touch "$XDG_CACHE_HOME/dotfiles/sync-status"
+# Write a known value to cache (line 1 = epoch, line 2 = payload)
+printf '%s\nCACHED\n' "$(date +%s)" > "$XDG_CACHE_HOME/dotfiles/sync-status"
 
 output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
 

@@ -781,10 +781,15 @@ bindkey '\e[13;6u'  accept-line        # Ctrl+Shift+Enter (kitty protocol)
 bindkey '\e[;5;13~' accept-line        # Ctrl+Enter (Ghostty variant)
 bindkey '\e[;6;13~' accept-line        # Ctrl+Shift+Enter (Ghostty variant)
 
-# tmux extended-keys (modifyOtherKeys) sends CSI sequences for Ctrl+key
-# combos that have no standard terminal meaning. Swallow them to prevent
-# raw escape codes printing in the shell.
-bindkey -s '\e[27;5;45~' ''            # Ctrl+- (swallow)
+# Ctrl+key combos with no legacy control-char encoding (Ctrl+-, Ctrl+=)
+# arrive as CSI-u sequences (extended-keys-format csi-u). Bind the actual
+# csi-u form so ZLE consumes the whole sequence instead of leaking the tail
+# (e.g. ';5u') as literal text. Ctrl+Shift+- already maps to undo via the
+# legacy ^_ byte, so wire Ctrl+- to redo as its mirror.
+bindkey    '\e[45;5u' redo             # Ctrl+- → redo (mirrors Ctrl+Shift+- → undo)
+bindkey -s '\e[61;5u' ''               # Ctrl+= (swallow)
+# Legacy modifyOtherKeys fallback (if extended-keys-format ever changes)
+bindkey    '\e[27;5;45~' redo          # Ctrl+- → redo
 bindkey -s '\e[27;5;61~' ''            # Ctrl+= (swallow)
 
 # =============================================================================

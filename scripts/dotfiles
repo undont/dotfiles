@@ -793,6 +793,13 @@ cmd_status() {
     print_header "Dotfiles Status"
 
     [[ -n "$version" ]] && printf "${CYAN}Version:${NC}   %s\n" "$(_format_version "$version")"
+
+    local released updated
+    released=$(_release_datetime "$version") || true
+    updated=$(_last_update_datetime) || true
+    [[ -n "$released" ]] && printf "${CYAN}Released:${NC}  %s\n" "$released"
+    [[ -n "$updated" ]]  && printf "${CYAN}Updated:${NC}   %s\n" "$updated"
+
     printf "${CYAN}Preset:${NC}    %s\n" "$preset"
     local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
     [[ -f "$theme_file" ]] && printf "${CYAN}Theme:${NC}     %s\n" "$(<"$theme_file")"
@@ -1111,6 +1118,13 @@ cmd_version() {
     print_logo
 
     printf "${CYAN}Version:${NC}  %s\n" "$(_format_version "$version")"
+
+    local released updated
+    released=$(_release_datetime "$version") || true
+    updated=$(_last_update_datetime) || true
+    [[ -n "$released" ]] && printf "${CYAN}Released:${NC} %s\n" "$released"
+    [[ -n "$updated" ]]  && printf "${CYAN}Updated:${NC}  %s\n" "$updated"
+
     printf "${CYAN}Preset:${NC}   %s\n" "$(get_preset)"
 
     local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
@@ -1335,7 +1349,7 @@ EOF
 
 _help_version() {
     cat << 'EOF'
-dotfiles version — show the current version, preset, and theme
+dotfiles version — show the current version, release/update dates, preset, and theme
 
 USAGE
   dotfiles version [OPTIONS]
@@ -1370,7 +1384,7 @@ COMMANDS
   sync            Sync copy-on-install files from repo
   aliases   -a    Show shell aliases and shortcuts
   notes     -n    Browse changelog in pager
-  version   -v    Show version, preset, theme
+  version   -v    Show version, dates, preset, theme
   edit      -e    Open dotfiles in $EDITOR
   cd              Print dotfiles path
 

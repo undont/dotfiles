@@ -128,7 +128,7 @@ dotfiles links     # show all managed symlinks and their status
 dotfiles theme     # list, switch, or generate themes
 dotfiles aliases   # browse all shell aliases and shortcuts
 dotfiles notes     # browse the changelog in a pager
-dotfiles version   # current version, preset, and theme
+dotfiles version   # current version, release/update dates, preset, and theme
 dotfiles edit      # open dotfiles in $EDITOR
 ```
 

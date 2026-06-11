@@ -499,7 +499,15 @@ set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
 set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
 # Responsive: full stats on wide terminals (≥80 cols), compact on narrow (mobile)
-set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#{battery_color_charge_bg}#[fg={{TMUX_STATUS_FG}}] #{battery_icon_status} #{battery_percentage} #{cpu_bg_color}#[fg={{TMUX_STATUS_FG}}]  #{cpu_percentage} #{ram_bg_color}#[fg={{TMUX_STATUS_FG}}]  #{ram_percentage} ,}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M:%S '
+# Battery/cpu/ram segment is rendered by utils/sysinfo.sh (cached, TTL ~5s)
+# so status-interval 1 keeps a ticking clock without re-running the
+# tmux-battery/tmux-cpu plugin scripts every second. Icons and colour are
+# passed via options because tmux format-expands #() content, which would
+# mangle "#rrggbb" colour arguments.
+set -g @sysinfo_fg "{{TMUX_STATUS_FG}}"
+set -g @sysinfo_cpu_icon ""
+set -g @sysinfo_ram_icon ""
+set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#(~/.tmux/scripts/utils/sysinfo.sh),}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M:%S '
 set -g status-left-length 30
 set -g status-right-length 150
 
