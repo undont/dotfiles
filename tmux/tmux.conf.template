@@ -47,6 +47,10 @@ set -ga terminal-features 'xterm*:extkeys:mouse'
 set -g extended-keys always
 set -s extended-keys-format csi-u    # emit kitty u-form (matches Ghostty + zsh bindkey)
 
+# Let TUIs (yazi, etc.) talk to the outer terminal directly. Required by yazi;
+# also stops its startup escape sequences leaking through tmux.
+set -g allow-passthrough on
+
 # Forward terminal focus events into panes (nvim :checktime autoreload,
 # Claude Code focus tracking, TUIs that pause when unfocused)
 set -g focus-events on

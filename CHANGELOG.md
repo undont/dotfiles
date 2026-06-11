@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.115] - 2026-06-11
+
+### Added
+- Tmux: `set -g allow-passthrough on` so TUIs like yazi can talk to the outer terminal directly. Without it yazi's image preview and startup escape sequences leak through tmux instead of reaching the terminal; passthrough lets the `\ePtmux;...` escape sequence reach the outer terminal unmodified. `tmux/tmux.conf.template`
+
 ## [0.2.114] - 2026-06-11
 
 ### Added
