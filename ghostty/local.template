@@ -29,6 +29,18 @@
 font-family = ""
 font-family = JetBrainsMono Nerd Font Mono
 
+# Font features are global (they apply to whichever font is active), so the
+# right sets depend on your font. Monaspace, for example, hides its coding
+# ligatures behind stylistic sets rather than plain `liga` — without these they
+# look dead. Match the sets to your font; don't enable them on JetBrains Mono.
+#   font-family = ""
+#   font-family = Monaspace Neon NF
+#   font-feature = ss01   # != ===
+#   font-feature = ss02   # <= >=
+#   font-feature = ss07   # :: =:=
+#   font-feature = ss08   # ..= .-
+#   font-feature = ss09   # <=> =<<
+
 # Other examples:
 #   cursor-style = bar
 #   font-size = 14

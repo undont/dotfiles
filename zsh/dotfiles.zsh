@@ -143,7 +143,12 @@ fi
 # =============================================================================
 # DOCKER & COMPLETIONS
 # =============================================================================
-# Dotfiles autoloaded functions and completions
+# Dotfiles autoloaded functions and completions.
+# DOTFILES_ROOT must be set before this fpath entry — otherwise the path
+# resolves to "/zsh/functions" and _dotfiles fails to autoload ("function
+# definition file not found"). It only appeared to work inside tmux because the
+# export below was inherited from the parent shell's environment.
+export DOTFILES_ROOT="${DOTFILES_DIR:-$HOME/dotfiles}"
 fpath=("$DOTFILES_ROOT/zsh/functions" $fpath)
 
 # Docker CLI completions (docker, docker-compose commands)
@@ -237,8 +242,8 @@ fi
 _cached_eval fzf fzf --zsh
 
 # Apply theme colours to fzf (and auto-refresh on theme-switch)
-# Export DOTFILES_ROOT so fzf-theme.sh skips its subshell-based path detection
-export DOTFILES_ROOT="${DOTFILES_DIR:-$HOME/dotfiles}"
+# DOTFILES_ROOT is exported earlier (see the fpath block); fzf-theme.sh relies
+# on it to skip its subshell-based path detection.
 if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
   source "$DOTFILES_ROOT/scripts/fzf-theme.sh"
   _fzf_theme_cached="${CURRENT_THEME:-}"

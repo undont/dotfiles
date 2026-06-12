@@ -529,6 +529,27 @@ local function open_git_modified()
   })
 end
 
+-- Branch-total scan: the diagnostic-scan analogue of <leader>dt. Same
+-- merge-base discovery (shared via core/ticket.lua) but instead of opening a
+-- diffview it scans every file changed on the branch vs main and dumps their
+-- diagnostics into the quickfix.
+local function open_branch_scan()
+  local paths = require('custom.core.ticket').branch_files()
+  if not paths then
+    return
+  end
+  if #paths == 0 then
+    vim.notify('No files changed vs main', vim.log.levels.INFO)
+    return
+  end
+  scan_files(paths, {
+    qf_title = 'Branch: diagnostics',
+    qf_label = 'Branch',
+    augroup_name = 'GitBranchScan',
+    empty_message = 'No readable files changed vs main',
+  })
+end
+
 -- Ticket-scoped scan: same commit discovery as <leader>dT and <leader>lT
 -- (shared via core/ticket.lua) — but instead of opening a diffview it scans
 -- the union of files touched by exactly the matched commits and dumps their
@@ -782,9 +803,11 @@ function M.setup()
   end, { desc = '[C]lear both quickfix and location lists' })
 
   vim.keymap.set('n', '<leader>xm', open_git_modified, { desc = 'Git [M]odified → diagnostics qf' })
+  vim.keymap.set('n', '<leader>xt', open_branch_scan, { desc = 'Branch [T]otal vs main → diagnostics qf' })
   vim.keymap.set('n', '<leader>xT', open_ticket_scan, { desc = 'Git [T]icket commits → diagnostics qf' })
 
   vim.api.nvim_create_user_command('GitModified', open_git_modified, { desc = 'Open git-modified files and dump diagnostics to quickfix' })
+  vim.api.nvim_create_user_command('BranchScan', open_branch_scan, { desc = 'Scan all files changed vs main and dump diagnostics to quickfix' })
   vim.api.nvim_create_user_command('TicketScan', open_ticket_scan, { desc = 'Scan files from ticket-matching commits and dump diagnostics to quickfix' })
 
   -- Wrap every roslyn client at attach so `workspace/projectInitializationComplete`

@@ -8,6 +8,9 @@
 -- Modified-file discovery behind <leader>xm (all-LSP diagnostics scan),
 -- <leader>lm (sonar scan) and <leader>sm (telescope picker), so all three
 -- always operate on the same file set.
+--
+-- Branch-total discovery behind <leader>xt (all-LSP diagnostics scan):
+-- every file changed vs merge-base(main), mirroring <leader>dt's diffview.
 
 local M = {}
 
@@ -125,6 +128,46 @@ function M.modified_files()
   local seen = {}
   local paths = {}
   for _, list in ipairs { modified or {}, untracked or {} } do
+    for _, rel in ipairs(list) do
+      local abs = toplevel .. '/' .. rel
+      if not seen[abs] then
+        seen[abs] = true
+        table.insert(paths, abs)
+      end
+    end
+  end
+  return paths
+end
+
+--- Union of files changed on this branch vs merge-base(main): committed
+--- branch work plus uncommitted/untracked changes. The single-rev
+--- `diff <base>` form (no second rev) diffs the merge-base against the
+--- working tree, so it already includes dirty files -- the same semantics as
+--- <leader>dt's single-rev DiffviewOpen. Deletions are filtered out (ACMR;
+--- renames keep the new path) since a scan can't use a missing file. Returns
+--- nil (with a notify) outside a git repo or when no merge-base with main.
+--- @return string[]?
+function M.branch_files()
+  local toplevel = (git_lines { 'rev-parse', '--show-toplevel' } or {})[1]
+  if not toplevel then
+    vim.notify('Not a git repo', vim.log.levels.WARN)
+    return nil
+  end
+
+  local base = (git_lines { 'merge-base', 'main', 'HEAD' } or {})[1]
+  if not base or base == '' then
+    vim.notify('Could not find merge-base with main', vim.log.levels.WARN)
+    return nil
+  end
+
+  -- Run both from the repo root (-C) so the output is uniformly
+  -- root-relative: `diff --name-only` always is, `ls-files` is cwd-relative.
+  local changed = git_lines { '-C', toplevel, 'diff', '--name-only', '--diff-filter=ACMR', base }
+  local untracked = git_lines { '-C', toplevel, 'ls-files', '--others', '--exclude-standard' }
+
+  local seen = {}
+  local paths = {}
+  for _, list in ipairs { changed or {}, untracked or {} } do
     for _, rel in ipairs(list) do
       local abs = toplevel .. '/' .. rel
       if not seen[abs] then
