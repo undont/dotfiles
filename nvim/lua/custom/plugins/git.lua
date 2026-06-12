@@ -15,6 +15,21 @@ return {
     dependencies = {
       'nvim-lua/plenary.nvim',
     },
+    -- lazygit runs in an in-process terminal float, so quitting it fires no
+    -- FocusGained/shell event for gitsigns to hook. Without a nudge, the
+    -- statusline branch (gitsigns_head) and diff counts (gitsigns_status_dict)
+    -- stay stale after a commit/stage/checkout done inside lazygit. The plugin
+    -- calls vim.g.lazygit_on_exit_callback after the terminal exits (and after
+    -- its own :checktime), so re-run gitsigns there to re-diff every buffer.
+    -- Set in init (startup) so the global exists before the float can close.
+    init = function()
+      vim.g.lazygit_on_exit_callback = function()
+        local ok, gitsigns = pcall(require, 'gitsigns')
+        if ok then
+          gitsigns.refresh() -- async; fires GitSignsUpdate which redraws the statusline
+        end
+      end
+    end,
   },
 
   -- Fugitive: in-buffer git (`:Git`, `:Git blame`, `:Gdiffsplit`, stage hunks, etc.)

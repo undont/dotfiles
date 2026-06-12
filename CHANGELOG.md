@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.116] - 2026-06-13
+
+### Added
+- Nvim: `<leader>xt` scans every file changed on the branch vs `merge-base(main, HEAD)` (committed branch work plus uncommitted/untracked changes) and dumps their diagnostics into the quickfix list, the diagnostic-scan analogue of `<leader>dt`'s diffview. Completes the lower/upper scan pair alongside `<leader>xT` (ticket commits); file discovery shares `core/ticket.lua` (`branch_files()`), and the scan reuses the batched `scan_files` driver, so peak roslyn memory stays bounded. Also exposed as `:BranchScan`. `nvim/lua/custom/core/ticket.lua`, `nvim/lua/custom/core/lists.lua`, `nvim/cheatsheet.txt`
+- Ghostty: commented `font-feature` example for Monaspace in `local.template`. Monaspace hides its coding ligatures behind stylistic sets (`ss01`-`ss09`) rather than plain `liga`, so the example documents which sets to enable and warns that font-features are global (don't enable them on JetBrains Mono). `ghostty/local.template`
+- Zsh: `vconf`/`gconf`/`tconf` aliases open the nvim/ghostty/tmux layered local-override files (`~/.config/nvim/local.lua`, `~/.config/ghostty/local`, `~/.config/tmux/local.conf`) directly, alongside the existing `config`/`zshrc`/`secrets` openers. `zsh/dotfiles.zsh`
+
+### Changed
+- Nvim: oil.nvim is now the default file explorer. It loads at startup (`lazy = false`) so its directory-hijack autocmd is registered before a directory buffer (e.g. `nvim ~/.config`) is processed, and neo-tree no longer hijacks netrw (`hijack_netrw_behavior = 'disabled'`). Neo-tree stays available on `|`. `nvim/lua/custom/plugins/navigation.lua`, `nvim/lua/kickstart/plugins/neo-tree.lua`
+- Nvim: cheatsheet keybinding notation normalised to nvim form (`<C-d>`, `<M-Down>`, `<Tab>`) instead of the mixed `Ctrl+d` / `Alt+Down` style. `nvim/cheatsheet.txt`
+
+### Fixed
+- Nvim: oil entry IDs (the `/006 ` line prefix) no longer leak on a fresh open. Oil's `set_win_options` reads `nvim_get_current_win()` from inside an `nvim_buf_call`, which switches the buffer context but not the window, so on a fresh open it can apply `conceallevel` to the wrong window; the safety-net autocmd ran synchronously on `BufWinEnter`/`WinEnter` and hit the same race. It now defers one tick (past oil's render and competing FileType handlers) and sets `conceallevel`/`concealcursor` on the resolved oil window explicitly instead of the current window. `nvim/lua/custom/plugins/navigation.lua`
+- Nvim: the statusline branch and diff counts no longer stay stale after git operations done inside the lazygit float. lazygit runs in an in-process terminal that fires no shell event for gitsigns to hook, so `vim.g.lazygit_on_exit_callback` now re-runs `gitsigns.refresh()` on exit to re-diff every buffer. `nvim/lua/custom/plugins/git.lua`
+- Zsh: `_dotfiles` autoload no longer fails outside tmux. `DOTFILES_ROOT` is now exported before the `fpath` entry that depends on it; previously it was set later (for fzf-theme) and only appeared to work inside tmux because the export was inherited from the parent shell. `zsh/dotfiles.zsh`
+
 ## [0.2.115] - 2026-06-11
 
 ### Added

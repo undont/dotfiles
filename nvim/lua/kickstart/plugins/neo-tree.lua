@@ -126,6 +126,9 @@ return {
       },
     },
     filesystem = {
+      -- Let oil.nvim own directory buffers (`nvim <dir>`, the `config`/`launchers`
+      -- aliases). Neo-tree stays available on `|`; it just no longer hijacks netrw.
+      hijack_netrw_behavior = 'disabled',
       filtered_items = {
         visible = true,
         hide_dotfiles = false,

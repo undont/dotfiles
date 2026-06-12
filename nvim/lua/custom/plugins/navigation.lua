@@ -25,13 +25,29 @@ end
 -- `oilId` syntax match plus the window-local `conceallevel`/`concealcursor` it
 -- sets when rendering. Because conceal is window-scoped, showing an existing oil
 -- buffer in a window that never ran oil's set_win_options (a split, a reused
--- window, a session-restored layout) leaves conceallevel at 0 and the IDs leak.
--- Reapplying on entry covers every such case.
+-- window) leaves conceallevel at 0 and the IDs leak.
+--
+-- Oil's own set_win_options reads `nvim_get_current_win()` from inside an
+-- `nvim_buf_call`, which switches the buffer context but NOT the window, so on a
+-- fresh open it can apply conceallevel to the wrong window and the IDs leak from
+-- the very first render. A synchronous reassert on entry hits the same race. So
+-- defer one tick (past oil's render and any competing FileType handlers) and set
+-- the option on the resolved oil window explicitly rather than "current window".
 vim.api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter' }, {
   pattern = 'oil://*',
   callback = function()
-    vim.wo.conceallevel = 3
-    vim.wo.concealcursor = 'nvic'
+    local win = vim.api.nvim_get_current_win()
+    vim.schedule(function()
+      if not vim.api.nvim_win_is_valid(win) then
+        return
+      end
+      local buf = vim.api.nvim_win_get_buf(win)
+      if vim.bo[buf].filetype ~= 'oil' then
+        return
+      end
+      vim.api.nvim_set_option_value('conceallevel', 3, { scope = 'local', win = win })
+      vim.api.nvim_set_option_value('concealcursor', 'nvic', { scope = 'local', win = win })
+    end)
   end,
 })
 
@@ -40,11 +56,15 @@ return {
   {
     'stevearc/oil.nvim',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
+    -- Load at startup so oil's directory-hijack autocmd is registered before a
+    -- directory buffer (e.g. `nvim ~/.config`) is processed. Lazy-loading on the
+    -- `-` key would miss command-line directory arguments.
+    lazy = false,
     keys = {
       { '-', '<cmd>Oil<CR>', desc = 'Oil: Open parent directory' },
     },
     opts = {
-      default_file_explorer = false,
+      default_file_explorer = true,
       columns = { 'icon' },
       view_options = { show_hidden = true },
       keymaps = {

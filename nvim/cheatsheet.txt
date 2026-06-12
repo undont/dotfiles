@@ -3,8 +3,8 @@ Move cursor | hjkl
 Word forward/back | w / b
 Line start/end | m / M (or 0 / $)
 File top/bottom | gg / G
-Half-page down/up | Ctrl+d / Ctrl+u
-Jump back/forward | Ctrl+o / Ctrl+i
+Half-page down/up | <C-d> / <C-u>
+Jump back/forward | <C-o> / <C-i>
 Set mark | gm{a-z}
 Find char forward/back | f{char} / F{char}
 Till char forward/back | t{char} / T{char}
@@ -63,19 +63,19 @@ Delete line (no yank) | dd
 Yank and delete (cut) | dy
 Yank line | yy
 Paste after/before | p / P
-Undo / redo | u / Ctrl+r
+Undo / redo | u / <C-r>
 Repeat last action | .
 Insert space at cursor | <leader>i
 
 ## multi-cursor @multi-cursor
-Select word / find next | Ctrl+n
-Add cursor below / above | Alt+Down / Alt+Up
+Select word / find next | <C-n>
+Add cursor below / above | <M-Down> / <M-Up>
 Skip current, find next | q
 Remove cursor from match | Q
 Select all occurrences | \A
 Add cursor at position | \c
 Next / prev match | n / N
-Toggle cursor/extend mode | Tab
+Toggle cursor/extend mode | <Tab>
 Exit multi-cursor | Esc
 
 ## text-objects @text-objects
@@ -144,6 +144,7 @@ Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
 Git modified → diagnostics qf | <leader>xm
+Branch total vs main → diagnostics qf | <leader>xt
 Git ticket commits → diagnostics qf | <leader>xT
 Grep yank register → quickfix | <leader>x/
 Filter qf list (keep matching) | :Cfilter /pat/
@@ -153,9 +154,9 @@ Qf stack older (undo filter) | <leader>x[
 Qf stack newer (redo filter) | <leader>x]
 
 ## windows @windows
-Move to window | Ctrl+hjkl
-Split vertical | :vs (or Ctrl+v in Telescope)
-Split horizontal | :sp (or Ctrl+x in Telescope)
+Move to window | <C-hjkl>
+Split vertical | :vs (or <C-v> in Telescope)
+Split horizontal | :sp (or <C-x> in Telescope)
 Zoom toggle | <leader>z
 Resize left | <leader>wh
 Resize right | <leader>wl
@@ -168,14 +169,14 @@ Maximise up | <leader>wK
 Equalise windows | <leader>w=
 
 ## completion @completion
-Trigger completion | Ctrl+Space
-Hide completion | Ctrl+e
-Accept completion | Enter
-Smart accept (Copilot or completion) | Tab
-Expand snippet | Tab (in snippet)
-Next snippet placeholder | Tab
-Previous snippet placeholder | Shift+Tab
-Scroll docs up/down | Ctrl+b / Ctrl+f
+Trigger completion | <C-Space>
+Hide completion | <C-e>
+Accept completion | <CR>
+Smart accept (Copilot or completion) | <Tab>
+Expand snippet | <Tab> (in snippet)
+Next snippet placeholder | <Tab>
+Previous snippet placeholder | <S-Tab>
+Scroll docs up/down | <C-b> / <C-f>
 
 ## snippets @snippets
 Claude comment template | <leader>cc
@@ -186,8 +187,8 @@ Next comment block | <leader>c]
 Previous comment block | <leader>c[
 @ file reference (markdown) | @ (insert mode)
 Literal @ (markdown) | @@ (insert mode)
-Expand/jump next placeholder | Ctrl+k
-Jump prev placeholder | Ctrl+j
+Expand/jump next placeholder | <C-k>
+Jump prev placeholder | <C-j>
 
 ## git @git
 Next/prev git change | ]c / [c
@@ -220,7 +221,7 @@ To kebab-case | crk
 To UPPER_CASE | cru
 To dash-case | cr-
 To dot.case | cr.
-To space case | cr<space>
+To space case | cr<Space>
 To Title Case | crt
 Case-aware substitute | :S/{from}/{to}/g
 Subvert (multi-form sub) | :Subvert/facilit{y,ies}/building{,s}/g
@@ -373,12 +374,12 @@ Next/prev conflict | ]x / [x
 Next/prev yank | ]y / [y
 
 ## increment-decrement @increment-decrement
-Increment | Ctrl+a
-Decrement | Ctrl+x
-Increment (sequential) | g Ctrl+a
-Decrement (sequential) | g Ctrl+x
-Tailwind: cycle class up | Ctrl+a (on tailwind class)
-Tailwind: cycle class down | Ctrl+x (on tailwind class)
+Increment | <C-a>
+Decrement | <C-x>
+Increment (sequential) | g <C-a>
+Decrement (sequential) | g <C-x>
+Tailwind: cycle class up | <C-a> (on tailwind class)
+Tailwind: cycle class down | <C-x> (on tailwind class)
 
 ## spell @spell
 Toggle spellcheck | <leader>St
