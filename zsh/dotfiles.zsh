@@ -703,7 +703,10 @@ alias config="v ~/.config"                                                     #
 alias cache="v ~/.cache"                                                       # open nvim in ~/.cache (dir)
 alias zshrc="v ~/.zshrc"                                                       # open nvim in ~/.zshrc (file)
 alias secrets="v ~/.config/zsh/secrets.zsh"                                    # open nvim in secrets.zsh (file)
-alias launchers="v ~/.config/dotfiles/launchers" # open launcher configs
+alias launchers="v ~/.config/dotfiles/launchers"                               # open launcher configs (dir)
+alias vconf="v ~/.config/nvim/local.lua"                                       # open nvim local config (file)
+alias gconf="v ~/.config/ghostty/local"                                        # open ghostty local config (file)
+alias tconf="v ~/.config/tmux/local.conf"                                      # open tmux local config (file)
 
 # Font preview (figlet/toilet font browser with fzf)
 # @cheat: font-preview | font browser (fzf)

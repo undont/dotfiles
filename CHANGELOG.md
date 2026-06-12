@@ -6,11 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.116] - dev
+## [0.2.116] - 2026-06-13
 
 ### Added
 - Nvim: `<leader>xt` scans every file changed on the branch vs `merge-base(main, HEAD)` (committed branch work plus uncommitted/untracked changes) and dumps their diagnostics into the quickfix list, the diagnostic-scan analogue of `<leader>dt`'s diffview. Completes the lower/upper scan pair alongside `<leader>xT` (ticket commits); file discovery shares `core/ticket.lua` (`branch_files()`), and the scan reuses the batched `scan_files` driver, so peak roslyn memory stays bounded. Also exposed as `:BranchScan`. `nvim/lua/custom/core/ticket.lua`, `nvim/lua/custom/core/lists.lua`, `nvim/cheatsheet.txt`
 - Ghostty: commented `font-feature` example for Monaspace in `local.template`. Monaspace hides its coding ligatures behind stylistic sets (`ss01`-`ss09`) rather than plain `liga`, so the example documents which sets to enable and warns that font-features are global (don't enable them on JetBrains Mono). `ghostty/local.template`
+- Zsh: `vconf`/`gconf`/`tconf` aliases open the nvim/ghostty/tmux layered local-override files (`~/.config/nvim/local.lua`, `~/.config/ghostty/local`, `~/.config/tmux/local.conf`) directly, alongside the existing `config`/`zshrc`/`secrets` openers. `zsh/dotfiles.zsh`
 
 ### Changed
 - Nvim: oil.nvim is now the default file explorer. It loads at startup (`lazy = false`) so its directory-hijack autocmd is registered before a directory buffer (e.g. `nvim ~/.config`) is processed, and neo-tree no longer hijacks netrw (`hijack_netrw_behavior = 'disabled'`). Neo-tree stays available on `|`. `nvim/lua/custom/plugins/navigation.lua`, `nvim/lua/kickstart/plugins/neo-tree.lua`
