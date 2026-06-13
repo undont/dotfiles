@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Set default shell to zsh
+# set default shell to zsh
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
@@ -21,7 +21,7 @@ fi
 
 echo "Changing default shell to zsh ($ZSH_PATH)..."
 
-# Ensure zsh is in /etc/shells (required by chsh on most systems)
+# ensure zsh is in /etc/shells (required by chsh on most systems)
 if [[ -f /etc/shells ]] && ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
     echo "Adding $ZSH_PATH to /etc/shells (may require sudo)..."
     echo "$ZSH_PATH" | sudo tee -a /etc/shells > /dev/null 2>&1 \

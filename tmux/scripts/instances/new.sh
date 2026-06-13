@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Create a new window in the current session and launch a process
+# create a new window in the current session and launch a process
 #
-# Usage: new.sh <process_name>
+# usage: new.sh <process_name>
 #   process_name: claude, codex, opencode, copilot, or nvim
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -18,7 +18,7 @@ fi
 
 PROCESS="$1"
 
-# Validate process name
+# validate process name
 case "$PROCESS" in
     claude|codex|opencode|copilot|nvim) ;;
     *)
@@ -27,15 +27,15 @@ case "$PROCESS" in
         ;;
 esac
 
-# Get current session and directory
+# get current session and directory
 SESSION=$(tmux display-message -p '#{session_name}')
 DIR=$(tmux display-message -p '#{pane_current_path}')
 
-# Create new window and capture its exact target (avoids name collision
+# create new window and capture its exact target (avoids name collision
 # when multiple windows share the same name, e.g. several "nvim" windows)
 TARGET=$(tmux new-window -P -F '#{session_name}:#{window_index}' -t "$SESSION" -n "$PROCESS" -c "$DIR")
 tmux set-window-option -t "$TARGET" automatic-rename off
 tmux send-keys -t "$TARGET" "$PROCESS" Enter
 
-# Switch client to the new window
+# switch client to the new window
 tmux switch-client -t "$TARGET"

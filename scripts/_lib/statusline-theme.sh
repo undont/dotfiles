@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Dotfiles statusline theme resolver.
+# dotfiles statusline theme resolver.
 #
-# Source this from the statusline command of an AI CLI coding agent — anything
-# that runs a script to render its statusline (Claude Code, GitHub Copilot CLI,
-# Antigravity CLI) — to colour it from the active `dotfiles theme`. It reads the
+# source this from the statusline command of an AI CLI coding agent (anything
+# that runs a script to render its statusline: Claude Code, GitHub Copilot CLI,
+# Antigravity CLI) to colour it from the active `dotfiles theme`. it reads the
 # current theme's palette and sets a set of SL_* variables holding ANSI
 # truecolour foreground escapes, so the statusline follows `dotfiles theme
 # switch` automatically.
 #
-# If the active theme can't be resolved (no theme set, file missing, not a
-# dotfiles checkout) it sets nothing — callers should keep their own defaults
+# if the active theme can't be resolved (no theme set, file missing, not a
+# dotfiles checkout) it sets nothing; callers should keep their own defaults
 # behind `${SL_*:-<fallback>}`, so sourcing this is always safe:
 #
 #   source ~/.config/dotfiles/statusline-theme.sh
@@ -22,21 +22,21 @@
 #   SL_LINES_ADD SL_LINES_DEL SL_SEP SL_BRACKET SL_WARNING
 # The raw theme hexes are also exposed as SL_HEX_* for custom mapping.
 #
-# Role colours (model, dir, branch, time, context, separators) follow the theme
-# palette directly. The semantic roles that carry universal add/delete/modify/
+# role colours (model, dir, branch, time, context, separators) follow the theme
+# palette directly. the semantic roles that carry universal add/delete/modify/
 # warn meaning (SL_STAGED, SL_LINES_ADD, SL_MODIFIED, SL_DELETED, SL_LINES_DEL,
 # SL_WARNING) are hue-locked: they keep the theme's brightness/saturation but are
 # pinned to a green/red/amber hue, so the git +/- diff and status markers always
 # read correctly even under a theme whose "green" slot is teal or grey, or whose
-# "red" is a washed-out pink.
+# "red" is a washed-out pink
 
-# Resolve everything in a function so the only thing that leaks into the caller
-# is the SL_* result set (helpers are unset at the end).
+# resolve everything in a function so the only thing that leaks into the caller
+# is the SL_* result set (helpers are unset at the end)
 __sl_theme_resolve() {
     local self real root config_dir name theme_file
 
-    # 1. Locate the dotfiles checkout. Prefer an explicit env, else walk up from
-    #    this file's real path (works through the ~/.config/dotfiles symlink).
+    # 1. locate the dotfiles checkout. prefer an explicit env, else walk up from
+    #    this file's real path (works through the ~/.config/dotfiles symlink)
     root="${DOTFILES_DIR:-${DOTFILES_ROOT:-}}"
     if [[ -z "$root" || ! -d "$root/themes" ]]; then
         self="${BASH_SOURCE[0]}"
@@ -45,14 +45,14 @@ __sl_theme_resolve() {
     fi
     [[ -n "$root" && -d "$root/themes" ]] || return 0
 
-    # 2. Read the active theme name (sanitised — used in a path).
+    # 2. read the active theme name (sanitised, used in a path)
     config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
     [[ -r "$config_dir/current-theme" ]] || return 0
     name="$(<"$config_dir/current-theme")"
     name="${name//[^a-zA-Z0-9._-]/}"
     [[ -n "$name" ]] || return 0
 
-    # 3. Locate the theme file (hand-crafted, then generated).
+    # 3. locate the theme file (hand-crafted, then generated)
     if [[ -f "$root/themes/$name.theme" ]]; then
         theme_file="$root/themes/$name.theme"
     elif [[ -f "$root/themes/generated/$name.theme" ]]; then
@@ -61,8 +61,8 @@ __sl_theme_resolve() {
         return 0
     fi
 
-    # Pull a literal `VAR="#rrggbb"` assignment without executing the theme file
-    # (hand-crafted themes call shell functions we don't want to run here).
+    # pull a literal `VAR="#rrggbb"` assignment without executing the theme file
+    # (hand-crafted themes call shell functions we don't want to run here)
     __sl_var() {
         sed -n "s/^$1=\"\(#[0-9a-fA-F]\{6\}\)\".*/\1/p" "$theme_file" | head -1
     }
@@ -78,16 +78,16 @@ __sl_theme_resolve() {
     yellow="$(__sl_var TMUX_ACCENT_YELLOW)"
     red="$(__sl_var TMUX_ACCENT_RED)"
 
-    # Bail unless the essentials parsed — keeps callers on their own defaults.
+    # bail unless the essentials parsed, keeps callers on their own defaults
     [[ -n "$fg" && -n "$bg" && -n "$pink" && -n "$cyan" && -n "$green" && -n "$red" ]] || return 0
     : "${fg_dim:=$fg}" "${purple:=$pink}" "${yellow:=$red}"
 
-    # hex -> ANSI 24-bit fg escape (real ESC byte via printf).
+    # hex -> ANSI 24-bit fg escape (real ESC byte via printf)
     __sl_fg() {
         local h="${1#\#}"
         printf '\033[38;2;%d;%d;%dm' "0x${h:0:2}" "0x${h:2:2}" "0x${h:4:2}"
     }
-    # blend hex1 towards hex2 by pct (0-100) -> hex.
+    # blend hex1 towards hex2 by pct (0-100) -> hex
     __sl_blend() {
         local a="${1#\#}" b="${2#\#}" p="$3" inv=$((100 - $3))
         printf '#%02x%02x%02x' \
@@ -95,12 +95,12 @@ __sl_theme_resolve() {
             $(( (16#${a:2:2} * inv + 16#${b:2:2} * p) / 100 )) \
             $(( (16#${a:4:2} * inv + 16#${b:4:2} * p) / 100 ))
     }
-    # Pin a hex onto a semantic hue band while keeping the theme's own lightness
-    # and saturation -> hex. Converts to HSL, clamps the hue into [lo,hi] (the
+    # pin a hex onto a semantic hue band while keeping the theme's own lightness
+    # and saturation -> hex. converts to HSL, clamps the hue into [lo,hi] (the
     # band may run past 360 for red), enforces a saturation floor (rescues a grey
     # accent) and a lightness window (rescues a washed-out or too-dark accent),
-    # then converts back. Args: hex, hue-centre (used for greys with no hue),
-    # band-lo, band-hi (degrees), sat-floor, light-lo, light-hi (each 0-100).
+    # then converts back. args: hex, hue-centre (used for greys with no hue),
+    # band-lo, band-hi (degrees), sat-floor, light-lo, light-hi (each 0-100)
     __sl_huelock() {
         local h="${1#\#}"
         awk -v r="$((16#${h:0:2}))" -v g="$((16#${h:2:2}))" -v b="$((16#${h:4:2}))" \
@@ -142,11 +142,11 @@ __sl_theme_resolve() {
         }'
     }
 
-    # Semantic tones, hue-locked so add/delete/modify/warn always read correctly
+    # semantic tones, hue-locked so add/delete/modify/warn always read correctly
     # regardless of how far a theme's accent strays from a true green/red/amber.
-    # Each keeps the source slot's brightness/saturation but is pinned to its hue
+    # each keeps the source slot's brightness/saturation but is pinned to its hue
     # band: green (add/staged), red (delete/deleted), orange (modified, a warmer
-    # cut of yellow), amber (warning). The separator stays a plain dim blend.
+    # cut of yellow), amber (warning). the separator stays a plain dim blend
     local c_green c_red c_orange c_amber sep
     c_green="$(__sl_huelock "$green" 127 100 150 45 45 68)"
     c_red="$(__sl_huelock "$red" 360 350 372 55 45 66)"
@@ -154,8 +154,8 @@ __sl_theme_resolve() {
     c_amber="$(__sl_huelock "$yellow" 46 40 52 55 50 70)"
     sep="$(__sl_blend "$fg_dim" "$bg" 55)"
 
-    # Theme-driven role colours: follow the palette directly so the statusline
-    # still reflects the active theme.
+    # theme-driven role colours: follow the palette directly so the statusline
+    # still reflects the active theme
     SL_MODEL="$(__sl_fg "$pink")"
     SL_DIR="$(__sl_fg "$fg")"
     SL_BRANCH="$(__sl_fg "$cyan")"
@@ -166,8 +166,8 @@ __sl_theme_resolve() {
     SL_SEP="$(__sl_fg "$sep")"
     SL_BRACKET="$(__sl_fg "$fg_dim")"
 
-    # Semantic role colours: hue-locked, so the git +/- diff, the status markers
-    # and the context-pressure indicator always carry the add/delete/warn cue.
+    # semantic role colours: hue-locked, so the git +/- diff, the status markers
+    # and the context-pressure indicator always carry the add/delete/warn cue
     SL_STAGED="$(__sl_fg "$c_green")"
     SL_LINES_ADD="$(__sl_fg "$c_green")"
     SL_MODIFIED="$(__sl_fg "$c_orange")"
@@ -175,7 +175,7 @@ __sl_theme_resolve() {
     SL_LINES_DEL="$(__sl_fg "$c_red")"
     SL_WARNING="$(__sl_fg "$c_amber")"
 
-    # Raw hexes for callers that want to map their own roles.
+    # raw hexes for callers that want to map their own roles
     SL_HEX_FG="$fg" SL_HEX_FG_DIM="$fg_dim" SL_HEX_BG="$bg"
     SL_HEX_PURPLE="$purple" SL_HEX_PINK="$pink" SL_HEX_CYAN="$cyan"
     SL_HEX_GREEN="$green" SL_HEX_YELLOW="$yellow" SL_HEX_RED="$red"

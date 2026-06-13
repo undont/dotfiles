@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Remove openapi-tui binary (was installed to ~/.cargo/bin by install-packages.sh)
+# remove openapi-tui binary (was installed to ~/.cargo/bin by install-packages.sh)
 
 OPENAPI_TUI="$HOME/.cargo/bin/openapi-tui"
 

@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Delete Launcher (with confirmation)
+# delete launcher (with confirmation)
 # ══════════════════════════════════════════════════════════════
-# Deletes a user-created launcher file after showing a
-# confirmation dialog. Repo launchers cannot be deleted.
+# deletes a user-created launcher file after showing a
+# confirmation dialog. repo launchers cannot be deleted.
 #
-# Usage: delete.sh <launcher_name>
+# usage: delete.sh <launcher_name>
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
@@ -16,13 +16,13 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 # shellcheck source=tmux/scripts/_lib/ui.sh
 source "$SCRIPT_DIR/../_lib/ui.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 
 name="${1:-}"
 [[ -n "$name" ]] || exit 0
 
-# Prevent path traversal — strip to basename and reject path separators
+# prevent path traversal: strip to basename and reject path separators
 name=$(basename "$name")
 if [[ "$name" == *"/"* ]] || [[ "$name" == "." ]] || [[ "$name" == ".." ]]; then
     show_error "Invalid launcher name: $name"
@@ -31,7 +31,7 @@ fi
 
 # USER_LAUNCHERS and DOTFILES_LAUNCHERS provided by common.sh
 
-# Only user launchers can be deleted
+# only user launchers can be deleted
 if [[ -f "$USER_LAUNCHERS/$name" ]]; then
     if ! show_visual_confirm "Delete Launcher" "Delete launcher '${name}'?"; then
         exit 0

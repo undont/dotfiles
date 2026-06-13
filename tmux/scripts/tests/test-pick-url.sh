@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Unit tests for pick-url.sh URL extraction logic
+# unit tests for pick-url.sh URL extraction logic
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -7,11 +7,11 @@ PICK_URL_SCRIPT="$SCRIPT_DIR/../utils/pick-url.sh"
 
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Source only the extract_urls function from pick-url.sh
-# We extract it to avoid sourcing the full script (which has side effects)
+# source only the extract_urls function from pick-url.sh
+# we extract it to avoid sourcing the full script (which has side effects)
 eval "$(sed -n '/^extract_urls()/,/^}/p' "$PICK_URL_SCRIPT")"
 
-# Helper: assert a single URL is extracted correctly from input text
+# helper: assert a single URL is extracted correctly from input text
 assert_extracts() {
     local description="$1"
     local input="$2"
@@ -25,7 +25,7 @@ assert_extracts() {
     fi
 }
 
-# Helper: assert multiple URLs are extracted (newline-separated expected)
+# helper: assert multiple URLs are extracted (newline-separated expected)
 assert_extracts_multi() {
     local description="$1"
     local input="$2"
@@ -41,7 +41,7 @@ assert_extracts_multi() {
     fi
 }
 
-# Helper: assert no URLs are extracted
+# helper: assert no URLs are extracted
 assert_no_urls() {
     local description="$1"
     local input="$2"
@@ -55,7 +55,7 @@ assert_no_urls() {
 }
 
 # ===========================================================================
-# Tests
+# tests
 # ===========================================================================
 
 section "Script exists and is executable"

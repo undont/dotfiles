@@ -1,39 +1,39 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Tests for command exit alert hooks
-# Tests exit code display functions, cmd-alert.sh, cmd-alert-hook.zsh, and alert file format
+# tests for command exit alert hooks
+# tests exit code display functions, cmd-alert.sh, cmd-alert-hook.zsh, and alert file format
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
 DOTFILES_ROOT="$(cd "$SCRIPTS_DIR/../.." && pwd)"
 
-# Source test helpers to get isolated tmux server
+# source test helpers to get isolated tmux server
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Trap to ensure cleanup on exit/interrupt
+# trap to ensure cleanup on exit/interrupt
 ALERT_TEST_DIR=""
 trap 'rm -rf "$ALERT_TEST_DIR"; cleanup_test_server' EXIT INT TERM
 
-# Setup isolated tmux server
+# setup isolated tmux server
 setup_test_server
 
-# Create temp directory for alerts file
+# create temp directory for alerts file
 ALERT_TEST_DIR=$(mktemp -d)
 export ALERTS_FILE="$ALERT_TEST_DIR/alerts"
 
-# Create a test session
+# create a test session
 TEST_SESSION="test-cmd-alerts-$$"
 test_tmux new-session -d -s "$TEST_SESSION" -n "testwin" -c /tmp
 
-# Source production libraries (after setup so tmux wrapper is active)
+# source production libraries (after setup so tmux wrapper is active)
 source "$SCRIPTS_DIR/_lib/common.sh"
 source "$SCRIPTS_DIR/_lib/alerts.sh"
 
 HOOKS_DIR="$DOTFILES_ROOT/scripts/hooks"
 
 # ═══════════════════════════════════════════════════════════════
-# Hook Script Existence and Syntax
+# hook script existence and syntax
 # ═══════════════════════════════════════════════════════════════
 
 section "Hook Script Existence and Syntax"
@@ -59,7 +59,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Exit Code Display Functions
+# exit code display functions
 # ═══════════════════════════════════════════════════════════════
 
 section "Exit Code Display Functions"
@@ -73,7 +73,7 @@ assert_equals "Exit 0 display"        "✓|#7aab88" "$(get_exit_code_display 0)"
 assert_equals "Exit 1 display"        "✗|#c07878" "$(get_exit_code_display 1)"
 
 # ═══════════════════════════════════════════════════════════════
-# Alert File Format
+# alert file format
 # ═══════════════════════════════════════════════════════════════
 
 section "Alert File Format"
@@ -97,7 +97,7 @@ else
     pass "clear_window_alerts removed all entries (file gone)"
 fi
 
-# Agent and exit alerts coexist correctly
+# agent and exit alerts coexist correctly
 echo "other-session:main:claude" > "$ALERTS_FILE"
 echo "$TEST_SESSION:testwin:exit:1:npm run lint" >> "$ALERTS_FILE"
 clear_window_alerts "$TEST_SESSION" "testwin" 2>/dev/null || true
@@ -138,7 +138,7 @@ fi
 
 section "Hook Label Truncation"
 
-# Test label building via zsh (the hook uses zsh-specific (z) word splitting)
+# test label building via zsh (the hook uses zsh-specific (z) word splitting)
 if command -v zsh &>/dev/null; then
     label=$(zsh -c '
         source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
@@ -179,7 +179,7 @@ fi
 section "Hook Threshold and Window Guard"
 
 if command -v zsh &>/dev/null; then
-    # Alert should NOT fire when elapsed < threshold
+    # alert should NOT fire when elapsed < threshold
     fired=$(zsh -c '
         export ALERTS_FILE="'"$ALERT_TEST_DIR/alerts-threshold"'"
         export _CMD_ALERT_SCRIPT="'"$HOOKS_DIR/cmd-alert.sh"'"
@@ -195,7 +195,7 @@ if command -v zsh &>/dev/null; then
         fail "Should not alert when elapsed < threshold (got: '$fired')"
     fi
 
-    # Alert should NOT fire if still in the same window (no TMUX set)
+    # alert should NOT fire if still in the same window (no TMUX set)
     fired=$(zsh -c '
         export ALERTS_FILE="'"$ALERT_TEST_DIR/alerts-nowindow"'"
         export _CMD_ALERT_SCRIPT="'"$HOOKS_DIR/cmd-alert.sh"'"
@@ -234,7 +234,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Summary
+# summary
 # ═══════════════════════════════════════════════════════════════
 
 echo ""

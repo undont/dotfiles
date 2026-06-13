@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Display tmux help with platform-appropriate modifier key names
+# display tmux help with platform-appropriate modifier key names
 # macOS shows "Opt", Linux shows "Alt"
 #
-# The full template is 37 rows tall. When the popup pty is shorter than that
+# the full template is 37 rows tall. when the popup pty is shorter than that
 # (small terminal, or display-popup -h clamped to terminal height), fall back
-# to the compact 21-row template so the bottom doesn't get clipped.
+# to the compact 21-row template so the bottom doesn't get clipped
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 

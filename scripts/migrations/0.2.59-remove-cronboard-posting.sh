@@ -1,7 +1,7 @@
 #!/bin/bash
 # Migration: Remove cronboard and posting
-# These were added in 0.2.58 but are being dropped — cronboard is a brew
-# formula and posting was installed via pipx.
+# these were added in 0.2.58 but are being dropped: cronboard is a brew
+# formula and posting was installed via pipx
 
 set -euo pipefail
 

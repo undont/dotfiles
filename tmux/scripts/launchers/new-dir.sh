@@ -3,21 +3,21 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# New Directory Picker (fzf become target)
+# new directory picker (fzf become target)
 # ══════════════════════════════════════════════════════════════
-# Shows a root picker (DEV_ROOT, PROJECTS_ROOT, Any directory)
-# then prompts for a subdirectory name. Passes the resulting
+# shows a root picker (DEV_ROOT, PROJECTS_ROOT, Any directory)
+# then prompts for a subdirectory name. passes the resulting
 # path to the launcher.
 #
-# Called via fzf become() from run.sh "n" keybind.
-# Usage: new-dir.sh <launcher_path>
+# called via fzf become() from run.sh "n" keybind.
+# usage: new-dir.sh <launcher_path>
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
@@ -27,12 +27,12 @@ if [[ -z "$LAUNCHER" ]]; then
 fi
 
 # ─────────────────────────────────────────
-# Resolve root directories
+# resolve root directories
 # ─────────────────────────────────────────
 dev_root="${DEV_ROOT:-}"
 projects_root="${PROJECTS_ROOT:-}"
 
-# Build options list with resolved paths
+# build options list with resolved paths
 options=""
 option_count=0
 
@@ -52,9 +52,9 @@ options+="    Any directory      ${GREY}enter a custom path${NC}"$'\n'
 option_count=$((option_count + 1))
 
 # ─────────────────────────────────────────
-# Show root picker
+# show root picker
 # ─────────────────────────────────────────
-# Build content with header
+# build content with header
 content=""
 content+=$'\n'
 content+="  ${GREEN}New directory${NC}"$'\n'
@@ -76,7 +76,7 @@ selection=$(printf '%s' "$content" | fzf \
     --bind 'esc:abort' \
     2>/dev/null) || exit 130
 
-# Extract the root name from selection
+# extract the root name from selection
 root_name=$(printf '%s' "$selection" | awk '{print $1}')
 
 case "$root_name" in
@@ -87,7 +87,7 @@ case "$root_name" in
         root_path="$projects_root"
         ;;
     Any)
-        # Free-form path prompt (mirrors original behaviour)
+        # free-form path prompt (mirrors original behaviour)
         dir=$(printf '' | fzf \
             --print-query --query='' \
             --prompt='Path: ' \
@@ -113,7 +113,7 @@ case "$root_name" in
 esac
 
 # ─────────────────────────────────────────
-# Prompt for subdirectory name
+# prompt for subdirectory name
 # ─────────────────────────────────────────
 root_display="${root_path/#$HOME/\~}"
 
@@ -133,7 +133,7 @@ name=$(printf '' | fzf \
 
 dir="${root_path}/${name}"
 
-# Create directory if it doesn't exist
+# create directory if it doesn't exist
 if [[ ! -d "$dir" ]]; then
     mkdir -p "$dir"
 fi

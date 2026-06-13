@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Verify dotfiles installation is correct
-# Checks symlinks, plugin managers, and basic functionality
+# verify dotfiles installation is correct
+# checks symlinks, plugin managers, and basic functionality
 
-# Help flag handling
+# help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat << 'EOF'
 health-check.sh - Dotfiles installation health check
@@ -50,7 +50,7 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Derive DOTFILES_DIR from script location if not set
+# derive DOTFILES_DIR from script location if not set
 if [[ -z "${DOTFILES_DIR:-}" ]]; then
     DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 fi
@@ -142,7 +142,7 @@ check_executable() {
     fi
 }
 
-# Informational check — does not set ISSUES
+# informational check, does not set ISSUES
 check_local_override() {
     local file="$1"
     local name="$2"
@@ -165,7 +165,7 @@ echo ""
 echo "Symlinks:"
 echo "---------"
 
-# Zsh (minimal)
+# zsh (minimal)
 printf "Checking %-30s" ".zshrc..."
 if [[ -f "$HOME/.zshrc" ]]; then
     if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
@@ -183,25 +183,25 @@ fi
 check_symlink "$HOME/.zprofile" "$DOTFILES_DIR/zsh/zprofile" ".zprofile"
 check_file "$HOME/.p10k.zsh" ".p10k.zsh"
 
-# Formatters
+# formatters
 check_symlink "$HOME/.prettierrc" "$DOTFILES_DIR/formatters/prettierrc.json" ".prettierrc"
 check_symlink "$HOME/.editorconfig" "$DOTFILES_DIR/formatters/editorconfig" ".editorconfig"
 
-# Dotfiles CLI (minimal)
+# dotfiles CLI (minimal)
 check_symlink "$HOME/.local/bin/dotfiles" "$DOTFILES_DIR/scripts/dotfiles" "dotfiles CLI"
 
-# Tmux (minimal)
-# Note: .tmux.conf is generated to XDG location and symlinked
+# tmux (minimal)
+# note: .tmux.conf is generated to XDG location and symlinked
 XDG_TMUX_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 check_symlink "$HOME/.tmux.conf" "$XDG_TMUX_CONF" ".tmux.conf"
 check_symlink "$HOME/.tmux" "$DOTFILES_DIR/tmux" ".tmux"
 
-# Neovim (core)
+# nvim (core)
 if should_install "core"; then
     check_symlink "$HOME/.config/nvim" "$DOTFILES_DIR/nvim" "nvim config"
 fi
 
-# LazyGit (core)
+# lazygit (core)
 if should_install "core"; then
     check_symlink "$HOME/.config/lazygit/config.yml" "$DOTFILES_DIR/lazygit/config.yml" "lazygit config"
 fi
@@ -211,16 +211,16 @@ if should_install "core"; then
     check_symlink "$HOME/.local/bin/dash-repo-sync" "$DOTFILES_DIR/gh-dash/dash-repo-sync" "dash-repo-sync"
 fi
 
-# Hammerspoon (full)
+# hammerspoon (full)
 if should_install "full"; then
     check_symlink "$HOME/.hammerspoon/init.lua" "$DOTFILES_DIR/hammerspoon/init.lua" "hammerspoon"
 fi
 
 # Ghostty (core)
-# Config is generated to XDG — Ghostty reads ~/.config/ghostty/config natively on all platforms
+# config is generated to XDG; Ghostty reads ~/.config/ghostty/config natively on all platforms
 if should_install "core"; then
     check_file "$HOME/.config/ghostty/config" "ghostty config (XDG)"
-    # The generated config includes config-file = ~/.config/ghostty/local
+    # the generated config includes config-file = ~/.config/ghostty/local
     check_file "$HOME/.config/ghostty/local" "ghostty local override"
 fi
 
@@ -233,10 +233,10 @@ echo ""
 echo "Generated Configs:"
 echo "------------------"
 
-# Tmux generated config (minimal) — the file that .tmux.conf symlinks to
+# tmux generated config (minimal): the file that .tmux.conf symlinks to
 check_file "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf" "tmux config (generated)"
 
-# Current theme (minimal)
+# current theme (minimal)
 printf "Checking %-30s" "current theme..."
 THEME_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
 if [[ -f "$THEME_FILE" ]]; then
@@ -257,7 +257,7 @@ echo "Plugin Managers:"
 echo "----------------"
 check_directory "$HOME/.tmux/plugins/tpm" "TPM (Tmux Plugin Manager)"
 
-# Key TPM-managed plugins (installed via prefix + I inside tmux)
+# key TPM-managed plugins (installed via prefix + I inside tmux)
 printf "Checking %-30s" "tmux plugins (via TPM)..."
 MISSING_PLUGINS=()
 for plugin in tmux-resurrect tmux-continuum tmux-yank tmux-fingers; do
@@ -277,9 +277,9 @@ fi
 if should_install "core"; then
     check_directory "$HOME/.local/share/nvim/lazy" "lazy.nvim (Neovim)"
 
-    # Warn if old packer install exists — it shadows lazy.nvim plugins in the
+    # warn if old packer install exists; it shadows lazy.nvim plugins in the
     # runtimepath and can cause "attempt to call field X (a nil value)" errors
-    # when Neovim loads the wrong (pre-rewrite) version of a plugin module.
+    # when nvim loads the wrong (pre-rewrite) version of a plugin module
     PACKER_DIR="$HOME/.local/share/nvim/site/pack/packer"
     printf "Checking %-30s" "no stale packer install..."
     if [[ -d "$PACKER_DIR" ]]; then
@@ -299,13 +299,13 @@ echo "--------"
 ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 check_file "$ZSH_CONFIG_DIR/secrets.zsh" "Secrets file"
 
-# Environment variables used by plugins (core) — informational only
+# environment variables used by plugins (core), informational only
 if should_install "core"; then
     echo ""
     echo "Environment Variables:"
     echo "----------------------"
 
-    # Informational check — does not set ISSUES (copilot is the default adapter)
+    # informational check, does not set ISSUES (copilot is the default adapter)
     check_env_var() {
         local var="$1"
         local desc="$2"
@@ -324,7 +324,7 @@ if should_install "core"; then
     check_env_var "ANTHROPIC_API_KEY" "Optional: enables anthropic adapter in codecompanion.nvim"
 fi
 
-# Session Launchers (core)
+# session launchers (core)
 if should_install "core"; then
     echo ""
     echo "Session Launchers:"
@@ -342,12 +342,12 @@ echo ""
 echo "Alerts System:"
 echo "--------------"
 
-# Hook scripts (must be executable for alerts to fire)
+# hook scripts (must be executable for alerts to fire)
 check_executable "$DOTFILES_DIR/scripts/hooks/agent-alert.sh" "agent-alert hook"
 check_executable "$DOTFILES_DIR/scripts/hooks/agent-alert-clear.sh" "agent-alert-clear hook"
 check_executable "$DOTFILES_DIR/scripts/hooks/cmd-alert.sh" "cmd-alert hook"
 
-# Wrapper scripts (used by Claude Code and OpenCode hook configs)
+# wrapper scripts (used by Claude Code and OpenCode hook configs)
 check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/claude-alert.sh" "claude alert wrapper"
 check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/claude-alert-clear.sh" "claude alert-clear wrapper"
 check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/opencode-alert.sh" "opencode alert wrapper"
@@ -357,7 +357,7 @@ echo ""
 echo "Local Overrides:"
 echo "----------------"
 
-# These are user-owned files created from templates — informational only
+# these are user-owned files created from templates, informational only
 check_local_override "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/local.conf" "tmux local.conf"
 if should_install "core"; then
     check_local_override "$HOME/.config/nvim/local.lua" "nvim local.lua"

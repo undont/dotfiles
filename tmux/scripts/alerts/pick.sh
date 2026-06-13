@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Alert picker — lists active alerts and navigates to the selected one
-# If only one alert exists, jumps directly without showing a picker.
+# alert picker: lists active alerts and navigates to the selected one
+# if only one alert exists, jumps directly without showing a picker
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# --list mode: output entries only (used by fzf reload-sync).
-# Detect this early so the hot reload path can skip the picker-only
-# initialisation (common.sh, ui.sh, load_fzf_theme) — those together
-# add ~100ms of bash sourcing that visibly stalls the UI on every `x`.
+# --list mode: output entries only (used by fzf reload-sync)
+# detect this early so the hot reload path can skip the picker-only
+# initialisation (common.sh, ui.sh, load_fzf_theme); those together
+# add ~100ms of bash sourcing that visibly stalls the UI on every `x`
 LIST_MODE=0
 [[ "${1:-}" == "--list" ]] && LIST_MODE=1
 
@@ -28,7 +28,7 @@ if [[ ! -f "$ALERTS_FILE" ]] || [[ ! -s "$ALERTS_FILE" ]]; then
     exit 0
 fi
 
-# Load entries from alerts file
+# load entries from alerts file
 _load_entries() {
     local entries=()
     while IFS= read -r line; do
@@ -37,11 +37,11 @@ _load_entries() {
         IFS=':' read -r session window field3 field4 field5 <<< "$line"
         [[ -z "$session" || -z "$window" || -z "$field3" ]] && continue
 
-        # Window names are stored percent-encoded; decode for display, the
-        # current-window check, and the tmux navigation target.
+        # window names are stored percent-encoded; decode for display, the
+        # current-window check, and the tmux navigation target
         window=$(alerts_decode_window "$window")
 
-        # Skip alerts for the current window (already visible)
+        # skip alerts for the current window (already visible)
         [[ "$session" == "$CURRENT_SESSION" && "$window" == "$CURRENT_WINDOW" ]] && continue
 
         local target="${session}:${window}"
@@ -67,7 +67,7 @@ _load_entries() {
     printf '%s\n' "${entries[@]}"
 }
 
-# Extract session:window target from a picker line (strip ANSI, grab field 2)
+# extract session:window target from a picker line (strip ANSI, grab field 2)
 _extract_target() {
     printf '%s' "$1" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $2}'
 }
@@ -81,21 +81,21 @@ if [[ $LIST_MODE -eq 1 ]]; then
     exit 0
 fi
 
-# Check if all alerts are on current window (filtered out)
+# check if all alerts are on current window (filtered out)
 if [[ $count -eq 0 ]] && [[ -f "$ALERTS_FILE" ]] && [[ -s "$ALERTS_FILE" ]]; then
     show_centered_message "Alerts" "Alert is on current window"
     read -rsn1
     exit 0
 fi
 
-# No alerts — show message and wait
+# no alerts: show message and wait
 if [[ $count -eq 0 ]]; then
     show_centered_message "Alerts" "No active alerts"
     read -rsn1
     exit 0
 fi
 
-# Single alert: jump directly instead of paying for an fzf startup.
+# single alert: jump directly instead of paying for an fzf startup
 if [[ $count -eq 1 ]]; then
     target=$(_extract_target "$entry_list")
     if [[ -n "$target" ]]; then
@@ -109,7 +109,7 @@ if [[ $count -eq 1 ]]; then
     exit 0
 fi
 
-# Show fzf picker (handles single or multiple alerts)
+# show fzf picker (handles single or multiple alerts)
 selected=$(printf '%s\n' "$entry_list" | fzf \
     --ansi --reverse --exact --cycle \
     --no-info --no-header \

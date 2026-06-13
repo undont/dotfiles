@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Create a new tmux session via fzf prompt
+# create a new tmux session via fzf prompt
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
 require_tmux
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 
-# Prompt for session name
+# prompt for session name
 newname=$(printf '' | fzf \
     --print-query \
     --query='' \
@@ -27,26 +27,26 @@ newname=$(printf '' | fzf \
     --bind 'esc:abort' \
     2>/dev/null | head -1) || true
 
-# Handle empty input (user cancelled)
+# handle empty input (user cancelled)
 if [[ -z "$newname" ]]; then
     exit 0
 fi
 
-# Sanitise session name (convert spaces and invalid chars to dashes)
+# sanitise session name (convert spaces and invalid chars to dashes)
 newname=$(sanitise_session_name "$newname")
 
-# Validate session name
+# validate session name
 if ! validate_session_name "$newname"; then
     # validate_session_name already outputs error message via error()
     exit 1
 fi
 
-# Check if session already exists
+# check if session already exists
 if session_exists "$newname"; then
-    # Session exists, switch to it
+    # session exists, switch to it
     tmux switch-client -t "$newname"
 else
-    # Create new session at home directory and switch to it
+    # create new session at home directory and switch to it
     tmux new-session -d -s "$newname" -n "zsh" -c ~
     tmux switch-client -t "$newname"
 fi

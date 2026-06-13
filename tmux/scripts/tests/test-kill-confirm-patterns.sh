@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Test kill and confirm patterns for windows, panes, and sessions
+# test kill and confirm patterns for windows, panes, and sessions
 set -euo pipefail
 
-# Determine repository root
+# determine repository root
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 REPO_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 SCRIPTS_DIR="$REPO_ROOT/tmux/scripts"
@@ -76,8 +76,8 @@ for script in windows/kill.sh panes/kill.sh; do
 done
 
 section "Alert cleanup must be synchronous (not backgrounded)"
-# Regression: backgrounded alert cleanup gets SIGHUP-killed when
-# the display-popup exits, leaving stale alerts in the file.
+# regression: backgrounded alert cleanup gets SIGHUP-killed when
+# the display-popup exits, leaving stale alerts in the file
 for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     if grep -qE 'clear_(session|window)_alerts.*&\s*$' "$SCRIPTS_DIR/$script"; then
         fail "$script backgrounds alert cleanup (will be killed by popup teardown)"
@@ -110,11 +110,11 @@ else
 fi
 
 section "Instance pickers must not use fzf become() in pipelines"
-# Regression: fzf become() is unreliable when fzf is piped to another
-# process (cut | xargs). Use execute-silent()+abort instead.
+# regression: fzf become() is unreliable when fzf is piped to another
+# process (cut | xargs); use execute-silent()+abort instead
 TMUX_TEMPLATE="$REPO_ROOT/tmux/tmux.conf.template"
 if [[ -f "$TMUX_TEMPLATE" ]]; then
-    # Find lines with both 'become(' and a pipe to another process on instance pickers
+    # find lines with both 'become(' and a pipe to another process on instance pickers
     if grep -A2 'instances/.*\.sh |' "$TMUX_TEMPLATE" | grep -q 'become('; then
         fail "Instance picker uses become() in pipeline (use execute-silent+abort)"
     else

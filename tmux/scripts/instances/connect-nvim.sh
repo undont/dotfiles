@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Connect an nvim instance to a pane by setting NVIM_SOCKET
-# Usage: connect-nvim.sh <fzf_selection_line>
-# Called from fzf with "c" key binding
-# Shows pane picker for current session, sends export command to selected pane
+# connect an nvim instance to a pane by setting NVIM_SOCKET
+# usage: connect-nvim.sh <fzf_selection_line>
+# called from fzf with "c" key binding
+# shows pane picker for current session, sends export command to selected pane
 
 set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 
 if [[ -z "${1:-}" ]]; then
@@ -17,7 +17,7 @@ if [[ -z "${1:-}" ]]; then
     exit 1
 fi
 
-# Extract socket path (after tab in the selection)
+# extract socket path (after tab in the selection)
 SOCKET=$(echo "$1" | cut -f2)
 
 if [[ -z "$SOCKET" || ! -S "$SOCKET" ]]; then
@@ -25,11 +25,11 @@ if [[ -z "$SOCKET" || ! -S "$SOCKET" ]]; then
     exit 1
 fi
 
-# Get current session
+# get current session
 CURRENT_SESSION=$(tmux display-message -p '#S')
 
-# List panes in current session, sorted by last-viewed, excluding nvim panes
-# Format: timestamp window_index.pane_index<tab>window_name (command)
+# list panes in current session, sorted by last-viewed, excluding nvim panes
+# format: timestamp window_index.pane_index<tab>window_name (command)
 pane_list=$(tmux list-panes -s -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{window_index}.#{pane_index}	#{window_name} (#{pane_current_command})' 2>/dev/null | \
     grep -v '(nvim)$' | \
     sort -rn | \
@@ -40,7 +40,7 @@ if [[ -z "$pane_list" ]]; then
     exit 1
 fi
 
-# Let user pick a pane
+# let user pick a pane
 TARGET_PANE=$(echo "$pane_list" | fzf --ansi --reverse --exact --disabled --cycle \
     --delimiter=$'\t' \
     --with-nth=2 \
@@ -57,20 +57,20 @@ TARGET_PANE=$(echo "$pane_list" | fzf --ansi --reverse --exact --disabled --cycl
     | cut -f1)
 
 if [[ -z "$TARGET_PANE" ]]; then
-    exit 0  # User cancelled
+    exit 0  # user cancelled
 fi
 
-# Build full target with session name
+# build full target with session name
 FULL_TARGET="${CURRENT_SESSION}:${TARGET_PANE}"
 
 EXPORT_CMD="export NVIM_SOCKET='$SOCKET' && claude"
 
-# Copy export command to clipboard
+# copy export command to clipboard
 echo -n "$EXPORT_CMD" | clipboard_copy
 
-# Switch to the target pane
+# switch to the target pane
 tmux select-window -t "$FULL_TARGET"
 tmux select-pane -t "$FULL_TARGET"
 
-# Show message in tmux status bar
+# show message in tmux status bar
 tmux display-message "Copied to clipboard - paste to connect"

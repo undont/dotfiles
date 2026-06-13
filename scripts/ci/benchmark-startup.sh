@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
-# Benchmark zsh startup time in CI
-# Usage: benchmark-startup.sh [threshold_ms]
+# benchmark zsh startup time in CI
+# usage: benchmark-startup.sh [threshold_ms]
 #
-# Runs hyperfine against `zsh -i -c exit` using the dotfiles framework,
+# runs hyperfine against `zsh -i -c exit` using the dotfiles framework,
 # outputs results for benchmark-action, writes a summary to $GITHUB_STEP_SUMMARY,
-# and exits non-zero if the median exceeds the threshold.
+# and exits non-zero if the median exceeds the threshold
 
 set -euo pipefail
 
@@ -14,11 +14,11 @@ DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 RESULTS_FILE="$(mktemp)"
 
 # ─────────────────────────────────────────
-# Create a temporary .zshrc that sources the framework
+# create a temporary .zshrc that sources the framework
 # ─────────────────────────────────────────
 TEMP_ZSHRC="$(mktemp)"
 cat > "$TEMP_ZSHRC" << EOF
-# CI benchmark — sources the dotfiles framework
+# CI benchmark, sources the dotfiles framework
 # Suppress powerlevel10k instant prompt (not installed in CI)
 typeset -g POWERLEVEL9K_INSTANT_PROMPT=quiet 2>/dev/null
 source "$DOTFILES_DIR/zsh/dotfiles.zsh"
@@ -30,7 +30,7 @@ cleanup() {
 trap cleanup EXIT
 
 # ─────────────────────────────────────────
-# Run benchmark
+# run benchmark
 # ─────────────────────────────────────────
 echo "Benchmarking zsh startup (threshold: ${THRESHOLD}ms)..."
 echo "Using framework: $DOTFILES_DIR/zsh/dotfiles.zsh"
@@ -49,7 +49,7 @@ hyperfine \
 rm -rf "$ZDOTDIR_DIR"
 
 # ─────────────────────────────────────────
-# Parse results
+# parse results
 # ─────────────────────────────────────────
 MEDIAN_S=$(python3 -c "
 import json, sys
@@ -83,14 +83,14 @@ echo ""
 echo "Results: median=${MEDIAN_MS}ms  min=${MIN_MS}ms  max=${MAX_MS}ms  stddev=${STDDEV_MS}ms"
 echo ""
 
-# Export for downstream steps (e.g. badge update)
+# export for downstream steps (e.g. badge update)
 if [[ -n "${GITHUB_OUTPUT:-}" ]]; then
     echo "min_ms=${MIN_MS}" >> "$GITHUB_OUTPUT"
     echo "median_ms=${MEDIAN_MS}" >> "$GITHUB_OUTPUT"
 fi
 
 # ─────────────────────────────────────────
-# Write GitHub step summary
+# write GitHub step summary
 # ─────────────────────────────────────────
 if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
     {
@@ -108,7 +108,7 @@ if [[ -n "${GITHUB_STEP_SUMMARY:-}" ]]; then
 fi
 
 # ─────────────────────────────────────────
-# Check threshold
+# check threshold
 # ─────────────────────────────────────────
 EXCEEDED=$(python3 -c "print('yes' if $MEDIAN_MS > $THRESHOLD else 'no')")
 

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Test suite for setup-keyd.sh
+# test suite for setup-keyd.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_test-helpers.sh"
@@ -11,7 +11,7 @@ SETUP_KEYD_SCRIPT="$SCRIPT_DIR/../install/setup-keyd.sh"
 
 section "setup-keyd Tests"
 
-# Test: macOS early exit
+# test: macOS early exit
 if is_macos; then
     output=$("$SETUP_KEYD_SCRIPT" 2>&1 || true)
     if [[ "$output" == *"Linux-only"* ]]; then
@@ -23,7 +23,7 @@ else
     skip "macOS early-exit test (not on macOS)"
 fi
 
-# Test: missing config file
+# test: missing config file
 output=$(DOTFILES_DIR="/nonexistent/path" "$SETUP_KEYD_SCRIPT" 2>&1 || true)
 if is_macos; then
     skip "Missing config test (macOS exits before config check)"
@@ -33,7 +33,7 @@ else
     fail "Should error when config not found (got: $output)"
 fi
 
-# Note: package installation and systemd paths require sudo — skip in CI
+# note: package installation and systemd paths require sudo, skip in CI
 skip "Package install path requires sudo"
 skip "systemd service management requires sudo"
 

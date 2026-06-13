@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
-# Terminal UI utilities for tmux scripts
-# Source this file after common.sh
+# terminal UI utilities for tmux scripts
+# source this file after common.sh
 
-# Guard against multiple sourcing
+# guard against multiple sourcing
 [[ -n "${_TMUX_UI_SH_LOADED:-}" ]] && return 0
 _TMUX_UI_SH_LOADED=1
 
-# Convert hex colour (#rrggbb) to truecolour ANSI foreground escape
-# Returns empty string if input is empty (caller should use fallback)
+# convert hex colour (#rrggbb) to truecolour ANSI foreground escape
+# returns empty string if input is empty (caller should use fallback)
 _hex_fg() {
     local hex="${1:-}"
     [[ -z "$hex" ]] && return
@@ -15,21 +15,21 @@ _hex_fg() {
         "$((16#${hex:1:2}))" "$((16#${hex:3:2}))" "$((16#${hex:5:2}))"
 }
 
-# Display a visual confirmation for last window/pane scenarios
-# Shows confirmation first, then switches to another session if user confirms
-# Usage: tmux_confirm_last_item "window" "session_name" "target" "window_name" ["window_id"]
+# display a visual confirmation for last window/pane scenarios
+# shows confirmation first, then switches to another session if user confirms
+# usage: tmux_confirm_last_item "window" "session_name" "target" "window_name" ["window_id"]
 #        tmux_confirm_last_item "pane" "session_name" "target" "" ""
 tmux_confirm_last_item() {
     local item_type="$1"        # "window" or "pane"
     local current_session="$2"   # session being affected
-    local target="$3"            # full target (e.g., "session:window" or "session:window.pane")
+    local target="$3"            # full target (e.g. "session:window" or "session:window.pane")
     local window_name="$4"       # window name (for clearing alerts, optional)
     local window_id="${5:-}"     # window id (for clearing alerts, optional)
 
     local other_session
     other_session=$(find_other_session "$current_session")
 
-    # Clear alerts before showing confirmation
+    # clear alerts before showing confirmation
     if [[ -n "$window_name" && "$item_type" == "window" ]]; then
         clear_window_alerts "$current_session" "$window_name" "$window_id"
     fi
@@ -44,19 +44,19 @@ tmux_confirm_last_item() {
         command="kill-${item_type} -t \"${target}\""
     fi
 
-    # Use tmux's built-in confirm-before
+    # use tmux's built-in confirm-before
     tmux confirm-before -p "$message (y/n) " "$command"
     return $?
 }
 
-# Display a centered message box
-# Usage: show_centered_message "Title" "Message line 1" "Message line 2" ...
+# display a centered message box
+# usage: show_centered_message "Title" "Message line 1" "Message line 2" ...
 show_centered_message() {
     local title="$1"
     shift
     local lines=("$@")
 
-    # Calculate dimensions
+    # calculate dimensions
     local max_width=0
     for line in "$title" "${lines[@]}"; do
         local len=${#line}
@@ -66,7 +66,7 @@ show_centered_message() {
     local box_width=$((max_width + 6))
     local box_height=$((${#lines[@]} + 4))
 
-    # Use LINES/COLUMNS if set (tmux popup), otherwise fall back to tput
+    # use LINES/COLUMNS if set (tmux popup), otherwise fall back to tput
     local term_height term_width
     term_height=${LINES:-$(tput lines)}
     term_width=${COLUMNS:-$(tput cols)}
@@ -82,24 +82,24 @@ show_centered_message() {
 
     clear
 
-    # Vertical padding
+    # vertical padding
     for ((i=0; i<v_pad; i++)); do
         printf '\n'
     done
 
-    # Theme-aware colours (fall back to 256-colour defaults)
+    # theme-aware colours (fall back to 256-colour defaults)
     local title_col sep_col
     title_col=$(_hex_fg "${TMUX_STATUS_ACTIVE_BG:-}") || true
     sep_col=$(_hex_fg "${TMUX_FG_SECONDARY:-}") || true
     [[ -z "$title_col" ]] && title_col=$'\033[38;5;141m'
     [[ -z "$sep_col" ]] && sep_col=$'\033[38;5;60m'
 
-    # Title
+    # title
     printf '%s%s%s\033[0m\n' "$pad" "$title_col" "$title"
     printf '%s%s%s\033[0m\n' "$pad" "$sep_col" "$(printf '%.0s─' $(seq 1 ${#title}))"
     printf '\n'
 
-    # Message lines
+    # message lines
     for line in "${lines[@]}"; do
         printf '%s%s\n' "$pad" "$line"
     done
@@ -107,8 +107,8 @@ show_centered_message() {
     printf '\n'
 }
 
-# Display a confirmation dialog (y/n)
-# Usage: confirm_action "Are you sure?" && do_something
+# display a confirmation dialog (y/n)
+# usage: confirm_action "Are you sure?" && do_something
 confirm_action() {
     local prompt="${1:-Are you sure?}"
     local response
@@ -117,8 +117,8 @@ confirm_action() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
-# Display a centered confirmation dialog
-# Usage: show_centered_confirm "Title" "Message" && do_something
+# display a centered confirmation dialog
+# usage: show_centered_confirm "Title" "Message" && do_something
 show_centered_confirm() {
     local title="$1"
     local message="$2"
@@ -130,18 +130,18 @@ show_centered_confirm() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
-# Visual confirmation dialog using fzf with Yes/No options
-# Usage: show_visual_confirm "Title" "Message"
-# Returns: 0 if confirmed, 1 if cancelled
+# visual confirmation dialog using fzf with Yes/No options
+# usage: show_visual_confirm "Title" "Message"
+# returns: 0 if confirmed, 1 if cancelled
 show_visual_confirm() {
     local title="$1"
     local message="$2"
 
-    # Load current theme colours for fzf
+    # load current theme colours for fzf
     load_fzf_theme
 
     local choice
-    # Use printf to interpret \n in the message
+    # use printf to interpret \n in the message
     choice=$(printf "yes\nno" | fzf \
         --height=100% --layout=reverse --disabled --cycle \
         --prompt=': ' \
@@ -159,8 +159,8 @@ show_visual_confirm() {
     [[ "$choice" == "yes" ]]
 }
 
-# Wait for any key press
-# Usage: wait_for_key "prompt" [true] - pass true as second arg to centre the prompt
+# wait for any key press
+# usage: wait_for_key "prompt" [true], pass true as second arg to centre the prompt
 wait_for_key() {
     local prompt="${1:-Press any key to continue...}"
     local centred="${2:-false}"
@@ -176,13 +176,13 @@ wait_for_key() {
     read -rsn1 -p "$prompt"
 }
 
-# Show a brief notification that auto-dismisses
-# Usage: show_notification "Success!" 2
+# show a brief notification that auto-dismisses
+# usage: show_notification "Success!" 2
 show_notification() {
     local message="$1"
     local duration="${2:-1}"
 
-    # Use LINES/COLUMNS if set (tmux popup), otherwise fall back to tput
+    # use LINES/COLUMNS if set (tmux popup), otherwise fall back to tput
     local term_height term_width
     term_height=${LINES:-$(tput lines)}
     term_width=${COLUMNS:-$(tput cols)}

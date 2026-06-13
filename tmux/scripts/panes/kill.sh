@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Kill current pane with undo capability
-# Saves pane state before killing for later restoration
+# kill current pane with undo capability
+# saves pane state before killing for later restoration
 
-# Parse arguments
+# parse arguments
 PANE_TARGET=""
 FORCE_KILL=false
 
@@ -29,7 +29,7 @@ source "$SCRIPT_DIR/../_lib/process.sh"
 
 require_tmux
 
-# Load all pane/window metadata in one tmux round-trip.
+# load all pane/window metadata in one tmux round-trip
 if [[ -n "$PANE_TARGET" ]]; then
     pane_info=$(tmux display-message -t "$PANE_TARGET" -p \
         '#{session_name}|#{window_index}|#{pane_index}|#{pane_current_path}|#{window_layout}|#{window_name}|#{window_id}|#{window_panes}|#{session_windows}' \
@@ -48,9 +48,9 @@ IS_LAST_PANE="no"
 IS_LAST_WINDOW="no"
 [[ "$WINDOW_COUNT" -eq 1 ]] && IS_LAST_WINDOW="yes"
 
-# Show confirmation unless --force flag is set
+# show confirmation unless --force flag is set
 if ! $FORCE_KILL; then
-    # Build context-aware message
+    # build context-aware message
     if [[ "$IS_LAST_PANE" == "yes" && "$IS_LAST_WINDOW" == "yes" ]]; then
         OTHER_SESSION=$(find_other_session "$CURRENT_SESSION")
         if [[ -n "$OTHER_SESSION" ]]; then
@@ -67,37 +67,37 @@ if ! $FORCE_KILL; then
     fi
 fi
 
-# User confirmed - save undo state
+# user confirmed, save undo state
 UNDO_FILE=$(get_pane_undo_file)
 UNDO_STATE=$(get_pane_undo_state)
 UNDO_CONTENT=$(get_pane_undo_content)
 
-# Clear previous undo data
+# clear previous undo data
 cleanup_undo_files "pane"
 
-# Save current state for undo
+# save current state for undo
 echo "$PANE_TARGET" > "$UNDO_FILE"
 chmod 600 "$UNDO_FILE"
 
-# Save pane metadata
+# save pane metadata
 {
     echo "dir=$PANE_DIR"
     echo "layout=$WINDOW_LAYOUT"
 } > "$UNDO_STATE"
 chmod 600 "$UNDO_STATE"
 
-# Capture pane contents
+# capture pane contents
 tmux capture-pane -t "$PANE_TARGET" -p -S -32768 > "$UNDO_CONTENT" 2>/dev/null || true
 chmod 600 "$UNDO_CONTENT"
 
-# Gracefully terminate running processes before killing the pane
+# gracefully terminate running processes before killing the pane
 terminate_pane_processes "$PANE_TARGET"
 
-# Determine if we need to check for session switching
-# We need the ACTUAL current client session (where the user is), not the target session
+# determine if we need to check for session switching
+# we need the ACTUAL current client session (where the user is), not the target session
 ACTUAL_CLIENT_SESSION=$(tmux display-message -p '#{client_session}' 2>/dev/null || echo "")
 
-# If last pane in last window and we're in that session, handle session switching
+# if last pane in last window and we're in that session, handle session switching
 if [[ "$IS_LAST_PANE" == "yes" && "$IS_LAST_WINDOW" == "yes" && "$ACTUAL_CLIENT_SESSION" == "$CURRENT_SESSION" ]]; then
     OTHER_SESSION=$(find_other_session "$CURRENT_SESSION")
     if [[ -n "$OTHER_SESSION" ]]; then
@@ -105,15 +105,15 @@ if [[ "$IS_LAST_PANE" == "yes" && "$IS_LAST_WINDOW" == "yes" && "$ACTUAL_CLIENT_
     else
         tmux kill-pane -t "$PANE_TARGET" 2>/dev/null || exit 1
     fi
-    # Session is destroyed — clear all session alerts synchronously
+    # session is destroyed, clear all session alerts synchronously
     # (backgrounding risks SIGHUP killing the process when popup exits)
     clear_session_alerts "$CURRENT_SESSION"
 elif [[ "$IS_LAST_PANE" == "yes" ]]; then
-    # Last pane but not last window — killing destroys the window
+    # last pane but not last window, killing destroys the window
     tmux kill-pane -t "$PANE_TARGET" 2>/dev/null || exit 1
-    # Window is destroyed — clear its alerts
+    # window is destroyed, clear its alerts
     clear_window_alerts "$CURRENT_SESSION" "$WINDOW_NAME" "$WINDOW_ID"
 else
-    # Not the last pane — panes don't have individual alerts
+    # not the last pane, panes don't have individual alerts
     tmux kill-pane -t "$PANE_TARGET" 2>/dev/null || exit 1
 fi

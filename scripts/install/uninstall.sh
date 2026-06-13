@@ -2,8 +2,8 @@
 # shellcheck disable=SC1091
 set -euo pipefail
 
-# Uninstall dotfiles - removes symlinks and optionally restores backups
-# Usage: ./scripts/install/uninstall.sh [--restore-backup] [--remove-brew-packages]
+# uninstall dotfiles: removes symlinks and optionally restores backups
+# usage: ./scripts/install/uninstall.sh [--restore-backup] [--remove-brew-packages]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 DOTFILES_DIR="$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)"
@@ -13,7 +13,7 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/brewfile.sh"
 source "$SCRIPT_DIR/../_lib/rollback.sh"
 
-# Parse arguments
+# parse arguments
 RESTORE_BACKUP=0
 REMOVE_BREW=0
 
@@ -67,36 +67,36 @@ done
 print_logo
 print_header "Dotfiles Uninstall"
 
-# Define all symlinks that install.sh creates
-# Must match create-symlinks.sh exactly
-# Note: ~/.zshrc is handled separately (may be personal file, not symlink)
+# define all symlinks that install.sh creates
+# must match create-symlinks.sh exactly
+# ~/.zshrc is handled separately (may be personal file, not symlink)
 SYMLINKS=(
-    # Minimal
+    # minimal
     "$HOME/.zprofile"
     "$HOME/.tmux.conf"
     "$HOME/.tmux"
     "$HOME/.local/bin/dotfiles"
     "$HOME/.prettierrc"
     "$HOME/.editorconfig"
-    # Core
+    # core
     "$HOME/.config/nvim"
     "$HOME/.local/bin/dash-repo-sync"
     "$HOME/.local/launchers/dev"
     "$HOME/.config/lazygit/config.yml"
     "$HOME/.config/yazi/yazi.toml"
     "$HOME/.config/yazi/keymap.toml"
-    # Full
+    # full
     "$HOME/.hammerspoon/init.lua"
 )
 
-# Legacy macOS ghostty symlink (no longer created — Ghostty reads XDG natively)
+# legacy macOS ghostty symlink (no longer created, Ghostty reads XDG natively)
 if [[ "$(uname)" == "Darwin" ]] && [[ -L "$HOME/Library/Application Support/com.mitchellh.ghostty/config" ]]; then
     SYMLINKS+=("$HOME/Library/Application Support/com.mitchellh.ghostty/config")
 fi
 
 echo "This will remove the following symlinks:"
 
-# Show ~/.zshrc status
+# show ~/.zshrc status
 if [[ -L "$HOME/.zshrc" ]]; then
     echo "  - $HOME/.zshrc -> $(readlink "$HOME/.zshrc")"
 elif [[ -f "$HOME/.zshrc" ]]; then
@@ -141,7 +141,7 @@ fi
 
 echo ""
 
-# Handle ~/.zshrc — may be a symlink (old) or personal file (new)
+# handle ~/.zshrc: may be a symlink (old) or personal file (new)
 if [[ -L "$HOME/.zshrc" ]]; then
     rm -f "$HOME/.zshrc"
     success "Removed: $HOME/.zshrc (symlink)"
@@ -151,7 +151,7 @@ elif [[ -f "$HOME/.zshrc" ]]; then
     fi
 fi
 
-# Step 1: Remove symlinks
+# step 1: remove symlinks
 info "Removing symlinks..."
 for link in "${SYMLINKS[@]}"; do
     if [[ -L "$link" ]]; then
@@ -162,19 +162,19 @@ for link in "${SYMLINKS[@]}"; do
     fi
 done
 
-# Step 2: Restore from backup if requested
+# step 2: restore from backup if requested
 if [[ $RESTORE_BACKUP -eq 1 ]] && [[ -n "${LATEST_BACKUP:-}" ]]; then
     echo ""
     restore_from_backup "$LATEST_BACKUP"
 fi
 
-# Step 3: Remove additional created files/directories
+# step 3: remove additional created files/directories
 echo ""
 info "Cleaning up additional files..."
 
-# Remove the yazi config dir: a real directory holds the generated theme.toml
+# remove the yazi config dir: a real directory holds the generated theme.toml
 # (per-file symlinks removed above); a legacy install may still have a whole-dir
-# symlink.
+# symlink
 if [[ -L "$HOME/.config/yazi" ]]; then
     rm -f "$HOME/.config/yazi"
     success "Removed: ~/.config/yazi (legacy symlink)"
@@ -183,7 +183,7 @@ elif [[ -d "$HOME/.config/yazi" ]]; then
     success "Removed: ~/.config/yazi (config dir + generated theme)"
 fi
 
-# Remove TPM if installed by us
+# remove TPM if installed by us
 if [[ -d "$HOME/.tmux/plugins/tpm" ]]; then
     if confirm "Remove TPM (Tmux Plugin Manager)?"; then
         rm -rf "$HOME/.tmux/plugins"
@@ -191,7 +191,7 @@ if [[ -d "$HOME/.tmux/plugins/tpm" ]]; then
     fi
 fi
 
-# Remove secrets file if empty
+# remove secrets file if empty
 ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
     if [[ ! -s "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
@@ -202,13 +202,13 @@ if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
     fi
 fi
 
-# Remove local-aliases backup if it exists
+# remove local-aliases backup if it exists
 if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh.bak" ]]; then
     rm -f "$ZSH_CONFIG_DIR/local-aliases.zsh.bak"
     success "Removed local-aliases.zsh.bak"
 fi
 
-# Remove local-aliases.zsh if still present and empty
+# remove local-aliases.zsh if still present and empty
 if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
     if [[ ! -s "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
         rm -f "$ZSH_CONFIG_DIR/local-aliases.zsh"
@@ -218,10 +218,10 @@ if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh" ]]; then
     fi
 fi
 
-# Handle Ghostty local override file
+# handle Ghostty local override file
 ghostty_local="$HOME/.config/ghostty/local"
 if [[ -f "$ghostty_local" ]]; then
-    # Check if it has any non-comment, non-blank content
+    # check if it has any non-comment, non-blank content
     if grep -qE '^[^#[:space:]]' "$ghostty_local" 2>/dev/null; then
         warn "Kept $ghostty_local (contains your personal overrides — remove manually if desired)"
     else
@@ -230,7 +230,7 @@ if [[ -f "$ghostty_local" ]]; then
     fi
 fi
 
-# Handle tmux local override file
+# handle tmux local override file
 tmux_local="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/local.conf"
 if [[ -f "$tmux_local" ]]; then
     if grep -qE '^[^#[:space:]]' "$tmux_local" 2>/dev/null; then
@@ -241,7 +241,7 @@ if [[ -f "$tmux_local" ]]; then
     fi
 fi
 
-# Handle Neovim local override file
+# handle nvim local override file
 nvim_local="$HOME/.config/nvim/local.lua"
 if [[ -f "$nvim_local" ]]; then
     if grep -qE '^[^-[:space:]]' "$nvim_local" 2>/dev/null; then
@@ -252,8 +252,8 @@ if [[ -f "$nvim_local" ]]; then
     fi
 fi
 
-# Handle user-owned config files (copy-on-install pattern)
-# These are personal configs — warn and preserve, like ~/.zshrc
+# handle user-owned config files (copy-on-install pattern)
+# these are personal configs: warn and preserve, like ~/.zshrc
 
 p10k_conf="$HOME/.p10k.zsh"
 if [[ -f "$p10k_conf" ]]; then
@@ -289,13 +289,13 @@ if [[ -f "$lazydocker_conf" ]]; then
     warn "Kept $lazydocker_conf (personal config — remove manually if desired)"
 fi
 
-# Step 4: Remove Homebrew packages if requested
+# step 4: remove Homebrew packages if requested
 if [[ $REMOVE_BREW -eq 1 ]]; then
     echo ""
     info "Removing Homebrew packages..."
 
     if [[ -f "$DOTFILES_DIR/Brewfile" ]] && command_exists brew; then
-        # Load saved preset
+        # load saved preset
         PRESET_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
         if [[ -f "$PRESET_FILE" ]]; then
             PRESET=$(cat "$PRESET_FILE")
@@ -305,10 +305,10 @@ if [[ $REMOVE_BREW -eq 1 ]]; then
             echo "No saved preset found, assuming: $PRESET"
         fi
 
-        # Create filtered Brewfile
+        # create filtered Brewfile
         FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 
-        # Set up cleanup trap for filtered Brewfile
+        # set up cleanup trap for filtered Brewfile
         # shellcheck disable=SC2064
         trap "rm -f '$FILTERED_BREWFILE'" EXIT
 
@@ -351,7 +351,7 @@ if [[ $REMOVE_BREW -eq 1 ]]; then
     fi
 fi
 
-# Step 5: Remove preset config (after brew removal since we need to read it)
+# step 5: remove preset config (after brew removal since we need to read it)
 PRESET_CONFIG_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
 if [[ -f "$PRESET_CONFIG_FILE" ]]; then
     rm -f "$PRESET_CONFIG_FILE"

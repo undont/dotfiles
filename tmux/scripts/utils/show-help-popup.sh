@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Pick a popup size matching whichever help template will fit, then launch
-# the help popup. The actual template choice happens inside show-help.sh
+# pick a popup size matching whichever help template will fit, then launch
+# the help popup. the actual template choice happens inside show-help.sh
 # via `stty size`; this wrapper just makes sure the popup itself isn't
 # wildly larger than its content.
 #
@@ -11,9 +11,9 @@ set -euo pipefail
 #   narrow       → -w 95% -h 24  (compact, fit-to-width)
 #   tiny         → -w 95% -h 95% (last-resort, content may scroll)
 #
-# Dimensions are passed in by the tmux binding via `#{client_width}` and
-# `#{client_height}` format strings — querying via `tmux display-message`
-# from inside run-shell occasionally returned 129/SIGHUP.
+# dimensions are passed in by the tmux binding via `#{client_width}` and
+# `#{client_height}` format strings; querying via `tmux display-message`
+# from inside run-shell occasionally returned 129/SIGHUP
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Tests for show-help.sh template rendering
+# tests for show-help.sh template rendering
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -34,7 +34,7 @@ else
     exit 1
 fi
 
-# Template should contain {{M}} placeholders
+# template should contain {{M}} placeholders
 if grep -q '{{M}}' "$TEMPLATE"; then
     pass "template contains {{M}} placeholders"
 else
@@ -45,14 +45,14 @@ section "Template rendering"
 
 output=$("$SHOW_HELP" 2>/dev/null)
 
-# Output should NOT contain any unresolved placeholders
+# output should NOT contain any unresolved placeholders
 if [[ "$output" != *'{{M}}'* ]]; then
     pass "no unreplaced {{M}} placeholders in output"
 else
     fail "output contains unreplaced {{M}} placeholders"
 fi
 
-# Output should contain the correct modifier key for the platform
+# output should contain the correct modifier key for the platform
 if [[ "$(uname)" == "Darwin" ]]; then
     EXPECTED_MOD="Opt"
 else
@@ -65,7 +65,7 @@ else
     fail "output should contain '${EXPECTED_MOD}+' for this platform"
 fi
 
-# Output should contain key structural elements from the help template
+# output should contain key structural elements from the help template
 if [[ "$output" == *"TABS"* && "$output" == *"PANES"* ]]; then
     pass "output contains expected help sections"
 else

@@ -1,17 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Tests for migration version comparison and state tracking logic
-# Tests the _version_gt function and migration filtering/tracking behaviour
+# tests for migration version comparison and state tracking logic
+# tests the _version_gt function and migration filtering/tracking behaviour
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 
-# Source shared test helpers
+# source shared test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Source _version_gt from cli.sh (Plan DOT-031 moved it out of scripts/dotfiles).
-# We extract the function definition directly so we don't have to satisfy the
-# library's load-guard preconditions (DOTFILES_DIR, common.sh, colour vars).
+# source _version_gt from cli.sh (it moved out of scripts/dotfiles).
+# extract the function definition directly so we don't have to satisfy the
+# library's load-guard preconditions (DOTFILES_DIR, common.sh, colour vars)
 eval "$(sed -n '/^_version_gt()/,/^}/p' "$DOTFILES_ROOT/scripts/_lib/cli.sh")"
 
 # ═══════════════════════════════════════════════════════════════
@@ -64,15 +64,15 @@ fi
 
 section "Migration version range filtering"
 
-# Simulate the migration filtering logic from _run_pending_migrations
-# Range: (old_version, new_version] — exclusive start, inclusive end
+# simulate the migration filtering logic from _run_pending_migrations
+# range: (old_version, new_version], exclusive start, inclusive end
 _in_migration_range() {
     local migration_version="$1" old_version="$2" new_version="$3"
     _version_gt "$migration_version" "$old_version" && \
         ! _version_gt "$migration_version" "$new_version"
 }
 
-# Upgrading from 0.2.56 to 0.2.60
+# upgrading from 0.2.56 to 0.2.60
 if _in_migration_range "0.2.57" "0.2.56" "0.2.60"; then
     pass "0.2.57 is in range (0.2.56, 0.2.60]"
 else
@@ -115,7 +115,7 @@ mkdir -p "$state_dir"
 applied_file="$state_dir/migrations"
 touch "$applied_file"
 
-# Record a migration as applied
+# record a migration as applied
 echo "0.2.57-unlink-p10k.sh" >> "$applied_file"
 
 if grep -qxF "0.2.57-unlink-p10k.sh" "$applied_file"; then
@@ -124,21 +124,21 @@ else
     fail "Should record applied migration"
 fi
 
-# Verify already-applied migration is detected
+# verify already-applied migration is detected
 if grep -qxF "0.2.57-unlink-p10k.sh" "$applied_file"; then
     pass "Already-applied migration detected via grep -qxF"
 else
     fail "Should detect already-applied migration"
 fi
 
-# Verify unapplied migration is not detected
+# verify unapplied migration is not detected
 if ! grep -qxF "0.2.59-remove-cronboard.sh" "$applied_file"; then
     pass "Unapplied migration not in state file"
 else
     fail "Unapplied migration should not be in state file"
 fi
 
-# Record multiple migrations and verify order
+# record multiple migrations and verify order
 echo "0.2.59-remove-cronboard.sh" >> "$applied_file"
 echo "0.2.60-remove-csharpier.sh" >> "$applied_file"
 
@@ -157,13 +157,13 @@ setup_sandbox
 migrations_dir="$TEST_HOME/migrations"
 mkdir -p "$migrations_dir"
 
-# Create test migration scripts
+# create test migration scripts
 echo '#!/bin/bash' > "$migrations_dir/0.2.57-first.sh"
 echo '#!/bin/bash' > "$migrations_dir/0.2.59-second.sh"
 echo '#!/bin/bash' > "$migrations_dir/0.2.60-third.sh"
 chmod +x "$migrations_dir"/*.sh
 
-# Verify glob ordering (same logic as _run_pending_migrations)
+# verify glob ordering (same logic as _run_pending_migrations)
 local_migrations=()
 for migration in "$migrations_dir"/*.sh; do
     [[ -f "$migration" ]] || continue
@@ -175,7 +175,7 @@ assert_equals "First migration is 0.2.57" "0.2.57-first.sh" "${local_migrations[
 assert_equals "Second migration is 0.2.59" "0.2.59-second.sh" "${local_migrations[1]}"
 assert_equals "Third migration is 0.2.60" "0.2.60-third.sh" "${local_migrations[2]}"
 
-# Test version extraction from filename
+# test version extraction from filename
 basename="0.2.57-unlink-p10k.sh"
 migration_version="${basename%%-*}"
 assert_equals "Extracts version from filename" "0.2.57" "$migration_version"
@@ -198,7 +198,7 @@ mkdir -p "$state_dir"
 applied_file="$state_dir/migrations"
 touch "$applied_file"
 
-# Create a migration that creates a file
+# create a migration that creates a file
 migrations_dir="$TEST_HOME/migrations"
 mkdir -p "$migrations_dir"
 cat > "$migrations_dir/0.2.57-test.sh" << 'MIGRATION'
@@ -208,7 +208,7 @@ touch "$HOME/migration-ran"
 MIGRATION
 chmod +x "$migrations_dir/0.2.57-test.sh"
 
-# Run it
+# run it
 bash "$migrations_dir/0.2.57-test.sh"
 echo "0.2.57-test.sh" >> "$applied_file"
 
@@ -218,7 +218,7 @@ else
     fail "Migration should create marker file"
 fi
 
-# Simulate skipping (as _run_pending_migrations does)
+# simulate skipping (as _run_pending_migrations does)
 if grep -qxF "0.2.57-test.sh" "$applied_file"; then
     pass "Already-applied migration would be skipped"
 else

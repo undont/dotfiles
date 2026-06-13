@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
-# List all running nvim instances across all tmux sessions
-# Shows session, window, pane, and cwd information for each instance
+# list all running nvim instances across all tmux sessions
+# shows session, window, pane, and cwd information for each instance
 
 set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Check if tmux is available
+# check if tmux is available
 if ! command -v tmux &>/dev/null; then
     exit 1
 fi
 
-# Check if any sessions exist
+# check if any sessions exist
 if ! tmux list-sessions &>/dev/null; then
     exit 0
 fi
 
-# Find nvim sockets and map PID -> socket
+# find nvim sockets and map PID -> socket
 declare -A socket_map=()
 while IFS= read -r sock; do
     [[ -z "$sock" ]] && continue
@@ -25,16 +25,16 @@ while IFS= read -r sock; do
     socket_map[$pid]="$sock"
 done < <(find "${TMPDIR}nvim.${USER}" -type s -name "nvim.*" 2>/dev/null || true)
 
-# Build PID -> PPID map for all nvim socket PIDs in one ps call.
-# This avoids repeated ps calls when walking the process tree.
+# build PID -> PPID map for all nvim socket PIDs in one ps call.
+# this avoids repeated ps calls when walking the process tree
 declare -A ppid_map=()
 if [[ ${#socket_map[@]} -gt 0 ]]; then
-    # Collect all PIDs we might need to walk (nvim pids + ancestors up to 5 levels)
+    # collect all PIDs we might need to walk (nvim pids + ancestors up to 5 levels)
     all_pids=()
     for pid in "${!socket_map[@]}"; do
         all_pids+=("$pid")
     done
-    # Get ppid for all processes in one call (faster than per-pid ps)
+    # get ppid for all processes in one call (faster than per-pid ps)
     while IFS= read -r pline; do
         [[ -z "$pline" ]] && continue
         p_pid="${pline%% *}"
@@ -46,7 +46,7 @@ if [[ ${#socket_map[@]} -gt 0 ]]; then
     done < <(ps -e -o pid=,ppid= 2>/dev/null)
 fi
 
-# Pre-fetch window names: "session:window_index window_name"
+# pre-fetch window names: "session:window_index window_name"
 declare -A window_names
 while IFS= read -r wline; do
     key="${wline%% *}"
@@ -54,35 +54,35 @@ while IFS= read -r wline; do
     window_names["$key"]="$name"
 done < <(tmux list-windows -a -F '#{session_name}:#{window_index} #{window_name}')
 
-# Store results
+# store results
 nvim_panes=()
 
-# Iterate through all panes in all sessions, sorted by last viewed (most recent first)
+# iterate through all panes in all sessions, sorted by last viewed (most recent first)
 while IFS= read -r line; do
-    # Parse: "last_viewed session:window_index.pane_index pane_pid command"
+    # parse: "last_viewed session:window_index.pane_index pane_pid command"
     rest="${line#* }"              # strip last_viewed
     target="${rest%% *}"           # session:window_index.pane_index
     rest2="${rest#* }"             # pane_pid command
     pane_pid="${rest2%% *}"        # pane_pid
     command="${rest2#* }"          # command
 
-    # Check if the command is nvim
+    # check if the command is nvim
     [[ "$command" == "nvim" ]] || continue
 
-    # Extract session and window_idx for lookups
+    # extract session and window_idx for lookups
     session="${target%%:*}"
     win_pane="${target#*:}"
     window_idx="${win_pane%%.*}"
 
     window_name="${window_names["${session}:${window_idx}"]:-}"
 
-    # Find the nvim socket for this pane (check nvim PID and children)
+    # find the nvim socket for this pane (check nvim PID and children)
     socket=""
-    # First check if pane_pid itself is nvim
+    # first check if pane_pid itself is nvim
     if [[ -n "${socket_map[$pane_pid]:-}" ]]; then
         socket="${socket_map[$pane_pid]}"
     else
-        # Check child processes for nvim using pre-built ppid_map
+        # check child processes for nvim using pre-built ppid_map
         for nvim_pid in "${!socket_map[@]}"; do
             check_pid="$nvim_pid"
             for _ in {1..5}; do
@@ -96,10 +96,10 @@ while IFS= read -r line; do
         done
     fi
 
-    # Build display: target window_name <tab> socket
+    # build display: target window_name <tab> socket
     display="${target} ${window_name}"
 
-    # Append socket path after tab for pick-nvim.sh to extract
+    # append socket path after tab for pick-nvim.sh to extract
     if [[ -n "$socket" ]]; then
         nvim_panes+=("${display}"$'\t'"${socket}")
     else
@@ -107,7 +107,7 @@ while IFS= read -r line; do
     fi
 done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid} #{pane_current_command}' | sort -rn)
 
-# Add NVIM logo at top — match the Keyword highlight from the active nvim colorscheme
+# add NVIM logo at top, match the Keyword highlight from the active nvim colorscheme
 # (same colour the Snacks dashboard header displays)
 load_fzf_theme
 LOGO_COLOUR=""
@@ -116,10 +116,10 @@ _scheme="${NVIM_COLORSCHEME:-dracula}"
 SCHEME_FILE="${_nvim_colors}/${_scheme}.lua"
 [[ -f "$SCHEME_FILE" ]] || SCHEME_FILE="${_nvim_colors}/generated/${_scheme}.lua"
 if [[ -f "$SCHEME_FILE" ]]; then
-    # Try direct hex: hl('Keyword', { fg = '#rrggbb' })
+    # try direct hex: hl('Keyword', { fg = '#rrggbb' })
     LOGO_COLOUR=$(grep "^hl('Keyword'" "$SCHEME_FILE" | grep -oE "'#[0-9a-fA-F]{6}'" | tr -d "'" | head -1 || true)
     if [[ -z "$LOGO_COLOUR" ]]; then
-        # Named colour: hl('Keyword', { fg = colors.name })
+        # named colour: hl('Keyword', { fg = colors.name })
         _cname=$(grep "^hl('Keyword'" "$SCHEME_FILE" | grep -oE 'colors\.[a-z_]+' | head -1 | cut -d. -f2 || true)
         [[ -n "$_cname" ]] && LOGO_COLOUR=$(grep "  ${_cname} = '#" "$SCHEME_FILE" | grep -oE "'#[0-9a-fA-F]{6}'" | tr -d "'" | head -1 || true)
     fi
@@ -133,12 +133,12 @@ printf "${NVIM_GREEN}▌ ▌▛▀ ▌ ▌▐▐ ▐ ▌▐ ▌${NC}\n"
 printf "${NVIM_GREEN}▘ ▘▝▀▘▝▀  ▘ ▀▘▘▝ ▘${NC}\n"
 echo ""
 
-# Display results (empty list shows just the logo)
+# display results (empty list shows just the logo)
 if [[ ${#nvim_panes[@]} -eq 0 ]]; then
     exit 0
 fi
 
-# Output list (display<tab>socket)
+# output list (display<tab>socket)
 for pane_info in "${nvim_panes[@]}"; do
     echo "$pane_info"
 done

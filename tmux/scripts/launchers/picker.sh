@@ -3,32 +3,32 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Launcher Picker Wrapper
+# launcher picker wrapper
 # ══════════════════════════════════════════════════════════════
-# Runs the launcher picker in a loop so that pressing Esc in a
-# submenu (new/edit/run) returns to the main picker list.
-# Called from tmux keybinding: prefix + p
+# runs the launcher picker in a loop so that pressing Esc in a
+# submenu (new/edit/run) returns to the main picker list
+# called from tmux keybinding: prefix + p
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
-# Argument parsing + auto-detection
+# argument parsing + auto-detection
 #
-# The dotfiles ASCII logo eats 7 rows of header space, which is fine on a
+# the dotfiles ASCII logo eats 7 rows of header space, which is fine on a
 # spacious popup but crowds out launchers when the popup is narrow OR short.
-# We query the popup pty directly via `stty size` (env vars from the parent
+# we query the popup pty directly via `stty size` (env vars from the parent
 # shell can lie about the popup's real dimensions) and drop the logo when:
-#   - width  < 80 rows — matches the session picker's `<80(bottom,40%)`
+#   - width  < 80 rows: matches the session picker's `<80(bottom,40%)`
 #     vertical-preview threshold, so both pickers compact at the same size
-#   - height < 20 rows — leaves at least ~8 visible launcher rows after the
+#   - height < 20 rows: leaves at least ~8 visible launcher rows after the
 #     logo + border + prompt chrome (~12 rows) are accounted for
-# `--no-logo` forces it off regardless.
+# `--no-logo` forces it off regardless
 LIST_ARGS=()
 HEADER_LINES=7
 NO_LOGO=0
@@ -78,12 +78,12 @@ main() {
             --bind "D:become(printf 'ACTION:dup:%s' \$($SCRIPT_DIR/duplicate.sh {1}))" \
             --bind 'enter:become(printf "ACTION:run:%s" {1})' \
             --bind 'space:become(printf "ACTION:run:%s" {1})' \
-            2>/dev/null) || break  # q/esc from main list → close popup
+            2>/dev/null) || break  # q/esc from main list closes popup
 
         case "$action" in
             ACTION:new)
                 "$SCRIPT_DIR/prompt.sh" && break
-                continue  # cancelled → back to picker
+                continue  # cancelled, back to picker
                 ;;
             ACTION:set)
                 "$SCRIPT_DIR/settings.sh" || true
@@ -92,7 +92,7 @@ main() {
             ACTION:edit:*)
                 local edit_name="${action#ACTION:edit:}"
                 edit_name=$(basename "$edit_name")
-                # Only user launchers can be edited — system launchers are read-only
+                # only user launchers can be edited, system launchers are read-only
                 if [[ ! -f "$USER_LAUNCHERS/$edit_name" ]]; then
                     show_error "Cannot edit system launcher '$edit_name'"
                     continue
@@ -104,7 +104,7 @@ main() {
                 local dup_name="${action#ACTION:dup:}"
                 dup_name=$(basename "$dup_name")
                 "$SCRIPT_DIR/prompt.sh" --edit "$dup_name" && break
-                # Cancelled — clean up the copy and return to picker
+                # cancelled, clean up the copy and return to picker
                 rm -f "$USER_LAUNCHERS/$dup_name"
                 continue
                 ;;

@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Master test runner for dotfiles
-# Usage: ./scripts/install/test-all.sh [--integration]
+# master test runner for dotfiles
+# usage: ./scripts/install/test-all.sh [--integration]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)"
@@ -10,7 +10,7 @@ DOTFILES_DIR="$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)"
 RUN_INTEGRATION="${1:-}"
 TOTAL_FAIL=0
 
-# Colours (using $'...' for proper escape interpretation)
+# colours (using $'...' for proper escape interpretation)
 GREEN=$'\033[0;32m'
 RED=$'\033[0;31m'
 YELLOW=$'\033[0;33m'
@@ -52,7 +52,7 @@ echo "${CYAN}══════════════════════�
 if command -v shellcheck &>/dev/null; then
     SHELLCHECK_FAILED=0
 
-    # Check installation scripts (severity warning or above, exclude SC1091 source following)
+    # check installation scripts (severity warning or above, exclude SC1091 source following)
     for script in "$SCRIPT_DIR"/*.sh; do
         if ! shellcheck -x -S warning -e SC1091 "$script" 2>/dev/null; then
             echo "${RED}✗ ShellCheck failed: $script${NC}"
@@ -60,7 +60,7 @@ if command -v shellcheck &>/dev/null; then
         fi
     done
 
-    # Check tmux scripts
+    # check tmux scripts
     for script in "$DOTFILES_DIR/tmux/scripts"/*.sh; do
         if ! shellcheck -x -S warning -e SC1091 "$script" 2>/dev/null; then
             echo "${RED}✗ ShellCheck failed: $script${NC}"
@@ -77,7 +77,7 @@ else
     echo "${YELLOW}○ ShellCheck not installed${NC}"
 fi
 
-# Unit tests
+# unit tests
 run_test_suite "Tmux Library Tests" "$DOTFILES_DIR/tmux/scripts/_lib/test-tmux-libs.sh"
 
 if [[ -f "$SCRIPT_DIR/../_lib/test-install-libs.sh" ]]; then
@@ -87,7 +87,7 @@ fi
 run_test_suite "Dotfiles Status Indicator Tests" "$DOTFILES_DIR/tmux/scripts/tests/test-show-dotfiles-status.sh"
 run_test_suite "Dotfiles CLI Tests" "$DOTFILES_DIR/scripts/tests/test-dotfiles-cli.sh"
 
-# Integration tests (require tmux)
+# integration tests (require tmux)
 if [[ "$RUN_INTEGRATION" == "--integration" ]]; then
     if [[ -n "${TMUX:-}" ]]; then
         run_test_suite "Kill/Undo Integration" "$DOTFILES_DIR/tmux/scripts/tests/test-kill-undo.sh"
@@ -99,7 +99,7 @@ if [[ "$RUN_INTEGRATION" == "--integration" ]]; then
     fi
 fi
 
-# Summary
+# summary
 echo ""
 echo "╔═══════════════════════════════════════════╗"
 echo "║              Test Summary                 ║"

@@ -1,18 +1,18 @@
 #!/bin/bash
-# Migration: Insert a `font-family = ""` reset into an existing ghostty local
-# override when it sets a font-family but lacks the reset.
+# migration: insert a `font-family = ""` reset into an existing ghostty local
+# override when it sets a font-family but lacks the reset
 #
 # Ghostty chains repeated font-family values into a fallback list (first entry =
-# primary) rather than last-value-wins. The base config (~/.config/ghostty/config)
+# primary) rather than last-value-wins. the base config (~/.config/ghostty/config)
 # already sets font-family, so a bare `font-family = MyFont` in the user-owned
-# local file ends up as a *fallback* behind the base font, not the primary. The
-# fix is a leading `font-family = ""` that clears the inherited value first.
+# local file ends up as a *fallback* behind the base font, not the primary. the
+# fix is a leading `font-family = ""` that clears the inherited value first
 #
 # local.template now ships that reset for fresh installs, but local is
-# copy-on-install (never overwritten), so existing users need it patched in here.
+# copy-on-install (never overwritten), so existing users need it patched in here
 #
-# Idempotent: does nothing if no font-family override is present, or if a reset
-# already exists.
+# idempotent: does nothing if no font-family override is present, or if a reset
+# already exists
 
 set -euo pipefail
 
@@ -22,22 +22,22 @@ if [[ ! -f "$f" ]]; then
     exit 0
 fi
 
-# Already has a font-family reset (empty value or "") -> nothing to do.
+# already has a font-family reset (empty value or "") -> nothing to do
 if grep -Eq '^[[:space:]]*font-family[[:space:]]*=[[:space:]]*("")?[[:space:]]*$' "$f"; then
     exit 0
 fi
 
-# No non-empty plain font-family override -> the base default already wins; leave
-# the file untouched. (The regex excludes font-family-bold/-italic, which would
-# have a '-' rather than '=' immediately after 'font-family'.)
+# no non-empty plain font-family override -> the base default already wins; leave
+# the file untouched. (the regex excludes font-family-bold/-italic, which would
+# have a '-' rather than '=' immediately after 'font-family')
 if ! grep -Eq '^[[:space:]]*font-family[[:space:]]*=[[:space:]]*[^[:space:]]' "$f"; then
     exit 0
 fi
 
-# Insert the reset before the first active (non-comment, non-blank) line, i.e.
-# at the top of the settings block. It only has to precede the font-family
+# insert the reset before the first active (non-comment, non-blank) line, i.e.
+# at the top of the settings block. it only has to precede the font-family
 # override to win; placing it at the top keeps it out of the way and avoids
-# splitting whatever grouping the user has. Indentation matches that first line.
+# splitting whatever grouping the user has. indentation matches that first line
 tmp="$(mktemp)"
 awk '
     !done && /[^[:space:]]/ && $0 !~ /^[[:space:]]*#/ {

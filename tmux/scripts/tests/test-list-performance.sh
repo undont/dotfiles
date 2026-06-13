@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
-# Test that list scripts use file-based alert lookups (not per-window tmux calls)
-# Guards against the performance regression from commit 53671a7 where
-# sessions/list.sh was changed to call tmux show-options per window.
+# test that list scripts use file-based alert lookups (not per-window tmux calls)
+# guards against the performance regression from commit 53671a7 where
+# sessions/list.sh was changed to call tmux show-options per window
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -23,7 +23,7 @@ for script in sessions/list.sh windows/list.sh; do
     fi
 done
 
-# Both list scripts should use the shared build_alert_icons function
+# both list scripts should use the shared build_alert_icons function
 for script in sessions/list.sh windows/list.sh; do
     if grep -q "build_alert_icons" "$SCRIPTS_DIR/$script"; then
         pass "$script uses build_alert_icons (file-based)"
@@ -32,7 +32,7 @@ for script in sessions/list.sh windows/list.sh; do
     fi
 done
 
-# Both list scripts should pre-read the alerts file
+# both list scripts should pre-read the alerts file
 for script in sessions/list.sh windows/list.sh; do
     if grep -q 'ALERTS_FILE' "$SCRIPTS_DIR/$script"; then
         pass "$script reads ALERTS_FILE"

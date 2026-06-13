@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Common utilities for installation scripts
-# Source this file: source "${BASH_SOURCE%/*}/_lib/common.sh"
+# common utilities for installation scripts
+# source this file: source "${BASH_SOURCE%/*}/_lib/common.sh"
 
-# Guard against multiple sourcing
+# guard against multiple sourcing
 [[ -n "${_DOTFILES_COMMON_SH_LOADED:-}" ]] && return 0
 _DOTFILES_COMMON_SH_LOADED=1
 
-# Resolve this file's directory once. BASH_SOURCE works when sourced from
+# resolve this file's directory once. BASH_SOURCE works when sourced from
 # bash; zsh leaves it empty inside the sourced file, so fall back to zsh's
-# `%x` prompt expansion. Lets ad-hoc `source scripts/_lib/common.sh` work
-# from either shell instead of failing with "no such file: /colours.sh".
+# `%x` prompt expansion. lets ad-hoc `source scripts/_lib/common.sh` work
+# from either shell instead of failing with "no such file: /colours.sh"
 if [[ -n "${BASH_VERSION:-}" ]]; then
     _COMMON_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 elif [[ -n "${ZSH_VERSION:-}" ]]; then
@@ -19,31 +19,31 @@ else
     return 1
 fi
 
-# Source colour definitions
+# source colour definitions
 # shellcheck source=scripts/_lib/colours.sh
 source "$_COMMON_LIB_DIR/colours.sh"
 
-# Print error message to stderr
+# print error message to stderr
 error() {
     printf "${RED}Error:${NC} %s\n" "$1" >&2
 }
 
-# Print warning message to stderr
+# print warning message to stderr
 warn() {
     printf "${YELLOW}Warning:${NC} %s\n" "$1" >&2
 }
 
-# Print info message
+# print info message
 info() {
     printf "${CYAN}%s${NC}\n" "$1"
 }
 
-# Print success message
+# print success message
 success() {
     printf "${GREEN}%s${NC}\n" "$1"
 }
 
-# Print step header with box style
+# print step header with box style
 print_header() {
     local title="$1"
     echo ""
@@ -53,7 +53,7 @@ print_header() {
     echo ""
 }
 
-# Print section header
+# print section header
 print_section() {
     local title="$1"
     echo "============================================"
@@ -62,7 +62,7 @@ print_section() {
     echo ""
 }
 
-# Print step with number
+# print step with number
 print_step() {
     local step_num="$1"
     local description="$2"
@@ -70,7 +70,7 @@ print_step() {
     echo ""
 }
 
-# Print skipped step
+# print skipped step
 print_skip() {
     local step_num="$1"
     local description="$2"
@@ -79,13 +79,13 @@ print_skip() {
     echo ""
 }
 
-# Check if a command exists
+# check if a command exists
 command_exists() {
     command -v "$1" &>/dev/null
 }
 
-# Install a package via the system package manager (Linux only).
-# Usage: install_system_package "pkg-name" [fatal]
+# install a package via the system package manager (Linux only)
+# usage: install_system_package "pkg-name" [fatal]
 #   fatal = exit 1 on failure (default: warn and return 1)
 install_system_package() {
     local pkg="$1"
@@ -101,7 +101,7 @@ install_system_package() {
         sudo yum install -y "$pkg" 2>/dev/null && return 0
     fi
 
-    # If we get here, either no package manager was found or install failed
+    # if we get here, either no package manager was found or install failed
     if [[ "$on_failure" == "fatal" ]]; then
         error "Failed to install '$pkg'. Install manually via your system package manager."
         exit 1
@@ -111,7 +111,7 @@ install_system_package() {
     fi
 }
 
-# Check for a command and print status
+# check for a command and print status
 check_command() {
     local name="$1"
     local cmd="$2"
@@ -140,19 +140,19 @@ check_command() {
     fi
 }
 
-# Check if running on macOS
+# check if running on macOS
 is_macos() {
     [[ "$(uname)" == "Darwin" ]]
 }
 
-# Check if running on Linux
+# check if running on Linux
 is_linux() {
     [[ "$(uname)" == "Linux" ]]
 }
 
-# Portable in-place sed (macOS BSD sed vs GNU sed)
-# Writes to a temp file first to prevent corruption on sed errors.
-# Usage: sed_inplace 'sed-expression' file
+# portable in-place sed (macOS BSD sed vs GNU sed)
+# writes to a temp file first to prevent corruption on sed errors
+# usage: sed_inplace 'sed-expression' file
 sed_inplace() {
     local args=("$@")
     local file="${args[-1]}"
@@ -167,12 +167,12 @@ sed_inplace() {
     fi
 }
 
-# Check if running on Apple Silicon
+# check if running on Apple Silicon
 is_apple_silicon() {
     [[ "$(uname -m)" == "arm64" ]]
 }
 
-# Get Homebrew prefix based on platform and architecture
+# get Homebrew prefix based on platform and architecture
 get_homebrew_prefix() {
     if is_macos; then
         if is_apple_silicon; then
@@ -185,9 +185,9 @@ get_homebrew_prefix() {
     fi
 }
 
-# Read with timeout (prevents hanging on interactive prompts)
-# Usage: read_with_timeout "prompt" variable_name timeout_seconds
-# Note: The variable_name is used via nameref for dynamic assignment
+# read with timeout (prevents hanging on interactive prompts)
+# usage: read_with_timeout "prompt" variable_name timeout_seconds
+# note: the variable_name is used via nameref for dynamic assignment
 read_with_timeout() {
     local prompt="$1"
     local -n _result_var="$2"
@@ -202,7 +202,7 @@ read_with_timeout() {
     fi
 }
 
-# Confirm action (y/n prompt)
+# confirm action (y/n prompt)
 confirm() {
     local prompt="${1:-Continue?}"
     local response
@@ -210,11 +210,11 @@ confirm() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
-# Update or add an export line in ~/.zshrc
-# Usage: update_zshrc_export "VAR_NAME" "value"
-# - Replaces existing `export VAR_NAME=...` line
-# - If not found, appends after the "YOUR PERSONAL CONFIGURATION" section marker
-# - Also auto-updates PROJECT_DIRS when DEV_ROOT or PROJECTS_ROOT is changed
+# update or add an export line in ~/.zshrc
+# usage: update_zshrc_export "VAR_NAME" "value"
+# - replaces existing `export VAR_NAME=...` line
+# - if not found, appends after the "YOUR PERSONAL CONFIGURATION" section marker
+# - also auto-updates PROJECT_DIRS when DEV_ROOT or PROJECTS_ROOT is changed
 update_zshrc_export() {
     local var_name="$1"
     local value="$2"
@@ -225,34 +225,34 @@ update_zshrc_export() {
         return 1
     fi
 
-    # Validate variable name — only allow standard shell variable names
+    # validate variable name, only allow standard shell variable names
     if [[ ! "$var_name" =~ ^[A-Z_][A-Z0-9_]*$ ]]; then
         error "Invalid variable name: $var_name"
         return 1
     fi
 
-    # Validate value doesn't contain newlines (would break sed append)
+    # validate value doesn't contain newlines (would break sed append)
     if [[ "$value" == *$'\n'* ]]; then
         error "Value for $var_name contains newlines"
         return 1
     fi
 
-    # Escape sed-special characters in value (& | \ /)
+    # escape sed-special characters in value (& | \ /)
     local escaped_value
     escaped_value=$(printf '%s' "$value" | sed 's/[&|\\\/]/\\&/g')
 
-    # Check if the export line already exists
+    # check if the export line already exists
     if grep -q "^export ${var_name}=" "$zshrc"; then
-        # Replace existing line
+        # replace existing line
         sed_inplace "s|^export ${var_name}=.*|export ${var_name}=\"${escaped_value}\"|" "$zshrc"
     else
-        # Append after the "YOUR PERSONAL CONFIGURATION" section marker
+        # append after the "YOUR PERSONAL CONFIGURATION" section marker
         local marker="YOUR PERSONAL CONFIGURATION"
         if grep -q "$marker" "$zshrc"; then
-            # Find the marker line and append after the comment block
+            # find the marker line and append after the comment block
             local line_num
             line_num=$(grep -n "$marker" "$zshrc" | head -1 | cut -d: -f1)
-            # Skip past the comment block (lines starting with #) after the marker
+            # skip past the comment block (lines starting with #) after the marker
             local total_lines
             total_lines=$(wc -l < "$zshrc" | tr -d ' ')
             local insert_after=$line_num
@@ -269,28 +269,28 @@ update_zshrc_export() {
 export ${var_name}=\"${value}\"
 " "$zshrc"
         else
-            # No marker found — append to end
+            # no marker found, append to end
             printf '\nexport %s="%s"\n' "$var_name" "$value" >> "$zshrc"
         fi
     fi
 
-    # Auto-update PROJECT_DIRS when DEV_ROOT or PROJECTS_ROOT changes — but
+    # auto-update PROJECT_DIRS when DEV_ROOT or PROJECTS_ROOT changes, but
     # preserve a customised line that already references both vars (e.g. a
-    # user appended a third root: `$DEV_ROOT:$PROJECTS_ROOT:$HOME/work`).
+    # user appended a third root: `$DEV_ROOT:$PROJECTS_ROOT:$HOME/work`)
     if [[ "$var_name" == "DEV_ROOT" || "$var_name" == "PROJECTS_ROOT" ]]; then
         # shellcheck disable=SC2016
         local project_dirs_line='export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT"'
         local existing
         existing=$(grep -m1 '^export PROJECT_DIRS=' "$zshrc" || true)
         if [[ -n "$existing" ]]; then
-            # Rewrite only if the existing line is missing one of the refs —
-            # otherwise the user's customisation already picks up the change.
+            # rewrite only if the existing line is missing one of the refs;
+            # otherwise the user's customisation already picks up the change
             if ! { [[ "$existing" == *'$DEV_ROOT'* || "$existing" == *'${DEV_ROOT}'* ]] \
                 && [[ "$existing" == *'$PROJECTS_ROOT'* || "$existing" == *'${PROJECTS_ROOT}'* ]]; }; then
                 sed_inplace "s|^export PROJECT_DIRS=.*|${project_dirs_line}|" "$zshrc"
             fi
         else
-            # Add PROJECT_DIRS after the last of DEV_ROOT/PROJECTS_ROOT
+            # add PROJECT_DIRS after the last of DEV_ROOT/PROJECTS_ROOT
             local last_root_line
             last_root_line=$(grep -n '^export \(DEV_ROOT\|PROJECTS_ROOT\)=' "$zshrc" | tail -1 | cut -d: -f1)
             if [[ -n "$last_root_line" ]]; then
@@ -302,27 +302,27 @@ ${project_dirs_line}
     fi
 }
 
-# Get the script directory (for relative sourcing)
+# get the script directory (for relative sourcing)
 get_script_dir() {
     cd "$(dirname "${BASH_SOURCE[1]}")" && pwd
 }
 
-# Source the library from script location
-# Usage: source "$(get_lib_path)/common.sh"
+# source the library from script location
+# usage: source "$(get_lib_path)/common.sh"
 get_lib_path() {
     echo "$(get_script_dir)/_lib"
 }
 
-# Check if a component should be installed based on preset hierarchy
-# Usage: should_install "core" returns true if preset is core or full
-# Requires PRESET variable to be set (defaults to "full")
+# check if a component should be installed based on preset hierarchy
+# usage: should_install "core" returns true if preset is core or full
+# requires PRESET variable to be set (defaults to "full")
 should_install() {
     local required_preset="$1"
     local current_preset="${PRESET:-full}"
 
     case "$required_preset" in
         minimal)
-            return 0  # Always include minimal
+            return 0  # always include minimal
             ;;
         core)
             [[ "$current_preset" == "core" || "$current_preset" == "full" ]]
@@ -337,23 +337,23 @@ should_install() {
     esac
 }
 
-# Display ASCII logo from logo.txt with theme-aware gradient
-# Uses active theme colours when available, red gradient as default
-# Usage: print_logo
+# display ASCII logo from logo.txt with theme-aware gradient
+# uses active theme colours when available, red gradient as default
+# usage: print_logo
 print_logo() {
     local logo_file="$_COMMON_LIB_DIR/logo.txt"
 
     if [[ -f "$logo_file" ]]; then
         echo ""
 
-        # Respect NO_COLOR convention (https://no-color.org)
+        # respect NO_COLOR convention (https://no-color.org)
         if [[ -n "${NO_COLOR:-}" ]]; then
             cat "$logo_file"
             echo ""
             return
         fi
 
-        # Load theme colours if a theme is active (skip on first install)
+        # load theme colours if a theme is active (skip on first install)
         if [[ -z "${TMUX_ACCENT_CYAN:-}" ]]; then
             local fzf_theme="$_COMMON_LIB_DIR/../fzf-theme.sh"
             local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
@@ -363,11 +363,11 @@ print_logo() {
             fi
         fi
 
-        # Theme-aware: use accent colours if available, sage → forest gradient as default
+        # theme-aware: use accent colours if available, sage → forest gradient as default
         local from="${TMUX_ACCENT_CYAN:-#8baf9e}"
         local to="${TMUX_ACCENT_PURPLE:-#38604a}"
 
-        # Use truecolor gradient when terminal supports it, otherwise basic ANSI
+        # use truecolor gradient when terminal supports it, otherwise basic ANSI
         if [[ "${COLORTERM:-}" == "truecolor" || "${COLORTERM:-}" == "24bit" ]]; then
             local r1=$((16#${from:1:2})) g1=$((16#${from:3:2})) b1=$((16#${from:5:2}))
             local r2=$((16#${to:1:2})) g2=$((16#${to:3:2})) b2=$((16#${to:5:2}))
@@ -381,7 +381,7 @@ print_logo() {
                 i=$((i + 1))
             done < "$logo_file"
         else
-            # Fallback: basic ANSI green
+            # fallback: basic ANSI green
             while IFS= read -r line || [[ -n "$line" ]]; do
                 printf "${GREEN}%s${NC}\n" "$line"
             done < "$logo_file"
