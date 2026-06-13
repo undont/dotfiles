@@ -1,38 +1,38 @@
 # =============================================================================
 # GHOSTTY LOCAL OVERRIDES
 # =============================================================================
-# Your personal Ghostty settings. This file is yours — add anything you want.
-# It is loaded AFTER the base config via `config-file`, so your values layer
+# your personal Ghostty settings; this file is yours, add anything you want.
+# it is loaded AFTER the base config via `config-file`, so your values layer
 # on top of the defaults.
 #
-# This file survives dotfiles theme and dotfiles update.
-# After making changes, reload Ghostty's config with Cmd+Shift+, (or fully quit
-# and reopen). Note: a tmux reload (prefix + r) does NOT reload Ghostty.
+# this file survives dotfiles theme and dotfiles update.
+# after making changes, reload Ghostty's config with Cmd+Shift+, (or fully quit
+# and reopen). note: a tmux reload (prefix + r) does NOT reload Ghostty.
 #
-# File structure:
-#   ~/.config/ghostty/config   - Generated config (managed by dotfiles theme)
-#   ~/.config/ghostty/local    - This file (your personal overrides)
+# file structure:
+#   ~/.config/ghostty/config   - generated config (managed by dotfiles theme)
+#   ~/.config/ghostty/local    - this file (your personal overrides)
 #
-# Most options are last-value-wins, so setting one here takes priority. The
+# most options are last-value-wins, so setting one here takes priority. the
 # exception is font-family (see the Font section below): Ghostty *chains*
 # repeated font-family values into a fallback list rather than overwriting, so
-# the base config's font would stay primary unless you reset it first.
+# the base config's font would stay primary unless you reset it first
 #
 
 # Font
 # Ghostty appends repeated font-family values into a fallback chain, with the
-# FIRST entry as the primary font. The base config already sets one, so the
+# FIRST entry as the primary font. the base config already sets one, so the
 # leading `font-family = ""` clears the inherited value and makes the line below
-# your primary font. To change the font: edit the family on the second line and
-# keep the empty reset above it. (Same applies if you set font-family-bold etc.,
+# your primary font. to change the font: edit the family on the second line and
+# keep the empty reset above it. (same applies if you set font-family-bold etc.,
 # but bold/italic auto-derive from font-family, so usually you only need this.)
 font-family = ""
 font-family = JetBrainsMono Nerd Font Mono
 
-# Font features are global (they apply to whichever font is active), so the
+# font features are global (they apply to whichever font is active), so the
 # right sets depend on your font. Monaspace, for example, hides its coding
-# ligatures behind stylistic sets rather than plain `liga` — without these they
-# look dead. Match the sets to your font; don't enable them on JetBrains Mono.
+# ligatures behind stylistic sets rather than plain `liga`; without these they
+# look dead. match the sets to your font; don't enable them on JetBrains Mono
 #   font-family = ""
 #   font-family = Monaspace Neon NF
 #   font-feature = ss01   # != ===
@@ -41,7 +41,7 @@ font-family = JetBrainsMono Nerd Font Mono
 #   font-feature = ss08   # ..= .-
 #   font-feature = ss09   # <=> =<<
 
-# Other examples:
+# other examples:
 #   cursor-style = bar
 #   font-size = 14
 #   background-opacity = 0.95
@@ -49,7 +49,7 @@ font-family = JetBrainsMono Nerd Font Mono
 #   window-padding-y = 4
 #   mouse-hide-while-typing = false
 
-# Custom shaders (GPU post-processing effects):
+# custom shaders (GPU post-processing effects):
 #   custom-shader = ~/dotfiles/ghostty/shaders/bloom.glsl
 #   custom-shader = ~/dotfiles/ghostty/shaders/starfield.glsl
 #   custom-shader = ~/dotfiles/ghostty/shaders/tft.glsl

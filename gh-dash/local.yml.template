@@ -1,24 +1,24 @@
 # =============================================================================
 # GH-DASH LOCAL OVERRIDES
 # =============================================================================
-# Your personal gh-dash settings. This file is yours — add anything you want.
-# It is deep-merged ON TOP of the generated config after every dotfiles theme,
+# your personal gh-dash settings; this file is yours, add anything you want.
+# it is deep-merged ON TOP of the generated config after every dotfiles theme,
 # so your values always win.
 #
-# This file survives dotfiles theme and dotfiles update.
-# After making changes, run: dotfiles theme current   (re-applies current theme + merge)
+# this file survives dotfiles theme and dotfiles update.
+# after making changes, run: dotfiles theme current   (re-applies current theme + merge)
 #
-# File structure:
-#   ~/.config/gh-dash/config.yml  — Generated config (managed by dotfiles theme)
-#   ~/.config/gh-dash/local.yml   — This file (your personal overrides)
+# file structure:
+#   ~/.config/gh-dash/config.yml  - generated config (managed by dotfiles theme)
+#   ~/.config/gh-dash/local.yml   - this file (your personal overrides)
 #
 # gh-dash also supports per-repo overrides: create a .gh-dash.yml in any
-# repo root to add project-specific sections on top of everything here.
+# repo root to add project-specific sections on top of everything here
 # =============================================================================
 
 # ---------------------------------------------------------------------------
 # PR Sections
-# Uncomment to add extra PR sections on top of the defaults.
+# uncomment to add extra PR sections on top of the defaults
 # ---------------------------------------------------------------------------
 # prSections:
 #     - title: My Pull Requests
@@ -30,7 +30,7 @@
 
 # ---------------------------------------------------------------------------
 # Issue Sections
-# Uncomment to add extra issue sections on top of the defaults.
+# uncomment to add extra issue sections on top of the defaults
 # ---------------------------------------------------------------------------
 # issuesSections:
 #     - title: My Issues
@@ -39,14 +39,14 @@
 #       filters: is:open assignee:@me
 #     - title: Involved
 #       filters: is:open involves:@me -author:@me
-#     # Example: follow a specific repo's issues
+#     # example: follow a specific repo's issues
 #     - title: Neovim
 #       filters: is:open repo:neovim/neovim
 
 # ---------------------------------------------------------------------------
 # Repo Paths
-# Map org/repo names (or wildcards) to local clone paths.
-# Required for commands that use {{.RepoPath}} (lazygit, Octo, etc.).
+# map org/repo names (or wildcards) to local clone paths.
+# required for commands that use {{.RepoPath}} (lazygit, Octo, etc.)
 # ---------------------------------------------------------------------------
 # repoPaths:
 #     your-org/*: ~/code/*
@@ -54,11 +54,11 @@
 
 # ---------------------------------------------------------------------------
 # Extra Keybindings
-# These are APPENDED to the base keybindings from config.yml.
-# Use different keys to avoid conflicts with C, D, A, m (defined in base config).
+# these are APPENDED to the base keybindings from config.yml.
+# use different keys to avoid conflicts with C, D, A, m (defined in base config).
 #
-# The commands below require repoPaths to be configured (they use RepoPath).
-# Uncomment repoPaths above first, then uncomment the keybindings.
+# the commands below require repoPaths to be configured (they use RepoPath).
+# uncomment repoPaths above first, then uncomment the keybindings
 # ---------------------------------------------------------------------------
 # keybindings:
 #     universal:
@@ -76,7 +76,7 @@
 
 # ---------------------------------------------------------------------------
 # Pager override
-# diffnav is set as the default in config.yml. Override here if preferred.
+# diffnav is set as the default in config.yml. override here if preferred
 # ---------------------------------------------------------------------------
 # pager:
 #     diff: delta
