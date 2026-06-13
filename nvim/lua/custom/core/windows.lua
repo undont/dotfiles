@@ -9,17 +9,7 @@ local M = {}
 -- stashing the layout to restore later.
 local zoom_state = {}
 
---- True when the current tabpage hosts a view that scopes its keymaps to the
---- tabpage (diffview, or octo's review). Reads `package.loaded` so the check
---- never forces either plugin to load.
-local function in_scoped_view()
-  local dv = package.loaded['diffview.lib']
-  if dv and dv.get_current_view() then
-    return true
-  end
-  local octo = package.loaded['octo.reviews']
-  return octo ~= nil and octo.get_current_review() ~= nil
-end
+local in_scoped_view = require('custom.core.review-context').is_scoped_view
 
 local function toggle_zoom()
   local tab = vim.api.nvim_get_current_tabpage()

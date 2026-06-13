@@ -186,18 +186,7 @@ function M.setup()
   -- because diffview's right-pane index buffers use `buftype=''` (they're
   -- editable for staging) -- we also have to check for an active diffview
   -- view or any loaded octo buffer.
-  local function in_review_context()
-    local ok, dv_lib = pcall(require, 'diffview.lib')
-    if ok and dv_lib.get_current_view() then
-      return true
-    end
-    for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-      if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
-        return true
-      end
-    end
-    return false
-  end
+  local review_context = require 'custom.core.review-context'
 
   vim.api.nvim_create_autocmd('FileType', {
     pattern = { 'cs', 'razor' },
@@ -205,7 +194,7 @@ function M.setup()
       if vim.bo[args.buf].buftype ~= '' then
         return
       end
-      if in_review_context() then
+      if review_context.is_active() then
         return
       end
       vim.api.nvim_exec_autocmds('User', { pattern = 'RealDotnetFile' })

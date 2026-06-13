@@ -315,14 +315,8 @@ local function maybe_clear_roslyn_flag()
   if not vim.g.roslyn_suppressed then
     return
   end
-  local dv_ok, dv_lib = pcall(require, 'diffview.lib')
-  if dv_ok and dv_lib.get_current_view() then
+  if require('custom.core.review-context').is_active() then
     return
-  end
-  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
-      return
-    end
   end
   vim.g.roslyn_suppressed = false
 end
