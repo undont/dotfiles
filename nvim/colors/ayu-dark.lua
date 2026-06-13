@@ -1,5 +1,5 @@
--- Ayu Dark colourscheme for Neovim
--- Matches the dotfiles ayu-dark.theme exactly
+-- Ayu Dark colourscheme for nvim
+-- matches the dotfiles ayu-dark.theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -33,7 +33,7 @@ local colors = {
   orange = '#ff8f40',
 }
 
--- Helper function to set highlight groups
+-- helper to set highlight groups
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end

@@ -1,4 +1,4 @@
--- Buffer removal without closing windows (mini.bufremove).
+-- buffer removal without closing windows (mini.bufremove)
 
 return {
   {

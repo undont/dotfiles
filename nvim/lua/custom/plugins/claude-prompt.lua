@@ -1,10 +1,10 @@
 -- Claude Code prompt editing support
--- For any markdown file:
+-- for any markdown file:
 --   - <leader>c* keymaps for comment block management (insert, navigate, toggle, delete)
--- For Claude prompt files (claude-prompt-*.md, or any .md under .claude/ or .plans/):
+-- for Claude prompt files (claude-prompt-*.md, or any .md under .claude/ or .plans/):
 --   - @ in insert mode opens Telescope file finder for project file references
 --   - @@ inserts a literal @ character
--- The bespoke pieces live in features/claude-comments and features/prompt-file-ref.
+-- the bespoke pieces live in features/claude-comments and features/prompt-file-ref
 
 return {
   {
@@ -19,7 +19,7 @@ return {
         pattern = '*.md',
         group = group,
         callback = function(ev)
-          -- Comment block keymaps apply to every markdown file
+          -- comment block keymaps apply to every markdown file
           require('custom.features.claude-comments').setup(ev.buf)
 
           -- @ file picker is scoped to Claude Code prompt files, .claude/, and .plans/

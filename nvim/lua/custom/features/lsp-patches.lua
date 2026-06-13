@@ -1,22 +1,22 @@
--- Monkeypatches to vim.lsp internals. Extracted from plugins/lsp.lua.
+-- monkeypatches to vim.lsp internals. extracted from plugins/lsp.lua.
 -- patch_lsp_start blocks LSP attach to non-file:// scheme buffers;
 -- patch_show_document recovers from servers reporting invalid cursor ranges.
--- (The roslyn.nvim#371 pull-diagnostics bufstate shim lives with the other
--- roslyn code in features/roslyn-diagnostics.)
+-- (the roslyn.nvim#371 pull-diagnostics bufstate shim lives with the other
+-- roslyn code in features/roslyn-diagnostics)
 
 local M = {}
 
---- Prevent LSP servers from attaching to non-file:// buffers (diffview://,
---- octo://, fugitive://, etc.). Without this, servers like gopls log JSON-RPC
---- parse errors when nvim sends didOpen with a non-file URI.
+--- prevent LSP servers from attaching to non-file:// buffers (diffview://,
+--- octo://, fugitive://, etc.). without this, servers like gopls log JSON-RPC
+--- parse errors when nvim sends didOpen with a non-file URI
 function M.patch_lsp_start()
   local orig_start = vim.lsp.start
   vim.lsp.start = function(config, opts)
     opts = opts or {}
     local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
-    -- Buffer can be wiped between when lsp_enable_callback queues the start
+    -- buffer can be wiped between when lsp_enable_callback queues the start
     -- and when this scheduled callback fires (e.g. diffview disposing diff
-    -- buffers); abort silently in that case.
+    -- buffers); abort silently in that case
     if not vim.api.nvim_buf_is_valid(bufnr) then
       return nil
     end
@@ -28,8 +28,8 @@ function M.patch_lsp_start()
   end
 end
 
---- Override show_document to handle cursor-position-outside-buffer errors
---- from LSP servers that report invalid ranges.
+--- override show_document to handle cursor-position-outside-buffer errors
+--- from LSP servers that report invalid ranges
 function M.patch_show_document()
   local orig = vim.lsp.util.show_document
   vim.lsp.util.show_document = function(location, offset_encoding, opts)

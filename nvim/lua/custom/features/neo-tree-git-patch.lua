@@ -1,5 +1,5 @@
--- neo-tree set_parents crash patch. Extracted from the neo-tree spec.
--- Bug: when git reports deleted files whose parent dirs no longer exist,
+-- neo-tree set_parents crash patch. extracted from the neo-tree spec.
+-- bug: when git reports deleted files whose parent dirs no longer exist,
 -- set_parents crashes with "bad argument #1 to 'insert' (table expected, got
 -- nil)" because it doesn't return after a pcall failure. apply() patches the
 -- local function at runtime via debug.setupvalue so it survives plugin updates.
@@ -14,7 +14,7 @@ function M.apply()
 
   local create_item_fn = file_items.create_item
 
-  -- Find set_parents in create_item's upvalues (forward-declared local, shared slot)
+  -- find set_parents in create_item's upvalues (forward-declared local, shared slot)
   local sp_idx
   for i = 1, 30 do
     local name = debug.getupvalue(create_item_fn, i)
@@ -32,7 +32,7 @@ function M.apply()
 
   local _, orig_sp = debug.getupvalue(create_item_fn, sp_idx)
 
-  -- Extract upvalues needed by set_parents
+  -- extract upvalues needed by set_parents
   local upvals = {}
   for i = 1, 30 do
     local name, val = debug.getupvalue(orig_sp, i)
@@ -48,7 +48,7 @@ function M.apply()
     return
   end
 
-  -- Patched set_parents: returns early when pcall fails instead of crashing
+  -- patched set_parents: returns early when pcall fails instead of crashing
   local patched
   patched = function(context, item)
     if context.item_exists[item.id] then
@@ -80,7 +80,7 @@ function M.apply()
     end
   end
 
-  -- Replace in the shared upvalue slot (affects both create_item and set_parents)
+  -- replace in the shared upvalue slot (affects both create_item and set_parents)
   debug.setupvalue(create_item_fn, sp_idx, patched)
 end
 

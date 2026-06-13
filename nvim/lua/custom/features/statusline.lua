@@ -10,8 +10,8 @@ local function flags()
   return (vim.bo.modified and ' [+]' or '') .. (vim.bo.readonly and ' [RO]' or '')
 end
 
--- Wrap a section's text in its highlight group as a padded run.
--- Empty sections collapse to nothing so they leave no stray gap.
+-- wrap a section's text in its highlight group as a padded run.
+-- empty sections collapse to nothing so they leave no stray gap
 local function block(text, group)
   if text == '' then
     return ''
@@ -19,19 +19,19 @@ local function block(text, group)
   return string.format('%%#%s# %s ', group, text)
 end
 
--- Display width of a statusline-formatted string: strip highlight
+-- display width of a statusline-formatted string: strip highlight
 -- escapes (%#Name#) and structural items (%<, %=, %*) so only the
--- visible glyphs are counted. Used to budget the filename section.
+-- visible glyphs are counted. used to budget the filename section
 local function sl_width(s)
   s = s:gsub('%%#[^#]*#', ''):gsub('%%[<=*]', ''):gsub('%%%%', '%%')
   return vim.fn.strdisplaywidth(s)
 end
 
--- Path to the current file relative to its git/project root, so long
--- worktree directory names don't dominate the statusline. Falls back to
--- a ~-relative path outside a repo. The resolved root is cached per
+-- path to the current file relative to its git/project root, so long
+-- worktree directory names don't dominate the statusline. falls back to
+-- a ~-relative path outside a repo. the resolved root is cached per
 -- buffer (false = looked up, none found) so redraws don't walk the
--- filesystem on every event.
+-- filesystem on every event
 local function project_relative_path()
   local full = vim.fn.expand '%:p'
   if full == '' then
@@ -52,13 +52,13 @@ local function project_relative_path()
   return full
 end
 
--- Colour the informational middle sections from groups the active theme
+-- colour the informational middle sections from groups the active theme
 -- already defines, so all 14 hand-crafted themes and the generated ones
--- stay consistent. The git branch keeps a solid coloured background
+-- stay consistent. the git branch keeps a solid coloured background
 -- block; diff counts and diagnostics are foreground only, so they sit on
 -- the neutral middle and follow terminal transparency automatically
--- (StatusLine.bg == Devinfo.bg in every theme). Filename and fileinfo
--- keep their neutral defaults.
+-- (StatusLine.bg == Devinfo.bg in every theme). filename and fileinfo
+-- keep their neutral defaults
 local function derive_statusline_hl()
   local function get(name)
     return vim.api.nvim_get_hl(0, { name = name, link = false })
@@ -67,13 +67,13 @@ local function derive_statusline_hl()
     return get(name).fg
   end
 
-  -- Branch block: theme accent background, dark text. The mode block's fg
-  -- is bg_primary in every theme and survives transparency stripping.
+  -- branch block: theme accent background, dark text. the mode block's fg
+  -- is bg_primary in every theme and survives transparency stripping
   local accent = fg 'Type' or fg 'Function'
   local dark = get('MiniStatuslineModeNormal').fg
   vim.api.nvim_set_hl(0, 'MiniStatuslineBranch', { fg = dark, bg = accent, bold = true })
 
-  -- Diff / diagnostics: foreground only (no bg), blend with the middle.
+  -- diff / diagnostics: foreground only (no bg), blend with the middle
   local groups = {
     MiniStatuslineDiffAdd = fg 'GitSignsAdd' or fg 'DiffAdd',
     MiniStatuslineDiffChange = fg 'GitSignsChange' or fg 'DiffChange',
@@ -94,9 +94,9 @@ function M.setup()
   statusline.setup {
     use_icons = vim.g.have_nerd_font,
     content = {
-      -- Mirrors the default active content plus a macro recording
+      -- mirrors the default active content plus a macro recording
       -- indicator. cmdheight=0 and ui2 swallow the native
-      -- "recording @a" message, so surface the register here.
+      -- "recording @a" message, so surface the register here
       active = function()
         local mode, mode_hl = statusline.section_mode { trunc_width = 120 }
         local macro = vim.fn.reg_recording()
@@ -107,8 +107,8 @@ function M.setup()
         local location = statusline.section_location { trunc_width = 75 }
         local search = statusline.section_searchcount { trunc_width = 75 }
 
-        -- Diff and diagnostics share the neutral middle section; only the
-        -- counts themselves are colour-coded.
+        -- diff and diagnostics share the neutral middle section; only the
+        -- counts themselves are colour-coded
         local changes = table.concat(
           vim.tbl_filter(function(s)
             return s ~= ''
@@ -134,12 +134,12 @@ function M.setup()
           block(loc, mode_hl),
         }
 
-        -- Adaptive filename: relative to the project root, shown in full
-        -- while it fits. Only when the rest of the line leaves no room do
+        -- adaptive filename: relative to the project root, shown in full
+        -- while it fits. only when the rest of the line leaves no room do
         -- parent dirs collapse to initials (the filename is kept intact),
-        -- which avoids mini's mid-word left-cut on deep paths. The budget
+        -- which avoids mini's mid-word left-cut on deep paths. the budget
         -- is the window width (laststatus=2) minus every other section,
-        -- this block's padding, and the modified/readonly flags.
+        -- this block's padding, and the modified/readonly flags
         local filename
         if vim.bo.buftype == 'terminal' then
           filename = '%t'
@@ -154,25 +154,25 @@ function M.setup()
           filename = path .. fl
         end
 
-        -- Pin the neutral filename group right before %= so the expanding
-        -- gap always fills neutral. Without it, an empty filename section
-        -- (qf, [No Name], terminal) leaves the previous block's highlight --
-        -- the orange mode colour -- active at %=, flooding the whole bar.
+        -- pin the neutral filename group right before %= so the expanding
+        -- gap always fills neutral. without it, an empty filename section
+        -- (qf, [No Name], terminal) leaves the previous block's highlight
+        -- (the orange mode colour) active at %=, flooding the whole bar
         return left .. '%<' .. block(filename, 'MiniStatuslineFilename') .. '%#MiniStatuslineFilename#%=' .. right
       end,
     },
   }
 
-  -- Re-derive the section colours on every theme change so all themes
-  -- (including generated ones) stay consistent.
+  -- re-derive the section colours on every theme change so all themes
+  -- (including generated ones) stay consistent
   vim.api.nvim_create_autocmd('ColorScheme', {
     group = vim.api.nvim_create_augroup('mini-statusline-colours', { clear = true }),
     callback = derive_statusline_hl,
   })
   derive_statusline_hl()
 
-  -- Redraw statusline on record start/stop so the indicator updates
-  -- immediately rather than on the next unrelated event.
+  -- redraw statusline on record start/stop so the indicator updates
+  -- immediately rather than on the next unrelated event
   vim.api.nvim_create_autocmd({ 'RecordingEnter', 'RecordingLeave' }, {
     group = vim.api.nvim_create_augroup('mini-statusline-macro', { clear = true }),
     callback = function()
@@ -189,9 +189,9 @@ function M.setup()
     return loc
   end
 
-  -- Project-relative filename (git root when inside a repo, else
-  -- ~-relative). Used for inactive windows; the active line builds its
-  -- own adaptively-shortened path. See project_relative_path above.
+  -- project-relative filename (git root when inside a repo, else
+  -- ~-relative). used for inactive windows; the active line builds its
+  -- own adaptively-shortened path. see project_relative_path above
   ---@diagnostic disable-next-line: duplicate-set-field, unused-local
   statusline.section_filename = function(args)
     if vim.bo.buftype == 'terminal' then
@@ -200,8 +200,8 @@ function M.setup()
     return project_relative_path() .. flags()
   end
 
-  -- Compact diff (+N green, ~N yellow, -N red), text coloured inline so the
-  -- counts read by meaning regardless of statusline style.
+  -- compact diff (+N green, ~N yellow, -N red), text coloured inline so the
+  -- counts read by meaning regardless of statusline style
   ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_diff = function(args)
     if statusline.is_truncated(args.trunc_width) then
@@ -227,7 +227,7 @@ function M.setup()
     return table.concat(parts, ' ') .. '%#MiniStatuslineDevinfo#'
   end
 
-  -- Per-severity diagnostic counts (E/W/I/H), each coloured inline.
+  -- per-severity diagnostic counts (E/W/I/H), each coloured inline
   local diag_specs = {
     { vim.diagnostic.severity.ERROR, 'MiniStatuslineDiagError', 'E' },
     { vim.diagnostic.severity.WARN, 'MiniStatuslineDiagWarn', 'W' },
@@ -253,21 +253,21 @@ function M.setup()
     return table.concat(parts, ' ') .. '%#MiniStatuslineDevinfo#'
   end
 
-  -- Deliberately disabled: the LSP-client section is stubbed to empty so it
-  -- never renders (diagnostics already convey LSP state).
+  -- deliberately disabled: the LSP-client section is stubbed to empty so it
+  -- never renders (diagnostics already convey LSP state)
   ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_lsp = function()
     return ''
   end
 
-  -- Friendlier display names for filetypes whose short code reads poorly
-  -- in the statusline. The icon is still looked up by the real filetype.
+  -- friendlier display names for filetypes whose short code reads poorly
+  -- in the statusline. the icon is still looked up by the real filetype
   local ft_display = { cs = 'csharp' }
 
-  -- File info with the filetype icon tinted by its mini.icons highlight
+  -- file info with the filetype icon tinted by its mini.icons highlight
   -- group (e.g. C# green), matching how the buffer and render-markdown
-  -- colour language glyphs. Only the glyph is coloured; the filetype,
-  -- encoding and size stay neutral. Mirrors mini's default format.
+  -- colour language glyphs. only the glyph is coloured; the filetype,
+  -- encoding and size stay neutral. mirrors mini's default format
   ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_fileinfo = function(args)
     local ft = vim.bo.filetype
@@ -275,8 +275,8 @@ function M.setup()
       return ''
     end
     local label = ft_display[ft] or ft
-    -- Colour the glyph via its icon highlight group, then reset to the
-    -- neutral fileinfo group for the trailing space and the rest.
+    -- colour the glyph via its icon highlight group, then reset to the
+    -- neutral fileinfo group for the trailing space and the rest
     local icon = ''
     if vim.g.have_nerd_font and _G.MiniIcons ~= nil then
       local glyph, hl = MiniIcons.get('filetype', ft)
@@ -287,9 +287,9 @@ function M.setup()
     if statusline.is_truncated(args.trunc_width) or vim.bo.buftype ~= '' then
       return icon .. label
     end
-    -- Encoding and line-ending are shown only when they deviate from the
+    -- encoding and line-ending are shown only when they deviate from the
     -- utf-8/unix default, so normal files stay clean and the unusual
-    -- cases (CRLF, non-utf-8) surface exactly when they matter.
+    -- cases (CRLF, non-utf-8) surface exactly when they matter
     local parts = { label }
     local encoding = vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding
     if encoding ~= '' and encoding ~= 'utf-8' then
@@ -310,7 +310,7 @@ function M.setup()
     return icon .. table.concat(parts, ' ')
   end
 
-  -- Truncate branch name to ticket ID (e.g. "feature/ACME-123-some-desc" -> "ACME-123")
+  -- truncate branch name to ticket ID (e.g. "feature/ACME-123-some-desc" -> "ACME-123")
   ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_git = function(args)
     if statusline.is_truncated(args.trunc_width) then
@@ -320,7 +320,7 @@ function M.setup()
     if head == '' then
       return ''
     end
-    -- Extract ticket ID pattern (e.g. ACME-123, JIRA-456)
+    -- extract ticket ID pattern (e.g. ACME-123, JIRA-456)
     local ticket = head:match '[A-Z]+-[0-9]+'
     local branch = ticket or head
     local icon = vim.g.have_nerd_font and (MiniIcons.get('os', 'git') .. ' ') or 'Git: '

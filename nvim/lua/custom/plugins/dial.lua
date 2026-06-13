@@ -1,4 +1,4 @@
--- Dial: increment/decrement engine + TailwindCSS class support.
+-- dial: increment/decrement engine + TailwindCSS class support
 
 return {
   {

@@ -1,14 +1,14 @@
--- Obsidian vault integration: daily notes, backlinks, tags, templates.
--- Markdown rendering and list/link editing stay in markdown-ui.lua
+-- obsidian vault integration: daily notes, backlinks, tags, templates.
+-- markdown rendering and list/link editing stay in markdown-ui.lua
 -- (render-markdown + mkdnflow + conceallevel); obsidian.nvim is kept to
 -- vault-aware features.
 --
--- Vault root resolution (in order):
---   1. `vim.g.obsidian_vault_root` — set in ~/.config/nvim/local.lua to override
---   2. ~/Library/Mobile Documents/iCloud~md~obsidian/Documents — default iCloud path
---   3. Neither exists — plugin spec is empty, obsidian.nvim is not loaded
+-- vault root resolution (in order):
+--   1. `vim.g.obsidian_vault_root`: set in ~/.config/nvim/local.lua to override
+--   2. ~/Library/Mobile Documents/iCloud~md~obsidian/Documents: default iCloud path
+--   3. neither exists: plugin spec is empty, obsidian.nvim is not loaded
 --
--- The resolved root can either be a vault itself (has `.obsidian/` directly
+-- the resolved root can either be a vault itself (has `.obsidian/` directly
 -- inside, e.g. `~/notes/.obsidian`) or a parent directory containing one or
 -- more vaults (e.g. `~/vaults/work/.obsidian`, `~/vaults/personal/.obsidian`).
 
@@ -36,7 +36,7 @@ if not vault_root then
 end
 
 -- `vault_root` can either be a vault itself (has `.obsidian/` directly inside)
--- or a parent directory containing one or more vaults. Handle both.
+-- or a parent directory containing one or more vaults. handle both.
 local function discover_workspaces()
   local workspaces = {}
   if vim.fn.isdirectory(vault_root .. '/.obsidian') == 1 then
@@ -118,7 +118,7 @@ return {
       legacy_commands = false,
       workspaces = workspaces,
 
-      -- Matches .obsidian/daily-notes.json (folder, format, template).
+      -- matches .obsidian/daily-notes.json (folder, format, template)
       daily_notes = {
         folder = 'daily',
         date_format = 'DD-MM-YYYY',
@@ -132,7 +132,7 @@ return {
         time_format = 'HH:mm',
       },
 
-      -- Completion is served by obsidian.nvim's built-in `obsidian-ls` LSP
+      -- completion is served by obsidian.nvim's built-in `obsidian-ls` LSP
       -- server (since v3.16); the old `nvim_cmp`/`blink` switches are
       -- deprecated and removed in 4.0. blink.cmp's `lsp` source picks it up.
       completion = {
@@ -141,19 +141,19 @@ return {
 
       picker = { name = 'telescope.nvim' },
 
-      -- Vault uses [[title]] and ![[embed]] (see templates/daily note.md).
+      -- vault uses [[title]] and ![[embed]] (see templates/daily note.md)
       link = {
         style = 'wiki',
         format = 'shortest',
       },
 
-      -- Random/quick notes land in scratchpad; daily_notes override folder.
+      -- random/quick notes land in scratchpad; daily_notes override folder
       new_notes_location = 'notes_subdir',
       notes_subdir = 'scratchpad',
 
-      -- Filename already is the title for this vault (human-readable names,
-      -- wiki+shortest links), so the builtin's `id` field is pure noise —
-      -- strip it. Aliases are kept only when the note actually has them in
+      -- filename already is the title for this vault (human-readable names,
+      -- wiki+shortest links), so the builtin's `id` field is pure noise,
+      -- strip it. aliases are kept only when the note actually has them in
       -- its frontmatter; otherwise the builtin would emit an empty `aliases:`
       -- line on every save.
       frontmatter = {
@@ -167,8 +167,8 @@ return {
         end,
       },
 
-      -- Vault uses human-readable titles (e.g. "UI Redesign Ideas.md"),
-      -- not Zettel IDs. Preserve the title as-is when given; fall back to
+      -- vault uses human-readable titles (e.g. "UI Redesign Ideas.md"),
+      -- not Zettel IDs. preserve the title as-is when given; fall back to
       -- a timestamp only if `:Obsidian new` is called with no title.
       note_id_func = function(title)
         if title ~= nil and title ~= '' then
@@ -177,15 +177,15 @@ return {
         return os.date '%Y-%m-%d-%H%M%S'
       end,
 
-      -- render-markdown + mkdnflow + conceallevel already handle display.
+      -- render-markdown + mkdnflow + conceallevel already handle display
       ui = { enable = false },
 
       attachments = { folder = 'attachments' },
 
-      -- For vault notes only: rebind `gf` to obsidian.nvim's link-follow
-      -- action, matching what `<CR>` does. Two non-obvious things about
+      -- for vault notes only: rebind `gf` to obsidian.nvim's link-follow
+      -- action, matching what `<CR>` does. two non-obvious things about
       -- the call:
-      --   1. `follow_link` doesn't grab the cursor link itself — it
+      --   1. `follow_link` doesn't grab the cursor link itself; it
       --      requires the raw link string, otherwise its internal
       --      `parse_link` crashes on a nil.
       --   2. `open_strategy` is used as a literal vim command, not as a

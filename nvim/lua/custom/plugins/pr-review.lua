@@ -13,8 +13,8 @@ return {
       {
         '<leader>do',
         function()
-          -- Phase tracer: enable via `:lua vim.g.do_perf = true`, run
-          -- `<leader>do` once, paste output. Off by default; near-zero overhead.
+          -- phase tracer: enable via `:lua vim.g.do_perf = true`, run
+          -- `<leader>do` once, paste output. off by default; near-zero overhead
           local t0 = vim.g.do_perf and vim.uv.hrtime() or nil
           local segs = {}
           local function mark(label)
@@ -28,7 +28,7 @@ return {
           local has_file = current_file ~= '' and vim.bo.buftype == ''
           mark 'preamble'
 
-          -- After diffview opens, restore cursor line if the same file is shown
+          -- after diffview opens, restore cursor line if the same file is shown
           if has_file and current_line > 1 then
             vim.api.nvim_create_autocmd('User', {
               pattern = 'DiffviewViewOpened',
@@ -81,8 +81,8 @@ return {
             return
           end
 
-          -- Single-rev form diffs the merge-base against the working tree, so
-          -- both branch commits and uncommitted/unstaged changes are included.
+          -- single-rev form diffs the merge-base against the working tree, so
+          -- both branch commits and uncommitted/unstaged changes are included
           diff_edit.diffview_open('DiffviewOpen ' .. base)
         end,
         desc = '[D]iff branch [T]otal (vs main)',
@@ -90,16 +90,16 @@ return {
       {
         '<leader>dT',
         function()
-          -- Commit discovery shared with <leader>xT / <leader>lT (core/ticket.lua)
+          -- commit discovery shared with <leader>xT / <leader>lT (core/ticket.lua)
           require('custom.features.ticket').prompt_commits(function(ctx)
             local oldest, newest = ctx.commits[#ctx.commits], ctx.commits[1]
             if newest == ctx.head then
-              -- Single-rev form diffs against the working tree, so
-              -- uncommitted changes are included in the review.
+              -- single-rev form diffs against the working tree, so
+              -- uncommitted changes are included in the review
               diff_edit.diffview_open(string.format('DiffviewOpen %s^', oldest))
             else
-              -- Commits exist after the newest match; a working-tree diff
-              -- would include them, so stick to the fixed range.
+              -- commits exist after the newest match; a working-tree diff
+              -- would include them, so stick to the fixed range
               diff_edit.diffview_open(string.format('DiffviewOpen %s^...%s', oldest, newest))
             end
           end)
@@ -130,10 +130,10 @@ return {
     config = function(_, opts)
       require('diffview').setup(opts)
 
-      -- Pin a permanent <Space> → which-key keymap on diffview buffers.
-      -- Which-key's trigger system has brief suspension windows (ModeChanged,
-      -- BufNew) where the <Space> trigger is absent. A regular buffer-local
-      -- keymap isn't managed by the trigger system and can't be removed.
+      -- pin a permanent <Space> to which-key keymap on diffview buffers.
+      -- which-key's trigger system has brief suspension windows (ModeChanged,
+      -- BufNew) where the <Space> trigger is absent. a regular buffer-local
+      -- keymap isn't managed by the trigger system and can't be removed
       vim.api.nvim_create_autocmd('FileType', {
         pattern = { 'DiffviewFiles', 'DiffviewFileHistory', 'DiffviewBlob' },
         callback = function(ev)
@@ -141,7 +141,7 @@ return {
             require('which-key').show ' '
           end, { buffer = ev.buf })
           vim.keymap.set('n', '<leader>u', '<Nop>', { buffer = ev.buf })
-          -- Allow diff commands to work from any diff buffer
+          -- allow diff commands to work from any diff buffer
           vim.keymap.set('n', '<leader>dc', function()
             vim.cmd 'DiffviewClose'
           end, { buffer = ev.buf, desc = '[D]iff [C]lose' })
@@ -149,11 +149,11 @@ return {
         end,
       })
 
-      -- Patch diffview upstream bugs (nil guards for async race conditions)
-      -- See: https://github.com/sindrets/diffview.nvim/issues/550
+      -- patch diffview upstream bugs (nil guards for async race conditions)
+      -- see: https://github.com/sindrets/diffview.nvim/issues/550
       local api = vim.api
 
-      -- Patch init_layout: curwin may already be closed after layout:create()
+      -- patch init_layout: curwin may already be closed after layout:create()
       local SV = require('diffview.scene.views.standard.standard_view').StandardView
       SV.init_layout = function(self)
         local first_init = not vim.t[self.tabpage].diffview_view_initialized
@@ -316,7 +316,7 @@ return {
             { 'n', '[f', actions.select_prev_entry, { desc = 'Previous changed file' } },
             { 'n', 'f', actions.scroll_view(0.25), { desc = 'Scroll the view down' } },
             { 'n', 'b', actions.scroll_view(-0.25), { desc = 'Scroll the view up' } },
-            -- Disable <leader> defaults — they steal the prefix from which-key
+            -- disable <leader> defaults; they steal the prefix from which-key
             { 'n', '<leader>e', false },
             { 'n', '<leader>b', false },
             { 'n', '<leader>co', false },
@@ -353,7 +353,7 @@ return {
     end,
   },
 
-  -- Octo: GitHub PR review from within Neovim
+  -- Octo: GitHub PR review from within nvim
   {
     'pwntester/octo.nvim',
     cmd = { 'Octo', 'OctoCacheClear' },
@@ -400,7 +400,7 @@ return {
       {
         '<leader>pq',
         function()
-          -- Close review layout if active
+          -- close review layout if active
           local ok, reviews = pcall(require, 'octo.reviews')
           if ok then
             local review = reviews.get_current_review()
@@ -408,9 +408,9 @@ return {
               review.layout:close()
             end
           end
-          -- Close all octo buffers
+          -- close all octo buffers
           require('custom.core.review-context').close_octo_buffers()
-          -- Re-trigger BufEnter so which-key re-attaches after layout teardown
+          -- re-trigger BufEnter so which-key re-attaches after layout teardown
           -- (closing Octo review windows/tabs can disrupt which-key's state)
           vim.schedule(function()
             vim.cmd 'doautocmd BufEnter'
@@ -426,7 +426,7 @@ return {
       { '<leader>pO', '<cmd>Octo pr checkout<CR>', desc = 'Check[O]ut' },
       { '<leader>pR', '<cmd>Octo pr ready<CR>', desc = 'Mark [R]eady' },
       { '<leader>pD', '<cmd>Octo pr draft<CR>', desc = 'Mark [D]raft' },
-      -- Review/thread actions
+      -- review/thread actions
       { '<leader>pd', '<cmd>Octo review discard<CR>', desc = 'Review [D]iscard' },
       { '<leader>pt', '<cmd>Octo thread resolve<CR>', desc = '[T]hread resolve' },
       { '<leader>pT', '<cmd>Octo thread unresolve<CR>', desc = '[T]hread unresolve' },
@@ -467,7 +467,7 @@ return {
             comment_review = { lhs = '<C-m>', desc = 'comment review', mode = { 'n', 'i' } },
             request_changes = { lhs = '<C-r>', desc = 'request changes review', mode = { 'n', 'i' } },
           },
-          -- Required: octo.workflow_runs reads these at module load time and crashes
+          -- required: octo.workflow_runs reads these at module load time and crashes
           -- the telescope picker if they're nil (mappings_disable_default removes them)
           runs = {
             expand_step = { lhs = 'o', desc = 'expand workflow step' },
@@ -483,7 +483,7 @@ return {
 
       octo_cache.setup()
 
-      -- Patch mappings to pass buffer context (upstream bug: opts is nil)
+      -- patch mappings to pass buffer context (upstream bug: opts is nil)
       local mappings = require 'octo.mappings'
       local context = require 'octo.context'
       mappings.list_commits = context.within_octo_buffer(function(buffer)
@@ -493,9 +493,9 @@ return {
         require('octo.picker').changed_files { repo = buffer.repo, number = buffer.number }
       end)
 
-      -- Review buffers are ephemeral — never prompt to save on close.
-      -- Thread buffers use buftype=acwrite (upstream), so Neovim can mark
-      -- them modified. Reset the flag immediately to suppress the prompt.
+      -- review buffers are ephemeral; never prompt to save on close.
+      -- thread buffers use buftype=acwrite (upstream), so nvim can mark
+      -- them modified. reset the flag immediately to suppress the prompt
       vim.api.nvim_create_autocmd('BufModifiedSet', {
         pattern = 'octo://*/review/*',
         callback = function(event)
@@ -505,7 +505,7 @@ return {
         end,
       })
 
-      -- Disable keymaps that don't make sense in Octo review context
+      -- disable keymaps that don't make sense in Octo review context
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'octo',
         callback = function(event)
@@ -523,12 +523,12 @@ return {
         end,
       })
 
-      -- Scroll keymaps for review diff buffers (non-modifiable, so safe to use single keys)
+      -- scroll keymaps for review diff buffers (non-modifiable, so safe to use single keys)
       local file_entry = require 'octo.reviews.file-entry'
 
-      -- Re-enable soft wrap synchronously when :diffthis flips diff on for an
+      -- re-enable soft wrap synchronously when :diffthis flips diff on for an
       -- octo review window. OptionSet fires inside the :diffthis call, so wrap
-      -- is restored before the unwrapped state ever renders.
+      -- is restored before the unwrapped state ever renders
       vim.api.nvim_create_autocmd('OptionSet', {
         pattern = 'diff',
         callback = function()
@@ -568,7 +568,7 @@ return {
         end, { buffer = bufid, desc = 'Scroll up half page' })
       end
 
-      -- Mark current file as viewed when navigating forward, not backward
+      -- mark current file as viewed when navigating forward, not backward
       local reviews = require 'octo.reviews'
 
       mappings.select_next_entry = function()
@@ -609,8 +609,8 @@ return {
         layout:select_prev_unviewed_file()
       end
 
-      -- Fix left-side diff highlights: upstream only remaps DiffChange but
-      -- not DiffAdd, so deleted lines on the left show green instead of red.
+      -- fix left-side diff highlights: upstream only remaps DiffChange but
+      -- not DiffAdd, so deleted lines on the left show green instead of red
       local Layout = require 'octo.reviews.layout'
       local constants = require 'octo.constants'
       local orig_init_layout = Layout.init_layout

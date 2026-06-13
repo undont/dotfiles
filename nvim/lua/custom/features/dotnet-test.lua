@@ -1,15 +1,15 @@
--- easy-dotnet test-runner extras. Extracted from plugins/dotnet.lua's
+-- easy-dotnet test-runner extras. extracted from plugins/dotnet.lua's
 -- easy-dotnet config: trap window-nav keys in the test-explorer / peek floats,
 -- and a <leader>tf that runs only the current file's tests (upstream's
 -- run_all_tests_from_buffer is project-wide). setup() is called from
--- easy-dotnet's config after its own setup().
+-- easy-dotnet's config after its own setup()
 
 local M = {}
 
 function M.setup()
-  -- Trap window-navigation keys in test explorer and peek stacktrace floats.
-  -- Without this, <C-h/j/k/l> escapes to the main buffer and the float
-  -- becomes unreachable.
+  -- trap window-navigation keys in test explorer and peek stacktrace floats.
+  -- without this, <C-h/j/k/l> escapes to the main buffer and the float
+  -- becomes unreachable
   local nav_block_group = vim.api.nvim_create_augroup('dotnet-float-nav-block', { clear = true })
   local nav_keys = { '<C-h>', '<C-j>', '<C-k>', '<C-l>' }
 
@@ -19,7 +19,7 @@ function M.setup()
     end
   end
 
-  -- Test explorer (easy-dotnet filetype)
+  -- test explorer (easy-dotnet filetype)
   vim.api.nvim_create_autocmd('FileType', {
     group = nav_block_group,
     pattern = 'easy-dotnet',
@@ -28,8 +28,8 @@ function M.setup()
     end,
   })
 
-  -- Peek stacktrace floats (winfixbuf scratch buffers created by easy-dotnet).
-  -- Deferred via vim.schedule so winfixbuf is set by window.lua before we check.
+  -- peek stacktrace floats (winfixbuf scratch buffers created by easy-dotnet).
+  -- deferred via vim.schedule so winfixbuf is set by window.lua before we check
   vim.api.nvim_create_autocmd('WinEnter', {
     group = nav_block_group,
     callback = function()
@@ -59,9 +59,9 @@ function M.setup()
     end,
   })
 
-  -- Run only tests in the current file (not the whole project).
-  -- Upstream run_all_tests_from_buffer runs by projectId which is too broad.
-  -- This finds TestClass nodes matching the current file and runs each one.
+  -- run only tests in the current file (not the whole project).
+  -- upstream run_all_tests_from_buffer runs by projectId which is too broad.
+  -- finds TestClass nodes matching the current file and runs each one
   vim.api.nvim_create_autocmd('FileType', {
     pattern = 'cs',
     callback = function(args)
@@ -69,15 +69,15 @@ function M.setup()
         local state = require 'easy-dotnet.test-runner.state'
         local client = require('easy-dotnet.rpc.rpc').global_rpc_client
         local filepath = vim.fs.normalize(vim.api.nvim_buf_get_name(args.buf))
-        -- Collect test nodes belonging to this file. Run at class level
-        -- to avoid running individual methods separately.
+        -- collect test nodes belonging to this file. run at class level
+        -- to avoid running individual methods separately
         local run_ids = {}
         local seen_ids = {}
         state.traverse_all(function(node)
           if not node.filePath or vim.fs.normalize(node.filePath) ~= filepath then
             return
           end
-          -- Find the highest runnable ancestor for this file (class > method)
+          -- find the highest runnable ancestor for this file (class > method)
           local target = node
           if node.type and node.type.type and node.parentId then
             local parent = state.nodes[node.parentId]

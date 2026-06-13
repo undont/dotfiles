@@ -1,5 +1,5 @@
--- Kanagawa colourscheme for Neovim
--- Matches the dotfiles kanagawa.theme exactly
+-- kanagawa colourscheme for nvim
+-- matches the dotfiles kanagawa.theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -9,16 +9,16 @@ end
 vim.g.colors_name = 'kanagawa'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/kanagawa.theme)
+-- theme colours (matching themes/kanagawa.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#1f1f28',
   fg_primary = '#dcd7ba',
   bg_secondary = '#2a2a37',
   fg_secondary = '#54546d',
   fg_variable = '#bab6a7',
 
-  -- Accents
+  -- accents
   purple = '#957fb8',
   pink = '#d27e99',
   cyan = '#7fb4ca',
@@ -26,7 +26,7 @@ local colors = {
   yellow = '#e6c384',
   red = '#c34043',
 
-  -- Additional shades
+  -- additional shades
   selection = '#2d4f67',
   comment = '#727169',
   line_highlight = '#25252f',
@@ -34,12 +34,12 @@ local colors = {
   orange = '#ffa066',
 }
 
--- Helper function to set highlight groups
+-- set highlight groups
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
@@ -78,7 +78,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = '#e6c384' })
 hl('String', { fg = '#98bb6c' })
@@ -115,14 +115,14 @@ hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
 hl('Todo', { fg = '#d27e99', bold = true })
 
--- Git signs
+-- git signs
 hl('GitSignsAdd', { fg = colors.green })
 hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
 
--- Diagnostics
+-- diagnostics
 hl('DiagnosticError', { fg = colors.red })
 hl('DiagnosticWarn', { fg = colors.yellow })
 hl('DiagnosticInfo', { fg = colors.cyan })

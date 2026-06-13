@@ -1,6 +1,6 @@
--- Core autocommands
+-- core autocommands
 
--- Custom filetype detection
+-- custom filetype detection
 vim.filetype.add {
   extension = {
     template = 'template',
@@ -10,7 +10,7 @@ vim.filetype.add {
 local M = {}
 
 function M.setup()
-  -- Highlight on yank
+  -- highlight on yank
   vim.api.nvim_create_autocmd('TextYankPost', {
     desc = 'Highlight when yanking (copying) text',
     group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
@@ -19,7 +19,7 @@ function M.setup()
     end,
   })
 
-  -- Auto-reload: Check for external changes on focus/cursor events.
+  -- auto-reload: check for external changes on focus/cursor events.
   -- BufEnter is deliberately omitted: it cascades :checktime across every
   -- loaded buffer each time a plugin (e.g. diffview) spawns buffers, which
   -- can race with the autosave below and surface a `(L)oad File` prompt
@@ -35,9 +35,9 @@ function M.setup()
     end,
   })
 
-  -- Force reload on external change. `autoread` is silently bypassed when a
+  -- force reload on external change. `autoread` is silently bypassed when a
   -- buffer is `modified` (e.g. diffview's transient mid-layout buffers), which
-  -- surfaces the `(L)oad File` prompt. Auto-save below flushes local edits to
+  -- surfaces the `(L)oad File` prompt. auto-save below flushes local edits to
   -- disk on focus/buffer leave, so discarding the in-memory copy is safe.
   vim.api.nvim_create_autocmd('FileChangedShell', {
     desc = 'Always reload externally-changed files without prompting',
@@ -47,7 +47,7 @@ function M.setup()
     end,
   })
 
-  -- Auto-save: Write buffer on text change and on focus/buffer leave.
+  -- auto-save: write buffer on text change and on focus/buffer leave.
   -- FocusLost/BufLeave guarantee the buffer is clean before an external
   -- agent edits the file, so the FocusGained checktime above can silently
   -- reload via `autoread` instead of prompting.
@@ -57,7 +57,7 @@ function M.setup()
     group = autosave_group,
     callback = function(ev)
       local buf = ev.buf
-      -- Only save if: buffer is modifiable, has a file, is modified, and not a special buffer
+      -- only save if: buffer is modifiable, has a file, is modified, and not a special buffer
       if vim.bo[buf].modifiable and vim.bo[buf].modified and vim.fn.bufname(buf) ~= '' and vim.bo[buf].buftype == '' then
         vim.api.nvim_buf_call(buf, function()
           vim.cmd 'silent! write'
@@ -66,11 +66,11 @@ function M.setup()
     end,
   })
 
-  -- Auto-show diagnostic float on cursor hold; hide virtual_text while float is open
+  -- auto-show diagnostic float on cursor hold; hide virtual_text while float is open
   local diag_float_group = vim.api.nvim_create_augroup('diagnostic-float', { clear = true })
   local vtext_hidden = false
 
-  -- Close any diagnostic float we previously opened. open_float's own
+  -- close any diagnostic float we previously opened. open_float's own
   -- close_events are racy (they miss window/buffer switches and can orphan the
   -- window if a new CursorHold re-opens before the one-shot close fires), so we
   -- track the handle ourselves and close it deterministically.
@@ -86,7 +86,7 @@ function M.setup()
     desc = 'Show diagnostic float and suppress virtual text',
     group = diag_float_group,
     callback = function()
-      -- Skip diagnostic float while LSP hover is open
+      -- skip diagnostic float while LSP hover is open
       if vim.b._hover_open then
         return
       end
@@ -113,7 +113,7 @@ function M.setup()
     end,
   })
 
-  -- Link LSP variable tokens to TreeSitter's @variable styling. Leaving the
+  -- link LSP variable tokens to TreeSitter's @variable styling. leaving the
   -- group empty does not let lower-priority TreeSitter captures show through;
   -- the semantic token still wins, just with Normal-like styling.
   vim.api.nvim_create_autocmd('ColorScheme', {
@@ -123,12 +123,12 @@ function M.setup()
       vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
     end,
   })
-  -- Apply immediately for the current colourscheme
+  -- apply immediately for the current colourscheme
   vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
 
   -- Lazy.nvim links `LazyDimmed` to `Conceal` for low-value commits
   -- (chore/deps bumps). Conceal is built for hiding chars, so on most dark
-  -- themes the dimmed lines are effectively invisible. Re-link to Comment,
+  -- themes the dimmed lines are effectively invisible. re-link to Comment,
   -- which is tuned for legible-but-subdued text.
   vim.api.nvim_create_autocmd('ColorScheme', {
     desc = 'Make Lazy.nvim dimmed commit lines legible',
@@ -139,12 +139,12 @@ function M.setup()
   })
   vim.api.nvim_set_hl(0, 'LazyDimmed', { link = 'Comment' })
 
-  -- Dynamic diff highlights (diffview, octo)
+  -- dynamic diff highlights (diffview, octo)
   local diff_highlights = require 'custom.core.diff-highlights'
   diff_highlights.setup()
 
   -- render-markdown links code blocks to ColorColumn by default, which
-  -- collides with our CursorLine tint. Give markdown code its own subtle
+  -- collides with our CursorLine tint. give markdown code its own subtle
   -- background derived from the active theme palette.
   local function apply_markdown_code_highlights()
     local function get(group, fallback)
@@ -171,7 +171,7 @@ function M.setup()
   })
   apply_markdown_code_highlights()
 
-  -- Disable swap file for Octo buffers (not needed and causes warnings)
+  -- disable swap file for Octo buffers (not needed and causes warnings)
   vim.api.nvim_create_autocmd('FileType', {
     pattern = 'octo',
     callback = function()
@@ -179,13 +179,13 @@ function M.setup()
     end,
   })
 
-  -- Fire `User RealDotnetFile` only for cs/razor outside a review context.
-  -- Lets heavy dotnet plugins (roslyn.nvim) lazy-load on this event instead
+  -- fire `User RealDotnetFile` only for cs/razor outside a review context.
+  -- lets heavy dotnet plugins (roslyn.nvim) lazy-load on this event instead
   -- of `ft = 'cs'`, so cold-start `<leader>do` from a dashboard doesn't pay
-  -- their config cost just to render diff buffers. Buftype alone isn't enough
+  -- their config cost just to render diff buffers. buftype alone isn't enough
   -- because diffview's right-pane index buffers use `buftype=''` (they're
-  -- editable for staging) -- we also have to check for an active diffview
-  -- view or any loaded octo buffer.
+  -- editable for staging), so we also check for an active diffview view or
+  -- any loaded octo buffer.
   local review_context = require 'custom.core.review-context'
 
   vim.api.nvim_create_autocmd('FileType', {
@@ -201,7 +201,7 @@ function M.setup()
     end,
   })
 
-  -- Sort JSON keys (strip trailing commas, sort with jq, reformat with prettier)
+  -- sort JSON keys (strip trailing commas, sort with jq, reformat with prettier)
   local function sort_json_keys(buf)
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
     local content = table.concat(lines, '\n')
@@ -222,24 +222,24 @@ function M.setup()
     sort_json_keys(ctx.bufnr)
   end
 
-  -- Graceful process cleanup on exit
-  -- Explicitly stops LSP servers and terminal jobs so they don't orphan
+  -- graceful process cleanup on exit
+  -- explicitly stops LSP servers and terminal jobs so they don't orphan
   -- (dotnet Roslyn, OmniSharp, EasyDotnet build servers, etc.)
   vim.api.nvim_create_autocmd('VimLeavePre', {
     desc = 'Stop LSP clients, DAP, and terminal jobs on exit',
     group = vim.api.nvim_create_augroup('cleanup-on-exit', { clear = true }),
     callback = function()
-      -- Stop all LSP clients (Roslyn, OmniSharp, etc.)
+      -- stop all LSP clients (Roslyn, OmniSharp, etc.)
       for _, client in ipairs(vim.lsp.get_clients()) do
         client:stop(true)
       end
 
-      -- Terminate debug adapter if running
+      -- terminate debug adapter if running
       pcall(function()
         require('dap').terminate()
       end)
 
-      -- Close all terminal buffers (forces child process termination)
+      -- close all terminal buffers (forces child process termination)
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do
         if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == 'terminal' then
           pcall(vim.api.nvim_buf_delete, buf, { force = true })
@@ -248,9 +248,9 @@ function M.setup()
     end,
   })
 
-  -- Clean up unnamed empty buffers when opening a file
-  -- Removes the default [No Name] buffer that nvim creates at startup
-  -- Deferred via vim.schedule to avoid interfering with plugin layout creation
+  -- clean up unnamed empty buffers when opening a file
+  -- removes the default [No Name] buffer that nvim creates at startup
+  -- deferred via vim.schedule to avoid interfering with plugin layout creation
   -- (e.g. diffview's find_pivot triggers BufEnter mid-layout via 1windo)
   local cleanup_group = vim.api.nvim_create_augroup('cleanup-empty-buffers', { clear = true })
   vim.api.nvim_create_autocmd('BufEnter', {

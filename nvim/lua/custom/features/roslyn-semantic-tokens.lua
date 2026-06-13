@@ -1,13 +1,13 @@
--- Roslyn semantic-token orchestration. Extracted from plugins/dotnet.lua.
--- Three concerns: disable nvim 0.12 viewport range requests (flicker on .cs
+-- Roslyn semantic-token orchestration. extracted from plugins/dotnet.lua.
+-- three concerns: disable nvim 0.12 viewport range requests (flicker on .cs
 -- open), refresh tokens after background analysis (project-wide on progress
 -- 'end' + per-file on DiagnosticChanged), and fix a few token
--- misclassifications. See .claude/rules/neovim_dotnet.md.
+-- misclassifications. see .claude/rules/neovim_dotnet.md
 
 local M = {}
 
---- Fix Roslyn misclassifying unresolved identifiers on using directives as
---- "variable" instead of "namespace". Override to @type for proper styling.
+--- fix Roslyn misclassifying unresolved identifiers on using directives as
+--- "variable" instead of "namespace". override to @type for proper styling
 function M.setup()
   local builtin_types = {
     bool = true,
@@ -41,16 +41,16 @@ function M.setup()
     return not last_close or last_open > last_close
   end
 
-  -- Disable Neovim 0.12's viewport-only semantic token range requests.
+  -- disable nvim 0.12's viewport-only semantic token range requests.
   -- Roslyn 5.8.0 declares semanticTokensProvider.range statically in
   -- the initialize response, so STHighlighter:on_attach caches
-  -- supports_range = true before our config runs. Range responses arrive
+  -- supports_range = true before our config runs. range responses arrive
   -- with stale/partial classifications during Roslyn warmup and replace
   -- the full-document tokens, causing visible flicker on .cs open.
   --
-  -- Neovim's Client:on_attach schedules STHighlighter:on_attach after
+  -- nvim's Client:on_attach schedules STHighlighter:on_attach after
   -- LspAttach callbacks finish (client.lua:1159) precisely so we can
-  -- mutate server_capabilities here as an opt-out hook.
+  -- mutate server_capabilities here as an opt-out hook
   vim.api.nvim_create_autocmd('LspAttach', {
     callback = function(ev)
       local client = vim.lsp.get_client_by_id(ev.data.client_id)
@@ -101,15 +101,15 @@ function M.setup()
     end,
   })
 
-  -- Refresh semantic tokens whenever Roslyn finishes a background task.
+  -- refresh semantic tokens whenever Roslyn finishes a background task.
   -- workspace/projectInitializationComplete (RoslynInitialized) fires *before*
   -- per-file semantic analysis is done, so a single refresh there lands stale
   -- (requiring a manual <leader>lt ~1s later to settle). Roslyn emits LSP
   -- progress 'end' notifications when its background analysis chunks finish;
   -- a debounced refresh on those catches the moment fresh tokens are ready.
-  -- Debounce keeps cost bounded during warmup (many 'end' events fire close
+  -- debounce keeps cost bounded during warmup (many 'end' events fire close
   -- together) while still picking up post-warmup analyses (branch switches,
-  -- dep restores, etc.).
+  -- dep restores, etc.)
   local refresh_pending = false
   vim.api.nvim_create_autocmd('LspProgress', {
     callback = function(ev)
@@ -136,16 +136,16 @@ function M.setup()
     end,
   })
 
-  -- The progress-'end' refresh above is keyed to project-wide timing, which can
+  -- the progress-'end' refresh above is keyed to project-wide timing, which can
   -- race a given buffer's analysis: under fast warmup it fires before that
   -- buffer's semantic tokens are ready, leaving colours stale until a manual
-  -- <leader>lt. A buffer's DiagnosticChanged is the per-file signal we actually
-  -- want — roslyn publishes diagnostics (empty or not) once it has a semantic
-  -- model for the file, which is exactly when its tokens are ready too. Force a
+  -- <leader>lt. a buffer's DiagnosticChanged is the per-file signal we actually
+  -- want; roslyn publishes diagnostics (empty or not) once it has a semantic
+  -- model for the file, which is exactly when its tokens are ready too. force a
   -- token refresh then, debounced per buffer (last-scheduled-wins) and gated to
   -- *visible* roslyn .cs buffers so a 100-file <leader>xm scan doesn't pile
-  -- refreshes onto hidden buffers. Re-requesting identical tokens is a no-op
-  -- repaint, so this can't reintroduce flicker as DiagnosticChanged settles.
+  -- refreshes onto hidden buffers. re-requesting identical tokens is a no-op
+  -- repaint, so this can't reintroduce flicker as DiagnosticChanged settles
   local token_refresh_seq = {}
   vim.api.nvim_create_autocmd('DiagnosticChanged', {
     callback = function(ev)
@@ -156,8 +156,8 @@ function M.setup()
       local seq = (token_refresh_seq[buf] or 0) + 1
       token_refresh_seq[buf] = seq
       vim.defer_fn(function()
-        -- Superseded by a later DiagnosticChanged for this buffer — let the
-        -- newest scheduled refresh win.
+        -- superseded by a later DiagnosticChanged for this buffer; let the
+        -- newest scheduled refresh win
         if token_refresh_seq[buf] ~= seq then
           return
         end

@@ -1,27 +1,27 @@
--- Rich "issue details" popup. Extracted from plugins/sonarlint.lua.
+-- rich "issue details" popup. extracted from plugins/sonarlint.lua.
 --
--- Selecting sonar's "Show issue details for '<rule>'" code action makes the
+-- selecting sonar's "Show issue details for '<rule>'" code action makes the
 -- server push sonarlint/showRuleDescription, which sonarlint.nvim renders as a
--- generic full-screen popup of the rule's HTML description. We replace that
+-- generic full-screen popup of the rule's HTML description. we replace that
 -- rendering with our own popup that, for deprecation findings, leads with the
--- deprecated symbol's signature and its "@deprecated -> use X instead" note --
+-- deprecated symbol's signature and its "@deprecated -> use X instead" note,
 -- the specific guidance sonar's own (generic) S1874 text explicitly defers to
 -- ("check the deprecation message ... what the recommended alternative is").
 --
--- That note is pulled from the editor-facing language server's hover at the
--- finding. Deprecation is detected language-agnostically via a co-located
+-- that note is pulled from the editor-facing language server's hover at the
+-- finding. deprecation is detected language-agnostically via a co-located
 -- diagnostic carrying the LSP `Deprecated` tag (e.g. ts_ls reports
 -- "'X' is deprecated" tagged Deprecated alongside sonar's S1874), so it extends
--- to any language whose server tags deprecated usages -- no rule-key list.
+-- to any language whose server tags deprecated usages, no rule-key list
 
 local common = require 'custom.features.sonar-common'
 
 local M = {}
 
---- The editor-facing LSP diagnostic at `lnum` carrying the `Deprecated` tag, or
---- nil. Neovim normalises LSP `tags: [2]` to `_tags.deprecated`; we also accept
---- the raw payload form. Sonar's own diagnostics never set the tag, so a match
---- always comes from a language server (ts_ls, gopls, roslyn, ...).
+--- the editor-facing LSP diagnostic at `lnum` carrying the `Deprecated` tag, or
+--- nil. nvim normalises LSP `tags: [2]` to `_tags.deprecated`; we also accept
+--- the raw payload form. sonar's own diagnostics never set the tag, so a match
+--- always comes from a language server (ts_ls, gopls, roslyn, ...)
 local function deprecated_diagnostic_at(bufnr, lnum)
   for _, d in ipairs(vim.diagnostic.get(bufnr, { lnum = lnum })) do
     if d._tags and d._tags.deprecated then
@@ -39,9 +39,9 @@ local function deprecated_diagnostic_at(bufnr, lnum)
   return nil
 end
 
---- Request hover at `position` from every editor-facing (non-sonar) LSP client
+--- request hover at `position` from every editor-facing (non-sonar) LSP client
 --- on `bufnr`, returning the first non-empty result as markdown lines via `cb`.
---- Falls back to `cb(nil)` if nothing useful answers within the timeout.
+--- falls back to `cb(nil)` if nothing useful answers within the timeout
 local function deprecation_hover(bufnr, position, cb)
   local clients = vim.tbl_filter(function(c)
     return c.name ~= common.SONARLINT_CLIENT_NAME and c:supports_method 'textDocument/hover'
@@ -77,7 +77,7 @@ local function deprecation_hover(bufnr, position, cb)
     end, bufnr)
   end
 
-  -- Safety net: never leave the popup unshown if a server stalls.
+  -- safety net: never leave the popup unshown if a server stalls
   vim.defer_fn(function()
     finish(nil)
   end, 2000)
@@ -86,22 +86,22 @@ end
 --- SonarLint appends a generic "others" fallback context (resource
 --- `others_section_html_content.html`: "How can I fix it in another component
 --- or framework?" + "Help us improve") to contextual tabs when it has no
---- framework-specific guidance. It carries no real fix, so we drop it; if a tab
---- has nothing left, the tab is skipped entirely (see rule_description_lines).
+--- framework-specific guidance. it carries no real fix, so we drop it; if a tab
+--- has nothing left, the tab is skipped entirely (see rule_description_lines)
 local function is_fallback_context(ctx)
   local key = ctx.contextKey and ctx.contextKey:lower()
   return key == 'others' or ctx.displayName == 'Others'
 end
 
---- Render one rule-description tab's body. A tab is either non-contextual
+--- render one rule-description tab's body. a tab is either non-contextual
 --- (`ruleDescriptionTabNonContextual.htmlContent`) or contextual, where
 --- `ruleDescriptionTabContextual` is a *list* of per-context variants
 --- ({ htmlContent, contextKey, displayName }), e.g. "How to fix it in PropTypes"
 --- vs "...in TypeScript". sonarlint.nvim's own renderer reads `.htmlContent` off
 --- that list and so shows contextual tabs (S6767's "How can I fix it?") empty;
 --- we render every real context, default first, each under its displayName.
---- Returns {} when the tab has no useful content (e.g. only the "others"
---- fallback) so the caller can omit it.
+--- returns {} when the tab has no useful content (e.g. only the "others"
+--- fallback) so the caller can omit it
 local function tab_body_lines(tab, filetype)
   local utils = require 'sonarlint.utils'
 
@@ -115,7 +115,7 @@ local function tab_body_lines(tab, filetype)
     return {}
   end
 
-  -- Drop the generic fallback, then put the default context first.
+  -- drop the generic fallback, then put the default context first
   local useful = {}
   for _, ctx in ipairs(contexts) do
     if not is_fallback_context(ctx) then
@@ -145,10 +145,10 @@ local function tab_body_lines(tab, filetype)
   return lines
 end
 
---- Build the rule-description body (markdown lines) from a showRuleDescription
+--- build the rule-description body (markdown lines) from a showRuleDescription
 --- payload: a single htmlDescription, or the tabbed form ("Why is this an
---- issue?", "How can I fix it?", ...). Tabs with no useful body (e.g. a "How can
---- I fix it?" that only held the generic fallback) are omitted entirely.
+--- issue?", "How can I fix it?", ...). tabs with no useful body (e.g. a "How can
+--- I fix it?" that only held the generic fallback) are omitted entirely
 local function rule_description_lines(result, filetype)
   local html = result.htmlDescription
   if html ~= nil and html ~= '' then
@@ -168,7 +168,7 @@ local function rule_description_lines(result, filetype)
   return lines
 end
 
---- Open a centred, read-only markdown popup. `q`/`<Esc>` close it.
+--- open a centred, read-only markdown popup. `q`/`<Esc>` close it
 local function show_details_popup(lines)
   local width = math.floor(vim.o.columns * 0.8)
   local height = math.floor(vim.o.lines * 0.8)
@@ -196,9 +196,9 @@ end
 
 --- showRuleDescription handler: render the rule description in our popup, led
 --- by the deprecated symbol's hover note when the finding under the cursor is a
---- deprecation. Replaces sonarlint.nvim's generic renderer. Context (which
---- buffer/finding) is read from the current window -- focus stays on the source
---- buffer until this popup opens.
+--- deprecation. replaces sonarlint.nvim's generic renderer. context (which
+--- buffer/finding) is read from the current window; focus stays on the source
+--- buffer until this popup opens
 function M.rich_rule_handler(_, result, _)
   if type(result) ~= 'table' then
     return

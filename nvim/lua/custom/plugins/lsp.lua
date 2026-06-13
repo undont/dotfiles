@@ -5,10 +5,10 @@ local lsp_fix_all = require 'custom.features.lsp-fix-all'
 local lsp_patches = require 'custom.features.lsp-patches'
 local roslyn_diagnostics = require 'custom.features.roslyn-diagnostics'
 
---- True only for ordinary on-disk file buffers. Diffview/fugitive views and
+--- true only for ordinary on-disk file buffers. Diffview/fugitive views and
 --- other plugin buffers carry a `scheme://` name and/or a non-empty `buftype`;
 --- formatting them is meaningless and crashes formatters like csharpier, which
---- tries to resolve a config directory from the bogus URI path.
+--- tries to resolve a config directory from the bogus URI path
 local function is_real_file(bufnr)
   if vim.bo[bufnr].buftype ~= '' then
     return false
@@ -16,18 +16,18 @@ local function is_real_file(bufnr)
   return vim.api.nvim_buf_get_name(bufnr):match '^%w+://' == nil
 end
 
---- Restart all LSP servers attached to the given buffer.
+--- restart all LSP servers attached to the given buffer
 local function restart_lsp_clients(bufnr)
   local clients = vim.lsp.get_clients { bufnr = bufnr }
 
   -- Roslyn's on_exit calls roslyn.store.set(client_id, nil), which nils
-  -- vim.g.roslyn_nvim_selected_solution as a side effect. The restarted
+  -- vim.g.roslyn_nvim_selected_solution as a side effect. the restarted
   -- client's on_init then misses the lock_target fast path and falls back
-  -- to broad search -- with multiple candidates it bails on the multi-target
+  -- to broad search; with multiple candidates it bails on the multi-target
   -- prompt (suppressed by ui.lua), so the LSP silently fails to re-attach.
-  -- Preserve the solution across the LspDetach window: that fires after
+  -- preserve the solution across the LspDetach window: that fires after
   -- on_exit nils the var but before the scheduled new-client start runs
-  -- on_init, so restoring here lets the new client hit the fast path.
+  -- on_init, so restoring here lets the new client hit the fast path
   local has_roslyn = false
   for _, c in ipairs(clients) do
     if c.name == 'roslyn' then
@@ -63,13 +63,13 @@ local function restart_lsp_clients(bufnr)
   end
 end
 
---- Rename handler that writes the files it touched.
---- The default handler applies the workspace edit to every affected file but
+--- rename handler that writes the files it touched.
+--- the default handler applies the workspace edit to every affected file but
 --- leaves the ones that weren't already open as unsaved background buffers.
---- Those never fire the autosave (no TextChanged/BufLeave), so renamed symbols
---- in other modules stay off disk -- invisible to Diffview (which diffs disk)
---- and piling up as a "save changes?" cascade on :qa. Mirror the default, then
---- flush every touched buffer, consistent with the auto-save autocmd.
+--- those never fire the autosave (no TextChanged/BufLeave), so renamed symbols
+--- in other modules stay off disk: invisible to Diffview (which diffs disk)
+--- and piling up as a "save changes?" cascade on :qa. mirror the default, then
+--- flush every touched buffer, consistent with the auto-save autocmd
 local function rename_and_save(_, result, ctx)
   if not result then
     vim.notify("Language server couldn't provide rename result", vim.log.levels.INFO)
@@ -78,11 +78,11 @@ local function rename_and_save(_, result, ctx)
   local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
   vim.lsp.util.apply_workspace_edit(result, client.offset_encoding)
 
-  -- documentChanges is an array of edits; changes is a map keyed by URI.
+  -- documentChanges is an array of edits; changes is a map keyed by URI
   local uris = {}
   if result.documentChanges then
     for _, change in ipairs(result.documentChanges) do
-      -- Skip create/rename/delete resource ops, which have no textDocument.
+      -- skip create/rename/delete resource ops, which have no textDocument
       if change.textDocument and change.textDocument.uri then
         uris[change.textDocument.uri] = true
       end
@@ -104,7 +104,7 @@ local function rename_and_save(_, result, ctx)
 end
 
 return {
-  -- Main LSP Configuration
+  -- main LSP configuration
   {
     'neovim/nvim-lspconfig',
     event = { 'BufReadPre', 'BufNewFile' },
@@ -153,7 +153,7 @@ return {
             restart_lsp_clients(event.buf)
           end, '[R]estart')
 
-          -- Document highlight on cursor hold
+          -- document highlight on cursor hold
           local client = vim.lsp.get_client_by_id(event.data.client_id)
           if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_documentHighlight, event.buf) then
             local highlight_augroup = vim.api.nvim_create_augroup('kickstart-lsp-highlight', { clear = false })
@@ -178,15 +178,15 @@ return {
             })
           end
 
-          -- Inlay hints toggle
+          -- inlay hints toggle
           if client and client:supports_method(vim.lsp.protocol.Methods.textDocument_inlayHint, event.buf) then
             map('<leader>lh', function()
               vim.lsp.inlay_hint.enable(not vim.lsp.inlay_hint.is_enabled { bufnr = event.buf })
             end, 'Inlay [H]ints')
           end
 
-          -- Code lens (gopls only; other languages render above-line which clashes
-          -- with deeply-nested declarations and adds noise).
+          -- code lens (gopls only; other languages render above-line which clashes
+          -- with deeply-nested declarations and adds noise)
           if client and client.name == 'gopls' and client:supports_method(vim.lsp.protocol.Methods.textDocument_codeLens, event.buf) then
             vim.lsp.codelens.enable(true, { bufnr = event.buf })
             map('<leader>ll', vim.lsp.codelens.run, 'Code [L]ens run')
@@ -197,7 +197,7 @@ return {
         end,
       })
 
-      -- Diagnostic Config
+      -- diagnostic config
       vim.diagnostic.config {
         severity_sort = true,
         float = { border = 'rounded', source = 'if_many' },
@@ -216,17 +216,17 @@ return {
         },
       }
 
-      -- Hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
+      -- hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
 
-      -- Write files touched by an LSP rename so they land on disk (see above).
+      -- write files touched by an LSP rename so they land on disk (see above)
       vim.lsp.handlers['textDocument/rename'] = rename_and_save
 
-      -- Merge blink.cmp completion capabilities with Neovim defaults so that
+      -- merge blink.cmp completion capabilities with nvim defaults so that
       -- semantic tokens, document highlights, and other standard capabilities
-      -- aren't dropped (blink only provides completion-related caps).
+      -- aren't dropped (blink only provides completion-related caps)
       local caps = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('blink.cmp').get_lsp_capabilities())
-      -- Disable built-in document_color to avoid assertion failures on stale client IDs
-      -- (neovim/neovim#38404).
+      -- disable built-in document_color to avoid assertion failures on stale client IDs
+      -- (neovim/neovim#38404)
       vim.lsp.document_color.enable(false)
       vim.lsp.config('*', { capabilities = caps })
 
@@ -250,19 +250,19 @@ return {
 
       -- Roslyn is sluggish to acknowledge `shutdown`, so `:lsp restart roslyn`
       -- (and `:Roslyn restart`, which delegates to it) hangs indefinitely with
-      -- the default `exit_timeout = false` -- the old client only actually
+      -- the default `exit_timeout = false`: the old client only actually
       -- dies once some subsequent LSP request nudges traffic on the pipe.
-      -- Force-terminate after 5s so restarts are reliable. roslyn.nvim's own
-      -- `:Roslyn target` command documents the same quirk in commands.lua.
+      -- force-terminate after 5s so restarts are reliable. roslyn.nvim's own
+      -- `:Roslyn target` command documents the same quirk in commands.lua
       vim.lsp.config('roslyn', {
         exit_timeout = 5000,
       })
 
-      -- Override `exit_timeout` to 0 on actual nvim exit so closing the
+      -- override `exit_timeout` to 0 on actual nvim exit so closing the
       -- editor is instant when .cs buffers are open. VimLeavePre computes
       -- `max_timeout` from every client's `exit_timeout`; if it's > 100
-      -- it schedules a deferred warning and `vim.wait`s on it. Runtime
-      -- `:lsp restart roslyn` still gets the 5s timeout above.
+      -- it schedules a deferred warning and `vim.wait`s on it. runtime
+      -- `:lsp restart roslyn` still gets the 5s timeout above
       vim.api.nvim_create_autocmd('ExitPre', {
         desc = 'force-kill roslyn so nvim does not wait on exit',
         callback = function()
@@ -291,12 +291,12 @@ return {
 
       -- sourcekit-lsp (Swift) ships with the Xcode/Swift toolchain, not Mason,
       -- so it can't ride the mason-lspconfig ensure_installed/automatic_enable
-      -- flow below -- configure and enable it directly. Launch via `xcrun` on
+      -- flow below: configure and enable it directly. launch via `xcrun` on
       -- macOS so it resolves against the active toolchain; fall back to the
-      -- PATH binary on Linux. Restrict filetypes to `swift`: lspconfig's
+      -- PATH binary on Linux. restrict filetypes to `swift`: lspconfig's
       -- default sourcekit config also claims c/cpp/objc/objcpp, which would
       -- double-attach alongside clangd and duplicate diagnostics. clangd keeps
-      -- ownership of the C family (including Objective-C).
+      -- ownership of the C family (including Objective-C)
       local sourcekit_cmd = vim.fn.has 'mac' == 1 and { 'xcrun', 'sourcekit-lsp' } or { 'sourcekit-lsp' }
       if vim.fn.executable(sourcekit_cmd[1]) == 1 then
         vim.lsp.config('sourcekit', {
@@ -306,7 +306,7 @@ return {
         vim.lsp.enable 'sourcekit'
       end
 
-      -- Server configurations
+      -- server configurations
       local servers = {
         astro = {},
         bashls = {},
@@ -322,17 +322,17 @@ return {
         yamlls = {},
       }
 
-      -- Defer mason setups: their `setup{}` calls do tool-install verification
+      -- defer mason setups: their `setup{}` calls do tool-install verification
       -- and per-server enable iteration that can take many seconds on cold
-      -- start. Running them in vim.schedule lets the triggering buffer
+      -- start. running them in vim.schedule lets the triggering buffer
       -- (BufReadPre, including diffview/octo diff buffers) finish opening
-      -- first. Servers register/attach a few ms later — invisible in practice.
+      -- first. servers register/attach a few ms later, invisible in practice
       vim.schedule(function()
         require('mason-lspconfig').setup {
           ensure_installed = vim.tbl_keys(servers or {}),
           automatic_installation = false,
           automatic_enable = {
-            exclude = { 'omnisharp' }, -- Using roslyn.nvim instead
+            exclude = { 'omnisharp' }, -- using roslyn.nvim instead
           },
         }
 
@@ -355,14 +355,14 @@ return {
             'roslyn',
             -- SonarLint LSP (analyzers + bundled omnisharp for C#); driven by sonarlint.lua
             'sonarlint-language-server',
-            -- Formatters
+            -- formatters
             'clang-format', -- c / cpp / objc
             'csharpier',
             'gofumpt',
             'goimports',
             'prettier',
             'stylua',
-            -- Linters
+            -- linters
             'golangci-lint',
             'ruff', -- Python lint + format
           },
@@ -371,7 +371,7 @@ return {
     end,
   },
 
-  -- Formatting
+  -- formatting
   {
     'stevearc/conform.nvim',
     event = { 'BufWritePre' },
@@ -430,19 +430,19 @@ return {
         csharpier = {
           -- conform's default args switch on `dotnet csharpier --version` and
           -- pass `csharpier format --stdin-path $FILENAME` (i.e. as a dotnet
-          -- subcommand). When we override `command` to Mason's standalone
+          -- subcommand). when we override `command` to Mason's standalone
           -- binary, those args get passed to it directly and csharpier 1.0+
-          -- bails with "Unrecognized command or argument 'csharpier'". Pin
-          -- args to the format subcommand the standalone binary understands.
+          -- bails with "Unrecognized command or argument 'csharpier'". pin
+          -- args to the format subcommand the standalone binary understands
           command = vim.fn.stdpath 'data' .. '/mason/bin/csharpier',
           args = { 'format', '--stdin-path', '$FILENAME' },
           stdin = true,
         },
         prettier = {
-          -- Prefer the project's local prettier so plugins declared in
+          -- prefer the project's local prettier so plugins declared in
           -- the project's .prettierrc (e.g. prettier-plugin-astro) are
-          -- resolved against the project's node_modules. Falls back to
-          -- Mason's prettier when there's no local install.
+          -- resolved against the project's node_modules. falls back to
+          -- Mason's prettier when there's no local install
           prefer_local = 'node_modules/.bin',
         },
       },

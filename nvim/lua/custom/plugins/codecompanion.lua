@@ -1,6 +1,6 @@
 -- AI coding assistant: chat, inline editing, and agentic workflows
--- Adapters: copilot (GitHub sub), anthropic (API key), opencode (ACP)
--- Switch adapter per-strategy below, or pick at runtime via the action palette.
+-- adapters: copilot (GitHub sub), anthropic (API key), opencode (ACP)
+-- switch adapter per-strategy below, or pick at runtime via the action palette
 
 return {
   {
@@ -27,13 +27,13 @@ return {
       adapters = {
         http = {
           copilot = function()
-            -- Force the copilot.vim oauth token. apps.json can hold several
+            -- force the copilot.vim oauth token. apps.json can hold several
             -- `github.com:*` entries (gh CLI, Copilot CLI, VS Code), and the
-            -- upstream adapter returns the first one `pairs()` yields -- often a
+            -- upstream adapter returns the first one `pairs()` yields, often a
             -- stale entry whose token exchange 401s, producing an empty bearer
             -- and a 400 "Authorization header is badly formatted" on every chat.
-            -- Pre-seeding `_oauth_token` short-circuits that pick (token.lua
-            -- returns it directly), so duplicates never break the adapter.
+            -- pre-seeding `_oauth_token` short-circuits that pick (token.lua
+            -- returns it directly), so duplicates never break the adapter
             pcall(function()
               local token = require 'codecompanion.adapters.http.copilot.token'
               local apps = vim.fn.expand '~/.config/github-copilot/apps.json'

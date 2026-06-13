@@ -1,6 +1,6 @@
--- Synthwave colorscheme for Neovim
--- Matches the dotfiles synthwave theme exactly
--- Cyberpunk vaporwave aesthetic
+-- synthwave colourscheme for nvim
+-- matches the dotfiles synthwave theme exactly
+-- cyberpunk vaporwave aesthetic
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -10,16 +10,16 @@ end
 vim.g.colors_name = 'synthwave'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/synthwave.theme)
+-- theme colours (matching themes/synthwave.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#1a1226',
   fg_primary = '#e4dfed',
   bg_secondary = '#2a1f3d',
   fg_secondary = '#9d8ec7',
   fg_variable = '#d2cbe4',
 
-  -- Accents
+  -- accents
   purple = '#b794f6',
   pink = '#ff2e97',
   cyan = '#00d9ff',
@@ -27,24 +27,24 @@ local colors = {
   yellow = '#ffd700',
   red = '#ff003c',
 
-  -- Additional shades
+  -- additional shades
   selection = '#3d2861',
   comment = '#6b5a82',
   line_highlight = '#241735',
 
-  -- Bright variants
+  -- bright variants
   bright_cyan = '#5cefff',
   bright_pink = '#ff5ac8',
   bright_green = '#6bff59',
   bright_purple = '#d6acff',
 }
 
--- Helper function to set highlight groups
+-- set a highlight group
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
@@ -83,7 +83,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = colors.purple })
 hl('String', { fg = colors.yellow })

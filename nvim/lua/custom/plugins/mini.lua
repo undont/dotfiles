@@ -1,14 +1,14 @@
 -- Mini.nvim modules: icons, surround, pairs, hipatterns, bracketed,
 -- splitjoin, statusline.
--- Loads eagerly so mini.icons custom glyphs are available for the
--- dashboard. All modules are lightweight (keymaps/tables).
+-- loads eagerly so mini.icons custom glyphs are available for the
+-- dashboard. all modules are lightweight (keymaps/tables)
 
 return {
   {
     'echasnovski/mini.nvim',
     lazy = false,
     config = function()
-      -- Icons provider (used by mini.statusline for filetype icons)
+      -- icons provider (used by mini.statusline for filetype icons)
       local template_icon = vim.fn.nr2char(0xf05c0) -- nf-md-file_code_outline
       local gopher_icon = vim.fn.nr2char(0xe627) -- nf-seti-go (gopher)
       local yaml_icon = vim.fn.nr2char(0xf013) -- nf-fa-cog
@@ -37,17 +37,17 @@ return {
           -- resolves them through vim.filetype.match(), which returns nil for
           -- these function-detected extensions during the dashboard's first
           -- paint at startup. mini then caches the generic glyph for the
-          -- session. Pin explicit extension glyphs so resolution never depends
+          -- session. pin explicit extension glyphs so resolution never depends
           -- on filetype-match timing (hl mirrors mini's own routing: sh/bash
-          -- grey, zsh green).
+          -- grey, zsh green)
           sh = { glyph = shell_icon, hl = 'MiniIconsGrey' },
           bash = { glyph = shell_icon, hl = 'MiniIconsGrey' },
           zsh = { glyph = shell_icon, hl = 'MiniIconsGreen' },
         },
       }
 
-      -- Add/delete/replace surroundings (brackets, quotes, etc.)
-      -- Uses 'gs' prefix to avoid delay on native 's' (substitute char)
+      -- add/delete/replace surroundings (brackets, quotes, etc.)
+      -- uses 'gs' prefix to avoid delay on native 's' (substitute char)
       require('mini.surround').setup {
         mappings = {
           add = 'gsa',
@@ -60,17 +60,17 @@ return {
         },
       }
 
-      -- Auto-close brackets, quotes, etc. (replaces nvim-autopairs)
+      -- auto-close brackets, quotes, etc. (replaces nvim-autopairs)
       require('mini.pairs').setup()
 
-      -- Highlight hex colour codes inline
+      -- highlight hex colour codes inline
       require('mini.hipatterns').setup {
         highlighters = {
           hex_color = require('mini.hipatterns').gen_highlighter.hex_color(),
         },
       }
 
-      -- Extended ]/[ navigation; disable suffixes that conflict with other plugins
+      -- extended ]/[ navigation; disable suffixes that conflict with other plugins
       require('mini.bracketed').setup {
         comment = { suffix = '' }, -- ]c/[c reserved for gitsigns (git changes)
         file = { suffix = 'f' }, -- diffview overrides ]f/[f when open
@@ -79,7 +79,7 @@ return {
         location = { suffix = '' }, -- ]l/[l wrapped in custom.features.lists (empty-list notify + cursor-relative idx)
       }
 
-      -- Redirect ]f/[f from neo-tree to the first normal editing window
+      -- redirect ]f/[f from neo-tree to the first normal editing window
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'neo-tree',
         callback = function(ev)
@@ -97,10 +97,10 @@ return {
         end,
       })
 
-      -- Split/join code constructs (gS to split, gJ to join)
+      -- split/join code constructs (gS to split, gJ to join)
       require('mini.splitjoin').setup()
 
-      -- Bespoke statusline content + section overrides live in features/.
+      -- bespoke statusline content + section overrides live in features/
       require('custom.features.statusline').setup()
     end,
   },

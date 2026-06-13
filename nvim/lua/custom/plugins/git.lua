@@ -1,4 +1,4 @@
--- Git-related plugins
+-- git-related plugins
 
 return {
   -- LazyGit integration
@@ -16,12 +16,12 @@ return {
       'nvim-lua/plenary.nvim',
     },
     -- lazygit runs in an in-process terminal float, so quitting it fires no
-    -- FocusGained/shell event for gitsigns to hook. Without a nudge, the
+    -- FocusGained/shell event for gitsigns to hook. without a nudge, the
     -- statusline branch (gitsigns_head) and diff counts (gitsigns_status_dict)
-    -- stay stale after a commit/stage/checkout done inside lazygit. The plugin
+    -- stay stale after a commit/stage/checkout done inside lazygit. the plugin
     -- calls vim.g.lazygit_on_exit_callback after the terminal exits (and after
     -- its own :checktime), so re-run gitsigns there to re-diff every buffer.
-    -- Set in init (startup) so the global exists before the float can close.
+    -- set in init (startup) so the global exists before the float can close
     init = function()
       vim.g.lazygit_on_exit_callback = function()
         local ok, gitsigns = pcall(require, 'gitsigns')
@@ -33,9 +33,9 @@ return {
   },
 
   -- Fugitive: in-buffer git (`:Git`, `:Git blame`, `:Gdiffsplit`, stage hunks, etc.)
-  -- Complements LazyGit (TUI workflow) with buffer-native operations.
+  -- complements LazyGit (TUI workflow) with buffer-native operations.
   -- `<leader>g` (lower) stays the LazyGit leaf-shortcut; `<leader>G*` (capital)
-  -- is the fugitive group, mirroring `<leader>H*` for gitsigns hunks.
+  -- is the fugitive group, mirroring `<leader>H*` for gitsigns hunks
   {
     'tpope/vim-fugitive',
     cmd = {
@@ -63,7 +63,7 @@ return {
       { '<leader>Gl', '<cmd>0Gclog<CR>', desc = 'File [L]og → qf' },
       { '<leader>Gw', '<cmd>Gwrite<CR>', desc = '[W]rite (stage buffer)' },
       -- GBrowse: normal opens current line, visual opens selected range.
-      -- Visual mapping uses `:` (not `<cmd>`) so vim prepends `'<,'>` for the range.
+      -- visual mapping uses `:` (not `<cmd>`) so vim prepends `'<,'>` for the range
       { '<leader>Go', '<cmd>GBrowse<CR>', desc = '[O]pen on GitHub' },
       { '<leader>Go', ':GBrowse<CR>', mode = 'v', desc = '[O]pen on GitHub (range)' },
     },

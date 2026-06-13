@@ -1,5 +1,5 @@
 -- macOS-style navigation: Opt+arrows for words, Cmd+arrows for line ends.
--- Also handles Ghostty's Shift+Enter (sent as Alt+Enter / \x1b\r).
+-- also handles Ghostty's Shift+Enter (sent as Alt+Enter / \x1b\r)
 
 local M = {}
 

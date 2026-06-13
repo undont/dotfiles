@@ -1,4 +1,4 @@
--- Neo-tree is a Neovim plugin to browse the file system
+-- Neo-tree is an nvim plugin to browse the file system
 -- https://github.com/nvim-neo-tree/neo-tree.nvim
 
 return {
@@ -18,7 +18,7 @@ return {
     window = {
       mappings = {
         ['o'] = 'open',
-        -- Move order_by prefix from o to O so o opens immediately
+        -- move order_by prefix from o to O so o opens immediately
         ['oc'] = 'none',
         ['od'] = 'none',
         ['og'] = 'none',
@@ -43,8 +43,8 @@ return {
       },
     },
     filesystem = {
-      -- Let oil.nvim own directory buffers (`nvim <dir>`, the `config`/`launchers`
-      -- aliases). Neo-tree stays available on `|`; it just no longer hijacks netrw.
+      -- let oil.nvim own directory buffers (`nvim <dir>`, the `config`/`launchers`
+      -- aliases). Neo-tree stays available on `|`; it just no longer hijacks netrw
       hijack_netrw_behavior = 'disabled',
       filtered_items = {
         visible = true,

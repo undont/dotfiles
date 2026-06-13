@@ -1,7 +1,7 @@
--- Treesitter: syntax highlighting, textobjects, indent detection.
+-- treesitter: syntax highlighting, textobjects, indent detection
 
 return {
-  -- Treesitter for syntax highlighting
+  -- treesitter for syntax highlighting
   {
     'nvim-treesitter/nvim-treesitter',
     branch = 'main',
@@ -28,7 +28,7 @@ return {
         'objc',
         'python',
         -- lua, luadoc, vim, vimdoc, query, markdown, markdown_inline are bundled
-        -- with Neovim 0.11+ — let Neovim manage them to avoid query/parser mismatches
+        -- with nvim 0.11+; let nvim manage them to avoid query/parser mismatches
         'swift',
         'tsx',
         'typescript',
@@ -40,10 +40,10 @@ return {
         'razor',
       }
 
-      -- Purge stale/bundled parsers before installing (ABI-mismatch guard).
+      -- purge stale/bundled parsers before installing (ABI-mismatch guard)
       require('custom.features.treesitter-parsers').purge_if_updated()
 
-      -- Install any parsers from the list that aren't already on disk
+      -- install any parsers from the list that aren't already on disk
       local missing = vim.tbl_filter(function(lang)
         return not pcall(vim.treesitter.language.inspect, lang)
       end, parsers)
@@ -51,20 +51,20 @@ return {
         require('nvim-treesitter').install(missing):wait(120000)
       end
 
-      -- Enable treesitter highlighting and indentation for all supported filetypes
+      -- enable treesitter highlighting and indentation for all supported filetypes
       vim.api.nvim_create_autocmd('FileType', {
         callback = function()
-          -- Skip treesitter for large files to avoid blocking the editor
+          -- skip treesitter for large files to avoid blocking the editor
           local ok, stats = pcall(vim.uv.fs_stat, vim.api.nvim_buf_get_name(0))
           if ok and stats and stats.size > 1024 * 1024 then
             return
           end
 
           if pcall(vim.treesitter.start) then
-            -- Only set treesitter indentexpr when indent queries exist for this
-            -- language, otherwise fall back to Vim's native indent (autoindent,
-            -- cindent, or filetype-specific indentexpr). Without this check,
-            -- languages like C# that lack indent queries get forced to column 0.
+            -- only set treesitter indentexpr when indent queries exist for this
+            -- language, otherwise fall back to vim's native indent (autoindent,
+            -- cindent, or filetype-specific indentexpr). without this check,
+            -- languages like C# that lack indent queries get forced to column 0
             local lang = vim.treesitter.language.get_lang(vim.bo.filetype) or vim.bo.filetype
             if vim.treesitter.query.get(lang, 'indents') then
               vim.bo.indentexpr = "v:lua.require'nvim-treesitter'.indentexpr()"
@@ -73,15 +73,15 @@ return {
         end,
       })
 
-      -- Register language aliases for markdown code fence highlighting
+      -- register language aliases for markdown code fence highlighting
       vim.treesitter.language.register('c_sharp', { 'csharp', 'cs' })
     end,
   },
 
-  -- Detect tabstop and shiftwidth automatically
+  -- detect tabstop and shiftwidth automatically
   { 'NMAC427/guess-indent.nvim', event = 'BufReadPost', opts = {} },
 
-  -- Treesitter textobjects: structural selection and motion
+  -- treesitter textobjects: structural selection and motion
   {
     'nvim-treesitter/nvim-treesitter-textobjects',
     branch = 'main',
@@ -97,7 +97,7 @@ return {
         move = { set_jumps = true },
       }
 
-      -- Select textobjects
+      -- select textobjects
       local select_maps = {
         { 'am', '@function.outer', 'Around method/function' },
         { 'im', '@function.inner', 'Inside method/function' },
@@ -110,7 +110,7 @@ return {
         end, { desc = map[3] })
       end
 
-      -- Move to next/previous function
+      -- move to next/previous function
       vim.keymap.set({ 'n', 'x', 'o' }, ']m', function()
         ts_move.goto_next_start '@function.outer'
       end, { desc = 'Next function start' })
@@ -124,7 +124,7 @@ return {
         ts_move.goto_previous_end '@function.outer'
       end, { desc = 'Previous function end' })
 
-      -- Swap parameters (guarded: bail with a notify when the buffer has no parser)
+      -- swap parameters (guarded: bail with a notify when the buffer has no parser)
       local function with_parser(fn)
         return function()
           local ok, parser = pcall(vim.treesitter.get_parser)

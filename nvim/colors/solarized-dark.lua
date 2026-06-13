@@ -1,6 +1,6 @@
--- Solarized Dark colorscheme for Neovim
--- Matches the dotfiles solarized-dark theme exactly
--- Based on Ethan Schoonover's Solarized color palette
+-- Solarized Dark colourscheme for nvim
+-- matches the dotfiles solarized-dark theme exactly
+-- based on Ethan Schoonover's Solarized colour palette
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -10,16 +10,16 @@ end
 vim.g.colors_name = 'solarized-dark'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/solarized-dark.theme)
+-- theme colours (matching themes/solarized-dark.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#002b36',
   fg_primary = '#93a1a1',
   bg_secondary = '#073642',
   fg_secondary = '#657b83',
   fg_variable = '#88989a',
 
-  -- Accents
+  -- accents
   purple = '#6c71c4',
   pink = '#d33682',
   cyan = '#2aa198',
@@ -27,7 +27,7 @@ local colors = {
   yellow = '#b58900',
   red = '#dc322f',
 
-  -- Additional solarized colours
+  -- additional solarized colours
   blue = '#268bd2',
   orange = '#cb4b16',
   base01 = '#586e75',
@@ -37,18 +37,18 @@ local colors = {
   base2 = '#eee8d5',
   base3 = '#fdf6e3',
 
-  -- Additional shades
+  -- additional shades
   selection = '#073642',
   comment = '#586e75',
   line_highlight = '#073642',
 }
 
--- Helper function to set highlight groups
+-- helper to set highlight groups
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
@@ -87,7 +87,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = colors.cyan })
 hl('String', { fg = colors.cyan })
@@ -124,14 +124,14 @@ hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
 hl('Todo', { fg = colors.pink, bold = true })
 
--- Git signs
+-- git signs
 hl('GitSignsAdd', { fg = colors.green })
 hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
 
--- Diagnostics
+-- diagnostics
 hl('DiagnosticError', { fg = colors.red })
 hl('DiagnosticWarn', { fg = colors.orange })
 hl('DiagnosticInfo', { fg = colors.blue })
@@ -146,7 +146,7 @@ hl('LspReferenceText', { bg = colors.selection })
 hl('LspReferenceRead', { bg = colors.selection })
 hl('LspReferenceWrite', { bg = colors.selection })
 
--- Treesitter
+-- treesitter
 hl('@variable', { fg = colors.fg_variable })
 hl('@variable.builtin', { fg = colors.cyan })
 hl('@variable.parameter', { fg = colors.blue })
@@ -206,7 +206,7 @@ hl('TelescopeResultsTitle', { fg = colors.cyan, bold = true })
 hl('TelescopeSelection', { fg = colors.yellow, bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = colors.orange, bold = true })
 
--- Neo-tree
+-- neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeCursorLine', { bg = '#2c545e' })
@@ -220,7 +220,7 @@ hl('NeoTreeGitDeleted', { fg = colors.red })
 hl('NeoTreeIndentMarker', { fg = colors.comment })
 hl('NeoTreeRootName', { fg = colors.orange, bold = true })
 
--- Which-key
+-- which-key
 hl('WhichKey', { fg = colors.blue })
 hl('WhichKeyGroup', { fg = colors.green })
 hl('WhichKeyDesc', { fg = colors.fg_primary })

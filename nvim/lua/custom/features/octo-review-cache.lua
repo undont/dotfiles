@@ -1,10 +1,10 @@
--- Octo review-diff caching. Extracted from plugins/pr-review.lua.
--- Monkeypatches octo's PullRequest.get_changed_files / FileEntry.fetch to
+-- Octo review-diff caching. extracted from plugins/pr-review.lua.
+-- monkeypatches octo's PullRequest.get_changed_files / FileEntry.fetch to
 -- snapshot a review's changed-file list and per-file left/right contents, so
 -- re-entering the same review (same commits) renders from cache instead of
--- re-fetching over the network. Also patches Review.set_files_and_select_first
+-- re-fetching over the network. also patches Review.set_files_and_select_first
 -- to honour a one-shot resume target (set by <leader>pe). OctoCacheClear drops
--- the cache.
+-- the cache
 
 local M = {}
 
@@ -13,11 +13,11 @@ local octo_review_cache = {
   file_contents = {},
 }
 
---- One-shot navigation target for `Octo review resume`. Set before issuing
---- the command; consumed once by the patched set_files_and_select_first.
+--- one-shot navigation target for `Octo review resume`. set before issuing
+--- the command; consumed once by the patched set_files_and_select_first
 local pending_resume_target = nil ---@type {path: string, line: integer}?
 
---- Stash a one-shot resume target consumed by the next review open.
+--- stash a one-shot resume target consumed by the next review open
 function M.set_resume_target(target)
   pending_resume_target = target
 end
@@ -156,8 +156,8 @@ function M.setup()
     vim.notify('Cleared Octo review cache', vim.log.levels.INFO)
   end, { desc = 'Clear cached Octo review diffs' })
 
-  -- Honour pending_resume_target: when set, select the matching file (and
-  -- restore cursor line) instead of the default first-unviewed file.
+  -- honour pending_resume_target: when set, select the matching file (and
+  -- restore cursor line) instead of the default first-unviewed file
   local Review = require('octo.reviews').Review
   local orig_select_first = Review.set_files_and_select_first
   Review.set_files_and_select_first = function(self, files)

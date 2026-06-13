@@ -1,4 +1,4 @@
--- Adds git related signs to the gutter, as well as utilities for managing changes
+-- adds git related signs to the gutter, plus utilities for managing changes
 
 return {
   {
@@ -6,7 +6,7 @@ return {
     event = { 'BufReadPre', 'BufNewFile' },
     config = function(_, opts)
       require('gitsigns').setup(opts)
-      -- Git sign colours are defined in nvim/colors/*.lua colourschemes
+      -- git sign colours are defined in nvim/colors/*.lua colourschemes
     end,
     opts = {
       signs = {
@@ -16,12 +16,12 @@ return {
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
-      sign_priority = 30, -- Above easy-dotnet test signs (priority 20)
+      sign_priority = 30, -- above easy-dotnet test signs (priority 20)
       numhl = false,
       linehl = false,
       on_attach = function(bufnr)
-        -- Skip diffview buffers — gutter signs are useless in diff panes and
-        -- each attachment spawns git subprocesses, risking EMFILE exhaustion.
+        -- skip diffview buffers: gutter signs are useless in diff panes and
+        -- each attachment spawns git subprocesses, risking EMFILE exhaustion
         local bufname = vim.api.nvim_buf_get_name(bufnr)
         if bufname:match 'diffview://' then
           return false
@@ -35,7 +35,7 @@ return {
           vim.keymap.set(mode, l, r, mopts)
         end
 
-        -- Navigation: hunks
+        -- navigation: hunks
         map('n', ']c', function()
           if vim.wo.diff then
             vim.cmd.normal { ']c', bang = true }
@@ -52,7 +52,7 @@ return {
           end
         end, { desc = 'Jump to previous git [c]hange' })
 
-        -- Actions
+        -- actions
         -- visual mode
         map('v', '<leader>Hs', function()
           gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }

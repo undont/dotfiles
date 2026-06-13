@@ -1,5 +1,5 @@
--- Nightfox colourscheme for Neovim
--- Matches the dotfiles nightfox.theme exactly
+-- nightfox colourscheme for nvim
+-- matches the dotfiles nightfox.theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -9,16 +9,16 @@ end
 vim.g.colors_name = 'nightfox'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/nightfox.theme)
+-- theme colours (matching themes/nightfox.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#192330',
   fg_primary = '#cdcecf',
   bg_secondary = '#212e3f',
   fg_secondary = '#71839b',
   fg_variable = '#b6bbc2',
 
-  -- Accents
+  -- accents
   purple = '#c792ea',
   pink = '#d67ad2',
   cyan = '#81b29a',
@@ -26,7 +26,7 @@ local colors = {
   yellow = '#dbc074',
   red = '#c94f6d',
 
-  -- Additional shades
+  -- additional shades
   selection = '#2b3b51',
   comment = '#71839b',
   line_highlight = '#1e2a38',
@@ -34,12 +34,12 @@ local colors = {
   orange = '#f4a261',
 }
 
--- Helper function to set highlight groups
+-- set a highlight group
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
@@ -78,7 +78,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = '#dbc074' })
 hl('String', { fg = '#a3be8c' })
@@ -115,14 +115,14 @@ hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
 hl('Todo', { fg = '#d67ad2', bold = true })
 
--- Git signs
+-- git signs
 hl('GitSignsAdd', { fg = colors.green })
 hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
 
--- Diagnostics
+-- diagnostics
 hl('DiagnosticError', { fg = colors.red })
 hl('DiagnosticWarn', { fg = colors.yellow })
 hl('DiagnosticInfo', { fg = colors.cyan })
@@ -137,7 +137,7 @@ hl('LspReferenceText', { bg = colors.selection })
 hl('LspReferenceRead', { bg = colors.selection })
 hl('LspReferenceWrite', { bg = colors.selection })
 
--- Treesitter
+-- treesitter
 hl('@variable', { fg = colors.fg_variable })
 hl('@variable.builtin', { fg = '#dbc074' })
 hl('@variable.parameter', { fg = colors.fg_secondary })
@@ -197,7 +197,7 @@ hl('TelescopeResultsTitle', { fg = '#c792ea', bold = true })
 hl('TelescopeSelection', { fg = '#c792ea', bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = '#d67ad2', bold = true })
 
--- Neo-tree
+-- neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeCursorLine', { bg = '#424d5b' })
@@ -211,13 +211,13 @@ hl('NeoTreeGitDeleted', { fg = colors.red })
 hl('NeoTreeIndentMarker', { fg = colors.comment })
 hl('NeoTreeRootName', { fg = '#d67ad2', bold = true })
 
--- Which-key
+-- which-key
 hl('WhichKey', { fg = '#c792ea' })
 hl('WhichKeyGroup', { fg = '#d67ad2' })
 hl('WhichKeyDesc', { fg = colors.fg_primary })
 hl('WhichKeySeparator', { fg = colors.comment })
 
--- Mini.nvim statusline
+-- mini.nvim statusline
 hl('MiniStatuslineModeNormal', { fg = colors.bg_primary, bg = '#c792ea', bold = true })
 hl('MiniStatuslineModeInsert', { fg = colors.bg_primary, bg = colors.green, bold = true })
 hl('MiniStatuslineModeVisual', { fg = colors.bg_primary, bg = colors.purple, bold = true })

@@ -1,9 +1,9 @@
--- Project-local sonar rule model: the .sonarlint/localRules.json schema
+-- project-local sonar rule model: the .sonarlint/localRules.json schema
 -- (ESLint-style rules + glob overrides), its read/write/encode layer, and the
--- live application of a silenced rule to running sonar clients. Extracted from
+-- live application of a silenced rule to running sonar clients. extracted from
 -- plugins/sonarlint.lua.
 --
--- localRules.json uses an ESLint-style schema -- rule values are ESLint
+-- localRules.json uses an ESLint-style schema: rule values are ESLint
 -- severities, not SonarLint's native `{ level }` shape:
 --   {
 --     "rules": {
@@ -16,14 +16,14 @@
 --         "rules": { "go:S3776": "off" } }
 --     ]
 --   }
--- A rule value is a severity -- "off" | "warn" | "error" (or 0 | 1 | 2) -- or
--- the array form ["error", { params }] when a rule takes parameters. It's
+-- a rule value is a severity ("off" | "warn" | "error", or 0 | 1 | 2) or
+-- the array form ["error", { params }] when a rule takes parameters. it's
 -- normalised to SonarLint's `{ level, parameters }` before being sent to the
 -- server. SonarLint has no warn/error split, so "warn" and "error" both map to
 -- level "on"; only "off" silences a rule.
 --
 -- `rules` is merged into the LSP server's rule config (applies globally; works
--- in both standalone and connected mode -- in connected mode explicit "off"
+-- in both standalone and connected mode; in connected mode explicit "off"
 -- wins over the server's "on"). `overrides` are applied client-side at
 -- diagnostic publish time and can only subtractively silence diagnostics:
 -- a globally-off rule can't be re-enabled per-glob because the server has
@@ -36,8 +36,8 @@ local M = {}
 local CONNECTED_MODE_FILE = '.sonarlint/connectedMode.json'
 local LOCAL_RULES_FILE = '.sonarlint/localRules.json'
 
---- Read and JSON-decode a file, returning the decoded table or nil if the file
---- is missing or malformed. Shared by the connectedMode/localRules readers.
+--- read and JSON-decode a file, returning the decoded table or nil if the file
+--- is missing or malformed. shared by the connectedMode/localRules readers
 local function read_json(path)
   if vim.fn.filereadable(path) == 0 then
     return nil
@@ -54,8 +54,8 @@ local function read_json(path)
   return decoded
 end
 
---- Read `.sonarlint/connectedMode.json` from a project root and return its
---- `projectKey`, or nil if the file is missing or malformed.
+--- read `.sonarlint/connectedMode.json` from a project root and return its
+--- `projectKey`, or nil if the file is missing or malformed
 function M.read_project_key(root)
   if not root or root == '' then
     return nil
@@ -64,8 +64,8 @@ function M.read_project_key(root)
   return decoded and decoded.projectKey or nil
 end
 
---- Read `.sonarlint/localRules.json` and return `{ rules, overrides }`, or
---- nil if the file is missing or malformed. Either field may be nil.
+--- read `.sonarlint/localRules.json` and return `{ rules, overrides }`, or
+--- nil if the file is missing or malformed. either field may be nil
 function M.read_project_config(root)
   if not root or root == '' then
     return nil
@@ -80,12 +80,12 @@ function M.read_project_config(root)
   }
 end
 
---- Read localRules.json as a raw decoded table (preserving every field), or {}.
+--- read localRules.json as a raw decoded table (preserving every field), or {}
 local function read_local_rules(path)
   return read_json(path) or {}
 end
 
---- Map an ESLint severity token to a SonarLint level ('on' | 'off'), or nil if
+--- map an ESLint severity token to a SonarLint level ('on' | 'off'), or nil if
 --- the token isn't a recognised ESLint severity. SonarLint has no warn/error
 --- distinction, so both collapse to 'on'.
 ---   "off"   / 0  -> "off"
@@ -100,11 +100,11 @@ local function eslint_severity_to_level(sev)
   return nil
 end
 
---- Normalise one ESLint-style rule value into SonarLint's `{ level, parameters }`
---- shape, or nil if it isn't valid ESLint syntax. Accepts a bare severity
+--- normalise one ESLint-style rule value into SonarLint's `{ level, parameters }`
+--- shape, or nil if it isn't valid ESLint syntax. accepts a bare severity
 --- ("off" | "warn" | "error", or 0 | 1 | 2) or the array form
---- ["error", { paramName = value }] -- ESLint options are positional, but
---- SonarLint parameters are named, so only a trailing object is carried across.
+--- ["error", { paramName = value }]: ESLint options are positional, but
+--- SonarLint parameters are named, so only a trailing object is carried across
 local function normalise_rule(value)
   if type(value) == 'string' or type(value) == 'number' then
     local level = eslint_severity_to_level(value)
@@ -124,9 +124,9 @@ local function normalise_rule(value)
   return nil
 end
 
---- Translate an ESLint-style `rules` map (rule key -> severity) into the
+--- translate an ESLint-style `rules` map (rule key -> severity) into the
 --- SonarLint server's native `{ ruleKey = { level, parameters } }` form.
---- Unrecognised entries are dropped; returns nil when nothing survives.
+--- unrecognised entries are dropped; returns nil when nothing survives
 function M.eslint_to_sonarlint_rules(rules)
   if type(rules) ~= 'table' then
     return nil
@@ -141,9 +141,9 @@ function M.eslint_to_sonarlint_rules(rules)
   return next(out) and out or nil
 end
 
---- Compile an `overrides` array into matcher entries:
+--- compile an `overrides` array into matcher entries:
 ---   { { matchers = { lpeg, ... }, off = { ["go:S3776"] = true, ... } }, ... }
---- Returns nil when there's nothing actionable (no valid globs / no "off" rules).
+--- returns nil when there's nothing actionable (no valid globs / no "off" rules)
 function M.compile_overrides(overrides)
   if not overrides or vim.tbl_isempty(overrides) then
     return nil
@@ -178,9 +178,9 @@ function M.compile_overrides(overrides)
   return #compiled > 0 and compiled or nil
 end
 
---- Return true if `code` should be suppressed for `path` under `compiled`.
---- Tries both the absolute path and the path relative to `root` so authors
---- can write either `**/*_test.go` or `internal/**/*_test.go` style globs.
+--- return true if `code` should be suppressed for `path` under `compiled`.
+--- tries both the absolute path and the path relative to `root` so authors
+--- can write either `**/*_test.go` or `internal/**/*_test.go` style globs
 function M.is_overridden(compiled, root, path, code)
   if not compiled or not code or not path then
     return false
@@ -201,9 +201,9 @@ function M.is_overridden(compiled, root, path, code)
   return false
 end
 
---- Pretty-print a Lua value as JSON (2-space indent, sorted object keys) so the
---- hand-edited localRules.json stays readable. Strings are escaped via
---- vim.json.encode; empty tables serialise as `{}`.
+--- pretty-print a lua value as JSON (2-space indent, sorted object keys) so the
+--- hand-edited localRules.json stays readable. strings are escaped via
+--- vim.json.encode; empty tables serialise as `{}`
 local function encode_json(value, indent)
   indent = indent or ''
   local child = indent .. '  '
@@ -236,9 +236,9 @@ local function encode_json(value, indent)
   return 'null'
 end
 
---- True if two glob lists hold the same entries (order-insensitive). Used to
+--- true if two glob lists hold the same entries (order-insensitive). used to
 --- fold a test-scope silence into an existing matching `overrides` entry
---- instead of appending a duplicate.
+--- instead of appending a duplicate
 local function same_globs(a, b)
   if type(a) ~= 'table' or type(b) ~= 'table' or #a ~= #b then
     return false
@@ -254,9 +254,9 @@ local function same_globs(a, b)
   return true
 end
 
---- Immediately drop sonar diagnostics carrying `code` so the silenced warning
+--- immediately drop sonar diagnostics carrying `code` so the silenced warning
 --- vanishes before the server's next publish. `only_bufnr` limits the sweep to
---- one buffer (test-scope only applies in test files, so we don't clear others).
+--- one buffer (test-scope only applies in test files, so we don't clear others)
 local function drop_diagnostics_with_code(code, only_bufnr)
   for _, client in ipairs(vim.lsp.get_clients { name = common.SONARLINT_CLIENT_NAME }) do
     local ok, ns = pcall(vim.lsp.diagnostic.get_namespace, client.id)
@@ -281,8 +281,8 @@ local function drop_diagnostics_with_code(code, only_bufnr)
   end
 end
 
---- Push the just-written rule change to running sonar clients so the warning
---- clears without a restart.
+--- push the just-written rule change to running sonar clients so the warning
+--- clears without a restart
 local function apply_silence_live(scope, code, root, bufnr)
   local clients = vim.lsp.get_clients { name = common.SONARLINT_CLIENT_NAME }
   if scope == 'global' then
@@ -295,7 +295,7 @@ local function apply_silence_live(scope, code, root, bufnr)
         cfg.settings.sonarlint.rules[code] = { level = 'off' }
         -- sonarlint re-pulls config via workspace/configuration after this
         -- notify; nvim's default handler answers from the (now updated)
-        -- client.config.settings, so the server stops emitting the rule.
+        -- client.config.settings, so the server stops emitting the rule
         client:notify('workspace/didChangeConfiguration', { settings = cfg.settings })
       end
     end
@@ -303,9 +303,9 @@ local function apply_silence_live(scope, code, root, bufnr)
     return
   end
 
-  -- Test scope: recompile overrides from the updated file so the always-on
+  -- test scope: recompile overrides from the updated file so the always-on
   -- publishDiagnostics wrapper filters future emits, then clear the current
-  -- buffer if it now matches a test glob.
+  -- buffer if it now matches a test glob
   for _, client in ipairs(clients) do
     local r = (client.config and client.config._sonarlint_root) or root
     local cfg = M.read_project_config(r)
@@ -322,7 +322,7 @@ local function apply_silence_live(scope, code, root, bufnr)
   end
 end
 
---- Add a silence to .sonarlint/localRules.json and apply it live.
+--- add a silence to .sonarlint/localRules.json and apply it live.
 --- `args` = { root, code, scope = 'global'|'test', globs?, bufnr? }
 function M.silence_rule(args)
   local root, code, scope = args.root, args.code, args.scope

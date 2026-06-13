@@ -1,9 +1,9 @@
--- vim.notify spam filter. Extracted from plugins/ui.lua's fidget config.
+-- vim.notify spam filter. extracted from plugins/ui.lua's fidget config.
 -- install() must run AFTER fidget.setup(): fidget's `override_vim_notify = true`
 -- replaces vim.notify at setup time, so a wrap installed earlier would be blown
--- away. This captures the post-fidget vim.notify and drops dotnet/roslyn/sonar
+-- away. captures the post-fidget vim.notify and drops dotnet/roslyn/sonar
 -- startup chatter (some always, some gated on the review-suppression flags
--- owned by sonarlint.lua / dotnet.lua).
+-- owned by sonarlint.lua / dotnet.lua)
 
 local M = {}
 
@@ -18,14 +18,14 @@ function M.install()
       return
     end
 
-    -- Transient roslyn pre-init noise: nvim core auto-pulls
+    -- transient roslyn pre-init noise: nvim core auto-pulls
     -- textDocument/diagnostic the moment roslyn attaches to a buffer,
     -- but roslyn can't resolve a file's language until its project has
     -- loaded, so each early pull errors -30099 ("Failed to get
-    -- language"). Scans hidden-loading many cs files during a cold
-    -- solution load burst one per file. Harmless: diagnostics arrive
+    -- language"). scans hidden-loading many cs files during a cold
+    -- solution load burst one per file. harmless: diagnostics arrive
     -- once init completes (the scans' own explicit pulls are
-    -- init-gated in features/diag-scan.lua). Still recorded in lsp.log.
+    -- init-gated in features/diag-scan.lua). still recorded in lsp.log
     if msg:match '^roslyn: %-30099: Failed to get language' then
       return
     end
@@ -33,7 +33,7 @@ function M.install()
     local title = nopts and nopts.title
     local title_str = type(title) == 'string' and title or nil
 
-    -- Always-silenced dotnet/roslyn startup spam (regardless of suppress)
+    -- always-silenced dotnet/roslyn startup spam (regardless of suppress)
     if not title or title == 'Progress' or (title_str and (title_str:match 'roslyn' or title_str:match 'easy%-dotnet')) then
       local dotnet_spam = { '^Initializing', '^Loading ', ' loaded$', '^Client initialized' }
       for _, pat in ipairs(dotnet_spam) do
@@ -43,8 +43,8 @@ function M.install()
       end
     end
 
-    -- Suppress-gated filters: drop sonarlint/roslyn chatter while in
-    -- diff/review contexts. Flags are owned by sonarlint.lua / dotnet.lua.
+    -- suppress-gated filters: drop sonarlint/roslyn chatter while in
+    -- diff/review contexts. flags are owned by sonarlint.lua / dotnet.lua
     if vim.g.sonarlint_suppressed then
       if msg:match '[Ss]onarlint' or msg:match '[Ss]onar[Qq]ube' then
         return

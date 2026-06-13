@@ -1,4 +1,4 @@
--- Completion configuration (blink.cmp)
+-- completion configuration (blink.cmp)
 
 return {
   {
@@ -56,7 +56,7 @@ return {
         ['<C-e>'] = { 'hide', 'fallback' },
         ['<CR>'] = { 'select_and_accept', 'fallback' },
         -- Shift+Enter (Ghostty sends ESC+CR = M-CR) inserts a literal newline
-        -- without accepting the visible completion item.
+        -- without accepting the visible completion item
         ['<M-CR>'] = {
           function(cmp)
             if cmp.is_visible() then

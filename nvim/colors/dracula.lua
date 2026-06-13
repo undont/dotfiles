@@ -1,5 +1,5 @@
--- Dracula colourscheme for Neovim
--- Matches the dotfiles dracula.theme exactly
+-- dracula colourscheme for nvim
+-- matches the dotfiles dracula.theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -9,16 +9,16 @@ end
 vim.g.colors_name = 'dracula'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/dracula.theme)
+-- theme colours (matching themes/dracula.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#282a36',
   fg_primary = '#f8f8f2',
   bg_secondary = '#44475a',
   fg_secondary = '#6272a4',
   fg_variable = '#d2d6de',
 
-  -- Accents
+  -- accents
   purple = '#bd93f9',
   pink = '#ff93d1',
   cyan = '#8be9fd',
@@ -26,18 +26,18 @@ local colors = {
   yellow = '#f1fa8c',
   red = '#ff5555',
 
-  -- Additional shades
+  -- additional shades
   selection = '#44475a',
   comment = '#6272a4',
   line_highlight = '#2e3040',
 }
 
--- Helper function to set highlight groups
+-- set a highlight group
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.purple, bg = colors.bg_secondary })
@@ -76,7 +76,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = colors.purple })
 hl('String', { fg = colors.yellow })

@@ -1,12 +1,12 @@
--- SonarLint project scan -- analogue to JetBrains' "Analyze All Project Files".
+-- SonarLint project scan, analogue to JetBrains' "Analyze All Project Files".
 -- SonarLint only analyses opened buffers, so we walk the project, hidden-load
 -- each scannable file, debounce on quiet diagnostic activity to detect "done",
 -- snapshot diagnostics into quickfix, and unload the buffers we created.
--- Three scopes, mirroring the all-LSP scans in features/diag-scan.lua:
+-- three scopes, mirroring the all-LSP scans in features/diag-scan.lua:
 --   <leader>lm  changed/untracked files   (~ <leader>xm)
 --   <leader>lT  ticket-matching commits   (~ <leader>xT, via features/ticket.lua)
 --   <leader>lS  whole project
--- Extracted from plugins/sonarlint.lua; delegates to features/scan-runner.
+-- extracted from plugins/sonarlint.lua; delegates to features/scan-runner
 
 local common = require 'custom.features.sonar-common'
 
@@ -16,8 +16,8 @@ local SCAN_FILE_CAP = 500
 local SCAN_DEBOUNCE_MS = 2000
 local SCAN_HARD_TIMEOUT_MS = 5 * 60 * 1000
 
--- Extensions that map to one of common.FILETYPES. Used to cheaply filter
--- `git ls-files` output before opening anything.
+-- extensions that map to one of common.FILETYPES. used to cheaply filter
+-- `git ls-files` output before opening anything
 local SCAN_EXTS = {
   py = true,
   c = true,
@@ -58,8 +58,8 @@ local function is_scannable_path(path)
   return base == 'dockerfile' or base:match '%.dockerfile$' ~= nil
 end
 
---- Run a git command and return its stdout split into lines.
---- Returns nil if the command failed (e.g. not in a git repo).
+--- run a git command and return its stdout split into lines.
+--- returns nil if the command failed (e.g. not in a git repo)
 local function git_lines(args, cwd)
   local result = vim.system(args, { text = true, cwd = cwd }):wait()
   if result.code ~= 0 then
@@ -72,7 +72,7 @@ local function git_lines(args, cwd)
   return lines
 end
 
---- Keep only sonarlint-scannable files that exist on disk.
+--- keep only sonarlint-scannable files that exist on disk
 --- @param paths string[] absolute paths
 local function scannable(paths)
   local files = {}
@@ -87,9 +87,9 @@ end
 --- @param mode 'changed' | 'all'
 local function list_scan_targets(mode)
   if mode == 'changed' then
-    -- Same file set as <leader>xm / <leader>sm (features/ticket.lua): staged or
+    -- same file set as <leader>xm / <leader>sm (features/ticket.lua): staged or
     -- unstaged changes vs HEAD plus untracked files. nil (already notified)
-    -- outside a git repo.
+    -- outside a git repo
     local paths = require('custom.features.ticket').modified_files()
     return paths and scannable(paths) or nil
   end
@@ -113,10 +113,10 @@ local function list_scan_targets(mode)
   return scannable(abs)
 end
 
---- Hidden-load `files`, debounce on their diagnostic activity and snapshot
---- sonar findings into the quickfix. `label` is shown in the fidget message.
+--- hidden-load `files`, debounce on their diagnostic activity and snapshot
+--- sonar findings into the quickfix. `label` is shown in the fidget message
 local function start_scan(files, label)
-  -- Track the buffers we open so we can unload only those in on_finalise.
+  -- track the buffers we open so we can unload only those in on_finalise
   local created = {}
   for _, path in ipairs(files) do
     local existed = vim.fn.bufnr(path) ~= -1
@@ -133,8 +133,8 @@ local function start_scan(files, label)
     end
   end
 
-  -- Pre-existing sonarlint buffers should still surface in the qf even
-  -- though they don't drive the debounce.
+  -- pre-existing sonarlint buffers should still surface in the qf even
+  -- though they don't drive the debounce
   local extra = {}
   for _, client in ipairs(vim.lsp.get_clients { name = common.SONARLINT_CLIENT_NAME }) do
     for bufnr, _ in pairs(client.attached_buffers or {}) do
@@ -155,8 +155,8 @@ local function start_scan(files, label)
   for _, b in ipairs(created) do
     table.insert(watched, b)
   end
-  -- Also watch already-loaded buffers from `files` so debounce reacts to
-  -- them; they're not in `created` because they pre-existed.
+  -- also watch already-loaded buffers from `files` so debounce reacts to
+  -- them; they're not in `created` because they pre-existed
   for _, path in ipairs(files) do
     local b = vim.fn.bufnr(path)
     if b ~= -1 then
@@ -194,9 +194,9 @@ function M.run_scan(mode)
     return
   end
 
-  -- Ticket mode resolves its file list asynchronously: same commit
+  -- ticket mode resolves its file list asynchronously: same commit
   -- discovery as <leader>dT / <leader>xT (features/ticket.lua), filtered to
-  -- sonarlint-scannable files.
+  -- sonarlint-scannable files
   if mode == 'ticket' then
     local ticket = require 'custom.features.ticket'
     ticket.prompt_commits(function(ctx)
@@ -217,7 +217,7 @@ function M.run_scan(mode)
 
   local files = list_scan_targets(mode)
   if not files then
-    return -- not a git repo; modified_files already notified
+    return -- not a git repo, modified_files already notified
   end
   if #files == 0 then
     local msg = mode == 'changed' and 'No changed sonarlint-scannable files' or 'No sonarlint-scannable files in ' .. vim.fn.getcwd()
@@ -227,8 +227,8 @@ function M.run_scan(mode)
 
   local label = mode == 'changed' and 'changed' or 'project'
 
-  -- Only the full-project scan asks for confirmation above the cap; the
-  -- changed-files and ticket modes are naturally bounded.
+  -- only the full-project scan asks for confirmation above the cap; the
+  -- changed-files and ticket modes are naturally bounded
   if mode == 'all' and #files > SCAN_FILE_CAP then
     vim.ui.select({ 'Yes', 'No' }, {
       prompt = 'Scan ' .. #files .. ' files (>' .. SCAN_FILE_CAP .. ')?',

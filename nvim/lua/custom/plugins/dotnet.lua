@@ -8,8 +8,8 @@ local function is_build_variant(path)
   return vim.fs.basename(path):match '%.[%l][%w]*%.slnx?$' ~= nil
 end
 
---- Find and set the target solution before roslyn.nvim loads, so that
---- lock_target can skip the multi-target picker entirely.
+--- find and set the target solution before roslyn.nvim loads, so that
+--- lock_target can skip the multi-target picker entirely
 local function resolve_solution_target()
   if vim.g.roslyn_nvim_selected_solution then
     return
@@ -30,23 +30,23 @@ local function resolve_solution_target()
 end
 
 -- Roslyn during diff/review contexts (Diffview, Octo).
--- Strategy: do NOTHING to the LSP client. Neovim's `lsp_enable_callback`
+-- strategy: do NOTHING to the LSP client. nvim's `lsp_enable_callback`
 -- skips buffers with `buftype` other than '' or 'help', and diff buffers
 -- have buftype=nofile (octo, diffview file_history) or buftype=nowrite
--- (diffview file diffs) -- so roslyn never auto-attaches to them anyway.
--- We previously called `vim.lsp.enable('roslyn', false)` to "block new
+-- (diffview file diffs), so roslyn never auto-attaches to them anyway.
+-- we previously called `vim.lsp.enable('roslyn', false)` to "block new
 -- attaches", but that ALSO stops every running roslyn client (per the
 -- vim.lsp.enable contract: "stops related LSP clients and servers"),
 -- which paid a multi-second cold-restart on every review entry/exit cycle.
 --
 -- vim.g.roslyn_suppressed remains as a flag so the notify wrap in ui.lua
 -- and fidget's progress.ignore can still drop residual chatter while in
--- review (e.g. messages emitted by an unrelated client startup).
+-- review (e.g. messages emitted by an unrelated client startup)
 vim.g.roslyn_suppressed = false
 
---- Source roslyn.nvim's plugin file after our config is applied. We block
+--- source roslyn.nvim's plugin file after our config is applied. we block
 --- it in init (vim.g.loaded_roslyn_plugin) to prevent vim.lsp.enable
---- firing before lock_target + ignore_target are set.
+--- firing before lock_target + ignore_target are set
 local function source_deferred_plugin()
   vim.g.loaded_roslyn_plugin = nil
   local plugin_file = vim.api.nvim_get_runtime_file('plugin/roslyn.lua', false)[1]
@@ -62,9 +62,9 @@ vim.api.nvim_create_autocmd('FileType', {
   end,
 })
 
--- Clear the flag once the review context is fully torn down. Diffview
+-- clear the flag once the review context is fully torn down. Diffview
 -- buffers can linger after close, so check the active view (not buffer
--- filetypes) plus any remaining octo buffers.
+-- filetypes) plus any remaining octo buffers
 local function maybe_clear_roslyn_flag()
   if not vim.g.roslyn_suppressed then
     return
@@ -86,10 +86,10 @@ vim.api.nvim_create_autocmd('BufEnter', {
 
 return {
   -- Roslyn LSP via roslyn.nvim (diagnostics, go-to-def, hover, completions)
-  -- Loads on `User RealDotnetFile` (fired by core/autocmds.lua only for
-  -- buftype='' cs/razor buffers). Diff buffers in diffview/octo have
+  -- loads on `User RealDotnetFile` (fired by core/autocmds.lua only for
+  -- buftype='' cs/razor buffers). diff buffers in diffview/octo have
   -- buftype=nowrite/nofile, so they don't trigger this and roslyn.nvim's
-  -- ~1.8s config cost stays off the cold-`<leader>do` critical path.
+  -- ~1.8s config cost stays off the cold-`<leader>do` critical path
   {
     'seblyng/roslyn.nvim',
     event = 'User RealDotnetFile',
@@ -113,16 +113,16 @@ return {
 
       vim.lsp.config('roslyn', {
         -- Roslyn's runtimeconfig.json pins System.GC.Server=true, which gives
-        -- the .NET runtime ~one GC heap per core — a heavy idle footprint on
-        -- many-core machines (and a big chunk of roslyn's thread count). The
+        -- the .NET runtime ~one GC heap per core: a heavy idle footprint on
+        -- many-core machines (and a big chunk of roslyn's thread count). the
         -- language server targets net10.0, and on .NET 9+ environment variables
         -- override runtimeconfig settings, so DOTNET_gcServer=0 forces
         -- workstation GC: far fewer heaps and lower memory, at a modest
         -- throughput cost on background full-solution analysis (kept off the hot
-        -- path by the batched scans in core/lists.lua). Scoped to the roslyn
+        -- path by the batched scans in core/lists.lua). scoped to the roslyn
         -- process via cmd_env, which roslyn.nvim's lsp/roslyn.lua passes through
         -- as the spawn env (merging with its own Configuration/TMPDIR), so
-        -- easy-dotnet's builds/tests/BuildHost are unaffected.
+        -- easy-dotnet's builds/tests/BuildHost are unaffected
         cmd_env = {
           DOTNET_gcServer = '0',
         },
@@ -157,9 +157,9 @@ return {
     },
     ft = { 'cs', 'fsharp', 'vb' },
     config = function()
-      -- Sync roslyn.nvim's solution target into easy-dotnet's cache so the
-      -- test runner and build commands use the same solution. Force-overwrite
-      -- if the cached solution is a build variant (e.g. .ci.slnx).
+      -- sync roslyn.nvim's solution target into easy-dotnet's cache so the
+      -- test runner and build commands use the same solution. force-overwrite
+      -- if the cached solution is a build variant (e.g. .ci.slnx)
       local roslyn_sln = vim.g.roslyn_nvim_selected_solution
       if roslyn_sln then
         local current_solution = require 'easy-dotnet.current_solution'
@@ -181,12 +181,12 @@ return {
           auto_start_testrunner = false,
           viewmode = 'float',
           mappings = {
-            -- Buffer keymaps (active in .cs files with tests)
+            -- buffer keymaps (active in .cs files with tests)
             run_test_from_buffer = { lhs = '<leader>tr', desc = '[R]un test' },
             -- run_all_tests_from_buffer overridden below (upstream runs whole project)
             debug_test_from_buffer = { lhs = '<leader>td', desc = '[D]ebug test' },
             peek_stack_trace_from_buffer = { lhs = '<leader>tp', desc = '[P]eek stacktrace' },
-            -- Explorer window keymaps (single keys — non-editable buffer)
+            -- explorer window keymaps (single keys, non-editable buffer)
             run = { lhs = 'r', desc = 'run test' },
             run_all = { lhs = 'R', desc = 'run all tests' },
             debug_test = { lhs = 'd', desc = 'debug test' },
@@ -217,7 +217,7 @@ return {
         require('easy-dotnet.test-runner').open()
       end, { desc = 'Test [E]xplorer (.NET)' })
 
-      -- Float nav-blocking + run-current-file tests live in features/.
+      -- float nav-blocking + run-current-file tests live in features/
       require('custom.features.dotnet-test').setup()
     end,
   },

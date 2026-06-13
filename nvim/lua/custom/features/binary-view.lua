@@ -1,6 +1,6 @@
--- Readable views for compiled object/library files.
+-- readable views for compiled object/library files.
 --
--- Opening a `.o`/`.a`/`.dylib`/`.so` normally shows raw binary noise. This
+-- opening a `.o`/`.a`/`.dylib`/`.so` normally shows raw binary noise. this
 -- intercepts the read and renders a decoded, read-only view instead: the
 -- symbol table by default (what you reach for when chasing an undefined-symbol
 -- link error), with disassembly and a hex dump a keypress away.
@@ -11,7 +11,7 @@
 
 local M = {}
 
--- Cap rendered output so opening a large dylib can't lock up the editor.
+-- cap rendered output so opening a large dylib can't lock up the editor
 local MAX_LINES = 50000
 local HEX_BYTES = 131072 -- 128 KiB
 
@@ -19,7 +19,7 @@ local function has(bin)
   return vim.fn.executable(bin) == 1
 end
 
---- Build the shell command for a given view, or nil if no tool is available.
+--- build the shell command for a given view, or nil if no tool is available
 local function view_command(view, path)
   local p = vim.fn.shellescape(path)
   if view == 'symbols' then
@@ -27,7 +27,7 @@ local function view_command(view, path)
       return nil
     end
     -- c++filt demangles C++/Obj-C++ symbols (e.g. TagLib::FileRef); other
-    -- symbols pass through untouched. Swift names stay mostly legible.
+    -- symbols pass through untouched. Swift names stay mostly legible
     return 'nm ' .. p .. (has 'c++filt' and ' | c++filt' or '')
   elseif view == 'disasm' then
     if has 'otool' then
@@ -44,7 +44,7 @@ local function view_command(view, path)
   end
 end
 
---- Collect a header (type + architectures) common to every view.
+--- collect a header (type + architectures) common to every view
 local function header(path)
   local lines = {}
   if has 'file' then
@@ -85,7 +85,7 @@ local function render(buf, path, view)
   vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].modifiable = false
-  -- 'asm' gives the disassembly real highlighting; the others read fine plain.
+  -- 'asm' gives the disassembly real highlighting; the others read fine plain
   vim.bo[buf].filetype = (view == 'disasm') and 'asm' or ''
 end
 
@@ -99,7 +99,7 @@ function M.setup()
       local buf = ev.buf
 
       -- nowrite + no swap so the decoded text can never be flushed back over
-      -- the binary (the auto-save autocmd also skips non-empty buftypes).
+      -- the binary (the auto-save autocmd also skips non-empty buftypes)
       vim.bo[buf].swapfile = false
       vim.bo[buf].buftype = 'nowrite'
       vim.bo[buf].undolevels = -1

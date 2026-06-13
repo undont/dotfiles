@@ -1,10 +1,10 @@
--- Refresh workflows: wipe buffers + restart LSP + re-source config,
--- and a lighter refresh for treesitter + semantic tokens.
+-- refresh workflows: wipe buffers + restart LSP + re-source config,
+-- and a lighter refresh for treesitter + semantic tokens
 
 local M = {}
 
 local function refresh_nvim()
-  -- Close stateful plugins cleanly before wiping buffers
+  -- close stateful plugins cleanly before wiping buffers
   pcall(function()
     vim.cmd 'Neotree close'
   end)
@@ -12,12 +12,12 @@ local function refresh_nvim()
     vim.cmd 'DiffviewClose'
   end)
 
-  -- Close all splits so the window fills the terminal before wiping buffers
+  -- close all splits so the window fills the terminal before wiping buffers
   vim.cmd 'only'
 
-  -- Suppress shutdown noise from force-stopped LSP clients. Async exit
+  -- suppress shutdown noise from force-stopped LSP clients. async exit
   -- callbacks (vim.schedule inside on_exit) arrive well after the defer
-  -- below, so the wrapper must outlive the refresh sequence.
+  -- below, so the wrapper must outlive the refresh sequence
   local real_notify = vim.notify
   local suppressing = true
   vim.notify = function(msg, level, opts)
@@ -42,9 +42,9 @@ local function refresh_nvim()
 
   vim.cmd 'source $MYVIMRC'
 
-  -- Open the dashboard in the current window (not as a float) for a clean start
+  -- open the dashboard in the current window (not as a float) for a clean start
   vim.defer_fn(function()
-    -- Restart Copilot — its lazy InsertEnter event won't re-fire after re-source
+    -- restart Copilot; its lazy InsertEnter event won't re-fire after re-source
     pcall(function()
       require('copilot.command').enable()
     end)
@@ -54,9 +54,9 @@ local function refresh_nvim()
     Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
   end, 200)
 
-  -- Restore vim.notify after async LSP exit callbacks have had time to fire.
-  -- Without this, repeated <leader>lR would chain wrappers (each capturing
-  -- the previous wrapper as real_notify).
+  -- restore vim.notify after async LSP exit callbacks have had time to fire.
+  -- without this, repeated <leader>lR would chain wrappers (each capturing
+  -- the previous wrapper as real_notify)
   vim.defer_fn(function()
     vim.notify = real_notify
   end, 3000)
@@ -84,10 +84,10 @@ local function refresh_treesitter()
   vim.notify('Refreshed tree-sitter', vim.log.levels.INFO)
 end
 
--- Toggle the dashboard in the current window without touching LSP/buffers.
--- On a non-dashboard buffer it stashes the current buffer and renders the
+-- toggle the dashboard in the current window without touching LSP/buffers.
+-- on a non-dashboard buffer it stashes the current buffer and renders the
 -- dashboard; pressing the key again on the dashboard restores that buffer
--- (falling back to the alternate buffer if the stash is gone).
+-- (falling back to the alternate buffer if the stash is gone)
 local dashboard_prev_buf = nil
 
 local function toggle_dashboard()

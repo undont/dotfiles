@@ -1,7 +1,7 @@
 -- debug.lua
 --
 -- Debug Adapter Protocol client with UI and inline variable display.
--- Go debugging via Delve, extensible to other languages.
+-- Go debugging via Delve, extensible to other languages
 
 return {
   'mfussenegger/nvim-dap',
@@ -84,17 +84,17 @@ return {
     require('mason-nvim-dap').setup {
       -- ensure_installed handles upfront install; automatic_installation races
       -- with it whenever an adapter is registered via dap.adapters[...] in the
-      -- same session, leaving installs stuck mid-flight (lockfile collision).
+      -- same session, leaving installs stuck mid-flight (lockfile collision)
       automatic_installation = false,
       handlers = {},
       ensure_installed = { 'delve', 'coreclr', 'debugpy', 'js', 'codelldb' },
     }
 
-    -- Single bottom panel with a winbar to switch sections (scopes is the
-    -- landing view, matching the old scopes-heavy sidebar). The debuggee
+    -- single bottom panel with a winbar to switch sections (scopes is the
+    -- landing view, matching the old scopes-heavy sidebar). the debuggee
     -- terminal/console sits in its own split alongside. `auto_toggle` opens
     -- the panel on session start and closes it when all sessions finish,
-    -- replacing the manual event listeners dap-ui needed.
+    -- replacing the manual event listeners dap-ui needed
     dapview.setup {
       winbar = {
         show = true,
@@ -111,21 +111,21 @@ return {
         terminal = {
           size = 0.5,
           position = 'left',
-          -- Go's delve uses an external terminal; no point reserving a split.
+          -- Go's delve uses an external terminal; no point reserving a split
           hide = { 'go' },
         },
       },
-      -- Inline variable values next to code (like Rider/GoLand). dap-view's
+      -- inline variable values next to code (like Rider/GoLand). dap-view's
       -- own implementation, registered against dap's `variables` event, so it
-      -- replaces the separate nvim-dap-virtual-text plugin. Requires nvim 0.12+
-      -- and auto-clears when the session terminates.
+      -- replaces the separate nvim-dap-virtual-text plugin. requires nvim 0.12+
+      -- and auto-clears when the session terminates
       virtual_text = {
         enabled = true,
       },
       auto_toggle = true,
     }
 
-    -- Breakpoint icons
+    -- breakpoint icons
     vim.api.nvim_set_hl(0, 'DapBreak', { fg = '#e51400' })
     vim.api.nvim_set_hl(0, 'DapStop', { fg = '#ffcc00' })
     local breakpoint_icons = vim.g.have_nerd_font and { Breakpoint = '', BreakpointCondition = '', BreakpointRejected = '', LogPoint = '', Stopped = '' }
@@ -142,16 +142,16 @@ return {
       },
     }
 
-    -- Attach to an already-running process via a headless delve. Start it
+    -- attach to an already-running process via a headless delve. start it
     -- yourself with one of:
     --   dlv attach <pid> --headless --listen=127.0.0.1:38697 --api-version=2
     --   dlv exec ./binary --headless --listen=127.0.0.1:38697 --api-version=2
-    -- This is the only working path for TUI binaries — delve's DAP server
+    -- this is the only working path for TUI binaries: delve's DAP server
     -- ignores `console: integratedTerminal` when actually debugging (only
     -- honoured for noDebug runs), and `dlv dap` has no `--tty` flag, so a
-    -- pure-launch flow always gives the debuggee pipe-based stdio. Using
+    -- pure-launch flow always gives the debuggee pipe-based stdio. using
     -- `dlv debug --tty=<pty>` in headless mode + this attach config is the
-    -- workaround if you want delve to launch the binary against a real PTY.
+    -- workaround if you want delve to launch the binary against a real PTY
     dap.configurations.go = dap.configurations.go or {}
     table.insert(dap.configurations.go, {
       type = 'go',
@@ -164,15 +164,15 @@ return {
       end,
     })
 
-    -- Point dap-python at Mason's debugpy venv so it doesn't depend on a
+    -- point dap-python at Mason's debugpy venv so it doesn't depend on a
     -- project-local venv being active. nvim-dap-python falls back to the
-    -- project venv automatically when one is detected.
+    -- project venv automatically when one is detected
     require('dap-python').setup(vim.fn.stdpath 'data' .. '/mason/packages/debugpy/venv/bin/python')
 
     -- JS/TS debugger (vscode-js-debug via Mason). `${port}` makes nvim-dap
-    -- pick a free port per session and spawn the adapter as a child — so a
+    -- pick a free port per session and spawn the adapter as a child, so a
     -- crashed session can't leave an orphan squatting on a fixed port.
-    -- neotest-vitest's `strategy = 'dap'` picks this up automatically.
+    -- neotest-vitest's `strategy = 'dap'` picks this up automatically
     local js_debug_server = vim.fn.stdpath 'data' .. '/mason/packages/js-debug-adapter/js-debug/src/dapDebugServer.js'
     for _, adapter in ipairs { 'pwa-node', 'pwa-chrome', 'pwa-msedge', 'node-terminal', 'pwa-extensionHost' } do
       dap.adapters[adapter] = {
@@ -189,7 +189,7 @@ return {
     -- codelldb (via Mason) debugs the native C family and Swift. `${port}` lets
     -- nvim-dap pick a free port per session and spawn the adapter as a child, so
     -- a crashed session can't leave an orphan squatting on a fixed port (same
-    -- pattern as the JS adapters above).
+    -- pattern as the JS adapters above)
     dap.adapters.codelldb = {
       type = 'server',
       port = '${port}',
@@ -199,9 +199,9 @@ return {
       },
     }
 
-    -- Shared launch config: prompt for the compiled binary. Point this at the
+    -- shared launch config: prompt for the compiled binary. point this at the
     -- product of your build (e.g. `.build/debug/<target>` for SwiftPM, or the
-    -- binary clang/cmake emits). Compile with debug symbols (`-g`).
+    -- binary clang/cmake emits). compile with debug symbols (`-g`)
     local codelldb_launch = {
       {
         name = 'Launch (codelldb)',

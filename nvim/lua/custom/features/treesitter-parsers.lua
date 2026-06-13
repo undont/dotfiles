@@ -1,19 +1,19 @@
--- nvim-treesitter parser maintenance. Extracted from plugins/treesitter.lua.
+-- nvim-treesitter parser maintenance. extracted from plugins/treesitter.lua.
 -- purge_if_updated() runs before install(): it drops compiled parsers (and their
 -- orphaned query dirs) when the plugin rev changes to avoid ABI crashes, and
 -- removes nvim-treesitter copies of parsers bundled with nvim so nvim's own
--- always-compatible versions win.
+-- always-compatible versions win
 
 local M = {}
 
---- Purge stale compiled parsers on a plugin update, then strip nvim-bundled
---- parser copies. Idempotent; safe to call on every startup.
+--- purge stale compiled parsers on a plugin update, then strip nvim-bundled
+--- parser copies. idempotent; safe to call on every startup
 function M.purge_if_updated()
-  -- Purge compiled parsers when nvim-treesitter updates to prevent ABI crashes.
-  -- Old .so files compiled against a previous treesitter ABI can crash Neovim
-  -- when opened (e.g. markdown, c_sharp after breaking updates). Remove the
+  -- purge compiled parsers when nvim-treesitter updates to prevent ABI crashes.
+  -- old .so files compiled against a previous treesitter ABI can crash nvim
+  -- when opened (e.g. markdown, c_sharp after breaking updates). remove the
   -- matching query directories too, otherwise health checks report orphaned
-  -- queries for parsers that no longer exist on disk.
+  -- queries for parsers that no longer exist on disk
   local parser_dir = vim.fn.stdpath 'data' .. '/site/parser'
   local query_dir = vim.fn.stdpath 'data' .. '/site/queries'
   local marker_path = vim.fn.stdpath 'data' .. '/nvim-treesitter-rev'
@@ -28,7 +28,7 @@ function M.purge_if_updated()
       stored_rev = stored_rev:gsub('%s+', '')
     end
     if stored_rev ~= current_rev then
-      -- Plugin updated — purge all compiled parsers so they reinstall cleanly
+      -- plugin updated, purge all compiled parsers so they reinstall cleanly
       local stat = vim.uv.fs_stat(parser_dir)
       if stat and stat.type == 'directory' then
         local handle = vim.uv.fs_scandir(parser_dir)
@@ -50,7 +50,7 @@ function M.purge_if_updated()
         end
         vim.notify('nvim-treesitter updated — reinstalling parsers', vim.log.levels.INFO)
       end
-      -- Write new marker
+      -- write new marker
       f = io.open(marker_path, 'w')
       if f then
         f:write(current_rev)
@@ -59,9 +59,9 @@ function M.purge_if_updated()
     end
   end
 
-  -- Remove any nvim-treesitter-managed copies of parsers bundled with Neovim
-  -- so that Neovim's own (always-compatible) versions take precedence.
-  -- Check both the site parser dir and the Lazy plugin parser dir.
+  -- remove any nvim-treesitter-managed copies of parsers bundled with nvim
+  -- so that nvim's own (always-compatible) versions take precedence.
+  -- check both the site parser dir and the Lazy plugin parser dir
   local nvim_bundled = { 'lua', 'luadoc', 'vim', 'vimdoc', 'query', 'markdown', 'markdown_inline' }
   local bundled_dirs = { parser_dir, plugin_dir .. '/parser' }
   for _, dir in ipairs(bundled_dirs) do
