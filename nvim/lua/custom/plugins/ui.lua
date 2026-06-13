@@ -3,8 +3,7 @@
 -- Colourschemes are custom files in nvim/colors/ — no plugins needed.
 
 return {
-  -- File explorer (neo-tree is imported from kickstart)
-  -- See kickstart/plugins/neo-tree.lua
+  -- File explorer (neo-tree spec lives in custom/plugins/neo-tree.lua)
 
   -- Cheatsheet for keybindings and commands
   {
