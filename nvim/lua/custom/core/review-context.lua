@@ -31,4 +31,14 @@ function M.is_scoped_view()
   return octo ~= nil and octo.get_current_review() ~= nil
 end
 
+--- delete every loaded octo buffer (the review-teardown sweep shared by
+--- <leader>pq and edit_diff_file's octo branch).
+function M.close_octo_buffers()
+  for _, buf in ipairs(vim.api.nvim_list_bufs()) do
+    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
+      vim.api.nvim_buf_delete(buf, { force = true })
+    end
+  end
+end
+
 return M

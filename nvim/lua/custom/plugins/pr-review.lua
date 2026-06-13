@@ -1,342 +1,7 @@
 -- PR review plugins: diffview, octo
 
-local octo_review_cache = {
-  changed_files = {},
-  file_contents = {},
-}
-
---- One-shot navigation target for `Octo review resume`. Set before issuing
---- the command; consumed once by the patched set_files_and_select_first.
-local pending_resume_target = nil ---@type {path: string, line: integer}?
-
---- Re-attach treesitter highlighting on the current buffer ONLY if it's
---- not already active. After `<leader>de` switches from a diff context to
---- a normal edit buffer, some :edit paths leave treesitter unattached.
---- Calling vim.treesitter.start unconditionally would replace an active
---- highlighter and force a full re-parse (slow on large files, visible
---- as flicker), so we skip when one is already attached.
-local function refresh_treesitter_highlight()
-  if vim.bo.filetype == '' then
-    return
-  end
-  local bufnr = vim.api.nvim_get_current_buf()
-  if vim.treesitter.highlighter.active[bufnr] then
-    return
-  end
-  pcall(vim.treesitter.start, 0)
-end
-
-local function octo_review_cache_key(pr)
-  return table.concat({ pr.repo, tostring(pr.number), pr.left.commit, pr.right.commit }, ':')
-end
-
-local function octo_review_prefix(pr)
-  return table.concat({ pr.repo, tostring(pr.number) }, ':') .. ':'
-end
-
-local function octo_file_cache_key(repo, commit, path)
-  return table.concat({ repo, commit, path }, ':')
-end
-
-local function snapshot_octo_changed_files(files)
-  local out = {}
-  for _, file in ipairs(files) do
-    out[#out + 1] = {
-      path = file.path,
-      previous_path = file.previous_path,
-      patch = file.patch,
-      status = file.status,
-      stats = vim.deepcopy(file.stats),
-    }
-  end
-  return out
-end
-
-local function build_octo_changed_files(pr, cached_files)
-  local FileEntry = require 'octo.reviews.file-entry'
-  local out = {}
-  for _, file in ipairs(cached_files) do
-    out[#out + 1] = FileEntry.FileEntry:new {
-      path = file.path,
-      previous_path = file.previous_path,
-      patch = file.patch,
-      pull_request = pr,
-      status = file.status,
-      stats = vim.deepcopy(file.stats),
-    }
-  end
-  return out
-end
-
-local function clear_stale_octo_review_entries(pr, keep_key)
-  local prefix = octo_review_prefix(pr)
-  for key in pairs(octo_review_cache.changed_files) do
-    if vim.startswith(key, prefix) and key ~= keep_key then
-      octo_review_cache.changed_files[key] = nil
-    end
-  end
-end
-
-local function persist_octo_file_cache(file, left_key, right_key)
-  if not file:is_ready_to_render() then
-    return false
-  end
-  octo_review_cache.file_contents[left_key] = vim.deepcopy(file.left_lines)
-  octo_review_cache.file_contents[right_key] = vim.deepcopy(file.right_lines)
-  return true
-end
-
-local function defer_octo_file_cache(file, left_key, right_key, attempts_left)
-  if persist_octo_file_cache(file, left_key, right_key) or attempts_left <= 0 then
-    return
-  end
-  vim.defer_fn(function()
-    defer_octo_file_cache(file, left_key, right_key, attempts_left - 1)
-  end, 25)
-end
-
-local function setup_octo_review_cache()
-  if vim.g.octo_review_cache_patched then
-    return
-  end
-  vim.g.octo_review_cache_patched = true
-
-  local PullRequest = require('octo.model.pull-request').PullRequest
-  local FileEntry = require('octo.reviews.file-entry').FileEntry
-  local orig_get_changed_files = PullRequest.get_changed_files
-  local orig_fetch = FileEntry.fetch
-
-  PullRequest.get_changed_files = function(self, callback)
-    local cache_key = octo_review_cache_key(self)
-    clear_stale_octo_review_entries(self, cache_key)
-
-    local cached = octo_review_cache.changed_files[cache_key]
-    if cached then
-      callback(build_octo_changed_files(self, cached))
-      return
-    end
-
-    orig_get_changed_files(self, function(files)
-      octo_review_cache.changed_files[cache_key] = snapshot_octo_changed_files(files)
-      callback(files)
-    end)
-  end
-
-  FileEntry.fetch = function(self, sync)
-    local current_review = require('octo.reviews').get_current_review()
-    if not current_review then
-      return orig_fetch(self, sync)
-    end
-
-    local left_path = self.path
-    if self.status == 'R' and self.previous_path then
-      left_path = self.previous_path
-    end
-
-    local left_key = octo_file_cache_key(self.pull_request.repo, current_review.layout.left.commit, left_path)
-    local right_key = octo_file_cache_key(self.pull_request.repo, current_review.layout.right.commit, self.path)
-    local cached_left = octo_review_cache.file_contents[left_key]
-    local cached_right = octo_review_cache.file_contents[right_key]
-
-    if cached_left and cached_right then
-      self.left_lines = vim.deepcopy(cached_left)
-      self.right_lines = vim.deepcopy(cached_right)
-      self.left_fetched = true
-      self.right_fetched = true
-      self.left_fetching = false
-      self.right_fetching = false
-      return
-    end
-
-    orig_fetch(self, sync)
-    if not persist_octo_file_cache(self, left_key, right_key) then
-      defer_octo_file_cache(self, left_key, right_key, sync and 10 or 80)
-    end
-  end
-
-  vim.api.nvim_create_user_command('OctoCacheClear', function()
-    octo_review_cache.changed_files = {}
-    octo_review_cache.file_contents = {}
-    vim.notify('Cleared Octo review cache', vim.log.levels.INFO)
-  end, { desc = 'Clear cached Octo review diffs' })
-
-  -- Honour pending_resume_target: when set, select the matching file (and
-  -- restore cursor line) instead of the default first-unviewed file.
-  local Review = require('octo.reviews').Review
-  local orig_select_first = Review.set_files_and_select_first
-  Review.set_files_and_select_first = function(self, files)
-    local target = pending_resume_target
-    pending_resume_target = nil
-    if not target then
-      return orig_select_first(self, files)
-    end
-
-    local match_idx
-    for idx, file in ipairs(files) do
-      if file.path == target.path then
-        match_idx = idx
-        break
-      end
-    end
-
-    if not match_idx then
-      return orig_select_first(self, files)
-    end
-
-    self.layout.files = files
-    files[match_idx]:fetch(true)
-    self.layout.selected_file_idx = match_idx
-    for _, file in ipairs(files) do
-      file:fetch(false)
-    end
-    self.layout:update_files()
-
-    local right_winid = self.layout.right_winid
-    if target.line and right_winid then
-      vim.schedule(function()
-        if vim.api.nvim_win_is_valid(right_winid) then
-          local line_count = vim.api.nvim_buf_line_count(vim.api.nvim_win_get_buf(right_winid))
-          local clamped = math.min(target.line, line_count)
-          pcall(vim.api.nvim_win_set_cursor, right_winid, { clamped, 0 })
-        end
-      end)
-    end
-  end
-end
-
---- Run a diffview command, closing any existing diffview first.
-local function diffview_open(cmd)
-  local lib = require 'diffview.lib'
-  local view = lib.get_current_view()
-  if view then
-    view:close()
-    lib.dispose_view(view)
-  end
-  vim.cmd(cmd)
-end
-
---- Close the current diff context and open the viewed file for editing.
---- Works for both diffview and octo review contexts.
-local function edit_diff_file()
-  -- Try diffview first
-  local dv_ok, dv_lib = pcall(require, 'diffview.lib')
-  if dv_ok then
-    local view = dv_lib.get_current_view()
-    if view then
-      local file = view:infer_cur_file()
-      if not file or not file.absolute_path then
-        vim.notify('No file under cursor', vim.log.levels.WARN)
-        return
-      end
-
-      -- Guard: file may have been deleted in this diff
-      if vim.fn.filereadable(file.absolute_path) ~= 1 then
-        vim.notify('File does not exist on disk: ' .. file.path, vim.log.levels.WARN)
-        return
-      end
-
-      -- Capture cursor position before closing. Try the right-side (new)
-      -- diff pane first, fall back to current window.
-      local cursor
-      if view.cur_layout then
-        local win = view.cur_layout:get_main_win()
-        if win and win.id and vim.api.nvim_win_is_valid(win.id) then
-          cursor = vim.api.nvim_win_get_cursor(win.id)
-        end
-      end
-      if not cursor then
-        cursor = vim.api.nvim_win_get_cursor(0)
-      end
-
-      local path = file.absolute_path
-
-      -- Close the tabpage directly for instant visual feedback.
-      local tabpage = view.tabpage
-      if tabpage and vim.api.nvim_tabpage_is_valid(tabpage) then
-        if #vim.api.nvim_list_tabpages() == 1 then
-          vim.cmd 'tabnew'
-        end
-        vim.cmd('tabclose ' .. vim.api.nvim_tabpage_get_number(tabpage))
-      end
-
-      vim.cmd('edit ' .. vim.fn.fnameescape(path))
-      if cursor then
-        pcall(vim.api.nvim_win_set_cursor, 0, cursor)
-      end
-
-      vim.schedule(refresh_treesitter_highlight)
-
-      -- Defer heavy cleanup (file:destroy() per diff buffer) so the
-      -- editor stays responsive. Event suppression keeps it fast.
-      vim.schedule(function()
-        local ei = vim.o.eventignore
-        vim.o.eventignore = 'all'
-        view:close()
-        dv_lib.dispose_view(view)
-        vim.o.eventignore = ei
-      end)
-
-      return
-    end
-  end
-
-  -- Try octo review
-  local octo_ok, reviews = pcall(require, 'octo.reviews')
-  if octo_ok then
-    local review = reviews.get_current_review()
-    if review and review.layout then
-      local layout = review.layout
-      local file = layout:get_current_file()
-      if not file then
-        vim.notify('No file in review', vim.log.levels.WARN)
-        return
-      end
-
-      local path = file.path
-
-      -- Guard: file may not exist if the PR branch isn't checked out
-      if vim.fn.filereadable(path) ~= 1 then
-        vim.notify('File not on disk (PR branch not checked out?): ' .. path, vim.log.levels.WARN)
-        return
-      end
-
-      -- Warn if on a different branch — file exists but may be a different version
-      local octo_utils = require 'octo.utils'
-      if file.pull_request and not octo_utils.in_pr_branch(file.pull_request) then
-        local choice = vim.fn.confirm('Not on the PR branch — file may differ from the review. Edit anyway?', '&Yes\n&No', 2)
-        if choice ~= 1 then
-          return
-        end
-      end
-
-      -- Read cursor from the right (new) side — if the user is on the left
-      -- (old) side the line numbers won't match the current file
-      local right_win = layout.right_winid
-      local cursor
-      if right_win and vim.api.nvim_win_is_valid(right_win) then
-        cursor = vim.api.nvim_win_get_cursor(right_win)
-      end
-
-      -- Close review layout and remaining octo buffers
-      layout:close()
-      for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-        if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
-          vim.api.nvim_buf_delete(buf, { force = true })
-        end
-      end
-
-      vim.schedule(function()
-        vim.cmd('edit ' .. vim.fn.fnameescape(path))
-        pcall(vim.api.nvim_win_set_cursor, 0, cursor)
-        vim.cmd 'doautocmd BufEnter'
-        refresh_treesitter_highlight()
-      end)
-      return
-    end
-  end
-
-  vim.notify('No diff context found', vim.log.levels.WARN)
-end
+local diff_edit = require 'custom.features.diff-edit'
+local octo_cache = require 'custom.features.octo-review-cache'
 
 return {
   -- Diffview: side-by-side diffs and file history
@@ -390,7 +55,7 @@ return {
           end
           mark 'cursor_hook'
 
-          diffview_open 'DiffviewOpen'
+          diff_edit.diffview_open 'DiffviewOpen'
           mark 'diffview_open'
 
           if t0 then
@@ -418,7 +83,7 @@ return {
 
           -- Single-rev form diffs the merge-base against the working tree, so
           -- both branch commits and uncommitted/unstaged changes are included.
-          diffview_open('DiffviewOpen ' .. base)
+          diff_edit.diffview_open('DiffviewOpen ' .. base)
         end,
         desc = '[D]iff branch [T]otal (vs main)',
       },
@@ -431,25 +96,25 @@ return {
             if newest == ctx.head then
               -- Single-rev form diffs against the working tree, so
               -- uncommitted changes are included in the review.
-              diffview_open(string.format('DiffviewOpen %s^', oldest))
+              diff_edit.diffview_open(string.format('DiffviewOpen %s^', oldest))
             else
               -- Commits exist after the newest match; a working-tree diff
               -- would include them, so stick to the fixed range.
-              diffview_open(string.format('DiffviewOpen %s^...%s', oldest, newest))
+              diff_edit.diffview_open(string.format('DiffviewOpen %s^...%s', oldest, newest))
             end
           end)
         end,
         desc = '[D]iff branch by [T]icket',
       },
-      { '<leader>de', edit_diff_file, desc = '[D]iff [E]dit file' },
+      { '<leader>de', diff_edit.edit_diff_file, desc = '[D]iff [E]dit file' },
       {
         '<leader>dh',
         function()
           local file = vim.fn.expand '%'
           if file ~= '' and vim.fn.filereadable(file) == 1 then
-            diffview_open 'DiffviewFileHistory %'
+            diff_edit.diffview_open 'DiffviewFileHistory %'
           else
-            diffview_open 'DiffviewFileHistory'
+            diff_edit.diffview_open 'DiffviewFileHistory'
           end
         end,
         desc = '[D]iff file [H]istory',
@@ -457,7 +122,7 @@ return {
       {
         '<leader>dp',
         function()
-          diffview_open 'DiffviewFileHistory --range=origin/HEAD...HEAD --right-only --no-merges'
+          diff_edit.diffview_open 'DiffviewFileHistory --range=origin/HEAD...HEAD --right-only --no-merges'
         end,
         desc = '[D]iff [P]R review',
       },
@@ -480,7 +145,7 @@ return {
           vim.keymap.set('n', '<leader>dc', function()
             vim.cmd 'DiffviewClose'
           end, { buffer = ev.buf, desc = '[D]iff [C]lose' })
-          vim.keymap.set('n', '<leader>de', edit_diff_file, { buffer = ev.buf, desc = '[D]iff [E]dit file' })
+          vim.keymap.set('n', '<leader>de', diff_edit.edit_diff_file, { buffer = ev.buf, desc = '[D]iff [E]dit file' })
         end,
       })
 
@@ -720,7 +385,7 @@ return {
           if current_file ~= '' and vim.bo.buftype == '' then
             local rel = vim.fn.fnamemodify(current_file, ':.')
             if rel ~= '' and not rel:match '^/' then
-              pending_resume_target = { path = rel, line = vim.fn.line '.' }
+              octo_cache.set_resume_target { path = rel, line = vim.fn.line '.' }
             end
           end
           vim.cmd 'Octo review resume'
@@ -744,11 +409,7 @@ return {
             end
           end
           -- Close all octo buffers
-          for _, buf in ipairs(vim.api.nvim_list_bufs()) do
-            if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].filetype == 'octo' then
-              vim.api.nvim_buf_delete(buf, { force = true })
-            end
-          end
+          require('custom.core.review-context').close_octo_buffers()
           -- Re-trigger BufEnter so which-key re-attaches after layout teardown
           -- (closing Octo review windows/tabs can disrupt which-key's state)
           vim.schedule(function()
@@ -820,7 +481,7 @@ return {
         },
       }
 
-      setup_octo_review_cache()
+      octo_cache.setup()
 
       -- Patch mappings to pass buffer context (upstream bug: opts is nil)
       local mappings = require 'octo.mappings'
