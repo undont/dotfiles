@@ -255,68 +255,9 @@ return {
       }
       require('fidget').setup(opts)
 
-      -- Wrap fidget's vim.notify with a spam filter. ALL notification
-      -- filtering lives here because fidget's `override_vim_notify = true`
-      -- overwrites vim.notify at setup time, blowing away any wrap installed
-      -- by other plugin specs at module load. This wrap runs after fidget
-      -- setup so it survives.
-      local base_notify = vim.notify
-      vim.notify = function(msg, level, nopts)
-        if type(msg) ~= 'string' then
-          return base_notify(msg, level, nopts)
-        end
-
-        if msg:match '^Multiple potential target files found' then
-          return
-        end
-
-        -- Transient roslyn pre-init noise: nvim core auto-pulls
-        -- textDocument/diagnostic the moment roslyn attaches to a buffer,
-        -- but roslyn can't resolve a file's language until its project has
-        -- loaded, so each early pull errors -30099 ("Failed to get
-        -- language"). Scans hidden-loading many cs files during a cold
-        -- solution load burst one per file. Harmless: diagnostics arrive
-        -- once init completes (the scans' own explicit pulls are
-        -- init-gated in core/lists.lua). Still recorded in lsp.log.
-        if msg:match '^roslyn: %-30099: Failed to get language' then
-          return
-        end
-
-        local title = nopts and nopts.title
-        local title_str = type(title) == 'string' and title or nil
-
-        -- Always-silenced dotnet/roslyn startup spam (regardless of suppress)
-        if not title or title == 'Progress' or (title_str and (title_str:match 'roslyn' or title_str:match 'easy%-dotnet')) then
-          local dotnet_spam = { '^Initializing', '^Loading ', ' loaded$', '^Client initialized' }
-          for _, pat in ipairs(dotnet_spam) do
-            if msg:match(pat) then
-              return
-            end
-          end
-        end
-
-        -- Suppress-gated filters: drop sonarlint/roslyn chatter while in
-        -- diff/review contexts. Flags are owned by sonarlint.lua / dotnet.lua.
-        if vim.g.sonarlint_suppressed then
-          if msg:match '[Ss]onarlint' or msg:match '[Ss]onar[Qq]ube' then
-            return
-          end
-          if title_str and title_str:lower():match 'sonar' then
-            return
-          end
-        end
-
-        if vim.g.roslyn_suppressed then
-          if msg:match '[Rr]oslyn' then
-            return
-          end
-          if title_str and title_str:lower():match 'roslyn' then
-            return
-          end
-        end
-
-        return base_notify(msg, level, nopts)
-      end
+      -- Spam filter must install AFTER fidget setup (override_vim_notify wipes
+      -- earlier wraps). See features/notify-filter.
+      require('custom.features.notify-filter').install()
 
       vim.keymap.set('n', '<leader>Nn', '<cmd>Fidget history<cr>', { desc = 'Notification history' })
     end,
