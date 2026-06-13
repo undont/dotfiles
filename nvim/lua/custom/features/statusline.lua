@@ -1,6 +1,6 @@
 -- bespoke mini.statusline content + section overrides. extracted from
--- plugins/mini.lua; setup(statusline) takes the require('mini.statusline')
--- handle so it can override section_* and drive setup().
+-- plugins/mini.lua; setup() requires the mini.statusline singleton itself so
+-- lua_ls keeps the library's section_* signatures, then overrides them.
 
 local M = {}
 
@@ -88,7 +88,9 @@ local function derive_statusline_hl()
   end
 end
 
-function M.setup(statusline)
+function M.setup()
+  local statusline = require 'mini.statusline'
+
   statusline.setup {
     use_icons = vim.g.have_nerd_font,
     content = {

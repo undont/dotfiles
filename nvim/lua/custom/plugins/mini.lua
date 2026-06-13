@@ -101,7 +101,7 @@ return {
       require('mini.splitjoin').setup()
 
       -- Bespoke statusline content + section overrides live in features/.
-      require('custom.features.statusline').setup(require 'mini.statusline')
+      require('custom.features.statusline').setup()
     end,
   },
 }
