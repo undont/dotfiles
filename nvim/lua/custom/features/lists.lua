@@ -283,7 +283,7 @@ local scanning = false
 
 --- True while any scan is running, including the gaps between batches.
 local function scan_in_progress()
-  return scanning or require('custom.core.scan_runner').is_active()
+  return scanning or require('custom.features.scan-runner').is_active()
 end
 
 --- Hidden-load one chunk of (already filtered-readable) absolute paths so LSPs
@@ -327,7 +327,7 @@ end
 --- @param paths string[] absolute paths
 --- @param opts { qf_title: string, qf_label: string, augroup_name: string, empty_message: string }
 local function scan_files(paths, opts)
-  local scan_runner = require 'custom.core.scan_runner'
+  local scan_runner = require 'custom.features.scan-runner'
   if scan_in_progress() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
     return
@@ -513,7 +513,7 @@ end
 -- Modified-file discovery shared with <leader>lm and <leader>sm
 -- (core/ticket.lua), so scan and picker operate on the same set.
 local function open_git_modified()
-  local paths = require('custom.core.ticket').modified_files()
+  local paths = require('custom.features.ticket').modified_files()
   if not paths then
     return
   end
@@ -534,7 +534,7 @@ end
 -- diffview it scans every file changed on the branch vs main and dumps their
 -- diagnostics into the quickfix.
 local function open_branch_scan()
-  local paths = require('custom.core.ticket').branch_files()
+  local paths = require('custom.features.ticket').branch_files()
   if not paths then
     return
   end
@@ -560,7 +560,7 @@ local function open_ticket_scan()
     return
   end
 
-  local ticket = require 'custom.core.ticket'
+  local ticket = require 'custom.features.ticket'
   ticket.prompt_commits(function(ctx)
     local paths = ticket.commit_files(ctx)
     if not paths then
@@ -585,7 +585,7 @@ end
 -- originating LSP). The same prefix is used by the auto-clear's
 -- (lnum, text) match so pruning stays accurate.
 local function diags_to_items(diagnostics)
-  local scan_runner = require 'custom.core.scan_runner'
+  local scan_runner = require 'custom.features.scan-runner'
   local items = {}
   for _, d in ipairs(diagnostics) do
     -- Drop SCAN_IGNORED_CODES phantoms from buffers not shown in any

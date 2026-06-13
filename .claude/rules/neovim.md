@@ -6,18 +6,22 @@ paths:
 
 # Neovim Configuration
 
-Based on kickstart.nvim with modular organisation:
-- `lua/custom/core/`: autocmds.lua, build.lua, diff-highlights.lua, folding.lua, keymaps.lua, lists.lua, macos-nav.lua, options.lua, refresh.lua, review-context.lua, scan_runner.lua, spellcheck.lua, tag-rename.lua, theme.lua, ticket.lua, windows.lua
+Based on kickstart.nvim with modular organisation. Three-way split: `core/` =
+editor settings + fundamental behaviour with no plugin coupling; `features/` =
+self-contained bespoke features (each owns its keymaps via `setup()`);
+`plugins/` = thin lazy specs that `require('custom.features.X')`.
+- `lua/custom/core/`: autocmds.lua, diff-highlights.lua, folding.lua, keymaps.lua, macos-nav.lua, options.lua, refresh.lua, review-context.lua, spellcheck.lua, theme.lua, windows.lua
+- `lua/custom/features/`: binary-view.lua, build.lua, lists.lua, scan-runner.lua, tag-rename.lua, ticket.lua
 - `lua/custom/plugins/`: init.lua, buffers.lua, claude-prompt.lua, codecompanion.lua, completion.lua, copilot.lua, dashboard.lua, dial.lua, dotnet.lua, git.lua, lazydev.lua, lsp.lua, markdown-ui.lua, mini.lua, multi-cursor.lua, music.lua, navigation.lua, obsidian.lua, paste.lua, pr-review.lua, search.lua, sonarlint.lua, telescope.lua, test.lua, tpope.lua, treesitter.lua, ui.lua
 - `lua/kickstart/plugins/`: neo-tree.lua, gitsigns.lua, autopairs.lua, debug.lua, lint.lua, indent_line.lua
 
 `core/keymaps.lua` is a slim entry point: it defines a few fundamental
 editing tweaks (`<Esc>` hl-clear, `dd`/`dy`, smart `i`/`a`, `m`/`M`/`gm`
 line nav, terminal escape, `<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
-and then calls `setup()` on the focused core modules (folding, lists,
-windows, macos-nav, refresh, spellcheck, build). Each focused module owns
-its own keymaps — add new ones where they belong rather than letting
-`keymaps.lua` regrow into a grab-bag.
+and then calls `setup()` on the focused modules: core (folding, windows,
+macos-nav, refresh, spellcheck) and features (lists, build, binary-view).
+Each focused module owns its own keymaps — add new ones where they belong
+rather than letting `keymaps.lua` regrow into a grab-bag.
 
 ## lua_ls Workspace Config (`.luarc.json`)
 

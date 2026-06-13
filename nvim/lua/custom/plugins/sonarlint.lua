@@ -367,7 +367,7 @@ local function list_scan_targets(mode)
     -- Same file set as <leader>xm / <leader>sm (core/ticket.lua): staged or
     -- unstaged changes vs HEAD plus untracked files. nil (already notified)
     -- outside a git repo.
-    local paths = require('custom.core.ticket').modified_files()
+    local paths = require('custom.features.ticket').modified_files()
     return paths and scannable(paths) or nil
   end
 
@@ -443,7 +443,7 @@ local function start_scan(files, label)
 
   local collect = vim.list_extend(vim.list_extend({}, watched), extra)
 
-  require('custom.core.scan_runner').start {
+  require('custom.features.scan-runner').start {
     bufnrs = watched,
     collect_bufnrs = collect,
     get_diagnostics = sonarlint_diagnostics,
@@ -466,7 +466,7 @@ end
 
 --- @param mode 'changed' | 'ticket' | 'all'
 local function run_scan(mode)
-  if require('custom.core.scan_runner').is_active() then
+  if require('custom.features.scan-runner').is_active() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
     return
   end
@@ -475,7 +475,7 @@ local function run_scan(mode)
   -- discovery as <leader>dT / <leader>xT (core/ticket.lua), filtered to
   -- sonarlint-scannable files.
   if mode == 'ticket' then
-    local ticket = require 'custom.core.ticket'
+    local ticket = require 'custom.features.ticket'
     ticket.prompt_commits(function(ctx)
       local paths = ticket.commit_files(ctx)
       if not paths then

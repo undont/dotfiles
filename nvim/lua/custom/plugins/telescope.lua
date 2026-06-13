@@ -169,7 +169,7 @@ return {
         -- staged or unstaged changes vs HEAD plus untracked files. A plain
         -- file picker rather than builtin.git_status, so no status letters or
         -- <Tab> staging -- in exchange the three always agree on "modified".
-        local files = require('custom.core.ticket').modified_files()
+        local files = require('custom.features.ticket').modified_files()
         if not files then
           return
         end

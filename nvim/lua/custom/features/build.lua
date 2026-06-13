@@ -2,7 +2,7 @@
 
 local M = {}
 
-local scan_runner = require 'custom.core.scan_runner'
+local scan_runner = require 'custom.features.scan-runner'
 
 --- Detect package manager from lockfile in a directory
 ---@param dir string

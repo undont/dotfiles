@@ -14,7 +14,7 @@
 require('custom.core.options').setup()
 require('custom.core.keymaps').setup()
 require('custom.core.autocmds').setup()
-require('custom.core.tag-rename').setup()
+require('custom.features.tag-rename').setup()
 
 -- Bootstrap and load plugins
 require('custom.lazy-bootstrap').setup()

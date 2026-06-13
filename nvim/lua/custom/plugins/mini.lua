@@ -75,8 +75,8 @@ return {
         comment = { suffix = '' }, -- ]c/[c reserved for gitsigns (git changes)
         file = { suffix = 'f' }, -- diffview overrides ]f/[f when open
         treesitter = { suffix = '' }, -- ]t/[t reserved for neotest (failed tests)
-        quickfix = { suffix = '' }, -- ]q/[q wrapped in custom.core.lists (empty-list notify + cursor-relative idx)
-        location = { suffix = '' }, -- ]l/[l wrapped in custom.core.lists (empty-list notify + cursor-relative idx)
+        quickfix = { suffix = '' }, -- ]q/[q wrapped in custom.features.lists (empty-list notify + cursor-relative idx)
+        location = { suffix = '' }, -- ]l/[l wrapped in custom.features.lists (empty-list notify + cursor-relative idx)
       }
 
       -- Redirect ]f/[f from neo-tree to the first normal editing window

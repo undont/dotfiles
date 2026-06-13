@@ -67,13 +67,13 @@ function M.setup()
 
   -- Focused modules own their own keymaps
   require('custom.core.folding').setup()
-  require('custom.core.lists').setup()
+  require('custom.features.lists').setup()
   require('custom.core.windows').setup()
   require('custom.core.macos-nav').setup()
   require('custom.core.refresh').setup()
   require('custom.core.spellcheck').setup()
-  require('custom.core.build').setup()
-  require('custom.core.binary-view').setup()
+  require('custom.features.build').setup()
+  require('custom.features.binary-view').setup()
 end
 
 return M

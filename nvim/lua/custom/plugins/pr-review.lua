@@ -426,7 +426,7 @@ return {
         '<leader>dT',
         function()
           -- Commit discovery shared with <leader>xT / <leader>lT (core/ticket.lua)
-          require('custom.core.ticket').prompt_commits(function(ctx)
+          require('custom.features.ticket').prompt_commits(function(ctx)
             local oldest, newest = ctx.commits[#ctx.commits], ctx.commits[1]
             if newest == ctx.head then
               -- Single-rev form diffs against the working tree, so
