@@ -11,7 +11,7 @@ editor settings + fundamental behaviour with no plugin coupling; `features/` =
 self-contained bespoke features (each owns its keymaps via `setup()`);
 `plugins/` = thin lazy specs that `require('custom.features.X')`.
 - `lua/custom/core/`: autocmds.lua, diff-highlights.lua, folding.lua, keymaps.lua, macos-nav.lua, options.lua, refresh.lua, review-context.lua, spellcheck.lua, theme.lua, windows.lua
-- `lua/custom/features/`: binary-view.lua, build.lua, diag-scan.lua, lists.lua, scan-runner.lua, statusline.lua, tag-rename.lua, ticket.lua
+- `lua/custom/features/`: binary-view.lua, build.lua, diag-scan.lua, lists.lua, scan-runner.lua, sonar-actions.lua, sonar-common.lua, sonar-rule-popup.lua, sonar-rules.lua, sonar-scan.lua, statusline.lua, tag-rename.lua, ticket.lua
 - `lua/custom/plugins/`: init.lua, buffers.lua, claude-prompt.lua, codecompanion.lua, completion.lua, copilot.lua, dashboard.lua, dial.lua, dotnet.lua, git.lua, lazydev.lua, lsp.lua, markdown-ui.lua, mini.lua, multi-cursor.lua, music.lua, navigation.lua, obsidian.lua, paste.lua, pr-review.lua, search.lua, sonarlint.lua, telescope.lua, test.lua, tpope.lua, treesitter.lua, ui.lua
 - `lua/kickstart/plugins/`: neo-tree.lua, gitsigns.lua, autopairs.lua, debug.lua, lint.lua, indent_line.lua
 
