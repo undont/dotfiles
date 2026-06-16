@@ -245,10 +245,21 @@ handle_parameterised() {
 
     # build content: header lines + directory list
     # note: avoid $(printf...) for line building, command substitution strips trailing newlines
-    local content=""
+    local content="" header_lines=5
     content+=$'\n'
     content+="  ${GREEN}${name}${NC}"$'\n'
     content+="  ${GREY}${description}${NC}"$'\n'
+
+    # empty list usually means PROJECT_DIRS isn't reaching the popup. show why
+    # rather than a blank picker. the var is exported in ~/.zshrc but only reaches
+    # a tmux popup via update-environment on attach (see tmux.conf update-environment)
+    if [[ ${#display_dirs[@]} -eq 0 ]]; then
+        local pd_display="${PROJECT_DIRS:-not set}"
+        content+="  ${YELLOW}No project directories found${NC}"$'\n'
+        content+="  ${GREY}PROJECT_DIRS: ${pd_display} · set it in ~/.zshrc, then detach + reattach${NC}"$'\n'
+        header_lines=7
+    fi
+
     content+=$'\n'
     content+=$'\n'
 
@@ -260,7 +271,7 @@ handle_parameterised() {
     result=$(printf '%s' "$content" | fzf \
         --ansi --reverse --exact --disabled --cycle \
         --print-query \
-        --header-lines=5 \
+        --header-lines="$header_lines" \
         --padding=0,0,1,0 \
         --prompt=': ' \
         --border=rounded \

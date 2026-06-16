@@ -40,6 +40,7 @@ return {
           if vim.wo.diff then
             vim.cmd.normal { ']c', bang = true }
           else
+            ---@diagnostic disable-next-line: missing-fields
             gitsigns.nav_hunk('next', { wrap = false, target = 'all' })
           end
         end, { desc = 'Jump to next git [c]hange' })
@@ -48,6 +49,7 @@ return {
           if vim.wo.diff then
             vim.cmd.normal { '[c', bang = true }
           else
+            ---@diagnostic disable-next-line: missing-fields
             gitsigns.nav_hunk('prev', { wrap = false, target = 'all' })
           end
         end, { desc = 'Jump to previous git [c]hange' })
@@ -64,7 +66,8 @@ return {
         map('n', '<leader>Hs', gitsigns.stage_hunk, { desc = '[S]tage hunk' })
         map('n', '<leader>Hr', gitsigns.reset_hunk, { desc = '[R]eset hunk' })
         map('n', '<leader>HS', gitsigns.stage_buffer, { desc = '[S]tage buffer' })
-        map('n', '<leader>Hu', gitsigns.undo_stage_hunk, { desc = '[U]ndo stage hunk' })
+        -- stage_hunk toggles: on a staged sign it unstages, replacing the deprecated undo_stage_hunk
+        map('n', '<leader>Hu', gitsigns.stage_hunk, { desc = '[U]ndo stage hunk' })
         map('n', '<leader>HR', gitsigns.reset_buffer, { desc = '[R]eset buffer' })
         map('n', '<leader>Hp', gitsigns.preview_hunk, { desc = '[P]review hunk' })
         map('n', '<leader>Hi', gitsigns.preview_hunk_inline, { desc = '[I]nline hunk diff' })

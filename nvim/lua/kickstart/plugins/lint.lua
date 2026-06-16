@@ -8,7 +8,6 @@ return {
       lint.linters_by_ft = {
         python = { 'ruff' },
         swift = { 'swiftlint' },
-        -- markdown = { 'markdownlint' },  -- Requires: npm install -g markdownlint-cli
       }
 
       -- Create autocommand which carries out the actual linting
