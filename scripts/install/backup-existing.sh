@@ -2,8 +2,8 @@
 # shellcheck disable=SC1091
 set -euo pipefail
 
-# Backup existing configuration files before creating symlinks
-# Creates timestamped backup directory
+# backup existing configuration files before creating symlinks
+# creates timestamped backup directory
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -12,7 +12,7 @@ source "$SCRIPT_DIR/../_lib/rollback.sh"
 PRESET="${DOTFILES_PRESET:-full}"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)-$$"
 
-# Ensure parent backup directory exists with restrictive permissions
+# ensure parent backup directory exists with restrictive permissions
 mkdir -p "$HOME/.dotfiles-backup"
 chmod 700 "$HOME/.dotfiles-backup"
 
@@ -36,17 +36,17 @@ echo ""
 
 BACKED_UP=0
 
-# Zsh (minimal)
+# zsh (minimal)
 backup_if_exists "$HOME/.zshrc" "$BACKUP_DIR/.zshrc" && BACKED_UP=1
 backup_if_exists "$HOME/.zprofile" "$BACKUP_DIR/.zprofile" && BACKED_UP=1
 backup_if_exists "$HOME/.p10k.zsh" "$BACKUP_DIR/.p10k.zsh" && BACKED_UP=1
 backup_if_exists "$HOME/.zsh" "$BACKUP_DIR/.zsh" && BACKED_UP=1
 
-# Tmux (minimal)
+# tmux (minimal)
 backup_if_exists "$HOME/.tmux.conf" "$BACKUP_DIR/.tmux.conf" && BACKED_UP=1
 backup_if_exists "$HOME/.tmux" "$BACKUP_DIR/.tmux" && BACKED_UP=1
 
-# Neovim (core)
+# nvim (core)
 if should_install "core"; then
     backup_if_exists "$HOME/.config/nvim" "$BACKUP_DIR/.config/nvim" && BACKED_UP=1
 fi

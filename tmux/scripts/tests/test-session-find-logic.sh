@@ -1,26 +1,26 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unit tests for session logic (mocks tmux)
-# This test verifies that find_other_session handles edge cases correctly
-# specifically that it doesn't crash with pipefail when grep finds nothing.
+# unit tests for session logic (mocks tmux)
+# this test verifies that find_other_session handles edge cases correctly
+# specifically that it doesn't crash with pipefail when grep finds nothing
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 LIB_DIR="$(dirname "$SCRIPT_DIR")/_lib"
 
-# Mocks
+# mocks
 # ---------------------------------------------------------
 
-# Mock tmux command to simulate specific session states
+# mock tmux command to simulate specific session states
 # shellcheck disable=SC2329  # Mock function called indirectly via export -f
 tmux() {
     case "$1" in
         list-sessions) 
-            # Return predetermined output based on TEST_CASE variable
+            # return predetermined output based on TEST_CASE variable
             echo "$TMUX_LIST_OUTPUT"
             ;;
         *)
-            # Fallback to system tmux or error
+            # fall back to system tmux or error
             echo "Mock tmux received unexpected command: $*" >&2
             return 1
             ;;
@@ -28,23 +28,23 @@ tmux() {
 }
 export -f tmux
 
-# Helpers
+# helpers
 # ---------------------------------------------------------
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Setup
+# setup
 # ---------------------------------------------------------
-# Source the library under test
+# source the library under test
 source "$LIB_DIR/session.sh"
 
 echo "Running find_other_session logic tests..."
 echo "-------------------------------------------"
 
-# Test 1: Single session exists (No other session)
+# test 1: single session exists (no other session)
 # ---------------------------------------------------------
 TMUX_LIST_OUTPUT="1736780000 active_session"
 
-# We expect find_other_session to return empty string and NOT exit with error
+# we expect find_other_session to return empty string and NOT exit with error
 output=$(find_other_session "active_session")
 exit_code=$?
 
@@ -59,9 +59,9 @@ else
 fi
 
 
-# Test 2: Multiple sessions exist
+# test 2: multiple sessions exist
 # ---------------------------------------------------------
-# Format: activity name
+# format: activity name
 TMUX_LIST_OUTPUT=$'1736780000 active_session\n1736770000 older_session'
 
 output=$(find_other_session "active_session")

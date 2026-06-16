@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Dispatch undo command to appropriate script based on most recent deletion
+# dispatch undo command to appropriate script based on most recent deletion
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -10,7 +10,7 @@ source "$SCRIPT_DIR/../_lib/ui.sh"
 
 require_tmux
 
-# Determine what was most recently deleted
+# determine what was most recently deleted
 undo_type=$(get_most_recent_undo_type)
 
 case "$undo_type" in

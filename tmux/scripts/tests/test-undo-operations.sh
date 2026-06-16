@@ -1,33 +1,33 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Functional tests for undo operations (window and pane kill → undo cycles)
-# Tests the full lifecycle: kill saves state, undo restores from state
+# functional tests for undo operations (window and pane kill → undo cycles)
+# tests the full lifecycle: kill saves state, undo restores from state
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Source test helpers to get isolated tmux server
+# source test helpers to get isolated tmux server
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Trap to ensure cleanup on exit/interrupt
+# trap to ensure cleanup on exit/interrupt
 UNDO_TEST_DIR=""
 trap 'rm -rf "$UNDO_TEST_DIR"; cleanup_test_server' EXIT INT TERM
 
-# Setup isolated tmux server
+# setup isolated tmux server
 setup_test_server
 
-# Create temp directory for undo state (override XDG_CACHE_HOME)
+# create temp directory for undo state (override XDG_CACHE_HOME)
 UNDO_TEST_DIR=$(mktemp -d)
 export XDG_CACHE_HOME="$UNDO_TEST_DIR/cache"
 mkdir -p "$XDG_CACHE_HOME/tmux/undo"
 
-# Source production libraries (they use TMUX_TEST_SOCKET via the tmux wrapper)
+# source production libraries (they use TMUX_TEST_SOCKET via the tmux wrapper)
 source "$SCRIPTS_DIR/_lib/common.sh"
 source "$SCRIPTS_DIR/_lib/paths.sh"
 
 # ═══════════════════════════════════════════════════════════════
-# Window Kill → Undo Cycle
+# window kill → undo cycle
 # ═══════════════════════════════════════════════════════════════
 
 section "Window Undo State Files"
@@ -35,11 +35,11 @@ section "Window Undo State Files"
 TEST_SESSION="test-undo-$$"
 test_tmux new-session -d -s "$TEST_SESSION" -c /tmp
 
-# Create a second window to kill (can't kill the only window easily)
+# create a second window to kill (can't kill the only window easily)
 test_tmux new-window -t "$TEST_SESSION" -n "killme" -c /tmp
 sleep 0.2
 
-# Verify window exists
+# verify window exists
 WINDOW_COUNT=$(test_tmux list-windows -t "$TEST_SESSION" | wc -l | tr -d ' ')
 if [[ "$WINDOW_COUNT" -ge 2 ]]; then
     pass "Created test session with multiple windows"
@@ -47,10 +47,10 @@ else
     fail "Expected at least 2 windows, got $WINDOW_COUNT"
 fi
 
-# Kill the window using the production script (with --no-confirm)
+# kill the window using the production script (with --no-confirm)
 "$SCRIPTS_DIR/windows/kill.sh" "${TEST_SESSION}:1" --no-confirm 2>/dev/null || true
 
-# Check that undo state files were created
+# check that undo state files were created
 UNDO_FILE=$(get_window_undo_file)
 UNDO_STATE=$(get_window_undo_state)
 UNDO_CONTENTS_DIR=$(get_window_undo_contents_dir)
@@ -73,7 +73,7 @@ else
     fail "Window kill should create undo contents directory"
 fi
 
-# Verify state file contains window metadata
+# verify state file contains window metadata
 if [[ -f "$UNDO_STATE" ]]; then
     state_content=$(cat "$UNDO_STATE")
     if [[ "$state_content" == *"window"* ]]; then
@@ -89,7 +89,7 @@ if [[ -f "$UNDO_STATE" ]]; then
     fi
 fi
 
-# Verify undo file permissions
+# verify undo file permissions
 if [[ "$(stat -f %Lp "$UNDO_FILE")" == "600" ]]; then
     pass "Undo file has secure permissions (600)"
 else
@@ -98,11 +98,11 @@ fi
 
 section "Window Undo Restore"
 
-# Now restore using undo
+# now restore using undo
 "$SCRIPTS_DIR/windows/undo.sh" 2>/dev/null || true
 sleep 0.3
 
-# Check window count is back to 2
+# check window count is back to 2
 WINDOW_COUNT_AFTER=$(test_tmux list-windows -t "$TEST_SESSION" | wc -l | tr -d ' ')
 if [[ "$WINDOW_COUNT_AFTER" -ge 2 ]]; then
     pass "Window undo restores window (count: $WINDOW_COUNT_AFTER)"
@@ -110,23 +110,23 @@ else
     fail "Window undo should restore window (expected >=2, got $WINDOW_COUNT_AFTER)"
 fi
 
-# Verify undo state is cleaned up (delayed cleanup runs in background)
+# verify undo state is cleaned up (delayed cleanup runs in background)
 sleep 1.5
 UNDO_FILE_AFTER=$(get_window_undo_file)
 if [[ ! -f "$UNDO_FILE_AFTER" ]]; then
     pass "Undo state cleaned up after restore"
 else
-    # Cleanup is backgrounded — might still be pending
+    # cleanup is backgrounded, might still be pending
     skip "Undo state cleanup may be pending (backgrounded)"
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Pane Kill → Undo Cycle
+# pane kill → undo cycle
 # ═══════════════════════════════════════════════════════════════
 
 section "Pane Undo State Files"
 
-# Create a split pane so we have something to kill
+# create a split pane so we have something to kill
 test_tmux split-window -t "$TEST_SESSION" -c /tmp
 sleep 0.2
 
@@ -137,11 +137,11 @@ else
     fail "Expected at least 2 panes, got $PANE_COUNT_BEFORE"
 fi
 
-# Kill the pane using production script
+# kill the pane using production script
 "$SCRIPTS_DIR/panes/kill.sh" --force 2>/dev/null || true
 sleep 0.2
 
-# Check pane undo state
+# check pane undo state
 PANE_UNDO_FILE=$(get_pane_undo_file)
 PANE_UNDO_STATE=$(get_pane_undo_state)
 PANE_UNDO_CONTENT=$(get_pane_undo_content)
@@ -158,7 +158,7 @@ else
     fail "Pane kill should create undo state file"
 fi
 
-# Verify pane state contains key=value pairs
+# verify pane state contains key=value pairs
 if [[ -f "$PANE_UNDO_STATE" ]]; then
     if grep -q "^dir=" "$PANE_UNDO_STATE"; then
         pass "Pane undo state contains dir field"
@@ -175,7 +175,7 @@ fi
 
 section "Pane Undo Restore"
 
-# Restore pane
+# restore pane
 "$SCRIPTS_DIR/panes/undo.sh" 2>/dev/null || true
 sleep 0.3
 
@@ -187,35 +187,35 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Edge Cases
+# edge cases
 # ═══════════════════════════════════════════════════════════════
 
 section "Undo Edge Cases"
 
-# Clear undo state first
+# clear undo state first
 cleanup_undo_files "window"
 cleanup_undo_files "pane"
 
-# Test undo with no state file (should exit gracefully)
+# test undo with no state file (should exit gracefully)
 UNDO_OUTPUT=$("$SCRIPTS_DIR/windows/undo.sh" 2>&1) || true
 pass "Window undo with no state exits gracefully"
 
 PANE_UNDO_OUTPUT=$("$SCRIPTS_DIR/panes/undo.sh" 2>&1) || true
 pass "Pane undo with no state exits gracefully"
 
-# Test undo with corrupt/empty state file
+# test undo with corrupt/empty state file
 echo "" > "$(get_window_undo_file)"
 echo "" > "$(get_window_undo_state)"
 "$SCRIPTS_DIR/windows/undo.sh" 2>/dev/null || true
 pass "Window undo with empty state does not crash"
 
-# Clean up
+# clean up
 cleanup_undo_files "window"
 cleanup_undo_files "pane"
 
 section "Session Undo Structural Validation"
 
-# Session undo depends on tmux-resurrect — just validate the script structure
+# session undo depends on tmux-resurrect, just validate the script structure
 SESSION_UNDO_SCRIPT="$SCRIPTS_DIR/sessions/undo.sh"
 
 if [[ -f "$SESSION_UNDO_SCRIPT" ]]; then

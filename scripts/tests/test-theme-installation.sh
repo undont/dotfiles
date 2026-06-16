@@ -1,19 +1,19 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unit tests for theme generation during installation
-# Tests that create-symlinks.sh properly generates themed configs
+# unit tests for theme generation during installation
+# tests that create-symlinks.sh properly generates themed configs
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CREATE_SYMLINKS="$DOTFILES_ROOT/scripts/install/create-symlinks.sh"
 THEME_SWITCH="$DOTFILES_ROOT/scripts/theme-switch"
 
-# Source shared test helpers (colours, pass/fail/skip/section, assertions)
+# source shared test helpers (colours, pass/fail/skip/section, assertions)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ===========================================================================
-# Tests
+# tests
 # ===========================================================================
 
 section "Script Prerequisite Checks"
@@ -82,7 +82,7 @@ fi
 
 section "Error Handling"
 
-# Check if output is suppressed via redirects or --quiet flag
+# check if output is suppressed via redirects or --quiet flag
 if [[ "$create_symlinks_content" == *">/dev/null 2>&1"* ]] || \
    [[ "$create_symlinks_content" == *"2>/dev/null"* ]] || \
    [[ "$create_symlinks_content" == *"--quiet"* ]]; then
@@ -91,7 +91,7 @@ else
     fail "create-symlinks should suppress theme-switch output"
 fi
 
-# Check for fallback on theme application failure
+# check for fallback on theme application failure
 if echo "$create_symlinks_content" | grep -A5 "theme-switch" | grep -q "warn"; then
     pass "create-symlinks warns on theme application failure"
 else
@@ -138,7 +138,7 @@ if [[ -f "$tmux_template" ]]; then
         fail "tmux template should contain TMUX_PANE_BORDER_ACTIVE placeholder"
     fi
 
-    # Count placeholders - tmux template has many theme variables
+    # count placeholders, tmux template has many theme variables
     placeholder_count=$(grep -oE "{{[A-Z_]+}}" "$tmux_template" | wc -l | tr -d ' ')
     if [[ $placeholder_count -gt 5 ]]; then
         pass "tmux template has multiple placeholders ($placeholder_count found)"
@@ -164,7 +164,7 @@ if [[ -f "$ghostty_template" ]]; then
         fail "ghostty template should contain GHOSTTY_BACKGROUND placeholder"
     fi
 
-    # Count placeholders - ghostty has fewer theme variables than tmux
+    # count placeholders, ghostty has fewer theme variables than tmux
     placeholder_count=$(grep -oE "{{[A-Z_]+}}" "$ghostty_template" | wc -l | tr -d ' ')
     if [[ $placeholder_count -gt 3 ]]; then
         pass "ghostty template has multiple placeholders ($placeholder_count found)"
@@ -177,7 +177,7 @@ fi
 
 section "Generated Config Files Should Not Contain Placeholders"
 
-# Check the actual generated files (if they exist)
+# check the actual generated files (if they exist)
 tmux_output="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 ghostty_output_macos="$HOME/Library/Application Support/com.mitchellh.ghostty/config"
 ghostty_output_linux="$HOME/.config/ghostty/config"
@@ -217,7 +217,7 @@ if [[ -f "$current_theme_file" ]]; then
     saved_theme=$(cat "$current_theme_file")
     pass "theme preference file exists (current: $saved_theme)"
 
-    # Verify it's a valid theme (hand-crafted or generated)
+    # verify it's a valid theme (hand-crafted or generated)
     themes_dir="$DOTFILES_ROOT/themes"
     theme_file="$themes_dir/$saved_theme.theme"
     generated_theme_file="$themes_dir/generated/$saved_theme.theme"
@@ -235,8 +235,8 @@ fi
 
 section "Theme Files Complete Variable Set"
 
-# Test that all theme files define base variables (not generated ones)
-# Generated variables (TMUX_STATUS_BG, TMUX_PANE_BORDER_ACTIVE, etc.) are created by apply_theme_defaults()
+# test that all theme files define base variables (not generated ones)
+# generated variables (TMUX_STATUS_BG, TMUX_PANE_BORDER_ACTIVE, etc.) are created by apply_theme_defaults()
 themes_dir="$DOTFILES_ROOT/themes"
 base_required_vars=(
     "THEME_NAME"
@@ -250,7 +250,7 @@ for theme_file in "$themes_dir"/*.theme; do
     if [[ -f "$theme_file" ]]; then
         theme_name=$(basename "$theme_file" .theme)
 
-        # Check that all base variables are defined in the theme file
+        # check that all base variables are defined in the theme file
         all_defined=true
         for var in "${base_required_vars[@]}"; do
             if ! grep -q "^$var=" "$theme_file"; then
@@ -260,7 +260,7 @@ for theme_file in "$themes_dir"/*.theme; do
         done
 
         if $all_defined; then
-            # Also verify that apply_theme_defaults generates derived variables
+            # also verify that apply_theme_defaults generates derived variables
             (
                 # shellcheck disable=SC1090
                 source "$theme_file"
@@ -268,7 +268,7 @@ for theme_file in "$themes_dir"/*.theme; do
                 source "$themes_dir/theme-defaults.sh"
                 apply_theme_defaults
 
-                # Check generated variables exist
+                # check generated variables exist
                 [[ -n "${TMUX_STATUS_BG:-}" ]] && \
                 [[ -n "${TMUX_STATUS_FG:-}" ]] && \
                 [[ -n "${TMUX_PANE_BORDER_ACTIVE:-}" ]]
@@ -286,7 +286,7 @@ echo "NOTE: The following tests would require running the actual installer,"
 echo "which could modify the system. These are structural checks only."
 echo ""
 
-# Check that installer script calls create-symlinks
+# check that installer script calls create-symlinks
 install_script="$DOTFILES_ROOT/install.sh"
 if [[ -f "$install_script" ]]; then
     install_content=$(cat "$install_script")
@@ -302,7 +302,7 @@ fi
 
 section "Documentation"
 
-# Check that README or installation docs mention themes
+# check that README or installation docs mention themes
 readme="$DOTFILES_ROOT/README.md"
 claude_md="$DOTFILES_ROOT/CLAUDE.md"
 
@@ -327,7 +327,7 @@ if ! $doc_mentions_themes; then
 fi
 
 # ===========================================================================
-# Summary
+# summary
 # ===========================================================================
 
 print_summary

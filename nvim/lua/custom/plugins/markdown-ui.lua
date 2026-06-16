@@ -1,14 +1,14 @@
--- Markdown editing stack:
---   * mkdnflow.nvim         — interactive editing (list continuation, table editing, link follow)
---   * render-markdown.nvim  — anti-conceal in-buffer rendering (headings, bullets, code blocks, tables)
---   * markdown-preview.nvim — browser preview window
+-- markdown editing stack:
+--   * mkdnflow.nvim         interactive editing (list continuation, table editing, link follow)
+--   * render-markdown.nvim  anti-conceal in-buffer rendering (headings, bullets, code blocks, tables)
+--   * markdown-preview.nvim browser preview window
 -- ftplugin/markdown.lua sets conceallevel=2 + wrap; render-markdown lifts to
--- conceallevel=3 while rendered and restores on insert/unrender.
+-- conceallevel=3 while rendered and restores on insert/unrender
 
 return {
-  -- In-buffer rendering: heading backgrounds, bullet glyphs, code-block tint,
-  -- table borders, checkboxes. Render-only — un-renders in insert mode so
-  -- mkdnflow can edit raw text underneath.
+  -- in-buffer rendering: heading backgrounds, bullet glyphs, code-block tint,
+  -- table borders, checkboxes. render-only, un-renders in insert mode so
+  -- mkdnflow can edit raw text underneath
   {
     'MeanderingProgrammer/render-markdown.nvim',
     ft = { 'markdown' },
@@ -30,7 +30,7 @@ return {
     },
   },
 
-  -- Interactive editing: list continuation, auto-renumbering, link following, table formatting
+  -- interactive editing: list continuation, auto-renumbering, link following, table formatting
   {
     'jakewvincent/mkdnflow.nvim',
     ft = { 'markdown' },
@@ -54,43 +54,43 @@ return {
           format_on_move = true,
         },
         mappings = {
-          -- Disable mappings that conflict with C-i jumplist / blink.cmp Tab
+          -- disable mappings that conflict with C-i jumplist / blink.cmp Tab
           MkdnNextLink = false,
           MkdnPrevLink = false,
           MkdnTableNextCell = false,
           MkdnTablePrevCell = false,
           MkdnToggleToDo = { 'n', '<leader>mt' }, -- moved from <C-Space> (blink conflict)
-          -- List / navigation (defaults are fine)
+          -- list / navigation (defaults are fine)
           MkdnEnter = false, -- disabled: was mangling numbered lists on <CR>
           MkdnNewListItem = false, -- disabled: was mangling links on <CR> in insert mode
           MkdnGoBack = { 'n', '<BS>' },
           MkdnGoForward = { 'n', '<Del>' },
           MkdnNextHeading = { 'n', ']]' },
           MkdnPrevHeading = { 'n', '[[' },
-          -- Defaults ][ and [] clutter which-key behind [/] and shadow
-          -- vim's native section-end motions. Use ]]/[[ instead.
+          -- defaults ][ and [] clutter which-key behind [/] and shadow
+          -- vim's native section-end motions. use ]]/[[ instead
           MkdnNextHeadingSame = false,
           MkdnPrevHeadingSame = false,
-          -- Section fold/unfold: override global zc/zr in markdown buffers only
+          -- section fold/unfold: override global zc/zr in markdown buffers only
           -- (markdown's natural fold unit is the section, not nested vim folds)
           MkdnFoldSection = { 'n', 'zc' },
           MkdnUnfoldSection = { 'n', 'zr' },
           MkdnUpdateNumbering = { 'n', '<leader>mn' }, -- renumber ordered list
-          -- Disable +/- heading bumpers: `-` shadows Oil's global parent-dir
+          -- disable +/- heading bumpers: `-` shadows Oil's global parent-dir
           -- keymap in markdown buffers
           MkdnIncreaseHeading = false,
           MkdnDecreaseHeading = false,
-          -- Create link from clipboard: moved from <leader>p (conflicts with PR Review)
+          -- create link from clipboard: moved from <leader>p (conflicts with PR Review)
           MkdnCreateLinkFromClipboard = { { 'n', 'v' }, '<leader>ml' },
-          -- Table insert: moved from <leader>i* (orphaned, no group)
+          -- table insert: moved from <leader>i* (orphaned, no group)
           MkdnTableNewRowBelow = { 'n', '<leader>mir' },
           MkdnTableNewRowAbove = { 'n', '<leader>miR' },
           MkdnTableNewColAfter = { 'n', '<leader>mic' },
           MkdnTableNewColBefore = { 'n', '<leader>miC' },
-          -- Table delete: moved from <leader>d* (conflicts with Diff)
+          -- table delete: moved from <leader>d* (conflicts with Diff)
           MkdnTableDeleteRow = { 'n', '<leader>mdr' },
           MkdnTableDeleteCol = { 'n', '<leader>mdc' },
-          -- Table alignment: moved from <leader>a* (conflicts with codecompanion)
+          -- table alignment: moved from <leader>a* (conflicts with codecompanion)
           MkdnTableAlignCenter = { 'n', '<leader>mAc' },
           MkdnTableAlignLeft = { 'n', '<leader>mAl' },
           MkdnTableAlignRight = { 'n', '<leader>mAr' },
@@ -98,7 +98,7 @@ return {
         },
       }
 
-      -- Markdown display: wrap text, conceal syntax, softwrap navigation
+      -- markdown display: wrap text, conceal syntax, softwrap navigation
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'markdown',
         callback = function(ev)
@@ -117,11 +117,11 @@ return {
           map('n', 'j', 'gj', bopts)
           map('n', 'k', 'gk', bopts)
 
-          -- Renumber ordered lists automatically after deleting lines
+          -- renumber ordered lists automatically after deleting lines
           vim.api.nvim_create_autocmd('TextChanged', {
             buffer = ev.buf,
             callback = function()
-              -- Only renumber if cursor is on/near a numbered list
+              -- only renumber if cursor is on/near a numbered list
               local line = vim.api.nvim_get_current_line()
               if line:match '^%s*%d+[%.%)%)]%s' then
                 pcall(function()
@@ -138,7 +138,7 @@ return {
     end,
   },
 
-  -- Browser preview with live sync scrolling, KaTeX, Mermaid, PlantUML
+  -- browser preview with live sync scrolling, KaTeX, Mermaid, PlantUML
   {
     'iamcco/markdown-preview.nvim',
     cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },

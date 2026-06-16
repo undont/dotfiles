@@ -1,22 +1,22 @@
--- Shared diagnostic-scan state machine. Wraps the common pattern of:
+-- shared diagnostic-scan state machine. wraps the common pattern of:
 --   open a set of buffers, debounce on DiagnosticChanged, snapshot
 --   diagnostics into a titled quickfix, finalise.
--- Used by sonarlint project-scan and the git-modified scan in core/lists.lua.
+-- used by sonarlint project-scan and the git-modified scan in core/lists.lua.
 --
--- Single global singleton: only one scan can be active at a time. Callers
--- check `is_active()` and reject (or merge) if a scan is already running --
+-- single global singleton: only one scan can be active at a time. callers
+-- check `is_active()` and reject (or merge) if a scan is already running;
 -- this is the desired mutual exclusion since both flows write to the same
--- quickfix list.
+-- quickfix list
 
 local M = {}
 
--- vim.diagnostic.severity values (1=ERROR, 2=WARN, 3=INFO, 4=HINT) → qf type letters.
+-- vim.diagnostic.severity values (1=ERROR, 2=WARN, 3=INFO, 4=HINT) → qf type letters
 local SEVERITY_TYPE = { 'E', 'W', 'I', 'N' }
 
--- Map raw `d.source` strings (what each LSP reports) to short labels used
--- as the `[label]` prefix in qf text. Unmapped sources fall through to the
--- raw value, so new LSPs degrade gracefully — add an entry here if a fresh
--- one shows up with a noisy label.
+-- map raw `d.source` strings (what each LSP reports) to short labels used
+-- as the `[label]` prefix in qf text. unmapped sources fall through to the
+-- raw value, so new LSPs degrade gracefully; add an entry here if a fresh
+-- one shows up with a noisy label
 local SOURCE_LABEL = {
   sonarlint = 'sonar',
   sonarqube = 'sonar',
@@ -43,11 +43,11 @@ local SOURCE_LABEL = {
   ['clang-tidy'] = 'c',
 }
 
---- Short label for a diagnostic's source. Explicit SOURCE_LABEL mapping wins;
+--- short label for a diagnostic's source. explicit SOURCE_LABEL mapping wins;
 --- otherwise we fall back to the buffer's filetype so subanalyzer sources
 --- (e.g. gopls modernize: stringscut, minmax, stringsseq) collapse under the
---- language label rather than leaking their internal analyzer names. The raw
---- source is the last resort.
+--- language label rather than leaking their internal analyzer names. the raw
+--- source is the last resort
 function M.source_label(d)
   local src = d.source
   if not src or src == '' then
@@ -66,11 +66,11 @@ function M.source_label(d)
   return src
 end
 
---- Render a diagnostic's text with a `[label] ` prefix when the source is
+--- render a diagnostic's text with a `[label] ` prefix when the source is
 --- known, so qf entries surface which LSP each warning came from
 --- (sonar, ts, roslyn, …). build.lua's auto-clear keys its live-diagnostic
 --- lookups by this same function so prune matches stay consistent with
---- what's displayed.
+--- what's displayed
 function M.qf_text(d)
   local label = M.source_label(d)
   if label then
@@ -79,8 +79,8 @@ function M.qf_text(d)
   return d.message or ''
 end
 
---- Convert a vim.Diagnostic into a qf item. Used in place of
---- vim.diagnostic.toqflist so we can inject the source prefix into `text`.
+--- convert a vim.Diagnostic into a qf item. used in place of
+--- vim.diagnostic.toqflist so we can inject the source prefix into `text`
 function M.diag_to_item(d)
   return {
     bufnr = d.bufnr,
@@ -137,9 +137,9 @@ function M.start(opts)
     watched[bufnr] = true
   end
 
-  -- Convert bufnr -> filename so qf entries survive any buffer-unload the
-  -- caller does in on_finalise. Items keyed only by bufnr would crash
-  -- setqflist ("E92: Buffer N not found") once the underlying buffer is gone.
+  -- convert bufnr -> filename so qf entries survive any buffer-unload the
+  -- caller does in on_finalise. items keyed only by bufnr would crash
+  -- setqflist ("E92: Buffer N not found") once the underlying buffer is gone
   local function collect()
     local items = {}
     local seen_bufnr = {}
@@ -179,10 +179,10 @@ function M.start(opts)
       pcall(opts.on_finalise, items)
     end
 
-    -- Batched mode: the caller drives buffer teardown and the final quickfix
+    -- batched mode: the caller drives buffer teardown and the final quickfix
     -- across multiple sequential runs, so skip the qf-write/notify/copen tail
-    -- and hand this batch's items back. Clear state first so the caller can
-    -- start the next batch's scan from inside the callback.
+    -- and hand this batch's items back. clear state first so the caller can
+    -- start the next batch's scan from inside the callback
     if opts.on_complete then
       state = nil
       pcall(opts.on_complete, items)
@@ -207,11 +207,11 @@ function M.start(opts)
     end
   end
 
-  -- Adaptive debounce: the full debounce_ms covers slow analyzers that
+  -- adaptive debounce: the full debounce_ms covers slow analyzers that
   -- haven't published anything yet, but once *every* watched buffer has
   -- reported at least one DiagnosticChanged, the remaining quiet time is
-  -- usually dead air — drop to settled_debounce_ms (when set) so small,
-  -- fast changesets finalise quickly.
+  -- usually dead air; drop to settled_debounce_ms (when set) so small,
+  -- fast changesets finalise quickly
   local function reset_debounce()
     clear_timer(state.debounce)
     local ms = opts.debounce_ms

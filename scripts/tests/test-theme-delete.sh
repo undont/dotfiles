@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unit tests for theme-delete script
+# unit tests for theme-delete script
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -10,7 +10,7 @@ GENERATE_THEME="$DOTFILES_ROOT/scripts/generate-theme"
 THEMES_GENERATED="$DOTFILES_ROOT/themes/generated"
 NVIM_GENERATED="$DOTFILES_ROOT/nvim/colors/generated"
 
-# Source shared test helpers (colours, pass/fail/skip/section, assertions)
+# source shared test helpers (colours, pass/fail/skip/section, assertions)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 section "Script Exists and Is Executable"
@@ -62,7 +62,7 @@ fi
 
 section "Refuses to Delete Custom Themes"
 
-# All hand-crafted themes should be refused
+# all hand-crafted themes should be refused
 for theme_file in "$DOTFILES_ROOT/themes/"*.theme; do
     [[ -f "$theme_file" ]] || continue
     theme_name=$(basename "$theme_file" .theme)
@@ -85,7 +85,7 @@ fi
 
 section "Delete Generated Theme"
 
-# Generate a test theme, then delete it
+# generate a test theme, then delete it
 if [[ -d "/Applications/Ghostty.app/Contents/Resources/ghostty/themes" ]]; then
     "$GENERATE_THEME" zenburn --quiet >/dev/null 2>&1
 
@@ -108,19 +108,19 @@ fi
 section "Auto-Switch When Deleting Current Theme"
 
 if [[ -d "/Applications/Ghostty.app/Contents/Resources/ghostty/themes" ]]; then
-    # Set up isolated config so we don't affect real current-theme
+    # set up isolated config so we don't affect real current-theme
     TEST_XDG=$(mktemp -d)
     mkdir -p "$TEST_XDG/dotfiles"
 
-    # Generate a theme to delete
+    # generate a theme to delete
     "$GENERATE_THEME" zenburn --quiet >/dev/null 2>&1
 
-    # Pretend zenburn is the current theme
+    # pretend zenburn is the current theme
     echo "zenburn" > "$TEST_XDG/dotfiles/current-theme"
 
     output=$(XDG_CONFIG_HOME="$TEST_XDG" "$THEME_DELETE" zenburn 2>&1) || true
 
-    # Should have switched away from zenburn
+    # should have switched away from zenburn
     if [[ -f "$TEST_XDG/dotfiles/current-theme" ]]; then
         new_theme=$(cat "$TEST_XDG/dotfiles/current-theme")
         if [[ "$new_theme" != "zenburn" ]] && [[ -n "$new_theme" ]]; then
@@ -149,10 +149,10 @@ if [[ -d "/Applications/Ghostty.app/Contents/Resources/ghostty/themes" ]]; then
     TEST_XDG=$(mktemp -d)
     mkdir -p "$TEST_XDG/dotfiles"
 
-    # Generate a theme to delete
+    # generate a theme to delete
     "$GENERATE_THEME" zenburn --quiet >/dev/null 2>&1
 
-    # Set current theme to dracula (a custom theme, not the one being deleted)
+    # set current theme to dracula (a custom theme, not the one being deleted)
     echo "dracula" > "$TEST_XDG/dotfiles/current-theme"
 
     XDG_CONFIG_HOME="$TEST_XDG" "$THEME_DELETE" zenburn >/dev/null 2>&1 || true
@@ -175,10 +175,10 @@ if [[ -d "/Applications/Ghostty.app/Contents/Resources/ghostty/themes" ]]; then
     TEST_XDG=$(mktemp -d)
     mkdir -p "$TEST_XDG/dotfiles"
 
-    # Generate a theme so there's something to delete
+    # generate a theme so there's something to delete
     "$GENERATE_THEME" zenburn --quiet >/dev/null 2>&1
 
-    # Pretend zenburn is the current theme
+    # pretend zenburn is the current theme
     echo "zenburn" > "$TEST_XDG/dotfiles/current-theme"
 
     output=$(XDG_CONFIG_HOME="$TEST_XDG" "$THEME_DELETE" all --yes 2>&1) || true
@@ -201,10 +201,10 @@ if [[ -d "/Applications/Ghostty.app/Contents/Resources/ghostty/themes" ]]; then
     TEST_XDG=$(mktemp -d)
     mkdir -p "$TEST_XDG/dotfiles"
 
-    # Generate a theme so delete all has work to do
+    # generate a theme so delete all has work to do
     "$GENERATE_THEME" zenburn --quiet >/dev/null 2>&1
 
-    # Current theme is a custom theme — should not be affected
+    # current theme is a custom theme, should not be affected
     echo "catppuccin-mocha" > "$TEST_XDG/dotfiles/current-theme"
 
     XDG_CONFIG_HOME="$TEST_XDG" "$THEME_DELETE" all --yes >/dev/null 2>&1 || true

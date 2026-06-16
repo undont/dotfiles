@@ -4,63 +4,63 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # test-resurrect.sh
 # ══════════════════════════════════════════════════════════════
-# Tests for tmux resurrect scripts and path discovery.
+# tests for tmux resurrect scripts and path discovery
 #
-# Coverage:
-# - Path discovery (legacy vs XDG locations)
-# - Split operations (post-save hook)
-# - Restore operations (per-session restore)
-# - Delete operations (kill + remove backup)
-# - Edge cases (missing dirs, invalid files)
+# coverage:
+# - path discovery (legacy vs XDG locations)
+# - split operations (post-save hook)
+# - restore operations (per-session restore)
+# - delete operations (kill + remove backup)
+# - edge cases (missing dirs, invalid files)
 #
-# Usage: ./test-resurrect.sh
+# usage: ./test-resurrect.sh
 # ══════════════════════════════════════════════════════════════
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
 LIB_DIR="$SCRIPTS_DIR/_lib"
 
-# Source test helpers (provides colours, pass/fail/skip/section, counters)
+# source test helpers (provides colours, pass/fail/skip/section, counters)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Final cleanup function for trap (cleans up both server and env)
+# final cleanup function for trap (cleans up both server and env)
 final_cleanup() {
-    # Kill any remaining test tmux server first
+    # kill any remaining test tmux server first
     cleanup_test_server 2>/dev/null || true
 
-    # Then clean up test environment
+    # then clean up test environment
     cleanup_test_env
 }
 
-# Trap to ensure cleanup on exit/interrupt
+# trap to ensure cleanup on exit/interrupt
 trap final_cleanup EXIT INT TERM
 
 # ══════════════════════════════════════════════════════════════
-# Test Environment Setup/Cleanup
+# test environment setup/cleanup
 # ══════════════════════════════════════════════════════════════
 
-# Test environment variables
+# test environment variables
 TEST_HOME=""
 TEST_XDG_DATA_HOME=""
 ORIGINAL_HOME="$HOME"
 ORIGINAL_XDG_DATA_HOME="${XDG_DATA_HOME:-}"
 
 setup_test_env() {
-    # Create temporary test directories
+    # create temporary test directories
     TEST_HOME=$(mktemp -d)
     TEST_XDG_DATA_HOME="$TEST_HOME/.local/share"
 
-    # Export for subshells
+    # export for subshells
     export HOME="$TEST_HOME"
     export XDG_DATA_HOME="$TEST_XDG_DATA_HOME"
 
-    # Create basic directory structure
+    # create basic directory structure
     mkdir -p "$TEST_HOME/.tmux/resurrect"
     mkdir -p "$TEST_XDG_DATA_HOME/tmux/resurrect"
 }
 
 cleanup_test_env() {
-    # Restore original environment
+    # restore original environment
     export HOME="$ORIGINAL_HOME"
     if [[ -n "$ORIGINAL_XDG_DATA_HOME" ]]; then
         export XDG_DATA_HOME="$ORIGINAL_XDG_DATA_HOME"
@@ -68,26 +68,26 @@ cleanup_test_env() {
         unset XDG_DATA_HOME
     fi
 
-    # Remove test directories (suppress errors for idempotent cleanup)
+    # remove test directories (suppress errors for idempotent cleanup)
     if [[ -n "$TEST_HOME" && -d "$TEST_HOME" ]]; then
         rm -rf "$TEST_HOME" 2>/dev/null || true
     fi
 
-    # Clear TEST_HOME to prevent double-cleanup attempts
+    # clear TEST_HOME to prevent double-cleanup attempts
     TEST_HOME=""
 }
 
 # ══════════════════════════════════════════════════════════════
-# Path Discovery Tests
+# path discovery tests
 # ══════════════════════════════════════════════════════════════
 
 test_path_discovery() {
     section "Path Discovery Tests"
     
-    # Source the paths library
+    # source the paths library
     source "$LIB_DIR/paths.sh"
     
-    # Test 1: Legacy location with 'last' symlink
+    # test 1: legacy location with 'last' symlink
     setup_test_env
     touch "$TEST_HOME/.tmux/resurrect/last"
     result=$(get_resurrect_dir)
@@ -98,7 +98,7 @@ test_path_discovery() {
     fi
     cleanup_test_env
     
-    # Test 2: XDG location with 'last' symlink
+    # test 2: XDG location with 'last' symlink
     setup_test_env
     mkdir -p "$TEST_XDG_DATA_HOME/tmux/resurrect"
     touch "$TEST_XDG_DATA_HOME/tmux/resurrect/last"
@@ -110,7 +110,7 @@ test_path_discovery() {
     fi
     cleanup_test_env
     
-    # Test 3: Priority - legacy 'last' over XDG 'last'
+    # test 3: priority, legacy 'last' over XDG 'last'
     setup_test_env
     touch "$TEST_HOME/.tmux/resurrect/last"
     mkdir -p "$TEST_XDG_DATA_HOME/tmux/resurrect"
@@ -123,7 +123,7 @@ test_path_discovery() {
     fi
     cleanup_test_env
     
-    # Test 4: XDG sessions directory fallback
+    # test 4: XDG sessions directory fallback
     setup_test_env
     mkdir -p "$TEST_XDG_DATA_HOME/tmux/resurrect/sessions"
     result=$(get_resurrect_dir)
@@ -134,7 +134,7 @@ test_path_discovery() {
     fi
     cleanup_test_env
     
-    # Test 5: Legacy sessions directory fallback
+    # test 5: legacy sessions directory fallback
     setup_test_env
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     result=$(get_resurrect_dir)
@@ -145,7 +145,7 @@ test_path_discovery() {
     fi
     cleanup_test_env
     
-    # Test 6: Default to legacy when nothing exists
+    # test 6: default to legacy when nothing exists
     setup_test_env
     result=$(get_resurrect_dir)
     if [[ "$result" == "$TEST_HOME/.tmux/resurrect" ]]; then
@@ -155,7 +155,7 @@ test_path_discovery() {
     fi
     cleanup_test_env
     
-    # Test 7: get_resurrect_sessions_dir consistency
+    # test 7: get_resurrect_sessions_dir consistency
     setup_test_env
     touch "$TEST_HOME/.tmux/resurrect/last"
     result=$(get_resurrect_sessions_dir)
@@ -167,7 +167,7 @@ test_path_discovery() {
     fi
     cleanup_test_env
     
-    # Test 8: XDG_DATA_HOME unset behaviour
+    # test 8: XDG_DATA_HOME unset behaviour
     setup_test_env
     unset XDG_DATA_HOME
     touch "$TEST_HOME/.local/share/tmux/resurrect/last"
@@ -181,16 +181,16 @@ test_path_discovery() {
 }
 
 # ══════════════════════════════════════════════════════════════
-# Resurrect Operation Tests
+# resurrect operation tests
 # ══════════════════════════════════════════════════════════════
 
 test_split_operation() {
     section "Split Operation Tests"
     
-    # Test 1: Basic split functionality
+    # test 1: basic split functionality
     setup_test_env
     
-    # Create a mock 'last' file with multiple sessions
+    # create a mock 'last' file with multiple sessions
     cat > "$TEST_HOME/.tmux/resurrect/last" << 'EOF'
 pane	session1	0	:window1	1	:*	1	:/home/user	1	bash	:
 pane	session2	0	:window1	1	:*	1	:/home/user	1	bash	:
@@ -200,23 +200,23 @@ state	session1
 state	session2	
 EOF
     
-    # Run split script (may fail in some environments)
+    # run split script (may fail in some environments)
     if bash "$SCRIPTS_DIR/resurrect/split.sh" 2>&1; then
-        # Check session1 file was created
+        # check session1 file was created
         if [[ -f "$TEST_HOME/.tmux/resurrect/sessions/session1.txt" ]]; then
             pass "Split creates session1.txt"
         else
             fail "Split did not create session1.txt"
         fi
         
-        # Check session2 file was created
+        # check session2 file was created
         if [[ -f "$TEST_HOME/.tmux/resurrect/sessions/session2.txt" ]]; then
             pass "Split creates session2.txt"
         else
             fail "Split did not create session2.txt"
         fi
         
-        # Verify session1 content
+        # verify session1 content
         if grep -q "session1" "$TEST_HOME/.tmux/resurrect/sessions/session1.txt" && \
            ! grep -q "session2" "$TEST_HOME/.tmux/resurrect/sessions/session1.txt"; then
             pass "session1.txt contains only session1 data"
@@ -224,7 +224,7 @@ EOF
             fail "session1.txt content incorrect"
         fi
         
-        # Verify session2 content
+        # verify session2 content
         if grep -q "session2" "$TEST_HOME/.tmux/resurrect/sessions/session2.txt" && \
            ! grep -q "session1" "$TEST_HOME/.tmux/resurrect/sessions/session2.txt"; then
             pass "session2.txt contains only session2 data"
@@ -232,13 +232,13 @@ EOF
             fail "session2.txt content incorrect"
         fi
     else
-        # Split script failed - this might happen in CI or limited environments
+        # split script failed, this might happen in CI or limited environments
         skip "Split script execution failed (environment-specific issue)"
     fi
     
     cleanup_test_env
     
-    # Test 2: Empty 'last' file handling
+    # test 2: empty 'last' file handling
     setup_test_env
     touch "$TEST_HOME/.tmux/resurrect/last"
     
@@ -250,7 +250,7 @@ EOF
     
     cleanup_test_env
     
-    # Test 3: Missing 'last' file
+    # test 3: missing 'last' file
     setup_test_env
     
     if ! bash "$SCRIPTS_DIR/resurrect/split.sh" 2>/dev/null; then
@@ -265,14 +265,14 @@ EOF
 test_restore_operation() {
     section "Restore Operation Tests"
 
-    # Note: Full restore testing requires tmux server setup
-    # These tests focus on backup file handling and validation
-    # A test server is required so restore.sh's tmux calls don't hit the live server
+    # note: full restore testing requires tmux server setup
+    # these tests focus on backup file handling and validation
+    # a test server is required so restore.sh's tmux calls don't hit the live server
     setup_test_server
 
     setup_test_env
     
-    # Create a session backup file
+    # create a session backup file
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     cat > "$TEST_HOME/.tmux/resurrect/sessions/test-session.txt" << 'EOF'
 pane	test-session	0	:window1	1	:*	1	:/home/user	1	bash	:
@@ -280,7 +280,7 @@ window	test-session	0	1	:*	0123,80x24,0,0,1
 state	test-session	
 EOF
     
-    # Test 1: List backups
+    # test 1: list backups
     result=$(bash "$SCRIPTS_DIR/resurrect/restore.sh" --list 2>/dev/null | grep -c "test-session" || true)
     if [[ "$result" -gt 0 ]]; then
         pass "List operation finds test-session backup"
@@ -288,7 +288,7 @@ EOF
         fail "List operation did not find test-session backup"
     fi
     
-    # Test 2: Backup file exists check
+    # test 2: backup file exists check
     if [[ -f "$TEST_HOME/.tmux/resurrect/sessions/test-session.txt" ]]; then
         pass "Backup file created correctly"
     else
@@ -297,12 +297,12 @@ EOF
     
     cleanup_test_env
     
-    # Test 3: Empty sessions directory
+    # test 3: empty sessions directory
     setup_test_env
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     
     result=$(bash "$SCRIPTS_DIR/resurrect/restore.sh" --list 2>/dev/null | wc -l)
-    if [[ "$result" -le 2 ]]; then  # Allow for header/footer lines
+    if [[ "$result" -le 2 ]]; then  # allow for header/footer lines
         pass "List operation handles empty sessions directory"
     else
         fail "List operation shows unexpected content for empty directory"
@@ -315,31 +315,31 @@ EOF
 test_delete_operation() {
     section "Delete Operation Tests"
 
-    # A test server is required so delete.sh's tmux calls don't hit the live server
+    # a test server is required so delete.sh's tmux calls don't hit the live server
     setup_test_server
 
-    # Note: These tests focus on backup file deletion; session killing requires tmux server
+    # note: these tests focus on backup file deletion; session killing requires tmux server
     setup_test_env
     
-    # Create a session backup file
+    # create a session backup file
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     touch "$TEST_HOME/.tmux/resurrect/sessions/test-session.txt"
     
-    # Test 1: Verify backup exists before delete
+    # test 1: verify backup exists before delete
     if [[ -f "$TEST_HOME/.tmux/resurrect/sessions/test-session.txt" ]]; then
         pass "Backup file exists before delete"
     else
         fail "Backup file not created"
     fi
     
-    # Test 2: Delete when session doesn't exist (only deletes backup)
-    # Note: This will attempt to kill the session which will fail,
+    # test 2: delete when session doesn't exist (only deletes backup)
+    # note: this will attempt to kill the session which will fail,
     # but should still delete the backup
     bash "$SCRIPTS_DIR/resurrect/delete.sh" test-session 2>/dev/null || true
     
-    # Verify backup was deleted (or attempted)
-    # Note: Script may not delete if session validation fails
-    # This is expected behaviour
+    # verify backup was deleted (or attempted)
+    # note: script may not delete if session validation fails
+    # this is expected behaviour
     skip "Delete operation requires tmux server for full testing"
 
     cleanup_test_env
@@ -347,16 +347,16 @@ test_delete_operation() {
 }
 
 # ══════════════════════════════════════════════════════════════
-# Edge Case Tests
+# edge case tests
 # ══════════════════════════════════════════════════════════════
 
 test_edge_cases() {
     section "Edge Case Tests"
 
-    # A test server is required so restore.sh's tmux calls don't hit the live server
+    # a test server is required so restore.sh's tmux calls don't hit the live server
     setup_test_server
 
-    # Test 1: Session name with special characters in backup
+    # test 1: session name with special characters in backup
     setup_test_env
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     touch "$TEST_HOME/.tmux/resurrect/sessions/my-project_v2.1.txt"
@@ -370,7 +370,7 @@ test_edge_cases() {
     
     cleanup_test_env
     
-    # Test 2: Multiple sessions with same prefix
+    # test 2: multiple sessions with same prefix
     setup_test_env
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     touch "$TEST_HOME/.tmux/resurrect/sessions/project.txt"
@@ -386,12 +386,12 @@ test_edge_cases() {
     
     cleanup_test_env
     
-    # Test 3: Invalid/corrupt backup file
+    # test 3: invalid/corrupt backup file
     setup_test_env
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     echo "corrupted data" > "$TEST_HOME/.tmux/resurrect/sessions/corrupt-session.txt"
     
-    # Script should still list it (restoration might fail, but listing should work)
+    # script should still list it (restoration might fail, but listing should work)
     result=$(bash "$SCRIPTS_DIR/resurrect/restore.sh" --list 2>/dev/null | grep -c "corrupt-session" || true)
     if [[ "$result" -gt 0 ]]; then
         pass "Lists sessions even with potentially corrupt backup files"
@@ -404,13 +404,13 @@ test_edge_cases() {
 }
 
 # ══════════════════════════════════════════════════════════════
-# Content and Command Restoration Tests
+# content and command restoration tests
 # ══════════════════════════════════════════════════════════════
 
 test_content_restoration() {
     section "Content Restoration Tests"
     
-    # Check if tmux-resurrect plugin is installed
+    # check if tmux-resurrect plugin is installed
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Content restoration tests require tmux-resurrect plugin"
         return
@@ -419,24 +419,24 @@ test_content_restoration() {
     setup_test_env
     setup_test_server
     
-    # Create a session with content
+    # create a session with content
     $TEST_TMUX_CMD new-session -d -s "test-content" "echo 'Test Content Line 1'; echo 'Test Content Line 2'; bash"
     sleep 0.5
     
-    # Save session (this should create pane contents files)
+    # save session (this should create pane contents files)
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
     sleep 0.5
     
-    # Split sessions to create individual backup
+    # split sessions to create individual backup
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     
-    # Kill the session
+    # kill the session
     $TEST_TMUX_CMD kill-session -t "test-content"
     
-    # Restore the session
+    # restore the session
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-content"
     
-    # Check if session was restored
+    # check if session was restored
     if $TEST_TMUX_CMD has-session -t "test-content" 2>/dev/null; then
         pass "Session restored with content restoration enabled"
     else
@@ -450,7 +450,7 @@ test_content_restoration() {
 test_command_restoration() {
     section "Command Restoration Tests"
     
-    # Check if tmux-resurrect plugin is installed
+    # check if tmux-resurrect plugin is installed
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Command restoration tests require tmux-resurrect plugin"
         return
@@ -459,15 +459,15 @@ test_command_restoration() {
     setup_test_env
     setup_test_server
     
-    # Configure process restoration
+    # configure process restoration
     $TEST_TMUX_CMD set-option -g @resurrect-processes "vim"
     
-    # Create session with vim running (should be restored)
-    # Use a simple sleep command instead of an interactive program for testing
+    # create session with vim running (should be restored)
+    # use a simple sleep command instead of an interactive program for testing
     $TEST_TMUX_CMD new-session -d -s "test-commands" "sleep 60"
     sleep 0.5
     
-    # Verify session was created
+    # verify session was created
     if ! $TEST_TMUX_CMD has-session -t "test-commands" 2>/dev/null; then
         skip "Session creation failed in test environment"
         cleanup_test_server
@@ -475,18 +475,18 @@ test_command_restoration() {
         return
     fi
     
-    # Save and restore flow
+    # save and restore flow
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-commands"
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-commands"
     
-    # Check if session was restored
+    # check if session was restored
     if $TEST_TMUX_CMD has-session -t "test-commands" 2>/dev/null; then
         pass "Session restored with command restoration configured"
         
-        # Check if command is running
+        # check if command is running
         local cmd
         cmd=$($TEST_TMUX_CMD display-message -p -t "test-commands:0.0" "#{pane_current_command}" 2>/dev/null || echo "")
         if [[ -n "$cmd" ]]; then
@@ -505,7 +505,7 @@ test_command_restoration() {
 test_process_list_configuration() {
     section "Process List Configuration Tests"
     
-    # Check if tmux-resurrect plugin is installed
+    # check if tmux-resurrect plugin is installed
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Process list configuration tests require tmux-resurrect plugin"
         return
@@ -514,12 +514,12 @@ test_process_list_configuration() {
     setup_test_env
     setup_test_server
     
-    # Test 1: Default process list (no configuration)
+    # test 1: default process list (no configuration)
     $TEST_TMUX_CMD set-option -ug @resurrect-processes
     $TEST_TMUX_CMD new-session -d -s "test-default" "sleep 30"
     sleep 0.3
     
-    # Save, kill, restore
+    # save, kill, restore
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
     sleep 0.3
     bash "$SCRIPTS_DIR/resurrect/split.sh"
@@ -534,7 +534,7 @@ test_process_list_configuration() {
     
     $TEST_TMUX_CMD kill-session -t "test-default" 2>/dev/null || true
     
-    # Test 2: Custom process list
+    # test 2: custom process list
     $TEST_TMUX_CMD set-option -g @resurrect-processes "ssh sleep"
     $TEST_TMUX_CMD new-session -d -s "test-custom" "sleep 30"
     sleep 0.3
@@ -565,7 +565,7 @@ test_process_list_configuration() {
 test_mixed_restoration() {
     section "Mixed State Restoration Tests"
     
-    # Check if tmux-resurrect plugin is installed
+    # check if tmux-resurrect plugin is installed
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Mixed restoration tests require tmux-resurrect plugin"
         return
@@ -574,26 +574,26 @@ test_mixed_restoration() {
     setup_test_env
     setup_test_server
     
-    # Create a session with multiple panes
-    # - Some with content, some without
-    # - Some with commands, some without
+    # create a session with multiple panes
+    # - some with content, some without
+    # - some with commands, some without
     $TEST_TMUX_CMD new-session -d -s "test-mixed" "echo 'Pane 1 content'; bash"
-    $TEST_TMUX_CMD split-window -t "test-mixed" "bash"  # Empty pane
+    $TEST_TMUX_CMD split-window -t "test-mixed" "bash"  # empty pane
     $TEST_TMUX_CMD split-window -t "test-mixed" "echo 'Pane 3 content'; bash"
     sleep 0.5
     
-    # Save, kill, restore
+    # save, kill, restore
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-mixed"
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-mixed"
     
-    # Check if session was restored with all panes
+    # check if session was restored with all panes
     if $TEST_TMUX_CMD has-session -t "test-mixed" 2>/dev/null; then
         local pane_count
         pane_count=$($TEST_TMUX_CMD list-panes -t "test-mixed" 2>/dev/null | wc -l)
-        pane_count="${pane_count//[$'\n\r ']/}"  # Strip whitespace
+        pane_count="${pane_count//[$'\n\r ']/}"  # strip whitespace
         if [[ "$pane_count" -eq 3 ]]; then
             pass "Mixed state restoration preserves all panes"
         else
@@ -613,11 +613,11 @@ test_graceful_degradation() {
     setup_test_env
     setup_test_server
     
-    # Test restoration when pane contents files don't exist
+    # test restoration when pane contents files don't exist
     $TEST_TMUX_CMD new-session -d -s "test-no-contents" "bash"
     sleep 0.3
     
-    # Create backup manually without pane contents
+    # create backup manually without pane contents
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     cat > "$TEST_HOME/.tmux/resurrect/sessions/test-no-contents.txt" << 'EOF'
 pane	test-no-contents	0	1		0	bash	/tmp	1	bash	
@@ -627,7 +627,7 @@ EOF
     $TEST_TMUX_CMD kill-session -t "test-no-contents"
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-no-contents"
     
-    # Should still restore successfully without contents files
+    # should still restore successfully without contents files
     if $TEST_TMUX_CMD has-session -t "test-no-contents" 2>/dev/null; then
         pass "Restoration works gracefully without pane contents files"
     else
@@ -639,13 +639,13 @@ EOF
 }
 
 # ══════════════════════════════════════════════════════════════
-# Field Validation Tests (Improvement #1)
+# field validation tests (Improvement #1)
 # ══════════════════════════════════════════════════════════════
 
 test_field_validation() {
     section "Field Validation Tests"
 
-    # Test 1: Missing window_number in pane line
+    # test 1: missing window_number in pane line
     setup_test_env
     setup_test_server
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
@@ -655,7 +655,7 @@ pane	test-missing-window	1	0	:	1	:	/tmp	0	bash	:
 window	test-missing-window	1	window1	1	:*	1234,80x24,0,0,1	0
 EOF
 
-    # Should skip malformed line but not crash
+    # should skip malformed line but not crash
     if bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-missing-window" 2>/dev/null; then
         pass "Handles missing window_number in pane line gracefully"
     else
@@ -665,7 +665,7 @@ EOF
     cleanup_test_server
     cleanup_test_env
 
-    # Test 2: Missing pane_index in pane line
+    # test 2: missing pane_index in pane line
     setup_test_env
     setup_test_server
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
@@ -684,7 +684,7 @@ EOF
     cleanup_test_server
     cleanup_test_env
 
-    # Test 3: Missing window_layout in window line
+    # test 3: missing window_layout in window line
     setup_test_env
     setup_test_server
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
@@ -702,7 +702,7 @@ EOF
     cleanup_test_server
     cleanup_test_env
 
-    # Test 4: Completely empty lines (should be ignored)
+    # test 4: completely empty lines (should be ignored)
     setup_test_env
     setup_test_server
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
@@ -724,13 +724,13 @@ EOF
 }
 
 # ══════════════════════════════════════════════════════════════
-# Cleanup Trap Tests (Improvement #3)
+# cleanup trap tests (Improvement #3)
 # ══════════════════════════════════════════════════════════════
 
 test_cleanup_trap() {
     section "Cleanup Trap Tests"
 
-    # Check if tmux server is available for these tests
+    # check if tmux server is available for these tests
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Cleanup trap tests require tmux-resurrect plugin"
         return
@@ -739,43 +739,43 @@ test_cleanup_trap() {
     setup_test_env
     setup_test_server
 
-    # Test 1: Partial session cleanup on error
-    # Create a backup file that will cause an error during restoration
+    # test 1: partial session cleanup on error
+    # create a backup file that will cause an error during restoration
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
 
-    # This should create session successfully, but subsequent operations might fail
+    # this should create session successfully, but subsequent operations might fail
     cat > "$TEST_HOME/.tmux/resurrect/sessions/test-cleanup.txt" << 'EOF'
 pane	test-cleanup	0	0	:	0	:	/tmp	1	bash	:
 window	test-cleanup	0	window1	1	:*	1234,80x24,0,0,1	0
 EOF
 
-    # Attempt restoration (may succeed or fail depending on environment)
+    # attempt restoration (may succeed or fail depending on environment)
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-cleanup" 2>/dev/null || true
 
-    # If it failed, verify no partial session remains
+    # if it failed, verify no partial session remains
     if ! $TEST_TMUX_CMD has-session -t "test-cleanup" 2>/dev/null; then
         pass "No partial session left after restoration error"
     else
-        # Session exists - either succeeded or trap didn't work
+        # session exists, either succeeded or trap didn't work
         skip "Session restoration succeeded or cleanup trap not triggered"
     fi
 
     cleanup_test_server
     cleanup_test_env
 
-    # Test 2: Script interruption handling
-    # Note: This is difficult to test automatically as it requires SIGINT/SIGTERM
+    # test 2: script interruption handling
+    # note: this is difficult to test automatically as it requires SIGINT/SIGTERM
     skip "Script interruption cleanup requires manual testing"
 }
 
 # ══════════════════════════════════════════════════════════════
-# Non-consecutive Window Number Tests (Improvement #4)
+# non-consecutive window number tests (Improvement #4)
 # ══════════════════════════════════════════════════════════════
 
 test_non_consecutive_windows() {
     section "Non-consecutive Window Number Tests"
 
-    # Check if tmux server is available
+    # check if tmux server is available
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Non-consecutive window tests require tmux-resurrect plugin"
         return
@@ -784,13 +784,13 @@ test_non_consecutive_windows() {
     setup_test_env
     setup_test_server
 
-    # Test 1: Windows with gaps (0, 5, 9)
+    # test 1: windows with gaps (0, 5, 9)
     $TEST_TMUX_CMD new-session -d -s "test-gaps" -n "win0"
     $TEST_TMUX_CMD new-window -t "test-gaps:5" -n "win5"
     $TEST_TMUX_CMD new-window -t "test-gaps:9" -n "win9"
     sleep 0.5
 
-    # Verify windows were created with correct numbers
+    # verify windows were created with correct numbers
     local win_list
     win_list=$($TEST_TMUX_CMD list-windows -t "test-gaps" -F "#{window_index}" 2>/dev/null | tr '\n' ' ')
     if [[ "$win_list" =~ "0" ]] && [[ "$win_list" =~ "5" ]] && [[ "$win_list" =~ "9" ]]; then
@@ -802,14 +802,14 @@ test_non_consecutive_windows() {
         return
     fi
 
-    # Save, kill, restore
+    # save, kill, restore
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-gaps"
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-gaps"
 
-    # Verify gaps are preserved
+    # verify gaps are preserved
     if $TEST_TMUX_CMD has-session -t "test-gaps" 2>/dev/null; then
         local restored_wins
         restored_wins=$($TEST_TMUX_CMD list-windows -t "test-gaps" -F "#{window_index}" 2>/dev/null | tr '\n' ' ')
@@ -819,7 +819,7 @@ test_non_consecutive_windows() {
             fail "Window numbers changed after restoration (got: $restored_wins)"
         fi
 
-        # Verify window names
+        # verify window names
         local win0_name win5_name win9_name
         win0_name=$($TEST_TMUX_CMD display-message -t "test-gaps:0" -p "#{window_name}" 2>/dev/null)
         win5_name=$($TEST_TMUX_CMD display-message -t "test-gaps:5" -p "#{window_name}" 2>/dev/null)
@@ -837,11 +837,11 @@ test_non_consecutive_windows() {
     cleanup_test_server
     cleanup_test_env
 
-    # Test 2: Base index 1 with gaps (1, 3, 7)
+    # test 2: base index 1 with gaps (1, 3, 7)
     setup_test_env
     setup_test_server
 
-    # Set base-index to 1
+    # set base-index to 1
     $TEST_TMUX_CMD set-option -g base-index 1
 
     $TEST_TMUX_CMD new-session -d -s "test-gaps-base1" -n "win1"
@@ -867,7 +867,7 @@ test_non_consecutive_windows() {
         fail "Session restoration failed with base-index 1"
     fi
 
-    # Reset base-index
+    # reset base-index
     $TEST_TMUX_CMD set-option -ug base-index
 
     cleanup_test_server
@@ -875,13 +875,13 @@ test_non_consecutive_windows() {
 }
 
 # ══════════════════════════════════════════════════════════════
-# Pane Readiness Tests (Improvement #2)
+# pane readiness tests (Improvement #2)
 # ══════════════════════════════════════════════════════════════
 
 test_pane_readiness() {
     section "Pane Readiness Tests"
 
-    # Check if tmux server is available
+    # check if tmux server is available
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Pane readiness tests require tmux-resurrect plugin"
         return
@@ -890,30 +890,30 @@ test_pane_readiness() {
     setup_test_env
     setup_test_server
 
-    # Test 1: Command restoration with wait_for_pane
-    # Configure process restoration
+    # test 1: command restoration with wait_for_pane
+    # configure process restoration
     $TEST_TMUX_CMD set-option -g @resurrect-processes "sleep"
 
-    # Create session with a sleep command
+    # create session with a sleep command
     $TEST_TMUX_CMD new-session -d -s "test-wait-pane" "sleep 60"
     sleep 0.5
 
-    # Save and restore
+    # save and restore
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-wait-pane"
 
-    # Restore - wait_for_pane should prevent race conditions
+    # restore, wait_for_pane should prevent race conditions
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-wait-pane"
 
     if $TEST_TMUX_CMD has-session -t "test-wait-pane" 2>/dev/null; then
         pass "Session restored with pane readiness polling"
 
-        # Give command restoration a moment
+        # give command restoration a moment
         sleep 0.3
 
-        # Check if command was restored (may or may not work depending on timing)
+        # check if command was restored (may or may not work depending on timing)
         local cmd
         cmd=$($TEST_TMUX_CMD display-message -p -t "test-wait-pane:0.0" "#{pane_current_command}" 2>/dev/null || echo "")
         if [[ -n "$cmd" ]]; then
@@ -928,25 +928,25 @@ test_pane_readiness() {
     cleanup_test_server
     cleanup_test_env
 
-    # Test 2: Multiple panes with rapid restoration
+    # test 2: multiple panes with rapid restoration
     setup_test_env
     setup_test_server
 
-    # Create session with multiple panes quickly
+    # create session with multiple panes quickly
     $TEST_TMUX_CMD new-session -d -s "test-multi-panes" "bash"
     $TEST_TMUX_CMD split-window -t "test-multi-panes" "bash"
     $TEST_TMUX_CMD split-window -t "test-multi-panes" "bash"
     $TEST_TMUX_CMD split-window -t "test-multi-panes" "bash"
     sleep 0.5
 
-    # Save and restore
+    # save and restore
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-multi-panes"
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-multi-panes"
 
-    # Verify all panes were restored
+    # verify all panes were restored
     if $TEST_TMUX_CMD has-session -t "test-multi-panes" 2>/dev/null; then
         local pane_count
         pane_count=$($TEST_TMUX_CMD list-panes -t "test-multi-panes" 2>/dev/null | wc -l)
@@ -965,13 +965,13 @@ test_pane_readiness() {
 }
 
 # ══════════════════════════════════════════════════════════════
-# Fuzzy Process Matching Tests (Improvement #6)
+# fuzzy process matching tests (Improvement #6)
 # ══════════════════════════════════════════════════════════════
 
 test_fuzzy_process_matching() {
     section "Fuzzy Process Matching Tests"
 
-    # Check if tmux-resurrect plugin is installed
+    # check if tmux-resurrect plugin is installed
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Fuzzy matching tests require tmux-resurrect plugin"
         return
@@ -980,17 +980,17 @@ test_fuzzy_process_matching() {
     setup_test_env
     setup_test_server
 
-    # Test 1: Tilde prefix for fuzzy matching (~vim matches nvim)
+    # test 1: tilde prefix for fuzzy matching (~vim matches nvim)
     $TEST_TMUX_CMD set-option -g @resurrect-processes "~vim"
 
-    # Source the restore script to test should_restore_command function
-    # We'll test by checking the configuration handling
+    # source the restore script to test should_restore_command function
+    # we'll test by checking the configuration handling
 
-    # Create a session with nvim (should match ~vim)
+    # create a session with nvim (should match ~vim)
     $TEST_TMUX_CMD new-session -d -s "test-fuzzy" "bash"
     sleep 0.3
 
-    # Create backup with nvim command
+    # create backup with nvim command
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
     cat > "$TEST_HOME/.tmux/resurrect/sessions/test-fuzzy.txt" << 'EOF'
 pane	test-fuzzy	0	1		0	bash	/tmp	1	nvim	nvim test.txt
@@ -1009,7 +1009,7 @@ EOF
     cleanup_test_server
     cleanup_test_env
 
-    # Test 2: Verify exact matching still works alongside fuzzy
+    # test 2: verify exact matching still works alongside fuzzy
     setup_test_env
     setup_test_server
 
@@ -1034,32 +1034,32 @@ EOF
 }
 
 # ══════════════════════════════════════════════════════════════
-# Restore All Sessions Tests (regression test for arithmetic bug)
+# restore all sessions tests (regression test for arithmetic bug)
 # ══════════════════════════════════════════════════════════════
 
 test_window_name_restoration() {
     section "Window Name Restoration Tests"
 
-    # Check if tmux-resurrect plugin is installed
+    # check if tmux-resurrect plugin is installed
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Window name restoration tests require tmux-resurrect plugin"
         return
     fi
 
-    # Test 1: Custom window names are preserved after restore
+    # test 1: custom window names are preserved after restore
     setup_test_env
     setup_test_server
 
     $TEST_TMUX_CMD new-session -d -s "test-winnames" -n "editor"
     $TEST_TMUX_CMD new-window -t "test-winnames" -n "server"
     $TEST_TMUX_CMD new-window -t "test-winnames" -n "logs"
-    # Disable automatic-rename to simulate user-set names
+    # disable automatic-rename to simulate user-set names
     $TEST_TMUX_CMD set-option -t "test-winnames:0" automatic-rename off
     $TEST_TMUX_CMD set-option -t "test-winnames:1" automatic-rename off
     $TEST_TMUX_CMD set-option -t "test-winnames:2" automatic-rename off
     sleep 0.5
 
-    # Save, split, kill, restore
+    # save, split, kill, restore
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
     sleep 0.5
     bash "$SCRIPTS_DIR/resurrect/split.sh"
@@ -1084,18 +1084,18 @@ test_window_name_restoration() {
     cleanup_test_server
     cleanup_test_env
 
-    # Test 2: Window names not overwritten by automatic-rename during restore
-    # This tests the race condition fix where automatic-rename is disabled
+    # test 2: window names not overwritten by automatic-rename during restore
+    # this tests the race condition fix where automatic-rename is disabled
     # in Pass 1 before names are applied in Pass 2
     setup_test_env
     setup_test_server
 
-    # Enable automatic-rename globally (the default that causes the race)
+    # enable automatic-rename globally (the default that causes the race)
     $TEST_TMUX_CMD set-option -g automatic-rename on
 
     $TEST_TMUX_CMD new-session -d -s "test-autorename" -n "code"
     $TEST_TMUX_CMD new-window -t "test-autorename" -n "build"
-    # Leave automatic-rename on for these windows (as saved in backup)
+    # leave automatic-rename on for these windows (as saved in backup)
     sleep 0.5
 
     $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
@@ -1103,7 +1103,7 @@ test_window_name_restoration() {
     bash "$SCRIPTS_DIR/resurrect/split.sh"
     $TEST_TMUX_CMD kill-session -t "test-autorename"
 
-    # Restore with global automatic-rename on (triggers the race condition)
+    # restore with global automatic-rename on (triggers the race condition)
     bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-autorename"
     sleep 0.3
 
@@ -1121,7 +1121,7 @@ test_window_name_restoration() {
         fail "Session restoration failed for automatic-rename test"
     fi
 
-    # Reset global setting
+    # reset global setting
     $TEST_TMUX_CMD set-option -ug automatic-rename
 
     cleanup_test_server
@@ -1131,7 +1131,7 @@ test_window_name_restoration() {
 test_restore_all_sessions() {
     section "Restore All Sessions Tests"
 
-    # Check if tmux-resurrect plugin is installed
+    # check if tmux-resurrect plugin is installed
     if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
         skip "Restore all tests require tmux-resurrect plugin"
         return
@@ -1140,11 +1140,11 @@ test_restore_all_sessions() {
     setup_test_env
     setup_test_server
 
-    # Test 1: Restore all with some sessions already running (tests skipping logic)
-    # This is a regression test for the ((skipped++)) bug that caused early exit
+    # test 1: restore all with some sessions already running (tests skipping logic)
+    # this is a regression test for the ((skipped++)) bug that caused early exit
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
 
-    # Create multiple session backups
+    # create multiple session backups
     for i in 1 2 3; do
         cat > "$TEST_HOME/.tmux/resurrect/sessions/test-all-$i.txt" << EOF
 pane	test-all-$i	0	1		0	bash	/tmp	1	bash
@@ -1152,21 +1152,21 @@ window	test-all-$i	0	window1	1		1234,80x24,0,0,1	0
 EOF
     done
 
-    # Start one session to force a skip
+    # start one session to force a skip
     $TEST_TMUX_CMD new-session -d -s "test-all-1" "bash"
     sleep 0.3
 
-    # Run restore all and capture output
+    # run restore all and capture output
     local output
     output=$(bash "$SCRIPTS_DIR/resurrect/restore.sh" 2>&1) || true
 
-    # Verify script processed all sessions (didn't exit early)
+    # verify script processed all sessions (didn't exit early)
     if echo "$output" | grep -q "Restored:"; then
-        # Check that it shows the summary with skipped count
+        # check that it shows the summary with skipped count
         if echo "$output" | grep -q "Skipped: 1"; then
             pass "Restore all iterates through all sessions without early exit"
         else
-            # May have different skip count, but should still complete
+            # may have different skip count, but should still complete
             if echo "$output" | grep -E "Restored: [0-9]+" | grep -qv "Restored: 0"; then
                 pass "Restore all completed and restored some sessions"
             else
@@ -1177,7 +1177,7 @@ EOF
         fail "Restore all exited early without showing summary"
     fi
 
-    # Test 2: Verify multiple sessions were restored
+    # test 2: verify multiple sessions were restored
     local restored_count=0
     for i in 2 3; do
         if $TEST_TMUX_CMD has-session -t "test-all-$i" 2>/dev/null; then
@@ -1194,7 +1194,7 @@ EOF
     cleanup_test_server
     cleanup_test_env
 
-    # Test 3: Restore all with no sessions running (all should restore)
+    # test 3: restore all with no sessions running (all should restore)
     setup_test_env
     setup_test_server
 
@@ -1211,7 +1211,7 @@ EOF
     if echo "$output" | grep -q "Restored: 3"; then
         pass "Restore all restores all sessions when none are running"
     elif echo "$output" | grep -q "Restored:"; then
-        # May show different count depending on environment
+        # may show different count depending on environment
         pass "Restore all completed successfully"
     else
         fail "Restore all did not complete properly"
@@ -1222,13 +1222,13 @@ EOF
 }
 
 # ══════════════════════════════════════════════════════════════
-# Main Test Execution
+# main test execution
 # ══════════════════════════════════════════════════════════════
 
 section "Setup Test Environment"
 pass "Test environment ready"
 
-# Run all test groups
+# run all test groups
 test_path_discovery
 test_split_operation
 test_restore_operation
@@ -1240,7 +1240,7 @@ test_process_list_configuration
 test_mixed_restoration
 test_graceful_degradation
 
-# New improvement tests
+# new improvement tests
 test_field_validation
 test_cleanup_trap
 test_non_consecutive_windows

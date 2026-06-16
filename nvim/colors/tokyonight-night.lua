@@ -1,5 +1,5 @@
--- Tokyo Night colourscheme for Neovim
--- Matches the dotfiles tokyonight-night.theme exactly
+-- Tokyo Night colourscheme for nvim
+-- matches the dotfiles tokyonight-night.theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -9,16 +9,16 @@ end
 vim.g.colors_name = 'tokyonight-night'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/tokyonight-night.theme)
+-- theme colours (matching themes/tokyonight-night.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#1a1b26',
   fg_primary = '#c0caf5',
   bg_secondary = '#24283b',
   fg_secondary = '#565f89',
   fg_variable = '#a6afda',
 
-  -- Accents
+  -- accents
   purple = '#bb9af7',
   pink = '#ff007c',
   cyan = '#7dcfff',
@@ -26,7 +26,7 @@ local colors = {
   yellow = '#e0af68',
   red = '#f7768e',
 
-  -- Additional shades
+  -- additional shades
   selection = '#283457',
   comment = '#565f89',
   line_highlight = '#1e2030',
@@ -34,12 +34,12 @@ local colors = {
   orange = '#ff9e64',
 }
 
--- Helper function to set highlight groups
+-- helper to set highlight groups
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
@@ -78,7 +78,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = '#bb9af7' })
 hl('String', { fg = '#9ece6a' })
@@ -115,14 +115,14 @@ hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
 hl('Todo', { fg = '#ff007c', bold = true })
 
--- Git signs
+-- git signs
 hl('GitSignsAdd', { fg = colors.green })
 hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
 
--- Diagnostics
+-- diagnostics
 hl('DiagnosticError', { fg = colors.red })
 hl('DiagnosticWarn', { fg = colors.yellow })
 hl('DiagnosticInfo', { fg = colors.cyan })
@@ -137,7 +137,7 @@ hl('LspReferenceText', { bg = colors.selection })
 hl('LspReferenceRead', { bg = colors.selection })
 hl('LspReferenceWrite', { bg = colors.selection })
 
--- Treesitter
+-- treesitter
 hl('@variable', { fg = colors.fg_variable })
 hl('@variable.builtin', { fg = '#bb9af7' })
 hl('@variable.parameter', { fg = colors.fg_secondary })

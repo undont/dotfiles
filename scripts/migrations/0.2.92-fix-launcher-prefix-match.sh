@@ -1,13 +1,13 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Patch user-owned launchers so tmux session lookups use exact-match
-# targets ("=$SESSION") instead of bare names. The wizard template
+# patch user-owned launchers so tmux session lookups use exact-match
+# targets ("=$SESSION") instead of bare names. the wizard template
 # generated `tmux has-session -t "$SESSION"`, which silently prefix-
-# matched — e.g. launching "foo-15" when "foo-1533" was already
-# running would re-attach to foo-1533 instead of creating foo-15.
-# Only patches the three lines the wizard template emits; hand-written
-# launchers using different variable names are left alone.
+# matched: launching "foo-15" when "foo-1533" was already running would
+# re-attach to foo-1533 instead of creating foo-15.
+# only patches the three lines the wizard template emits; hand-written
+# launchers using different variable names are left alone
 
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 
@@ -28,7 +28,7 @@ fi
 patched=0
 for f in "${launchers[@]}"; do
     [[ -f "$f" ]] || continue
-    # Skip if already exact-match (idempotent)
+    # skip if already exact-match (idempotent)
     if ! grep -qE 'tmux (has-session|switch-client|attach-session) -t "\$SESSION"' "$f"; then
         continue
     fi

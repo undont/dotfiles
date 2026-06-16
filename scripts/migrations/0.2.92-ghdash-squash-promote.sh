@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Migration: promote 'm' squash & merge keybinding from gh-dash local.yml to
-# the base config (config.yml.template). The 0.2.64 migration originally
+# migration: promote 'm' squash & merge keybinding from gh-dash local.yml to
+# the base config (config.yml.template). the 0.2.64 migration originally
 # planted this in local.yml as an override; now that it ships in the
 # template, leaving the local copy would cause yq's *+ array-merge to
-# duplicate the binding.
+# duplicate the binding
 
 local_yml="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/local.yml"
 
@@ -25,12 +25,12 @@ if ! command -v yq >/dev/null 2>&1; then
     exit 0
 fi
 
-# Remove the entry matching key:m AND command containing --squash. Anything
-# else the user added under keybindings.prs is left alone.
+# remove the entry matching key:m AND command containing --squash. anything
+# else the user added under keybindings.prs is left alone
 yq -i 'del(.keybindings.prs[] | select(.key == "m" and ((.command // "") | contains("--squash"))))' "$local_yml"
 
-# Clean up empty containers left behind so the file matches the shape new
-# users get from local.yml.template.
+# clean up empty containers left behind so the file matches the shape new
+# users get from local.yml.template
 if [[ "$(yq '.keybindings.prs | length' "$local_yml" 2>/dev/null)" == "0" ]]; then
     yq -i 'del(.keybindings.prs)' "$local_yml"
 fi

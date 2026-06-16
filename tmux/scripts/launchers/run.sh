@@ -5,21 +5,21 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # Launcher Runner (fzf become target)
 # ══════════════════════════════════════════════════════════════
-# Post-selection handler for the launcher picker (prefix + p).
-# Routes to the appropriate handler based on launcher type:
-#   - Fixed-session: instance picker (attach existing or create new)
-#   - Parameterised: directory picker (choose project directory)
+# post-selection handler for the launcher picker (prefix + p).
+# routes to the appropriate handler based on launcher type:
+#   - fixed-session: instance picker (attach existing or create new)
+#   - parameterised: directory picker (choose project directory)
 #
-# Called via fzf become() with launcher name as $1.
+# called via fzf become() with launcher name as $1
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Strip shell-escape backslashes from a pasted path. Fzf gives literal text
+# strip shell-escape backslashes from a pasted path. fzf gives literal text
 # (not shell-parsed), so `~/Library/Mobile\ Documents/...` arrives with the
-# backslashes intact and fails the [[ -d ... ]] check downstream.
+# backslashes intact and fails the [[ -d ... ]] check downstream
 unescape_paste() {
     local s="$1"
     s="${s//\\ / }"
@@ -32,7 +32,7 @@ if [[ -z "${DOTFILES_ROOT:-}" ]] || [[ ! -d "$DOTFILES_ROOT" ]]; then
     exit 1
 fi
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
@@ -41,16 +41,16 @@ if [[ -z "$name" ]]; then
     exit 0
 fi
 
-# Record launcher usage for MRU ordering
+# record launcher usage for MRU ordering
 mkdir -p "$(dirname "$LAUNCHER_HISTORY")"
 printf '%s\n' "$name" >> "$LAUNCHER_HISTORY"
-# Trim to last 100 entries
+# trim to last 100 entries
 if [[ $(wc -l < "$LAUNCHER_HISTORY") -gt 100 ]]; then
     tail -100 "$LAUNCHER_HISTORY" > "$LAUNCHER_HISTORY.tmp" && mv "$LAUNCHER_HISTORY.tmp" "$LAUNCHER_HISTORY"
 fi
 
 # ─────────────────────────────────────────
-# Find the launcher file
+# find the launcher file
 # ─────────────────────────────────────────
 LAUNCHER=""
 
@@ -66,48 +66,48 @@ if [[ -z "$LAUNCHER" ]]; then
 fi
 
 # ─────────────────────────────────────────
-# Extract launcher metadata
+# extract launcher metadata
 # ─────────────────────────────────────────
 description=$(grep -m1 '# @description:' "$LAUNCHER" 2>/dev/null | sed 's/.*# @description: *//' || true)
 
-# Instance creation mode: "prompt" asks for a name, "auto" (default) auto-increments
-# Set via: # @instance: prompt
+# instance creation mode: "prompt" asks for a name, "auto" (default) auto-increments
+# set via: # @instance: prompt
 instance_mode=$(grep -m1 '# @instance:' "$LAUNCHER" 2>/dev/null | sed 's/.*# @instance: *//' || true)
 
-# Detect launcher type by checking for a fixed SESSION= value
-# Fixed: SESSION="myproject" or SESSION="${SESSION_NAME:-myproject}"
-# Parameterised: no SESSION= line (e.g. dev derives session from directory)
+# detect launcher type by checking for a fixed SESSION= value
+# fixed: SESSION="myproject" or SESSION="${SESSION_NAME:-myproject}"
+# parameterised: no SESSION= line (e.g. dev derives session from directory)
 session_value=$(grep -m1 '^SESSION=' "$LAUNCHER" 2>/dev/null | sed 's/^SESSION=//' | tr -d '"' || true)
 
 is_fixed_session() {
-    # Has a SESSION= line and it's not purely variable-based
+    # has a SESSION= line and it's not purely variable-based
     [[ -n "$session_value" ]]
 }
 
-# Extract the base session name from SESSION= value
-# Handles: SESSION="${SESSION_NAME:-myproject}" → myproject
+# extract the base session name from SESSION= value
+# handles: SESSION="${SESSION_NAME:-myproject}" → myproject
 #          SESSION="myproject" → myproject
 get_base_session_name() {
     local val="$session_value"
-    # Handle ${SESSION_NAME:-default} pattern
+    # handle ${SESSION_NAME:-default} pattern
     if [[ "$val" =~ :-([^}]+)\} ]]; then
         printf '%s' "${BASH_REMATCH[1]}"
     else
-        # Plain value (strip any remaining $ or { chars)
+        # plain value (strip any remaining $ or { chars)
         # shellcheck disable=SC2016
         printf '%s' "$val" | tr -d '${}'
     fi
 }
 
 # ─────────────────────────────────────────
-# Fixed-session launcher handler
+# fixed-session launcher handler
 # ─────────────────────────────────────────
 handle_fixed_session() {
     local base_name
     base_name=$(get_base_session_name)
 
-    # Find running sessions matching base name or base-<suffix> pattern
-    # Matches both auto-incremented (acme-2) and prompted (acme-1234) instances
+    # find running sessions matching base name or base-<suffix> pattern
+    # matches both auto-incremented (acme-2) and prompted (acme-1234) instances
     local running=()
     while IFS= read -r session; do
         if [[ "$session" == "$base_name" ]] || [[ "$session" =~ ^${base_name}-.+$ ]]; then
@@ -115,14 +115,14 @@ handle_fixed_session() {
         fi
     done < <(tmux list-sessions -F '#{session_name}' 2>/dev/null || true)
 
-    # No running sessions — launch directly
+    # no running sessions, launch directly
     if [[ ${#running[@]} -eq 0 ]]; then
         exec "$LAUNCHER"
     fi
 
-    # One or more running — show instance picker
-    # Build content: header lines + items (piped together for consistent alignment)
-    # Note: avoid $(printf...) for line building — command substitution strips trailing newlines
+    # one or more running, show instance picker
+    # build content: header lines + items (piped together for consistent alignment)
+    # note: avoid $(printf...) for line building, command substitution strips trailing newlines
     local content=""
     content+=$'\n'
     content+="  ${GREEN}${name}${NC}"$'\n'
@@ -131,21 +131,21 @@ handle_fixed_session() {
     content+=$'\n'
 
     for session in "${running[@]}"; do
-        # Use printf for %-16s field width, then append newline separately
+        # use printf for %-16s field width, then append newline separately
         content+="    ${GREEN}●${NC} $(printf '%-16s' "$session") ${GREY}(running)${NC}"$'\n'
     done
 
-    # Build the become() command for 'n' (new instance)
+    # build the become() command for 'n' (new instance)
     local safe_base_name safe_launcher
     safe_base_name=$(printf '%q' "$base_name")
     safe_launcher=$(printf '%q' "$LAUNCHER")
 
     local new_cmd
     if [[ "$instance_mode" == "prompt" ]]; then
-        # Prompt for a suffix (e.g. ticket number) → acme-1234
+        # prompt for a suffix (e.g. ticket number) → acme-1234
         new_cmd="suffix=\$(printf '' | fzf --query='' --prompt=${safe_base_name}- --height=100% --layout=reverse --border=rounded --border-label=' ⏎ create · esc cancel ' --border-label-pos=bottom --no-info --pointer=' ' --bind 'enter:print-query' --bind 'esc:abort' 2>/dev/null) && [ -n \"\$suffix\" ] && suffix=\$(printf '%s' \"\$suffix\" | tr -c '[:alnum:]_-' '-') && SESSION_NAME=${safe_base_name}-\$suffix exec ${safe_launcher}"
     else
-        # Auto-increment → acme-2, acme-3, etc.
+        # auto-increment → acme-2, acme-3, etc.
         new_cmd="num=2; while tmux has-session -t ${safe_base_name}-\$num 2>/dev/null; do num=\$((num+1)); done; SESSION_NAME=${safe_base_name}-\$num exec ${safe_launcher}"
     fi
 
@@ -167,7 +167,7 @@ handle_fixed_session() {
         --bind "n:become($new_cmd)" \
         2>/dev/null) || exit 130
 
-    # Extract session name from selection (after ● marker)
+    # extract session name from selection (after ● marker)
     local target
     target=$(printf '%s' "$selection" | sed 's/.*● *//' | awk '{print $1}')
     if [[ -n "$target" ]]; then
@@ -176,25 +176,25 @@ handle_fixed_session() {
 }
 
 # ─────────────────────────────────────────
-# Session collision handler (parameterised)
+# session collision handler (parameterised)
 # ─────────────────────────────────────────
 handle_session_collision() {
     local session="$1"
     local dir="$2"
 
-    # Get existing session's working directory for context
+    # get existing session's working directory for context
     local existing_path
     existing_path=$(tmux display-message -t "${session}:1" -p '#{pane_current_path}' 2>/dev/null || true)
     existing_path="${existing_path/#$HOME/\~}"
 
-    # Find next available auto-increment suffix
+    # find next available auto-increment suffix
     local num=2
     while session_exists "${session}-${num}"; do
         num=$((num + 1))
     done
 
-    # Build become() command for 'n' — suffix prompt with auto-number as default
-    # User can type a custom suffix or press enter to accept the default
+    # build become() command for 'n': suffix prompt with auto-number as default
+    # user can type a custom suffix or press enter to accept the default
     local safe_session safe_launcher safe_dir
     safe_session=$(printf '%q' "$session")
     safe_launcher=$(printf '%q' "$LAUNCHER")
@@ -226,7 +226,7 @@ handle_session_collision() {
         --bind "n:become($new_cmd)" \
         2>/dev/null) || exit 130
 
-    # Only reachable via enter/space — 'n' goes through become()
+    # only reachable via enter/space; 'n' goes through become()
     if [[ "$selection" == *"●"* ]]; then
         tmux switch-client -t "$session"
         exit 0
@@ -234,21 +234,32 @@ handle_session_collision() {
 }
 
 # ─────────────────────────────────────────
-# Parameterised launcher handler
+# parameterised launcher handler
 # ─────────────────────────────────────────
 handle_parameterised() {
-    # Collect directories from PROJECT_DIRS using shared helper
+    # collect directories from PROJECT_DIRS using shared helper
     local display_dirs=()
     while IFS= read -r d; do
         display_dirs+=("$d")
     done < <(list_project_dirs)
 
-    # Build content: header lines + directory list
-    # Note: avoid $(printf...) for line building — command substitution strips trailing newlines
-    local content=""
+    # build content: header lines + directory list
+    # note: avoid $(printf...) for line building, command substitution strips trailing newlines
+    local content="" header_lines=5
     content+=$'\n'
     content+="  ${GREEN}${name}${NC}"$'\n'
     content+="  ${GREY}${description}${NC}"$'\n'
+
+    # empty list usually means PROJECT_DIRS isn't reaching the popup. show why
+    # rather than a blank picker. the var is exported in ~/.zshrc but only reaches
+    # a tmux popup via update-environment on attach (see tmux.conf update-environment)
+    if [[ ${#display_dirs[@]} -eq 0 ]]; then
+        local pd_display="${PROJECT_DIRS:-not set}"
+        content+="  ${YELLOW}No project directories found${NC}"$'\n'
+        content+="  ${GREY}PROJECT_DIRS: ${pd_display} · set it in ~/.zshrc, then detach + reattach${NC}"$'\n'
+        header_lines=7
+    fi
+
     content+=$'\n'
     content+=$'\n'
 
@@ -260,7 +271,7 @@ handle_parameterised() {
     result=$(printf '%s' "$content" | fzf \
         --ansi --reverse --exact --disabled --cycle \
         --print-query \
-        --header-lines=5 \
+        --header-lines="$header_lines" \
         --padding=0,0,1,0 \
         --prompt=': ' \
         --border=rounded \
@@ -280,21 +291,21 @@ handle_parameterised() {
     query=$(printf '%s' "$result" | sed -n '1p' | sed 's/^[[:space:]]*//')
     selected=$(printf '%s' "$result" | sed -n '2p' | sed 's/^[[:space:]]*//')
 
-    # Use selected item if available, otherwise use the typed query
+    # use selected item if available, otherwise use the typed query
     dir="${selected:-$query}"
     [[ -n "$dir" ]] || exit 0
 
     dir=$(unescape_paste "$dir")
 
-    # Expand ~ back to $HOME
+    # expand ~ back to $HOME
     dir="${dir/#\~/$HOME}"
 
-    # Resolve to absolute path if relative
+    # resolve to absolute path if relative
     if [[ -d "$dir" ]]; then
         dir=$(cd "$dir" && pwd)
     fi
 
-    # Derive expected session name (parameterised launchers suffix the launcher name)
+    # derive expected session name (parameterised launchers suffix the launcher name)
     local expected_session
     expected_session="$(sanitise_session_name "$(basename "$dir")")-${name}"
     if [[ -n "$expected_session" ]] && session_exists "$expected_session"; then
@@ -305,7 +316,7 @@ handle_parameterised() {
 }
 
 # ─────────────────────────────────────────
-# Main
+# main
 # ─────────────────────────────────────────
 if is_fixed_session; then
     handle_fixed_session

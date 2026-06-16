@@ -1,34 +1,34 @@
 #!/usr/bin/env bash
-# Display agent alerts for tmux status bar (Claude, OpenCode, etc.)
-# Shows one alert per session (aggregates all windows in that session)
-# Also handles command exit alerts (session:window:exit:<code>:<label>)
+# display agent alerts for tmux status bar (Claude, OpenCode, etc.)
+# shows one alert per session (aggregates all windows in that session)
+# also handles command exit alerts (session:window:exit:<code>:<label>)
 #
-# Compatible with bash 3.2 (macOS stock) — no associative arrays.
+# compatible with bash 3.2 (macOS stock); no associative arrays
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 
-# Bail before spawning tmux or sourcing libs — this runs every status-interval
-# and the common case is no alerts at all.
+# bail before spawning tmux or sourcing libs; this runs every status-interval
+# and the common case is no alerts at all
 if [[ ! -f "$ALERTS_FILE" ]] || [[ ! -s "$ALERTS_FILE" ]]; then
     exit 0
 fi
 
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 
-# Source the alerts library for agent configuration
+# source the alerts library for agent configuration
 [[ -f "$SCRIPT_DIR/../_lib/alerts.sh" ]] || exit 0
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# Parallel arrays for bash 3.2 compatibility (no associative arrays)
-# sessions[i]     — unique session name
-# sess_agents[i]  — comma-separated agent names
-# sess_exit[i]    — "icon|colour|label" for exit alert (last wins per session)
+# parallel arrays for bash 3.2 compatibility (no associative arrays)
+# sessions[i]     unique session name
+# sess_agents[i]  comma-separated agent names
+# sess_exit[i]    "icon|colour|label" for exit alert (last wins per session)
 sessions=()
 sess_agents=()
 sess_exit=()
 
-# Find index of session, or echo -1
+# find index of session, or echo -1
 _find_idx() {
     local target="$1" i
     for (( i=0; i<${#sessions[@]}; i++ )); do
@@ -40,10 +40,10 @@ _find_idx() {
 while IFS= read -r line; do
     [[ -z "$line" ]] && continue
 
-    # Split on ':' — exit alerts have 5 fields, agent alerts have 3
+    # split on ':'; exit alerts have 5 fields, agent alerts have 3
     IFS=':' read -r session _window field3 field4 field5 <<< "$line"
 
-    # Skip current session and malformed entries
+    # skip current session and malformed entries
     [[ "$session" == "$CURRENT_SESSION" ]] && continue
     [[ -z "$session" || -z "$field3" ]] && continue
 
@@ -58,7 +58,7 @@ while IFS= read -r line; do
     if [[ "$field3" == "exit" ]]; then
         local_code="$field4"
         local_label="$field5"
-        # Escape '#' to prevent tmux format injection
+        # escape '#' to prevent tmux format injection
         local_label="${local_label//\#/##}"
         display=$(get_exit_code_display "$local_code")
         sess_exit[idx]="${display}|${local_label}"
@@ -67,7 +67,7 @@ while IFS= read -r line; do
         if [[ -z "${sess_agents[idx]}" ]]; then
             sess_agents[idx]="$agent"
         else
-            # Append agent if not already present
+            # append agent if not already present
             case ",${sess_agents[idx]}," in
                 *,"$agent",*) ;;
                 *) sess_agents[idx]="${sess_agents[idx]},${agent}" ;;
@@ -84,7 +84,7 @@ output=""
 for (( i=0; i<session_count && i<3; i++ )); do
     session="${sessions[$i]}"
 
-    # Agent icons first — also shows the session name
+    # agent icons first; also shows the session name
     if [[ -n "${sess_agents[$i]}" ]]; then
         icons=""
         IFS=',' read -ra agent_list <<< "${sess_agents[$i]}"
@@ -97,7 +97,7 @@ for (( i=0; i<session_count && i<3; i++ )); do
         output="${output}${icons} ${session}#[default] "
     fi
 
-    # Exit alert: icon and label only, coloured; session name shown separately
+    # exit alert: icon and label only, coloured; session name shown separately
     if [[ -n "${sess_exit[$i]}" ]]; then
         exit_data="${sess_exit[$i]}"
         exit_icon="${exit_data%%|*}"
@@ -112,7 +112,7 @@ for (( i=0; i<session_count && i<3; i++ )); do
     fi
 done
 
-# Show overflow count if more than 3 sessions
+# show overflow count if more than 3 sessions
 if [[ $session_count -gt 3 ]]; then
     echo "${output}+ $((session_count-3)) "
 else

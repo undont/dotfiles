@@ -1,8 +1,8 @@
 -- Dashboard: snacks.nvim startup screen
 
---- Set dashboard highlight groups by linking to standard Vim groups.
---- Called on load and on every ColorScheme change so highlights
---- stay in sync with dotfiles theme switching.
+--- set dashboard highlight groups by linking to standard vim groups.
+--- called on load and on every ColorScheme change so highlights
+--- stay in sync with dotfiles theme switching
 local function set_dashboard_highlights()
   local links = {
     SnacksDashboardHeader = 'Keyword',
@@ -29,7 +29,7 @@ return {
     lazy = false,
     ---@type snacks.Config
     opts = {
-      -- Only enable the dashboard module
+      -- only enable the dashboard module
       bigfile = { enabled = false },
       dashboard = {
         enabled = true,
@@ -92,7 +92,7 @@ return {
     config = function(_, opts)
       require('snacks').setup(opts)
 
-      -- Apply highlights now and re-apply on every theme change
+      -- apply highlights now and re-apply on every theme change
       set_dashboard_highlights()
       vim.api.nvim_create_autocmd('ColorScheme', {
         group = vim.api.nvim_create_augroup('SnacksDashboardTheme', { clear = true }),

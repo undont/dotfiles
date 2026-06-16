@@ -1,27 +1,27 @@
 #!/usr/bin/env bash
-# Agent alert utilities for tmux scripts
-# Source this file after common.sh
+# agent alert utilities for tmux scripts
+# source this file after common.sh
 
-# Guard against multiple sourcing
+# guard against multiple sourcing
 [[ -n "${_TMUX_ALERTS_SH_LOADED:-}" ]] && return 0
 _TMUX_ALERTS_SH_LOADED=1
 
-# Alerts file location (only set if not already defined, allowing tests to override)
+# alerts file location (only set if not already defined, allowing tests to override)
 if [[ -z "${ALERTS_FILE:-}" ]]; then
     readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 fi
 
-# Alert file format: session:window:agent
-# Future enhancement: Add timestamp field for age-based sorting and auto-expiry
-# Proposed format: session:window:agent:timestamp
+# alert file format: session:window:agent
+# future enhancement: add timestamp field for age-based sorting and auto-expiry
+# proposed format: session:window:agent:timestamp
 
-# Percent-encode a window name for safe storage in the colon-delimited alerts
+# percent-encode a window name for safe storage in the colon-delimited alerts
 # file. tmux allows colons in window names (e.g. via automatic-rename from a
 # process title), and a literal colon would be mistaken for the field
-# separator and corrupt parsing. Encode '%' first so the transform is
-# reversible, then ':'. Sessions use a restricted charset and never need
-# encoding; labels are always the trailing field so their colons are harmless.
-# Usage: encoded=$(alerts_encode_window "$window_name")
+# separator and corrupt parsing. encode '%' first so the transform is
+# reversible, then ':'. sessions use a restricted charset and never need
+# encoding; labels are always the trailing field so their colons are harmless
+# usage: encoded=$(alerts_encode_window "$window_name")
 alerts_encode_window() {
     local s="$1"
     s="${s//%/%25}"
@@ -29,9 +29,9 @@ alerts_encode_window() {
     printf '%s' "$s"
 }
 
-# Inverse of alerts_encode_window. Decode ':' before '%' to mirror the encode
-# order so a literal "%3A" in the original name survives the round-trip.
-# Usage: name=$(alerts_decode_window "$encoded")
+# inverse of alerts_encode_window. decode ':' before '%' to mirror the encode
+# order so a literal "%3A" in the original name survives the round-trip
+# usage: name=$(alerts_decode_window "$encoded")
 alerts_decode_window() {
     local s="$1"
     s="${s//%3A/:}"
@@ -39,9 +39,9 @@ alerts_decode_window() {
     printf '%s' "$s"
 }
 
-# Get agent icon (compatible with bash 3.2 - no associative arrays)
-# Usage: get_agent_icon "agent_name"
-# Returns: icon symbol
+# get agent icon (compatible with bash 3.2, no associative arrays)
+# usage: get_agent_icon "agent_name"
+# returns: icon symbol
 get_agent_icon() {
     local agent="$1"
     case "$agent" in
@@ -53,23 +53,23 @@ get_agent_icon() {
     esac
 }
 
-# Get agent colour (compatible with bash 3.2 - no associative arrays)
-# Usage: get_agent_colour "agent_name"
-# Returns: hex colour code
+# get agent colour (compatible with bash 3.2, no associative arrays)
+# usage: get_agent_colour "agent_name"
+# returns: hex colour code
 get_agent_colour() {
     local agent="$1"
     case "$agent" in
-        claude) echo "#f1fa8c" ;;      # Yellow
-        codex) echo "#50fa7b" ;;       # Dracula green (matches codex logo)
-        opencode) echo "#bd93f9" ;;    # Dracula purple
+        claude) echo "#f1fa8c" ;;      # yellow
+        codex) echo "#50fa7b" ;;       # dracula green (matches codex logo)
+        opencode) echo "#bd93f9" ;;    # dracula purple
         copilot) echo "#58a6ff" ;;     # GitHub blue
-        *) echo "#6272a4" ;;           # Dracula blue
+        *) echo "#6272a4" ;;           # dracula blue
     esac
 }
 
-# Get agent display icon and colour (inlined to avoid subshell forks)
-# Usage: get_agent_display "agent_name"
-# Returns: "icon|colour"
+# get agent display icon and colour (inlined to avoid subshell forks)
+# usage: get_agent_display "agent_name"
+# returns: "icon|colour"
 get_agent_display() {
     case "$1" in
         claude)   echo "⚡|#f1fa8c" ;;
@@ -80,8 +80,8 @@ get_agent_display() {
     esac
 }
 
-# Exit code icon (separate from agent icons)
-# Usage: get_exit_code_icon "exit_code"
+# exit code icon (separate from agent icons)
+# usage: get_exit_code_icon "exit_code"
 get_exit_code_icon() {
     local code="$1"
     case "$code" in
@@ -90,18 +90,18 @@ get_exit_code_icon() {
     esac
 }
 
-# Exit code colour
-# Usage: get_exit_code_colour "exit_code"
+# exit code colour
+# usage: get_exit_code_colour "exit_code"
 get_exit_code_colour() {
     local code="$1"
     case "$code" in
-        0)   echo "#7aab88" ;;    # Muted green
-        *)   echo "#c07878" ;;    # Muted red
+        0)   echo "#7aab88" ;;    # muted green
+        *)   echo "#c07878" ;;    # muted red
     esac
 }
 
-# Exit code display (combined icon|colour, avoids subshell forks)
-# Usage: get_exit_code_display "exit_code"
+# exit code display (combined icon|colour, avoids subshell forks)
+# usage: get_exit_code_display "exit_code"
 get_exit_code_display() {
     local code="$1"
     case "$code" in
@@ -110,21 +110,21 @@ get_exit_code_display() {
     esac
 }
 
-# Build alert icon string from tmux window options output
-# Usage: icons=$(get_window_alert_icons "$opts")
-# Returns: ANSI-coloured icon string (empty if no alerts)
+# build alert icon string from tmux window options output
+# usage: icons=$(get_window_alert_icons "$opts")
+# returns: ANSI-coloured icon string (empty if no alerts)
 get_window_alert_icons() {
     local opts="$1"
     local icons=""
 
-    # Exit alert
+    # exit alert
     if printf '%s\n' "$opts" | grep -q '^@exit_alert '; then
         local exit_code exit_label display icon colour
         exit_code=$(printf '%s\n' "$opts" | grep '^@exit_alert_code ' | cut -d' ' -f2)
         exit_label=$(printf '%s\n' "$opts" | grep '^@exit_alert_label ' | cut -d' ' -f2-)
         exit_label="${exit_label#\"}"
         exit_label="${exit_label%\"}"
-        # Escape '#' to prevent tmux format injection
+        # escape '#' to prevent tmux format injection
         exit_label="${exit_label//\#/##}"
         display=$(get_exit_code_display "$exit_code")
         icon="${display%%|*}"
@@ -132,14 +132,14 @@ get_window_alert_icons() {
         icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon} ${exit_label}\033[0m "
     fi
 
-    # Agent alerts
+    # agent alerts
     local agent
     for agent in claude codex opencode copilot; do
         if printf '%s\n' "$opts" | grep -q "^@${agent}_alert "; then
             display=$(get_agent_display "$agent")
             icon="${display%%|*}"
             colour="${display##*|}"
-            # Apply colour only for non-emoji icons (emojis are self-coloured)
+            # apply colour only for non-emoji icons (emojis are self-coloured)
             case "$agent" in
                 copilot)
                     icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon}\033[0m "
@@ -154,13 +154,13 @@ get_window_alert_icons() {
     printf '%s' "$icons"
 }
 
-# Build alert icons from pre-read alerts file content
-# Avoids per-window tmux calls by reading the flat file once
-# Usage: icons=$(build_alert_icons "$alerts_content" "^session_name:" [dedupe])
-#   $1 - Full alerts file content (pre-read)
-#   $2 - Grep pattern to filter entries (e.g. "^mysession:" or "^mysession:mywindow:")
-#   $3 - Optional: pass "dedupe" to deduplicate agent icons across entries
-# Returns: ANSI-coloured icon string (empty if no alerts match)
+# build alert icons from pre-read alerts file content
+# avoids per-window tmux calls by reading the flat file once
+# usage: icons=$(build_alert_icons "$alerts_content" "^session_name:" [dedupe])
+#   $1 - full alerts file content (pre-read)
+#   $2 - grep pattern to filter entries (e.g. "^mysession:" or "^mysession:mywindow:")
+#   $3 - optional: pass "dedupe" to deduplicate agent icons across entries
+# returns: ANSI-coloured icon string (empty if no alerts match)
 build_alert_icons() {
     local alerts_content="$1"
     local pattern="$2"
@@ -181,17 +181,17 @@ build_alert_icons() {
 
         IFS=: read -r _sess _win field3 rest <<< "$line"
         if [[ "$field3" == "exit" ]]; then
-            # Exit alert: rest is "code:label"
+            # exit alert: rest is "code:label"
             local code="${rest%%:*}"
             local label="${rest#*:}"
-            # Escape '#' to prevent tmux format injection
+            # escape '#' to prevent tmux format injection
             label="${label//\#/##}"
             display=$(get_exit_code_display "$code")
             icon="${display%%|*}"
             colour="${display##*|}"
             icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon} ${label}\033[0m "
         else
-            # Agent alert: field3 is agent name
+            # agent alert: field3 is agent name
             local agent="$field3"
             if [[ "$dedupe" == "dedupe" ]]; then
                 case "$seen_agents" in *"|${agent}|"*) continue ;; esac
@@ -214,15 +214,15 @@ build_alert_icons() {
     printf '%s' "$icons"
 }
 
-# Set an exit code alert for the current window
-# Usage: set_exit_alert "exit_code" "label" [ring_bell]
-# Sets @exit_alert and @exit_alert_colour window options and adds 5-field entry to alerts file
+# set an exit code alert for the current window
+# usage: set_exit_alert "exit_code" "label" [ring_bell]
+# sets @exit_alert and @exit_alert_colour window options and adds 5-field entry to alerts file
 set_exit_alert() {
     local code="$1"
     local label="$2"
     local ring_bell="${3:-true}"
 
-    # Ensure alerts directory exists
+    # ensure alerts directory exists
     local alerts_dir
     alerts_dir="$(dirname "$ALERTS_FILE")"
     if [[ ! -d "$alerts_dir" ]]; then
@@ -230,19 +230,19 @@ set_exit_alert() {
         chmod 700 "$alerts_dir"
     fi
 
-    # Get colour for this exit code
+    # get colour for this exit code
     local colour
     colour="$(get_exit_code_colour "$code")"
 
-    # Determine the window target — prefer TMUX_PANE (a pane ID like %12) since
+    # determine the window target, prefer TMUX_PANE (a pane ID like %12) since
     # it's set to the origin pane by cmd-alert.sh and works even when we've
-    # switched windows. tmux accepts pane IDs directly as -wt targets.
+    # switched windows. tmux accepts pane IDs directly as -wt targets
     local target=""
     if [[ -n "${TMUX_PANE:-}" ]]; then
         target="$TMUX_PANE"
     fi
 
-    # Set the @exit_alert and @exit_alert_colour window options on the origin window
+    # set the @exit_alert and @exit_alert_colour window options on the origin window
     if [[ -n "$target" ]]; then
         tmux set-option -wt "$target" "@exit_alert" 1 2>/dev/null
         tmux set-option -wt "$target" "@exit_alert_colour" "$colour" 2>/dev/null
@@ -250,9 +250,9 @@ set_exit_alert() {
         tmux set-option -wt "$target" "@exit_alert_label" "$label" 2>/dev/null
     fi
 
-    # Resolve session and window names for the alerts file (needed for
-    # show.sh / list.sh). Fetch them separately so a colon in the window name
-    # can't be confused with the session:window join.
+    # resolve session and window names for the alerts file (needed for
+    # show.sh / list.sh). fetch them separately so a colon in the window name
+    # can't be confused with the session:window join
     local sess="" win=""
     if [[ -n "${TMUX_PANE:-}" ]]; then
         sess=$(tmux display-message -t "$TMUX_PANE" -p '#S' 2>/dev/null || true)
@@ -263,10 +263,10 @@ set_exit_alert() {
         win=$(tmux display-message -p '#W' 2>/dev/null || true)
     fi
 
-    # Add window to alerts file with exit code and label (5-field format).
-    # Session: project convention (alnum, dot, underscore, hyphen).
-    # Window: any non-control chars (allows spaces and colons); colons are
-    # percent-encoded so they don't collide with the field separator.
+    # add window to alerts file with exit code and label (5-field format)
+    # session: project convention (alnum, dot, underscore, hyphen)
+    # window: any non-control chars (allows spaces and colons); colons are
+    # percent-encoded so they don't collide with the field separator
     if [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
         local enc_win
         enc_win=$(alerts_encode_window "$win")
@@ -274,7 +274,7 @@ set_exit_alert() {
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
 
-    # Ring the terminal bell (only if requested and /dev/tty is available)
+    # ring the terminal bell (only if requested and /dev/tty is available)
     if [[ "$ring_bell" == "true" ]]; then
         {
             if [[ -w /dev/tty ]]; then
@@ -284,20 +284,20 @@ set_exit_alert() {
     fi
 }
 
-# Set an alert for the current window
-# Usage: set_window_alert "agent_name" [ring_bell]
-# Sets tmux window option and adds to alerts file
+# set an alert for the current window
+# usage: set_window_alert "agent_name" [ring_bell]
+# sets tmux window option and adds to alerts file
 set_window_alert() {
     local agent="${1:-claude}"
     local ring_bell="${2:-true}"
 
-    # Validate agent name against whitelist
+    # validate agent name against whitelist
     case "$agent" in
         claude|codex|opencode|copilot) ;;
         *) return 1 ;;
     esac
 
-    # Ensure alerts directory exists
+    # ensure alerts directory exists
     local alerts_dir
     alerts_dir="$(dirname "$ALERTS_FILE")"
     if [[ ! -d "$alerts_dir" ]]; then
@@ -305,8 +305,8 @@ set_window_alert() {
         chmod 700 "$alerts_dir"
     fi
 
-    # Get current tmux session and window names separately, so a colon in the
-    # window name can't be confused with the session:window join.
+    # get current tmux session and window names separately, so a colon in the
+    # window name can't be confused with the session:window join
     local sess="" win=""
     if [[ -n "${TMUX_PANE:-}" ]]; then
         sess=$(tmux display-message -t "$TMUX_PANE" -p '#S' 2>/dev/null)
@@ -317,18 +317,18 @@ set_window_alert() {
         win=$(tmux display-message -p '#W' 2>/dev/null)
     fi
 
-    # Set the @agent_alert window option. Prefer the origin pane id — it's
-    # unambiguous even when the window name contains a colon or spaces.
+    # set the @agent_alert window option. prefer the origin pane id, it's
+    # unambiguous even when the window name contains a colon or spaces
     if [[ -n "${TMUX_PANE:-}" ]]; then
         tmux set-option -wt "$TMUX_PANE" "@${agent}_alert" 1 2>/dev/null
     elif [[ -n "$sess" ]]; then
         tmux set-option -wt "${sess}:${win}" "@${agent}_alert" 1 2>/dev/null
     fi
 
-    # Add window to alerts file with agent type if not already present.
-    # Session: project convention (alnum, dot, underscore, hyphen).
-    # Window: any non-control chars (allows spaces and colons); colons are
-    # percent-encoded so they don't collide with the field separator.
+    # add window to alerts file with agent type if not already present
+    # session: project convention (alnum, dot, underscore, hyphen)
+    # window: any non-control chars (allows spaces and colons); colons are
+    # percent-encoded so they don't collide with the field separator
     if [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
         local enc_win
         enc_win=$(alerts_encode_window "$win")
@@ -336,7 +336,7 @@ set_window_alert() {
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
 
-    # Ring the terminal bell (only if requested and /dev/tty is available)
+    # ring the terminal bell (only if requested and /dev/tty is available)
     if [[ "$ring_bell" == "true" ]]; then
         {
             if [[ -w /dev/tty ]]; then
@@ -346,20 +346,20 @@ set_window_alert() {
     fi
 }
 
-# File locking: uses mkdir as an atomic lock primitive (POSIX guarantees mkdir
-# is atomic even on NFS). Lock acquisition retries 10 times with 100ms backoff
-# (1 second total timeout). This prevents concurrent alert updates from
-# corrupting the alerts file when multiple tmux scripts fire simultaneously.
+# file locking: uses mkdir as an atomic lock primitive (POSIX guarantees mkdir
+# is atomic even on NFS). lock acquisition retries 10 times with 100ms backoff
+# (1 second total timeout). this prevents concurrent alert updates from
+# corrupting the alerts file when multiple tmux scripts fire simultaneously
 #
-# Stale lock recovery: if the lock holder PID is no longer alive, the lock is
-# removed and acquisition retried.
+# stale lock recovery: if the lock holder PID is no longer alive, the lock is
+# removed and acquisition retried
 #
 # grep exit codes: 0 = lines matched (filtered), 1 = no matches (file cleared),
-# both are valid. Exit code 2+ indicates an actual error.
+# both are valid. exit code 2+ indicates an actual error
 
-# Acquire the alerts file lock
-# Usage: _acquire_alerts_lock
-# Returns: 0 on success, 1 on failure
+# acquire the alerts file lock
+# usage: _acquire_alerts_lock
+# returns: 0 on success, 1 on failure
 _acquire_alerts_lock() {
     local lock_dir="${ALERTS_FILE}.lock"
     local pid_file="${lock_dir}/pid"
@@ -370,7 +370,7 @@ _acquire_alerts_lock() {
             return 0
         fi
 
-        # Check for stale lock — if holder PID is no longer alive, remove it
+        # check for stale lock, if holder PID is no longer alive, remove it
         if [[ -f "$pid_file" ]]; then
             local holder_pid
             holder_pid=$(cat "$pid_file" 2>/dev/null) || true
@@ -386,30 +386,30 @@ _acquire_alerts_lock() {
     return 1
 }
 
-# Release the alerts file lock
-# Usage: _release_alerts_lock
+# release the alerts file lock
+# usage: _release_alerts_lock
 _release_alerts_lock() {
     local lock_dir="${ALERTS_FILE}.lock"
     rm -f "${lock_dir}/pid" 2>/dev/null
     rmdir "$lock_dir" 2>/dev/null || true
 }
 
-# Clear all alerts for a specific window
-# Usage: clear_window_alerts "session" "window" ["window_id"]
+# clear all alerts for a specific window
+# usage: clear_window_alerts "session" "window" ["window_id"]
 clear_window_alerts() {
     local session="$1"
     local window="$2"
     local window_id="${3:-}"
 
-    # Remove from alerts file (any agent) with file locking
+    # remove from alerts file (any agent) with file locking
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
         local tmp_file
         tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
         local grep_exit=0
-        # Window names are stored percent-encoded; encode the lookup to match.
+        # window names are stored percent-encoded; encode the lookup to match
         grep -vF "${session}:$(alerts_encode_window "$window"):" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
 
-        # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
+        # exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
         if [[ $grep_exit -le 1 ]]; then
             mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
         else
@@ -419,7 +419,7 @@ clear_window_alerts() {
         _release_alerts_lock
     fi
 
-    # Unset all @*_alert window options (agent-agnostic wildcard clearing)
+    # unset all @*_alert window options (agent-agnostic wildcard clearing)
     local target
     if [[ -n "$window_id" ]]; then
         target="$window_id"
@@ -437,8 +437,8 @@ clear_window_alerts() {
     fi
 }
 
-# Clean up stale alerts (for windows/sessions that no longer exist)
-# Usage: cleanup_stale_alerts
+# clean up stale alerts (for windows/sessions that no longer exist)
+# usage: cleanup_stale_alerts
 cleanup_stale_alerts() {
     [[ ! -f "$ALERTS_FILE" ]] && return 0
 
@@ -448,26 +448,26 @@ cleanup_stale_alerts() {
     tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
     local cleaned=0
 
-    # Read each alert and verify the session:window exists
-    # Lines may be 3-field (session:window:agent) or 5-field (session:window:exit:code:label)
-    # so we read the full line and only split the first two fields for validation.
+    # read each alert and verify the session:window exists
+    # lines may be 3-field (session:window:agent) or 5-field (session:window:exit:code:label)
+    # so we read the full line and only split the first two fields for validation
     while IFS= read -r line; do
         IFS=':' read -r session window field3 _rest <<< "$line"
 
-        # Validate format — need at least session, window, and one more field
+        # validate format, need at least session, window, and one more field
         if [[ -z "$session" || -z "$window" || -z "$field3" ]]; then
             cleaned=1
             continue
         fi
 
-        # Check if session exists
+        # check if session exists
         if ! tmux has-session -t "$session" 2>/dev/null; then
             cleaned=1
             continue
         fi
 
-        # Check if window exists in session. The stored name is percent-encoded;
-        # decode it before comparing against the real tmux window names.
+        # check if window exists in session. the stored name is percent-encoded;
+        # decode it before comparing against the real tmux window names
         local decoded_window
         decoded_window=$(alerts_decode_window "$window")
         if ! tmux list-windows -t "$session" -F '#{window_name}' 2>/dev/null | grep -qxF "$decoded_window"; then
@@ -475,7 +475,7 @@ cleanup_stale_alerts() {
             continue
         fi
 
-        # Window exists, keep the alert — preserve original line intact
+        # window exists, keep the alert, preserve original line intact
         echo "$line" >> "$tmp_file"
     done < "$ALERTS_FILE"
 
@@ -492,8 +492,8 @@ cleanup_stale_alerts() {
     _release_alerts_lock
 }
 
-# Update window name in alerts file (for window renames)
-# Usage: update_window_name_in_alerts "session" "old_window" "new_window"
+# update window name in alerts file (for window renames)
+# usage: update_window_name_in_alerts "session" "old_window" "new_window"
 update_window_name_in_alerts() {
     local session="$1"
     local old_window="$2"
@@ -501,12 +501,12 @@ update_window_name_in_alerts() {
 
     [[ ! -f "$ALERTS_FILE" ]] && return 0
 
-    # Window names are stored percent-encoded; encode both sides to match.
+    # window names are stored percent-encoded; encode both sides to match
     local enc_old enc_new
     enc_old=$(alerts_encode_window "$old_window")
     enc_new=$(alerts_encode_window "$new_window")
 
-    # Check if there are any alerts for this window before locking
+    # check if there are any alerts for this window before locking
     grep -qF "${session}:${enc_old}:" "$ALERTS_FILE" 2>/dev/null || return 0
 
     if ! _acquire_alerts_lock; then
@@ -523,7 +523,7 @@ update_window_name_in_alerts() {
         fi
     fi
 
-    # Clean up temp file if update failed
+    # clean up temp file if update failed
     if [[ $update_success -eq 0 ]]; then
         rm -f "$tmp_file"
     fi
@@ -531,15 +531,15 @@ update_window_name_in_alerts() {
     _release_alerts_lock
 }
 
-# Update session name in alerts file (for session renames)
-# Usage: update_session_name_in_alerts "old_session" "new_session"
+# update session name in alerts file (for session renames)
+# usage: update_session_name_in_alerts "old_session" "new_session"
 update_session_name_in_alerts() {
     local old_session="$1"
     local new_session="$2"
 
     [[ ! -f "$ALERTS_FILE" ]] && return 0
 
-    # Check if there are any alerts for the old session before locking
+    # check if there are any alerts for the old session before locking
     grep -qF "${old_session}:" "$ALERTS_FILE" 2>/dev/null || return 0
 
     if ! _acquire_alerts_lock; then
@@ -556,7 +556,7 @@ update_session_name_in_alerts() {
         fi
     fi
 
-    # Clean up temp file if update failed
+    # clean up temp file if update failed
     if [[ $update_success -eq 0 ]]; then
         rm -f "$tmp_file"
     fi
@@ -564,19 +564,19 @@ update_session_name_in_alerts() {
     _release_alerts_lock
 }
 
-# Clear all alerts for a session
-# Usage: clear_session_alerts "session"
+# clear all alerts for a session
+# usage: clear_session_alerts "session"
 clear_session_alerts() {
     local session="$1"
 
-    # Remove all entries for this session from alerts file with locking
+    # remove all entries for this session from alerts file with locking
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
         local tmp_file
         tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
         local grep_exit=0
         grep -vF "${session}:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
 
-        # Exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
+        # exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
         if [[ $grep_exit -le 1 ]]; then
             mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
         else
@@ -586,7 +586,7 @@ clear_session_alerts() {
         _release_alerts_lock
     fi
 
-    # Unset agent options for all windows in session
+    # unset agent options for all windows in session
     local win
     for win in $(tmux list-windows -t "$session" -F '#D' 2>/dev/null); do
         local alert_options

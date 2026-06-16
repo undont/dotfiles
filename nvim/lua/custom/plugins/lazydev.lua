@@ -1,9 +1,9 @@
 -- lazydev.nvim: feed lua_ls the type definitions for plugins we use, loaded
--- on demand. Without this, plugin globals like `Snacks`/`Mini*` are only listed
+-- on demand. without this, plugin globals like `Snacks`/`Mini*` are only listed
 -- in .luarc.json's `diagnostics.globals` (which silences the undefined-global
 -- warning but gives them no type), so `K` hover and completion show nothing.
--- Each `words` pattern triggers loading that plugin's library when the pattern
--- appears in the buffer, keeping the workspace index lean.
+-- each `words` pattern triggers loading that plugin's library when the pattern
+-- appears in the buffer, keeping the workspace index lean
 
 return {
   {

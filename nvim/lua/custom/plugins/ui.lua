@@ -1,12 +1,11 @@
 -- UI plugins: which-key, todo-comments, fidget, noice, cheatsheet.
 -- mini.nvim lives in plugins/mini.lua.
--- Colourschemes are custom files in nvim/colors/ — no plugins needed.
+-- colourschemes are custom files in nvim/colors/, no plugins needed
 
 return {
-  -- File explorer (neo-tree is imported from kickstart)
-  -- See kickstart/plugins/neo-tree.lua
+  -- file explorer (neo-tree spec lives in custom/plugins/neo-tree.lua)
 
-  -- Cheatsheet for keybindings and commands
+  -- cheatsheet for keybindings and commands
   {
     'sudormrfbin/cheatsheet.nvim',
     cmd = 'Cheatsheet',
@@ -25,15 +24,15 @@ return {
   },
 
   -- Which-key for keybinding hints
-  -- Tiered display: top-level shows category groups only; standalone keys and
-  -- context-specific groups are hidden unless the filetype is relevant.
+  -- tiered display: top-level shows category groups only; standalone keys and
+  -- context-specific groups are hidden unless the filetype is relevant
   {
     'folke/which-key.nvim',
-    lazy = false, -- Load immediately to ensure leader preview works reliably
+    lazy = false, -- load immediately to ensure leader preview works reliably
     config = function()
       local wk = require 'which-key'
 
-      -- Custom highlight for Claude icon (distinct orange, not DiagnosticWarn yellow)
+      -- custom highlight for Claude icon (distinct orange, not DiagnosticWarn yellow)
       vim.api.nvim_set_hl(0, 'WhichKeyIconClaude', { fg = '#ff9e64' })
       vim.api.nvim_create_autocmd('ColorScheme', {
         group = vim.api.nvim_create_augroup('which-key-claude-hl', { clear = true }),
@@ -42,11 +41,11 @@ return {
         end,
       })
 
-      -- Filetype sets for context gating
+      -- filetype sets for context gating
       local dotnet_fts = { cs = true, fsharp = true, razor = true, xml = true }
 
       wk.setup {
-        delay = 0, -- Show immediately for snappy feel
+        delay = 0, -- show immediately for snappy feel
         filter = function(mapping)
           return mapping.desc ~= 'diffview_ignore'
         end,
@@ -57,7 +56,7 @@ return {
           mappings = vim.g.have_nerd_font,
         },
         spec = {
-          -- ── Always-visible groups ──
+          -- ── always-visible groups ──
           { '<leader>a', group = '[A]I', icon = { icon = '󰚩 ', color = 'purple' } },
           { '<leader>b', group = '[B]reakpoint / Buffer', icon = { icon = '󰈔 ', color = 'red' } },
           { '<leader>d', group = '[D]iff', icon = { cat = 'filetype', name = 'git' } },
@@ -71,24 +70,24 @@ return {
           { '<leader>o', group = '[O]bsidian', icon = { icon = '󱞁 ', color = 'purple' } },
           { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'red' } },
 
-          -- ── Always-visible (non-code contexts like Octo, diffview) ──
+          -- ── always-visible (non-code contexts like Octo, diffview) ──
           { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' } },
 
-          -- ── Always-visible (qf/loclist commands work in any buffer) ──
+          -- ── always-visible (qf/loclist commands work in any buffer) ──
           { '<leader>x', group = 'Diagnostics', icon = { icon = '󱖫 ', color = 'green' } },
 
-          -- ── Filetype-gated groups (hidden by default, shown in code files via autocmd) ──
+          -- ── filetype-gated groups (hidden by default, shown in code files via autocmd) ──
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = true },
           { '<leader>u', icon = { icon = '󰕌 ', color = 'blue' }, hidden = true },
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = true },
 
-          -- ── Filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
+          -- ── filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
           { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = true },
           { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = true },
           { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' }, hidden = true },
           { '<leader>N', group = '[N]otifications', icon = { icon = '󰈸 ', color = 'yellow' } },
 
-          -- ── Always-hidden standalone keys (muscle memory) ──
+          -- ── always-hidden standalone keys (muscle memory) ──
           { '<leader>1', hidden = true },
           { '<leader>2', hidden = true },
           { '<leader>3', hidden = true },
@@ -97,7 +96,7 @@ return {
           { '<leader>g', hidden = true },
           { '<leader>i', hidden = true },
 
-          -- ── macOS-style navigation (core/macos-nav.lua) — muscle memory, kept out of which-key ──
+          -- ── macOS-style navigation (core/macos-nav.lua), muscle memory, kept out of which-key ──
           { '<M-CR>', hidden = true },
           { '<M-BS>', hidden = true },
           { '<D-BS>', hidden = true },
@@ -111,7 +110,7 @@ return {
           { '<leader>?', icon = { icon = '', color = 'blue' } },
           { '<leader><leader>', icon = { icon = '', color = 'blue' } },
           { '<leader>z', icon = { icon = '', color = 'red' } },
-          -- ── Conditionally hidden (shown in code files via autocmd) ──
+          -- ── conditionally hidden (shown in code files via autocmd) ──
           { '<leader>q', icon = { icon = '', color = 'green' }, hidden = true },
           { '<leader>Q', icon = { icon = '', color = 'green' }, hidden = true },
           { '<leader>f', hidden = true },
@@ -122,7 +121,7 @@ return {
         },
       }
 
-      -- Show/hide context-specific groups based on current buffer filetype
+      -- show/hide context-specific groups based on current buffer filetype
       local non_code_fts = {
         [''] = true,
         dashboard = true,
@@ -137,15 +136,15 @@ return {
         ['neotest-output-panel'] = true,
       }
 
-      -- Track last visibility state to avoid unnecessary wk.add calls.
-      -- Each wk.add internally calls Buf.clear() which removes ALL trigger
+      -- track last visibility state to avoid unnecessary wk.add calls.
+      -- each wk.add internally calls Buf.clear() which removes ALL trigger
       -- keymaps from ALL buffers, creating a brief window where which-key
-      -- can't intercept <leader>. Caching prevents this during rapid buffer
-      -- transitions (e.g. diffview file navigation).
+      -- can't intercept <leader>. caching prevents this during rapid buffer
+      -- transitions (e.g. diffview file navigation)
       local prev_vis = {}
 
       local function update_filetype_groups()
-        -- Only update for real file buffers; preserve previous state in
+        -- only update for real file buffers; preserve previous state in
         -- special contexts (diffview, telescope, neo-tree, etc.)
         if vim.bo.buftype ~= '' then
           return
@@ -164,7 +163,7 @@ return {
         prev_vis = { code = is_code, md = is_markdown, dotnet = is_dotnet }
 
         wk.add {
-          -- Code-file groups (LSP, format, breakpoints)
+          -- code-file groups (LSP, format, breakpoints)
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = not is_code },
           { '<leader>f', hidden = not is_code },
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = not is_code },
@@ -175,7 +174,7 @@ return {
           { '<leader>bL', hidden = not is_code },
           { '<leader>bl', hidden = not is_code },
 
-          -- Markdown-only groups
+          -- markdown-only groups
           { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = not is_markdown },
           { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = not is_markdown },
 
@@ -193,7 +192,7 @@ return {
     end,
   },
 
-  -- Todo comments highlighting
+  -- todo comments highlighting
   {
     'folke/todo-comments.nvim',
     event = 'VimEnter',
@@ -208,11 +207,11 @@ return {
     opts = {
       progress = {
         -- sonarlint.nvim emits LSP progress on every BufEnter for a supported
-        -- filetype, which fidget would otherwise pop up. Drop it unconditionally
-        -- — the manual `<leader>lm` / `<leader>lS` scan uses a separate
+        -- filetype, which fidget would otherwise pop up. drop it unconditionally;
+        -- the manual `<leader>lm` / `<leader>lS` scan uses a separate
         -- `sonar-scan` client name (see plugins/sonarlint.lua) so its progress
-        -- still shows. Errors flow via vim.notify, not progress.
-        -- Roslyn progress stays gated on `vim.g.roslyn_suppressed` (review only).
+        -- still shows. errors flow via vim.notify, not progress.
+        -- Roslyn progress stays gated on `vim.g.roslyn_suppressed` (review only)
         ignore = {
           function(msg)
             if not (msg.lsp_client and msg.lsp_client.name) then
@@ -256,68 +255,9 @@ return {
       }
       require('fidget').setup(opts)
 
-      -- Wrap fidget's vim.notify with a spam filter. ALL notification
-      -- filtering lives here because fidget's `override_vim_notify = true`
-      -- overwrites vim.notify at setup time, blowing away any wrap installed
-      -- by other plugin specs at module load. This wrap runs after fidget
-      -- setup so it survives.
-      local base_notify = vim.notify
-      vim.notify = function(msg, level, nopts)
-        if type(msg) ~= 'string' then
-          return base_notify(msg, level, nopts)
-        end
-
-        if msg:match '^Multiple potential target files found' then
-          return
-        end
-
-        -- Transient roslyn pre-init noise: nvim core auto-pulls
-        -- textDocument/diagnostic the moment roslyn attaches to a buffer,
-        -- but roslyn can't resolve a file's language until its project has
-        -- loaded, so each early pull errors -30099 ("Failed to get
-        -- language"). Scans hidden-loading many cs files during a cold
-        -- solution load burst one per file. Harmless: diagnostics arrive
-        -- once init completes (the scans' own explicit pulls are
-        -- init-gated in core/lists.lua). Still recorded in lsp.log.
-        if msg:match '^roslyn: %-30099: Failed to get language' then
-          return
-        end
-
-        local title = nopts and nopts.title
-        local title_str = type(title) == 'string' and title or nil
-
-        -- Always-silenced dotnet/roslyn startup spam (regardless of suppress)
-        if not title or title == 'Progress' or (title_str and (title_str:match 'roslyn' or title_str:match 'easy%-dotnet')) then
-          local dotnet_spam = { '^Initializing', '^Loading ', ' loaded$', '^Client initialized' }
-          for _, pat in ipairs(dotnet_spam) do
-            if msg:match(pat) then
-              return
-            end
-          end
-        end
-
-        -- Suppress-gated filters: drop sonarlint/roslyn chatter while in
-        -- diff/review contexts. Flags are owned by sonarlint.lua / dotnet.lua.
-        if vim.g.sonarlint_suppressed then
-          if msg:match '[Ss]onarlint' or msg:match '[Ss]onar[Qq]ube' then
-            return
-          end
-          if title_str and title_str:lower():match 'sonar' then
-            return
-          end
-        end
-
-        if vim.g.roslyn_suppressed then
-          if msg:match '[Rr]oslyn' then
-            return
-          end
-          if title_str and title_str:lower():match 'roslyn' then
-            return
-          end
-        end
-
-        return base_notify(msg, level, nopts)
-      end
+      -- spam filter must install AFTER fidget setup (override_vim_notify wipes
+      -- earlier wraps). see features/notify-filter
+      require('custom.features.notify-filter').install()
 
       vim.keymap.set('n', '<leader>Nn', '<cmd>Fidget history<cr>', { desc = 'Notification history' })
     end,

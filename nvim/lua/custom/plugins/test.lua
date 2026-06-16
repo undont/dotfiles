@@ -1,10 +1,10 @@
--- Test runner with neotest
+-- test runner with neotest
 -- https://github.com/nvim-neotest/neotest
 -- .NET tests handled by easy-dotnet.nvim (see dotnet.lua)
 
---- Find the nearest directory containing node_modules/.bin/<bin>.
---- Walks up from the path, then checks immediate subdirectories as fallback (monorepo root).
---- Results are cached per (path, bin) since binary locations don't change in a session.
+--- find the nearest directory containing node_modules/.bin/<bin>.
+--- walks up from the path, then checks immediate subdirectories as fallback (monorepo root).
+--- results are cached per (path, bin) since binary locations don't change in a session
 local node_bin_root_cache = {} ---@type table<string, string|false>
 local function find_node_bin_root(path, bin)
   local start = vim.fn.isdirectory(path) == 1 and path or vim.fn.fnamemodify(path, ':h')
@@ -20,7 +20,7 @@ local function find_node_bin_root(path, bin)
     end
     dir = vim.fn.fnamemodify(dir, ':h')
   end
-  -- Walk-up failed (e.g. monorepo root) — check immediate subdirectories
+  -- walk-up failed (e.g. monorepo root); check immediate subdirectories
   for name, type in vim.fs.dir(start) do
     if type == 'directory' and name ~= 'node_modules' then
       if vim.uv.fs_stat(start .. '/' .. name .. '/node_modules/.bin/' .. bin) then
@@ -40,7 +40,7 @@ local function find_jest_root(path)
   return find_node_bin_root(path, 'jest')
 end
 
---- Wrap a neotest function to skip .cs files (handled by easy-dotnet).
+--- wrap a neotest function to skip .cs files (handled by easy-dotnet)
 local function neotest_fn(fn)
   return function()
     if vim.bo.filetype ~= 'cs' then
@@ -56,7 +56,7 @@ return {
     'nvim-lua/plenary.nvim',
     'antoinemadec/FixCursorHold.nvim',
     'nvim-treesitter/nvim-treesitter',
-    -- Adapters
+    -- adapters
     'fredrikaverpil/neotest-golang', -- Go
     'marilari88/neotest-vitest', -- Vitest/Bun test runner
     'haydenmeade/neotest-jest', -- Jest (React Native, RTL, plain JS/TS)
@@ -120,20 +120,20 @@ return {
             if not dir then
               return 'vitest'
             end
-            -- Return `node <vitest.mjs>` rather than the .bin/vitest wrapper:
+            -- return `node <vitest.mjs>` rather than the .bin/vitest wrapper:
             -- neotest-vitest passes command[1] as DAP's `runtimeExecutable`,
-            -- which must be a node-equivalent runtime. Using `.bin/vitest`
-            -- directly breaks package.json resolution under js-debug-adapter.
+            -- which must be a node-equivalent runtime. using `.bin/vitest`
+            -- directly breaks package.json resolution under js-debug-adapter
             local vitest_mjs = dir .. '/node_modules/vitest/vitest.mjs'
             if vim.uv.fs_stat(vitest_mjs) then
               return 'node ' .. vitest_mjs
             end
             return dir .. '/node_modules/.bin/vitest'
           end,
-          -- Don't override cwd: neotest-vitest defaults to the dir of the
+          -- don't override cwd: neotest-vitest defaults to the dir of the
           -- nearest vitest.config.*, which is the per-project root in a
-          -- monorepo. Forcing the hoisted-node_modules root here causes
-          -- vitest's per-project `include` globs to miss the test file.
+          -- monorepo. forcing the hoisted-node_modules root here causes
+          -- vitest's per-project `include` globs to miss the test file
           filter_dir = function(name)
             return name ~= 'node_modules' and name ~= 'dist' and name ~= '.git' and name ~= 'coverage'
           end,
@@ -144,8 +144,8 @@ return {
             return dir and (dir .. '/node_modules/.bin/jest') or 'jest'
           end,
           cwd = find_jest_root,
-          -- Only claim files when a jest binary is reachable, so this adapter stays
-          -- out of vitest projects (which use the same .test./.spec. naming).
+          -- only claim files when a jest binary is reachable, so this adapter stays
+          -- out of vitest projects (which use the same .test./.spec. naming)
           is_test_file = function(path)
             if not path:match '%.test%.[jt]sx?$' and not path:match '%.spec%.[jt]sx?$' then
               return false
@@ -188,7 +188,7 @@ return {
       },
     }
 
-    -- Close output preview on any keypress for a transient popup feel
+    -- close output preview on any keypress for a transient popup feel
     vim.api.nvim_create_autocmd('FileType', {
       pattern = 'neotest-output',
       callback = function(args)

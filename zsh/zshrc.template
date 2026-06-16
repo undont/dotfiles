@@ -1,21 +1,21 @@
 # =============================================================================
 # ZSH CONFIGURATION
 # =============================================================================
-# Your personal shell config. This file is yours — add anything you want.
-# The dotfiles framework is sourced below; your customisations go after it.
+# your personal shell config; this file is yours, add anything you want.
+# the dotfiles framework is sourced below; your customisations go after it.
 #
-# File structure:
-#   ~/.zshrc                           - This file (your personal config)
-#   ~/dotfiles/zsh/dotfiles.zsh        - Shared framework (tools, plugins, PATH)
+# file structure:
+#   ~/.zshrc                           - this file (your personal config)
+#   ~/dotfiles/zsh/dotfiles.zsh        - shared framework (tools, plugins, PATH)
 #   ~/.config/zsh/secrets.zsh          - API keys and credentials (not versioned)
-#   ~/.zprofile                        - Login shell config (PATH from installers)
+#   ~/.zprofile                        - login shell config (PATH from installers)
 #   ~/.p10k.zsh                        - Powerlevel10k theme configuration
 
 # =============================================================================
 # POWERLEVEL10K INSTANT PROMPT
 # =============================================================================
-# Must be at the top of ~/.zshrc. Caches prompt for instant display.
-# Disabled for SSH to avoid input issues with remote connections.
+# must be at the top of ~/.zshrc. caches prompt for instant display.
+# disabled for SSH to avoid input issues with remote connections.
 if [[ -z "$SSH_CONNECTION" && -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
@@ -23,8 +23,8 @@ fi
 # =============================================================================
 # DOTFILES FRAMEWORK
 # =============================================================================
-# Shared config: Homebrew, PATH, plugins, tools, aliases, keybindings, etc.
-# Update the framework with: dotfiles update (or git pull in ~/dotfiles)
+# shared config: Homebrew, PATH, plugins, tools, aliases, keybindings, etc.
+# update the framework with: dotfiles update (or git pull in ~/dotfiles)
 DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 if [[ -f "$DOTFILES_DIR/zsh/dotfiles.zsh" ]]; then
   source "$DOTFILES_DIR/zsh/dotfiles.zsh"
@@ -33,18 +33,18 @@ fi
 # =============================================================================
 # YOUR PERSONAL CONFIGURATION
 # =============================================================================
-# Everything below this line is yours. Add aliases, PATH changes, functions,
-# overrides — anything you want. This runs AFTER the framework, so you can
+# everything below this line is yours. add aliases, PATH changes, functions,
+# overrides, anything you want. this runs AFTER the framework, so you can
 # override any setting from dotfiles.zsh.
 #
-# Examples:
-#   export EDITOR="code"              # Override default editor (framework sets nvim)
-#   export PATH="$HOME/scripts:$PATH" # Add personal scripts to PATH
-#   alias myproject="cd ~/src/myapp"  # Project shortcuts
-#   bindkey -v                         # Switch to vi mode (framework sets emacs)
+# examples:
+#   export EDITOR="code"              # override default editor (framework sets nvim)
+#   export PATH="$HOME/scripts:$PATH" # add personal scripts to PATH
+#   alias myproject="cd ~/src/myapp"  # project shortcuts
+#   bindkey -v                         # switch to vi mode (framework sets emacs)
 #
-# Project directories for launcher picker (prefix+p → dev).
-# Colon-separated roots — the picker lists subdirectories of each:
+# project directories for launcher picker (prefix+p → dev).
+# colon-separated roots; the picker lists subdirectories of each:
 #   export DEV_ROOT="$HOME/src"
 #   export PROJECTS_ROOT="$HOME/playground"
 #   export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT"

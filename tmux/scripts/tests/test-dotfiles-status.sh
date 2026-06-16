@@ -1,23 +1,23 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Tests for dotfiles-status.sh caching and git status detection
-# Creates throwaway git repos to test ahead/behind/diverged states
+# tests for dotfiles-status.sh caching and git status detection
+# creates throwaway git repos to test ahead/behind/diverged states
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
 
-# Source test helpers (no tmux server needed for this test)
+# source test helpers (no tmux server needed for this test)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Create isolated test environment
+# create isolated test environment
 STATUS_TEST_DIR=$(mktemp -d)
 trap 'rm -rf "$STATUS_TEST_DIR"' EXIT INT TERM
 
 STATUS_SCRIPT="$SCRIPTS_DIR/utils/dotfiles-status.sh"
 
 # ═══════════════════════════════════════════════════════════════
-# Script Validation
+# script validation
 # ═══════════════════════════════════════════════════════════════
 
 section "Script Exists and Is Valid"
@@ -42,21 +42,21 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Setup Test Git Repos
+# setup test git repos
 # ═══════════════════════════════════════════════════════════════
 
 section "Git Repository Setup"
 
-# Create a bare "remote" repo
+# create a bare "remote" repo
 REMOTE_REPO="$STATUS_TEST_DIR/remote.git"
 git init --bare "$REMOTE_REPO" >/dev/null 2>&1
 pass "Created bare remote repo"
 
-# Clone it as "local" repo (simulates dotfiles directory)
+# clone it as "local" repo (simulates dotfiles directory)
 LOCAL_REPO="$STATUS_TEST_DIR/local"
 git clone "$REMOTE_REPO" "$LOCAL_REPO" >/dev/null 2>&1
 
-# Create initial commit in local
+# create initial commit in local
 (
     cd "$LOCAL_REPO"
     git config user.email "test@test.com"
@@ -68,27 +68,27 @@ git clone "$REMOTE_REPO" "$LOCAL_REPO" >/dev/null 2>&1
 )
 pass "Created initial commit and pushed"
 
-# Get the branch name
+# get the branch name
 BRANCH_NAME=$(cd "$LOCAL_REPO" && git rev-parse --abbrev-ref HEAD)
 
-# Override environment for the status script
+# override environment for the status script
 export DOTFILES_DIR="$LOCAL_REPO"
 export XDG_CACHE_HOME="$STATUS_TEST_DIR/cache"
-export DOTFILES_SYNC_CACHE_TTL=0    # Disable fetch cache
-export DOTFILES_RESULT_CACHE_TTL=0  # Disable result cache
+export DOTFILES_SYNC_CACHE_TTL=0    # disable fetch cache
+export DOTFILES_RESULT_CACHE_TTL=0  # disable result cache
 mkdir -p "$XDG_CACHE_HOME/dotfiles"
 
 # ═══════════════════════════════════════════════════════════════
-# Up-to-date Status
+# up-to-date status
 # ═══════════════════════════════════════════════════════════════
 
 section "Up-to-date State"
 
-# Clear cache
+# clear cache
 rm -f "$XDG_CACHE_HOME/dotfiles/sync-status" "$XDG_CACHE_HOME/dotfiles/last-fetch"
 
 output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
-# Wait for background fetch to complete
+# wait for background fetch to complete
 sleep 0.5
 
 if [[ -z "$output" ]] || [[ "$output" == "" ]]; then
@@ -98,12 +98,12 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Behind Remote
+# behind remote
 # ═══════════════════════════════════════════════════════════════
 
 section "Behind Remote State"
 
-# Push a commit to remote (via a second clone)
+# push a commit to remote (via a second clone)
 SECOND_CLONE="$STATUS_TEST_DIR/second"
 git clone "$REMOTE_REPO" "$SECOND_CLONE" >/dev/null 2>&1
 (
@@ -116,10 +116,10 @@ git clone "$REMOTE_REPO" "$SECOND_CLONE" >/dev/null 2>&1
     git push >/dev/null 2>&1
 )
 
-# Fetch in local so it knows about the remote commit
+# fetch in local so it knows about the remote commit
 (cd "$LOCAL_REPO" && git fetch origin >/dev/null 2>&1)
 
-# Clear cache and re-run
+# clear cache and re-run
 rm -f "$XDG_CACHE_HOME/dotfiles/sync-status" "$XDG_CACHE_HOME/dotfiles/last-fetch"
 output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
 sleep 0.5
@@ -131,12 +131,12 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Ahead of Remote
+# ahead of remote
 # ═══════════════════════════════════════════════════════════════
 
 section "Ahead of Remote State"
 
-# Pull to get in sync first, then add local commit
+# pull to get in sync first, then add local commit
 (
     cd "$LOCAL_REPO"
     git pull origin "$BRANCH_NAME" >/dev/null 2>&1
@@ -145,7 +145,7 @@ section "Ahead of Remote State"
     git commit -m "Local commit" >/dev/null 2>&1
 )
 
-# Clear cache and re-run
+# clear cache and re-run
 rm -f "$XDG_CACHE_HOME/dotfiles/sync-status" "$XDG_CACHE_HOME/dotfiles/last-fetch"
 output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
 sleep 0.5
@@ -157,12 +157,12 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Diverged State
+# diverged state
 # ═══════════════════════════════════════════════════════════════
 
 section "Diverged State"
 
-# Add another remote commit (via second clone)
+# add another remote commit (via second clone)
 (
     cd "$SECOND_CLONE"
     echo "another remote change" > remote2.txt
@@ -171,10 +171,10 @@ section "Diverged State"
     git push >/dev/null 2>&1
 )
 
-# Fetch so local knows about it (but don't pull)
+# fetch so local knows about it (but don't pull)
 (cd "$LOCAL_REPO" && git fetch origin >/dev/null 2>&1)
 
-# Clear cache and re-run
+# clear cache and re-run
 rm -f "$XDG_CACHE_HOME/dotfiles/sync-status" "$XDG_CACHE_HOME/dotfiles/last-fetch"
 output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
 sleep 0.5
@@ -186,15 +186,15 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Result Cache Tests
+# result cache tests
 # ═══════════════════════════════════════════════════════════════
 
 section "Result Caching"
 
-# Set a long result TTL and verify cache is used
+# set a long result TTL and verify cache is used
 export DOTFILES_RESULT_CACHE_TTL=300  # 5 minutes
 
-# Write a known value to cache (line 1 = epoch, line 2 = payload)
+# write a known value to cache (line 1 = epoch, line 2 = payload)
 printf '%s\nCACHED\n' "$(date +%s)" > "$XDG_CACHE_HOME/dotfiles/sync-status"
 
 output=$(bash "$STATUS_SCRIPT" 2>/dev/null) || output=""
@@ -205,16 +205,16 @@ else
     fail "Should return cached result (got: '$output')"
 fi
 
-# Reset TTL
+# reset TTL
 export DOTFILES_RESULT_CACHE_TTL=0
 
 # ═══════════════════════════════════════════════════════════════
-# Silent Failure Tests
+# silent failure tests
 # ═══════════════════════════════════════════════════════════════
 
 section "Silent Failure"
 
-# Point at a non-git directory
+# point at a non-git directory
 export DOTFILES_DIR="$STATUS_TEST_DIR/not-a-repo"
 mkdir -p "$DOTFILES_DIR"
 rm -f "$XDG_CACHE_HOME/dotfiles/sync-status"
@@ -235,7 +235,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Script Structure
+# script structure
 # ═══════════════════════════════════════════════════════════════
 
 section "Script Structure"
@@ -267,7 +267,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Summary
+# summary
 # ═══════════════════════════════════════════════════════════════
 
 echo ""

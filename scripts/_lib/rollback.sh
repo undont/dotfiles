@@ -1,49 +1,49 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
-# Rollback utilities for installation scripts
-# Source this file after common.sh
+# rollback utilities for installation scripts
+# source this file after common.sh
 
-# Three-file state protocol for installation rollback:
-#   state.txt         — append-only log of completed install steps (for resume detection)
-#   symlinks.txt      — pipe-delimited "link_path|target_path" records of created symlinks
-#   backup-location.txt — path to the timestamped backup directory
+# three-file state protocol for installation rollback:
+#   state.txt         append-only log of completed install steps (for resume detection)
+#   symlinks.txt      pipe-delimited "link_path|target_path" records of created symlinks
+#   backup-location.txt path to the timestamped backup directory
 #
-# Lifecycle: init_rollback_state → record_step/record_symlink/record_backup_location
-#            → perform_rollback (on failure) or cleanup_rollback_state (on success)
+# lifecycle: init_rollback_state -> record_step/record_symlink/record_backup_location
+#            -> perform_rollback (on failure) or cleanup_rollback_state (on success)
 #
-# Rollback is two-phase: (1) remove created symlinks, (2) restore backed-up files.
-# Path traversal sanitisation prevents restoring files outside $HOME.
+# rollback is two-phase: (1) remove created symlinks, (2) restore backed-up files
+# path traversal sanitisation prevents restoring files outside $HOME
 
-# Guard against multiple sourcing
+# guard against multiple sourcing
 [[ -n "${_DOTFILES_ROLLBACK_SH_LOADED:-}" ]] && return 0
 _DOTFILES_ROLLBACK_SH_LOADED=1
 
-# State file location
+# state file location
 ROLLBACK_STATE_DIR="${DOTFILES_DIR:-.}/.install-state"
 ROLLBACK_STATE_FILE="$ROLLBACK_STATE_DIR/state.txt"
 SYMLINKS_CREATED_FILE="$ROLLBACK_STATE_DIR/symlinks.txt"
 BACKUP_LOCATION_FILE="$ROLLBACK_STATE_DIR/backup-location.txt"
 
-# Initialise rollback state directory
+# initialise rollback state directory
 init_rollback_state() {
     rm -rf "$ROLLBACK_STATE_DIR"
     mkdir -p "$ROLLBACK_STATE_DIR"
     chmod 700 "$ROLLBACK_STATE_DIR"
 
-    # Create empty state files
+    # create empty state files
     touch "$ROLLBACK_STATE_FILE"
     touch "$SYMLINKS_CREATED_FILE"
     touch "$BACKUP_LOCATION_FILE"
 }
 
-# Record current installation step (no-op if state not initialised)
+# record current installation step (no-op if state not initialised)
 record_step() {
     local step="$1"
     [[ -d "$ROLLBACK_STATE_DIR" ]] || return 0
     echo "$step" >> "$ROLLBACK_STATE_FILE"
 }
 
-# Get last completed step
+# get last completed step
 get_last_step() {
     if [[ -f "$ROLLBACK_STATE_FILE" ]]; then
         tail -n1 "$ROLLBACK_STATE_FILE" 2>/dev/null || echo ""
@@ -52,14 +52,14 @@ get_last_step() {
     fi
 }
 
-# Record backup location (no-op if state not initialised)
+# record backup location (no-op if state not initialised)
 record_backup_location() {
     local location="$1"
     [[ -d "$ROLLBACK_STATE_DIR" ]] || return 0
     echo "$location" > "$BACKUP_LOCATION_FILE"
 }
 
-# Get backup location
+# get backup location
 get_backup_location() {
     if [[ -f "$BACKUP_LOCATION_FILE" ]]; then
         cat "$BACKUP_LOCATION_FILE"
@@ -68,7 +68,7 @@ get_backup_location() {
     fi
 }
 
-# Record created symlink (no-op if state not initialised)
+# record created symlink (no-op if state not initialised)
 record_symlink() {
     local link_path="$1"
     local target_path="$2"
@@ -76,24 +76,24 @@ record_symlink() {
     echo "${link_path}|${target_path}" >> "$SYMLINKS_CREATED_FILE"
 }
 
-# Get all created symlinks
+# get all created symlinks
 get_created_symlinks() {
     if [[ -f "$SYMLINKS_CREATED_FILE" ]]; then
         cat "$SYMLINKS_CREATED_FILE"
     fi
 }
 
-# Check if rollback state exists
+# check if rollback state exists
 has_rollback_state() {
     [[ -d "$ROLLBACK_STATE_DIR" ]] && [[ -f "$ROLLBACK_STATE_FILE" ]]
 }
 
-# Clean up rollback state (after successful install)
+# clean up rollback state (after successful install)
 cleanup_rollback_state() {
     rm -rf "$ROLLBACK_STATE_DIR"
 }
 
-# Restore from a specific backup directory (without state)
+# restore from a specific backup directory (without state)
 restore_from_backup() {
     local backup_dir="$1"
 
@@ -104,11 +104,11 @@ restore_from_backup() {
 
     info "Restoring from backup: $backup_dir"
 
-    # Find all files in backup and restore them
+    # find all files in backup and restore them
     find "$backup_dir" -type f | while read -r backup_file; do
         local relative_path="${backup_file#"$backup_dir"/}"
 
-        # Sanitise path to prevent traversal attacks
+        # sanitise path to prevent traversal attacks
         if [[ "$relative_path" == ../* ]] || [[ "$relative_path" == */../* ]] || [[ "$relative_path" == */./* ]]; then
             warn "Skipping suspicious path: $relative_path"
             continue
@@ -116,17 +116,17 @@ restore_from_backup() {
 
         local original_path="$HOME/$relative_path"
 
-        # Remove existing symlink if present
+        # remove existing symlink if present
         if [[ -L "$original_path" ]]; then
             rm -f "$original_path"
         fi
 
-        # Create directory if needed
+        # create directory if needed
         local original_dir
         original_dir=$(dirname "$original_path")
         mkdir -p "$original_dir"
 
-        # Restore file
+        # restore file
         cp -p "$backup_file" "$original_path"
         success "Restored: $original_path"
     done
@@ -134,14 +134,14 @@ restore_from_backup() {
     success "Backup restored"
 }
 
-# Perform rollback
+# perform rollback
 perform_rollback() {
     local backup_dir
     backup_dir=$(get_backup_location)
 
     info "Starting rollback..."
 
-    # Step 1: Remove created symlinks
+    # step 1: remove created symlinks
     info "Removing created symlinks..."
     while IFS='|' read -r link_path target_path; do
         if [[ -L "$link_path" ]]; then
@@ -150,16 +150,16 @@ perform_rollback() {
         fi
     done < <(get_created_symlinks)
 
-    # Step 2: Restore from backup if available
+    # step 2: restore from backup if available
     if [[ -n "$backup_dir" ]] && [[ -d "$backup_dir" ]]; then
         info "Restoring from backup: $backup_dir"
 
-        # Restore each backed up file
+        # restore each backed up file
         find "$backup_dir" -type f | while read -r backup_file; do
-            # Calculate original path
+            # calculate original path
             local relative_path="${backup_file#"$backup_dir"/}"
 
-            # Sanitise path to prevent traversal attacks
+            # sanitise path to prevent traversal attacks
             if [[ "$relative_path" == ../* ]] || [[ "$relative_path" == */../* ]] || [[ "$relative_path" == */./* ]]; then
                 warn "Skipping suspicious path: $relative_path"
                 continue
@@ -167,7 +167,7 @@ perform_rollback() {
 
             local original_path="$HOME/$relative_path"
 
-            # Verify resolved path is still under $HOME
+            # verify resolved path is still under $HOME
             local resolved_dir
             resolved_dir=$(cd "$(dirname "$original_path")" 2>/dev/null && pwd) || {
                 warn "Cannot resolve path: $original_path"
@@ -182,10 +182,10 @@ perform_rollback() {
             local original_dir
             original_dir=$(dirname "$original_path")
 
-            # Create directory if needed
+            # create directory if needed
             mkdir -p "$original_dir"
 
-            # Restore file
+            # restore file
             cp -p "$backup_file" "$original_path"
             success "Restored: $original_path"
         done
@@ -195,7 +195,7 @@ perform_rollback() {
         warn "No backup found to restore"
     fi
 
-    # Step 3: Clean up state
+    # step 3: clean up state
     cleanup_rollback_state
 
     success "Rollback complete"

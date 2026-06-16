@@ -1,31 +1,31 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Functional tests for scripts/_lib/rollback.sh
-# Tests rollback operations with real filesystem operations in a temp directory
+# functional tests for scripts/_lib/rollback.sh
+# tests rollback operations with real filesystem operations in a temp directory
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Source shared test helpers
+# source shared test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Create isolated test environment
+# create isolated test environment
 TEST_DIR=$(mktemp -d)
 TEST_HOME="$TEST_DIR/home"
 TEST_BACKUP="$TEST_DIR/backup"
 mkdir -p "$TEST_HOME" "$TEST_BACKUP"
 
-# Override HOME and DOTFILES_DIR for isolation
+# override HOME and DOTFILES_DIR for isolation
 ORIGINAL_HOME="$HOME"
 export HOME="$TEST_HOME"
 export DOTFILES_DIR="$TEST_DIR/dotfiles"
 mkdir -p "$DOTFILES_DIR"
 
-# Trap to ensure cleanup
+# trap to ensure cleanup
 trap 'HOME="$ORIGINAL_HOME"; rm -rf "$TEST_DIR"' EXIT INT TERM
 
-# Source the libraries under test
+# source the libraries under test
 # shellcheck source=scripts/_lib/common.sh
 source "$DOTFILES_DIR/../../dotfiles/scripts/_lib/common.sh" 2>/dev/null || \
     source "$(cd "$SCRIPT_DIR/.." && pwd)/_lib/common.sh"
@@ -46,7 +46,7 @@ else
     fail "Should create state directory"
 fi
 
-# Check permissions
+# check permissions
 dir_perms=$(stat -f %Lp "$ROLLBACK_STATE_DIR" 2>/dev/null) || dir_perms=$(stat -c %a "$ROLLBACK_STATE_DIR" 2>/dev/null) || dir_perms="unknown"
 if [[ "$dir_perms" == "700" ]]; then
     pass "State directory has 700 permissions"
@@ -100,7 +100,7 @@ record_symlink "$TEST_HOME/.tmux.conf" "$DOTFILES_DIR/tmux/tmux.conf"
 symlink_count=$(wc -l < "$SYMLINKS_CREATED_FILE" | tr -d ' ')
 assert_equals "Records two symlinks" "2" "$symlink_count"
 
-# Verify pipe-delimited format
+# verify pipe-delimited format
 first_line=$(head -1 "$SYMLINKS_CREATED_FILE")
 if [[ "$first_line" == *"|"* ]]; then
     pass "Symlink records use pipe delimiter"
@@ -125,7 +125,7 @@ assert_equals "Records and retrieves backup location" "$TEST_BACKUP" "$backup_lo
 
 section "perform_rollback - Symlink Removal"
 
-# Create actual symlinks that rollback should remove
+# create actual symlinks that rollback should remove
 mkdir -p "$DOTFILES_DIR/zsh" "$DOTFILES_DIR/tmux"
 echo "zshrc content" > "$DOTFILES_DIR/zsh/zshrc"
 echo "tmux content" > "$DOTFILES_DIR/tmux/tmux.conf"
@@ -139,17 +139,17 @@ else
     fail "Test symlink .zshrc should exist"
 fi
 
-# Re-initialise state with the symlinks
+# re-initialise state with the symlinks
 init_rollback_state
 record_symlink "$TEST_HOME/.zshrc" "$DOTFILES_DIR/zsh/zshrc"
 record_symlink "$TEST_HOME/.tmux.conf" "$DOTFILES_DIR/tmux/tmux.conf"
 
-# Create a backup to restore from
+# create a backup to restore from
 mkdir -p "$TEST_BACKUP/.config"
 echo "original zshrc" > "$TEST_BACKUP/.zshrc"
 record_backup_location "$TEST_BACKUP"
 
-# Run rollback
+# run rollback
 perform_rollback 2>/dev/null
 
 if [[ ! -L "$TEST_HOME/.zshrc" ]]; then
@@ -164,7 +164,7 @@ else
     fail "Rollback should remove .tmux.conf symlink"
 fi
 
-# Check backup was restored
+# check backup was restored
 if [[ -f "$TEST_HOME/.zshrc" ]] && [[ "$(cat "$TEST_HOME/.zshrc")" == "original zshrc" ]]; then
     pass "Rollback restores .zshrc from backup"
 else
@@ -177,7 +177,7 @@ fi
 
 section "cleanup_rollback_state"
 
-# Re-init and then clean up
+# re-init and then clean up
 init_rollback_state
 record_step "test"
 
@@ -196,7 +196,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Idempotency Tests
+# idempotency tests
 # ═══════════════════════════════════════════════════════════════
 
 section "Idempotency"
@@ -213,19 +213,19 @@ record_backup_location "/fake/backup" 2>/dev/null || true
 pass "record_backup_location is no-op without state directory"
 
 # ═══════════════════════════════════════════════════════════════
-# Path Traversal Protection Tests
+# path traversal protection tests
 # ═══════════════════════════════════════════════════════════════
 
 section "Path Traversal Protection"
 
-# Create a backup with a traversal path and verify it's skipped
+# create a backup with a traversal path and verify it's skipped
 mkdir -p "$TEST_BACKUP"
 init_rollback_state
 record_backup_location "$TEST_BACKUP"
 
-# Create a file with a traversal path in the backup
-# The restore_from_backup function should skip files matching ../ patterns
-# This is a structural check — the function uses pattern matching
+# create a file with a traversal path in the backup
+# the restore_from_backup function should skip files matching ../ patterns
+# this is a structural check; the function uses pattern matching
 rollback_content=$(cat "$(cd "$SCRIPT_DIR/.." && pwd)/_lib/rollback.sh")
 if [[ "$rollback_content" == *'../*'* ]]; then
     pass "Rollback library checks for path traversal patterns"
@@ -242,7 +242,7 @@ fi
 cleanup_rollback_state
 
 # ═══════════════════════════════════════════════════════════════
-# Summary
+# summary
 # ═══════════════════════════════════════════════════════════════
 
 print_summary

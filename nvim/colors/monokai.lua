@@ -1,6 +1,4 @@
--- Monokai colorscheme for Neovim
--- Matches the dotfiles monokai theme exactly
--- Classic Monokai aesthetic
+-- monokai colorscheme for nvim, matching the dotfiles monokai theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -10,16 +8,16 @@ end
 vim.g.colors_name = 'monokai'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/monokai.theme)
+-- theme colours (matching themes/monokai.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#272822',
   fg_primary = '#f8f8f2',
   bg_secondary = '#3e3d32',
   fg_secondary = '#75715e',
   fg_variable = '#d7d6cd',
 
-  -- Accents
+  -- accents
   purple = '#ae81ff',
   pink = '#f92672',
   cyan = '#66d9ef',
@@ -27,23 +25,23 @@ local colors = {
   yellow = '#e6db74',
   red = '#ff5555',
 
-  -- Additional shades
+  -- additional shades
   selection = '#49483e',
   comment = '#75715e',
   line_highlight = '#3e3d32',
 
-  -- Bright variants
+  -- bright variants
   bright_green = '#a6e22e',
   bright_yellow = '#f4bf75',
   bright_cyan = '#a1efe4',
 }
 
--- Helper function to set highlight groups
+-- set a highlight group
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
@@ -82,7 +80,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = colors.purple })
 hl('String', { fg = colors.yellow })
@@ -119,14 +117,14 @@ hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
 hl('Todo', { fg = colors.purple, bold = true })
 
--- Git signs
+-- git signs
 hl('GitSignsAdd', { fg = colors.green })
 hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
 
--- Diagnostics
+-- diagnostics
 hl('DiagnosticError', { fg = colors.red })
 hl('DiagnosticWarn', { fg = colors.yellow })
 hl('DiagnosticInfo', { fg = colors.cyan })
@@ -141,7 +139,7 @@ hl('LspReferenceText', { bg = colors.selection })
 hl('LspReferenceRead', { bg = colors.selection })
 hl('LspReferenceWrite', { bg = colors.selection })
 
--- Treesitter
+-- treesitter
 hl('@variable', { fg = colors.fg_variable })
 hl('@variable.builtin', { fg = colors.purple })
 hl('@variable.parameter', { fg = colors.cyan })
@@ -221,7 +219,7 @@ hl('WhichKeyGroup', { fg = colors.pink })
 hl('WhichKeyDesc', { fg = colors.fg_primary })
 hl('WhichKeySeparator', { fg = colors.comment })
 
--- Mini.nvim statusline
+-- mini.nvim statusline
 hl('MiniStatuslineModeNormal', { fg = colors.bg_primary, bg = colors.cyan, bold = true })
 hl('MiniStatuslineModeInsert', { fg = colors.bg_primary, bg = colors.green, bold = true })
 hl('MiniStatuslineModeVisual', { fg = colors.bg_primary, bg = colors.purple, bold = true })

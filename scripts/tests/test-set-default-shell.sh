@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Test suite for set-default-shell.sh
+# test suite for set-default-shell.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_test-helpers.sh"
@@ -10,7 +10,7 @@ SET_SHELL_SCRIPT="$SCRIPT_DIR/../install/set-default-shell.sh"
 
 section "set-default-shell Tests"
 
-# Test: shell already zsh — should exit early
+# test: shell already zsh, should exit early
 output=$(SHELL=/usr/bin/zsh "$SET_SHELL_SCRIPT" 2>&1 || true)
 if [[ "$output" == *"already zsh"* ]]; then
     pass "Exits early when shell is already zsh"
@@ -18,11 +18,11 @@ else
     fail "Should skip when shell is already zsh (got: $output)"
 fi
 
-# Test: zsh not in PATH — should warn and exit
-# Build a PATH that has bash but not zsh by using the actual bash location
+# test: zsh not in PATH, should warn and exit
+# build a PATH that has bash but not zsh by using the actual bash location
 BASH_DIR="$(dirname "$(command -v bash)")"
 FAKE_DIR=$(mktemp -d)
-# Symlink only bash into the fake dir so zsh won't be found
+# symlink only bash into the fake dir so zsh won't be found
 ln -sf "$(command -v bash)" "$FAKE_DIR/bash"
 output=$(PATH="$FAKE_DIR:/usr/bin" SHELL=/bin/bash "$SET_SHELL_SCRIPT" 2>&1 || true)
 rm -rf "$FAKE_DIR"
@@ -32,7 +32,7 @@ else
     fail "Should warn when zsh not found (got: $output)"
 fi
 
-# Note: chsh and /etc/shells paths require sudo — skip in CI
+# note: chsh and /etc/shells paths require sudo, skip in CI
 skip "chsh path requires sudo and modifies /etc/shells"
 
 print_summary

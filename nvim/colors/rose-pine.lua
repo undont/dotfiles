@@ -1,5 +1,5 @@
--- Rosé Pine colourscheme for Neovim
--- Matches the dotfiles rose-pine.theme exactly
+-- Rosé Pine colourscheme for nvim
+-- matches the dotfiles rose-pine.theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -34,7 +34,7 @@ local colors = {
   subtle = '#908caa',
 }
 
--- Helper function to set highlight groups
+-- helper to set highlight groups
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end

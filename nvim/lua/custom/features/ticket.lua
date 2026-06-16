@@ -1,20 +1,20 @@
--- Git file/commit discovery shared by the scan, diff and picker keymaps.
+-- git file/commit discovery shared by the scan, diff and picker keymaps.
 --
--- Ticket-scoped commit discovery behind <leader>dT (diffview), <leader>xT
+-- ticket-scoped commit discovery behind <leader>dT (diffview), <leader>xT
 -- (all-LSP diagnostics scan) and <leader>lT (sonar scan): merge-base with
 -- main, ticket default pulled from the branch name, commit subjects grepped
 -- with --fixed-strings in base..HEAD.
 --
--- Modified-file discovery behind <leader>xm (all-LSP diagnostics scan),
+-- modified-file discovery behind <leader>xm (all-LSP diagnostics scan),
 -- <leader>lm (sonar scan) and <leader>sm (telescope picker), so all three
 -- always operate on the same file set.
 --
--- Branch-total discovery behind <leader>xt (all-LSP diagnostics scan):
--- every file changed vs merge-base(main), mirroring <leader>dt's diffview.
+-- branch-total discovery behind <leader>xt (all-LSP diagnostics scan):
+-- every file changed vs merge-base(main), mirroring <leader>dt's diffview
 
 local M = {}
 
---- Run `git <args>` and return stdout lines, or nil on failure.
+--- run `git <args>` and return stdout lines, or nil on failure
 local function git_lines(args)
   local result = vim.system(vim.list_extend({ 'git' }, args), { text = true }):wait()
   if result.code ~= 0 then
@@ -33,10 +33,10 @@ end
 --- @field commits string[] matched commit hashes, newest first
 --- @field input string     the grep string the user entered
 
---- Prompt for a ticket / commit grep (default extracted from the branch
+--- prompt for a ticket / commit grep (default extracted from the branch
 --- name) and resolve the matching commits in merge-base(main)..HEAD.
---- Notifies and bails on failure; `cb` is only called with a non-empty
---- match. Async: returns before the prompt is answered.
+--- notifies and bails on failure; `cb` is only called with a non-empty
+--- match. async: returns before the prompt is answered
 --- @param cb fun(ctx: TicketCommits)
 function M.prompt_commits(cb)
   local base = (git_lines { 'merge-base', 'main', 'HEAD' } or {})[1]
@@ -64,13 +64,13 @@ function M.prompt_commits(cb)
   end)
 end
 
---- Union of absolute paths touched by the matched commits. Per-commit
+--- union of absolute paths touched by the matched commits. per-commit
 --- diff-tree (not a range diff) so interleaved non-matching commits don't
---- drag their files in. Mirrors <leader>dT's working-tree rule: when the
+--- drag their files in. mirrors <leader>dT's working-tree rule: when the
 --- newest matched commit is HEAD the ticket is the branch tip, so
---- uncommitted work is part of it -- union in modified/untracked files.
---- Otherwise dirty files likely belong to other work; stick to exactly the
---- matched commits. Returns nil (with a notify) outside a git repo.
+--- uncommitted work is part of it, union in modified/untracked files.
+--- otherwise dirty files likely belong to other work; stick to exactly the
+--- matched commits. returns nil (with a notify) outside a git repo
 --- @param ctx TicketCommits
 --- @return string[]?
 function M.commit_files(ctx)
@@ -96,9 +96,9 @@ function M.commit_files(ctx)
   end
 
   if ctx.commits[1] == ctx.head then
-    -- Reuse modified_files so the union resolves paths from the repo root
+    -- reuse modified_files so the union resolves paths from the repo root
     -- (cwd-relative ls-files + :p breaks when nvim's cwd isn't the root)
-    -- and catches staged-but-uncommitted work via its `diff HEAD` form.
+    -- and catches staged-but-uncommitted work via its `diff HEAD` form
     for _, abs in ipairs(M.modified_files() or {}) do
       add(abs)
     end
@@ -107,11 +107,11 @@ function M.commit_files(ctx)
   return paths
 end
 
---- Union of git-modified and untracked files as absolute paths: staged or
+--- union of git-modified and untracked files as absolute paths: staged or
 --- unstaged changes vs HEAD (excluding deletions, which neither a scan nor
---- a picker can use) plus untracked files that aren't gitignored. The
+--- a picker can use) plus untracked files that aren't gitignored. the
 --- `diff HEAD` form catches staged-but-uncommitted work that
---- `ls-files -m` misses. Returns nil (with a notify) outside a git repo.
+--- `ls-files -m` misses. returns nil (with a notify) outside a git repo
 --- @return string[]?
 function M.modified_files()
   local toplevel = (git_lines { 'rev-parse', '--show-toplevel' } or {})[1]
@@ -120,8 +120,8 @@ function M.modified_files()
     return nil
   end
 
-  -- Run both from the repo root (-C) so the output is uniformly
-  -- root-relative: `diff --name-only` always is, `ls-files` is cwd-relative.
+  -- run both from the repo root (-C) so the output is uniformly
+  -- root-relative: `diff --name-only` always is, `ls-files` is cwd-relative
   local modified = git_lines { '-C', toplevel, 'diff', '--name-only', '--diff-filter=ACMR', 'HEAD' }
   local untracked = git_lines { '-C', toplevel, 'ls-files', '--others', '--exclude-standard' }
 
@@ -139,13 +139,13 @@ function M.modified_files()
   return paths
 end
 
---- Union of files changed on this branch vs merge-base(main): committed
---- branch work plus uncommitted/untracked changes. The single-rev
+--- union of files changed on this branch vs merge-base(main): committed
+--- branch work plus uncommitted/untracked changes. the single-rev
 --- `diff <base>` form (no second rev) diffs the merge-base against the
---- working tree, so it already includes dirty files -- the same semantics as
---- <leader>dt's single-rev DiffviewOpen. Deletions are filtered out (ACMR;
---- renames keep the new path) since a scan can't use a missing file. Returns
---- nil (with a notify) outside a git repo or when no merge-base with main.
+--- working tree, so it already includes dirty files, the same semantics as
+--- <leader>dt's single-rev DiffviewOpen. deletions are filtered out (ACMR;
+--- renames keep the new path) since a scan can't use a missing file. returns
+--- nil (with a notify) outside a git repo or when no merge-base with main
 --- @return string[]?
 function M.branch_files()
   local toplevel = (git_lines { 'rev-parse', '--show-toplevel' } or {})[1]
@@ -160,8 +160,8 @@ function M.branch_files()
     return nil
   end
 
-  -- Run both from the repo root (-C) so the output is uniformly
-  -- root-relative: `diff --name-only` always is, `ls-files` is cwd-relative.
+  -- run both from the repo root (-C) so the output is uniformly
+  -- root-relative: `diff --name-only` always is, `ls-files` is cwd-relative
   local changed = git_lines { '-C', toplevel, 'diff', '--name-only', '--diff-filter=ACMR', base }
   local untracked = git_lines { '-C', toplevel, 'ls-files', '--others', '--exclude-standard' }
 

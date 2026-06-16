@@ -1,10 +1,10 @@
--- File navigation: Harpoon2 for quick marks, Oil for filesystem-as-buffer.
+-- file navigation: Harpoon2 for quick marks, Oil for filesystem-as-buffer
 
--- Close oil, restoring the dashboard if oil was opened from it. oil.close()
+-- close oil, restoring the dashboard if oil was opened from it. oil.close()
 -- restores `oil_original_buffer`, but the snacks dashboard is bufhidden=wipe,
 -- so launching oil over it wipes it; oil then falls back to a blank `enew`
--- buffer. Detect that empty landing buffer and re-render the dashboard,
--- matching snacks' own "empty buffer on startup" behaviour.
+-- buffer. detect that empty landing buffer and re-render the dashboard,
+-- matching snacks' own "empty buffer on startup" behaviour
 local function oil_close()
   require('oil').close()
   local buf = vim.api.nvim_get_current_buf()
@@ -14,25 +14,25 @@ local function oil_close()
     and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ''
   if empty and Snacks and Snacks.dashboard then
     -- open() merges partial opts with the configured dashboard defaults, so the
-    -- "missing sections/formats" check on snacks.dashboard.Opts is a false positive.
+    -- "missing sections/formats" check on snacks.dashboard.Opts is a false positive
     ---@diagnostic disable-next-line: missing-fields
     Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
   end
 end
 
--- Re-assert oil's conceal window options whenever an oil buffer becomes visible.
--- Oil hides its per-line entry IDs (the `/006 ` prefix) with a buffer-local
+-- re-assert oil's conceal window options whenever an oil buffer becomes visible.
+-- oil hides its per-line entry IDs (the `/006 ` prefix) with a buffer-local
 -- `oilId` syntax match plus the window-local `conceallevel`/`concealcursor` it
--- sets when rendering. Because conceal is window-scoped, showing an existing oil
+-- sets when rendering. because conceal is window-scoped, showing an existing oil
 -- buffer in a window that never ran oil's set_win_options (a split, a reused
 -- window) leaves conceallevel at 0 and the IDs leak.
 --
--- Oil's own set_win_options reads `nvim_get_current_win()` from inside an
+-- oil's own set_win_options reads `nvim_get_current_win()` from inside an
 -- `nvim_buf_call`, which switches the buffer context but NOT the window, so on a
 -- fresh open it can apply conceallevel to the wrong window and the IDs leak from
--- the very first render. A synchronous reassert on entry hits the same race. So
+-- the very first render. a synchronous reassert on entry hits the same race. so
 -- defer one tick (past oil's render and any competing FileType handlers) and set
--- the option on the resolved oil window explicitly rather than "current window".
+-- the option on the resolved oil window explicitly rather than "current window"
 vim.api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter' }, {
   pattern = 'oil://*',
   callback = function()
@@ -52,13 +52,13 @@ vim.api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter' }, {
 })
 
 return {
-  -- Oil: filesystem-as-buffer
+  -- oil: filesystem-as-buffer
   {
     'stevearc/oil.nvim',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
-    -- Load at startup so oil's directory-hijack autocmd is registered before a
-    -- directory buffer (e.g. `nvim ~/.config`) is processed. Lazy-loading on the
-    -- `-` key would miss command-line directory arguments.
+    -- load at startup so oil's directory-hijack autocmd is registered before a
+    -- directory buffer (e.g. `nvim ~/.config`) is processed. lazy-loading on the
+    -- `-` key would miss command-line directory arguments
     lazy = false,
     keys = {
       { '-', '<cmd>Oil<CR>', desc = 'Oil: Open parent directory' },
@@ -96,7 +96,7 @@ return {
         end,
       }
 
-      -- Keymaps
+      -- keymaps
       vim.keymap.set('n', '<leader>ha', function()
         harpoon:list():add()
       end, { desc = '[H]arpoon: [a]dd file' })
@@ -105,7 +105,7 @@ return {
         harpoon.ui:toggle_quick_menu(harpoon:list())
       end, { desc = '[H]arpoon: [l]ist files' })
 
-      -- Quick access to files 1-4 (easier than <leader>h1-4)
+      -- quick access to files 1-4 (easier than <leader>h1-4)
       local function select_harpoon_file(index)
         local list = harpoon:list()
         local item = list:get(index)
@@ -132,12 +132,12 @@ return {
         select_harpoon_file(4)
       end, { desc = 'Harpoon: file 4' })
 
-      -- Remove current file from harpoon list
+      -- remove current file from harpoon list
       vim.keymap.set('n', '<leader>hd', function()
         harpoon:list():remove()
       end, { desc = '[H]arpoon: [d]elete current file' })
 
-      -- Clear all harpoon marks (capital X = harder to accidentally press)
+      -- clear all harpoon marks (capital X = harder to accidentally press)
       vim.keymap.set('n', '<leader>hX', function()
         harpoon:list():clear()
       end, { desc = '[H]arpoon: clear all (X marks the spot)' })

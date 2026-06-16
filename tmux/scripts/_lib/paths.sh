@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Undo file path definitions for tmux scripts
-# Source this file after common.sh
+# undo file path definitions for tmux scripts
+# source this file after common.sh
 
-# Guard against multiple sourcing
+# guard against multiple sourcing
 [[ -n "${_TMUX_PATHS_SH_LOADED:-}" ]] && return 0
 _TMUX_PATHS_SH_LOADED=1
 
-# Undo path constants (XDG-compliant)
-# Stores kill/undo state in XDG cache directory
+# undo path constants (XDG-compliant)
+# stores kill/undo state in XDG cache directory
 
-# Get the undo base directory (XDG-compliant)
+# get the undo base directory (XDG-compliant)
 get_undo_base_dir() {
     local xdg_undo_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tmux/undo"
     mkdir -p "$xdg_undo_dir" 2>/dev/null || true
@@ -20,12 +20,12 @@ get_undo_base_dir() {
 UNDO_BASE_DIR=$(get_undo_base_dir)
 readonly UNDO_BASE_DIR
 
-# Pane undo paths
+# pane undo paths
 get_pane_undo_file()    { echo "${UNDO_BASE_DIR}/pane"; }
 get_pane_undo_state()   { echo "${UNDO_BASE_DIR}/pane-state.txt"; }
 get_pane_undo_content() { echo "${UNDO_BASE_DIR}/pane-content.txt"; }
 
-# Window undo paths
+# window undo paths
 get_window_undo_file()  { echo "${UNDO_BASE_DIR}/window"; }
 get_window_undo_state() { echo "${UNDO_BASE_DIR}/window-state.txt"; }
 
@@ -36,7 +36,7 @@ get_window_undo_contents_dir() {
     echo "$dir"
 }
 
-# Session undo paths
+# session undo paths
 get_session_undo_file()  { echo "${UNDO_BASE_DIR}/session"; }
 get_session_undo_state() { echo "${UNDO_BASE_DIR}/session-state.txt"; }
 
@@ -44,8 +44,8 @@ get_session_undo_backup() {
     echo "${UNDO_BASE_DIR}/session-backup"
 }
 
-# Clean up undo files for a specific type
-# Usage: cleanup_undo_files "pane" | "window" | "session"
+# clean up undo files for a specific type
+# usage: cleanup_undo_files "pane" | "window" | "session"
 cleanup_undo_files() {
     local type="$1"
     local base_dir
@@ -72,14 +72,14 @@ cleanup_undo_files() {
     esac
 }
 
-# Get the most recent undo type based on file timestamps
+# get the most recent undo type based on file timestamps
 get_most_recent_undo_type() {
     local base_dir
     base_dir=$(get_undo_base_dir)
 
     local pane_time=0 window_time=0 session_time=0
 
-    # Platform-aware stat for modification time
+    # platform-aware stat for modification time
     local stat_cmd
     if [[ "$(uname)" == "Darwin" ]]; then
         stat_cmd=(stat -f %m)
@@ -105,36 +105,36 @@ get_most_recent_undo_type() {
 # ═════════════════════════════════════════════════════════════════
 # Resurrect Path Discovery
 # ═════════════════════════════════════════════════════════════════
-# The functions below discover where tmux-resurrect stores session data.
-# They check both XDG-compliant and legacy locations.
+# the functions below discover where tmux-resurrect stores session data.
+# they check both XDG-compliant and legacy locations
 
-# Get the resurrect data directory
-# Returns the directory where tmux-resurrect stores its data
+# get the resurrect data directory
+# returns the directory where tmux-resurrect stores its data
 #
-# Usage: RESURRECT_DIR=$(get_resurrect_dir)
-# Output: Path to resurrect directory
+# usage: RESURRECT_DIR=$(get_resurrect_dir)
+# output: path to resurrect directory
 get_resurrect_dir() {
-    # Check for existing 'last' symlink (best indicator)
+    # check for existing 'last' symlink (best indicator)
     if [[ -L "${HOME}/.tmux/resurrect/last" || -f "${HOME}/.tmux/resurrect/last" ]]; then
         echo "${HOME}/.tmux/resurrect"
     elif [[ -L "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/last" || -f "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/last" ]]; then
         echo "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
-    # Fall back to checking for sessions directory
+    # fall back to checking for sessions directory
     elif [[ -d "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect/sessions" ]]; then
         echo "${XDG_DATA_HOME:-$HOME/.local/share}/tmux/resurrect"
     elif [[ -d "${HOME}/.tmux/resurrect/sessions" ]]; then
         echo "${HOME}/.tmux/resurrect"
-    # Default to legacy location if neither exists
+    # default to legacy location if neither exists
     else
         echo "${HOME}/.tmux/resurrect"
     fi
 }
 
-# Get the resurrect sessions directory
-# Returns the directory where session state files are stored
+# get the resurrect sessions directory
+# returns the directory where session state files are stored
 #
-# Usage: SESSIONS_DIR=$(get_resurrect_sessions_dir)
-# Output: Path to resurrect sessions directory
+# usage: SESSIONS_DIR=$(get_resurrect_sessions_dir)
+# output: path to resurrect sessions directory
 get_resurrect_sessions_dir() {
     local resurrect_dir
     resurrect_dir=$(get_resurrect_dir)

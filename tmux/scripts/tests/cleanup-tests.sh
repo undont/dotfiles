@@ -2,17 +2,17 @@
 # ══════════════════════════════════════════════════════════════
 # cleanup-tests.sh
 # ══════════════════════════════════════════════════════════════
-# Cleans up leftover tmux test servers, sockets, and backup files.
-# Run this to clean up orphaned test resources from failed tests.
+# cleans up leftover tmux test servers, sockets, and backup files.
+# run this to clean up orphaned test resources from failed tests.
 #
-# Usage:
-#   cleanup-tests.sh           # Clean up test resources
-#   cleanup-tests.sh --dry-run # Show what would be cleaned
+# usage:
+#   cleanup-tests.sh           # clean up test resources
+#   cleanup-tests.sh --dry-run # show what would be cleaned
 # ══════════════════════════════════════════════════════════════
 
 set -euo pipefail
 
-# Colours
+# colours
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[0;33m'
@@ -31,10 +31,10 @@ SOCKET_COUNT=0
 BACKUP_COUNT=0
 
 # ──────────────────────────────────────────────────────────────
-# Clean up test sockets/servers
+# clean up test sockets/servers
 # ──────────────────────────────────────────────────────────────
 if [[ -d "$SOCKET_DIR" ]]; then
-    # Find test sockets (either 'test-*' or 'tmux-test-*')
+    # find test sockets (either 'test-*' or 'tmux-test-*')
     TEST_SOCKETS=$(find "$SOCKET_DIR" -name 'test-*' -o -name 'tmux-test-*' 2>/dev/null || true)
 
     if [[ -n "$TEST_SOCKETS" ]]; then
@@ -47,10 +47,10 @@ if [[ -d "$SOCKET_DIR" ]]; then
             if [[ "$DRY_RUN" == "true" ]]; then
                 printf "${YELLOW}Would kill:${NC} %s\n" "$SOCKET_NAME"
             else
-                # Try to kill the server gracefully
+                # try to kill the server gracefully
                 tmux -L "$SOCKET_NAME" kill-server 2>/dev/null || true
                 
-                # Remove socket file if it still exists
+                # remove socket file if it still exists
                 rm -f "$socket" 2>/dev/null || true
                 
                 printf "${GREEN}✓${NC} Cleaned up: %s\n" "$SOCKET_NAME"
@@ -62,10 +62,10 @@ if [[ -d "$SOCKET_DIR" ]]; then
 fi
 
 # ──────────────────────────────────────────────────────────────
-# Clean up test session backup files
+# clean up test session backup files
 # ──────────────────────────────────────────────────────────────
 if [[ -d "$SESSIONS_DIR" ]]; then
-    # Find test session backups (files starting with 'test')
+    # find test session backups (files starting with 'test')
     TEST_BACKUPS=$(find "$SESSIONS_DIR" -name 'test*.txt' 2>/dev/null || true)
 
     if [[ -n "$TEST_BACKUPS" ]]; then
@@ -91,7 +91,7 @@ if [[ -d "$SESSIONS_DIR" ]]; then
 fi
 
 # ──────────────────────────────────────────────────────────────
-# Summary
+# summary
 # ──────────────────────────────────────────────────────────────
 printf "\n"
 if [[ $SOCKET_COUNT -eq 0 && $BACKUP_COUNT -eq 0 ]]; then

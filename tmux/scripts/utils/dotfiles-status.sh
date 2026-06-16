@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
-# Dotfiles sync status indicator for tmux status bar
-# Shows icon when local dotfiles are behind/ahead of origin
+# dotfiles sync status indicator for tmux status bar
+# shows icon when local dotfiles are behind/ahead of origin
 #
-# Output:
-#   ↓  - behind origin (updates available)
-#   ↑  - ahead of origin (unpushed commits)
-#   ↕  - diverged (both ahead and behind)
-#   (empty) - up-to-date or error (silent fail)
+# output:
+#   ↓  behind origin (updates available)
+#   ↑  ahead of origin (unpushed commits)
+#   ↕  diverged (both ahead and behind)
+#   (empty) up-to-date or error (silent fail)
 #
-# Caches git fetch (default: 5 min) and computed result (default: 30s)
-# to avoid expensive git operations on every status bar refresh.
+# caches git fetch (default: 5 min) and computed result (default: 30s)
+# to avoid expensive git operations on every status bar refresh
 
 set -euo pipefail
 
@@ -20,14 +20,14 @@ FETCH_CACHE_FILE="$CACHE_DIR/last-fetch"
 CACHE_TTL_SECONDS="${DOTFILES_SYNC_CACHE_TTL:-300}"  # 5 minutes default
 RESULT_TTL_SECONDS="${DOTFILES_RESULT_CACHE_TTL:-30}" # 30 seconds default
 
-# Silent exit helper (no output on failure)
+# silent exit helper (no output on failure)
 bail() {
     exit 0
 }
 
-# Serve from result cache if fresh. This is the hot path (runs every
-# status-interval), so it uses bash builtins only — no date/stat/cat forks.
-# Cache format: line 1 = epoch written, line 2 = payload.
+# serve from result cache if fresh. this is the hot path (runs every
+# status-interval), so it uses bash builtins only, no date/stat/cat forks.
+# cache format: line 1 = epoch written, line 2 = payload
 now="${EPOCHSECONDS:-$(date +%s)}"
 if [[ -f "$CACHE_FILE" ]]; then
     { IFS= read -r cache_ts && IFS= read -r cache_payload; } < "$CACHE_FILE" 2>/dev/null \
@@ -38,25 +38,25 @@ if [[ -f "$CACHE_FILE" ]]; then
     fi
 fi
 
-# Ensure cache directory exists (only reached on cache miss)
+# ensure cache directory exists (only reached on cache miss)
 [[ -d "$CACHE_DIR" ]] || mkdir -p "$CACHE_DIR"
 
-# Check if we're in a git repo
+# check if we're in a git repo
 cd "$DOTFILES_DIR" 2>/dev/null || bail
 git rev-parse --git-dir &>/dev/null || bail
 
-# Get the default remote branch (origin/main, origin/master, etc.)
+# get the default remote branch (origin/main, origin/master, etc.)
 get_remote_branch() {
     local ref
-    # Try to get the default branch from origin
+    # try to get the default branch from origin
     ref=$(git symbolic-ref refs/remotes/origin/HEAD 2>/dev/null) || {
-        # Fallback: try to detect from remote
+        # fallback: try to detect from remote
         ref=$(git remote show origin 2>/dev/null | grep 'HEAD branch' | awk '{print $NF}')
         if [[ -n "$ref" ]]; then
             echo "origin/$ref"
             return
         fi
-        # Last resort: try common names
+        # last resort: try common names
         if git rev-parse --verify origin/main &>/dev/null; then
             echo "origin/main"
         elif git rev-parse --verify origin/master &>/dev/null; then
@@ -66,11 +66,11 @@ get_remote_branch() {
         fi
         return
     }
-    # Convert refs/remotes/origin/main -> origin/main
+    # convert refs/remotes/origin/main -> origin/main
     echo "${ref#refs/remotes/}"
 }
 
-# Fetch from origin if cache is stale
+# fetch from origin if cache is stale
 maybe_fetch() {
     local now last_fetch age
 
@@ -81,29 +81,29 @@ maybe_fetch() {
         age=$((now - last_fetch))
 
         if [[ $age -lt $CACHE_TTL_SECONDS ]]; then
-            return 0  # Cache still fresh
+            return 0  # cache still fresh
         fi
     fi
 
-    # Fetch in background to avoid blocking tmux
+    # fetch in background to avoid blocking tmux
     git fetch origin --quiet 2>/dev/null &
     echo "$now" > "$FETCH_CACHE_FILE"
 }
 
-# Main logic
+# main logic
 main() {
     local remote_branch behind ahead output=""
 
     remote_branch=$(get_remote_branch) || bail
 
-    # Trigger background fetch if needed
+    # trigger background fetch if needed
     maybe_fetch
 
-    # Count commits behind and ahead
+    # count commits behind and ahead
     behind=$(git rev-list HEAD.."$remote_branch" --count 2>/dev/null) || behind=0
     ahead=$(git rev-list "$remote_branch"..HEAD --count 2>/dev/null) || ahead=0
 
-    # Build output
+    # build output
     if [[ $behind -gt 0 && $ahead -gt 0 ]]; then
         output="↕ "
     elif [[ $behind -gt 0 ]]; then
@@ -112,11 +112,11 @@ main() {
         output="↑ "
     fi
 
-    # Cache the result (line 1 = epoch, line 2 = payload; read by the
+    # cache the result (line 1 = epoch, line 2 = payload; read by the
     # builtin-only hot path above)
     printf '%s\n%s\n' "$now" "$output" > "$CACHE_FILE"
 
-    # Output for tmux
+    # output for tmux
     printf "%s" "$output"
 }
 

@@ -1,12 +1,12 @@
 #!/bin/bash
-# Move a tmux window to a different session
-# Usage: move.sh <session:window_index>
+# move a tmux window to a different session
+# usage: move.sh <session:window_index>
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 
 if [[ -z "$1" ]]; then
@@ -16,7 +16,7 @@ fi
 
 SOURCE_WINDOW="$1"
 
-# Validate input contains colon separator (session:window format)
+# validate input contains colon separator (session:window format)
 if [[ ! "$SOURCE_WINDOW" =~ : ]]; then
     error "Invalid format: expected 'session:window_index' (e.g., 'main:1')"
     exit 1
@@ -25,11 +25,11 @@ fi
 SOURCE_SESSION="${SOURCE_WINDOW%%:*}"
 WINDOW_INDEX="${SOURCE_WINDOW##*:}"
 
-# Remove any trailing indicators (⚡, 󱜙, etc.) from the window identifier
+# remove any trailing indicators (⚡, 󱜙, etc.) from the window identifier
 SOURCE_SESSION="${SOURCE_SESSION%% *}"
 WINDOW_INDEX="${WINDOW_INDEX%% *}"
 
-# Get the window name for display purposes
+# get the window name for display purposes
 WINDOW_NAME=$(tmux display-message -p -t "${SOURCE_SESSION}:${WINDOW_INDEX}" '#{window_name}' 2>/dev/null)
 
 if [[ -z "$WINDOW_NAME" ]]; then
@@ -37,7 +37,7 @@ if [[ -z "$WINDOW_NAME" ]]; then
     exit 1
 fi
 
-# Get list of sessions excluding the source session
+# get list of sessions excluding the source session
 TARGET_SESSION=$(tmux list-sessions -F '#{session_name}' | \
     grep -v "^${SOURCE_SESSION}$" | \
     fzf --height=100% --layout=reverse --exact --cycle --disabled \
@@ -54,19 +54,19 @@ TARGET_SESSION=$(tmux list-sessions -F '#{session_name}' | \
         --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space)" || echo "abort"')
 
 if [[ -z "$TARGET_SESSION" ]]; then
-    exit 0  # User cancelled
+    exit 0  # user cancelled
 fi
 
-# Move the window to the target session
+# move the window to the target session
 tmux move-window -s "${SOURCE_SESSION}:${WINDOW_INDEX}" -t "${TARGET_SESSION}:"
 
-# Renumber remaining windows in the source session to fill the gap left behind
+# renumber remaining windows in the source session to fill the gap left behind
 tmux move-window -r -s "$SOURCE_SESSION" 2>/dev/null
 
-# Update alert tracking: replace source session name with target in the alerts file.
-# Tmux window options (@*_alert) travel with the window automatically — only the
-# flat file needs updating. Handles both 3-field and 5-field alert formats.
-# Window names are stored percent-encoded, so encode before matching.
+# update alert tracking: replace source session name with target in the alerts file.
+# tmux window options (@*_alert) travel with the window automatically; only the
+# flat file needs updating. handles both 3-field and 5-field alert formats.
+# window names are stored percent-encoded, so encode before matching
 ENC_WINDOW_NAME=$(alerts_encode_window "$WINDOW_NAME")
 if [[ -f "$ALERTS_FILE" ]] && grep -qF "${SOURCE_SESSION}:${ENC_WINDOW_NAME}:" "$ALERTS_FILE" 2>/dev/null; then
     if _acquire_alerts_lock; then

@@ -4,31 +4,31 @@ set -euo pipefail
 # =============================================================================
 # PROJECT LAUNCHER TEMPLATE
 # =============================================================================
-# Copy this file and customise for your project:
+# copy this file and customise for your project:
 #   cp launcher.template myproject
 #   chmod +x myproject
 #
-# Add your project root to ~/.zshrc:
+# add your project root to ~/.zshrc:
 #   export MYPROJECT_ROOT="$HOME/src/myproject"
 # =============================================================================
 
 # =============================================================================
-# CONFIGURATION - Customise these for your project
+# CONFIGURATION - customise these for your project
 # =============================================================================
 # @description: My project - brief description of windows/layout
 #
-# The @description tag is required for the launcher picker (prefix + p).
-# It appears as a one-line summary next to the launcher name in the picker.
-# Launchers without this tag are hidden from the picker.
+# the @description tag is required for the launcher picker (prefix + p).
+# it appears as a one-line summary next to the launcher name in the picker.
+# launchers without this tag are hidden from the picker.
 #
-# Optional: @instance tag controls how new instances are created (press n):
+# optional: @instance tag controls how new instances are created (press n):
 #   # @instance: prompt    - asks for a name (e.g. ticket number → myproject-1234)
 #   # @instance: auto      - auto-increments (myproject-2, myproject-3) [default]
 
 SESSION="${SESSION_NAME:-myproject}"              # tmux session name (SESSION_NAME allows multi-instance)
 PROJECT_DIR="${MYPROJECT_ROOT:-$HOME/src/myproject}"  # from local aliases or fallback
 
-# Help flag handling
+# help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat << EOF
 $SESSION - Project tmux session launcher
@@ -70,7 +70,7 @@ fi
 # SESSION MANAGEMENT
 # =============================================================================
 
-# Check if session already exists
+# check if session already exists
 if tmux has-session -t "$SESSION" 2>/dev/null; then
     if [[ -n "${TMUX:-}" ]]; then
         tmux switch-client -t "$SESSION"
@@ -81,43 +81,43 @@ if tmux has-session -t "$SESSION" 2>/dev/null; then
 fi
 
 # =============================================================================
-# WINDOW LAYOUT - Customise this section for your workflow
+# WINDOW LAYOUT - customise this section for your workflow
 # =============================================================================
 
-# Window 1: dev (split panes - Claude left, terminal right)
+# window 1: dev (split panes - Claude left, terminal right)
 tmux new-session -d -s "$SESSION" -n dev -c "$PROJECT_DIR"
 tmux split-window -t "$SESSION:dev" -h -c "$PROJECT_DIR"
 tmux send-keys -t "$SESSION:dev.1" 'claude' Enter
 
-# Window 2: edit (neovim)
+# window 2: edit (nvim)
 tmux new-window -t "$SESSION" -n edit -c "$PROJECT_DIR"
 tmux send-keys -t "$SESSION:edit" 'nvim' Enter
 
-# Window 3: shell (general terminal)
+# window 3: shell (general terminal)
 tmux new-window -t "$SESSION" -n shell -c "$PROJECT_DIR"
 
 # =============================================================================
 # EXAMPLES OF OTHER WINDOW CONFIGURATIONS
 # =============================================================================
 #
-# # Subdirectory window:
+# # subdirectory window:
 # tmux new-window -t "$SESSION" -n backend -c "$PROJECT_DIR/backend"
 #
-# # Split pane running commands:
+# # split pane running commands:
 # tmux new-window -t "$SESSION" -n servers -c "$PROJECT_DIR"
 # tmux split-window -h -t "$SESSION:servers" -c "$PROJECT_DIR"
 # tmux send-keys -t "$SESSION:servers.1" 'npm run dev' Enter
 # tmux send-keys -t "$SESSION:servers.2" 'npm run watch' Enter
 #
-# # Window at home directory:
+# # window at home directory:
 # tmux new-window -t "$SESSION" -n misc -c ~
 
 # =============================================================================
 # EXAMPLES OF INSTANCE CUSTOMISATION
 # =============================================================================
 #
-# # Git worktree matching (with @instance: prompt)
-# # When the user types a ticket number (e.g. 1234), match it to a worktree
+# # git worktree matching (with @instance: prompt)
+# # when the user types a ticket number (e.g. 1234), match it to a worktree
 # # directory like ~/src/myproject-worktrees/PROJ-1234-Some-Description/
 # #
 # # WORKTREES_DIR="${MYPROJECT_WORKTREES:-$HOME/src/myproject-worktrees}"
@@ -129,17 +129,17 @@ tmux new-window -t "$SESSION" -n shell -c "$PROJECT_DIR"
 # #     fi
 # # fi
 # #
-# # Place this between the SESSION/PROJECT_DIR lines and the validation block.
+# # place this between the SESSION/PROJECT_DIR lines and the validation block
 
 # =============================================================================
 # ATTACH TO SESSION
 # =============================================================================
 
-# Select first window
+# select first window
 tmux select-window -t "$SESSION:1"
 tmux select-pane -t "$SESSION:1.1"
 
-# Attach to session
+# attach to session
 if [[ -n "${TMUX:-}" ]]; then
     tmux switch-client -t "$SESSION"
 else

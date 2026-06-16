@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Tests for ghdash_merge_local() from scripts/_lib/ghdash.sh
+# tests for ghdash_merge_local() from scripts/_lib/ghdash.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Source shared test helpers (colours, pass/fail/skip/section, assertions, sandbox)
+# source shared test helpers (colours, pass/fail/skip/section, assertions, sandbox)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 setup_sandbox
 trap cleanup_sandbox EXIT
 
-# Source ghdash library (sets GHDASH_BASE, GHDASH_CONFIG, GHDASH_LOCAL)
+# source ghdash library (sets GHDASH_BASE, GHDASH_CONFIG, GHDASH_LOCAL)
 source "$DOTFILES_DIR/scripts/_lib/common.sh"
 source "$DOTFILES_DIR/scripts/_lib/ghdash.sh"
 
@@ -32,7 +32,7 @@ pass "yq is available"
 
 section "ghdash merge — with local overrides"
 
-# Override module-level paths to use sandbox
+# override module-level paths to use sandbox
 GHDASH_DIR="$TEST_HOME/.config/gh-dash"
 mkdir -p "$GHDASH_DIR"
 
@@ -40,7 +40,7 @@ GHDASH_BASE="$GHDASH_DIR/config.base.yml"
 GHDASH_CONFIG="$GHDASH_DIR/config.yml"
 GHDASH_LOCAL="$GHDASH_DIR/local.yml"
 
-# Test 1: Merge with both base and local present
+# test 1: merge with both base and local present
 cat > "$GHDASH_BASE" <<'EOF'
 prSections:
   - title: My PRs
@@ -65,7 +65,7 @@ else
     fail "local.yml entries not found in merged config"
 fi
 
-# Verify base entries are also preserved
+# verify base entries are also preserved
 if yq '.prSections[] | .title' "$GHDASH_CONFIG" 2>/dev/null | grep -q "My PRs"; then
     pass "base config entries preserved after merge"
 else
@@ -74,7 +74,7 @@ fi
 
 section "ghdash merge — missing local.yml"
 
-# Test 2: No local.yml — base should be promoted to config
+# test 2: no local.yml, base should be promoted to config
 cat > "$GHDASH_BASE" <<'EOF'
 prSections:
   - title: My PRs
@@ -91,7 +91,7 @@ fi
 
 section "ghdash merge — empty local.yml"
 
-# Test 3: Empty local.yml — base should be preserved
+# test 3: empty local.yml, base should be preserved
 cat > "$GHDASH_BASE" <<'EOF'
 prSections:
   - title: My PRs
@@ -108,7 +108,7 @@ fi
 
 section "ghdash merge — no base config"
 
-# Test 4: No base config — should return 0 and do nothing
+# test 4: no base config, should return 0 and do nothing
 rm -f "$GHDASH_BASE" "$GHDASH_CONFIG" "$GHDASH_LOCAL"
 
 if ghdash_merge_local --quiet; then

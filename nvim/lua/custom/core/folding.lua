@@ -1,4 +1,4 @@
--- Folding keymaps: default zr/zc/zm to their recursive/all-fold variants.
+-- folding keymaps: default zr/zc/zm to their recursive/all-fold variants
 
 local M = {}
 

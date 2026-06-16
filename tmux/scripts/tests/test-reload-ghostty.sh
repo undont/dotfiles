@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# Tests for reload-ghostty.sh
-# Tests the ghostty-reload.sh helper script
+# tests for reload-ghostty.sh
+# tests the ghostty-reload.sh helper script
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GHOSTTY_RELOAD="$SCRIPT_DIR/../themes/reload-ghostty.sh"
 
-# Source test helpers
+# source test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ══════════════════════════════════════════════════════════════
@@ -41,21 +41,21 @@ fi
 
 section "Script Content Validation"
 
-# Test that script uses ps to find ghostty process (cross-platform)
+# test that script uses ps to find ghostty process (cross-platform)
 if grep -q "ps -eo" "$GHOSTTY_RELOAD"; then
     pass "script uses ps to find ghostty process"
 else
     fail "script should use ps to find ghostty process"
 fi
 
-# Test that script uses SIGUSR2 to reload
+# test that script uses SIGUSR2 to reload
 if grep -qE "kill.*USR2|USR2" "$GHOSTTY_RELOAD"; then
     pass "script uses SIGUSR2 signal to reload"
 else
     fail "script should use SIGUSR2 signal to reload"
 fi
 
-# Test that script greps for ghostty in process list
+# test that script greps for ghostty in process list
 if grep -q "grep.*ghostty" "$GHOSTTY_RELOAD"; then
     pass "script searches for ghostty process"
 else
@@ -64,7 +64,7 @@ fi
 
 section "Ghostty Process Detection"
 
-# Check if ghostty is running
+# check if ghostty is running
 # shellcheck disable=SC2009  # ps | grep intentional: matches full .app path on macOS
 ghostty_pid=$(ps -eo pid,comm | grep -E '/ghostty$' | awk '{print $1}' | head -1)
 
@@ -73,14 +73,14 @@ if [[ -n "$ghostty_pid" ]]; then
 
     section "Script Execution"
 
-    # Test that script runs without error
+    # test that script runs without error
     if "$GHOSTTY_RELOAD" 2>&1; then
         pass "script executes without errors"
     else
         fail "script execution failed"
     fi
 
-    # Test that script handles being called multiple times
+    # test that script handles being called multiple times
     if "$GHOSTTY_RELOAD" 2>&1 && "$GHOSTTY_RELOAD" 2>&1; then
         pass "script can be called multiple times"
     else

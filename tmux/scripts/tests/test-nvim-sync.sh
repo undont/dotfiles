@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# End-to-end tests for nvim buffer sync flow
-# Tests: list-nvim.sh, connect-nvim.sh, nvim-buffer-sync.sh
-# Usage: ./test-nvim-sync.sh
+# end-to-end tests for nvim buffer sync flow
+# tests: list-nvim.sh, connect-nvim.sh, nvim-buffer-sync.sh
+# usage: ./test-nvim-sync.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$(dirname "$SCRIPT_DIR")"
@@ -11,28 +11,28 @@ HOOKS_DIR="$SCRIPT_DIR/../../../scripts/hooks"
 TMPDIR="${TMPDIR:-/tmp}"
 TMPDIR="${TMPDIR%/}/"
 
-# Source test helpers
+# source test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# Scripts under test
+# scripts under test
 LIST_NVIM="$SCRIPTS_DIR/instances/nvim.sh"
 CONNECT_NVIM="$SCRIPTS_DIR/instances/connect-nvim.sh"
 BUFFER_SYNC="$HOOKS_DIR/nvim-buffer-sync.sh"
 
-# Trap to ensure cleanup on exit/interrupt
+# trap to ensure cleanup on exit/interrupt
 trap cleanup EXIT INT TERM
 
 cleanup() {
-    # Kill test nvim if running
+    # kill test nvim if running
     if [[ -n "${NVIM_PID:-}" ]]; then
         kill "$NVIM_PID" 2>/dev/null || true
     fi
-    # Cleanup test tmux server
+    # cleanup test tmux server
     cleanup_test_server 2>/dev/null || true
 }
 
 # =============================================================================
-# Unit Tests: Script Existence and Syntax
+# unit tests: script existence and syntax
 # =============================================================================
 
 section "Script Existence"
@@ -79,7 +79,7 @@ else
 fi
 
 # =============================================================================
-# Unit Tests: list-nvim.sh Structure
+# unit tests: list-nvim.sh structure
 # =============================================================================
 
 section "list-nvim.sh Structure"
@@ -123,7 +123,7 @@ else
 fi
 
 # =============================================================================
-# Unit Tests: connect-nvim.sh Structure
+# unit tests: connect-nvim.sh structure
 # =============================================================================
 
 section "connect-nvim.sh Structure"
@@ -179,7 +179,7 @@ else
 fi
 
 # =============================================================================
-# Unit Tests: nvim-buffer-sync.sh Structure
+# unit tests: nvim-buffer-sync.sh structure
 # =============================================================================
 
 section "nvim-buffer-sync.sh Structure"
@@ -229,12 +229,12 @@ else
 fi
 
 # =============================================================================
-# Integration Tests: nvim-buffer-sync.sh
+# integration tests: nvim-buffer-sync.sh
 # =============================================================================
 
 section "nvim-buffer-sync.sh Integration"
 
-# Test: exits cleanly when NVIM_SOCKET is not set
+# test: exits cleanly when NVIM_SOCKET is not set
 unset NVIM_SOCKET
 if echo '{}' | "$BUFFER_SYNC" 2>/dev/null; then
     pass "Exits cleanly when NVIM_SOCKET not set"
@@ -242,7 +242,7 @@ else
     fail "Should exit 0 when NVIM_SOCKET not set"
 fi
 
-# Test: exits cleanly when NVIM_SOCKET doesn't exist
+# test: exits cleanly when NVIM_SOCKET doesn't exist
 export NVIM_SOCKET="/nonexistent/socket"
 if echo '{}' | "$BUFFER_SYNC" 2>/dev/null; then
     pass "Exits cleanly when socket doesn't exist"
@@ -250,9 +250,9 @@ else
     fail "Should exit 0 when socket doesn't exist"
 fi
 
-# Test: exits cleanly with invalid JSON
+# test: exits cleanly with invalid JSON
 export NVIM_SOCKET="/tmp/fake-socket-$$"
-touch "$NVIM_SOCKET"  # Create a regular file (not a socket)
+touch "$NVIM_SOCKET"  # create a regular file (not a socket)
 if echo 'not json' | "$BUFFER_SYNC" 2>/dev/null; then
     pass "Exits cleanly with invalid JSON"
 else
@@ -260,7 +260,7 @@ else
 fi
 rm -f "$NVIM_SOCKET"
 
-# Test: exits cleanly with missing file_path
+# test: exits cleanly with missing file_path
 if echo '{"tool_input":{}}' | "$BUFFER_SYNC" 2>/dev/null; then
     pass "Exits cleanly when file_path missing"
 else
@@ -269,7 +269,7 @@ fi
 unset NVIM_SOCKET
 
 # =============================================================================
-# Integration Tests: list-nvim.sh (with tmux)
+# integration tests: list-nvim.sh (with tmux)
 # =============================================================================
 
 section "list-nvim.sh Integration"
@@ -277,15 +277,15 @@ section "list-nvim.sh Integration"
 if ! command -v tmux &>/dev/null; then
     skip "tmux not installed"
 elif ! command tmux list-sessions &>/dev/null 2>&1; then
-    # Intentionally queries the real tmux server (not the test socket) to check
-    # whether there are live sessions to run the integration smoke-test against.
+    # intentionally queries the real tmux server (not the test socket) to check
+    # whether there are live sessions to run the integration smoke-test against
     skip "no tmux sessions running"
 else
-    # Test runs without error
+    # test runs without error
     if output=$("$LIST_NVIM" 2>/dev/null); then
         pass "Runs successfully"
 
-        # Should at least output the logo
+        # should at least output the logo
         if echo "$output" | grep -q "▛▀▖"; then
             pass "Outputs NVIM logo"
         else
@@ -297,7 +297,7 @@ else
 fi
 
 # =============================================================================
-# E2E Test: Full flow with real nvim
+# e2e test: full flow with real nvim
 # =============================================================================
 
 section "End-to-End Tests (requires nvim)"
@@ -307,24 +307,24 @@ if ! command -v nvim &>/dev/null; then
 elif ! command -v tmux &>/dev/null; then
     skip "tmux not installed - skipping E2E tests"
 else
-    # Set up isolated test tmux server (only if we have both nvim and tmux)
+    # set up isolated test tmux server (only if we have both nvim and tmux)
     setup_test_server
 
-    # Create a test session with nvim running
+    # create a test session with nvim running
     TEST_SESSION="nvim-test-$$"
     test_tmux new-session -d -s "$TEST_SESSION" -c /tmp
 
-    # Start nvim in the test session (headless, listening on socket)
+    # start nvim in the test session (headless, listening on socket)
     TEST_SOCKET="${TMPDIR}nvim.${USER}/test-nvim-$$.0"
     mkdir -p "$(dirname "$TEST_SOCKET")"
 
-    # Start nvim in headless server mode with --clean to skip user config that may
-    # trigger terminal capability queries (DECRPM, DA1 escape sequences).
+    # start nvim in headless server mode with --clean to skip user config that may
+    # trigger terminal capability queries (DECRPM, DA1 escape sequences)
     nvim --headless --clean --listen "$TEST_SOCKET" </dev/null >/dev/null 2>&1 &
     NVIM_PID=$!
 
-    # Poll for RPC readiness — socket file existing doesn't mean the server accepts
-    # connections yet. A simple --remote-expr confirms the RPC channel is alive.
+    # poll for RPC readiness, socket file existing doesn't mean the server accepts
+    # connections yet. a simple --remote-expr confirms the RPC channel is alive
     _nvim_ready=false
     for _ in {1..40}; do
         if nvim --headless --server "$TEST_SOCKET" --remote-expr "1+1" >/dev/null 2>&1; then
@@ -337,17 +337,17 @@ else
     if [[ "$_nvim_ready" = true ]]; then
         pass "Test nvim RPC server ready at $TEST_SOCKET"
 
-        # Test: nvim-buffer-sync.sh can send to real nvim
+        # test: nvim-buffer-sync.sh can send to real nvim
         export NVIM_SOCKET="$TEST_SOCKET"
         TEST_FILE="/tmp/test-buffer-sync-$$.txt"
 
         if echo "{\"tool_input\":{\"file_path\":\"$TEST_FILE\"}}" | "$BUFFER_SYNC" 2>/dev/null; then
             pass "nvim-buffer-sync.sh sent command to nvim"
 
-            # Small delay to let nvim process the badd command
+            # small delay to let nvim process the badd command
             sleep 0.2
 
-            # Verify buffer was added by checking nvim's buffer list
+            # verify buffer was added by checking nvim's buffer list
             buffers=""
             for _ in {1..20}; do
                 buffers=$(nvim --headless --server "$TEST_SOCKET" --remote-expr "join(map(getbufinfo(), 'v:val.name'), '\n')" 2>/dev/null || echo "")
@@ -370,7 +370,7 @@ else
         skip "Could not start nvim RPC server (headless nvim may not work in this environment)"
     fi
 
-    # Cleanup — redirect nvim's SIGTERM stderr to avoid leaking into test output
+    # cleanup, redirect nvim's SIGTERM stderr to avoid leaking into test output
     kill "$NVIM_PID" 2>/dev/null || true
     wait "$NVIM_PID" 2>/dev/null || true
     unset NVIM_PID
@@ -380,7 +380,7 @@ else
 fi
 
 # =============================================================================
-# Summary
+# summary
 # =============================================================================
 
 echo ""

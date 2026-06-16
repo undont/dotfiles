@@ -1,31 +1,31 @@
 # =============================================================================
 # TMUX LOCAL OVERRIDES
 # =============================================================================
-# Your personal tmux settings. This file is yours — add anything you want.
-# It is sourced AFTER the base config and plugins, so your values override
+# your personal tmux settings; this file is yours, add anything you want.
+# it is sourced AFTER the base config and plugins, so your values override
 # the defaults.
 #
-# This file survives dotfiles theme and dotfiles update.
-# After making changes, reload with: prefix + r
+# this file survives dotfiles theme and dotfiles update.
+# after making changes, reload with: prefix + r
 #
-# File structure:
-#   ~/.config/tmux/tmux.conf   - Generated config (managed by dotfiles theme)
-#   ~/.config/tmux/local.conf  - This file (your personal overrides)
+# file structure:
+#   ~/.config/tmux/tmux.conf   - generated config (managed by dotfiles theme)
+#   ~/.config/tmux/local.conf  - this file (your personal overrides)
 #
 
-# Examples:
+# examples:
 #   set -g cursor-style bar
 #   set -g status-position bottom
 #   set -g history-limit 100000
 #   set -g default-shell /usr/local/bin/fish
 #
-# Additional plugins (installed by TPM with prefix + I):
+# additional plugins (installed by TPM with prefix + I):
 #   set -g @plugin 'tmux-plugins/tmux-logging'
 #
-# Extra keybindings:
+# extra keybindings:
 #   bind M display-popup -E "man tmux"
 #
-# URL picker (prefix + u) — open URLs in a specific macOS app:
+# URL picker (prefix + u): open URLs in a specific macOS app:
 #   set -g @browser-app 'Arc'           # opens via: open -a Arc <url>
 #   set -g @browser-app 'Google Chrome'
 #   set -g @browser-app 'Safari'

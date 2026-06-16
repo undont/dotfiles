@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Codex alert wrapper
-# Triggers tmux window alerts when Codex completes work
+# codex alert wrapper
+# triggers tmux window alerts when codex completes work
 
-# Skip when running as ACP subprocess inside Neovim (e.g. codecompanion.nvim)
+# skip when running as ACP subprocess inside nvim (e.g. codecompanion.nvim)
 [[ -n "${NVIM:-}" ]] && exit 0
 
 SCRIPT_DIR="${BASH_SOURCE%/*}/.."

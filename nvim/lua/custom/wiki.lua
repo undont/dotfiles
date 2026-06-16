@@ -1,6 +1,6 @@
--- Wiki-link resolver for markdown `gf`.
--- Turns `[[name]]`, `[[name|alias]]`, or `[[name#anchor]]` into an absolute
--- path. Used by after/ftplugin/markdown.lua via 'includeexpr'.
+-- wiki-link resolver for markdown `gf`.
+-- turns `[[name]]`, `[[name|alias]]`, or `[[name#anchor]]` into an absolute
+-- path. used by after/ftplugin/markdown.lua via 'includeexpr'.
 
 local M = {}
 
@@ -8,9 +8,9 @@ local function clean(name)
   return (name:gsub('[%[%]]', ''):gsub('|.*$', ''):gsub('#.*$', ''))
 end
 
--- Resolve a wiki-link target to an absolute path.
--- Search order: sibling .md, then recursive walk from the nearest .git root.
--- Falls back to the cleaned name so vim's own path/suffixesadd lookup can try.
+-- resolve a wiki-link target to an absolute path.
+-- search order: sibling .md, then recursive walk from the nearest .git root.
+-- falls back to the cleaned name so vim's own path/suffixesadd lookup can try.
 function M.resolve(name)
   local cleaned = clean(name)
   if cleaned == '' then

@@ -1,20 +1,20 @@
 # =============================================================================
 # LAZYGIT LOCAL OVERRIDES
 # =============================================================================
-# Your personal lazygit settings. This file is yours — add anything you want.
-# It is loaded AFTER the base config, so your values override the defaults.
+# your personal lazygit settings; this file is yours, add anything you want.
+# it is loaded AFTER the base config, so your values override the defaults.
 #
-# This file survives dotfiles update.
+# this file survives dotfiles update.
 # lazygit merges both files at launch via LG_CONFIG_FILE (set in dotfiles.zsh).
 #
-# File structure:
-#   ~/.config/lazygit/config.yml  — Base config (symlink → dotfiles)
-#   ~/.config/lazygit/local.yml   — This file (your overrides)
+# file structure:
+#   ~/.config/lazygit/config.yml  - base config (symlink → dotfiles)
+#   ~/.config/lazygit/local.yml   - this file (your overrides)
 #
-# Full config reference: https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
+# full config reference: https://github.com/jesseduffield/lazygit/blob/master/docs/Config.md
 # =============================================================================
 
-# Examples:
+# examples:
 #
 # gui:
 #   theme:

@@ -1,12 +1,12 @@
-# Yazi theme - GENERATED from the active dotfiles theme by `dotfiles theme`.
-# Do not edit directly: edit this template (yazi/theme.toml.template) or the
-# theme files (themes/*.theme). The generated output lives at
+# yazi theme: GENERATED from the active dotfiles theme by `dotfiles theme`.
+# don't edit directly: edit this template (yazi/theme.toml.template) or the
+# theme files (themes/*.theme). the generated output lives at
 # ~/.config/yazi/theme.toml and is not tracked in the repo.
 #
-# Only colour-bearing keys are overridden here; everything else (icons, symbols,
-# layout) falls through to yazi's bundled preset theme. Colours are real hex
+# only colour-bearing keys are overridden here; everything else (icons, symbols,
+# layout) falls through to yazi's bundled preset theme. colours are real hex
 # values substituted from the theme's palette, so they apply in both yazi's
-# dark and light startup modes.
+# dark and light startup modes
 #:schema https://yazi-rs.github.io/schemas/theme.json
 
 # : Manager {{{
@@ -188,7 +188,7 @@ rules = [
 	{ url = "*", is = "exec", fg = "{{TMUX_ACCENT_GREEN}}" },
 	{ url = "*", is = "dummy", bg = "{{TMUX_ACCENT_RED}}" },
 	{ url = "*/", is = "dummy", bg = "{{TMUX_ACCENT_RED}}" },
-	# Directories use the theme's active accent
+	# directories use the theme's active accent
 	{ url = "*/", fg = "{{TMUX_STATUS_ACTIVE_BG}}" },
 ]
 

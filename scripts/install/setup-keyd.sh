@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Setup keyd (Linux keyboard remapping daemon) - equivalent of Karabiner on macOS
-# Installs keyd, deploys config, and enables the systemd service.
+# setup keyd (Linux keyboard remapping daemon), equivalent of Karabiner on macOS
+# installs keyd, deploys config, and enables the systemd service
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
@@ -21,13 +21,13 @@ if [[ ! -f "$KEYD_CONF" ]]; then
     exit 1
 fi
 
-# Install keyd if not present
+# install keyd if not present
 if ! command_exists keyd; then
     echo "Installing keyd..."
     install_system_package "keyd" "fatal"
 fi
 
-# Deploy config
+# deploy config
 echo "Deploying keyd config..."
 sudo mkdir -p /etc/keyd
 if sudo cp "$KEYD_CONF" /etc/keyd/default.conf; then
@@ -37,7 +37,7 @@ else
     exit 1
 fi
 
-# Enable and start service
+# enable and start service
 echo "Enabling keyd service..."
 if sudo systemctl enable --now keyd 2>/dev/null; then
     success "keyd service enabled and started"
@@ -47,7 +47,7 @@ else
     warn "Could not start keyd service — you may need to reboot"
 fi
 
-# Reload config in case service was already running
+# reload config in case service was already running
 sudo keyd reload 2>/dev/null || true
 
 success "keyd setup complete"

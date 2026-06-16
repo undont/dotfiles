@@ -1,20 +1,20 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Extract and open URLs from tmux pane scrollback
+# extract and open URLs from tmux pane scrollback
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/ui.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 
 PANE_ID="${1:-}"
 CLIPBOARD_CMD=$(clipboard_copy_cmd)
 
-# Extract URLs from text, cleaning trailing punctuation and balancing parens
-# Handles: trailing ,.:;!?' and unbalanced closing parens/brackets
+# extract URLs from text, cleaning trailing punctuation and balancing parens
+# handles: trailing ,.:;!?' and unbalanced closing parens/brackets
 extract_urls() {
     grep -oE "https?://[^][[:space:]\"'<>{}|\\\^]+" | awk '{
         # Strip trailing punctuation that is almost never part of a URL
@@ -26,7 +26,7 @@ extract_urls() {
     } NF { if (seen[$0] == 0) { seen[$0] = 1; print } }'
 }
 
-# Capture pane content and extract URLs
+# capture pane content and extract URLs
 if [[ -n "$PANE_ID" ]]; then
     urls=$(tmux capture-pane -t "$PANE_ID" -Jp -S -50000 2>/dev/null | extract_urls | reverse_lines) || true
 else

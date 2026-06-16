@@ -2,10 +2,10 @@
 # shellcheck disable=SC1091
 set -euo pipefail
 
-# Reload all local override files across tmux, Ghostty, and Neovim.
-# Safe to run at any time — tmux and nvim are reloaded non-destructively.
+# reload all local override files across tmux, Ghostty, and nvim
+# safe to run at any time; tmux and nvim are reloaded non-destructively
 #
-# Usage: reload-locals.sh
+# usage: reload-locals.sh
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -27,7 +27,7 @@ fi
 ghostty_msg="ghostty: reloaded"
 
 # ─────────────────────────────────────────
-# Neovim
+# nvim
 # ─────────────────────────────────────────
 # $TMPDIR may not be set in non-login shells (e.g. tmux run-shell)
 tmpdir="${TMPDIR:-$(python3 -c 'import tempfile; print(tempfile.gettempdir())' 2>/dev/null || echo /tmp)}"
@@ -44,7 +44,7 @@ done < <(find "${tmpdir}nvim.${USER:-$(id -un)}" -type s -name "nvim.*" 2>/dev/n
 nvim_msg="nvim: ${reloaded} instance(s) reloaded"
 
 # ─────────────────────────────────────────
-# Output
+# output
 # ─────────────────────────────────────────
 summary="${tmux_msg} | ${ghostty_msg} | ${nvim_msg}"
 

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# Test confirmation dialogs in kill-pane.sh, kill-window.sh, kill-session.sh
-# Verifies that all kill scripts use show_visual_confirm with context-aware messages
+# test confirmation dialogs in kill-pane.sh, kill-window.sh, kill-session.sh
+# verifies that all kill scripts use show_visual_confirm with context-aware messages
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 SCRIPTS_DIR="$SCRIPT_DIR/.."
@@ -9,7 +9,7 @@ source "$SCRIPT_DIR/_test-helpers.sh"
 
 section "Script existence and executability"
 
-# Map logical names to actual subdirectory paths
+# map logical names to actual subdirectory paths
 declare -A KILL_SCRIPTS=(
     ["kill-pane.sh"]="panes/kill.sh"
     ["kill-window.sh"]="windows/kill.sh"
@@ -153,7 +153,7 @@ done
 
 section "Confirmation can be skipped"
 
-# Verify scripts skip confirmation when flags are set
+# verify scripts skip confirmation when flags are set
 if grep -q "if ! \$FORCE_KILL" "$SCRIPTS_DIR/panes/kill.sh"; then
     pass "kill-pane.sh skips confirmation with --force"
 else
@@ -176,7 +176,7 @@ section "Exit codes and cancellation handling"
 
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
-    # Check if script exits cleanly when user cancels (looks for exit 0 after show_visual_confirm check)
+    # check if script exits cleanly when user cancels (looks for exit 0 after show_visual_confirm check)
     if grep -A2 "show_visual_confirm" "$SCRIPTS_DIR/$script_path" | grep -q "exit 0"; then
         pass "$script exits cleanly on cancellation"
 
@@ -203,7 +203,7 @@ fi
 
 section "Undo state preservation"
 
-# All kill scripts should save undo state
+# all kill scripts should save undo state
 for script in kill-pane.sh kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "UNDO_FILE\|undo_file\|save_undo_state" "$SCRIPTS_DIR/$script_path"; then
@@ -217,22 +217,22 @@ done
 
 section "save_undo_state resilience"
 
-# Regression: save_undo_state must return 0 even when no backup exists,
+# regression: save_undo_state must return 0 even when no backup exists,
 # otherwise set -e kills the script before the session gets killed.
-# This happens when a session is created, killed, recreated, and killed
-# again before the auto-save cycle captures it.
+# this happens when a session is created, killed, recreated, and killed
+# again before the auto-save cycle captures it
 if bash -c '
     set -euo pipefail
     TEST_XDG_CACHE=$(mktemp -d)
     export XDG_CACHE_HOME="$TEST_XDG_CACHE"
-    # Stub tmux to simulate a session with no windows/panes (empty output)
+    # stub tmux to simulate a session with no windows/panes (empty output)
     tmux() { return 1; }
     export -f tmux
-    # Source kill.sh safely — the guard prevents the main script from running
+    # source kill.sh safely, the guard prevents the main script from running
     SOURCING_FOR_TEST=1 source "'"$SCRIPTS_DIR/sessions/kill.sh"'"
-    # Call with a session that has no backup anywhere
+    # call with a session that has no backup anywhere
     save_undo_state "nonexistent_session_$$"
-    # If we reach here, set -e did not kill us
+    # if we reach here, set -e did not kill us
     cleanup_undo_files "session"
     rm -rf "$TEST_XDG_CACHE"
     exit 0

@@ -2,35 +2,35 @@
 # ══════════════════════════════════════════════════════════════
 # split-resurrect.sh
 # ══════════════════════════════════════════════════════════════
-# Post-save hook for tmux-resurrect.
+# post-save hook for tmux-resurrect.
 #
-# By default, tmux-resurrect saves ALL sessions to a single combined
-# file. This hook runs after each save and splits that file into
+# by default, tmux-resurrect saves ALL sessions to a single combined
+# file. this hook runs after each save and splits that file into
 # individual per-session files, enabling independent session restore.
 #
-# Called automatically via: @resurrect-hook-post-save-all
+# called automatically via: @resurrect-hook-post-save-all
 #
-# Input:  ~/.tmux/resurrect/last (symlink to latest save)
-# Output: ~/.tmux/resurrect/sessions/<session-name>.txt
+# input:  ~/.tmux/resurrect/last (symlink to latest save)
+# output: ~/.tmux/resurrect/sessions/<session-name>.txt
 #
-# Also cleans up session files for sessions that no longer exist.
+# also cleans up session files for sessions that no longer exist
 # ══════════════════════════════════════════════════════════════
 
 set -euo pipefail
 
-# Source path utilities
+# source path utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../_lib/paths.sh"
 
-# Get the resurrect directories using shared functions
+# get the resurrect directories using shared functions
 RESURRECT_DIR=$(get_resurrect_dir)
 SESSIONS_DIR=$(get_resurrect_sessions_dir)
 LAST_FILE="${RESURRECT_DIR}/last"
 
-# Ensure sessions directory exists
+# ensure sessions directory exists
 mkdir -p "${SESSIONS_DIR}"
 
-# Get file modification time (cross-platform)
+# get file modification time (cross-platform)
 get_file_mtime() {
     local file="$1"
     if [[ "$(uname)" == "Darwin" ]]; then
@@ -40,19 +40,19 @@ get_file_mtime() {
     fi
 }
 
-# Get the actual save file (resolve symlink)
+# get the actual save file (resolve symlink)
 if [[ ! -L "${LAST_FILE}" ]] && [[ ! -f "${LAST_FILE}" ]]; then
-    exit 0  # No save file yet, nothing to do
+    exit 0  # no save file yet, nothing to do
 fi
 
 if [[ -L "${LAST_FILE}" ]]; then
-    # Use realpath if available, otherwise use readlink (macOS compatible)
+    # use realpath if available, otherwise use readlink (macOS compatible)
     if command -v realpath >/dev/null 2>&1; then
         SAVE_FILE=$(realpath "${LAST_FILE}" 2>/dev/null) || exit 0
     else
         # macOS readlink doesn't support -f, so manually resolve
         SAVE_FILE=$(readlink "${LAST_FILE}" 2>/dev/null) || exit 0
-        # If relative path, make it absolute
+        # if relative path, make it absolute
         if [[ "${SAVE_FILE}" != /* ]]; then
             SAVE_FILE="${RESURRECT_DIR}/${SAVE_FILE}"
         fi
@@ -66,9 +66,9 @@ if [[ ! -f "${SAVE_FILE}" ]]; then
 fi
 
 # ─────────────────────────────────────────
-# Extract session names
+# extract session names
 # ─────────────────────────────────────────
-# Resurrect save format: tab-separated values with session name in field 2
+# resurrect save format: tab-separated values with session name in field 2
 SESSIONS=$(awk -F'\t' '/^(pane|window)/ { print $2 }' "${SAVE_FILE}" | sort -u)
 
 if [[ -z "${SESSIONS}" ]]; then
@@ -76,16 +76,16 @@ if [[ -z "${SESSIONS}" ]]; then
 fi
 
 # ─────────────────────────────────────────
-# Split into per-session files
+# split into per-session files
 # ─────────────────────────────────────────
-# Track sessions saved this run (Bash 3.2 compatible - no associative arrays)
+# track sessions saved this run (bash 3.2 compatible, no associative arrays)
 CURRENT_SESSIONS_LIST=""
 
 for session in ${SESSIONS}; do
     SESSION_FILE="${SESSIONS_DIR}/${session}.txt"
     CURRENT_SESSIONS_LIST="$CURRENT_SESSIONS_LIST $session "
 
-    # Extract all lines belonging to this session (pane, window, grouped_session)
+    # extract all lines belonging to this session (pane, window, grouped_session)
     awk -F'\t' -v sess="${session}" '
         /^pane/ && $2 == sess { print }
         /^window/ && $2 == sess { print }
@@ -94,9 +94,9 @@ for session in ${SESSIONS}; do
 done
 
 # ─────────────────────────────────────────
-# Cleanup: remove orphaned session files
+# cleanup: remove orphaned session files
 # ─────────────────────────────────────────
-# Delete backup files for sessions that no longer exist,
+# delete backup files for sessions that no longer exist,
 # but skip files that are newer than the save file we just processed
 # (these may have been restored by undo and shouldn't be deleted)
 SAVE_FILE_TIME=$(get_file_mtime "${SAVE_FILE}")
@@ -104,9 +104,9 @@ SAVE_FILE_TIME=$(get_file_mtime "${SAVE_FILE}")
 for existing_file in "${SESSIONS_DIR}"/*.txt; do
     [[ -e "${existing_file}" ]] || continue
     session_name=$(basename "${existing_file}" .txt)
-    # Check if session is in current sessions list (Bash 3.2 compatible)
+    # check if session is in current sessions list (bash 3.2 compatible)
     if [[ " $CURRENT_SESSIONS_LIST " != *" $session_name "* ]]; then
-        # Skip files newer than the save file (likely restored by undo)
+        # skip files newer than the save file (likely restored by undo)
         local_file_time=$(get_file_mtime "${existing_file}")
         if [[ $local_file_time -gt $SAVE_FILE_TIME ]]; then
             continue
@@ -116,9 +116,9 @@ for existing_file in "${SESSIONS_DIR}"/*.txt; do
 done
 
 # ─────────────────────────────────────────
-# Cleanup: remove old resurrect save files
+# cleanup: remove old resurrect save files
 # ─────────────────────────────────────────
-# Keep only the 20 most recent saves to prevent unbounded growth
+# keep only the 20 most recent saves to prevent unbounded growth
 cleanup_old_backups() {
     local dir="$1"
     local keep="$2"

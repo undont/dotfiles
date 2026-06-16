@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
-# Shared helpers for gh-dash configuration management.
-# Sourced by theme-switch and dash-repo-sync.
+# shared helpers for gh-dash configuration management
+# sourced by theme-switch and dash-repo-sync
 
-# Guard against multiple sourcing
+# guard against multiple sourcing
 [[ -n "${_DOTFILES_GHDASH_SH_LOADED:-}" ]] && return 0
 _DOTFILES_GHDASH_SH_LOADED=1
 
@@ -10,11 +10,11 @@ GHDASH_BASE="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/config.base.yml"
 GHDASH_CONFIG="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/config.yml"
 GHDASH_LOCAL="${XDG_CONFIG_HOME:-$HOME/.config}/gh-dash/local.yml"
 
-# Merge local.yml overrides on top of the clean base config.
-# Always starts from config.base.yml (template output) to avoid array
-# duplication from repeated *+ merges into an already-merged config.yml.
-# Returns 0 on success or skip, 1 on merge failure.
-# Usage: ghdash_merge_local [--quiet]
+# merge local.yml overrides on top of the clean base config
+# always starts from config.base.yml (template output) to avoid array
+# duplication from repeated *+ merges into an already-merged config.yml
+# returns 0 on success or skip, 1 on merge failure
+# usage: ghdash_merge_local [--quiet]
 ghdash_merge_local() {
     local quiet=false
     [[ "${1:-}" == "--quiet" ]] && quiet=true
@@ -23,7 +23,7 @@ ghdash_merge_local() {
         return 0
     fi
 
-    # No local overrides — just promote base to active config
+    # no local overrides, just promote base to active config
     if [[ ! -f "$GHDASH_LOCAL" ]]; then
         cp "$GHDASH_BASE" "$GHDASH_CONFIG"
         return 0

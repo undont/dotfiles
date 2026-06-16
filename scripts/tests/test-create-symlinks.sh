@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Smoke tests for scripts/install/create-symlinks.sh
-# Validates script structure and symlink definitions without actually running it
-# (Running it would modify real $HOME, so we test structurally)
+# smoke tests for scripts/install/create-symlinks.sh
+# validates script structure and symlink definitions without actually running it
+# (running it would modify real $HOME, so we test structurally)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CREATE_SYMLINKS="$DOTFILES_DIR/scripts/install/create-symlinks.sh"
 
-# Source shared test helpers
+# source shared test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ═══════════════════════════════════════════════════════════════
@@ -59,7 +59,7 @@ fi
 
 section "Minimal Preset Symlinks"
 
-# These should be created for all presets (minimal, core, full)
+# these should be created for all presets (minimal, core, full)
 if [[ "$script_content" == *'.zprofile'* ]]; then
     pass "Links .zprofile"
 else
@@ -279,10 +279,10 @@ fi
 
 section "Copy-on-Install Configs"
 
-# These configs should use copy_config, NOT create_link
+# these configs should use copy_config, NOT create_link
 for config in "btop.conf" "karabiner.json" "lazydocker/config.yml"; do
     config_name=$(basename "$config")
-    # Check the config appears in a copy_config call, not create_link
+    # check the config appears in a copy_config call, not create_link
     if echo "$script_content" | grep -q "copy_config.*$config_name"; then
         pass "$config_name uses copy_config"
     else
@@ -290,14 +290,14 @@ for config in "btop.conf" "karabiner.json" "lazydocker/config.yml"; do
     fi
 done
 
-# Hammerspoon uses layered pattern (symlink + local override)
+# hammerspoon uses layered pattern (symlink + local override)
 if echo "$script_content" | grep -q 'create_link.*hammerspoon.*init\.lua'; then
     pass "Hammerspoon uses create_link for init.lua (layered config)"
 else
     fail "Hammerspoon should use create_link for init.lua"
 fi
 
-# Hammerspoon should have a local override template
+# hammerspoon should have a local override template
 if echo "$script_content" | grep -q 'install_local.*hammerspoon'; then
     pass "Hammerspoon installs local override from template"
 else
@@ -306,21 +306,21 @@ fi
 
 section "copy_config Function Behaviour"
 
-# Test copy_config in isolation using a temp directory
+# test copy_config in isolation using a temp directory
 TEST_DIR=$(mktemp -d)
 trap 'rm -rf "$TEST_DIR"' EXIT
 
-# Source only the function (extract it) and needed colour vars
+# source only the function (extract it) and needed colour vars
 source "$DOTFILES_DIR/scripts/_lib/colours.sh"
 
-# Define minimal stubs for functions used by copy_config
+# define minimal stubs for functions used by copy_config
 success() { :; }
 info() { :; }
 
-# Re-source the function
+# re-source the function
 eval "$(sed -n '/^copy_config()/,/^}/p' "$CREATE_SYMLINKS")"
 
-# Test 1: Copies to new destination
+# test 1: copies to new destination
 echo "test content" > "$TEST_DIR/source.conf"
 copy_config "$TEST_DIR/source.conf" "$TEST_DIR/dest/config.conf"
 if [[ -f "$TEST_DIR/dest/config.conf" ]] && [[ ! -L "$TEST_DIR/dest/config.conf" ]]; then
@@ -330,7 +330,7 @@ else
 fi
 assert_equals "copy_config copies content correctly" "test content" "$(cat "$TEST_DIR/dest/config.conf")"
 
-# Test 2: Skips existing file (any type)
+# test 2: skips existing file (any type)
 ln -sf "$TEST_DIR/source.conf" "$TEST_DIR/symlinked.conf"
 copy_config "$TEST_DIR/source.conf" "$TEST_DIR/symlinked.conf"
 if [[ -L "$TEST_DIR/symlinked.conf" ]]; then
@@ -339,7 +339,7 @@ else
     fail "copy_config should leave existing symlink untouched"
 fi
 
-# Test 3: Preserves existing regular file
+# test 3: preserves existing regular file
 echo "user customised" > "$TEST_DIR/existing.conf"
 copy_config "$TEST_DIR/source.conf" "$TEST_DIR/existing.conf"
 assert_equals "copy_config preserves existing file content" "user customised" "$(cat "$TEST_DIR/existing.conf")"
@@ -350,7 +350,7 @@ assert_equals "copy_config preserves existing file content" "user customised" "$
 
 section "Source Files Exist"
 
-# Verify key source files that create-symlinks references exist in the repo
+# verify key source files that create-symlinks references exist in the repo
 declare -a SOURCE_FILES=(
     "zsh/zprofile"
     "zsh/zshrc.template"
@@ -369,7 +369,7 @@ done
 
 section "Copy-on-Install Source Files Exist"
 
-# Verify source configs for copy-on-install pattern exist in the repo
+# verify source configs for copy-on-install pattern exist in the repo
 declare -a COPY_SOURCES=(
     "btop/btop.conf"
     "karabiner/karabiner.json"
@@ -395,21 +395,21 @@ section "Uninstall Script - Copy-on-Install Handling"
 UNINSTALL="$DOTFILES_DIR/scripts/install/uninstall.sh"
 uninstall_content=$(cat "$UNINSTALL")
 
-# Copy-on-install configs should NOT be in the SYMLINKS array
+# copy-on-install configs should NOT be in the SYMLINKS array
 if echo "$uninstall_content" | grep -A 20 '^SYMLINKS=(' | grep -q 'karabiner'; then
     fail "Uninstall SYMLINKS should not contain karabiner (now copy-on-install)"
 else
     pass "Uninstall SYMLINKS does not contain karabiner"
 fi
 
-# Hammerspoon uses layered pattern (init.lua symlinked, local.lua user-owned)
+# hammerspoon uses layered pattern (init.lua symlinked, local.lua user-owned)
 if echo "$uninstall_content" | grep -A 20 '^SYMLINKS=(' | grep -q 'hammerspoon'; then
     pass "Uninstall SYMLINKS contains hammerspoon init.lua (layered pattern)"
 else
     fail "Uninstall SYMLINKS should contain hammerspoon init.lua symlink"
 fi
 
-# Should have preservation warnings for user-owned configs
+# should have preservation warnings for user-owned configs
 for config in "btop" "karabiner" "hammerspoon" "lazygit" "lazydocker"; do
     if [[ "$uninstall_content" == *"personal config"*"$config"* ]] || [[ "$uninstall_content" == *"$config"*"personal config"* ]]; then
         pass "Uninstall preserves $config with warning"

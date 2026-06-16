@@ -3,20 +3,20 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Tmux Launcher List Provider
+# tmux launcher list provider
 # ══════════════════════════════════════════════════════════════
-# Lists available session launchers with descriptions and status.
-# Tab-delimited output; called from picker.sh to feed fzf.
+# lists available session launchers with descriptions and status.
+# tab-delimited output; called from picker.sh to feed fzf
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 
-# Argument parsing
+# argument parsing
 SHOW_LOGO=1
 for arg in "$@"; do
     case "$arg" in
@@ -24,7 +24,7 @@ for arg in "$@"; do
     esac
 done
 
-# Check whether a newline-delimited list contains an exact entry.
+# check whether a newline-delimited list contains an exact entry
 contains_line() {
     local needle="$1"
     local haystack="$2"
@@ -34,7 +34,7 @@ contains_line() {
     return 1
 }
 
-# Extract the first description tag from a launcher file.
+# extract the first description tag from a launcher file
 extract_description() {
     local file="$1"
     local line
@@ -51,10 +51,10 @@ extract_description() {
     return 1
 }
 
-# List launchers in fzf-compatible format, sorted by most recently used
+# list launchers in fzf-compatible format, sorted by most recently used
 list_launchers_for_fzf() {
-    # Header (consumed by fzf --header-lines)
-    # Prefix with tab so --with-nth=2 in picker.sh still displays the logo
+    # header (consumed by fzf --header-lines)
+    # prefix with tab so --with-nth=2 in picker.sh still displays the logo
     if (( SHOW_LOGO )); then
         local logo_line
         while IFS= read -r logo_line; do
@@ -62,11 +62,11 @@ list_launchers_for_fzf() {
         done < <(print_dotfiles_logo)
     fi
 
-    # Collect all launchers in memory.
-    # Format: name|description|source
+    # collect all launchers in memory
+    # format: name|description|source
     local all_launchers="" seen_names=""
 
-    # Helper: collect a single launcher entry
+    # helper: collect a single launcher entry
     collect_launcher() {
         local file="$1"
         local source="${2:-}"
@@ -74,16 +74,16 @@ list_launchers_for_fzf() {
 
         name=$(basename "$file")
 
-        # Extract @description tag
+        # extract @description tag
         description=$(extract_description "$file" || true)
         [[ -n "$description" ]] || return 0
 
-        # Store: name|description|source
+        # store: name|description|source
         all_launchers+="${name}|${description}|${source}"$'\n'
         seen_names+="${name}"$'\n'
     }
 
-    # User launchers first (they take priority on name collision)
+    # user launchers first (they take priority on name collision)
     if [[ -d "$USER_LAUNCHERS" ]]; then
         for file in "$USER_LAUNCHERS"/*; do
             [[ -f "$file" ]] || continue
@@ -93,7 +93,7 @@ list_launchers_for_fzf() {
         done
     fi
 
-    # Repo launchers (skip if overridden by user)
+    # repo launchers (skip if overridden by user)
     if [[ -d "$DOTFILES_LAUNCHERS" ]]; then
         for file in "$DOTFILES_LAUNCHERS"/*; do
             [[ -f "$file" ]] || continue
@@ -101,13 +101,13 @@ list_launchers_for_fzf() {
             [[ "$file" != *.template ]] || continue
             local name
             name=$(basename "$file")
-            # Skip if already seen (user override)
+            # skip if already seen (user override)
             contains_line "$name" "$seen_names" && continue
             collect_launcher "$file" "system"
         done
     fi
 
-    # Build MRU list from history (most recent first, deduplicated)
+    # build MRU list from history (most recent first, deduplicated)
     local mru_list="" history_lines=()
     if [[ -f "$LAUNCHER_HISTORY" ]] && [[ -s "$LAUNCHER_HISTORY" ]]; then
         local hist_line idx
@@ -123,13 +123,13 @@ list_launchers_for_fzf() {
         done
     fi
 
-    # Track which launchers have been output
+    # track which launchers have been output
     local outputted=""
 
-    # Output MRU launchers first
+    # output MRU launchers first
     while IFS= read -r hist_name; do
         [[ -n "$hist_name" ]] || continue
-        # Find this launcher in all_launchers
+        # find this launcher in all_launchers
         local entry="" scan_entry
         while IFS= read -r scan_entry; do
             [[ "$scan_entry" == "$hist_name|"* ]] || continue
@@ -138,7 +138,7 @@ list_launchers_for_fzf() {
         done <<< "$all_launchers"
         [[ -n "$entry" ]] || continue
 
-        # Parse entry: name|description|source
+        # parse entry: name|description|source
         local name desc source suffix=""
         IFS='|' read -r name desc source <<< "$entry"
 
@@ -152,16 +152,16 @@ list_launchers_for_fzf() {
         outputted+="${name}"$'\n'
     done <<< "$mru_list"
 
-    # Output remaining launchers alphabetically
+    # output remaining launchers alphabetically
     local remaining=""
     while IFS='|' read -r name desc source; do
         [[ -n "$name" ]] || continue
-        # Skip if already output
+        # skip if already output
         contains_line "$name" "$outputted" && continue
         remaining+="${name}|${desc}|${source}"$'\n'
     done <<< "$all_launchers"
 
-    # Sort and output remaining
+    # sort and output remaining
     while IFS='|' read -r name desc source; do
         [[ -n "$name" ]] || continue
 
@@ -176,7 +176,7 @@ list_launchers_for_fzf() {
     done < <(printf '%s' "$remaining" | sort)
 }
 
-# Main
+# main
 main() {
     list_launchers_for_fzf
 }

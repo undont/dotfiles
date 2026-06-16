@@ -1,4 +1,4 @@
--- Completion configuration (blink.cmp)
+-- completion configuration (blink.cmp)
 
 return {
   {
@@ -56,7 +56,7 @@ return {
         ['<C-e>'] = { 'hide', 'fallback' },
         ['<CR>'] = { 'select_and_accept', 'fallback' },
         -- Shift+Enter (Ghostty sends ESC+CR = M-CR) inserts a literal newline
-        -- without accepting the visible completion item.
+        -- without accepting the visible completion item
         ['<M-CR>'] = {
           function(cmp)
             if cmp.is_visible() then
@@ -159,14 +159,6 @@ return {
         completion = {
           menu = {
             auto_show = function()
-              local cmdtype = vim.fn.getcmdtype()
-              if cmdtype == '/' or cmdtype == '?' then
-                local bufname = vim.api.nvim_buf_get_name(0)
-                local ft = vim.bo.filetype
-                if bufname:match '^diffview://' or ft == 'DiffviewFiles' or ft == 'DiffviewFileHistory' then
-                  return false
-                end
-              end
               return false
             end,
           },

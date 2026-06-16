@@ -1,4 +1,4 @@
--- Bootstrap lazy.nvim plugin manager
+-- bootstrap lazy.nvim plugin manager
 
 local M = {}
 

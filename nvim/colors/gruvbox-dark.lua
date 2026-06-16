@@ -1,6 +1,6 @@
--- Gruvbox Dark colourscheme for Neovim
--- Matches the dotfiles gruvbox-dark.theme exactly
--- Custom implementation to match terminal colours precisely
+-- gruvbox dark colourscheme for nvim
+-- matches the dotfiles gruvbox-dark.theme exactly
+-- custom implementation to match terminal colours precisely
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -10,16 +10,16 @@ end
 vim.g.colors_name = 'gruvbox-dark'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/gruvbox-dark.theme)
+-- theme colours (matching themes/gruvbox-dark.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#282828',
   fg_primary = '#ebdbb2',
   bg_secondary = '#3c3836',
   fg_secondary = '#928374',
   fg_variable = '#d5c5a2',
 
-  -- Accents
+  -- accents
   purple = '#b16286',
   pink = '#d3869b',
   cyan = '#8ec07c',
@@ -27,12 +27,12 @@ local colors = {
   yellow = '#fabd2f',
   red = '#fb4934',
 
-  -- Additional shades for visual consistency
+  -- additional shades for visual consistency
   selection = '#504945',
   comment = '#928374',
   line_highlight = '#3c3836',
 
-  -- Bright variants from terminal palette
+  -- bright variants from terminal palette
   bright_red = '#fb4934',
   bright_green = '#b8bb26',
   bright_yellow = '#fabd2f',
@@ -40,7 +40,7 @@ local colors = {
   bright_purple = '#d3869b',
   bright_cyan = '#8ec07c',
 
-  -- Dark variants from terminal palette
+  -- dark variants from terminal palette
   dark_red = '#cc241d',
   dark_green = '#98971a',
   dark_yellow = '#d79921',
@@ -49,12 +49,12 @@ local colors = {
   dark_cyan = '#689d6a',
 }
 
--- Helper function to set highlight groups
+-- helper to set highlight groups
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
@@ -93,7 +93,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = colors.purple })
 hl('String', { fg = colors.green })
@@ -130,14 +130,14 @@ hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
 hl('Todo', { fg = colors.yellow, bg = colors.bg_secondary, bold = true })
 
--- Git signs
+-- git signs
 hl('GitSignsAdd', { fg = colors.green })
 hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
 
--- Diagnostics
+-- diagnostics
 hl('DiagnosticError', { fg = colors.red })
 hl('DiagnosticWarn', { fg = colors.yellow })
 hl('DiagnosticInfo', { fg = colors.cyan })

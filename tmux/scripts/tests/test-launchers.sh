@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Unit tests for launcher management scripts:
+# unit tests for launcher management scripts:
 #   - launchers/list.sh (output format, launcher discovery, dedup)
 #   - launchers/run.sh (get_base_session_name, is_fixed_session, metadata)
 #   - launchers/delete.sh (repo protection, path traversal guard)
@@ -76,35 +76,35 @@ section "launchers/list.sh: Output Format"
 
 output=$("$LIST_LAUNCHERS" 2>&1) || true
 
-# Should have dotfiles ASCII art logo in header
+# should have dotfiles ASCII art logo in header
 if [[ "$output" == *'__| | ___ | |_'* ]]; then
     pass "output includes dotfiles logo header"
 else
     fail "output should include dotfiles logo header"
 fi
 
-# Should list repo launchers (dev has @description)
+# should list repo launchers (dev has @description)
 if [[ "$output" == *"dev"* ]]; then
     pass "output lists dev launcher"
 else
     fail "output should list dev launcher (has @description tag)"
 fi
 
-# Should show description from @description tag
+# should show description from @description tag
 if [[ "$output" == *"Dev session"* ]]; then
     pass "output shows dev description"
 else
     fail "output should show dev @description text"
 fi
 
-# code launcher has no @description — should be hidden
+# code launcher has no @description, should be hidden
 if [[ "$output" != *"VS Code"* ]]; then
     pass "launchers without @description are hidden (code)"
 else
     fail "launchers without @description should be hidden"
 fi
 
-# Template should be excluded
+# template should be excluded
 if [[ "$output" != *"launcher.template"* ]]; then
     pass "template file is excluded from listing"
 else
@@ -113,7 +113,7 @@ fi
 
 section "launchers/list.sh: Launcher Dedup (user overrides repo)"
 
-# Create temporary user launcher dir with a duplicate name
+# create temporary user launcher dir with a duplicate name
 TEST_XDG=$(mktemp -d)
 TEST_USER_DIR="$TEST_XDG/dotfiles/launchers"
 mkdir -p "$TEST_USER_DIR"
@@ -125,7 +125,7 @@ TESTEOF
 chmod +x "$TEST_USER_DIR/dev"
 
 dedup_output=$(XDG_CONFIG_HOME="$TEST_XDG" "$LIST_LAUNCHERS" 2>&1) || true
-# Strip ANSI for counting
+# strip ANSI for counting
 plain_dedup=$(printf '%s' "$dedup_output" | sed 's/\x1b\[[0-9;]*m//g')
 dev_count=$(printf '%s' "$plain_dedup" | grep -c 'dev' || true)
 
@@ -135,7 +135,7 @@ else
     fail "dedup: dev should appear once, got $dev_count times"
 fi
 
-# User version description should win
+# user version description should win
 if [[ "$dedup_output" == *"User override"* ]]; then
     pass "dedup: user launcher description takes priority"
 else
@@ -190,24 +190,24 @@ fi
 
 section "launchers/run.sh: get_base_session_name() Regex Parsing"
 
-# Source launchers/run.sh functions by extracting and testing them
-# We can't source the whole file (it has side effects), so test via grep/pattern
+# source launchers/run.sh functions by extracting and testing them
+# we can't source the whole file (it has side effects), so test via grep/pattern
 run_content=$(cat "$RUN_LAUNCHER")
 
-# Verify function exists
+# verify function exists
 if [[ "$run_content" == *"get_base_session_name()"* ]]; then
     pass "get_base_session_name function exists"
 else
     fail "get_base_session_name function should exist"
 fi
 
-# Test the regex patterns by creating a mini test harness
+# test the regex patterns by creating a mini test harness
 test_base_session() {
     local input="$1"
     local expected="$2"
     local desc="$3"
 
-    # Replicate the function's logic
+    # replicate the function's logic
     local val="$input"
     local result
     if [[ "$val" =~ :-([^}]+)\} ]]; then
@@ -224,13 +224,13 @@ test_base_session() {
     fi
 }
 
-# Plain session name
+# plain session name
 test_base_session "myproject" "myproject" "plain value 'myproject'"
 
 # ${SESSION_NAME:-default} pattern
 test_base_session '${SESSION_NAME:-acme}' "acme" '${SESSION_NAME:-acme} extracts default'
 
-# Complex default with dashes
+# complex default with dashes
 test_base_session '${SESSION_NAME:-my-app}' "my-app" '${SESSION_NAME:-my-app} preserves dashes'
 
 section "launchers/run.sh: is_fixed_session() Detection"
@@ -242,14 +242,14 @@ else
     fail "is_fixed_session function should exist"
 fi
 
-# dev has no SESSION= line — should be detected as parameterised
+# dev has no SESSION= line, should be detected as parameterised
 if grep -q '^SESSION=' "$DOTFILES_ROOT/launchers/dev"; then
     fail "dev should NOT have a SESSION= line (it's parameterised)"
 else
     pass "dev correctly has no SESSION= line (parameterised launcher)"
 fi
 
-# launcher.template has SESSION= — should be detected as fixed
+# launcher.template has SESSION=, should be detected as fixed
 if grep -q '^SESSION=' "$DOTFILES_ROOT/launchers/launcher.template"; then
     pass "launcher.template has SESSION= line (fixed launcher)"
 else
@@ -258,14 +258,14 @@ fi
 
 section "launchers/run.sh: Metadata Extraction"
 
-# Verify @description extraction pattern
+# verify @description extraction pattern
 if [[ "$run_content" == *'# @description:'* ]]; then
     pass "extracts @description metadata"
 else
     fail "should extract @description metadata"
 fi
 
-# Verify @instance extraction pattern
+# verify @instance extraction pattern
 if [[ "$run_content" == *'# @instance:'* ]]; then
     pass "extracts @instance metadata"
 else
@@ -274,7 +274,7 @@ fi
 
 section "launchers/run.sh: Input Sanitisation"
 
-# Check that fzf become() commands sanitise user input
+# check that fzf become() commands sanitise user input
 if [[ "$run_content" == *"tr -c '[:alnum:]_-' '-'"* ]]; then
     pass "sanitises suffix input in become() command (dots excluded)"
 else
@@ -343,7 +343,7 @@ else
     fail "should use basename to prevent path traversal"
 fi
 
-# Check for dot/dotdot rejection
+# check for dot/dotdot rejection
 if [[ "$del_content" == *'".."'* ]] || [[ "$del_content" == *'"."'* ]]; then
     pass "rejects . and .. as launcher names"
 else
@@ -409,35 +409,35 @@ else
     fail "should call sanitise_launcher_name from shared library"
 fi
 
-# Should sanitise special characters
+# should sanitise special characters
 if [[ "$common_lib_content" == *"tr -c '[:alnum:]_.-' '-'"* ]] || [[ "$common_lib_content" == *"tr -c '[:alnum:]_-' '-'"* ]]; then
     pass "sanitises special characters in launcher names"
 else
     fail "should sanitise special characters in launcher names"
 fi
 
-# Should lowercase names
+# should lowercase names
 if [[ "$common_lib_content" == *"tr '[:upper:]' '[:lower:]'"* ]]; then
     pass "lowercases launcher names"
 else
     fail "should lowercase launcher names"
 fi
 
-# Should strip leading dots/dashes
+# should strip leading dots/dashes
 if [[ "$common_lib_content" == *'strip leading dots/dashes'* ]] || [[ "$common_lib_content" == *'%%[[:alnum:]_]'* ]]; then
     pass "strips leading dots/dashes from names"
 else
     fail "should strip leading dots/dashes from names"
 fi
 
-# Should enforce length limit
+# should enforce length limit
 if [[ "$common_lib_content" == *':0:64'* ]] || [[ "$common_lib_content" == *'{name:0:64}'* ]]; then
     pass "enforces 64-character name length limit"
 else
     fail "should enforce 64-character name length limit"
 fi
 
-# Should block shell reserved words
+# should block shell reserved words
 if [[ "$common_lib_content" == *"test|cd|ls"* ]]; then
     pass "blocks shell reserved words as launcher names"
 else
@@ -462,10 +462,10 @@ fi
 
 section "launchers/new.sh: Tmux Exact-Match Session Targets"
 
-# Regression guard: the wizard template must emit `=$SESSION` for tmux
-# session targets. Bare `"$SESSION"` triggers tmux's prefix-matching,
+# regression guard: the wizard template must emit `=$SESSION` for tmux
+# session targets. bare `"$SESSION"` triggers tmux's prefix-matching,
 # so launching "foo-15" would silently re-attach to a running "foo-1533"
-# instead of creating a new session.
+# instead of creating a new session
 if [[ "$nl_content" == *'tmux has-session -t "=$SESSION"'* ]]; then
     pass "generated has-session uses exact-match (=\$SESSION)"
 else
@@ -484,7 +484,7 @@ else
     fail "generated attach-session should use =\$SESSION (prefix-match bug)"
 fi
 
-# Same guard for the shared `dev` launcher (uses lowercase $session)
+# same guard for the shared `dev` launcher (uses lowercase $session)
 dev_launcher="$DOTFILES_ROOT/launchers/dev"
 if [[ -f "$dev_launcher" ]]; then
     dev_content=$(cat "$dev_launcher")
@@ -541,11 +541,11 @@ section "launchers/list.sh: Tab-Delimited Output Format"
 
 list_output=$("$LIST_LAUNCHERS" 2>&1) || true
 
-# Strip header lines (7 logo lines), then check data lines
+# strip header lines (7 logo lines), then check data lines
 data_lines=$(printf '%s\n' "$list_output" | tail -n +8)
 
 if [[ -n "$data_lines" ]]; then
-    # Every data line should contain a tab separator
+    # every data line should contain a tab separator
     bad_lines=0
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
@@ -560,7 +560,7 @@ if [[ -n "$data_lines" ]]; then
         fail "$bad_lines data line(s) missing tab delimiter"
     fi
 
-    # Field 1 (before tab) should be the launcher name, field 2 should also contain it
+    # field 1 (before tab) should be the launcher name, field 2 should also contain it
     first_line=$(printf '%s\n' "$data_lines" | head -1)
     field1=$(printf '%s' "$first_line" | cut -d$'\t' -f1)
     field2=$(printf '%s' "$first_line" | cut -d$'\t' -f2-)
@@ -574,7 +574,7 @@ else
     fail "no data lines found in list output"
 fi
 
-# Header lines should also have tab prefix (for --with-nth=2 compatibility)
+# header lines should also have tab prefix (for --with-nth=2 compatibility)
 header_lines=$(printf '%s\n' "$list_output" | head -7)
 header_has_tabs=true
 while IFS= read -r line; do
@@ -687,7 +687,7 @@ fi
 
 section "launchers/duplicate.sh: Functional Test"
 
-# Create a temporary launcher to duplicate
+# create a temporary launcher to duplicate
 TEST_XDG=$(mktemp -d)
 TEST_USER_DIR="$TEST_XDG/dotfiles/launchers"
 mkdir -p "$TEST_USER_DIR"
@@ -698,7 +698,7 @@ echo "test"
 TESTEOF
 chmod +x "$TEST_USER_DIR/test-dup"
 
-# Duplicate it
+# duplicate it
 copy_name=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "test-dup" 2>/dev/null) || true
 
 if [[ "$copy_name" == "test-dup-copy" ]]; then
@@ -719,14 +719,14 @@ else
     fail "copy file should be executable"
 fi
 
-# Check description was updated
+# check description was updated
 if grep -q "Copy of test-dup" "$TEST_USER_DIR/test-dup-copy" 2>/dev/null; then
     pass "copy has updated @description"
 else
     fail "copy should have '@description: Copy of test-dup'"
 fi
 
-# Duplicate again — should get -copy-2
+# duplicate again, should get -copy-2
 copy_name2=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "test-dup" 2>/dev/null) || true
 
 if [[ "$copy_name2" == "test-dup-copy-2" ]]; then
@@ -735,7 +735,7 @@ else
     fail "second copy should be 'test-dup-copy-2', got '$copy_name2'"
 fi
 
-# Duplicate the copy itself — should still base on original name
+# duplicate the copy itself, should still base on original name
 copy_name3=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "test-dup-copy" 2>/dev/null) || true
 
 if [[ "$copy_name3" == "test-dup-copy-3" ]]; then
@@ -744,7 +744,7 @@ else
     fail "duplicating a copy should produce 'test-dup-copy-3', got '$copy_name3'"
 fi
 
-# Empty name should exit cleanly
+# empty name should exit cleanly
 empty_result=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "" 2>/dev/null; echo "exit:$?") || true
 if [[ "$empty_result" == *"exit:0"* ]]; then
     pass "empty name exits cleanly"

@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Behavioural tests for the dotfiles CLI.
+# behavioural tests for the dotfiles CLI
 #
-# These tests assert the CLI's externally observable behaviour: exit codes,
-# stdout/stderr substrings, side effects on a sandbox HOME. They deliberately
+# these tests assert the CLI's externally observable behaviour: exit codes,
+# stdout/stderr substrings, side effects on a sandbox HOME. they deliberately
 # avoid grepping for internal function names so refactors that preserve
-# behaviour stay green.
+# behaviour stay green
 #
-# Other concerns (rollback lib, uninstall, create-symlinks, themes, prereqs,
-# launchers) live in their own test-*.sh files in this directory.
+# other concerns (rollback lib, uninstall, create-symlinks, themes, prereqs,
+# launchers) live in their own test-*.sh files in this directory
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
@@ -22,7 +22,7 @@ echo "==========================================="
 echo "Dotfiles CLI Behavioural Tests"
 echo "==========================================="
 
-# ─── 1. Existence and executable ──────────────────────────────────────
+# ─── 1. existence and executable ──────────────────────────────────────
 
 section "CLI script existence"
 
@@ -59,7 +59,7 @@ else
     skip "shellcheck not installed"
 fi
 
-# ─── 3. Help system ────────────────────────────────────────────────────
+# ─── 3. help system ────────────────────────────────────────────────────
 
 section "Main help"
 
@@ -134,9 +134,9 @@ for cmd in update status set links diff sync notes version aliases health edit c
     fi
 done
 
-# Unknown topic falls back to main help with an error
+# unknown topic falls back to main help with an error
 if out=$("$DOTFILES_CLI" help no_such_topic_xyz 2>&1); then
-    : # exit code 1 expected — `if` runs negated branch
+    : # exit code 1 expected; `if` runs negated branch
 fi
 if [[ "$out" == *"No help available"* ]]; then
     pass "help <unknown> reports a clear error"
@@ -144,7 +144,7 @@ else
     fail "help <unknown> should print 'No help available'"
 fi
 
-# ─── 4. Per-command behaviour (read-only, no sandbox needed) ──────────
+# ─── 4. per-command behaviour (read-only, no sandbox needed) ──────────
 
 section "cmd_cd"
 
@@ -155,7 +155,7 @@ else
     fail "cd outputs an invalid directory: $cd_out"
 fi
 
-# Exactly one line of output (no trailing extra)
+# exactly one line of output (no trailing extra)
 cd_lines=$(printf '%s' "$cd_out" | wc -l | tr -d ' ')
 if [[ "$cd_lines" == "0" ]]; then
     pass "cd output is single-line (no trailing newline noise)"
@@ -176,7 +176,7 @@ for label in "Version:" "Released:" "Preset:" "Branch:" "Path:"; do
 done
 
 # "Updated:" only renders once install.sh has stamped a last-update time, so it
-# is environment-dependent (absent on a fresh clone / CI). Assert conditionally.
+# is environment-dependent (absent on a fresh clone / CI). assert conditionally
 update_stamp="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/.state/last-update"
 if [[ -f "$update_stamp" ]]; then
     if [[ "$ver_out" == *"Updated:"* ]]; then
@@ -212,14 +212,14 @@ if "$DOTFILES_CLI" diff >/dev/null 2>&1; then
     pass "diff exits 0 on a healthy install"
 else
     # diff exits non-zero only if there are real diffs and `set -e` propagated;
-    # the command itself uses `|| true` internally so this should not happen.
+    # the command itself uses `|| true` internally so this should not happen
     fail "diff exited non-zero unexpectedly"
 fi
 
 section "cmd_aliases — real source"
 
-# Run against the real DOTFILES_DIR (no sandbox) — a smoke check that the
-# parser produces a coherent cheatsheet for the actual zsh/dotfiles.zsh.
+# run against the real DOTFILES_DIR (no sandbox); a smoke check that the
+# parser produces a coherent cheatsheet for the actual zsh/dotfiles.zsh
 aliases_out=$("$DOTFILES_CLI" aliases 2>&1)
 
 if [[ "$aliases_out" == *"SHELL REFERENCE"* ]]; then
@@ -236,7 +236,7 @@ for sect in NAVIGATION FILES GIT TMUX "DOTFILES CLI"; do
     fi
 done
 
-# A sample of well-known shortcuts must always be present
+# a sample of well-known shortcuts must always be present
 for entry in gs gd mkcd brewup; do
     if [[ "$aliases_out" == *"$entry"* ]]; then
         pass "aliases includes '$entry'"
@@ -254,7 +254,7 @@ else
     fail "status exits non-zero"
 fi
 
-# ─── 5. Flag parsing contract ──────────────────────────────────────────
+# ─── 5. flag parsing contract ──────────────────────────────────────────
 
 section "Flag parsing — unknown flag exits 2"
 
@@ -299,14 +299,14 @@ fi
 
 section "Flag parsing — sync --force / -f"
 
-# Just verifies parsing doesn't error; sync is read-only without --force
+# just verifies parsing doesn't error; sync is read-only without --force
 if "$DOTFILES_CLI" sync >/dev/null 2>&1; then
     pass "sync (no flags) parses and runs"
 else
     fail "sync (no flags) failed unexpectedly"
 fi
 
-# ─── 6. Side effects in a sandbox ──────────────────────────────────────
+# ─── 6. side effects in a sandbox ──────────────────────────────────────
 
 section "cmd_set side effects (sandboxed)"
 
@@ -331,7 +331,7 @@ else
     fail "set dev wrote an unexpected path"
 fi
 
-# Setting projects too should also write PROJECT_DIRS automatically
+# setting projects too should also write PROJECT_DIRS automatically
 mkdir -p "$TEST_HOME/playground"
 "$TEST_DOTFILES_DIR/scripts/dotfiles" set projects "$TEST_HOME/playground" >/dev/null
 
@@ -347,10 +347,10 @@ else
     fail "set should auto-derive PROJECT_DIRS"
 fi
 
-# Customised PROJECT_DIRS (extra roots appended) is preserved across re-set
+# customised PROJECT_DIRS (extra roots appended) is preserved across re-set
 # shellcheck disable=SC2016
 custom_line='export PROJECT_DIRS="$DEV_ROOT:$PROJECTS_ROOT:$HOME/work"'
-# Use awk to replace the auto-generated line with the customised one
+# use awk to replace the auto-generated line with the customised one
 awk -v new="$custom_line" '/^export PROJECT_DIRS=/ {print new; next} {print}' "$HOME/.zshrc" > "$HOME/.zshrc.tmp" \
     && mv "$HOME/.zshrc.tmp" "$HOME/.zshrc"
 
@@ -363,7 +363,7 @@ else
     fail "set should preserve customised PROJECT_DIRS when both refs are present"
 fi
 
-# A stale PROJECT_DIRS that doesn't reference both vars should still be rewritten
+# a stale PROJECT_DIRS that doesn't reference both vars should still be rewritten
 cat > "$HOME/.zshrc" << 'EOF'
 # YOUR PERSONAL CONFIGURATION
 export DEV_ROOT="$HOME/src"
@@ -380,7 +380,7 @@ else
     fail "set should rewrite stale PROJECT_DIRS that does not reference both vars"
 fi
 
-# Missing argument → exit 2 with hint
+# missing argument → exit 2 with hint
 if "$TEST_DOTFILES_DIR/scripts/dotfiles" set 2>/dev/null; then
     fail "set with no arg should fail"
 else
@@ -394,12 +394,12 @@ fi
 
 cleanup_sandbox
 
-# ─── 7. Theme command delegation (Plan 1 fix) ──────────────────────────
+# ─── 7. theme command delegation (Plan 1 fix) ──────────────────────────
 
 section "Theme delegation — child help renders parent name"
 
 # Plan 1 added DOTFILES_INVOKED_AS so child scripts render the canonical
-# user-facing command name in their help text instead of the raw basename.
+# user-facing command name in their help text instead of the raw basename
 out=$("$DOTFILES_CLI" theme delete help 2>&1)
 if [[ "$out" == *"dotfiles theme delete"* ]]; then
     pass "theme delete help shows canonical command name"
@@ -420,7 +420,7 @@ else
     fail "theme generate help should show 'dotfiles theme generate'"
 fi
 
-# Sanity: theme list works
+# sanity: theme list works
 if "$DOTFILES_CLI" theme list >/dev/null 2>&1; then
     pass "theme list runs cleanly"
 else
@@ -447,7 +447,7 @@ else
     fi
 fi
 
-# Bare 'theme <name>' is no longer accepted (must use 'theme switch <name>')
+# bare 'theme <name>' is no longer accepted (must use 'theme switch <name>')
 if "$DOTFILES_CLI" theme nonexistent-theme-bogus >/dev/null 2>&1; then
     fail "bare 'theme <name>' should be rejected"
 else
@@ -459,9 +459,9 @@ else
     fi
 fi
 
-# ─── 8. Library API (rollback lib) ─────────────────────────────────────
-# Functional behaviour for the rollback library lives in test-rollback-lib.sh;
-# here we just assert the public API is present and callable.
+# ─── 8. library API (rollback lib) ─────────────────────────────────────
+# functional behaviour for the rollback library lives in test-rollback-lib.sh;
+# here we just assert the public API is present and callable
 
 section "Rollback library — public API"
 
@@ -492,13 +492,13 @@ else
     skip "rollback library not found"
 fi
 
-# ─── 9. Cheatsheet parser tests (Plan 2) ───────────────────────────────
+# ─── 9. cheatsheet parser tests (Plan 2) ───────────────────────────────
 
 section "Cheatsheet — parser behaviour (synthetic source)"
 
 setup_cli_sandbox
 
-# Synthesise a minimal dotfiles.zsh that exercises every parse rule.
+# synthesise a minimal dotfiles.zsh that exercises every parse rule
 cat > "$TEST_DOTFILES_DIR/zsh/dotfiles.zsh" << 'EOF'
 # @section: Navigation
 alias c="clear"                          # clear screen
@@ -517,7 +517,7 @@ EOF
 
 aliases_out=$("$TEST_DOTFILES_DIR/scripts/dotfiles" aliases 2>&1)
 
-# Section detection
+# section detection
 if [[ "$aliases_out" == *"NAVIGATION"* ]]; then
     pass "section 'NAVIGATION' rendered (uppercased)"
 else
@@ -529,7 +529,7 @@ else
     fail "missing section GIT"
 fi
 
-# Alias with description renders
+# alias with description renders
 if [[ "$aliases_out" == *"clear screen"* ]]; then
     pass "alias-with-description rendered"
 else
@@ -541,28 +541,28 @@ else
     fail "alias 'gs' should render"
 fi
 
-# Alias without description is silently skipped
+# alias without description is silently skipped
 if [[ "$aliases_out" != *"undescribed"* ]]; then
     pass "alias without description is skipped"
 else
     fail "alias without description leaked into output"
 fi
 
-# Function with @cheat directive
+# function with @cheat directive
 if [[ "$aliases_out" == *"mkcd"* ]] && [[ "$aliases_out" == *"mkdir + cd into"* ]]; then
     pass "function with @cheat rendered"
 else
     fail "function 'mkcd' should render with description"
 fi
 
-# Free-form @cheat: <name> | <description>
+# free-form @cheat: <name> | <description>
 if [[ "$aliases_out" == *"Opt+A"* ]] && [[ "$aliases_out" == *"cd from history"* ]]; then
     pass "free-form @cheat rendered"
 else
     fail "Opt+A free-form @cheat should render"
 fi
 
-# Missing source file → clear error and exit 1
+# missing source file → clear error and exit 1
 rm -f "$TEST_DOTFILES_DIR/zsh/dotfiles.zsh"
 if out=$("$TEST_DOTFILES_DIR/scripts/dotfiles" aliases 2>&1); then
     fail "aliases should fail when source missing"
@@ -578,17 +578,17 @@ cleanup_sandbox
 
 section "Cheatsheet — intentional omissions stay omitted"
 
-# Aliases that live in zsh/dotfiles.zsh but are deliberately kept out of
-# `dotfiles aliases`. Reasons vary: platform-conditional twins of an already
+# aliases that live in zsh/dotfiles.zsh but are deliberately kept out of
+# `dotfiles aliases`. reasons vary: platform-conditional twins of an already
 # described alias, internal implementations behind a shorter public alias,
-# or thin wrappers that just prepend `cl &&`.
+# or thin wrappers that just prepend `cl &&`
 #
-# If you remove an entry, ensure the alias gains a description so it renders.
-# If you add one, leave a brief note explaining why it's hidden.
+# if you remove an entry, ensure the alias gains a description so it renders.
+# if you add one, leave a brief note explaining why it's hidden
 omitted_aliases=(
     "demo-rec"      # asciinema recording (developer-only)
-    "pbcopy"        # Linux only — macOS has it natively
-    "pbpaste"       # Linux only — macOS has it natively
+    "pbcopy"        # Linux only; macOS has it natively
+    "pbpaste"       # Linux only; macOS has it natively
     "alerts-clear"  # implementation behind the user-facing 'ac'
     "oc"            # opencode shorthand; opencode is already listed
     "ralph"         # cl && ralph wrapper
@@ -596,18 +596,18 @@ omitted_aliases=(
     "btop"          # cl && btop wrapper
 )
 
-# Run with an empty HOME so the user's real ~/.zshrc can't leak aliases
-# into the rendered output.
+# run with an empty HOME so the user's real ~/.zshrc can't leak aliases
+# into the rendered output
 isolated_home=$(mktemp -d)
 aliases_out=$(HOME="$isolated_home" "$DOTFILES_CLI" aliases 2>&1)
 rm -rf "$isolated_home"
 
-# Strip ANSI escapes so our column-anchored parsing sees plain text.
+# strip ANSI escapes so our column-anchored parsing sees plain text
 stripped=$(printf '%s\n' "$aliases_out" | sed -E $'s/\x1b\\[[0-9;]*m//g')
 
-# Pull the leading word from each rendered column. Cheatsheet rows start with
+# pull the leading word from each rendered column. cheatsheet rows start with
 # two spaces and are separated by " │ "; section headings have no leading
-# whitespace, so the regex excludes them.
+# whitespace, so the regex excludes them
 rendered_names=$(printf '%s\n' "$stripped" | awk -F'│' '
     /^[[:space:]]+[a-zA-Z]/ {
         for (i = 1; i <= NF; i++) {
@@ -627,7 +627,7 @@ for name in "${omitted_aliases[@]}"; do
     fi
 done
 
-# ─── Summary ───────────────────────────────────────────────────────────
+# ─── summary ───────────────────────────────────────────────────────────
 
 print_summary
 [[ $FAIL -gt 0 ]] && exit 1

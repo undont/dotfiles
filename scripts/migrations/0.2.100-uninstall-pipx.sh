@@ -1,18 +1,18 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Migration: replace pipx with uv.
+# migration: replace pipx with uv
 #
-# The Brewfile now ships `uv` instead of `pipx`. `uv tool install <name>`
+# the Brewfile now ships `uv` instead of `pipx`. `uv tool install <name>`
 # and `uvx <name>` are drop-in replacements for `pipx install` / `pipx run`,
-# so the pipx formula and its managed venvs are no longer needed.
+# so the pipx formula and its managed venvs are no longer needed
 #
-# We can't silently re-home pipx-managed apps under uv — uv keeps its own
+# we can't silently re-home pipx-managed apps under uv; uv keeps its own
 # venv tree under `~/.local/share/uv/tools/` and the user may not want every
-# pipx app reinstalled. Instead we list what was managed by pipx, snapshot
+# pipx app reinstalled. instead we list what was managed by pipx, snapshot
 # it to disk so the user has a record, uninstall the apps + their venvs,
-# then drop the pipx formula. Re-install anything you still want with
-# `uv tool install <name>`.
+# then drop the pipx formula. re-install anything you still want with
+# `uv tool install <name>`
 
 if ! command -v brew >/dev/null 2>&1; then
     echo "    brew not found — skipping pipx removal"
@@ -58,8 +58,8 @@ fi
 echo "    Uninstalling pipx formula..."
 brew uninstall --formula pipx
 
-# Append a notice so the end-of-update summary surfaces this — the mid-run
-# output above will have scrolled past by the time the installer finishes.
+# append a notice so the end-of-update summary surfaces this; the mid-run
+# output above will have scrolled past by the time the installer finishes
 {
     echo "pipx has been removed; uv replaces it."
     if [[ -n "$managed" ]]; then

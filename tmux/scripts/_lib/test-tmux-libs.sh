@@ -1,24 +1,24 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Test suite for tmux script libraries
-# Usage: ./tmux/scripts/_lib/test-tmux-libs.sh [--verbose]
+# test suite for tmux script libraries
+# usage: ./tmux/scripts/_lib/test-tmux-libs.sh [--verbose]
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 PASS=0
 FAIL=0
 # shellcheck disable=SC2034
-VERBOSE="${1:-}"  # Reserved for future verbose output
+VERBOSE="${1:-}"  # reserved for future verbose output
 
-# Source test helpers for isolated tmux server support
+# source test helpers for isolated tmux server support
 # shellcheck source=tmux/scripts/tests/_test-helpers.sh
 source "$SCRIPT_DIR/../tests/_test-helpers.sh"
 
-# Source common.sh to get the tmux() wrapper that respects TMUX_TEST_SOCKET
+# source common.sh to get the tmux() wrapper that respects TMUX_TEST_SOCKET
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/common.sh"
 
-# Temp dir for isolated alerts file (set up before alerts.sh is sourced)
+# temp dir for isolated alerts file (set up before alerts.sh is sourced)
 _TEST_ALERTS_DIR="$(mktemp -d)"
 export ALERTS_FILE="$_TEST_ALERTS_DIR/alerts"
 touch "$ALERTS_FILE"
@@ -36,13 +36,13 @@ section() {
     echo "─────────────────────────────────────────"
 }
 
-# Capture stderr from a command (discard stdout, return stderr)
+# capture stderr from a command (discard stdout, return stderr)
 # shellcheck disable=SC2069
 capture_stderr() {
     "$@" 2>&1 1>/dev/null
 }
 
-# Assert that a command succeeds
+# assert that a command succeeds
 assert_success() {
     local desc="$1"
     shift
@@ -53,7 +53,7 @@ assert_success() {
     fi
 }
 
-# Assert that a command fails
+# assert that a command fails
 assert_failure() {
     local desc="$1"
     shift
@@ -64,7 +64,7 @@ assert_failure() {
     fi
 }
 
-# Assert output equals expected value
+# assert output equals expected value
 assert_equals() {
     local desc="$1"
     local expected="$2"
@@ -76,7 +76,7 @@ assert_equals() {
     fi
 }
 
-# Assert output matches pattern
+# assert output matches pattern
 assert_matches() {
     local desc="$1"
     local pattern="$2"
@@ -88,7 +88,7 @@ assert_matches() {
     fi
 }
 
-# Assert file exists
+# assert file exists
 assert_file_exists() {
     local desc="$1"
     local file="$2"
@@ -99,7 +99,7 @@ assert_file_exists() {
     fi
 }
 
-# Assert directory exists
+# assert directory exists
 assert_dir_exists() {
     local desc="$1"
     local dir="$2"
@@ -110,7 +110,7 @@ assert_dir_exists() {
     fi
 }
 
-# Assert file has specific permissions
+# assert file has specific permissions
 assert_permissions() {
     local desc="$1"
     local path="$2"
@@ -126,7 +126,7 @@ assert_permissions() {
 }
 
 # ─────────────────────────────────────────
-# Test common.sh
+# test common.sh
 # ─────────────────────────────────────────
 section "Testing common.sh"
 source "$SCRIPT_DIR/common.sh"
@@ -174,7 +174,7 @@ assert_failure "  rejects '-1' (negative)" validate_window_index "-1"
 assert_failure "  rejects '1.5' (decimal)" validate_window_index "1.5"
 assert_failure "  rejects '1a' (mixed)" validate_window_index "1a"
 
-# Test output functions (capture output)
+# test output functions (capture output)
 echo ""
 echo "  output functions:"
 
@@ -207,7 +207,7 @@ else
 fi
 
 # ─────────────────────────────────────────
-# Test paths.sh
+# test paths.sh
 # ─────────────────────────────────────────
 section "Testing paths.sh"
 source "$SCRIPT_DIR/paths.sh"
@@ -218,7 +218,7 @@ assert_matches "  returns correct path format" "^${HOME}/.cache/tmux/undo$" "$UN
 assert_dir_exists "  creates directory" "$UNDO_DIR"
 assert_permissions "  has correct permissions (700)" "$UNDO_DIR" "700"
 
-# Test idempotency - calling again shouldn't fail
+# test idempotency, calling again shouldn't fail
 UNDO_DIR2=$(get_undo_base_dir)
 assert_equals "  is idempotent" "$UNDO_DIR" "$UNDO_DIR2"
 
@@ -338,19 +338,19 @@ assert_equals "  returns 'pane' after updating pane file" "pane" "$MOST_RECENT"
 rm -f "$UNDO_DIR/pane" "$UNDO_DIR/window" "$UNDO_DIR/session"
 
 # ─────────────────────────────────────────
-# Test session.sh
+# test session.sh
 # ─────────────────────────────────────────
 section "Testing session.sh"
 source "$SCRIPT_DIR/session.sh"
 
-# Spin up an isolated server for session and alerts tests
+# spin up an isolated server for session and alerts tests
 setup_test_server
-# Create a bootstrap session so the server has something to query
+# create a bootstrap session so the server has something to query
 test_tmux new-session -d -s lib-test-main -n main 2>/dev/null || true
 
 # session.sh functions that query the *current* tmux context require
 # being attached; skip those when not in a real tmux session but run
-# the server-querying tests against the isolated server regardless.
+# the server-querying tests against the isolated server regardless
 if [[ -n "${TMUX:-}" ]]; then
     echo "  (running inside tmux - full tests)"
 
@@ -377,7 +377,7 @@ if [[ -n "${TMUX:-}" ]]; then
         fail "  get_window_layout returned empty"
     fi
 
-    # Test find_other_session (may or may not have other sessions)
+    # test find_other_session (may or may not have other sessions)
     OTHER=$(find_other_session "$SESSION")
     if [[ -n "$OTHER" ]]; then
         pass "  find_other_session found another session: $OTHER"
@@ -395,30 +395,30 @@ else
 fi
 
 # ─────────────────────────────────────────
-# Test alerts.sh
+# test alerts.sh
 # ─────────────────────────────────────────
 section "Testing alerts.sh"
 source "$SCRIPT_DIR/alerts.sh"
 
-# Run against the isolated test server (set up above in session.sh section).
+# run against the isolated test server (set up above in session.sh section)
 # TMUX_TEST_SOCKET is exported, so all bare `tmux` calls are intercepted by
-# the wrapper in common.sh and routed to the isolated server.
+# the wrapper in common.sh and routed to the isolated server
 echo "  (using isolated test server)"
 
-# Clear the isolated alerts file for a clean slate
+# clear the isolated alerts file for a clean slate
 : > "$ALERTS_FILE"
 
-# Use the bootstrap session created on the isolated server
+# use the bootstrap session created on the isolated server
 CURRENT_SESSION="lib-test-main"
 CURRENT_WINDOW="main"
 CURRENT_WINDOW_ID=$(tmux list-windows -t "$CURRENT_SESSION" -F '#{window_id}' 2>/dev/null | head -1)
 CURRENT_PANE_ID=$(tmux list-panes -t "$CURRENT_SESSION:$CURRENT_WINDOW" -F '#{pane_id}' 2>/dev/null | head -1)
 
-# Test set_window_alert
+# test set_window_alert
 echo ""
 echo "  set_window_alert:"
 # set_window_alert uses TMUX_PANE to call display-message; point it at the
-# isolated server's pane so it can resolve the session:window context.
+# isolated server's pane so it can resolve the session:window context
 TMUX_PANE="$CURRENT_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
 if grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude$" "$ALERTS_FILE" 2>/dev/null; then
     pass "    creates alert file entry"
@@ -433,7 +433,7 @@ else
     fail "    should set @claude_alert option to 1"
 fi
 
-# Test clear_window_alerts
+# test clear_window_alerts
 echo ""
 echo "  clear_window_alerts:"
 clear_window_alerts "$CURRENT_SESSION" "$CURRENT_WINDOW" "$CURRENT_WINDOW_ID"
@@ -451,16 +451,16 @@ else
     fail "    should unset @claude_alert option"
 fi
 
-# Test concurrent clearing (locking mechanism)
+# test concurrent clearing (locking mechanism)
 echo ""
 echo "  clear_window_alerts locking:"
 
-# Create test alerts
+# create test alerts
 echo "${CURRENT_SESSION}:${CURRENT_WINDOW}:claude" > "$ALERTS_FILE"
 echo "${CURRENT_SESSION}:test-window-1:claude" >> "$ALERTS_FILE"
 echo "${CURRENT_SESSION}:test-window-2:claude" >> "$ALERTS_FILE"
 
-# Simulate concurrent clears (file operations only, no tmux ops since windows don't exist)
+# simulate concurrent clears (file operations only, no tmux ops since windows don't exist)
 (
     LOCK_DIR="${ALERTS_FILE}.lock"
     for _ in {1..10}; do
@@ -491,7 +491,7 @@ PID2=$!
 
 wait $PID1 $PID2
 
-# Check that file is in consistent state (only current window alert should remain)
+# check that file is in consistent state (only current window alert should remain)
 REMAINING=$(wc -l < "$ALERTS_FILE" 2>/dev/null | tr -d ' ' || echo "0")
 if [[ "$REMAINING" == "1" ]]; then
     pass "    handles concurrent clears without corruption"
@@ -499,11 +499,11 @@ else
     fail "    concurrent clears may have caused corruption (expected: 1, got: $REMAINING)"
 fi
 
-# Test cleanup_stale_alerts
+# test cleanup_stale_alerts
 echo ""
 echo "  cleanup_stale_alerts:"
 
-# Create alerts with mix of valid and invalid sessions/windows
+# create alerts with mix of valid and invalid sessions/windows
 echo "${CURRENT_SESSION}:${CURRENT_WINDOW}:claude" > "$ALERTS_FILE"
 echo "nonexistent-session:window:claude" >> "$ALERTS_FILE"
 echo "${CURRENT_SESSION}:nonexistent-window:claude" >> "$ALERTS_FILE"
@@ -531,10 +531,10 @@ else
 fi
 
 # ─────────────────────────────────────────
-# Colon-in-window-name handling (percent-encoding round-trip)
-# Regression: window names like "FOO:BAR" contain tmux's ':' which is
-# also the alerts-file field separator. They must be encoded on write and
-# decoded on read, otherwise clear.sh and friends reject or corrupt them.
+# colon-in-window-name handling (percent-encoding round-trip)
+# regression: window names like "FOO:BAR" contain tmux's ':' which is
+# also the alerts-file field separator. they must be encoded on write and
+# decoded on read, otherwise clear.sh and friends reject or corrupt them
 # ─────────────────────────────────────────
 echo ""
 echo "  colon-in-window encoding:"
@@ -554,15 +554,15 @@ else
     fail "    decode should round-trip the original name"
 fi
 
-# A literal '%' must survive the round-trip ('%' is encoded first).
+# a literal '%' must survive the round-trip ('%' is encoded first)
 if [[ "$(alerts_decode_window "$(alerts_encode_window 'a%3Ab:c')")" == 'a%3Ab:c' ]]; then
     pass "    round-trips a literal percent sequence"
 else
     fail "    literal '%' should round-trip"
 fi
 
-# End-to-end against the isolated server: create a colon-named window, set an
-# alert via its pane, and confirm the file stores the encoded form.
+# end-to-end against the isolated server: create a colon-named window, set an
+# alert via its pane, and confirm the file stores the encoded form
 : > "$ALERTS_FILE"
 tmux new-window -t "$CURRENT_SESSION" -n "$COLON_WIN" 2>/dev/null
 COLON_WIN_ID=$(tmux list-windows -t "$CURRENT_SESSION" -F '#{window_name}|#{window_id}' 2>/dev/null | grep -F "${COLON_WIN}|" | head -1 | cut -d'|' -f2)
@@ -582,7 +582,7 @@ else
     pass "    raw colon name is not written verbatim"
 fi
 
-# cleanup_stale_alerts must keep it (decode matches the real tmux window name).
+# cleanup_stale_alerts must keep it (decode matches the real tmux window name)
 cleanup_stale_alerts
 if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
     pass "    cleanup_stale_alerts preserves the colon-named window"
@@ -590,7 +590,7 @@ else
     fail "    cleanup_stale_alerts should preserve the colon-named window"
 fi
 
-# clear_window_alerts with the RAW colon name removes the encoded entry.
+# clear_window_alerts with the RAW colon name removes the encoded entry
 clear_window_alerts "$CURRENT_SESSION" "$COLON_WIN" "$COLON_WIN_ID"
 if grep -qF "${CURRENT_SESSION}:${ENC_WIN}:" "$ALERTS_FILE" 2>/dev/null; then
     fail "    clear_window_alerts should clear the encoded entry"
@@ -600,10 +600,10 @@ fi
 
 tmux kill-window -t "$COLON_WIN_ID" 2>/dev/null || true
 
-# Clean up isolated server (trap also handles this on exit)
+# clean up isolated server (trap also handles this on exit)
 cleanup_test_server
 
-# Test agent display functions (don't require tmux)
+# test agent display functions (don't require tmux)
 echo ""
 echo "  agent display functions:"
 
@@ -635,11 +635,11 @@ else
     fail "  get_agent_display should return 'icon|colour', got: $DISPLAY"
 fi
 
-# Test build_alert_icons
+# test build_alert_icons
 echo ""
 echo "  build_alert_icons:"
 
-# Basic: agent alert matched by session pattern
+# basic: agent alert matched by session pattern
 _BAI_CONTENT="mysession:mywindow:claude"
 _BAI_RESULT=$(build_alert_icons "$_BAI_CONTENT" "^mysession:")
 if [[ -n "$_BAI_RESULT" ]]; then
@@ -648,7 +648,7 @@ else
     fail "  should return icons for matching alert"
 fi
 
-# Pattern anchor: different session should not match
+# pattern anchor: different session should not match
 _BAI_RESULT2=$(build_alert_icons "$_BAI_CONTENT" "^other:")
 if [[ -z "$_BAI_RESULT2" ]]; then
     pass "  non-matching session pattern returns empty"
@@ -656,7 +656,7 @@ else
     fail "  non-matching pattern should return empty"
 fi
 
-# Dot in session name: 'v0.2.67' must NOT match 'v0X2X67'
+# dot in session name: 'v0.2.67' must NOT match 'v0X2X67'
 _BAI_DOT_CONTENT="v0X2X67:main:claude"
 _BAI_DOT_PAT="^v0\\.2\\.67:"
 _BAI_DOT_RESULT=$(build_alert_icons "$_BAI_DOT_CONTENT" "$_BAI_DOT_PAT")
@@ -666,7 +666,7 @@ else
     fail "  escaped dot should not match 'v0X2X67' (got: $_BAI_DOT_RESULT)"
 fi
 
-# Dot in session name: 'v0.2.67' DOES match with escaped pattern
+# dot in session name: 'v0.2.67' DOES match with escaped pattern
 _BAI_DOT_CONTENT2="v0.2.67:main:claude"
 _BAI_DOT_RESULT2=$(build_alert_icons "$_BAI_DOT_CONTENT2" "$_BAI_DOT_PAT")
 if [[ -n "$_BAI_DOT_RESULT2" ]]; then
@@ -675,8 +675,8 @@ else
     pass "  escaped dot pattern does not match dotted session name"
 fi
 
-# Unescaped dot regression no longer applies because build_alert_icons now
-# does literal prefix matching instead of regex evaluation.
+# unescaped dot regression no longer applies because build_alert_icons now
+# does literal prefix matching instead of regex evaluation
 _BAI_UNESCAPED_PAT="^v0.2.67:"
 _BAI_REGRESSION=$(build_alert_icons "$_BAI_DOT_CONTENT" "$_BAI_UNESCAPED_PAT")
 if [[ -n "$_BAI_REGRESSION" ]]; then
@@ -696,7 +696,7 @@ else
     fail "  dedupe should produce 1 icon, got: $_BAI_COUNT"
 fi
 
-# Empty content returns empty
+# empty content returns empty
 _BAI_EMPTY=$(build_alert_icons "" "^any:")
 if [[ -z "$_BAI_EMPTY" ]]; then
     pass "  empty content returns empty string"
@@ -705,11 +705,11 @@ else
 fi
 
 # ─────────────────────────────────────────
-# Test state file parsing (panes/undo.sh logic)
+# test state file parsing (panes/undo.sh logic)
 # ─────────────────────────────────────────
 section "Testing state file parsing"
 
-# Create a test state file
+# create a test state file
 TEST_STATE_FILE=$(mktemp)
 cat > "$TEST_STATE_FILE" << 'EOF'
 dir=/Users/test/projects
@@ -720,7 +720,7 @@ PANE=1
 PANE_COUNT=3
 EOF
 
-# Parse the state file (mimicking panes/undo.sh logic)
+# parse the state file (mimicking panes/undo.sh logic)
 TEST_SESSION=""
 TEST_WINDOW=""
 TEST_PANE=""
@@ -752,11 +752,11 @@ fi
 
 rm -f "$TEST_STATE_FILE"
 
-# Test edge cases in state file parsing
+# test edge cases in state file parsing
 echo ""
 echo "  state file edge cases:"
 
-# Empty state file
+# empty state file
 TEST_STATE_FILE=$(mktemp)
 touch "$TEST_STATE_FILE"
 EMPTY_TEST=""
@@ -770,7 +770,7 @@ else
 fi
 rm -f "$TEST_STATE_FILE"
 
-# State file with special characters in path
+# state file with special characters in path
 TEST_STATE_FILE=$(mktemp)
 echo "dir=/Users/test/path with spaces/project" > "$TEST_STATE_FILE"
 SPECIAL_DIR=""
@@ -782,7 +782,7 @@ done < "$TEST_STATE_FILE"
 assert_equals "  handles paths with spaces" "/Users/test/path with spaces/project" "$SPECIAL_DIR"
 rm -f "$TEST_STATE_FILE"
 
-# State file with equals in value
+# state file with equals in value
 TEST_STATE_FILE=$(mktemp)
 echo "layout=abc=def=ghi" > "$TEST_STATE_FILE"
 EQUALS_VALUE=""
@@ -791,8 +791,8 @@ while IFS='=' read -r key value; do
         layout) EQUALS_VALUE="$value" ;;
     esac
 done < "$TEST_STATE_FILE"
-# Note: IFS='=' splits on first = only when using read -r
-# This may or may not work as expected depending on shell
+# note: IFS='=' splits on first = only when using read -r
+# this may or may not work as expected depending on shell
 if [[ "$EQUALS_VALUE" == "abc=def=ghi" || "$EQUALS_VALUE" == "abc" ]]; then
     pass "  handles values with equals signs (value: $EQUALS_VALUE)"
 else
@@ -801,7 +801,7 @@ fi
 rm -f "$TEST_STATE_FILE"
 
 # ─────────────────────────────────────────
-# Test cross-platform helpers
+# test cross-platform helpers
 # ─────────────────────────────────────────
 section "Testing cross-platform helpers"
 
@@ -812,7 +812,7 @@ if [[ "$(uname)" == "Darwin" ]]; then
 else
     assert_equals "  returns 'Alt' on Linux" "Alt" "$MOD_RESULT"
 fi
-# Must return a non-empty string on any platform
+# must return a non-empty string on any platform
 if [[ -n "$MOD_RESULT" ]]; then
     pass "  returns non-empty value"
 else
@@ -846,7 +846,7 @@ TWO_LINES=$(printf 'first\nsecond\n' | reverse_lines)
 assert_equals "  reverses two lines" "$(printf 'second\nfirst')" "$TWO_LINES"
 
 # ─────────────────────────────────────────
-# Syntax check all scripts
+# syntax check all scripts
 # ─────────────────────────────────────────
 section "Syntax checking scripts"
 SCRIPTS_DIR="$SCRIPT_DIR/.."
@@ -861,7 +861,7 @@ for script in "$SCRIPTS_DIR"/*.sh; do
     fi
 done
 
-# Also check library files
+# also check library files
 for lib in "$SCRIPT_DIR"/*.sh; do
     lib_name=$(basename "$lib")
     [[ "$lib_name" == "test.sh" ]] && continue
@@ -878,7 +878,7 @@ done
 if command -v shellcheck &>/dev/null; then
     section "ShellCheck analysis"
     SHELLCHECK_FAIL=0
-    # Use same exclusions as CI (see .github/workflows/ci.yml)
+    # use same exclusions as CI (see .github/workflows/ci.yml)
     SHELLCHECK_EXCLUDES="-e SC1091 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
 
     for script in "$SCRIPTS_DIR"/*.sh; do
@@ -910,7 +910,7 @@ else
 fi
 
 # ─────────────────────────────────────────
-# Summary
+# summary
 # ─────────────────────────────────────────
 echo ""
 echo "═════════════════════════════════════════"

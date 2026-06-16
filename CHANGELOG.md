@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.117] - 2026-06-16
+
+### Fixed
+- Tmux: the launcher picker (prefix + p) directory list no longer comes up empty for users who set `DEV_ROOT`/`PROJECTS_ROOT`/`PROJECT_DIRS` in `~/.zshrc`. The picker runs in a `display-popup`, which inherits tmux's session environment, not the interactive shell's; those vars were never in `update-environment`, so a popup only saw them if the server happened to be started from a shell that already had them exported. They are now in `update-environment`, so each client attach imports them into the session environment the popup inherits (existing servers need one detach + reattach to pick them up). `tmux/tmux.conf.template`
+- Tmux: when the launcher directory list is empty, the picker now shows why ("No project directories found" plus the current `PROJECT_DIRS` value and a hint to set it in `~/.zshrc`, then detach + reattach) instead of a blank list. `tmux/scripts/launchers/run.sh`
+- Nvim: with `cmdheight=0`, the height-resize maps (`<leader>wj`/`wk`/`wJ`/`wK`) no longer re-expose the last typed `:` command. A height resize on a window with no vertical neighbour has nowhere to put the freed rows, so nvim grew the command line; the maps now run the resize only when a window sits directly above or below. `nvim/lua/custom/core/windows.lua`
+- Nvim: `<leader>Hu` (undo stage hunk) now calls `gitsigns.stage_hunk`, which toggles staging on the hunk under the cursor, replacing the deprecated `undo_stage_hunk`. `nvim/lua/custom/plugins/gitsigns.lua`
+
 ## [0.2.116] - 2026-06-13
 
 ### Added

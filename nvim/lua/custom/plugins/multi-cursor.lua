@@ -1,4 +1,4 @@
--- Multiple cursors via vim-visual-multi.
+-- multiple cursors via vim-visual-multi
 
 return {
   {
@@ -9,7 +9,7 @@ return {
       vim.g.VM_maps = {
         ['Add Cursor Up'] = '<M-Up>',
         ['Add Cursor Down'] = '<M-Down>',
-        -- Disable motions that conflict with buffer-local maps (markdown gj/gk,
+        -- disable motions that conflict with buffer-local maps (markdown gj/gk,
         -- mkdnflow o/O/<Del>) and insert maps (blink.cmp) to avoid startup stutter
         ['Motion j'] = '',
         ['Motion k'] = '',

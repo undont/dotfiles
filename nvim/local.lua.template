@@ -1,32 +1,32 @@
 -- =============================================================================
 -- NEOVIM LOCAL OVERRIDES
 -- =============================================================================
--- Your personal Neovim settings. This file is yours — add anything you want.
--- It is loaded AFTER the base config but BEFORE plugin specs are imported, so
+-- your personal nvim settings; this file is yours, add anything you want.
+-- it is loaded AFTER the base config but BEFORE plugin specs are imported, so
 -- `vim.g.*` values set here are visible to plugin specs at load time.
 --
--- This file survives dotfiles update (it's gitignored).
--- After making changes, reload with: prefix + r (in tmux)
+-- this file survives dotfiles update (it's gitignored).
+-- after making changes, reload with: prefix + r (in tmux)
 --
--- Anything that depends on a plugin already being loaded (e.g.
--- `require('some_plugin')...`) must be deferred — wrap it in
+-- anything that depends on a plugin already being loaded (e.g.
+-- `require('some_plugin')...`) must be deferred; wrap it in
 -- `vim.schedule(function() ... end)` or a `VimEnter` autocmd.
 
--- Examples:
+-- examples:
 --   vim.opt.guicursor = 'a:ver25'  -- bar cursor in all modes
 --   vim.o.scrolloff = 5
 --   vim.o.relativenumber = false
 --   vim.o.wrap = true
 --   vim.keymap.set('n', '<leader>xx', ':!echo hello<CR>')
 --
--- Music player backend (default: apple_music) — deferred until plugin loads:
+-- music player backend (default: apple_music), deferred until plugin loads:
 --   vim.schedule(function()
 --     require('music.config').options.preferred_backend = 'spotify'
 --   end)
 --
--- Obsidian vault root (default: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents).
--- Either point at a single vault (the directory has `.obsidian/` directly
+-- obsidian vault root (default: ~/Library/Mobile Documents/iCloud~md~obsidian/Documents).
+-- either point at a single vault (the directory has `.obsidian/` directly
 -- inside) or at a parent directory containing one or more vaults:
 --   vim.g.obsidian_vault_root = '~/notes'        -- ~/notes/.obsidian exists
 --   vim.g.obsidian_vault_root = '~/vaults'       -- ~/vaults/<vault>/.obsidian exists
--- If unset and the default path doesn't exist, obsidian.nvim is skipped.
+-- if unset and the default path doesn't exist, obsidian.nvim is skipped

@@ -1,13 +1,13 @@
 # ══════════════════════════════════════════════════════════════
 # TMUX CONFIGURATION TEMPLATE (Theme: {{THEME_NAME}})
 # ══════════════════════════════════════════════════════════════
-# This template is processed by dotfiles theme and written to:
+# this template is processed by dotfiles theme and written to:
 #   ~/.config/tmux/tmux.conf (XDG standard location)
 #
-# A compatibility symlink exists at ~/.tmux.conf for backwards compatibility.
-# Change themes with: dotfiles theme switch <theme-name>
+# a compatibility symlink exists at ~/.tmux.conf for backwards compatibility.
+# change themes with: dotfiles theme switch <theme-name>
 #
-# Quick reference:
+# quick reference:
 #   Prefix: ` (backtick) or Ctrl+b (mobile-friendly)
 #   Help:   ` h (popup with keybindings)
 #   Save:   ` w (like vim :w)
@@ -17,49 +17,57 @@
 # Core Settings
 # ══════════════════════════════════════════════════════════════
 
-# Prefix key: ` (backtick - single key, double-tap for literal)
-# Secondary prefix: Ctrl+b (mobile-friendly, works alongside backtick)
+# prefix key: ` (backtick, single key, double-tap for literal)
+# secondary prefix: Ctrl+b (mobile-friendly, works alongside backtick)
 set -g prefix `
 set -g prefix2 C-b
 bind ` send-prefix
 bind C-b send-prefix -2
 
-# Terminal colours: enable 256-colour and true colour (RGB) support
-# Use terminal-features wildcard so RGB works regardless of outer TERM
+# terminal colours: enable 256-colour and true colour (RGB) support
+# use terminal-features wildcard so RGB works regardless of outer TERM
 # (xterm-ghostty under Ghostty, xterm-256color under other emulators, etc.)
 set -g default-terminal "tmux-256color"
 set -ag terminal-features "*:RGB"
-# Remap Home/End to CSI sequences so cmd+left/right work in all pane apps
+# remap Home/End to CSI sequences so cmd+left/right work in all pane apps
 set -ag terminal-overrides ",xterm-256color:khome=\E[H,kend=\E[F"
 # Claude Code (>=2.1.77) clamps chalk to 256-colour whenever $TMUX is set,
-# regardless of true terminal capability. Opt out via this env var so the
-# TUI emits real 24-bit RGB. See anthropics/claude-code#36785, #46146.
+# regardless of true terminal capability. opt out via this env var so the
+# TUI emits real 24-bit RGB. see anthropics/claude-code#36785, #46146.
 set-environment -g CLAUDE_CODE_TMUX_TRUECOLOR 1
 
-# Cursor: default to block (local.conf can override)
+# cursor: default to block (local.conf can override)
 set -g cursor-style block
 
-# Mouse: enable for pane selection, scrolling, and resizing
+# mouse: enable for pane selection, scrolling, and resizing
 set -g mouse on
 
-# Extended key and mouse support for apps like glow
+# extended key and mouse support for apps like glow
 set -ga terminal-features 'xterm*:extkeys:mouse'
 set -g extended-keys always
 set -s extended-keys-format csi-u    # emit kitty u-form (matches Ghostty + zsh bindkey)
 
-# Let TUIs (yazi, etc.) talk to the outer terminal directly. Required by yazi;
-# also stops its startup escape sequences leaking through tmux.
+# let TUIs (yazi, etc.) talk to the outer terminal directly. required by yazi;
+# also stops its startup escape sequences leaking through tmux
 set -g allow-passthrough on
 
-# Forward terminal focus events into panes (nvim :checktime autoreload,
+# forward terminal focus events into panes (nvim :checktime autoreload,
 # Claude Code focus tracking, TUIs that pause when unfocused)
 set -g focus-events on
 
-# Pass mouse wheel to apps using alternate screen (glow, k9s, etc.)
+# import the launcher root vars from each attaching client into the session
+# environment so the launcher picker popup (prefix + p) can see them. without
+# this a popup only sees the server's start-time global env, so vars exported
+# later in ~/.zshrc never reach it and the directory list comes up empty
+set -ga update-environment "DEV_ROOT"
+set -ga update-environment "PROJECTS_ROOT"
+set -ga update-environment "PROJECT_DIRS"
+
+# pass mouse wheel to apps using alternate screen (glow, k9s, etc.)
 bind -n WheelUpPane if -F '#{alternate_on}' 'send-keys -M' 'if -F "#{mouse_any_flag}" "send -M" "copy-mode -e; send-keys -M"'
 bind -n WheelDownPane if -F '#{alternate_on}' 'send-keys -M' 'send-keys -M'
 
-# Click session name in status bar to open session switcher
+# click session name in status bar to open session switcher
 bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/sessions/list.sh | \
@@ -84,78 +92,78 @@ bind -n MouseDown1StatusLeft display-popup -w 95% -h 95% -E "\
       --bind 'r:execute(~/.tmux/scripts/sessions/rename.sh \$(echo {} | cut -d\" \" -f1) >/dev/null)+reload-sync(~/.tmux/scripts/sessions/list.sh)' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
-# Click alerts in status-right to jump to alert source (or pick if multiple)
+# click alerts in status-right to jump to alert source (or pick if multiple)
 bind -n MouseDown1StatusRight if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 50 -h 10 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"' \
   'display-popup -w 95% -h 14 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"'
 
-# Alert picker (prefix + A) - keyboard shortcut for alerts
+# alert picker (prefix + A): keyboard shortcut for alerts
 bind A if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 50 -h 10 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"' \
   'display-popup -w 95% -h 14 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"'
 
-# Indexing: start windows and panes at 1 (matches keyboard layout)
+# indexing: start windows and panes at 1 (matches keyboard layout)
 set -g base-index 1
 setw -g pane-base-index 1
 
-# Auto-renumber windows when one is closed (no gaps in numbering)
+# auto-renumber windows when one is closed (no gaps in numbering)
 set -g renumber-windows on
 
-# Command exit alert colours (theme-aware, set by dotfiles theme)
+# command exit alert colours (theme-aware, set by dotfiles theme)
 set -g @exit_pass_colour "{{TMUX_EXIT_PASS_COLOUR}}"
 set -g @exit_fail_colour "{{TMUX_EXIT_FAIL_COLOUR}}"
 
-# Bell monitoring: highlight windows when Claude Code needs attention (via hooks)
+# bell monitoring: highlight windows when Claude Code needs attention (via hooks)
 setw -g monitor-activity off
 setw -g monitor-bell on
-set -g visual-bell off                # Don't show message, just highlight
+set -g visual-bell off                # don't show message, just highlight
 
-# Window naming: show directory name if shell, otherwise show command
+# window naming: show directory name if shell, otherwise show command
 setw -g automatic-rename on
 setw -g automatic-rename-format '#{?#{==:#{pane_current_command},zsh},#{b:pane_current_path},#{pane_current_command}}'
 
-# Performance: eliminate delay after pressing Escape (important for vim)
+# performance: eliminate delay after pressing Escape (important for vim)
 set -s escape-time 0
 
-# History: 50,000 lines of scrollback per pane
+# history: 50,000 lines of scrollback per pane
 set -g history-limit 50000
 
-# Status bar refresh: every second (keeps right-side clock seconds in sync)
+# status bar refresh: every second (keeps right-side clock seconds in sync)
 set -g status-interval 1
 
 # ══════════════════════════════════════════════════════════════
 # Keybindings
 # ══════════════════════════════════════════════════════════════
-# Note: "M-" means Option/Alt key, "-n" means no prefix required
+# note: "M-" means Option/Alt key, "-n" means no prefix required
 
-# Unbind keys to pass through to shell/apps (Ctrl+z suspend, etc.)
+# unbind keys to pass through to shell/apps (Ctrl+z suspend, etc.)
 unbind -n C-z
 unbind -n C-o
 unbind -n C-p
 unbind -n C-x
 
-# Unbind default new-window (use Opt+t instead)
+# unbind default new-window (use Opt+t instead)
 unbind c
 
-# Unbind default new-window (Shift variant, reused for Codex picker)
+# unbind default new-window (Shift variant, reused for Codex picker)
 unbind C
 
-# Unbind default kill-pane (use Opt+s for kill-pane, Opt+x for kill-window)
+# unbind default kill-pane (use Opt+s for kill-pane, Opt+x for kill-window)
 unbind x
 
-# Unbind default clock (use prefix+t for theme picker instead)
+# unbind default clock (use prefix+t for theme picker instead)
 unbind t
 
-# Unbind default last-window (prefix+l conflicts with pane navigation)
+# unbind default last-window (prefix+l conflicts with pane navigation)
 unbind l
 
-# Unbind default paste (use prefix+p for launcher picker instead)
+# unbind default paste (use prefix+p for launcher picker instead)
 unbind p
 
-# Unbind default next-layout (use prefix+Space for thumbs instead)
+# unbind default next-layout (use prefix+Space for thumbs instead)
 unbind Space
 
-# Unbind default zoom-pane (use Opt+z instead)
+# unbind default zoom-pane (use Opt+z instead)
 unbind z
 
 # ─────────────────────────────────────────
@@ -164,26 +172,26 @@ unbind z
 bind -n M-[ previous-window          # Opt+[
 bind -n M-] next-window              # Opt+]
 
-# Pass Ctrl+Enter / Ctrl+Shift+Enter through to the inner program
+# pass Ctrl+Enter / Ctrl+Shift+Enter through to the inner program
 # (extended-keys would otherwise consume them and leak the tail bytes)
 bind -n C-Enter   send-keys C-Enter
 bind -n C-S-Enter send-keys C-S-Enter
 
-# Previous/next window (prefix variants for mobile)
+# previous/next window (prefix variants for mobile)
 bind , next-window                    # prefix + ,
 bind . previous-window                # prefix + .
 
-# Jump to window by number (requires prefix)
+# jump to window by number (requires prefix)
 bind 1 select-window -t 1
 bind 2 select-window -t 2
 bind 3 select-window -t 3
 bind 4 select-window -t 4
 bind 5 select-window -t 5
 
-# New window in current directory
+# new window in current directory
 bind -n M-t new-window -c "#{pane_current_path}"    # Opt+t
 
-# Window operations (right-click menu alternatives)
+# window operations (right-click menu alternatives)
 bind -n M-r if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 50 -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"' \
   'display-popup -w 95% -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"'
@@ -201,7 +209,7 @@ bind -n M-D run-shell '~/.tmux/scripts/windows/duplicate.sh'               # Opt
 # ─────────────────────────────────────────
 # Claude instance switcher (prefix + c)
 # Navigation: j/k (↓/↑), g/G (top/bottom)
-# Press / to start searching, Esc to return to navigation mode
+# press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
 bind c display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
@@ -228,7 +236,7 @@ bind c display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 # Codex instance switcher (prefix + C)
 # Navigation: j/k (↓/↑), g/G (top/bottom)
-# Press / to start searching, Esc to return to navigation mode
+# press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
 bind C display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
@@ -255,7 +263,7 @@ bind C display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 # OpenCode instance switcher (prefix + o)
 # Navigation: j/k (↓/↑), g/G (top/bottom)
-# Press / to start searching, Esc to return to navigation mode
+# press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
 bind o display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
@@ -282,7 +290,7 @@ bind o display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 # GitHub Copilot instance switcher (prefix + a)
 # Navigation: j/k (↓/↑), g/G (top/bottom)
-# Press / to start searching, Esc to return to navigation mode
+# press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
 bind a display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
@@ -306,23 +314,23 @@ bind a display-popup -w 95% -h 95% -E "\
       --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) copilot)+reload-sync(~/.tmux/scripts/instances/copilot.sh)' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 # ─────────────────────────────────────────
-# Vim-style navigation (Opt+hjkl)
+# vim-style navigation (Opt+hjkl)
 bind -n M-h select-pane -L           # Opt+h = left
 bind -n M-j select-pane -D           # Opt+j = down
 bind -n M-k select-pane -U           # Opt+k = up
 bind -n M-l select-pane -R           # Opt+l = right
 
-# Alternative navigation
+# alternative navigation
 bind -n C-, select-pane -L           # Ctrl+, = left
 bind -n C-. select-pane -D           # Ctrl+. = down
 
-# Split panes (new panes inherit current directory)
+# split panes (new panes inherit current directory)
 bind -n M-\\ split-window -h -c "#{pane_current_path}"    # Opt+\ = split right
 bind -n "M-'" split-window -h -b -c "#{pane_current_path}"  # Opt+' = split left
 bind -n M-- split-window -v -c "#{pane_current_path}"     # Opt+- = split down
 bind -n M-= split-window -v -b -c "#{pane_current_path}"  # Opt+= = split up
 
-# Pane operations
+# pane operations
 bind -n M-s if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -E -w 50 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"' \
   'display-popup -E -w 95% -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"'
@@ -333,13 +341,13 @@ bind [ previous-layout                # `+[ = previous layout
 bind ] next-layout                    # `+] = next layout
 bind \\ rotate-window                  # `+\ = rotate through panes (ex C-o)
 
-# Swap panes (requires prefix)
+# swap panes (requires prefix)
 bind H swap-pane -U
 bind J swap-pane -D
 bind K swap-pane -U
 bind L swap-pane -D
 
-# Resize panes (Opt+Shift+hjkl)
+# resize panes (Opt+Shift+hjkl)
 bind -n M-H resize-pane -L 5           # Opt+Shift+h = shrink left
 bind -n M-J resize-pane -D 5           # Opt+Shift+j = shrink down
 bind -n M-K resize-pane -U 5           # Opt+Shift+k = grow up
@@ -349,14 +357,14 @@ bind -n M-L resize-pane -R 5           # Opt+Shift+l = grow right
 # URL picker
 # ─────────────────────────────────────────
 # prefix+u = find all URLs in scrollback and open selected one
-# macOS: override the browser via local.conf, e.g.  set -g @browser-app 'Arc'
+# macOS: override the browser via local.conf, e.g. set -g @browser-app 'Arc'
 unbind u
 bind u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
 
 # ─────────────────────────────────────────
 # Nvim instance switcher (prefix + n)
 # Navigation: j/k (↓/↑), g/G (top/bottom)
-# Press / to start searching, Esc to return to navigation mode
+# press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
 unbind n
 bind n display-popup -w 95% -h 95% -E "\
@@ -387,24 +395,24 @@ bind n display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 # Scroll mode (copy-mode)
 # ─────────────────────────────────────────
-# Enter scroll mode
+# enter scroll mode
 bind -n M-v copy-mode                    # Opt+v = enter scroll mode
 bind v copy-mode                         # prefix + v = enter scroll mode
 
-# Use vi-style keys in copy mode
+# use vi-style keys in copy mode
 setw -g mode-keys vi
 
-# Navigation in copy mode (vim-style)
+# navigation in copy mode (vim-style)
 bind -T copy-mode-vi j send-keys -X cursor-down
 bind -T copy-mode-vi k send-keys -X cursor-up
 bind -T copy-mode-vi h send-keys -X cursor-left
 bind -T copy-mode-vi l send-keys -X cursor-right
 
-# Page navigation
+# page navigation
 bind -T copy-mode-vi C-f send-keys -X page-down       # Ctrl+f = page down
 bind -T copy-mode-vi C-b send-keys -X page-up         # Ctrl+b = page up
 
-# Half-page navigation
+# half-page navigation
 bind -T copy-mode-vi C-d send-keys -X bottom-line     # Ctrl+d = cursor to bottom of visible page
 bind -T copy-mode-vi C-u send-keys -X top-line        # Ctrl+u = cursor to top of visible page
 bind -T copy-mode-vi d send-keys -X halfpage-down \; send-keys -X bottom-line   # d = half page down + cursor to bottom
@@ -412,27 +420,27 @@ bind -T copy-mode-vi u send-keys -X halfpage-up \; send-keys -X top-line   # u =
 bind -T copy-mode-vi D send-keys -X halfpage-down \; send-keys -X bottom-line   # D = alias for d
 bind -T copy-mode-vi U send-keys -X halfpage-up \; send-keys -X top-line   # U = alias for u
 
-# Jump to top/bottom of history
+# jump to top/bottom of history
 bind -T copy-mode-vi g send-keys -X history-top       # g = top of history
 bind -T copy-mode-vi G send-keys -X history-bottom    # G = bottom of history
 
-# Search (find on page)
+# search (find on page)
 bind -T copy-mode-vi / command-prompt -i -p "(search down)" "send -X search-forward-incremental \"%%%\""
 bind -T copy-mode-vi ? command-prompt -i -p "(search up)" "send -X search-backward-incremental \"%%%\""
 bind -T copy-mode-vi n send-keys -X search-again      # n = next match
 bind -T copy-mode-vi N send-keys -X search-reverse    # N = previous match
 
-# Visual selection
+# visual selection
 bind -T copy-mode-vi v send-keys -X begin-selection   # v = start char selection
 bind -T copy-mode-vi V send-keys -X select-line       # V = select entire line
 
-# Yank (copy to clipboard)
+# yank (copy to clipboard)
 bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"   # y = yank selection
 bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"  # Y = yank line
-# Yank to top/bottom: use v (visual) → g/G → y instead
+# yank to top/bottom: use v (visual) → g/G → y instead
 # tmux doesn't support multi-key sequences like vim's ygg
 
-# Exit scroll mode
+# exit scroll mode
 bind -T copy-mode-vi m send-keys -X back-to-indentation # m = first non-blank (like ^)
 bind -T copy-mode-vi M send-keys -X end-of-line        # M = end of line (like $)
 
@@ -442,13 +450,13 @@ bind -T copy-mode-vi Escape send-keys -X cancel       # Esc = quit scroll mode
 # ─────────────────────────────────────────
 # Help
 # ─────────────────────────────────────────
-# Display keybinding reference popup (press Esc to close)
+# display keybinding reference popup (press Esc to close)
 bind h run-shell '~/.tmux/scripts/utils/show-help-popup.sh #{client_width} #{client_height}'
 
 # ─────────────────────────────────────────
 # Theme picker (prefix + t)
 # Navigation: j/k (↓/↑), d/u (half-page), g/G (top/bottom), f (fav), r (random)
-# Press / to start searching, Esc to return to navigation mode
+# press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
 bind t if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 70 -h 24 -E "~/.tmux/scripts/themes/picker.sh"' \
@@ -457,8 +465,8 @@ bind t if-shell '[ #{client_width} -ge 80 ]' \
 # ─────────────────────────────────────────
 # Launcher picker (prefix + p)
 # Navigation: j/k (↓/↑), g/G (top/bottom)
-# Press / to start searching, Esc to return to navigation mode
-# Press n to create a new launcher
+# press / to start searching, Esc to return to navigation mode
+# press n to create a new launcher
 # ─────────────────────────────────────────
 bind p if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 60% -h 60% -E "~/.tmux/scripts/launchers/picker.sh"' \
@@ -467,8 +475,8 @@ bind p if-shell '[ #{client_width} -ge 80 ]' \
 # ─────────────────────────────────────────
 # Window switcher with vim-style navigation (prefix + f)
 # Navigation: j/k (↓/↑), g/G (top/bottom), f/b (page), d/u (half-page)
-# Press / to start searching, Esc to return to navigation mode
-# Press a to toggle between current session and all sessions
+# press / to start searching, Esc to return to navigation mode
+# press a to toggle between current session and all sessions
 # ─────────────────────────────────────────
 bind f display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
@@ -502,12 +510,12 @@ bind f display-popup -w 95% -h 95% -E "\
 set -g status-position top
 set -g status-style 'bg={{TMUX_STATUS_BG}} fg={{TMUX_STATUS_FG}}'
 set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-status.sh)#[fg={{TMUX_STATUS_BELL_FG}},bold]#S '
-# Responsive: full stats on wide terminals (≥80 cols), compact on narrow (mobile)
-# Battery/cpu/ram segment is rendered by utils/sysinfo.sh (cached, TTL ~5s)
+# responsive: full stats on wide terminals (≥80 cols), compact on narrow (mobile)
+# battery/cpu/ram segment is rendered by utils/sysinfo.sh (cached, TTL ~5s)
 # so status-interval 1 keeps a ticking clock without re-running the
-# tmux-battery/tmux-cpu plugin scripts every second. Icons and colour are
+# tmux-battery/tmux-cpu plugin scripts every second. icons and colour are
 # passed via options because tmux format-expands #() content, which would
-# mangle "#rrggbb" colour arguments.
+# mangle "#rrggbb" colour arguments
 set -g @sysinfo_fg "{{TMUX_STATUS_FG}}"
 set -g @sysinfo_cpu_icon ""
 set -g @sysinfo_ram_icon ""
@@ -515,73 +523,73 @@ set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg
 set -g status-left-length 30
 set -g status-right-length 150
 
-# Window tabs: inactive=grey, active=purple highlight, bell/alert=pink
+# window tabs: inactive=grey, active=purple highlight, bell/alert=pink
 setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@codex_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@copilot_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
 setw -g window-status-current-format '#[fg={{TMUX_STATUS_ACTIVE_FG}},bg={{TMUX_STATUS_ACTIVE_BG}},bold] #I:#W '
 
-# Pane borders: inactive=dark grey, active=purple
+# pane borders: inactive=dark grey, active=purple
 set -g pane-border-style 'fg={{TMUX_PANE_BORDER_INACTIVE}}'
 set -g pane-active-border-style 'fg={{TMUX_PANE_BORDER_ACTIVE}}'
 
-# Command prompt / message bar: purple background with light text
+# command prompt / message bar: purple background with light text
 set -g message-style 'bg={{TMUX_MESSAGE_BG}} fg={{TMUX_MESSAGE_FG}} bold'
 set -g message-command-style 'bg={{TMUX_MESSAGE_COMMAND_BG}} fg={{TMUX_MESSAGE_COMMAND_FG}}'
 
-# Copy mode (scroll mode) styling
+# copy mode (scroll mode) styling
 set -g mode-style 'bg={{TMUX_ACCENT_CYAN}} fg={{TMUX_BG_PRIMARY}} bold'
 
-# Search match highlighting in copy mode (tmux 3.2+)
-# All matches highlighted in yellow, current match in pink (high contrast)
+# search match highlighting in copy mode (tmux 3.2+)
+# all matches highlighted in yellow, current match in pink (high contrast)
 set -g copy-mode-match-style 'bg={{TMUX_ACCENT_YELLOW}} fg={{TMUX_BG_PRIMARY}}'
 set -g copy-mode-current-match-style 'bg={{TMUX_ACCENT_PINK}} fg={{TMUX_BG_PRIMARY}} bold,underscore'
 
-# Show search counter in mode indicator (e.g., "[3/12]" when searching)
+# show search counter in mode indicator (e.g. "[3/12]" when searching)
 set -g copy-mode-mark-style 'bg={{TMUX_ACCENT_PINK}} fg={{TMUX_BG_PRIMARY}} bold'
 
-# Clock colour for copy mode
+# clock colour for copy mode
 set -g clock-mode-colour "{{TMUX_ACCENT_CYAN}}"
 
 # ══════════════════════════════════════════════════════════════
 # Plugins (managed by TPM)
 # ══════════════════════════════════════════════════════════════
-# Install: prefix + I    Update: prefix + U    Clean: prefix + alt + u
+# install: prefix + I    update: prefix + U    clean: prefix + alt + u
 
-set -g @plugin 'tmux-plugins/tpm'              # Plugin manager
-set -g @plugin 'tmux-plugins/tmux-resurrect'   # Save/restore sessions
-set -g @plugin 'tmux-plugins/tmux-continuum'   # Auto-save sessions
+set -g @plugin 'tmux-plugins/tpm'              # plugin manager
+set -g @plugin 'tmux-plugins/tmux-resurrect'   # save/restore sessions
+set -g @plugin 'tmux-plugins/tmux-continuum'   # auto-save sessions
 set -g @plugin 'tmux-plugins/tmux-cpu'         # CPU/RAM monitoring
-set -g @plugin 'tmux-plugins/tmux-battery'    # Battery status
-set -g @plugin 'tmux-plugins/tmux-open'        # Open highlighted selection
-set -g @plugin 'tmux-plugins/tmux-yank'        # System clipboard integration
-set -g @plugin 'Morantron/tmux-fingers'        # Quick pattern copy (flash.nvim-like)
+set -g @plugin 'tmux-plugins/tmux-battery'    # battery status
+set -g @plugin 'tmux-plugins/tmux-open'        # open highlighted selection
+set -g @plugin 'tmux-plugins/tmux-yank'        # system clipboard integration
+set -g @plugin 'Morantron/tmux-fingers'        # quick pattern copy (flash.nvim-like)
 
 # ─────────────────────────────────────────
 # Resurrect configuration
 # ─────────────────────────────────────────
-# Capture pane contents (terminal output) when saving
+# capture pane contents (terminal output) when saving
 set -g @resurrect-capture-pane-contents 'on'
 
-# Restore specific programs (space-separated list)
-# Default: vi vim nvim emacs man less more tail top htop irssi weechat mutt ssh
-# Add more as needed:
+# restore specific programs (space-separated list)
+# default: vi vim nvim emacs man less more tail top htop irssi weechat mutt ssh
+# add more as needed:
 set -g @resurrect-processes 'ssh psql mysql sqlite3 claude codex opencode copilot "~rails server" "~npm start"'
 
-# Alternative: Restore ALL running programs (use with caution)
+# alternative: restore ALL running programs (use with caution)
 # set -g @resurrect-processes ':all:'
 
-# Note: Use tilde prefix (~) for fuzzy matching of commands with arguments
-# Example: "~rails server" matches "/usr/bin/ruby /usr/local/bin/rails server"
+# note: use tilde prefix (~) for fuzzy matching of commands with arguments
+# example: "~rails server" matches "/usr/bin/ruby /usr/local/bin/rails server"
 
-# Auto-restore on tmux start
+# auto-restore on tmux start
 set -g @continuum-restore 'on'
 
-# Save interval: every 1 minute (default is 15)
+# save interval: every 1 minute (default is 15)
 set -g @continuum-save-interval '1'
 
 # ─────────────────────────────────────────
 # tmux-cpu configuration
 # ─────────────────────────────────────────
-# Icons for different load levels
+# icons for different load levels
 set -g @cpu_low_icon ""
 set -g @cpu_medium_icon ""
 set -g @cpu_high_icon ""
@@ -591,7 +599,7 @@ set -g @cpu_low_bg_color "#[bg={{TMUX_CPU_LOW_BG}}]"
 set -g @cpu_medium_bg_color "#[bg={{TMUX_CPU_MEDIUM_BG}}]"
 set -g @cpu_high_bg_color "#[bg={{TMUX_CPU_HIGH_BG}}]"
 
-# Percentage format (no padding for consistent spacing)
+# percentage format (no padding for consistent spacing)
 set -g @cpu_percentage_format "%.0f%%"
 
 # RAM icons for different load levels
@@ -610,14 +618,14 @@ set -g @ram_percentage_format "%.0f%%"
 # ─────────────────────────────────────────
 # tmux-battery configuration
 # ─────────────────────────────────────────
-# Battery status icons (geometric, matches CPU/RAM style)
+# battery status icons (geometric, matches CPU/RAM style)
 set -g @batt_icon_status_charged ''
 set -g @batt_icon_status_charging ''
 set -g @batt_icon_status_discharging ''
 set -g @batt_icon_status_attached ''
 set -g @batt_icon_status_unknown ''
 
-# Battery background colours (themed)
+# battery background colours (themed)
 set -g @batt_color_charge_primary_tier8 '{{TMUX_BATTERY_NORMAL_BG}}'
 set -g @batt_color_charge_primary_tier7 '{{TMUX_BATTERY_NORMAL_BG}}'
 set -g @batt_color_charge_primary_tier6 '{{TMUX_BATTERY_NORMAL_BG}}'
@@ -630,8 +638,8 @@ set -g @batt_color_charge_primary_tier1 '{{TMUX_BATTERY_LOW_BG}}'
 # ─────────────────────────────────────────
 # tmux-fingers configuration
 # ─────────────────────────────────────────
-# prefix + Space to activate — shows hint labels over copyable patterns
-# Press hint letter to copy, Ctrl+hint to open in browser, Shift+hint to paste
+# prefix + Space to activate; shows hint labels over copyable patterns
+# press hint letter to copy, Ctrl+hint to open in browser, Shift+hint to paste
 set -g @fingers-key Space
 set -g @fingers-keyboard-layout qwerty-homerow
 set -g @fingers-main-action ':copy:'
@@ -639,22 +647,22 @@ set -g @fingers-ctrl-action ':open:'
 set -g @fingers-shift-action ':paste:'
 set -g @fingers-show-copied-notification 1
 
-# Built-in patterns: enable all. 2.7.0 turned this option into an enum whose
+# built-in patterns: enable all. 2.7.0 turned this option into an enum whose
 # validator rejects comma-separated subset lists (the documented form), so a
 # curated list silently breaks prefix+Space. 'all' is the only multi-pattern
-# value that validates on both 2.6.x and 2.7.x.
+# value that validates on both 2.6.x and 2.7.x
 set -g @fingers-enabled-builtin-patterns 'all'
 
-# Skip the install/update wizard. The binary is supplied by brew (Brewfile) and
+# skip the install/update wizard. the binary is supplied by brew (Brewfile) and
 # kept current by `dotfiles update` (brew bundle --upgrade), so the loader never
-# needs to bootstrap or rebuild it. Without this, the loader compares the brew
+# needs to bootstrap or rebuild it. without this, the loader compares the brew
 # binary's version against the TPM clone's shard.yml on every reload; when they
 # drift it fires the update wizard, which fails non-interactively at config-load
-# time (`install-wizard.sh ... returned 1`). This gates only the update wizard,
-# not the first-run "no binary found" bootstrap, so fresh installs still work.
+# time (`install-wizard.sh ... returned 1`). this gates only the update wizard,
+# not the first-run "no binary found" bootstrap, so fresh installs still work
 set -g @fingers-skip-wizard 1
 
-# Custom patterns (stricter replacements + extras)
+# custom patterns (stricter replacements + extras)
 set -g @fingers-pattern-0 '(~?(/[a-zA-Z0-9._-]+){2,})/?'
 set -g @fingers-pattern-1 '[A-Z][A-Z0-9_]+-[0-9]+'
 set -g @fingers-pattern-2 '[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\.[a-zA-Z]{2,}'
@@ -663,30 +671,30 @@ set -g @fingers-pattern-4 '#[0-9a-fA-F]{6}\b'
 set -g @fingers-pattern-5 'postgres(?:ql)?://\S+'
 set -g @fingers-pattern-6 '[❯$] (?<match>[a-zA-Z][\w.-]+( +\S+)+)'
 
-# Styles (tmux-fingers only supports named colours / colourN)
+# styles (tmux-fingers only supports named colours / colourN)
 set -g @fingers-highlight-style 'fg=green'
 set -g @fingers-hint-style 'fg=magenta,bold'
 set -g @fingers-selected-highlight-style 'fg=cyan'
 set -g @fingers-selected-hint-style 'fg=cyan,bold'
 
-# Post-save hook: split combined save file into per-session files
-# This enables restoring individual sessions independently
+# post-save hook: split combined save file into per-session files
+# this enables restoring individual sessions independently
 set -g @resurrect-hook-post-save-all '~/.tmux/scripts/resurrect/split.sh'
 
 # ─────────────────────────────────────────
 # Session management keybindings
 # ─────────────────────────────────────────
-# Built-in resurrect bindings:
+# built-in resurrect bindings:
 #   prefix + Ctrl+s = save all sessions
 #   prefix + Ctrl+r = restore all sessions
 
-# Quick save (prefix + w, like vim :w)
+# quick save (prefix + w, like vim :w)
 bind w run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh
 
-# Custom bindings for per-session management:
-# Session switcher with vim-style navigation (prefix + s)
+# custom bindings for per-session management:
+# session switcher with vim-style navigation (prefix + s)
 # Navigation: j/k (↓/↑), g/G (top/bottom), f/b (page), d/u (half-page)
-# Press / to start searching, Esc to return to navigation mode
+# press / to start searching, Esc to return to navigation mode
 # Ctrl+x kills session, Ctrl+u undoes the last kill
 bind s display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
@@ -722,29 +730,29 @@ bind § choose-buffer -Z                                     # ` § = paste buff
 # ─────────────────────────────────────────
 # Auto-cleanup on session close
 # ─────────────────────────────────────────
-# When a session is killed, trigger a save to update backups
-# This removes the killed session from tls listings
-# Note: kill-session.sh already handles saves, but this catches edge cases
+# when a session is killed, trigger a save to update backups
+# this removes the killed session from tls listings
+# note: kill-session.sh already handles saves, but this catches edge cases
 set-hook -g session-closed 'run-shell -b "~/.tmux/plugins/tmux-resurrect/scripts/save.sh >/dev/null 2>&1 && ~/.tmux/scripts/resurrect/split.sh >/dev/null 2>&1; ~/.tmux/scripts/alerts/cleanup.sh >/dev/null 2>&1"'
 
 # ─────────────────────────────────────────
 # Window & pane access tracking
 # ─────────────────────────────────────────
-# Update @last-viewed (window) and @pane-viewed (pane) timestamps for fuzzy finder sorting
-# Window-level: used by windows/list.sh  |  Pane-level: used by instance scripts
-# Also clear any claude alert on the window (backup to UserPromptSubmit hook)
+# update @last-viewed (window) and @pane-viewed (pane) timestamps for fuzzy finder sorting
+# window-level: used by windows/list.sh  |  pane-level: used by instance scripts
+# also clear any claude alert on the window (backup to UserPromptSubmit hook)
 set-hook -g after-select-window 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 
-# Track pane switches within the same window (doesn't fire after-select-window)
+# track pane switches within the same window (doesn't fire after-select-window)
 set-hook -g after-select-pane 'run-shell -b "tmux set-option -pt \"#{pane_id}\" @pane-viewed \"$(date +%s)\" 2>/dev/null || true"'
 
-# Clear alerts when the terminal window gains OS focus. Covers cmd+` between multiple
-# Ghostty clients attached to the same tmux server, where after-select-window doesn't fire.
+# clear alerts when the terminal window gains OS focus. covers cmd+` between multiple
+# Ghostty clients attached to the same tmux server, where after-select-window doesn't fire
 set-hook -g pane-focus-in 'run-shell -b "~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 
-# Clean up stale alerts when window is renamed (catches native tmux renames)
-# Note: Our rename script (windows/rename.sh) handles the update directly;
-# this hook is a fallback for automatic renames or prefix+, usage.
+# clean up stale alerts when window is renamed (catches native tmux renames)
+# note: our rename script (windows/rename.sh) handles the update directly;
+# this hook is a fallback for automatic renames or prefix+, usage
 set-hook -g after-rename-window 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh >/dev/null 2>&1"'
 set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 set-hook -g after-new-session 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}"'
@@ -755,22 +763,22 @@ set-hook -g session-renamed 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh >/d
 # ══════════════════════════════════════════════════════════════
 run '~/.tmux/plugins/tpm/tpm'
 
-# Override tmux-yank bindings (must be after plugin load)
+# override tmux-yank bindings (must be after plugin load)
 bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"
 bind u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
 
-# Override TPM's prefix+I to show a completion message after installing plugins
+# override TPM's prefix+I to show a completion message after installing plugins
 bind I run-shell "~/.tmux/plugins/tpm/bin/install_plugins > /dev/null 2>&1" \; display-message "All plugins installed successfully!"    # prefix + I
 
-# Reload all local overrides (tmux + Ghostty + nvim)
+# reload all local overrides (tmux + Ghostty + nvim)
 bind r run-shell "{{DOTFILES_ROOT}}/scripts/reload-locals.sh > /dev/null 2>&1"    # prefix + r
 
-# Reload shell config: source ~/.zshrc in all zsh panes across all sessions
+# reload shell config: source ~/.zshrc in all zsh panes across all sessions
 bind R run-shell '~/.tmux/scripts/utils/reload-shells.sh'    # prefix + R
 
-# Transparent status bar when Ghostty background-opacity < 1
+# transparent status bar when Ghostty background-opacity < 1
 if-shell 'cat ~/.config/ghostty/config ~/.config/ghostty/local 2>/dev/null | grep -E "^[[:space:]]*background-opacity" | tail -1 | grep -qE "=[[:space:]]*0\."' \
   'set -g status-style "bg=default fg={{TMUX_STATUS_FG}}"'
 
-# User overrides (not managed by dotfiles — survives theme changes)
+# User overrides (not managed by dotfiles; survives theme changes)
 source-file -q ~/.config/tmux/local.conf

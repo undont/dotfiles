@@ -1,22 +1,22 @@
 #!/usr/bin/env bash
-# Colour definitions for dotfiles scripts
-# Source this file: source "${BASH_SOURCE%/*}/_lib/colours.sh"
+# colour definitions for dotfiles scripts
+# source this file: source "${BASH_SOURCE%/*}/_lib/colours.sh"
 #
-# Note: Uses $'...' syntax for proper escape interpretation
-# Use with printf for coloured output
+# uses $'...' syntax for proper escape interpretation
+# use with printf for coloured output
 
-# Guard against multiple sourcing (readonly variables can't be redefined)
+# guard against multiple sourcing (readonly variables can't be redefined)
 if [[ -z "${DOTFILES_COLOURS_LOADED:-}" ]]; then
     readonly DOTFILES_COLOURS_LOADED=1
 
-    # Standard colours
+    # standard colours
     readonly RED=$'\033[0;31m'
     readonly GREEN=$'\033[0;32m'
     readonly YELLOW=$'\033[0;33m'
     readonly CYAN=$'\033[0;36m'
     readonly GREY=$'\033[0;90m'
-    readonly NC=$'\033[0m' # No Colour
+    readonly NC=$'\033[0m' # no colour
 
-    # Export for subshells if needed
+    # export for subshells if needed
     export RED GREEN YELLOW CYAN GREY NC
 fi

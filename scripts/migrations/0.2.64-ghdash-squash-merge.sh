@@ -1,6 +1,6 @@
 #!/bin/bash
-# Migration: Add squash & merge keybinding to gh-dash local.yml
-# Overrides the built-in 'm' key to use --squash --delete-branch.
+# migration: add squash & merge keybinding to gh-dash local.yml
+# overrides the built-in 'm' key to use --squash --delete-branch
 
 set -euo pipefail
 
@@ -16,16 +16,16 @@ if grep -q 'squash.*delete-branch' "$local_yml" 2>/dev/null; then
     exit 0
 fi
 
-# Check if there's an existing keybindings.prs section we need to append to
+# check for an existing keybindings.prs section to append to
 if grep -q '^keybindings:' "$local_yml" 2>/dev/null; then
     if grep -q '^\s*prs:' "$local_yml" 2>/dev/null; then
-        # Append entry under existing prs key
+        # append entry under existing prs key
         sed -i.bak '/^[[:space:]]*prs:/a\
         - key: m\
           name: squash \& merge\
           command: gh pr merge --squash --delete-branch --repo {{.RepoName}} {{.PrNumber}}' "$local_yml"
     else
-        # keybindings exists but no prs section — add one
+        # keybindings exists but no prs section, add one
         sed -i.bak '/^keybindings:/a\
     prs:\
         - key: m\
@@ -33,7 +33,7 @@ if grep -q '^keybindings:' "$local_yml" 2>/dev/null; then
           command: gh pr merge --squash --delete-branch --repo {{.RepoName}} {{.PrNumber}}' "$local_yml"
     fi
 else
-    # No keybindings section at all — append to end of file
+    # no keybindings section at all, append to end of file
     cat >> "$local_yml" <<'EOF'
 keybindings:
     prs:

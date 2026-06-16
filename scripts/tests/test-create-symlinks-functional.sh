@@ -1,35 +1,35 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Functional tests for symlink creation patterns
-# Tests actual symlink/copy/local-override logic in a sandboxed HOME
+# functional tests for symlink creation patterns
+# tests actual symlink/copy/local-override logic in a sandboxed HOME
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# Source shared test helpers (colours, pass/fail/skip/section, assertions, sandbox)
+# source shared test helpers (colours, pass/fail/skip/section, assertions, sandbox)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ===========================================================================
-# Setup
+# setup
 # ===========================================================================
 
 setup_sandbox
 trap cleanup_sandbox EXIT
 
-# Create minimal structure the symlink script expects
+# create minimal structure the symlink script expects
 mkdir -p "$TEST_HOME/.config"
 
-# Source common.sh for should_install and colour variables
+# source common.sh for should_install and colour variables
 source "$DOTFILES_DIR/scripts/_lib/common.sh"
 
 # ===========================================================================
-# Tests
+# tests
 # ===========================================================================
 
 section "Symlink creation patterns"
 
-# Test 1: ln -sf creates a valid symlink
+# test 1: ln -sf creates a valid symlink
 test_source="$DOTFILES_DIR/zsh/dotfiles.zsh"
 test_dest="$TEST_HOME/.config/zsh/dotfiles.zsh"
 mkdir -p "$(dirname "$test_dest")"
@@ -46,7 +46,7 @@ else
     fail "symlink was not created"
 fi
 
-# Test 2: symlink replaces existing file
+# test 2: symlink replaces existing file
 echo "existing content" > "$TEST_HOME/.test-existing"
 test_source2="$DOTFILES_DIR/zsh/zprofile"
 ln -sf "$test_source2" "$TEST_HOME/.test-existing"
@@ -56,7 +56,7 @@ else
     fail "symlink did not replace existing file"
 fi
 
-# Test 3: copy creates a regular file (not symlink)
+# test 3: copy creates a regular file (not symlink)
 test_copy_src="$DOTFILES_DIR/btop/btop.conf"
 test_copy_dest="$TEST_HOME/.config/btop/btop.conf"
 mkdir -p "$(dirname "$test_copy_dest")"
@@ -71,13 +71,13 @@ else
     skip "btop.conf not found — skipping copy test"
 fi
 
-# Test 4: install_local preserves existing file
+# test 4: install_local preserves existing file
 test_template="$DOTFILES_DIR/ghostty/local.template"
 test_local_dest="$TEST_HOME/.config/ghostty/local"
 mkdir -p "$(dirname "$test_local_dest")"
 if [[ -f "$test_template" ]]; then
     echo "my custom overrides" > "$test_local_dest"
-    # Simulate install_local — should NOT overwrite existing
+    # simulate install_local, should NOT overwrite existing
     if [[ -f "$test_local_dest" ]]; then
         # install_local only copies if dest doesn't exist
         content=$(cat "$test_local_dest")
@@ -155,7 +155,7 @@ else
 fi
 
 # ===========================================================================
-# Summary
+# summary
 # ===========================================================================
 
 print_summary

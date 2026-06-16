@@ -1,15 +1,15 @@
--- Spell autocorrect utilities and keymaps.
--- Provides single-word, line, and buffer-wide autocorrect using Vim's spellsuggest.
+-- spell autocorrect utilities and keymaps.
+-- single-word, line, and buffer-wide autocorrect via vim's spellsuggest
 
 local M = {}
 
---- Shift spelling "mark bad word" from zw to zW to prevent accidents.
+--- shift spelling "mark bad word" from zw to zW to prevent accidents
 local function setup_mark_swap()
   vim.keymap.set('n', 'zW', 'zw', { desc = 'Mark word as misspelled', silent = true })
   vim.keymap.set('n', 'zw', '<Nop>', { silent = true })
 end
 
---- Apply the first spell suggestion to the misspelled word nearest the cursor.
+--- apply the first spell suggestion to the misspelled word nearest the cursor
 ---@return boolean true if a word was corrected
 function M.apply_first_suggestion()
   local bad_word = vim.fn.spellbadword()[1]
@@ -51,7 +51,7 @@ function M.apply_first_suggestion()
   return true
 end
 
---- Autocorrect all misspelled words in a line range.
+--- autocorrect all misspelled words in a line range
 ---@param start_line integer 1-indexed start line
 ---@param end_line integer 1-indexed end line (inclusive)
 ---@return integer fixed number of words corrected
@@ -75,7 +75,7 @@ function M.autocorrect_range(start_line, end_line)
       break
     end
 
-    -- Guard against cursor not advancing (no more misspellings in range)
+    -- guard against cursor not advancing (no more misspellings in range)
     if row == prev_row and col == prev_col then
       break
     end

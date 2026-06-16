@@ -5,19 +5,19 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # New Launcher Prompt (fzf become target)
 # ══════════════════════════════════════════════════════════════
-# Prompts for a launcher name, then hands off to new.sh
-# Called via fzf become() from the launcher picker (prefix + p)
+# prompts for a launcher name, then hands off to new.sh
+# called via fzf become() from the launcher picker (prefix + p)
 #
-# Usage:
-#   prompt.sh              # Create mode
-#   prompt.sh --edit NAME  # Edit mode (pre-fills name)
+# usage:
+#   prompt.sh              # create mode
+#   prompt.sh --edit NAME  # edit mode (pre-fills name)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
@@ -38,7 +38,7 @@ if [[ -n "$edit_source" ]]; then
     border_label=' ⏎ edit · esc cancel '
 fi
 
-# Prompt for launcher name using fzf --print-query
+# prompt for launcher name using fzf --print-query
 name=$(printf '' | fzf \
     --print-query \
     --query="$default_query" \
@@ -62,5 +62,5 @@ if [[ -n "$edit_source" ]]; then
     exec "$SCRIPT_DIR/new.sh" --edit "$edit_source" "$name"
 fi
 
-# Hand off to the full scaffolding script
+# hand off to the full scaffolding script
 exec "$SCRIPT_DIR/new.sh" "$name"

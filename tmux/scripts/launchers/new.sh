@@ -5,10 +5,10 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # New Launcher Wizard
 # ══════════════════════════════════════════════════════════════
-# Step-based wizard for creating/editing session launchers.
-# Supports ctrl+b to go back a step.
+# step-based wizard for creating/editing session launchers
+# supports ctrl+b to go back a step
 #
-# Usage: new.sh [name]
+# usage: new.sh [name]
 #        new.sh --edit SOURCE [name]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -17,9 +17,9 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 
-# Strip shell-escape backslashes from a pasted path. Fzf gives literal text
+# strip shell-escape backslashes from a pasted path. fzf gives literal text
 # (not shell-parsed), so `~/Library/Mobile\ Documents/...` arrives with the
-# backslashes intact and fails the [[ -d ... ]] check downstream.
+# backslashes intact and fails the [[ -d ... ]] check downstream
 unescape_paste() {
     local s="$1"
     s="${s//\\ / }"
@@ -27,13 +27,13 @@ unescape_paste() {
     printf '%s' "$s"
 }
 
-# Ensure stdin/stdout use terminal (needed when called via fzf become() in a pipeline).
-# Security note: this redirects to the controlling terminal, bypassing any pipe isolation.
-# Safe here because this script is only invoked interactively from the launcher picker.
+# ensure stdin/stdout use terminal (needed when called via fzf become() in a pipeline)
+# security note: this redirects to the controlling terminal, bypassing any pipe isolation
+# safe here because this script is only invoked interactively from the launcher picker
 exec < /dev/tty > /dev/tty
 
 # ─────────────────────────────────────────
-# Argument parsing
+# argument parsing
 # ─────────────────────────────────────────
 edit_source=""
 name=""
@@ -46,7 +46,7 @@ fi
 name="${1:-}"
 
 # ─────────────────────────────────────────
-# Helpers for edit mode
+# helpers for edit mode
 # ─────────────────────────────────────────
 resolve_edit_source() {
     local source="$1"
@@ -88,9 +88,9 @@ load_existing_launcher() {
     else
         instance_mode="n"
     fi
-    # New format: separate `_<SESSION>_ROOT_DEFAULT="$HOME/path"` line — handles
-    # paths containing apostrophes (which break `"${VAR:-default}"` parsing).
-    # Old format (kept for backward compat): `PROJECT_DIR="${VAR:-default}"`.
+    # new format: separate `_<SESSION>_ROOT_DEFAULT="$HOME/path"` line, handles
+    # paths containing apostrophes (which break `"${VAR:-default}"` parsing)
+    # old format (kept for backward compat): `PROJECT_DIR="${VAR:-default}"`
     project_dir=$(grep -m1 '^_[A-Z0-9_]*_ROOT_DEFAULT=' "$file" 2>/dev/null \
         | sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
     if [[ -z "$project_dir" ]]; then
@@ -101,7 +101,7 @@ load_existing_launcher() {
     fi
     project_dir="${project_dir/#\$HOME/\~}"
 
-    # Detect worktree configuration
+    # detect worktree configuration
     if grep -q '^WORKTREES_DIR=\|^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null; then
         worktree_aware="y"
         worktrees_dir=$(grep -m1 '^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null \
@@ -165,23 +165,23 @@ load_existing_launcher() {
         num_windows="${#win_names[@]}"
     fi
 
-    # Recalculate total steps with pre-loaded window count
+    # recalculate total steps with pre-loaded window count
     if [[ -n "$num_windows" ]]; then
         total_steps=$((4 + num_windows))
     fi
 }
 
 # ─────────────────────────────────────────
-# Additional colour definitions
+# additional colour definitions
 # ─────────────────────────────────────────
 DIM=$'\033[2m'
 
 # ─────────────────────────────────────────
-# Ctrl+B back navigation
+# ctrl+b back navigation
 # ─────────────────────────────────────────
-# read -e enables readline. Rebind ctrl+b to: clear line → insert
-# text marker → auto-submit. The ask functions detect the marker
-# and return 1 (go back). Left arrow still works for cursor movement.
+# read -e enables readline. rebind ctrl+b to: clear line → insert
+# text marker → auto-submit. the ask functions detect the marker
+# and return 1 (go back). left arrow still works for cursor movement
 BACK_MARKER="__BACK__"
 bind '"\C-b": "\C-a\C-k__BACK__\C-m"' 2>/dev/null
 
@@ -189,8 +189,8 @@ bind '"\C-b": "\C-a\C-k__BACK__\C-m"' 2>/dev/null
 # UI helpers
 # ─────────────────────────────────────────
 
-# Draw wizard header with step indicator
-# Usage: draw_header "step_num" "total_steps"
+# draw wizard header with step indicator
+# usage: draw_header "step_num" "total_steps"
 draw_header() {
     local step="$1"
     local total="$2"
@@ -205,7 +205,7 @@ draw_header() {
     local label_plain="$title  ·  $indicator"
     local label="$title  ${DIM}·  $indicator${NC}"
 
-    # Centre the box horizontally
+    # centre the box horizontally
     local term_width=${COLUMNS:-$(tput cols)}
     local box_width=$((width + 2))  # ╭ + inner + ╮
     local margin=$(( (term_width - box_width) / 2 ))
@@ -221,8 +221,8 @@ draw_header() {
     printf "\n"
 }
 
-# Draw footer with controls (fzf border-label style)
-# Usage: draw_footer "back_hint"
+# draw footer with controls (fzf border-label style)
+# usage: draw_footer "back_hint"
 #   "false"  = no back option (not shown)
 #   "true"   = ^b back
 #   "rename" = ^b rename
@@ -235,7 +235,7 @@ draw_footer() {
     esac
     hints="$hints · ^c cancel "
 
-    # Centre the footer and pin to bottom of screen
+    # centre the footer and pin to bottom of screen
     local term_width=${COLUMNS:-$(tput cols)}
     local term_height=${LINES:-$(tput lines)}
     local hints_len=${#hints}
@@ -248,15 +248,15 @@ draw_footer() {
 
     local footer_line="${DIM}${left_border}${NC}${CYAN}${hints}${NC}${DIM}${right_border}${NC}"
 
-    # Save cursor, jump to bottom, print footer, restore cursor
+    # save cursor, jump to bottom, print footer, restore cursor
     printf '\033[s'
     printf '\033[%d;1H' "$((term_height - 1))"
     printf '%s' "$footer_line"
     printf '\033[u'
 }
 
-# Show context from previous steps (dim)
-# Usage: show_context "label" "value"
+# show context from previous steps (dim)
+# usage: show_context "label" "value"
 show_context() {
     local label="$1"
     local value="$2"
@@ -265,15 +265,15 @@ show_context() {
     fi
 }
 
-# Prompt for input with default value, respects ctrl+b
-# Usage: ask "label" "default_value" result_var
-# Returns 1 if ctrl+b was pressed (go back)
+# prompt for input with default value, respects ctrl+b
+# usage: ask "label" "default_value" result_var
+# returns 1 if ctrl+b was pressed (go back)
 ask() {
     local label="$1"
     local default="$2"
     local -n _result="$3"
 
-    # Use \001/\002 to mark non-printing chars so readline calculates width correctly
+    # use \001/\002 to mark non-printing chars so readline calculates width correctly
     local rl_cyan=$'\001'"${CYAN}"$'\002'
     local rl_nc=$'\001'"${NC}"$'\002'
     local prompt
@@ -285,7 +285,7 @@ ask() {
         read -er -p "$prompt" _result || true
     fi
 
-    # Detect the back marker injected by the ctrl+b readline binding
+    # detect the back marker injected by the ctrl+b readline binding
     if [[ "$_result" == *"$BACK_MARKER"* ]]; then
         return 1
     fi
@@ -296,9 +296,9 @@ ask() {
     return 0
 }
 
-# Prompt for yes/no with default, respects ctrl+b
-# Usage: ask_yn "label" "default" result_var
-# Returns 1 if ctrl+b was pressed (go back)
+# prompt for yes/no with default, respects ctrl+b
+# usage: ask_yn "label" "default" result_var
+# returns 1 if ctrl+b was pressed (go back)
 ask_yn() {
     local label="$1"
     local default="$2"
@@ -311,14 +311,14 @@ ask_yn() {
         prompt_hint="y/N"
     fi
 
-    # Use \001/\002 to mark non-printing chars so readline calculates width correctly
+    # use \001/\002 to mark non-printing chars so readline calculates width correctly
     local rl_cyan=$'\001'"${CYAN}"$'\002'
     local rl_nc=$'\001'"${NC}"$'\002'
     local prompt="  ${rl_cyan}${label}${rl_nc} [${prompt_hint}]: "
 
     read -er -p "$prompt" _yn_result || true
 
-    # Detect the back marker injected by the ctrl+b readline binding
+    # detect the back marker injected by the ctrl+b readline binding
     if [[ "$_yn_result" == *"$BACK_MARKER"* ]]; then
         return 1
     fi
@@ -330,25 +330,25 @@ ask_yn() {
 }
 
 # ─────────────────────────────────────────
-# Worktree directory suggestions
+# worktree directory suggestions
 # ─────────────────────────────────────────
 
-# List worktree directory suggestions based on project directory
-# Combines smart suggestions with existing directories and general project dirs
+# list worktree directory suggestions based on project directory
+# combines smart suggestions with existing directories and general project dirs
 list_worktree_suggestions() {
     local proj_dir="$1"
-    # Expand $HOME and ~ for filesystem operations
+    # expand $HOME and ~ for filesystem operations
     local expanded="${proj_dir//\$HOME/$HOME}"
     expanded="${expanded/#\~/$HOME}"
     local proj_parent proj_basename
     proj_parent=$(dirname "$expanded")
     proj_basename=$(basename "$expanded")
 
-    # Smart suggestions based on project location
+    # smart suggestions based on project location
     printf '%s\n' "${proj_parent/#$HOME/\~}/${proj_basename}-worktrees"
     printf '%s\n' "${proj_parent/#$HOME/\~}/worktrees"
 
-    # Existing worktree-like directories near the project
+    # existing worktree-like directories near the project
     if [[ -d "$proj_parent" ]]; then
         for d in "$proj_parent"/*worktree*/; do
             [[ -d "$d" ]] || continue
@@ -357,12 +357,12 @@ list_worktree_suggestions() {
         done
     fi
 
-    # General project directories for flexibility
+    # general project directories for flexibility
     list_project_dirs
 }
 
 # ─────────────────────────────────────────
-# State variables
+# state variables
 # ─────────────────────────────────────────
 description=""
 instance_mode=""
@@ -376,11 +376,11 @@ worktree_aware=""
 worktrees_dir=""
 default_names=("dev" "edit" "shell")
 
-# Calculate total steps (recalculated after step 4)
+# calculate total steps (recalculated after step 4)
 total_steps=4
 step=1
 
-# Handle edit mode: resolve source and load existing values
+# handle edit mode: resolve source and load existing values
 if [[ -n "$edit_source" ]]; then
     edit_source=$(basename "$edit_source")
     edit_file=$(resolve_edit_source "$edit_source")
@@ -396,7 +396,7 @@ if [[ -n "$edit_source" ]]; then
     fi
 fi
 
-# If name was provided, start at step 1 (description)
+# if name was provided, start at step 1 (description)
 # but validate/sanitise it first
 if [[ -n "$name" ]]; then
     name=$(sanitise_launcher_name "$name")
@@ -406,7 +406,7 @@ if [[ -n "$name" ]]; then
         printf "  ${RED}Launcher '%s' already exists${NC}\n\n" "$name"
         printf "  ${DIM}%s/%s${NC}\n" "$USER_LAUNCHERS" "$name"
 
-        # Pin hint to bottom (prefixed to avoid polluting global namespace)
+        # pin hint to bottom (prefixed to avoid polluting global namespace)
         _err_tw=${COLUMNS:-$(tput cols)}
         _err_th=${LINES:-$(tput lines)}
         _err_hint=" spc/enter back · q/esc close "
@@ -428,12 +428,12 @@ if [[ -n "$name" ]]; then
 fi
 
 # ─────────────────────────────────────────
-# Main wizard loop
+# main wizard loop
 # ─────────────────────────────────────────
 while true; do
     case $step in
         1)
-            # Step 1: Description
+            # step 1: description
             draw_header 1 "$total_steps"
             printf "  ${GREEN}What does this launcher do?${NC}\n\n"
             show_context "Name" "$name"
@@ -444,7 +444,7 @@ while true; do
                 description="$local_desc"
                 step=2
             else
-                # ctrl+b on step 1 — go back to name prompt
+                # ctrl+b on step 1, go back to name prompt
                 if [[ -n "$edit_source" ]]; then
                     exec "$SCRIPT_DIR/prompt.sh" --edit "$edit_source"
                 fi
@@ -453,7 +453,7 @@ while true; do
             ;;
 
         2)
-            # Step 2: Project directory (inline fzf picker)
+            # step 2: project directory (inline fzf picker)
             load_fzf_theme
             draw_header 2 "$total_steps"
             printf "  ${GREEN}Where is the project?${NC}\n\n"
@@ -499,7 +499,7 @@ while true; do
                 local_dir="$local_default_dir"
             fi
 
-            # Check if directory exists (expand ~ for the check)
+            # check if directory exists (expand ~ for the check)
             local_expanded="${local_dir/#\~/$HOME}"
             if [[ ! -d "$local_expanded" ]]; then
                 printf "\n"
@@ -516,7 +516,7 @@ while true; do
             fi
 
             project_dir="$local_dir"
-            # Expand ~ for template but keep $HOME in generated script
+            # expand ~ for template but keep $HOME in generated script
             if [[ "$project_dir" == "~" ]]; then
                 project_dir="\$HOME"
             else
@@ -526,15 +526,15 @@ while true; do
             ;;
 
         3)
-            # Step 3: Instance mode + worktree awareness
-            # Sub-steps: instance y/n → worktree y/n → worktree dir (fzf picker)
-            # Worktree is only offered when instances are enabled, since worktree
-            # resolution depends on the instance suffix in the session name.
+            # step 3: instance mode + worktree awareness
+            # sub-steps: instance y/n → worktree y/n → worktree dir (fzf picker)
+            # worktree is only offered when instances are enabled, since worktree
+            # resolution depends on the instance suffix in the session name
             local_sub=1
             while true; do
                 case $local_sub in
                     1)
-                        # Instance mode question
+                        # instance mode question
                         draw_header 3 "$total_steps"
                         printf "  ${GREEN}Instance configuration${NC}\n"
                         printf "  ${DIM}e.g. ticket numbers: %s-1234${NC}\n\n" "$name"
@@ -562,7 +562,7 @@ while true; do
                         ;;
 
                     2)
-                        # Worktree awareness (only when instances are enabled)
+                        # worktree awareness (only when instances are enabled)
                         draw_header 3 "$total_steps"
                         printf "  ${GREEN}Resolve worktree directories for instances?${NC}\n"
                         printf "  ${DIM}e.g. %s-1252 → %s-1252-*${NC}\n\n" "$name" "$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')"
@@ -589,7 +589,7 @@ while true; do
                         ;;
 
                     3)
-                        # Worktree directory picker (fzf with smart suggestions)
+                        # worktree directory picker (fzf with smart suggestions)
                         load_fzf_theme
                         draw_header 3 "$total_steps"
                         printf "  ${GREEN}Where are the worktrees?${NC}\n\n"
@@ -599,7 +599,7 @@ while true; do
                         show_context "Instances" "yes (worktree aware)"
                         printf "\n"
 
-                        # Derive default from project dir if not already set
+                        # derive default from project dir if not already set
                         local_wt_default="${worktrees_dir:-}"
                         local_wt_default="${local_wt_default/#\$HOME/\~}"
                         if [[ -z "$local_wt_default" ]]; then
@@ -655,7 +655,7 @@ while true; do
             ;;
 
         4)
-            # Step 4: Number of windows
+            # step 4: number of windows
             draw_header 4 "$total_steps"
             printf "  ${GREEN}How many windows?${NC}\n\n"
             show_context "Name" "$name"
@@ -672,13 +672,13 @@ while true; do
 
             local_num=""
             if ask "Number of windows" "${num_windows:-3}" local_num; then
-                # Validate it's a number between 1 and 20
+                # validate it's a number between 1 and 20
                 if ! [[ "$local_num" =~ ^[0-9]+$ ]] || [[ "$local_num" -lt 1 ]]; then
                     local_num=3
                 elif [[ "$local_num" -gt 20 ]]; then
                     local_num=20
                 fi
-                # Only reset window arrays if count changed
+                # only reset window arrays if count changed
                 if [[ "$local_num" != "$num_windows" ]]; then
                     win_names=()
                     win_cmds=()
@@ -694,11 +694,11 @@ while true; do
             ;;
 
         *)
-            # Steps 5+: Window configuration
+            # steps 5+: window configuration
             local_win_idx=$((step - 4))  # 1-based window index
 
             if [[ $local_win_idx -gt $num_windows ]]; then
-                # Past last window — done
+                # past last window, done
                 break
             fi
 
@@ -715,7 +715,7 @@ while true; do
                 fi
             fi
 
-            # Show previously configured windows
+            # show previously configured windows
             for ((p = 1; p < local_win_idx; p++)); do
                 local_p_idx=$((p - 1))
                 if [[ $local_p_idx -lt ${#win_names[@]} ]]; then
@@ -730,7 +730,7 @@ while true; do
 
             local_default="${default_names[$((local_win_idx - 1))]:-window-$local_win_idx}"
 
-            # Get existing values for this window if going back
+            # get existing values for this window if going back
             local_prev_name="${win_names[$((local_win_idx - 1))]:-}"
             local_prev_cmd="${win_cmds[$((local_win_idx - 1))]:-}"
             local_prev_split="${win_splits[$((local_win_idx - 1))]:-no}"
@@ -766,7 +766,7 @@ while true; do
                 fi
             fi
 
-            # Store window config (replace if going forward again)
+            # store window config (replace if going forward again)
             local_arr_idx=$((local_win_idx - 1))
             win_names[local_arr_idx]="$local_wname"
             win_cmds[local_arr_idx]="$local_wcmd"
@@ -783,7 +783,7 @@ while true; do
 done
 
 # ─────────────────────────────────────────
-# Generate launcher file (edit-aware)
+# generate launcher file (edit-aware)
 # ─────────────────────────────────────────
 
 mkdir -p "$USER_LAUNCHERS"
@@ -791,14 +791,14 @@ mkdir -p "$USER_LAUNCHERS"
 target_name="$name"
 target_path="$USER_LAUNCHERS/$target_name"
 
-# If editing a user launcher and the name changed, remove the old file
+# if editing a user launcher and the name changed, remove the old file
 if [[ -n "$edit_source" ]]; then
     if [[ -f "$USER_LAUNCHERS/$edit_source" && "$edit_source" != "$target_name" ]]; then
         rm -f "$USER_LAUNCHERS/$edit_source"
     fi
 fi
 
-# Session name: strip dots (tmux uses '.' as pane separator in target syntax)
+# session name: strip dots (tmux uses '.' as pane separator in target syntax)
 session_name=$(printf '%s' "$name" | tr '.' '-' | sed 's/-*$//')
 session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '.-' '_')
 
@@ -833,15 +833,15 @@ fi
 
 PREAMBLE
 
-    # Generate SESSION and PROJECT_DIR (worktree-aware or simple)
+    # generate SESSION and PROJECT_DIR (worktree-aware or simple)
     #
-    # Path defaults are staged in `_<SESSION>_…_DEFAULT` variables rather than
+    # path defaults are staged in `_<SESSION>_…_DEFAULT` variables rather than
     # embedded inline as `${VAR:-/path}`, because single quotes inside a
     # parameter-expansion default (e.g. `${VAR:-/foo's/bar}`) trip bash's
-    # quoter even within `"…"`. A regular `VAR="…"` assignment handles
+    # quoter even within `"…"`. a regular `VAR="…"` assignment handles
     # apostrophes natively; the `${VAR:-$_DEFAULT}` then references it safely.
-    # The `${PATH/#\~/$HOME}` lines expand a leading `~` in case an env-var
-    # override (e.g. `FOO_ROOT="~/x"`) ships a literal tilde.
+    # the `${PATH/#\~/$HOME}` lines expand a leading `~` in case an env-var
+    # override (e.g. `FOO_ROOT="~/x"`) ships a literal tilde
     if [[ "$worktree_aware" == "y" ]]; then
         worktree_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
         cat << WTBLOCK
@@ -853,7 +853,7 @@ BASE_DIR="\${${session_var}_ROOT:-\$_${session_var}_ROOT_DEFAULT}"
 WORKTREES_DIR="\${WORKTREES_DIR/#\\~/\$HOME}"
 BASE_DIR="\${BASE_DIR/#\\~/\$HOME}"
 
-# Resolve project directory — check for a matching worktree when session has a suffix
+# resolve project directory: check for a matching worktree when session has a suffix
 PROJECT_DIR="\$BASE_DIR"
 if [[ "\$SESSION" =~ -([0-9]+)\$ ]]; then
     ticket_num="\${BASH_REMATCH[1]}"
@@ -895,14 +895,14 @@ fi
 
 VALIDATE
 
-    # Generate window commands
+    # generate window commands
     for ((i = 0; i < ${#win_names[@]}; i++)); do
         wname="${win_names[$i]}"
         wcmd="${win_cmds[$i]}"
         wsplit="${win_splits[$i]}"
         wscmd="${win_split_cmds[$i]}"
 
-        # Escape single quotes for safe embedding in generated send-keys commands
+        # escape single quotes for safe embedding in generated send-keys commands
         wcmd="${wcmd//\'/\'\\\'\'}"
         wscmd="${wscmd//\'/\'\\\'\'}"
 
@@ -944,7 +944,7 @@ FOOTER
 
 chmod +x "$target_path"
 
-# Show success
+# show success
 clear
 printf "\n\n"
 if [[ -n "$edit_source" ]]; then

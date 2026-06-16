@@ -1,6 +1,6 @@
 -- GitHub Copilot configuration (copilot.lua + blink-cmp-copilot)
--- Ghost text for inline suggestions, blink.cmp source for menu items.
--- Ghost text auto-hides when blink menu is open to avoid visual clutter.
+-- ghost text for inline suggestions, blink.cmp source for menu items.
+-- ghost text auto-hides when blink menu is open to avoid visual clutter
 
 return {
   {
@@ -8,12 +8,12 @@ return {
     cmd = 'Copilot',
     event = 'InsertEnter',
     opts = {
-      -- Use the standalone copilot-language-server binary instead of the
-      -- bundled Node server. The Node path requires `node` (>= 22) on PATH at
+      -- use the standalone copilot-language-server binary instead of the
+      -- bundled Node server. the Node path requires `node` (>= 22) on PATH at
       -- launch; on machines where nvim starts outside an fnm/nvm shell (GUI
       -- app, launcher, bare login shell) that silently yields zero completions.
-      -- The binary server auto-downloads from GitHub releases and has no Node
-      -- dependency. See lsp/binary.lua in copilot.lua.
+      -- the binary server auto-downloads from GitHub releases and has no Node
+      -- dependency. see lsp/binary.lua in copilot.lua
       server = { type = 'binary' },
       suggestion = {
         enabled = true,
@@ -46,7 +46,7 @@ return {
         cvs = false,
       },
       should_attach = function(bufnr, bufname)
-        -- Preserve default checks: skip unlisted and special buffers (e.g. Telescope prompts)
+        -- preserve default checks: skip unlisted and special buffers (e.g. Telescope prompts)
         if not vim.bo[bufnr].buflisted or vim.bo[bufnr].buftype ~= '' then
           return false
         end
@@ -62,7 +62,7 @@ return {
     config = function(_, opts)
       require('copilot').setup(opts)
 
-      -- Hide ghost text when blink menu opens, restore when it closes
+      -- hide ghost text when blink menu opens, restore when it closes
       vim.api.nvim_create_autocmd('User', {
         pattern = 'BlinkCmpMenuOpen',
         callback = function()

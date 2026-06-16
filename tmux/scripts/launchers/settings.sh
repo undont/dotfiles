@@ -5,10 +5,10 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # Launcher Settings (inline root directory configuration)
 # ══════════════════════════════════════════════════════════════
-# Allows configuring DEV_ROOT and PROJECTS_ROOT from within
-# the launcher picker. Updates ~/.zshrc using the shared helper.
+# configures DEV_ROOT and PROJECTS_ROOT from within the launcher
+# picker. updates ~/.zshrc using the shared helper.
 #
-# Called via ACTION:set from picker.sh
+# called via ACTION:set from picker.sh
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
@@ -17,12 +17,12 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 # shellcheck source=scripts/_lib/common.sh
 source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 
-# Load current theme colours for fzf
+# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
 # ─────────────────────────────────────────
-# Resolve current values
+# resolve current values
 # ─────────────────────────────────────────
 dev_root="${DEV_ROOT:-}"
 projects_root="${PROJECTS_ROOT:-}"
@@ -34,7 +34,7 @@ proj_display="${projects_root:-not set}"
 [[ -z "$projects_root" ]] || proj_display="${projects_root/#$HOME/\~}"
 
 # ─────────────────────────────────────────
-# Show setting picker
+# show setting picker
 # ─────────────────────────────────────────
 content=""
 content+=$'\n'
@@ -58,7 +58,7 @@ selection=$(printf '%s' "$content" | fzf \
     --bind 'esc:abort' \
     2>/dev/null) || exit 130
 
-# Extract selected variable name
+# extract selected variable name
 var_name=$(printf '%s' "$selection" | awk '{print $1}')
 
 case "$var_name" in
@@ -74,7 +74,7 @@ case "$var_name" in
 esac
 
 # ─────────────────────────────────────────
-# Prompt for new value
+# prompt for new value
 # ─────────────────────────────────────────
 default_query=""
 [[ "$current_value" == "not set" ]] || default_query="$current_value"
@@ -94,16 +94,16 @@ new_value=$(printf '' | fzf \
 
 [[ -n "$new_value" ]] || exit 0
 
-# Expand ~ and resolve
+# expand ~ and resolve
 new_value="${new_value/#\~/$HOME}"
 if [[ -d "$new_value" ]]; then
     new_value=$(cd "$new_value" && pwd)
 fi
 
-# Store with $HOME for portability
+# store with $HOME for portability
 stored_value="\$HOME${new_value#"$HOME"}"
 
 update_zshrc_export "$var_name" "$stored_value"
 
-# Show confirmation via tmux message
+# show confirmation via tmux message
 tmux display-message "${var_name} set to ${new_value/#$HOME/\~} (source ~/.zshrc to apply)"

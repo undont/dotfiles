@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Fix lazydocker config YAML structure:
+# fix lazydocker config YAML structure:
 # - returnImmediately was incorrectly nested under gui.theme (should be gui)
 # - logs.timestamps was nested under gui.theme (should be top-level logs)
 # - timestamp key was misspelled (should be timestamps)
@@ -17,7 +17,7 @@ if [[ ! -f "$conf" ]]; then
     exit 0
 fi
 
-# Only patch if the file still has the broken nesting
+# only patch if the file still has the broken nesting
 if grep -q '^ *returnImmediately:' "$conf" && grep -B5 'returnImmediately' "$conf" | grep -q 'theme:'; then
     echo "    Fixing YAML structure in lazydocker config..."
     DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)}"

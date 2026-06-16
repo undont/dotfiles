@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
-# Session management utilities for tmux scripts
-# Source this file after common.sh
+# session management utilities for tmux scripts
+# source this file after common.sh
 
-# Guard against multiple sourcing
+# guard against multiple sourcing
 [[ -n "${_TMUX_SESSION_SH_LOADED:-}" ]] && return 0
 _TMUX_SESSION_SH_LOADED=1
 
-# Find another session to switch to (excluding specified session)
-# Returns the session name via stdout, empty if none found
-# Usage: other=$(find_other_session "$current_session")
+# find another session to switch to (excluding specified session)
+# returns the session name via stdout, empty if none found
+# usage: other=$(find_other_session "$current_session")
 find_other_session() {
     local exclude_session="$1"
 
@@ -19,8 +19,8 @@ find_other_session() {
         head -n1 || true
 }
 
-# Switch to another session if available
-# Usage: switch_to_other_session "$current_session"
+# switch to another session if available
+# usage: switch_to_other_session "$current_session"
 switch_to_other_session() {
     local current_session="$1"
     local other_session
@@ -35,44 +35,44 @@ switch_to_other_session() {
     return 1
 }
 
-# Get current session name
+# get current session name
 get_current_session() {
-    # Only return a session name if we're actually inside tmux
-    # Check for TMUX variable which is set when running inside a tmux session
+    # only return a session name if we're actually inside tmux
+    # check for TMUX variable which is set when running inside a tmux session
     if [[ -z "${TMUX:-}" ]]; then
-        # Not inside a tmux session - return empty
+        # not inside a tmux session, return empty
         echo ""
         return 0
     fi
     tmux display-message -p '#{session_name}' 2>/dev/null || echo ""
 }
 
-# Get current window index
+# get current window index
 get_current_window() {
     tmux display-message -p '#{window_index}'
 }
 
-# Get current pane index
+# get current pane index
 get_current_pane() {
     tmux display-message -p '#{pane_index}'
 }
 
-# Get current pane directory
+# get current pane directory
 get_pane_directory() {
     tmux display-message -p '#{pane_current_path}'
 }
 
-# Get window layout
+# get window layout
 get_window_layout() {
     tmux display-message -p '#{window_layout}'
 }
 
-# Get current window name
+# get current window name
 get_window_name() {
     tmux display-message -p '#{window_name}'
 }
 
-# Get pane count in current window
+# get pane count in current window
 get_pane_count() {
     tmux display-message -p '#{window_panes}'
 }

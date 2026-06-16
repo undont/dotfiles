@@ -1,5 +1,5 @@
--- Catppuccin Mocha colourscheme for Neovim
--- Matches the dotfiles catppuccin-mocha.theme exactly
+-- Catppuccin Mocha colourscheme for nvim
+-- matches the dotfiles catppuccin-mocha.theme exactly
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -9,16 +9,16 @@ end
 vim.g.colors_name = 'catppuccin-mocha'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/catppuccin-mocha.theme)
+-- theme colours (matching themes/catppuccin-mocha.theme)
 local colors = {
-  -- Base colours
+  -- base colours
   bg_primary = '#1e1e2e',
   fg_primary = '#cdd6f4',
   bg_secondary = '#313244',
   fg_secondary = '#6c7086',
   fg_variable = '#b5bcd8',
 
-  -- Accents
+  -- accents
   purple = '#cba6f7',
   pink = '#f5c2e7',
   cyan = '#89dceb',
@@ -26,19 +26,19 @@ local colors = {
   yellow = '#f9e2af',
   red = '#f38ba8',
 
-  -- Additional shades
+  -- additional shades
   selection = '#313244',
   comment = '#6c7086',
   line_highlight = '#262637',
   blue = '#89b4fa',
 }
 
--- Helper function to set highlight groups
+-- helper to set highlight groups
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
 end
 
--- Editor highlights
+-- editor highlights
 hl('Normal', { fg = colors.fg_primary, bg = colors.bg_primary })
 hl('NormalFloat', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
@@ -77,7 +77,7 @@ hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
 
--- Syntax highlighting
+-- syntax highlighting
 hl('Comment', { fg = colors.comment, italic = true })
 hl('Constant', { fg = '#cba6f7' })
 hl('String', { fg = '#a6e3a1' })
@@ -114,14 +114,14 @@ hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
 hl('Todo', { fg = '#f5c2e7', bold = true })
 
--- Git signs
+-- git signs
 hl('GitSignsAdd', { fg = colors.green })
 hl('GitSignsChange', { fg = colors.yellow })
 hl('GitSignsDelete', { fg = colors.red })
 hl('GitSignsTopdelete', { fg = colors.red })
 hl('GitSignsChangedelete', { fg = colors.orange or colors.yellow })
 
--- Diagnostics
+-- diagnostics
 hl('DiagnosticError', { fg = colors.red })
 hl('DiagnosticWarn', { fg = colors.yellow })
 hl('DiagnosticInfo', { fg = colors.cyan })
@@ -136,7 +136,7 @@ hl('LspReferenceText', { bg = colors.selection })
 hl('LspReferenceRead', { bg = colors.selection })
 hl('LspReferenceWrite', { bg = colors.selection })
 
--- Treesitter
+-- treesitter
 hl('@variable', { fg = colors.fg_variable })
 hl('@variable.builtin', { fg = '#cba6f7' })
 hl('@variable.parameter', { fg = colors.fg_secondary })
@@ -196,7 +196,7 @@ hl('TelescopeResultsTitle', { fg = '#cba6f7', bold = true })
 hl('TelescopeSelection', { fg = '#cba6f7', bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = '#f5c2e7', bold = true })
 
--- Neo-tree
+-- neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeCursorLine', { bg = '#4f5060' })
@@ -210,7 +210,7 @@ hl('NeoTreeGitDeleted', { fg = colors.red })
 hl('NeoTreeIndentMarker', { fg = colors.comment })
 hl('NeoTreeRootName', { fg = '#f5c2e7', bold = true })
 
--- Which-key
+-- which-key
 hl('WhichKey', { fg = '#cba6f7' })
 hl('WhichKeyGroup', { fg = '#f5c2e7' })
 hl('WhichKeyDesc', { fg = colors.fg_primary })

@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# Uninstall postgresql@14 — the Brewfile pinned `postgresql@17` long ago,
+# uninstall postgresql@14: the Brewfile pinned `postgresql@17` long ago,
 # but `brew bundle install` only adds packages, so users who installed
 # the original Brewfile still have postgresql@14 sitting around (and
-# possibly running as a service). Data directories are left untouched
-# in case the user wants to migrate them by hand.
+# possibly running as a service). data directories are left untouched
+# in case the user wants to migrate them by hand
 
 if ! command -v brew >/dev/null 2>&1; then
     echo "    brew not found — skipping postgresql@14 uninstall"

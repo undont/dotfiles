@@ -17,7 +17,7 @@ return {
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
-      -- Helper to format path as parent/parent/filename (2 dirs up)
+      -- helper to format path as parent/parent/filename (2 dirs up)
       local function short_path(path)
         local tail = require('telescope.utils').path_tail(path)
         local parent = vim.fn.fnamemodify(path, ':h:t')
@@ -35,7 +35,7 @@ return {
 
       require('telescope').setup {
         defaults = {
-          -- Results show full relative path (default behaviour)
+          -- results show full relative path (default behaviour)
           path_display = { 'filename_first' },
           file_ignore_patterns = {
             '%.git/',
@@ -92,7 +92,7 @@ return {
         },
       }
 
-      -- Override previewer to show short path in title
+      -- override previewer to show short path in title
       local conf = require('telescope.config').values
 
       local original_file_previewer = conf.file_previewer
@@ -136,9 +136,9 @@ return {
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = 'Search [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = 'Search [F]iles' })
       vim.keymap.set('n', '<leader>sF', function()
-        -- Live regex find: re-run `fd --regex <prompt>` on every keystroke.
-        -- The fuzzy sorter would re-filter rg/fd output and reject regex
-        -- metacharacters like `.*`, so use highlighter_only to preserve order.
+        -- live regex find: re-run `fd --regex <prompt>` on every keystroke.
+        -- the fuzzy sorter would re-filter rg/fd output and reject regex
+        -- metacharacters like `.*`, so use highlighter_only to preserve order
         local pickers = require 'telescope.pickers'
         local finders = require 'telescope.finders'
         local make_entry = require 'telescope.make_entry'
@@ -165,11 +165,11 @@ return {
         builtin.live_grep { additional_args = { '--hidden', '--fixed-strings' } }
       end, { desc = 'Search [G]rep (literal)' })
       vim.keymap.set('n', '<leader>sm', function()
-        -- Same file set as the <leader>xm / <leader>lm scans (core/ticket.lua):
-        -- staged or unstaged changes vs HEAD plus untracked files. A plain
+        -- same file set as the <leader>xm / <leader>lm scans (core/ticket.lua):
+        -- staged or unstaged changes vs HEAD plus untracked files. a plain
         -- file picker rather than builtin.git_status, so no status letters or
-        -- <Tab> staging -- in exchange the three always agree on "modified".
-        local files = require('custom.core.ticket').modified_files()
+        -- <Tab> staging; in exchange the three always agree on "modified"
+        local files = require('custom.features.ticket').modified_files()
         if not files then
           return
         end
@@ -192,9 +192,9 @@ return {
       end, { desc = 'Search git [M]odified files' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = 'Search [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', function()
-        -- Resume re-uses cached entries from the previous picker; we want a
+        -- resume re-uses cached entries from the previous picker; we want a
         -- fresh run against the current state of the workspace, so trigger a
-        -- finder refresh once the resumed picker is ready.
+        -- finder refresh once the resumed picker is ready
         vim.api.nvim_create_autocmd('User', {
           pattern = 'TelescopeResumePost',
           once = true,
@@ -216,7 +216,7 @@ return {
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = 'Recent files [.]' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = 'Buffers' })
 
-      -- Fuzzy search in current buffer
+      -- fuzzy search in current buffer
       vim.keymap.set('n', '<leader>s/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
           winblend = 10,
@@ -224,7 +224,7 @@ return {
         })
       end, { desc = 'Fuzzy search buffer' })
 
-      -- Search Neovim config files
+      -- search nvim config files
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = 'Search [N]eovim files' })

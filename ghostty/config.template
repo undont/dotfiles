@@ -1,4 +1,4 @@
-# Ghostty Configuration File
+# Ghostty configuration file
 # Theme: {{THEME_NAME}}
 
 # Fonts
@@ -28,7 +28,7 @@ shell-integration-features = no-cursor,title
 # Mouse
 mouse-hide-while-typing = true
 
-# Bell - allow terminal bells through for tmux monitor-bell
+# Bell: allow terminal bells through for tmux monitor-bell
 bell-features = title,attention
 
 # Colors
@@ -82,5 +82,5 @@ keybind = super+backspace=text:\x15
 keybind = shift+backspace=text:\x7f
 keybind = shift+space=text:\x20
 
-# User overrides (not managed by dotfiles — survives theme changes)
+# User overrides (not managed by dotfiles; survives theme changes)
 config-file = ~/.config/ghostty/local
