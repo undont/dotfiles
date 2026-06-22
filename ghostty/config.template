@@ -78,9 +78,7 @@ keybind = super+left=text:\x1b[H
 keybind = super+right=text:\x1b[F
 keybind = super+up=text:\x1b[1;5H
 keybind = super+down=text:\x1b[1;5F
-# cmd+backspace as ctrl+backspace (csi-u): tmux forwards ctrl but has no super
-# modifier, and this stays distinct from ctrl+u for apps that scroll on it
-keybind = super+backspace=text:\x1b[127;5u
+keybind = super+backspace=text:\x15
 keybind = shift+backspace=text:\x7f
 keybind = shift+space=text:\x20
 
