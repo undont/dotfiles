@@ -2,10 +2,11 @@
 -- SonarLint only analyses opened buffers, so we walk the project, hidden-load
 -- each scannable file, debounce on quiet diagnostic activity to detect "done",
 -- snapshot diagnostics into quickfix, and unload the buffers we created.
--- three scopes, mirroring the all-LSP scans in features/diag-scan.lua:
+-- four scopes, mirroring the all-LSP scans in features/diag-scan.lua:
 --   <leader>lm  changed/untracked files   (~ <leader>xm)
+--   <leader>lb  branch vs main            (~ <leader>xb, via features/ticket.lua)
 --   <leader>lT  ticket-matching commits   (~ <leader>xT, via features/ticket.lua)
---   <leader>lS  whole project
+--   <leader>lS  whole project             (~ <leader>xS)
 -- extracted from plugins/sonarlint.lua; delegates to features/scan-runner
 
 local common = require 'custom.features.sonar-common'
@@ -84,13 +85,19 @@ local function scannable(paths)
   return files
 end
 
---- @param mode 'changed' | 'all'
+--- @param mode 'changed' | 'branch' | 'all'
 local function list_scan_targets(mode)
   if mode == 'changed' then
     -- same file set as <leader>xm / <leader>sm (features/ticket.lua): staged or
     -- unstaged changes vs HEAD plus untracked files. nil (already notified)
     -- outside a git repo
     local paths = require('custom.features.ticket').modified_files()
+    return paths and scannable(paths) or nil
+  end
+
+  if mode == 'branch' then
+    -- every file changed vs merge-base(main), same set as <leader>xb
+    local paths = require('custom.features.ticket').branch_files()
     return paths and scannable(paths) or nil
   end
 
@@ -187,7 +194,7 @@ local function start_scan(files, label)
   }
 end
 
---- @param mode 'changed' | 'ticket' | 'all'
+--- @param mode 'changed' | 'branch' | 'ticket' | 'all'
 function M.run_scan(mode)
   if require('custom.features.scan-runner').is_active() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
@@ -220,12 +227,16 @@ function M.run_scan(mode)
     return -- not a git repo, modified_files already notified
   end
   if #files == 0 then
-    local msg = mode == 'changed' and 'No changed sonarlint-scannable files' or 'No sonarlint-scannable files in ' .. vim.fn.getcwd()
+    local msg = ({
+      changed = 'No changed sonarlint-scannable files',
+      branch = 'No sonarlint-scannable files changed vs main',
+      all = 'No sonarlint-scannable files in ' .. vim.fn.getcwd(),
+    })[mode]
     vim.notify(msg, vim.log.levels.INFO)
     return
   end
 
-  local label = mode == 'changed' and 'changed' or 'project'
+  local label = ({ changed = 'changed', branch = 'branch', all = 'project' })[mode]
 
   -- only the full-project scan asks for confirmation above the cap; the
   -- changed-files and ticket modes are naturally bounded

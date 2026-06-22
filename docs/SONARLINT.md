@@ -184,14 +184,15 @@ without a server round-trip.
 
 ## Scanning
 
-SonarLint only analyses open buffers. Three LSP keymaps run a scan that hidden-loads
+SonarLint only analyses open buffers. Four LSP keymaps run a scan that hidden-loads
 files, snapshots the diagnostics into the quickfix list, then unloads what it opened:
-one scoped to changed/untracked files (needs a git repo), one scoped to the files
-touched by ticket-matching commits (prompts for a commit grep with a default pulled
-from the branch name; the same commit discovery as the diff-by-ticket and ticket
-diagnostics-scan bindings), and one for the whole project (with a confirmation prompt
-above 500 files). The exact bindings live in the `lsp` section of
-`nvim/cheatsheet.txt` (and `<leader>?` in the editor) so they stay in one place.
+one scoped to changed/untracked files (needs a git repo), one scoped to every file
+changed vs main, one scoped to the files touched by ticket-matching commits (prompts
+for a commit grep with a default pulled from the branch name; the same commit discovery
+as the diff-by-ticket and ticket diagnostics-scan bindings), and one for the whole
+project (with a confirmation prompt above 500 files). Each mirrors an all-LSP
+diagnostics-scan binding under `<leader>x`. The exact bindings live in the `lsp` section
+of `nvim/cheatsheet.txt` (and `<leader>?` in the editor) so they stay in one place.
 
 ## C# is not analysed locally
 

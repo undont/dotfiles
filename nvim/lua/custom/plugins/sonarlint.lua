@@ -145,6 +145,13 @@ return {
         desc = 'LSP: Sonar scan [M]odified files',
       },
       {
+        '<leader>lb',
+        function()
+          scan.run_scan 'branch'
+        end,
+        desc = 'LSP: Sonar scan [B]ranch vs main',
+      },
+      {
         '<leader>lT',
         function()
           scan.run_scan 'ticket'

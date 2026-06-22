@@ -604,16 +604,23 @@ end
 ---                   carry the `[source]` text prefix that the diagnostic
 ---                   lists use.
 ---   - 'line_text' : drop unless a live diagnostic has the same (lnum, text)
----                   tuple. used for Sonar/Modified/Diagnostics, where items
----                   are built via scan_runner.diag_to_item and carry a
----                   `[source] message` text. stops stale entries surviving
----                   just because an unrelated diagnostic landed on the row.
+---                   tuple. used for the scan-backed lists (Sonar, Modified,
+---                   Branch, Ticket, Project, Buffer), where items are built
+---                   via scan_runner.diag_to_item and carry a `[source]
+---                   message` text. stops stale entries surviving just because
+---                   an unrelated diagnostic landed on the row.
+---
+--- the live `<leader>xx` list (title `Diagnostics: all`) is deliberately absent:
+--- lists.lua's debounced rebuild fully owns it (it both adds and removes), so a
+--- second pruner here would just race that rebuild.
 local AUTO_CLEAR_KINDS = {
   Build = { label = 'Build errors resolved', match = 'line' },
   Sonar = { label = 'Sonar issues resolved', match = 'line_text' },
   Modified = { label = 'Modified file diagnostics resolved', match = 'line_text' },
+  Branch = { label = 'Branch diagnostics resolved', match = 'line_text' },
   Ticket = { label = 'Ticket diagnostics resolved', match = 'line_text' },
-  Diagnostics = { label = 'Diagnostics resolved', match = 'line_text' },
+  Project = { label = 'Project diagnostics resolved', match = 'line_text' },
+  Buffer = { label = 'Buffer diagnostics resolved', match = 'line_text' },
 }
 
 --- prune diagnostic-backed items from `list` for `bufnr`. returns

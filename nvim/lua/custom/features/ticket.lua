@@ -9,7 +9,7 @@
 -- <leader>lm (sonar scan) and <leader>sm (telescope picker), so all three
 -- always operate on the same file set.
 --
--- branch-total discovery behind <leader>xt (all-LSP diagnostics scan):
+-- branch discovery behind <leader>xb (all-LSP) and <leader>lb (sonar) scans:
 -- every file changed vs merge-base(main), mirroring <leader>dt's diffview
 
 local M = {}

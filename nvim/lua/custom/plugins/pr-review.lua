@@ -13,7 +13,7 @@ return {
       {
         '<leader>dT',
         function()
-          -- commit discovery shared with <leader>xT / <leader>lT (core/ticket.lua)
+          -- commit discovery shared with <leader>xT / <leader>lT (features/ticket.lua)
           require('custom.features.ticket').prompt_commits(function(ctx)
             local oldest, newest = ctx.commits[#ctx.commits], ctx.commits[1]
             if newest == ctx.head then

@@ -165,7 +165,7 @@ return {
         builtin.live_grep { additional_args = { '--hidden', '--fixed-strings' } }
       end, { desc = 'Search [G]rep (literal)' })
       vim.keymap.set('n', '<leader>sm', function()
-        -- same file set as the <leader>xm / <leader>lm scans (core/ticket.lua):
+        -- same file set as the <leader>xm / <leader>lm scans (features/ticket.lua):
         -- staged or unstaged changes vs HEAD plus untracked files. a plain
         -- file picker rather than builtin.git_status, so no status letters or
         -- <Tab> staging; in exchange the three always agree on "modified"

@@ -139,41 +139,6 @@ local function bracketed_loc(direction)
   end
 end
 
--- library / dependency code we never want in a diagnostics list. these are
--- read-only files surfaced when an LSP attaches after a go-to-definition jump
--- (e.g. gopls emitting modernization notes on the Go stdlib under the Homebrew
--- Cellar). two signals: the file lives outside the project root (cwd), which
--- catches stdlib and global module caches; or it sits under an in-tree vendored
--- dependency directory, which a cwd check alone would miss
-local LIBRARY_SEGMENTS = {
-  '/node_modules/',
-  '/vendor/',
-  '/site%-packages/',
-  '/dist%-packages/',
-  '/pkg/mod/',
-  '/%.venv/',
-  '/%.cargo/',
-}
-
-local function diag_in_library(d)
-  if not d.bufnr or not vim.api.nvim_buf_is_valid(d.bufnr) then
-    return false
-  end
-  local name = vim.api.nvim_buf_get_name(d.bufnr)
-  if name == '' then
-    return false
-  end
-  local path = vim.fs.normalize(name)
-  for _, seg in ipairs(LIBRARY_SEGMENTS) do
-    if path:find(seg) then
-      return true
-    end
-  end
-  -- outside the project root: stdlib, global caches, anything jumped into
-  local root = vim.fs.normalize(vim.fn.getcwd())
-  return path:sub(1, #root + 1) ~= root .. '/'
-end
-
 -- diagnostics into native lists. explicit titles let `build.lua`'s
 -- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
 -- match these lists and prune resolved entries on DiagnosticChanged.
@@ -192,7 +157,7 @@ local function diags_to_items(diagnostics)
     -- they'd sit in the live list indefinitely. displayed buffers keep
     -- theirs (the full pass has run; entries are real). the predicate is
     -- shared with diag-scan's batch snapshot
-    if d.bufnr and d.lnum and not diag_in_library(d) then
+    if d.bufnr and d.lnum and not scan_runner.in_library(d) then
       local hidden_phantom = scan_ignored(d) and #vim.fn.win_findbuf(d.bufnr) == 0
       if not hidden_phantom then
         table.insert(items, scan_runner.diag_to_item(d))
@@ -231,9 +196,9 @@ local function rebuild_live_qf()
       return
     end
     vim.fn.setqflist({}, 'r', { title = DIAG_QF_TITLE, items = {} })
-    -- close + notify only if build.lua's auto-clear prune hasn't already
-    -- (it fires undebounced on the same DiagnosticChanged and closes the
-    -- window itself when its prune empties the list)
+    -- this live list owns its own close + notify: build.lua's auto-clear no
+    -- longer prunes the DIAG_QF_TITLE list (its `Diagnostics` kind was retired
+    -- in favour of `Buffer`/`Branch`/`Project`), so nothing else empties it
     for _, win in ipairs(vim.fn.getwininfo()) do
       if win.quickfix == 1 and win.loclist == 0 then
         vim.api.nvim_win_close(win.winid, true)
@@ -284,10 +249,65 @@ local function schedule_live_rebuild()
   live_timer:start(300, 0, vim.schedule_wrap(rebuild_live_qf))
 end
 
+-- :Cfilter / :Lfilter replacements that keep the source list's "Kind:" prefix
+-- in the filtered list's title. stock cfilter.vim retitles the new list
+-- ":Cfilter /pat/", which drops the prefix build.lua's auto-clear keys on, so a
+-- filtered diagnostics list stops pruning as issues are fixed. we reproduce
+-- cfilter's matching (optional /"' delimiters, empty pat = last search, ! to
+-- invert, case-sensitive against text + filename) and only change the title:
+-- keep the original and append the filter when it carries a kind, else fall
+-- back to cfilter's own title so grep/other lists read naturally
+local function filter_list(is_qf, searchpat, bang)
+  local pat = searchpat
+  local first, last = searchpat:sub(1, 1), searchpat:sub(-1)
+  if first == last and (first == '/' or first == '"' or first == "'") then
+    pat = searchpat:sub(2, -2)
+    if pat == '' then
+      pat = vim.fn.getreg '/'
+    end
+  end
+  if pat == '' then
+    return
+  end
+
+  local cur = is_qf and vim.fn.getqflist { title = 0, items = 0 } or vim.fn.getloclist(0, { title = 0, items = 0 })
+
+  -- \C forces case-sensitive matching to mirror cfilter's =~# / !~#
+  local mpat = '\\C' .. pat
+  local invert = bang == '!'
+  local kept = {}
+  for _, item in ipairs(cur.items) do
+    local name = (item.bufnr and item.bufnr > 0) and vim.fn.bufname(item.bufnr) or ''
+    local matched = vim.fn.match(item.text or '', mpat) >= 0 or vim.fn.match(name, mpat) >= 0
+    if matched ~= invert then
+      table.insert(kept, item)
+    end
+  end
+
+  local title
+  if cur.title and cur.title:match '^%w+:' then
+    title = cur.title .. ' (filtered /' .. pat .. '/)'
+  else
+    title = (is_qf and ':Cfilter' or ':Lfilter') .. bang .. ' /' .. pat .. '/'
+  end
+
+  if is_qf then
+    vim.fn.setqflist({}, ' ', { title = title, items = kept })
+  else
+    vim.fn.setloclist(0, {}, ' ', { title = title, items = kept })
+  end
+end
+
 function M.setup()
-  -- built-in filter plugin: :Cfilter /pat/ keeps matching qf entries,
-  -- :Cfilter! /pat/ drops them. same for :Lfilter on loclists
-  vim.cmd 'packadd cfilter'
+  -- :Cfilter /pat/ keeps matching qf entries, :Cfilter! /pat/ drops them; same
+  -- for :Lfilter on loclists. these shadow the stock cfilter.vim commands to
+  -- preserve the kind prefix in the filtered title (see filter_list)
+  vim.api.nvim_create_user_command('Cfilter', function(o)
+    filter_list(true, o.args, o.bang and '!' or '')
+  end, { nargs = '+', bang = true, desc = 'Filter quickfix (keeps kind for auto-clear)' })
+  vim.api.nvim_create_user_command('Lfilter', function(o)
+    filter_list(false, o.args, o.bang and '!' or '')
+  end, { nargs = '+', bang = true, desc = 'Filter location list (keeps kind for auto-clear)' })
 
   -- dashboard escape is handled globally in autocmds.lua (FileType qf autocmd)
   vim.keymap.set('n', '<leader>xq', toggle_quickfix, { desc = '[Q]uickfix list toggle' })
@@ -327,7 +347,7 @@ function M.setup()
   end, { desc = 'All [D]iagnostics to quickfix (live)' })
   vim.keymap.set('n', '<leader>xX', function()
     local items = diags_to_items(vim.diagnostic.get(0))
-    vim.fn.setloclist(0, {}, ' ', { title = 'Diagnostics: buffer', items = items })
+    vim.fn.setloclist(0, {}, ' ', { title = 'Buffer: diagnostics', items = items })
     if #items == 0 then
       vim.notify('Buffer diagnostics: clean', vim.log.levels.INFO)
     end

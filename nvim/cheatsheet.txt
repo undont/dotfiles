@@ -117,6 +117,7 @@ Refresh Neovim | <leader>lR
 Refresh Treesitter + semantic tokens | <leader>lt
 Toggle dashboard in current window | <leader>ld
 Sonar scan changed files | <leader>lm
+Sonar scan branch vs main | <leader>lb
 Sonar scan ticket commits | <leader>lT
 Sonar scan whole project | <leader>lS
 Sonar issue details / silence rule | gra (on sonar finding)
@@ -144,8 +145,9 @@ Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
 Git modified → diagnostics qf | <leader>xm
-Branch total vs main → diagnostics qf | <leader>xt
+Branch vs main → diagnostics qf | <leader>xb
 Git ticket commits → diagnostics qf | <leader>xT
+Whole project scan → diagnostics qf | <leader>xS
 Grep yank register → quickfix | <leader>x/
 Filter qf list (keep matching) | :Cfilter /pat/
 Filter qf list (drop matching) | :Cfilter! /pat/
