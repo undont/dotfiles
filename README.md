@@ -8,9 +8,9 @@
 
 **Personal configuration files for zsh, tmux, neovim, ghostty, git and much more.**
 
-[![CI](https://img.shields.io/github/actions/workflow/status/seanhalberthal/dotfiles/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/seanhalberthal/dotfiles/actions)
-[![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/seanhalberthal/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json&style=flat&logo=ghostty&logoColor=white)](https://github.com/seanhalberthal/dotfiles/actions/workflows/ci.yml)
-[![Licence](https://img.shields.io/github/license/seanhalberthal/dotfiles?style=flat&label=licence&color=6A9462)](LICENCE)
+[![CI](https://img.shields.io/github/actions/workflow/status/undont/dotfiles/ci.yml?branch=main&style=flat&logo=githubactions&logoColor=white&label=CI)](https://github.com/undont/dotfiles/actions)
+[![Zsh Startup](https://img.shields.io/endpoint?url=https://gist.githubusercontent.com/undont/fa735d81db7a1bfb7662671f293e4c35/raw/zsh-startup.json&style=flat&logo=ghostty&logoColor=white)](https://github.com/undont/dotfiles/actions/workflows/ci.yml)
+[![Licence](https://img.shields.io/github/license/undont/dotfiles?style=flat&label=licence&color=6A9462)](LICENCE)
 [![Neovim](https://img.shields.io/badge/Neovim-0.11+-57A143?style=flat&logo=neovim&logoColor=white)](https://neovim.io/)
 [![Tmux](https://img.shields.io/badge/Tmux-3.3+-1BB91F?style=flat&logo=tmux&logoColor=white)](https://github.com/tmux/tmux)
 [![macOS](https://img.shields.io/badge/macOS-supported-6e7681?style=flat&logo=apple&logoColor=white)]()
@@ -27,7 +27,7 @@
 Prerequisites: macOS or Linux. On a fresh macOS, run `xcode-select --install` first.
 
 ```bash
-git clone https://github.com/seanhalberthal/dotfiles.git ~/dotfiles
+git clone https://github.com/undont/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 ./install.sh            # full install (default)
 ```
@@ -179,11 +179,11 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the architecture.
 
 | Tool | What it does |
 |------|--------------|
-| [supplyscan](https://github.com/seanhalberthal/supplyscan) | Go CLI / MCP that scans JS-ecosystem projects for vulnerabilities and supply-chain attacks |
-| [jiru](https://github.com/seanhalberthal/jiru) | Bubble Tea TUI for managing Jira issues and Confluence pages |
-| [seeql](https://github.com/seanhalberthal/seeql) | SQL client TUI |
-| [lazycron](https://github.com/seanhalberthal/lazycron) | Cron job manager TUI |
-| [gh-bench](https://github.com/seanhalberthal/gh-bench) | `gh` CLI extension for benchmarking GitHub Actions and tracking failures |
+| [supplyscan](https://github.com/undont/supplyscan) | Go CLI / MCP that scans JS-ecosystem projects for vulnerabilities and supply-chain attacks |
+| [jiru](https://github.com/undont/jiru) | Bubble Tea TUI for managing Jira issues and Confluence pages |
+| [seeql](https://github.com/undont/seeql) | SQL client TUI |
+| [lazycron](https://github.com/undont/lazycron) | Cron job manager TUI |
+| [gh-bench](https://github.com/undont/gh-bench) | `gh` CLI extension for benchmarking GitHub Actions and tracking failures |
 
 ### gh CLI extensions (auto-installed)
 

@@ -12,7 +12,7 @@ tap "libsql/sqld"
 tap "morantron/tmux-fingers"
 tap "neur0map/tap"
 tap "oven-sh/bun"
-tap "seanhalberthal/tap"
+tap "undont/tap"
 tap "teamookla/speedtest"
 
 # =============================================================================
@@ -110,14 +110,14 @@ cask "dotnet-sdk"
 # Code Quality
 brew "shellcheck"                    # Shell script linter
 brew "luacheck"                      # Lua linter
-brew "seanhalberthal/tap/supplyscan" # Supply chain vulnerability scanner
+brew "undont/tap/supplyscan" # Supply chain vulnerability scanner
 brew "sonar-scanner"
 
 # Database
 brew "postgresql@17"
 brew "mongosh"
 brew "libsql/sqld/sqld"
-brew "seanhalberthal/tap/seeql"     # SQL client TUI
+brew "undont/tap/seeql"     # SQL client TUI
 
 # Containers & Infrastructure
 brew "act"                          # GitHub Actions locally
@@ -152,8 +152,8 @@ brew "asciinema"                     # Terminal session recorder
 brew "figlet"                        # ASCII art text banners
 brew "toilet"                        # Unicode/colour text banners (figlet-compatible)
 brew "chafa"                         # Terminal image renderer (used by music.nvim)
-brew "seanhalberthal/tap/lazycron"   # Cron job manager TUI
-brew "seanhalberthal/tap/jiru"       # Jira TUI app
+brew "undont/tap/lazycron"   # Cron job manager TUI
+brew "undont/tap/jiru"       # Jira TUI app
 brew "neur0map/tap/gpk"              # Unified package manager TUI
 brew "snitch" unless OS.linux? && Hardware::CPU.arm? # No Linux ARM bottle
 

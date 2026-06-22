@@ -136,7 +136,7 @@ This reads the `NVIM_SOCKET` environment variable (set by `nvim-pair`) and calls
 
 ### OpenCode
 
-OpenCode uses the [`opencode-tmux-alert`](https://github.com/seanhalberthal/opencode-tmux-alert) plugin. The plugin triggers alerts on session idle, permission requests, tool pending, and prompt appends, and clears when the user sends a message.
+OpenCode uses the [`opencode-tmux-alert`](https://github.com/undont/opencode-tmux-alert) plugin. The plugin triggers alerts on session idle, permission requests, tool pending, and prompt appends, and clears when the user sends a message.
 
 **1. Install the plugin:**
 
