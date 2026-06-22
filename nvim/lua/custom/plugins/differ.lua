@@ -11,7 +11,7 @@
 
 return {
   {
-    'seanhalberthal/differ.nvim',
+    'undont/differ.nvim',
     build = 'make go-build',
     cmd = 'Differ',
     keys = {

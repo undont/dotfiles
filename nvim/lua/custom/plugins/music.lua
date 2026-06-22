@@ -1,6 +1,6 @@
 return {
   {
-    'seanhalberthal/music.nvim',
+    'undont/music.nvim',
     config = function()
       require('music').setup {
         position = 'top-right',

@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.120] - 2026-06-22
+
+### Changed
+- Renamed the personal GitHub account from `seanhalberthal` to `undont`. Updated the Homebrew tap and the `supplyscan`/`seeql`/`lazycron`/`jiru` formula prefixes (`Brewfile`), badge/clone URLs and personal-tool links (`README.md`), the `differ.nvim` and `music.nvim` plugin owners, the `gh-bench` extension install (`scripts/install/install-packages.sh`), and the `opencode-tmux-alert` link (`docs/AGENT-HOOKS.md`). GitHub redirects the old paths for a while, so existing clones keep working. Optionally point your clone at the new owner: `git -C ~/dotfiles remote set-url origin https://github.com/undont/dotfiles.git`. `scripts/migrations/0.2.120-rename-brew-tap.sh` drops the old tap so `brew bundle` reinstalls the formulae from the new tap with no gap.
+
 ## [0.2.119] - 2026-06-22
 
 ### Changed
