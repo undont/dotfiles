@@ -1,7 +1,8 @@
 -- shared diagnostic-scan state machine. wraps the common pattern of:
 --   open a set of buffers, debounce on DiagnosticChanged, snapshot
 --   diagnostics into a titled quickfix, finalise.
--- used by sonarlint project-scan and the git-modified scan in core/lists.lua.
+-- used by the sonarlint project-scan (features/sonar-scan.lua) and the
+-- git-scoped scans (features/diag-scan.lua).
 --
 -- single global singleton: only one scan can be active at a time. callers
 -- check `is_active()` and reject (or merge) if a scan is already running;
@@ -91,6 +92,42 @@ function M.diag_to_item(d)
     text = M.qf_text(d),
     type = SEVERITY_TYPE[d.severity] or 'E',
   }
+end
+
+-- library / dependency code we never want in a diagnostics list. these are
+-- read-only files surfaced when an LSP attaches after a go-to-definition jump
+-- (e.g. gopls emitting modernization notes on the Go stdlib under the Homebrew
+-- Cellar). two signals: the file lives outside the project root (cwd), which
+-- catches stdlib and global module caches; or it sits under an in-tree vendored
+-- dependency directory, which a cwd check alone would miss. shared by the live
+-- <leader>xx list (lists.lua) and the git-scoped scans (diag-scan.lua)
+local LIBRARY_SEGMENTS = {
+  '/node_modules/',
+  '/vendor/',
+  '/site%-packages/',
+  '/dist%-packages/',
+  '/pkg/mod/',
+  '/%.venv/',
+  '/%.cargo/',
+}
+
+function M.in_library(d)
+  if not d.bufnr or not vim.api.nvim_buf_is_valid(d.bufnr) then
+    return false
+  end
+  local name = vim.api.nvim_buf_get_name(d.bufnr)
+  if name == '' then
+    return false
+  end
+  local path = vim.fs.normalize(name)
+  for _, seg in ipairs(LIBRARY_SEGMENTS) do
+    if path:find(seg) then
+      return true
+    end
+  end
+  -- outside the project root: stdlib, global caches, anything jumped into
+  local root = vim.fs.normalize(vim.fn.getcwd())
+  return path:sub(1, #root + 1) ~= root .. '/'
 end
 
 local state = nil

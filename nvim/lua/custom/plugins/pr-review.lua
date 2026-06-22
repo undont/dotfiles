@@ -11,86 +11,9 @@ return {
     dependencies = { 'nvim-tree/nvim-web-devicons' },
     keys = {
       {
-        '<leader>do',
-        function()
-          -- phase tracer: enable via `:lua vim.g.do_perf = true`, run
-          -- `<leader>do` once, paste output. off by default; near-zero overhead
-          local t0 = vim.g.do_perf and vim.uv.hrtime() or nil
-          local segs = {}
-          local function mark(label)
-            if t0 then
-              table.insert(segs, string.format('%s=%.0fms', label, (vim.uv.hrtime() - t0) / 1e6))
-            end
-          end
-
-          local current_file = vim.fn.expand '%:p'
-          local current_line = vim.fn.line '.'
-          local has_file = current_file ~= '' and vim.bo.buftype == ''
-          mark 'preamble'
-
-          -- after diffview opens, restore cursor line if the same file is shown
-          if has_file and current_line > 1 then
-            vim.api.nvim_create_autocmd('User', {
-              pattern = 'DiffviewViewOpened',
-              once = true,
-              callback = function()
-                local view = require('diffview.lib').get_current_view()
-                if not view then
-                  return
-                end
-                view.emitter:once('file_open_post', function(_, new_entry)
-                  if new_entry and new_entry.absolute_path == current_file then
-                    vim.schedule(function()
-                      if view.cur_layout then
-                        local win = view.cur_layout:get_main_win()
-                        if win and win.id and vim.api.nvim_win_is_valid(win.id) then
-                          pcall(vim.api.nvim_win_set_cursor, win.id, { current_line, 0 })
-                        end
-                      end
-                    end)
-                  end
-                end)
-              end,
-            })
-          end
-          mark 'cursor_hook'
-
-          diff_edit.diffview_open 'DiffviewOpen'
-          mark 'diffview_open'
-
-          if t0 then
-            vim.notify('[do-perf] ' .. table.concat(segs, ' '), vim.log.levels.INFO)
-          end
-        end,
-        desc = '[D]iff [O]pen (vs index)',
-      },
-      {
-        '<leader>dc',
-        function()
-          vim.cmd 'DiffviewClose'
-        end,
-        desc = '[D]iff [C]lose',
-      },
-      {
-        '<leader>dt',
-        function()
-          local base = vim.fn.systemlist('git merge-base main HEAD')[1]
-
-          if not base or base == '' then
-            vim.notify('Could not find merge-base with main', vim.log.levels.WARN)
-            return
-          end
-
-          -- single-rev form diffs the merge-base against the working tree, so
-          -- both branch commits and uncommitted/unstaged changes are included
-          diff_edit.diffview_open('DiffviewOpen ' .. base)
-        end,
-        desc = '[D]iff branch [T]otal (vs main)',
-      },
-      {
         '<leader>dT',
         function()
-          -- commit discovery shared with <leader>xT / <leader>lT (core/ticket.lua)
+          -- commit discovery shared with <leader>xT / <leader>lT (features/ticket.lua)
           require('custom.features.ticket').prompt_commits(function(ctx)
             local oldest, newest = ctx.commits[#ctx.commits], ctx.commits[1]
             if newest == ctx.head then
@@ -105,26 +28,6 @@ return {
           end)
         end,
         desc = '[D]iff branch by [T]icket',
-      },
-      { '<leader>de', diff_edit.edit_diff_file, desc = '[D]iff [E]dit file' },
-      {
-        '<leader>dh',
-        function()
-          local file = vim.fn.expand '%'
-          if file ~= '' and vim.fn.filereadable(file) == 1 then
-            diff_edit.diffview_open 'DiffviewFileHistory %'
-          else
-            diff_edit.diffview_open 'DiffviewFileHistory'
-          end
-        end,
-        desc = '[D]iff file [H]istory',
-      },
-      {
-        '<leader>dp',
-        function()
-          diff_edit.diffview_open 'DiffviewFileHistory --range=origin/HEAD...HEAD --right-only --no-merges'
-        end,
-        desc = '[D]iff [P]R review',
       },
     },
     config = function(_, opts)
@@ -362,75 +265,9 @@ return {
       'nvim-telescope/telescope.nvim',
       'nvim-tree/nvim-web-devicons',
     },
-    keys = {
-      { '<leader>pl', '<cmd>Octo pr list<CR>', desc = '[L]ist PRs' },
-      { '<leader>pf', '<cmd>Octo pr search<CR>', desc = '[F]ind PR' },
-      { '<leader>psm', '<cmd>Octo pr merge squash<CR>', desc = '[S]quash [M]erge' },
-      {
-        '<leader>po',
-        function()
-          vim.ui.input({ prompt = 'PR number: ' }, function(input)
-            if input and input ~= '' then
-              vim.cmd('Octo pr edit ' .. input)
-            end
-          end)
-        end,
-        desc = '[O]pen by number',
-      },
-      { '<leader>pr', '<cmd>Octo review start<CR>', desc = '[R]eview start' },
-      {
-        '<leader>pe',
-        function()
-          local current_file = vim.fn.expand '%:p'
-          if current_file ~= '' and vim.bo.buftype == '' then
-            local rel = vim.fn.fnamemodify(current_file, ':.')
-            if rel ~= '' and not rel:match '^/' then
-              octo_cache.set_resume_target { path = rel, line = vim.fn.line '.' }
-            end
-          end
-          vim.cmd 'Octo review resume'
-        end,
-        desc = 'Review r[E]sume',
-      },
-      { '<leader>pm', '<cmd>Octo review submit<CR>', desc = 'Review sub[M]it' },
-      { '<leader>pP', '<cmd>Octo pr approve<CR>', desc = 'A[P]prove' },
-      { '<leader>pa', '<cmd>Octo comment add<CR>', desc = 'Comment [A]dd', mode = { 'n', 'v' } },
-      { '<leader>pc', '<cmd>Octo pr comments<CR>', desc = '[C]omments' },
-      { '<leader>pC', '<cmd>Octo review close<CR>', desc = 'Review [C]lose' },
-      {
-        '<leader>pq',
-        function()
-          -- close review layout if active
-          local ok, reviews = pcall(require, 'octo.reviews')
-          if ok then
-            local review = reviews.get_current_review()
-            if review and review.layout then
-              review.layout:close()
-            end
-          end
-          -- close all octo buffers
-          require('custom.core.review-context').close_octo_buffers()
-          -- re-trigger BufEnter so which-key re-attaches after layout teardown
-          -- (closing Octo review windows/tabs can disrupt which-key's state)
-          vim.schedule(function()
-            vim.cmd 'doautocmd BufEnter'
-          end)
-        end,
-        desc = '[Q]uit Octo',
-      },
-      { '<leader>pX', '<cmd>Octo pr close<CR>', desc = 'Close PR' },
-      -- PR actions
-      { '<leader>pb', '<cmd>Octo pr browser<CR>', desc = 'Open in [B]rowser' },
-      { '<leader>py', '<cmd>Octo pr url<CR>', desc = '[Y]ank URL' },
-      { '<leader>pk', '<cmd>Octo pr checks<CR>', desc = 'Chec[K]s' },
-      { '<leader>pO', '<cmd>Octo pr checkout<CR>', desc = 'Check[O]ut' },
-      { '<leader>pR', '<cmd>Octo pr ready<CR>', desc = 'Mark [R]eady' },
-      { '<leader>pD', '<cmd>Octo pr draft<CR>', desc = 'Mark [D]raft' },
-      -- review/thread actions
-      { '<leader>pd', '<cmd>Octo review discard<CR>', desc = 'Review [D]iscard' },
-      { '<leader>pt', '<cmd>Octo thread resolve<CR>', desc = '[T]hread resolve' },
-      { '<leader>pT', '<cmd>Octo thread unresolve<CR>', desc = '[T]hread unresolve' },
-    },
+    -- launcher keymaps moved to differ (custom.plugins.differ owns <leader>p*).
+    -- octo stays installed as a fallback for pr search, issues, and any differ
+    -- pr rough edge; reach it via :Octo (e.g. :Octo pr search)
     config = function()
       vim.treesitter.language.register('markdown', 'octo')
 

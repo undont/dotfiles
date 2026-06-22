@@ -5,6 +5,8 @@
 
 local M = {}
 
+local scan_runner = require 'custom.features.scan-runner'
+
 -- hidden-load all git-modified (unstaged) and untracked files so LSPs attach,
 -- then debounce on DiagnosticChanged and dump the resulting diagnostics into
 -- the quickfix list, without switching the current buffer. falls through
@@ -125,9 +127,13 @@ function M.scan_ignored(d)
   return code ~= nil and SCAN_IGNORED_CODES[tostring(code)] == true
 end
 
+-- drop scan-ignored phantoms and library/dependency code (node_modules,
+-- vendored deps, stdlib jumped into) so a scan of a changeset that touches a
+-- vendored file doesn't dump its diagnostics into the qf. mirrors the live
+-- <leader>xx list's filtering (diags_to_items in lists.lua)
 local function scan_diagnostics(bufnr)
   return vim.tbl_filter(function(d)
-    return not M.scan_ignored(d)
+    return not M.scan_ignored(d) and not scan_runner.in_library(d)
   end, vim.diagnostic.get(bufnr))
 end
 
@@ -195,7 +201,6 @@ end
 --- @param paths string[] absolute paths
 --- @param opts { qf_title: string, qf_label: string, augroup_name: string, empty_message: string }
 local function scan_files(paths, opts)
-  local scan_runner = require 'custom.features.scan-runner'
   if scan_in_progress() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
     return
@@ -418,6 +423,59 @@ local function open_branch_scan()
   })
 end
 
+-- whole-project scan: the all-LSP analogue of sonar's <leader>lS. hidden-loads
+-- every tracked-or-untracked file so every LSP attaches, in the same bounded
+-- batches as the git-scoped scans. unlike those, the file set is unbounded, so
+-- a confirm guards runs above PROJECT_SCAN_CAP (roslyn et al. are heavy and the
+-- repo-wide finding set is noisy)
+local PROJECT_SCAN_CAP = 500
+
+local function project_files()
+  local cwd = vim.fn.getcwd()
+  local result = vim.system({ 'git', 'ls-files', '-co', '--exclude-standard' }, { text = true, cwd = cwd }):wait()
+  if result.code ~= 0 then
+    return nil
+  end
+  local paths = {}
+  for line in (result.stdout or ''):gmatch '[^\r\n]+' do
+    table.insert(paths, cwd .. '/' .. line)
+  end
+  return paths
+end
+
+local function open_project_scan()
+  local paths = project_files()
+  if not paths then
+    vim.notify('Not a git repository', vim.log.levels.WARN)
+    return
+  end
+  if #paths == 0 then
+    vim.notify('No files in project', vim.log.levels.INFO)
+    return
+  end
+
+  local function go()
+    scan_files(paths, {
+      qf_title = 'Project: diagnostics',
+      qf_label = 'Project',
+      augroup_name = 'GitProjectScan',
+      empty_message = 'No readable project files',
+    })
+  end
+
+  if #paths > PROJECT_SCAN_CAP then
+    vim.ui.select({ 'Yes', 'No' }, {
+      prompt = 'Scan ' .. #paths .. ' files (>' .. PROJECT_SCAN_CAP .. ')?',
+    }, function(choice)
+      if choice == 'Yes' then
+        go()
+      end
+    end)
+  else
+    go()
+  end
+end
+
 -- ticket-scoped scan: same commit discovery as <leader>dT and <leader>lT
 -- (shared via features/ticket.lua) but instead of opening a diffview it scans
 -- the union of files touched by exactly the matched commits and dumps their
@@ -447,12 +505,14 @@ end
 
 function M.setup()
   vim.keymap.set('n', '<leader>xm', open_git_modified, { desc = 'Git [M]odified → diagnostics qf' })
-  vim.keymap.set('n', '<leader>xt', open_branch_scan, { desc = 'Branch [T]otal vs main → diagnostics qf' })
+  vim.keymap.set('n', '<leader>xb', open_branch_scan, { desc = '[B]ranch vs main → diagnostics qf' })
   vim.keymap.set('n', '<leader>xT', open_ticket_scan, { desc = 'Git [T]icket commits → diagnostics qf' })
+  vim.keymap.set('n', '<leader>xS', open_project_scan, { desc = 'Whole project [S]can → diagnostics qf' })
 
   vim.api.nvim_create_user_command('GitModified', open_git_modified, { desc = 'Open git-modified files and dump diagnostics to quickfix' })
   vim.api.nvim_create_user_command('BranchScan', open_branch_scan, { desc = 'Scan all files changed vs main and dump diagnostics to quickfix' })
   vim.api.nvim_create_user_command('TicketScan', open_ticket_scan, { desc = 'Scan files from ticket-matching commits and dump diagnostics to quickfix' })
+  vim.api.nvim_create_user_command('ProjectScan', open_project_scan, { desc = 'Scan every project file and dump diagnostics to quickfix' })
 
   -- wrap every roslyn client at attach so `workspace/projectInitializationComplete`
   -- is observed even on warm-start scans (the notification only fires once per

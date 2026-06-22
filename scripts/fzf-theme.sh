@@ -38,7 +38,8 @@ fi
 # sourcing it is ~1ms vs ~10ms for the full work below. the cache is
 # invalidated whenever any input is newer than the cache file: the
 # current-theme selector, the active theme file, theme-defaults.sh,
-# or ghostty config (which affects FZF_BG for transparency).
+# this script (so bind/colour edits propagate), or ghostty config
+# (which affects FZF_BG for transparency).
 #
 # because the cache contains ONLY `export` statements, it cannot have
 # the side-effect-loss problem an in-memory cache key would have:
@@ -53,6 +54,7 @@ if [[ -f "$_FZF_THEME_CACHE_FILE" && -f "$CURRENT_THEME_FILE" \
         "$THEMES_DIR/$CURRENT_THEME.theme" \
         "$THEMES_DIR/generated/$CURRENT_THEME.theme" \
         "$THEMES_DIR/theme-defaults.sh" \
+        "$DOTFILES_ROOT/scripts/fzf-theme.sh" \
         "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config" \
         "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/local"; do
         [[ -f "$_fzf_input" ]] || continue
@@ -129,7 +131,7 @@ unset _ghostty_file _ghostty_line _ghostty_opacity
 # export FZF_DEFAULT_OPTS with theme colours
 # format: --color=element:colour
 # use ${VAR:-} to avoid unbound variable errors if theme doesn't define all vars
-export FZF_DEFAULT_OPTS="--color=bg:${FZF_BG:-#1e1e1e},fg:${FZF_FG:-#d4d4d4},bg+:${FZF_BG_PLUS:-#2e2e2e},fg+:${FZF_FG_PLUS:-#ffffff},hl:${FZF_HL:-#569cd6},hl+:${FZF_HL_PLUS:-#4fc1ff},border:${FZF_BORDER:-#3e3e3e},prompt:${FZF_PROMPT:-#ce9178},pointer:${FZF_POINTER:-#4ec9b0},marker:${FZF_MARKER:-#c586c0},spinner:${FZF_SPINNER:-#4ec9b0},header:${FZF_HEADER:-#569cd6},info:${FZF_INFO:-#d4d4d4},separator:${FZF_SEPARATOR:-#3e3e3e},scrollbar:${FZF_SCROLLBAR:-#569cd6},label:${FZF_LABEL:-#ffffff},preview-bg:${FZF_PREVIEW_BG:-#1e1e1e},preview-fg:${FZF_PREVIEW_FG:-#d4d4d4} --bind=ctrl-d:half-page-down,ctrl-u:half-page-up,ctrl-l:clear-query"
+export FZF_DEFAULT_OPTS="--color=bg:${FZF_BG:-#1e1e1e},fg:${FZF_FG:-#d4d4d4},bg+:${FZF_BG_PLUS:-#2e2e2e},fg+:${FZF_FG_PLUS:-#ffffff},hl:${FZF_HL:-#569cd6},hl+:${FZF_HL_PLUS:-#4fc1ff},border:${FZF_BORDER:-#3e3e3e},prompt:${FZF_PROMPT:-#ce9178},pointer:${FZF_POINTER:-#4ec9b0},marker:${FZF_MARKER:-#c586c0},spinner:${FZF_SPINNER:-#4ec9b0},header:${FZF_HEADER:-#569cd6},info:${FZF_INFO:-#d4d4d4},separator:${FZF_SEPARATOR:-#3e3e3e},scrollbar:${FZF_SCROLLBAR:-#569cd6},label:${FZF_LABEL:-#ffffff},preview-bg:${FZF_PREVIEW_BG:-#1e1e1e},preview-fg:${FZF_PREVIEW_FG:-#d4d4d4} --bind=ctrl-d:half-page-down,ctrl-u:half-page-up,ctrl-l:clear-query,ctrl-j:down,ctrl-k:up"
 
 # also export individual colours for scripts that need direct access
 export FZF_THEME_BG="$FZF_BG"

@@ -119,7 +119,7 @@ return {
         -- override runtimeconfig settings, so DOTNET_gcServer=0 forces
         -- workstation GC: far fewer heaps and lower memory, at a modest
         -- throughput cost on background full-solution analysis (kept off the hot
-        -- path by the batched scans in core/lists.lua). scoped to the roslyn
+        -- path by the batched scans in features/diag-scan.lua). scoped to the roslyn
         -- process via cmd_env, which roslyn.nvim's lsp/roslyn.lua passes through
         -- as the spawn env (merging with its own Configuration/TMPDIR), so
         -- easy-dotnet's builds/tests/BuildHost are unaffected

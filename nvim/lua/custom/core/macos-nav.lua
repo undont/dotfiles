@@ -10,6 +10,8 @@ function M.setup()
   -- Word-wise deletion
   vim.keymap.set({ 'i', 'c' }, '<M-BS>', '<C-w>', { desc = 'Delete word backward (Opt+Backspace)' })
   vim.keymap.set('i', '<D-BS>', '<C-u>', { desc = 'Delete to beginning of line (Cmd+Backspace)' })
+  -- inside tmux, Cmd+Backspace arrives as Ctrl+Backspace (tmux has no super modifier)
+  vim.keymap.set('i', '<C-BS>', '<C-u>', { desc = 'Delete to beginning of line (Cmd+Backspace, tmux)' })
 
   -- Word motion
   vim.keymap.set({ 'n', 'v' }, '<M-Right>', 'w', { desc = 'Move word right (Opt+Right)' })

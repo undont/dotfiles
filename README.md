@@ -268,7 +268,9 @@ Homebrew is set to require explicit trust for non-official taps (`HOMEBREW_REQUI
 | Test nearest | <kbd>Space</kbd> <kbd>t</kbd> <kbd>t</kbd> |
 | Diagnostics (live list) | <kbd>Space</kbd> <kbd>x</kbd> <kbd>x</kbd> |
 | Git-modified diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>m</kbd> |
-| Ticket-commit diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>t</kbd> |
+| Branch diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>b</kbd> |
+| Ticket-commit diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>T</kbd> |
+| Project-wide diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>S</kbd> |
 | Grep yank to quickfix | <kbd>Space</kbd> <kbd>x</kbd> <kbd>/</kbd> |
 | PR diff review | <kbd>Space</kbd> <kbd>d</kbd> <kbd>p</kbd> |
 
