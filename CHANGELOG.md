@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.118] - 2026-06-22
+
+### Added
+- Nvim: differ.nvim drives local diffs, file history, staging, PR review, and merge conflicts through one renderer. It owns the `<leader>d*` diff launchers and the `<leader>p*` PR launchers, with in-diff thread/comment gestures (`ga` comment, `gp` reply, `gr` resolve, `gx` delete, `gc` collapse, `]t`/`[t` thread nav). The build hook compiles its Go sidecar (`make go-build`) on install/update; local diffs work without it. `nvim/lua/custom/plugins/differ.lua`
+- Zsh: Ctrl+J / Ctrl+K act as down/up in history, line nav, and the tab-completion menu (Return still submits via `^M`). Scoped to zsh so nvim's own `C-j`/`C-k` are untouched. `zsh/dotfiles.zsh`
+- Ghostty/Nvim/Zsh: Cmd+Backspace deletes to the start of the line inside tmux. Ghostty now emits ctrl+backspace in csi-u form (`\e[127;5u`) because tmux has no super modifier; zsh binds it to `backward-kill-line` and nvim maps `<C-BS>` to `<C-u>`, keeping the existing direct `<D-BS>` binding for the no-tmux case. `ghostty/config.template`, `nvim/lua/custom/core/macos-nav.lua`, `zsh/dotfiles.zsh`
+- Fzf: Ctrl+J / Ctrl+K move the selection down/up in the picker, alongside the existing `ctrl-d`/`ctrl-u` half-page binds. `scripts/fzf-theme.sh`
+
+### Changed
+- Nvim: PR review and local diffs move from diffview/octo to differ.nvim. diffview stays installed and keeps `<leader>dT` (diff by ticket); octo stays installed as a fallback for PR search and issues, reachable via `:Octo`. `nvim/lua/custom/plugins/pr-review.lua`
+- Nvim: the make build-target detector matches `check` anywhere in a target name, so bare `check` and prefixed variants (`typecheck`, `lint-check`) both register as build targets. `nvim/lua/custom/features/build.lua`
+- Zsh: `vconf` renamed to `nconf` (open the nvim local config). `zsh/dotfiles.zsh`
+- Fzf: the theme cache now invalidates when `scripts/fzf-theme.sh` itself changes, so bind and colour edits propagate without a manual cache clear. `scripts/fzf-theme.sh`
+
+### Fixed
+- Nvim: library and dependency diagnostics no longer land in the live diagnostics list. Files outside the project root (stdlib, global module caches) or under an in-tree vendored directory (`node_modules`, `vendor`, `site-packages`, `dist-packages`, `pkg/mod`, `.venv`, `.cargo`) are filtered out, so an LSP attaching after a go-to-definition jump no longer parks read-only notes in the list. `nvim/lua/custom/features/lists.lua`
+
 ## [0.2.117] - 2026-06-16
 
 ### Fixed

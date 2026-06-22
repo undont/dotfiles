@@ -139,6 +139,41 @@ local function bracketed_loc(direction)
   end
 end
 
+-- library / dependency code we never want in a diagnostics list. these are
+-- read-only files surfaced when an LSP attaches after a go-to-definition jump
+-- (e.g. gopls emitting modernization notes on the Go stdlib under the Homebrew
+-- Cellar). two signals: the file lives outside the project root (cwd), which
+-- catches stdlib and global module caches; or it sits under an in-tree vendored
+-- dependency directory, which a cwd check alone would miss
+local LIBRARY_SEGMENTS = {
+  '/node_modules/',
+  '/vendor/',
+  '/site%-packages/',
+  '/dist%-packages/',
+  '/pkg/mod/',
+  '/%.venv/',
+  '/%.cargo/',
+}
+
+local function diag_in_library(d)
+  if not d.bufnr or not vim.api.nvim_buf_is_valid(d.bufnr) then
+    return false
+  end
+  local name = vim.api.nvim_buf_get_name(d.bufnr)
+  if name == '' then
+    return false
+  end
+  local path = vim.fs.normalize(name)
+  for _, seg in ipairs(LIBRARY_SEGMENTS) do
+    if path:find(seg) then
+      return true
+    end
+  end
+  -- outside the project root: stdlib, global caches, anything jumped into
+  local root = vim.fs.normalize(vim.fn.getcwd())
+  return path:sub(1, #root + 1) ~= root .. '/'
+end
+
 -- diagnostics into native lists. explicit titles let `build.lua`'s
 -- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
 -- match these lists and prune resolved entries on DiagnosticChanged.
@@ -157,7 +192,7 @@ local function diags_to_items(diagnostics)
     -- they'd sit in the live list indefinitely. displayed buffers keep
     -- theirs (the full pass has run; entries are real). the predicate is
     -- shared with diag-scan's batch snapshot
-    if d.bufnr and d.lnum then
+    if d.bufnr and d.lnum and not diag_in_library(d) then
       local hidden_phantom = scan_ignored(d) and #vim.fn.win_findbuf(d.bufnr) == 0
       if not hidden_phantom then
         table.insert(items, scan_runner.diag_to_item(d))

@@ -704,7 +704,7 @@ alias cache="v ~/.cache"                                                       #
 alias zshrc="v ~/.zshrc"                                                       # open nvim in ~/.zshrc (file)
 alias secrets="v ~/.config/zsh/secrets.zsh"                                    # open nvim in secrets.zsh (file)
 alias launchers="v ~/.config/dotfiles/launchers"                               # open launcher configs (dir)
-alias vconf="v ~/.config/nvim/local.lua"                                       # open nvim local config (file)
+alias nconf="v ~/.config/nvim/local.lua"                                       # open nvim local config (file)
 alias gconf="v ~/.config/ghostty/local"                                        # open ghostty local config (file)
 alias tconf="v ~/.config/tmux/local.conf"                                      # open tmux local config (file)
 
@@ -781,6 +781,18 @@ bindkey '\e[1;3A' up-line-or-history   # Opt+Up
 bindkey '\e[1;3B' down-line-or-history # Opt+Down
 bindkey '\e[1;5H' beginning-of-line   # Cmd+Up (via Ghostty: super+up → Ctrl+Home)
 bindkey '\e[1;5F' end-of-line         # Cmd+Down (via Ghostty: super+down → Ctrl+End)
+
+# Ctrl+J / Ctrl+K as Down/Up for menu + line nav (overrides accept-line/kill-line;
+# Return still submits via ^M). scoped to zsh so nvim's own C-j/C-k are untouched
+# @cheat: Ctrl+J / Ctrl+K | down / up in history, line, and completion menu
+bindkey '^j' down-line-or-history     # Ctrl+J → Down
+bindkey '^k' up-line-or-history       # Ctrl+K → Up
+# and move the highlight inside the tab-completion menu
+zmodload -i zsh/complist 2>/dev/null
+bindkey -M menuselect '^j' down-line-or-history
+bindkey -M menuselect '^k' up-line-or-history
+# @cheat: Cmd+Backspace | delete to line start
+bindkey '\e[127;5u' backward-kill-line # Cmd+Backspace (via Ghostty: super+backspace → Ctrl+Backspace)
 
 # Ghostty sends these sequences for modifier+enter combos; bind them to
 # accept-line so they act as Enter in zsh instead of printing garbage

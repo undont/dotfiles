@@ -108,12 +108,12 @@ local build_configs = {
 }
 
 -- lua patterns that indicate a build-related make target
--- plain find for 'build'/'compile' (match anywhere in name)
--- 'check' requires a prefix separator so bare 'check' doesn't match
+-- plain find anywhere in the name, so bare 'check' and prefixed
+-- variants ('typecheck', 'lint-check') both match
 local make_build_patterns = {
   { pattern = 'build', plain = true },
   { pattern = 'compile', plain = true },
-  { pattern = '[_-]check', plain = false },
+  { pattern = 'check', plain = true },
 }
 
 --- parse Makefile and extract build-related targets
