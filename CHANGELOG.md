@@ -6,12 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.119] - 2026-06-22
+
+### Changed
+- Ghostty: reverted `super+backspace` back to `text:\x15`. The zsh `backward-kill-line` bindkey and nvim `<C-BS>` mapping are unchanged. `ghostty/config.template`
+
 ## [0.2.118] - 2026-06-22
 
 ### Added
 - Nvim: differ.nvim drives local diffs, file history, staging, PR review, and merge conflicts through one renderer. It owns the `<leader>d*` diff launchers and the `<leader>p*` PR launchers, with in-diff thread/comment gestures (`ga` comment, `gp` reply, `gr` resolve, `gx` delete, `gc` collapse, `]t`/`[t` thread nav). The build hook compiles its Go sidecar (`make go-build`) on install/update; local diffs work without it. `nvim/lua/custom/plugins/differ.lua`
 - Zsh: Ctrl+J / Ctrl+K act as down/up in history, line nav, and the tab-completion menu (Return still submits via `^M`). Scoped to zsh so nvim's own `C-j`/`C-k` are untouched. `zsh/dotfiles.zsh`
-- Ghostty/Nvim/Zsh: Cmd+Backspace deletes to the start of the line inside tmux. Ghostty now emits ctrl+backspace in csi-u form (`\e[127;5u`) because tmux has no super modifier; zsh binds it to `backward-kill-line` and nvim maps `<C-BS>` to `<C-u>`, keeping the existing direct `<D-BS>` binding for the no-tmux case. `ghostty/config.template`, `nvim/lua/custom/core/macos-nav.lua`, `zsh/dotfiles.zsh`
+- Nvim/Zsh: Cmd+Backspace deletes to the start of the line inside tmux when Ghostty emits ctrl+backspace in csi-u form (`\e[127;5u`), since tmux has no super modifier. zsh binds that sequence to `backward-kill-line` and nvim maps `<C-BS>` to `<C-u>`, keeping the existing direct `<D-BS>` binding for the no-tmux case. `nvim/lua/custom/core/macos-nav.lua`, `zsh/dotfiles.zsh`
 - Fzf: Ctrl+J / Ctrl+K move the selection down/up in the picker, alongside the existing `ctrl-d`/`ctrl-u` half-page binds. `scripts/fzf-theme.sh`
 - Nvim: `<leader>xS` runs an all-LSP diagnostics scan over every project file (`git ls-files -co`), the diagnostic-scan analogue of sonar's `<leader>lS`. A confirm prompt guards runs above 500 files since roslyn and friends are heavy. Also exposed as `:ProjectScan`. `nvim/lua/custom/features/diag-scan.lua`
 - Nvim: `<leader>lb` runs a SonarLint scan over every file changed vs `merge-base(main)`, the sonar analogue of `<leader>xb`. Shares branch-file discovery with the all-LSP scan via `features/ticket.lua`. `nvim/lua/custom/plugins/sonarlint.lua`
