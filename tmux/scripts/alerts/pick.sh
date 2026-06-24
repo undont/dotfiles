@@ -72,6 +72,33 @@ _extract_target() {
     printf '%s' "$1" | sed 's/\x1b\[[0-9;]*m//g' | awk '{print $2}'
 }
 
+# resolve a session + exact window name to an unambiguous window-id (@N).
+# window names can contain dots ("2.1.186") or colons, which collide with
+# tmux's session:window.pane target syntax; matching by id sidesteps parsing
+_resolve_window_id() {
+    local session="$1" name="$2" tab
+    printf -v tab '\t'
+    tmux list-windows -t "$session" -F "#{window_id}${tab}#{window_name}" 2>/dev/null \
+        | awk -F'\t' -v n="$name" '$2 == n { print $1; exit }'
+}
+
+# navigate the client to an alert target given as "session:window-name".
+# resolves to a window-id first so dotted/colon-bearing names don't misparse,
+# falling back to the raw target if the lookup fails (e.g. window just closed)
+_navigate_to_target() {
+    local target="$1"
+    [[ -n "$target" ]] || return 0
+    local session="${target%%:*}" name="${target#*:}" current wid dst
+    current=$(tmux display-message -p '#S' 2>/dev/null)
+    wid=$(_resolve_window_id "$session" "$name")
+    dst="${wid:-$target}"
+    if [[ "$session" != "$current" ]]; then
+        tmux switch-client -t "$dst" 2>/dev/null || tmux select-window -t "$dst" 2>/dev/null || true
+    else
+        tmux select-window -t "$dst" 2>/dev/null || true
+    fi
+}
+
 entry_list=$(_load_entries)
 count=$(printf '%s\n' "$entry_list" | grep -c .)
 
@@ -97,15 +124,7 @@ fi
 
 # single alert: jump directly instead of paying for an fzf startup
 if [[ $count -eq 1 ]]; then
-    target=$(_extract_target "$entry_list")
-    if [[ -n "$target" ]]; then
-        target_session="${target%%:*}"
-        if [[ "$target_session" != "$CURRENT_SESSION" ]]; then
-            tmux switch-client -t "$target" 2>/dev/null || tmux select-window -t "$target" 2>/dev/null || true
-        else
-            tmux select-window -t "$target" 2>/dev/null || true
-        fi
-    fi
+    _navigate_to_target "$(_extract_target "$entry_list")"
     exit 0
 fi
 
@@ -133,14 +152,4 @@ selected=$(printf '%s\n' "$entry_list" | fzf \
 
 [[ -z "$selected" ]] && exit 0
 
-target=$(_extract_target "$selected")
-
-if [[ -n "$target" ]]; then
-    target_session="${target%%:*}"
-    current_session=$(tmux display-message -p '#S' 2>/dev/null)
-    if [[ "$target_session" != "$current_session" ]]; then
-        tmux switch-client -t "$target" 2>/dev/null || tmux select-window -t "$target" 2>/dev/null || true
-    else
-        tmux select-window -t "$target" 2>/dev/null || true
-    fi
-fi
+_navigate_to_target "$(_extract_target "$selected")"
