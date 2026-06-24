@@ -365,6 +365,9 @@ return {
             -- linters
             'golangci-lint',
             'ruff', -- Python lint + format
+            -- go codegen helpers (struct tags, iferr); wired in features/go.lua
+            'gomodifytags',
+            'iferr',
           },
         }
       end)
@@ -398,6 +401,11 @@ return {
       notify_on_error = true,
       format_on_save = function(bufnr)
         if not is_real_file(bufnr) then
+          return
+        end
+        -- per-buffer / global opt-out (conform's convention); differ's merge tool
+        -- sets the buffer flag so :w doesn't format over conflict markers
+        if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
           return
         end
         return {

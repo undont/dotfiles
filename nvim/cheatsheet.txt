@@ -229,41 +229,44 @@ Case-aware substitute | :S/{from}/{to}/g
 Subvert (multi-form sub) | :Subvert/facilit{y,ies}/building{,s}/g
 
 ## diff @diff
-Diffview open (vs index) | <leader>do
-Diffview close | <leader>dc
-Diffview file history | <leader>dh
-Diffview branch total (vs main) | <leader>dt
-Diffview branch by ticket | <leader>dT
-Diffview PR review | <leader>dp
-Diffview edit file | <leader>de
+Diff open (vs index) | <leader>do
+Diff close | <leader>dc
+Diff branch total (vs base) | <leader>dt
+Diff branch by ticket | <leader>dT
+Diff file history | <leader>dh
+Diff PR-range review | <leader>dp
+Diff edit file | <leader>de
+Diff change layout | <leader>dl
+Next/prev hunk | ]c / [c
+Next/prev file | ]f / [f
+More/less context | d= / d-
+Stage / unstage (hunk or file) | s / u
+Stage / unstage all | S / U
 
 ## pr-review @pr-review
 List PRs | <leader>pl
-Search PRs | <leader>pf
-Squash merge PR | <leader>psm
 Open PR by number | <leader>po
 Start review | <leader>pr
 Resume review | <leader>pe
 Submit review | <leader>pm
-Approve PR | <leader>pP
-Add comment | <leader>pa
-PR comments | <leader>pc
-Close review | <leader>pC
-Quit Octo | <leader>pq
-Close PR | <leader>pX
-Open in browser | <leader>pb
-Yank PR URL | <leader>py
+Discard review | <leader>pd
+Squash merge PR | <leader>psm
 CI checks | <leader>pk
 Checkout branch | <leader>pO
 Mark ready | <leader>pR
 Convert to draft | <leader>pD
-Discard review | <leader>pd
-Thread resolve | <leader>pt
-Thread unresolve | <leader>pT
-Toggle file viewed | <Tab>
+Close PR | <leader>pX
+Open in browser | <leader>pb
+Yank PR URL | <leader>py
+Quit PR review | <leader>pq
+Comment on line/selection | ga
+Reply to thread | gp
+Resolve/unresolve thread | gr
+Delete latest comment | gx
+Collapse/expand thread | gc
+Next/prev review thread | ]t / [t
 Next/prev unviewed file | ]u / [u
-Next/prev changed file | ]f / [f
-Next/prev review thread | ]C / [C
+Toggle file viewed | <Tab>
 
 ## debug @debug
 Start/Continue | F5
@@ -353,6 +356,14 @@ New item | <leader>nn
 Outdated packages | <leader>no
 Debug project | <leader>nd
 Attach to running .NET process | <leader>na
+
+## go @go
+Add json struct tags | <leader>la
+Clear struct tags | <leader>lc
+Generate if-err block | <leader>le
+Add struct tags (command) | :GoAddTags [tags]
+Remove struct tags (command) | :GoRmTags [tags]
+If-err block (command) | :GoIfErr
 
 ## buffers @buffers
 Delete buffer | <leader>bd

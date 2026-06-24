@@ -3,7 +3,7 @@
 # ══════════════════════════════════════════════════════════════
 
 .PHONY: help test test-verbose test-tmux test-no-tmux test-failures \
-        lint lint-shell lint-lua theme-check \
+        lint lint-shell lint-zsh lint-lua theme-check \
         test-libs test-scripts test-integration \
         install install-minimal install-core install-full \
         check clean
@@ -63,7 +63,7 @@ test-integration: ## Run integration tests only
 # Linting
 # ──────────────────────────────────────────────────────────────
 
-lint: lint-shell lint-lua theme-check ## Run all linters
+lint: lint-shell lint-zsh lint-lua theme-check ## Run all linters
 
 lint-shell: ## Run ShellCheck on shell scripts
 	@printf '\033[1;36mRunning ShellCheck...\033[0m\n'
@@ -72,6 +72,17 @@ lint-shell: ## Run ShellCheck on shell scripts
 	@shellcheck -x scripts/dotfiles scripts/run-tests.sh
 	@shellcheck -x launchers/*
 	@printf '\033[0;32m✓ ShellCheck passed\033[0m\n'
+
+lint-zsh: ## Syntax-check zsh framework with zsh -n (shellcheck has no zsh dialect)
+	@printf '\033[1;36mChecking zsh syntax...\033[0m\n'
+	@if ! command -v zsh >/dev/null 2>&1; then \
+		printf '\033[0;33m! zsh not installed, skipping\033[0m\n'; \
+	else \
+		for f in zsh/*.zsh zsh/*.template scripts/hooks/*.zsh; do \
+			zsh -n "$$f" || exit 1; \
+		done; \
+		printf '\033[0;32m✓ zsh syntax passed\033[0m\n'; \
+	fi
 
 lint-lua: ## Run luacheck on Neovim config
 	@printf '\033[1;36mRunning luacheck...\033[0m\n'

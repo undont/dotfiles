@@ -96,6 +96,13 @@ jobs:
             bash -n "$file" || exit 1
           done
 
+      - name: Check zsh syntax
+        run: |
+          sudo apt-get install -y zsh
+          for f in zsh/*.zsh zsh/*.template scripts/hooks/*.zsh; do
+            zsh -n "$f" || exit 1
+          done
+
   lua-check:
     name: Lua Check
     runs-on: ubuntu-latest

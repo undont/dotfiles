@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.121] - 2026-06-24
+
+### Added
+- Nvim: Go editing helpers. `<leader>la`/`<leader>lc` add json / clear struct tags via gomodifytags, `<leader>le` generates an `if err != nil` block via iferr, with `:GoAddTags`/`:GoRmTags`/`:GoIfErr` commands; both tools are Mason-managed. `nvim/lua/custom/features/go.lua`
+- Zsh: `graduate`/`relegate` (aliases `promote`/`demote`) move a project between `~/playground` and `~/code`, relocating its Claude Code history and memories, repointing gh-dash paths, and cd-ing into the new home. Tab-completion lists the source-root projects. `zsh/dotfiles.zsh`
+- CI/Make: zsh syntax linting (`zsh -n`) over `zsh/*.zsh`, templates, and shell hooks, wired into `make lint` (`lint-zsh`) and a new CI step. `.github/workflows/ci.yml`, `Makefile`
+- Nvim: differ.nvim local-dev toggle (`DIFFER_DEV`) to run the plugin from a `~/code/differ.nvim` checkout instead of the installed release. `nvim/lua/custom/plugins/differ.lua`
+
+### Changed
+- Nvim: format-on-save honours `vim.g.disable_autoformat` / `vim.b.disable_autoformat`, so differ's merge tool can suppress formatting over conflict markers. `nvim/lua/custom/plugins/lsp.lua`
+- Docs: cheatsheet diff/PR sections rewritten for differ.nvim keymaps; README and installation guide describe differ.nvim as the diff/PR engine. `nvim/cheatsheet.txt`, `README.md`, `docs/INSTALLATION-GUIDE.md`
+- Tooling: `scripts/migrations/0.2.121-rename-dotfiles-remote.sh` repoints the dotfiles `origin` from the old GitHub account to `undont`, completing the 0.2.120 rename so clones stop relying on GitHub's redirect.
+
+### Fixed
+- Nvim: astro `<script>` blocks no longer double-inject (javascript over typescript); a `query.set` override forces typescript-only injection. `nvim/queries/astro/injections.scm`, `nvim/lua/custom/plugins/treesitter.lua`
+- Tmux: alert navigation resolves the target window by id, so window names containing dots or colons no longer misparse against tmux's `session:window.pane` syntax. `tmux/scripts/alerts/pick.sh`
+
 ## [0.2.120] - 2026-06-22
 
 ### Changed

@@ -5,28 +5,12 @@ paths:
 
 # Tmux Scripts Architecture
 
-Scripts are organised into functional subdirectories under `tmux/scripts/`:
-- **sessions/**: `list.sh`, `new.sh`, `rename.sh`, `kill.sh`, `undo.sh` - Session management with fzf integration
-- **windows/**: `list.sh`, `rename.sh`, `kill.sh`, `undo.sh`, `duplicate.sh`, `move.sh` - Window operations
-- **panes/**: `kill.sh`, `undo.sh` - Pane management
-- **launchers/**: `list.sh`, `picker.sh`, `run.sh`, `prompt.sh`, `new.sh`, `new-dir.sh`, `settings.sh`, `duplicate.sh`, `delete.sh` - Session launcher system
-- **instances/**: `claude.sh`, `opencode.sh`, `copilot.sh`, `nvim.sh`, `new.sh`, `kill.sh`, `connect-nvim.sh` - Process instance management (list, create, kill)
-- **alerts/**: `show.sh`, `clear.sh`, `cleanup.sh`, `pick.sh`, `update-timestamp.sh`, `update-rename.sh` - Agent alert system for status bar
-- **resurrect/**: `split.sh`, `restore.sh`, `delete.sh` - Per-session tmux-resurrect extensions
-- **themes/**: `pick.sh`, `picker.sh`, `reload-fzf.sh`, `reload-ghostty.sh` - Runtime theme switching
-- **utils/**: `undo-dispatch.sh`, `pick-url.sh`, `dotfiles-status.sh`, `sysinfo.sh`, `nav.sh`, `reload-shells.sh`, `show-help.sh` - Shared utilities
-- **_lib/**: `common.sh`, `paths.sh`, `session.sh`, `alerts.sh`, `process.sh`, `ui.sh` - Shared libraries
-- **tests/**: `test-*.sh` - Test suites
-
-## Tmux Libraries
-
-**`tmux/scripts/_lib/`**: Tmux-specific utilities
-- `common.sh`: Error handling, tmux validation
-- `paths.sh`: XDG-compliant undo file paths with legacy fallback
-- `session.sh`: Session management functions
-- `alerts.sh`: Multi-agent alert system (Claude, OpenCode)
-- `process.sh`: Graceful process termination (SIGTERM → wait → SIGKILL) shared by `kill.sh` scripts in `sessions/`, `panes/`, `windows/`, `instances/`
-- `ui.sh`: Terminal dialogs and prompts
+Scripts live under `tmux/scripts/` in functional subdirectories (`sessions/`,
+`windows/`, `panes/`, `launchers/`, `instances/`, `alerts/`, `resurrect/`,
+`themes/`, `utils/`, `tests/`), with shared libraries in `_lib/` (`common.sh`,
+`paths.sh`, `session.sh`, `alerts.sh`, `process.sh`, `ui.sh`). `process.sh`
+provides the graceful SIGTERM → wait → SIGKILL termination shared by the
+`kill.sh` scripts across `sessions/`, `panes/`, `windows/`, and `instances/`.
 
 ## Template Conventions
 

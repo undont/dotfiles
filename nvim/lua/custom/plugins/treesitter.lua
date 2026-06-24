@@ -75,6 +75,21 @@ return {
 
       -- register language aliases for markdown code fence highlighting
       vim.treesitter.language.register('c_sharp', { 'csharp', 'cs' })
+
+      -- force the astro injections override. upstream astro/injections.scm
+      -- inherits html_tags (bare `<script>` -> javascript) then adds an
+      -- unconditional typescript rule, so every astro `<script>` is injected
+      -- twice and the javascript parse errors over the typescript highlights.
+      -- a file override can't fix this: query.get reads the `; inherits:`
+      -- modeline from every matching file in rtp, so the plugin's inherit
+      -- still fires. query.set bypasses the file/modeline merge entirely
+      local astro_inj = vim.fn.stdpath 'config' .. '/queries/astro/injections.scm'
+      local f = io.open(astro_inj, 'r')
+      if f then
+        local scm = f:read '*a'
+        f:close()
+        pcall(vim.treesitter.query.set, 'astro', 'injections', scm)
+      end
     end,
   },
 

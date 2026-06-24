@@ -752,6 +752,96 @@ alias nuke-nvim='ps -eo pid,ppid,args | awk "/nvim --embed/ && \$2 == 1 {print \
 alias nuke-dotnet='dotnet build-server shutdown 2>/dev/null; pkill -f "OmniSharp.dll" 2>/dev/null; pkill -f "EasyDotnet.BuildServer.dll" 2>/dev/null; pkill -f "dotnet-easydotnet" 2>/dev/null; pkill -f "VBCSCompiler" 2>/dev/null; pkill -f "vstest.console.dll" 2>/dev/null; echo "done"'   # kill stale dotnet procs
 alias dot="dotfiles"
 
+# relocate claude code per-project data (session transcripts + memories) so it
+# follows a moved project. claude keys the dir on the absolute path with every
+# non-alphanumeric char replaced by '-'. refuses to merge onto an existing
+# destination to avoid clobbering a memory index; leaves the source in place
+_move_claude_data() {
+  emulate -L zsh
+  local base="$HOME/.claude/projects"
+  local src_dir="$base/${1//[^A-Za-z0-9]/-}"
+  local dest_dir="$base/${2//[^A-Za-z0-9]/-}"
+
+  [[ -d "$src_dir" && "$src_dir" != "$dest_dir" ]] || return 0
+
+  if [[ -e "$dest_dir" ]]; then
+    printf "\033[0;33m!\033[0m claude history exists at the destination; left it at %s\n" "${src_dir:t}" >&2
+    return 0
+  fi
+
+  command mv "$src_dir" "$dest_dir" \
+    && printf "\033[0;32m✔\033[0m claude history + memories moved\n"
+}
+
+# move a project between playground (PROJECTS_ROOT) and code (DEV_ROOT).
+# graduate promotes playground → code; relegate sends code → playground.
+# moves claude history, repoints gh-dash paths, then cd into the new home
+_move_project() {
+  emulate -L zsh
+  local src_root="$1" dest_root="$2" name="${3:t}" verb="$4"
+
+  if [[ -z "$name" ]]; then
+    printf "usage: %s <project>\n" "$verb" >&2
+    return 2
+  fi
+
+  local src="$src_root/$name" dest="$dest_root/$name"
+  if [[ ! -d "$src" ]]; then
+    printf "\033[0;31m✘\033[0m not found: %s\n" "$src" >&2
+    return 1
+  fi
+  if [[ -e "$dest" ]]; then
+    printf "\033[0;31m✘\033[0m already exists: %s\n" "$dest" >&2
+    return 1
+  fi
+
+  command mkdir -p "$dest_root"
+  command mv "$src" "$dest" || return 1
+  printf "\033[0;32m✔\033[0m %s → %s\n" "$src" "$dest"
+
+  _move_claude_data "$src" "$dest"
+
+  if command -v dash-repo-sync >/dev/null 2>&1; then
+    dash-repo-sync >/dev/null 2>&1 && printf "\033[0;32m✔\033[0m gh-dash paths synced\n"
+  fi
+
+  cd "$dest"
+}
+
+# @cheat: promote to code
+graduate() {
+  local name="${1:t}"
+  _move_project "${PROJECTS_ROOT:-$HOME/playground}" "${DEV_ROOT:-$HOME/code}" "$name" graduate || return
+  # nvim resolves local dev plugins from playground only (lazy dev.path), so a
+  # graduated plugin silently falls back to its remote; flag it
+  if [[ "$name" == *.nvim || -d "$PWD/lua" ]]; then
+    printf "\033[0;33m!\033[0m looks like an nvim plugin: lazy dev.path points at playground, so this'll fall back to the remote. keep it in playground or update nvim/init.lua\n" >&2
+  fi
+}
+
+# @cheat: demote to playground
+relegate() {
+  _move_project "${DEV_ROOT:-$HOME/code}" "${PROJECTS_ROOT:-$HOME/playground}" "${1:t}" relegate
+}
+
+# graduate completes from playground dirs, relegate from code dirs
+_graduate_complete() {
+  local root="${PROJECTS_ROOT:-$HOME/playground}"
+  local -a projects; projects=(${root}/*(/N:t))
+  _describe 'playground projects' projects
+}
+_relegate_complete() {
+  local root="${DEV_ROOT:-$HOME/code}"
+  local -a projects; projects=(${root}/*(/N:t))
+  _describe 'code projects' projects
+}
+compdef _graduate_complete graduate
+compdef _relegate_complete relegate
+
+# promote/demote synonyms (completion follows the alias automatically)
+alias promote="graduate"
+alias demote="relegate"
+
 # =============================================================================
 # ZSH LINE EDITOR (ZLE) KEYBINDINGS
 # =============================================================================
