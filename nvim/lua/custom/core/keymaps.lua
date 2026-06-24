@@ -75,6 +75,7 @@ function M.setup()
   require('custom.core.spellcheck').setup()
   require('custom.features.build').setup()
   require('custom.features.binary-view').setup()
+  require('custom.features.go').setup()
 end
 
 return M

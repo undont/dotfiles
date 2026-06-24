@@ -9,9 +9,27 @@
 -- the build hook compiles the go sidecar (pr review) on install/update; it needs
 -- go + make on PATH. local diffs work without it.
 
+-- local-dev toggle: flip to true (and restart nvim) to run differ.nvim from the
+-- ~/code/differ.nvim checkout instead of the installed release. lazy serves the
+-- plugin's modules from `dir`, so this is the only place the swap actually takes
+-- (an rtp prepend elsewhere loses to lazy's loader). the sidecar self-locates its
+-- bin off its own lua file, so PR features then need `make go-build` run in the
+-- checkout; local diffs/history/staging work without it. false = installed release.
+local DIFFER_DEV = false
+local DIFFER_LOCAL = vim.fn.expand '~/code/differ.nvim'
+
+-- :D as a cold-start alias for :Differ. a cmdline abbrev, not differ's
+-- command_alias, so it expands before the plugin is loaded: `:D ...` rewrites to
+-- `:Differ ...`, which is the lazy `cmd` trigger. defined here at startup (this
+-- spec module is required when lazy builds its plugin list) rather than in the
+-- plugin's config, which would only run after the load it's meant to trigger. the
+-- getcmdtype/getcmdline guard keeps it from expanding mid-line, e.g. in :s/D/x/
+vim.cmd [[cnoreabbrev <expr> D (getcmdtype() == ':' && getcmdline() ==# 'D') ? 'Differ' : 'D']]
+
 return {
   {
     'undont/differ.nvim',
+    dir = DIFFER_DEV and DIFFER_LOCAL or nil,
     build = 'make go-build',
     cmd = 'Differ',
     keys = {
@@ -51,9 +69,9 @@ return {
       { '<leader>pq', '<cmd>Differ close<CR>', desc = '[Q]uit PR' },
     },
     config = function()
-      require('differ').setup {
-        command_alias = 'D',
-      }
+      -- :D alias is a cmdline abbrev defined at startup above, not command_alias,
+      -- so it survives a cold start before this config runs
+      require('differ').setup {}
     end,
   },
 }
