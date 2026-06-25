@@ -22,7 +22,14 @@ case "$TYPE" in
         ;;
     done)
         # A=finish epoch, B=window_id: drop that one entry from the history file
+        row_sess=""; row_wname=""
         if [[ -n "$A" && -f "$FINISHED_FILE" ]]; then
+            # capture the row's stored session + window name (fields 3 and 5)
+            # before deleting it; the alerts file keys its exit line on that
+            # name, which the live window may have since renamed away from
+            IFS=$'\t' read -r row_sess row_wname < <(awk -F'\t' \
+                -v e="$A" -v w="$B" '$1==e && $4==w {print $3"\t"$5; exit}' \
+                "$FINISHED_FILE")
             tmpf=$(mktemp "${FINISHED_FILE}.XXXXXX") || exit 0
             if awk -F'\t' -v e="$A" -v w="$B" '!($1 == e && $4 == w)' \
                 "$FINISHED_FILE" > "$tmpf" 2>/dev/null; then
@@ -31,5 +38,11 @@ case "$TYPE" in
                 rm -f "$tmpf"
             fi
         fi
+        # clear the window's exit indicator (status-right + window-status) on the
+        # same keystroke. the indicator is one-per-window, decoupled from how many
+        # finished rows the window has, so gating on a remaining-rows count
+        # stranded it whenever the other rows aged out via GC instead of being
+        # dismissed here. dismiss it outright
+        [[ -n "$B" ]] && clear_window_exit_alert "$B" "$row_sess" "$row_wname"
         ;;
 esac

@@ -308,13 +308,16 @@ set_exit_alert() {
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
 
-    # ring the terminal bell (only if requested and /dev/tty is available)
+    # ring the bell at the attached client terminal(s) rather than the origin
+    # pane. a pane bell trips monitor-bell and leaves a window_bell_flag that
+    # lingers as a status highlight until the window is viewed (and which the
+    # proclist dismiss can't clear); the @exit_alert option already marks the
+    # window, so this is just the audible cue, delivered wherever you're attached
     if [[ "$ring_bell" == "true" ]]; then
-        {
-            if [[ -w /dev/tty ]]; then
-                printf '\a' > /dev/tty
-            fi
-        } 2>/dev/null || true
+        local _ctty
+        while IFS= read -r _ctty; do
+            [[ -n "$_ctty" && -w "$_ctty" ]] && printf '\a' > "$_ctty" 2>/dev/null
+        done < <(tmux list-clients -F '#{client_tty}' 2>/dev/null)
     fi
 }
 
@@ -448,6 +451,45 @@ clear_window_finished() {
     else
         rm -f "$tmpf"
     fi
+}
+
+# drop a window's exit alert from the status bar: the @exit_alert* options that
+# drive the icon plus its session:window:exit: line in the alerts file. agent
+# alerts on the same window are left intact. lets a dismissed proclist "done"
+# row also clear the status-right indicator. the alerts line is keyed on the
+# window name as it was at completion, so the caller passes that stored name
+# (the live window may have since renamed away from it); both fall back to the
+# live values when omitted
+# usage: clear_window_exit_alert "window_id" ["session" "window_name"]
+clear_window_exit_alert() {
+    local window_id="$1"
+    local sess="${2:-}"
+    local win="${3:-}"
+    [[ -n "$window_id" ]] || return 0
+
+    # unset the window options that render the status-right exit icon
+    local opt
+    for opt in @exit_alert @exit_alert_code @exit_alert_label @exit_alert_colour; do
+        tmux set-option -wt "$window_id" -u "$opt" 2>/dev/null || true
+    done
+
+    # remove the matching exit line from the alerts file (used by show.sh)
+    [[ -f "$ALERTS_FILE" ]] || return 0
+    [[ -n "$sess" ]] || sess=$(tmux display-message -t "$window_id" -p '#S' 2>/dev/null) || return 0
+    [[ -n "$win" ]] || win=$(tmux display-message -t "$window_id" -p '#W' 2>/dev/null) || return 0
+    [[ -n "$sess" && -n "$win" ]] || return 0
+
+    _acquire_alerts_lock || return 0
+    local tmp_file enc_win grep_exit=0
+    enc_win=$(alerts_encode_window "$win")
+    tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
+    grep -vF "${sess}:${enc_win}:exit:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
+    if [[ $grep_exit -le 1 ]]; then
+        mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
+    else
+        rm -f "$tmp_file" 2>/dev/null
+    fi
+    _release_alerts_lock
 }
 
 # clear all alerts for a specific window
