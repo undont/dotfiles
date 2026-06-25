@@ -27,6 +27,25 @@ unescape_paste() {
     printf '%s' "$s"
 }
 
+# expand a leading ~ or $HOME into an absolute path for filesystem checks
+expand_path() {
+    local s="$1"
+    s="${s/#\~\//$HOME/}"
+    s="${s/#\~/$HOME}"
+    s="${s/#\$HOME/$HOME}"
+    printf '%s' "$s"
+}
+
+# first configured project root (~ form), the default base for new launchers.
+# pulls from PROJECT_DIRS (colon-separated, like list_project_dirs) rather than
+# hardcoding ~/src
+default_project_root() {
+    local first="${PROJECT_DIRS:-$HOME/src}"
+    first="${first%%:*}"
+    first="${first/#\~/$HOME}"
+    printf '%s' "${first/#$HOME/\~}"
+}
+
 # ensure stdin/stdout use terminal (needed when called via fzf become() in a pipeline)
 # security note: this redirects to the controlling terminal, bypassing any pipe isolation
 # safe here because this script is only invoked interactively from the launcher picker
@@ -137,7 +156,11 @@ load_existing_launcher() {
             win_splits+=("no")
             win_split_cmds+=("")
         elif [[ "$line" =~ ^tmux\ split-window.*-t\ \"?\$SESSION:([^\"\ ]+)\"? ]]; then
+            # target may be the window name (our format) or include a pane index
+            # like `dev.1` (hand-written launchers); strip a trailing .N so the
+            # window still matches and the split flag is preserved
             local split_win="${BASH_REMATCH[1]}"
+            [[ "$split_win" =~ \.[0-9]+$ ]] && split_win="${split_win%.*}"
             if idx=$(index_for_window "$split_win"); then
                 win_splits[idx]="yes"
             fi
@@ -461,7 +484,9 @@ while true; do
             show_context "Desc" "$description"
             printf "\n"
 
-            local_default_dir="${project_dir:-~/src/$name}"
+            local_default_dir="${project_dir:-$(default_project_root)/$name}"
+            # display ~ rather than the literal $HOME that gets stored on the way forward
+            local_default_dir="${local_default_dir/#\$HOME/\~}"
 
             local_fzf_result=""
             local_fzf_exit=0
@@ -499,8 +524,8 @@ while true; do
                 local_dir="$local_default_dir"
             fi
 
-            # check if directory exists (expand ~ for the check)
-            local_expanded="${local_dir/#\~/$HOME}"
+            # check if directory exists (expand ~ and $HOME for the check)
+            local_expanded=$(expand_path "$local_dir")
             if [[ ! -d "$local_expanded" ]]; then
                 printf "\n"
                 printf "  ${YELLOW}Directory not found:${NC} %s\n" "$local_dir"

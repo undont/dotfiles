@@ -10,9 +10,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Added
 - Tmux: process list switcher (prefix + Shift+P) merging running and finished commands into one fzf picker. Running commands (tests, builds, servers) show as live ● rows with elapsed time from a new per-pane registry the zsh cmd-alert hook writes during execution; finished commands show ✓/✗/⊘ rows from a new finished-history file recorded on every tracked completion (so a command you watched finish in place still appears, unlike the switch-away-gated status-bar alerts), keeping the last 20 within the hour. Signal deaths (exit > 128, e.g. Ctrl-C) render as a neutral ⊘ "stopped" rather than a red ✗ failure. Jump to any entry, or `x` to interrupt a running process / dismiss a finished one. `tmux/scripts/alerts/proclist.sh`, `tmux/scripts/alerts/proclist-action.sh`, `tmux/scripts/_lib/alerts.sh`, `scripts/hooks/cmd-alert-hook.zsh`, `tmux/tmux.conf.template`
+- Nvim: `<leader>mr` toggles render-markdown's inline rendering for the current buffer (markdown only). `nvim/lua/custom/plugins/markdown-ui.lua`
 
 ### Changed
 - Tmux/zsh: command exit alerts now match the exclude list against the alias-expanded command as well as what you typed, so short git aliases (`gfp` -> `git fetch --prune`) are covered by the `git` entry; added `fg`/`bg` to the defaults so resuming a suspended job no longer registers as a process. Aliases defined as a clear-then-run (`cl && X`) are recognised as interactive launchers from zsh's alias map and excluded automatically, so agents and TUIs (`claude`, `ralph`, `gemini`, `lg`, ...) stay out of the process list with no per-launcher list to maintain. `scripts/hooks/cmd-alert-hook.zsh`
+- Nvim: differ.nvim dev mode is now guarded by a real local checkout. The dev toggle only swaps lazy to `~/code/differ.nvim` when its entry module is present, so the toggle can stay enabled in shared dotfiles: machines without the checkout (or with an empty/half-cloned one) fall back to the installed release instead of pointing lazy at a dir with no modules. `nvim/lua/custom/plugins/differ.lua`
+
+### Fixed
+- Nvim: qf/loclist buffers are unlisted while open, so they no longer surface in telescope's buffers picker or mini.bracketed's `]b`/`[b` (both filter on `buflisted`). `nvim/lua/custom/features/lists.lua`
+- Tmux: new-launcher flow expands `~` and `$HOME` when checking whether the target directory exists, defaults the project root from `PROJECT_DIRS` rather than a hardcoded `~/src`, and strips a trailing pane index (`dev.1`) when matching split-window targets so hand-written launchers still load with their split flags. `tmux/scripts/launchers/new.sh`
 
 ## [0.2.121] - 2026-06-24
 

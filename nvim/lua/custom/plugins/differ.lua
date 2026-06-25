@@ -5,7 +5,7 @@
 -- reachable via :Octo). thread/comment actions are in-diff gestures bound by
 -- differ itself in the pr diff: ga comment, gp reply, gr resolve, gx delete,
 -- gc collapse, ]t/[t thread nav.
---
+
 -- the build hook compiles the go sidecar (pr review) on install/update; it needs
 -- go + make on PATH. local diffs work without it.
 
@@ -15,8 +15,15 @@
 -- (an rtp prepend elsewhere loses to lazy's loader). the sidecar self-locates its
 -- bin off its own lua file, so PR features then need `make go-build` run in the
 -- checkout; local diffs/history/staging work without it. false = installed release.
-local DIFFER_DEV = false
+--
+-- the swap is guarded by a real checkout existing, so leaving this true in shared
+-- dots stays safe: machines without ~/code/differ.nvim (or with a stale/empty one)
+-- fall back to the release instead of pointing lazy at a dir with no modules
+-- (which would break :Differ entirely). the guard checks the entry module rather
+-- than just the dir so an empty or half-cloned checkout doesn't count as dev
+local DIFFER_DEV = true
 local DIFFER_LOCAL = vim.fn.expand '~/code/differ.nvim'
+local DIFFER_USE_DEV = DIFFER_DEV and vim.fn.filereadable(DIFFER_LOCAL .. '/lua/differ/init.lua') == 1
 
 -- :D as a cold-start alias for :Differ. a cmdline abbrev, not differ's
 -- command_alias, so it expands before the plugin is loaded: `:D ...` rewrites to
@@ -29,7 +36,7 @@ vim.cmd [[cnoreabbrev <expr> D (getcmdtype() == ':' && getcmdline() ==# 'D') ? '
 return {
   {
     'undont/differ.nvim',
-    dir = DIFFER_DEV and DIFFER_LOCAL or nil,
+    dir = DIFFER_USE_DEV and DIFFER_LOCAL or nil,
     build = 'make go-build',
     cmd = 'Differ',
     keys = {

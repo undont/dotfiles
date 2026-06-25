@@ -296,6 +296,7 @@ Table align left | <leader>mAl
 Table align right | <leader>mAr
 Table align default | <leader>mAx
 Preview in browser | <leader>mp
+Toggle inline render | <leader>mr
 Next/prev heading | ]] / [[
 
 ## obsidian @obsidian
