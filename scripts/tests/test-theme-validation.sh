@@ -398,11 +398,11 @@ for theme_file in "$THEMES_DIR"/*.theme; do
     if [[ -f "$theme_file" ]]; then
         theme_name=$(basename "$theme_file" .theme)
 
-        # check for shebang
-        if head -1 "$theme_file" | grep -q "^#!/bin/bash"; then
-            pass "$theme_name: has bash shebang"
+        # theme files are sourced data, not executed; they carry no shebang
+        if head -1 "$theme_file" | grep -q "^#!"; then
+            fail "$theme_name: sourced theme file should not have a shebang"
         else
-            fail "$theme_name: should have #!/bin/bash shebang"
+            pass "$theme_name: no shebang (sourced data file)"
         fi
 
         # check for comment header

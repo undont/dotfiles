@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 # Nightfox theme
 # https://github.com/EdenEast/nightfox.nvim
 

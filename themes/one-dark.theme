@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 # One Dark theme
 # https://github.com/joshdick/onedark.vim
 

@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 # Nord theme
 # https://www.nordtheme.com/
 

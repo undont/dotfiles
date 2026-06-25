@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # migration: convert p10k.zsh from symlink to user-owned copy
 # p10k.zsh is no longer tracked in the repo; users should own their config
 # via `p10k configure`

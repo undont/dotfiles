@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 # Dracula theme - current default
 # https://draculatheme.com/
 

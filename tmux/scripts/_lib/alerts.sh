@@ -11,6 +11,23 @@ if [[ -z "${ALERTS_FILE:-}" ]]; then
     readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 fi
 
+# running-process registry: one file per pane (named by pane number) holding an
+# in-flight tracked command. written by the zsh preexec hook, removed by precmd.
+# kept in sync with _CMD_RUNNING_DIR in scripts/hooks/cmd-alert-hook.zsh
+if [[ -z "${RUNNING_DIR:-}" ]]; then
+    readonly RUNNING_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/running"
+fi
+
+# finished-process history: appended on every tracked completion (regardless of
+# whether you switched away, unlike the alerts file which only records
+# switched-away results for the status bar). feeds the proclist "done" rows.
+# kept in sync with _CMD_FINISHED_FILE in scripts/hooks/cmd-alert-hook.zsh
+# fields: finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label<tab>cmd
+# (cmd is the full command as typed, for proclist rerun; absent on pre-rerun rows)
+if [[ -z "${FINISHED_FILE:-}" ]]; then
+    readonly FINISHED_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/finished"
+fi
+
 # alert file format: session:window:agent
 # future enhancement: add timestamp field for age-based sorting and auto-expiry
 # proposed format: session:window:agent:timestamp
@@ -80,10 +97,18 @@ get_agent_display() {
     esac
 }
 
+# a shell reports a signal death as exit code 128+N (SIGINT 130, SIGTERM 143,
+# SIGKILL 137, SIGHUP 129). those are interruptions, not run-to-completion
+# failures, so they get a neutral state rather than the red ✗
+_exit_code_is_signal() {
+    [[ "$1" =~ ^[0-9]+$ ]] && (( $1 > 128 ))
+}
+
 # exit code icon (separate from agent icons)
 # usage: get_exit_code_icon "exit_code"
 get_exit_code_icon() {
     local code="$1"
+    _exit_code_is_signal "$code" && { echo "⊘"; return; }
     case "$code" in
         0)   echo "✓" ;;
         *)   echo "✗" ;;
@@ -94,16 +119,25 @@ get_exit_code_icon() {
 # usage: get_exit_code_colour "exit_code"
 get_exit_code_colour() {
     local code="$1"
+    _exit_code_is_signal "$code" && { echo "#8a8f98"; return; }    # muted grey
     case "$code" in
         0)   echo "#7aab88" ;;    # muted green
         *)   echo "#c07878" ;;    # muted red
     esac
 }
 
+# running-process display (combined icon|colour, avoids subshell forks)
+# distinct from the ✓/✗ exit icons: an in-flight command has no exit code yet
+# usage: get_running_display
+get_running_display() {
+    echo "●|#d8a657"    # amber: in progress
+}
+
 # exit code display (combined icon|colour, avoids subshell forks)
 # usage: get_exit_code_display "exit_code"
 get_exit_code_display() {
     local code="$1"
+    _exit_code_is_signal "$code" && { echo "⊘|#8a8f98"; return; }    # interrupted
     case "$code" in
         0)   echo "✓|#7aab88" ;;
         *)   echo "✗|#c07878" ;;
@@ -274,13 +308,16 @@ set_exit_alert() {
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
 
-    # ring the terminal bell (only if requested and /dev/tty is available)
+    # ring the bell at the attached client terminal(s) rather than the origin
+    # pane. a pane bell trips monitor-bell and leaves a window_bell_flag that
+    # lingers as a status highlight until the window is viewed (and which the
+    # proclist dismiss can't clear); the @exit_alert option already marks the
+    # window, so this is just the audible cue, delivered wherever you're attached
     if [[ "$ring_bell" == "true" ]]; then
-        {
-            if [[ -w /dev/tty ]]; then
-                printf '\a' > /dev/tty
-            fi
-        } 2>/dev/null || true
+        local _ctty
+        while IFS= read -r _ctty; do
+            [[ -n "$_ctty" && -w "$_ctty" ]] && printf '\a' > "$_ctty" 2>/dev/null
+        done < <(tmux list-clients -F '#{client_tty}' 2>/dev/null)
     fi
 }
 
@@ -394,12 +431,76 @@ _release_alerts_lock() {
     rmdir "$lock_dir" 2>/dev/null || true
 }
 
+# drop finished-history rows for a window so "done" rows clear once viewed,
+# mirroring how clear_window_alerts dismisses agent/exit alerts on select.
+# keyed on window_id (field 4); tmux never reuses ids within a server lifetime,
+# so a rename can't strand the entry. no-op without an id (the only reliable key)
+# usage: clear_window_finished "window_id"
+clear_window_finished() {
+    local window_id="$1"
+    [[ -n "$window_id" && -f "$FINISHED_FILE" ]] || return 0
+
+    # fast path: skip the rewrite when this window has no finished rows. a stray
+    # field-4-shaped match in a label only costs a no-op rewrite, never a miss
+    grep -qF "$window_id" "$FINISHED_FILE" 2>/dev/null || return 0
+
+    local tmpf
+    tmpf=$(mktemp "${FINISHED_FILE}.XXXXXX") || return 0
+    if awk -F'\t' -v w="$window_id" '$4 != w' "$FINISHED_FILE" > "$tmpf" 2>/dev/null; then
+        mv "$tmpf" "$FINISHED_FILE" 2>/dev/null || rm -f "$tmpf"
+    else
+        rm -f "$tmpf"
+    fi
+}
+
+# drop a window's exit alert from the status bar: the @exit_alert* options that
+# drive the icon plus its session:window:exit: line in the alerts file. agent
+# alerts on the same window are left intact. lets a dismissed proclist "done"
+# row also clear the status-right indicator. the alerts line is keyed on the
+# window name as it was at completion, so the caller passes that stored name
+# (the live window may have since renamed away from it); both fall back to the
+# live values when omitted
+# usage: clear_window_exit_alert "window_id" ["session" "window_name"]
+clear_window_exit_alert() {
+    local window_id="$1"
+    local sess="${2:-}"
+    local win="${3:-}"
+    [[ -n "$window_id" ]] || return 0
+
+    # unset the window options that render the status-right exit icon
+    local opt
+    for opt in @exit_alert @exit_alert_code @exit_alert_label @exit_alert_colour; do
+        tmux set-option -wt "$window_id" -u "$opt" 2>/dev/null || true
+    done
+
+    # remove the matching exit line from the alerts file (used by show.sh)
+    [[ -f "$ALERTS_FILE" ]] || return 0
+    [[ -n "$sess" ]] || sess=$(tmux display-message -t "$window_id" -p '#S' 2>/dev/null) || return 0
+    [[ -n "$win" ]] || win=$(tmux display-message -t "$window_id" -p '#W' 2>/dev/null) || return 0
+    [[ -n "$sess" && -n "$win" ]] || return 0
+
+    _acquire_alerts_lock || return 0
+    local tmp_file enc_win grep_exit=0
+    enc_win=$(alerts_encode_window "$win")
+    tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
+    grep -vF "${sess}:${enc_win}:exit:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
+    if [[ $grep_exit -le 1 ]]; then
+        mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
+    else
+        rm -f "$tmp_file" 2>/dev/null
+    fi
+    _release_alerts_lock
+}
+
 # clear all alerts for a specific window
 # usage: clear_window_alerts "session" "window" ["window_id"]
 clear_window_alerts() {
     local session="$1"
     local window="$2"
     local window_id="${3:-}"
+
+    # finished-process rows clear on the same select that dismisses alerts
+    clear_window_finished "$window_id"
 
     # remove from alerts file (any agent) with file locking
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then

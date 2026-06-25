@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # migration: repoint the dotfiles git remote from the old github account to the
 # new one (seanhalberthal -> undont) after the account rename. github's rename
 # redirect keeps the old origin url working, but only until the old name is

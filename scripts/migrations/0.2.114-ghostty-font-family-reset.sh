@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # migration: insert a `font-family = ""` reset into an existing ghostty local
 # override when it sets a font-family but lacks the reset
 #

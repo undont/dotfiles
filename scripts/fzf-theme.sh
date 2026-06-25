@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # FZF theme configuration
 # sources the current theme and exports FZF_DEFAULT_OPTS
 # can be sourced by .zshrc or individual scripts

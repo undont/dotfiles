@@ -13,6 +13,9 @@ return {
     'MeanderingProgrammer/render-markdown.nvim',
     ft = { 'markdown' },
     dependencies = { 'nvim-treesitter/nvim-treesitter', 'echasnovski/mini.nvim' },
+    keys = {
+      { '<leader>mr', '<cmd>RenderMarkdown buf_toggle<CR>', desc = 'Toggle markdown render', ft = 'markdown' },
+    },
     opts = {
       anti_conceal = {
         ignore = {

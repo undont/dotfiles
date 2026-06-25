@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # move a tmux window to a different session
 # usage: move.sh <session:window_index>
 

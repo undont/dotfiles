@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # migration: remove CSharpier from Mason
 # C# formatting now uses Roslyn LSP (via easy-dotnet) instead of CSharpier
 

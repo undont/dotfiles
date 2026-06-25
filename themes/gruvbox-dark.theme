@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 # Gruvbox Dark theme
 # https://github.com/morhetz/gruvbox
 

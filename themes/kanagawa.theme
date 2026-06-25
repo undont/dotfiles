@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 # Kanagawa theme
 # https://github.com/rebelot/kanagawa.nvim
 

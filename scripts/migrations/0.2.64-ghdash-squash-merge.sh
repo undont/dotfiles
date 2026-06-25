@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # migration: add squash & merge keybinding to gh-dash local.yml
 # overrides the built-in 'm' key to use --squash --delete-branch
 

@@ -21,6 +21,10 @@ setup_test_server
 # create temp directory for alerts file
 ALERT_TEST_DIR=$(mktemp -d)
 export ALERTS_FILE="$ALERT_TEST_DIR/alerts"
+# set before sourcing alerts.sh so it isn't frozen to the real path via readonly
+export FINISHED_FILE="$ALERT_TEST_DIR/finished"
+# isolate the running registry too so proclist.sh can't touch the real one
+export RUNNING_DIR="$ALERT_TEST_DIR/running"
 
 # create a test session
 TEST_SESSION="test-cmd-alerts-$$"
@@ -105,6 +109,164 @@ if [[ -f "$ALERTS_FILE" ]] && grep -q "other-session:main:claude" "$ALERTS_FILE"
     pass "clear_window_alerts preserves agent alerts from other sessions"
 else
     fail "clear_window_alerts should preserve unrelated entries"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# finished-history clearing (proclist "done" rows clear on view)
+# ═══════════════════════════════════════════════════════════════
+
+section "Finished History Clearing"
+
+TAB=$(printf '\t')
+
+# fields: finish_epoch<tab>exit<tab>session<tab>window_id<tab>window<tab>label
+printf '%s\n' \
+    "1000${TAB}0${TAB}$TEST_SESSION${TAB}@5${TAB}testwin${TAB}make test" \
+    "1001${TAB}1${TAB}$TEST_SESSION${TAB}@6${TAB}other${TAB}npm run lint" \
+    > "$FINISHED_FILE"
+
+clear_window_finished "@5" 2>/dev/null || true
+if grep -q "$TAB@5$TAB" "$FINISHED_FILE"; then
+    fail "clear_window_finished should drop the matching window_id row"
+else
+    pass "clear_window_finished drops the matching window_id row"
+fi
+if grep -q "$TAB@6$TAB" "$FINISHED_FILE"; then
+    pass "clear_window_finished preserves rows for other windows"
+else
+    fail "clear_window_finished should preserve unrelated window rows"
+fi
+
+# empty window_id is a no-op (the only reliable key); nothing removed
+printf '%s\n' "1002${TAB}0${TAB}$TEST_SESSION${TAB}@7${TAB}w${TAB}cmd" > "$FINISHED_FILE"
+clear_window_finished "" 2>/dev/null || true
+if grep -q "$TAB@7$TAB" "$FINISHED_FILE"; then
+    pass "clear_window_finished no-ops on empty window_id"
+else
+    fail "clear_window_finished should not touch the file without a window_id"
+fi
+
+# clear_window_alerts also clears finished rows for the same window on select
+printf '%s\n' "1003${TAB}0${TAB}$TEST_SESSION${TAB}@8${TAB}testwin${TAB}cmd" > "$FINISHED_FILE"
+clear_window_alerts "$TEST_SESSION" "testwin" "@8" 2>/dev/null || true
+if grep -q "$TAB@8$TAB" "$FINISHED_FILE"; then
+    fail "clear_window_alerts should clear finished rows for the selected window"
+else
+    pass "clear_window_alerts clears finished rows for the selected window"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# command rerun (proclist r/R bindings)
+# ═══════════════════════════════════════════════════════════════
+
+section "Command Rerun (r/R)"
+
+# the hook stores the full command as typed ($1, pre-expansion) so $VAR
+# references survive as references, not values, and the command isn't truncated
+if command -v zsh &>/dev/null; then
+    cmd_out=$(DB_PASS=topsecret zsh -c '
+        source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+        _cmd_alert_preexec '\''mysql -p$DB_PASS --host db.internal mydb'\''
+        echo "$_cmd_alert_cmd"
+    ' 2>/dev/null)
+    assert_equals "rerun cmd keeps full command, \$VAR unexpanded" \
+        'mysql -p$DB_PASS --host db.internal mydb' "$cmd_out"
+    if [[ "$cmd_out" == *topsecret* ]]; then
+        fail "rerun cmd must not expand \$VAR to its secret value"
+    else
+        pass "rerun cmd does not store the resolved secret value"
+    fi
+    if [[ "$cmd_out" == *mydb ]]; then
+        pass "rerun cmd is the full command, not the truncated label"
+    else
+        fail "rerun cmd should not be truncated like the status-bar label"
+    fi
+else
+    skip "zsh not available — skipping rerun cmd capture tests"
+fi
+
+# proclist-rerun.sh pastes the right row's command into its window's pane,
+# matched by epoch+window_id; an unrelated row must not be pasted
+test_tmux new-window -t "$TEST_SESSION" -n "rerunwin" -c /tmp 2>/dev/null || true
+RW_ID=$(test_tmux list-windows -t "$TEST_SESSION" -F '#{window_name} #{window_id}' 2>/dev/null \
+    | awk '$1=="rerunwin"{print $2; exit}')
+if [[ -n "$RW_ID" ]]; then
+    printf '%s\n' \
+        "2000${TAB}1${TAB}$TEST_SESSION${TAB}@99999${TAB}gone${TAB}decoy${TAB}echo DECOYCMD" \
+        "2001${TAB}1${TAB}$TEST_SESSION${TAB}$RW_ID${TAB}rerunwin${TAB}grep needle${TAB}grep -r RERUNNEEDLE src/" \
+        > "$FINISHED_FILE"
+    bash "$SCRIPTS_DIR/alerts/proclist-rerun.sh" 2001 "$RW_ID" 2>/dev/null || true
+    sleep 0.4
+    pasted=$(test_tmux capture-pane -t "$RW_ID" -p 2>/dev/null | tr -d '\000')
+    if [[ "$pasted" == *"grep -r RERUNNEEDLE src/"* ]]; then
+        pass "proclist-rerun (stage) types the matched row's command into its window"
+    else
+        fail "proclist-rerun should stage the matched command (pane: '$pasted')"
+    fi
+    if [[ "$pasted" == *DECOYCMD* ]]; then
+        fail "proclist-rerun pasted an unrelated row's command"
+    else
+        pass "proclist-rerun ignores rows that don't match epoch+window_id"
+    fi
+else
+    skip "could not create rerun test window — skipping paste test"
+fi
+
+# run mode (R) executes the command; stage mode (r) leaves it unexecuted. assert
+# via a side effect (a touched file) on a fresh window so leftover prompt text
+# from the stage test above can't interfere
+test_tmux new-window -t "$TEST_SESSION" -n "execwin" -c /tmp 2>/dev/null || true
+EW_ID=$(test_tmux list-windows -t "$TEST_SESSION" -F '#{window_name} #{window_id}' 2>/dev/null \
+    | awk '$1=="execwin"{print $2; exit}')
+if [[ -n "$EW_ID" ]]; then
+    EXEC_MARK="$ALERT_TEST_DIR/exec_ran"
+
+    rm -f "$EXEC_MARK"
+    printf '%s\n' "3001${TAB}0${TAB}$TEST_SESSION${TAB}$EW_ID${TAB}execwin${TAB}touch${TAB}touch $EXEC_MARK" \
+        > "$FINISHED_FILE"
+    bash "$SCRIPTS_DIR/alerts/proclist-rerun.sh" 3001 "$EW_ID" exec 2>/dev/null || true
+    sleep 0.6
+    if [[ -f "$EXEC_MARK" ]]; then
+        pass "proclist-rerun (run) executes the command immediately"
+    else
+        fail "proclist-rerun run mode should execute the command (marker missing)"
+    fi
+
+    rm -f "$EXEC_MARK"
+    printf '%s\n' "3002${TAB}0${TAB}$TEST_SESSION${TAB}$EW_ID${TAB}execwin${TAB}touch${TAB}touch $EXEC_MARK" \
+        > "$FINISHED_FILE"
+    bash "$SCRIPTS_DIR/alerts/proclist-rerun.sh" 3002 "$EW_ID" 2>/dev/null || true
+    sleep 0.6
+    if [[ ! -f "$EXEC_MARK" ]]; then
+        pass "proclist-rerun (stage) does not execute the command"
+    else
+        fail "proclist-rerun stage mode must not run the command"
+    fi
+else
+    skip "could not create exec test window — skipping stage/run mode tests"
+fi
+
+# proclist.sh GC rewrite must preserve the cmd field on rows it keeps
+if [[ -n "$RW_ID" ]]; then
+    NOW=$(date +%s)
+    printf '%s\n' \
+        "100${TAB}0${TAB}$TEST_SESSION${TAB}@5${TAB}old${TAB}old${TAB}echo STALECMD" \
+        "${NOW}${TAB}0${TAB}$TEST_SESSION${TAB}$RW_ID${TAB}rerunwin${TAB}fresh${TAB}grep -r KEEPCMD src/" \
+        > "$FINISHED_FILE"
+    bash "$SCRIPTS_DIR/alerts/proclist.sh" >/dev/null 2>&1 || true
+    remaining=$(cat "$FINISHED_FILE" 2>/dev/null || true)
+    if [[ "$remaining" != *STALECMD* ]]; then
+        pass "proclist GC drops the stale finished row"
+    else
+        fail "proclist GC should drop rows older than the age cutoff"
+    fi
+    if [[ "$remaining" == *"grep -r KEEPCMD src/"* ]]; then
+        pass "proclist GC preserves the cmd field on kept rows"
+    else
+        fail "proclist GC dropped the cmd field (remaining: '$remaining')"
+    fi
+else
+    skip "no rerun test window — skipping GC preservation test"
 fi
 
 # ═══════════════════════════════════════════════════════════════
@@ -213,6 +375,49 @@ if command -v zsh &>/dev/null; then
     fi
 else
     skip "zsh not available — skipping threshold/window guard tests"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# view guard: alert fires when no client is viewing the origin pane
+# (regression: switching to another *session* used to wrongly suppress it,
+#  because display-message from a background pane returns the origin session's
+#  active pane. the guard now matches the origin pane against every client's
+#  active pane via list-clients. with no client attached the pane is unviewed,
+#  so the alert must fire — the buggy guard suppressed it here)
+# ═══════════════════════════════════════════════════════════════
+
+section "Exit Alert View Guard"
+
+if command -v zsh &>/dev/null; then
+    GUARD_AF="$ALERT_TEST_DIR/alerts-guard"
+    : > "$GUARD_AF"
+    # route the hook's bare tmux calls to the isolated server via $TMUX, so the
+    # guard sees this server's (empty) client list, not the user's real one
+    G_SP=$(test_tmux display-message -p '#{socket_path}' 2>/dev/null)
+    G_PID=$(test_tmux display-message -p '#{pid}' 2>/dev/null)
+    G_PANE=$(test_tmux display-message -t "$TEST_SESSION:testwin" -p '#{pane_id}' 2>/dev/null)
+    guard_out=$(TMUX="$G_SP,$G_PID,0" TMUX_PANE="$G_PANE" \
+        ALERTS_FILE="$GUARD_AF" \
+        _CMD_FINISHED_FILE="$ALERT_TEST_DIR/fin-guard" \
+        _CMD_RUNNING_DIR="$ALERT_TEST_DIR/run-guard" \
+        _CMD_ALERT_SCRIPT="$HOOKS_DIR/cmd-alert.sh" \
+        _CMD_ALERT_MIN_SECONDS=0 \
+        zsh -c '
+            source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+            _cmd_alert_start=0
+            _cmd_alert_pane="'"$G_PANE"'"
+            _cmd_alert_label="guardjob"
+            _cmd_alert_cmd="false"
+            false; _cmd_alert_precmd
+            [[ -f "'"$GUARD_AF"'" ]] && cat "'"$GUARD_AF"'"
+        ' 2>/dev/null)
+    if [[ "$guard_out" == *":exit:"*"guardjob"* ]]; then
+        pass "exit alert fires when origin pane isn't viewed (session-switch case)"
+    else
+        fail "exit alert should fire when no client views the origin pane (got: '$guard_out')"
+    fi
+else
+    skip "zsh not available — skipping view guard test"
 fi
 
 # ═══════════════════════════════════════════════════════════════

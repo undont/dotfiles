@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 # Solarized Dark theme
 # https://ethanschoonover.com/solarized/
 
