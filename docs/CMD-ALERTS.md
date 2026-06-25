@@ -11,7 +11,7 @@ You run: make test  (then switch to another window)
   → make test runs normally
   → Command exits (code 0 or non-zero)
     → precmd hook fires
-      → Elapsed time ≥ 10s AND you've switched away?
+      → Elapsed ≥ threshold (default 1s) AND you've moved away (window or session)?
         → cmd-alert.sh sets exit alert
           → Bell rings + window tab highlights green or red
           → Status bar shows ✓ or ✗ for other sessions
@@ -50,10 +50,10 @@ The window tab colour changes:
 
 An alert fires only when **all** of the following are true:
 1. You are inside tmux
-2. You switched to a different window before the command finished
+2. You moved away before the command finished, to a different window **or** a different session
 3. The command is not in the exclude list
 
-If you're still watching the command, no alert fires; it would just be noise.
+If you're still watching the command, no alert fires; it would just be noise. "Still watching" means an attached client is currently viewing the origin pane: the guard checks each client's active pane via `list-clients`, so switching to another session counts as moving away just like switching windows does.
 
 ## Excluded Commands
 
@@ -126,10 +126,14 @@ Running rows come from a per-pane registry the `preexec` hook writes while a tra
 |-----|--------|
 | <kbd>j</kbd>/<kbd>k</kbd>, <kbd>g</kbd>/<kbd>G</kbd> | move / jump to top or bottom |
 | <kbd>Space</kbd>/<kbd>Enter</kbd> | switch to the selected process's window |
+| <kbd>r</kbd> | rerun a finished command: stage it on its origin window's prompt and jump there, no Enter, ready to edit |
+| <kbd>R</kbd> | stage the command and run it straight away |
 | <kbd>x</kbd> | interrupt a running process (sends Ctrl-C) or dismiss a finished one from history |
 | <kbd>/</kbd> | search; <kbd>Esc</kbd> returns to navigation |
 
-Running entries are self-cleaning: the `precmd` hook removes them on completion, and the reader prunes any whose owning shell has died or whose pane has closed. Finished entries roll off once they age past an hour or fall outside the most recent 20.
+Rerun reads the full command (stored as typed, so `$VAR` references stay references and are re-expanded by the shell on rerun) from the finished history by key, so the raw text never crosses the fzf/shell boundary. `R` types into whatever the target pane's foreground is, so it is safest at an idle prompt; `r` is the safe default when in doubt.
+
+Running entries are self-cleaning: the `precmd` hook removes them on completion, and the reader prunes any whose owning shell has died or whose pane has closed. Finished entries roll off once they age past an hour or fall outside the most recent 20, and they also clear when you view their window (the same window-switch clear that dismisses exit and agent alerts).
 
 ## Clearing Alerts
 
@@ -144,8 +148,8 @@ alerts-clear    # Alias for rm -rf ~/.config/tmux-alerts
 - `precmd` hook: on completion, checks elapsed time and whether window changed
 - Alert file: `~/.config/tmux-alerts/alerts` (format: `session:window:exit:<code>:<label>`)
 - Running registry: `~/.config/tmux-alerts/running` (one file per pane, named by pane number; fields `pane_id<tab>start_epoch<tab>shell_pid<tab>label`)
-- Finished history: `~/.config/tmux-alerts/finished` (one line per completion; fields `finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label`; reader keeps last 20 within the hour)
+- Finished history: `~/.config/tmux-alerts/finished` (one line per completion; fields `finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label<tab>cmd`, where `cmd` is the full command as typed for rerun and is absent on rows written before rerun shipped; reader keeps last 20 within the hour)
 - Hook script: `scripts/hooks/cmd-alert.sh`
-- Process list: `tmux/scripts/alerts/proclist.sh` (reader) and `tmux/scripts/alerts/proclist-action.sh` (the `x` binding)
+- Process list: `tmux/scripts/alerts/proclist.sh` (reader), `tmux/scripts/alerts/proclist-action.sh` (the `x` binding), and `tmux/scripts/alerts/proclist-rerun.sh` (the `r`/`R` bindings)
 - Bell + status bar rendering: `tmux/scripts/alerts/show.sh`
-- Auto-clear on window switch: `after-select-window` hook in `tmux.conf.template`
+- Auto-clear on window switch: `after-select-window` hook in `tmux.conf.template`, via `clear.sh`, which clears both the alerts file and any finished-history rows for the window

@@ -101,12 +101,13 @@ if [[ -f "$FINISHED_FILE" ]]; then
     kept=()        # within-age lines, for the garbage-collecting rewrite
     done_rows=()   # display rows, prefixed with epoch for sorting
     total=0        # every line read, to decide whether a GC rewrite is needed
-    while IFS="$TAB" read -r f_epoch f_exit f_sess f_wid f_wname f_label; do
+    while IFS="$TAB" read -r f_epoch f_exit f_sess f_wid f_wname f_label f_cmd; do
         total=$(( total + 1 ))
         [[ "$f_epoch" =~ ^[0-9]+$ ]] || continue
         (( f_epoch >= cutoff )) || continue
-        kept+=("$(printf '%s%s%s%s%s%s%s%s%s%s%s' \
-            "$f_epoch" "$TAB" "$f_exit" "$TAB" "$f_sess" "$TAB" "$f_wid" "$TAB" "$f_wname" "$TAB" "$f_label")")
+        # preserve the cmd field (rerun source) verbatim through the GC rewrite
+        kept+=("$(printf '%s%s%s%s%s%s%s%s%s%s%s%s%s' \
+            "$f_epoch" "$TAB" "$f_exit" "$TAB" "$f_sess" "$TAB" "$f_wid" "$TAB" "$f_wname" "$TAB" "$f_label" "$TAB" "$f_cmd")")
         f_label="${f_label//$TAB/ }"
         disp=$(get_exit_code_display "$f_exit")
         icon="${disp%%|*}"; col="${disp##*|}"

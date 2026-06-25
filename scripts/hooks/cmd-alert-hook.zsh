@@ -29,6 +29,7 @@ zmodload zsh/datetime 2>/dev/null || true
 _cmd_alert_start=-1       # -1 = no command in flight (0 is a valid SECONDS value)
 _cmd_alert_exit=0
 _cmd_alert_label=""
+_cmd_alert_cmd=""         # full command as typed, for proclist rerun (R)
 _cmd_alert_pane=""
 
 # commands that should never trigger alerts (interactive pagers, editors, etc.)
@@ -122,6 +123,12 @@ _cmd_alert_preexec() {
     _cmd_alert_label="${_cmd_alert_label//\#/##}"
     _cmd_alert_label="${_cmd_alert_label:0:80}"
 
+    # keep the full command as typed for proclist rerun (R). $1 is pre-expansion,
+    # so $VAR references stay references (re-expanded by the shell on rerun, not
+    # stored as values). collapse tabs/newlines so one finished row stays one line
+    _cmd_alert_cmd="${cmd//$'\n'/ }"
+    _cmd_alert_cmd="${_cmd_alert_cmd//$'\t'/ }"
+
     # capture the origin pane so the alert lands on the correct window
     # even if the user switches windows before the command finishes
     if [[ -n "${TMUX:-}" ]]; then
@@ -162,6 +169,7 @@ _cmd_alert_precmd() {
     # only alert if we're in tmux and command ran long enough to be worth noticing
     if [[ -z "${TMUX:-}" ]] || (( elapsed < _CMD_ALERT_MIN_SECONDS )); then
         _cmd_alert_label=""
+        _cmd_alert_cmd=""
         _cmd_alert_pane=""
         return
     fi
@@ -175,18 +183,25 @@ _cmd_alert_precmd() {
         local _sess _wid _wname
         IFS=$'\t' read -r _sess _wid _wname <<< "$_meta"
         [[ -d "${_CMD_FINISHED_FILE:h}" ]] || mkdir -p "${_CMD_FINISHED_FILE:h}" 2>/dev/null
-        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "${EPOCHSECONDS:-0}" "$_cmd_alert_exit" "$_sess" "$_wid" "$_wname" "$_cmd_alert_label" \
+        printf '%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "${EPOCHSECONDS:-0}" "$_cmd_alert_exit" "$_sess" "$_wid" "$_wname" "$_cmd_alert_label" "$_cmd_alert_cmd" \
             >> "$_CMD_FINISHED_FILE" 2>/dev/null
     fi
 
-    # window-switch guard: only alert if the user switched away from the origin
-    # pane. if still viewing the same pane, the command finished in plain sight
+    # view guard: only alert if no attached client is currently viewing the
+    # origin pane. comparing against `display-message -p '#{pane_id}'` was wrong:
+    # run from a background pane it resolves to the *origin session's* active
+    # pane, so switching to another session still looked like "still here" and
+    # suppressed the alert. matching the origin pane against every client's
+    # active pane catches both window- and session-switch cases
     if [[ -n "$_cmd_alert_pane" ]]; then
-        local current_pane
-        current_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null) || true
-        if [[ "$current_pane" == "$_cmd_alert_pane" ]]; then
+        local _cp _watching=0
+        while IFS= read -r _cp; do
+            [[ "$_cp" == "$_cmd_alert_pane" ]] && { _watching=1; break; }
+        done < <(tmux list-clients -F '#{pane_id}' 2>/dev/null)
+        if (( _watching )); then
             _cmd_alert_label=""
+            _cmd_alert_cmd=""
             _cmd_alert_pane=""
             return
         fi
@@ -199,6 +214,7 @@ _cmd_alert_precmd() {
     fi
 
     _cmd_alert_label=""
+    _cmd_alert_cmd=""
     _cmd_alert_pane=""
 }
 

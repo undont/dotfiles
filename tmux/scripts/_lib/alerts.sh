@@ -22,7 +22,8 @@ fi
 # whether you switched away, unlike the alerts file which only records
 # switched-away results for the status bar). feeds the proclist "done" rows.
 # kept in sync with _CMD_FINISHED_FILE in scripts/hooks/cmd-alert-hook.zsh
-# fields: finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label
+# fields: finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label<tab>cmd
+# (cmd is the full command as typed, for proclist rerun; absent on pre-rerun rows)
 if [[ -z "${FINISHED_FILE:-}" ]]; then
     readonly FINISHED_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/finished"
 fi
@@ -427,12 +428,37 @@ _release_alerts_lock() {
     rmdir "$lock_dir" 2>/dev/null || true
 }
 
+# drop finished-history rows for a window so "done" rows clear once viewed,
+# mirroring how clear_window_alerts dismisses agent/exit alerts on select.
+# keyed on window_id (field 4); tmux never reuses ids within a server lifetime,
+# so a rename can't strand the entry. no-op without an id (the only reliable key)
+# usage: clear_window_finished "window_id"
+clear_window_finished() {
+    local window_id="$1"
+    [[ -n "$window_id" && -f "$FINISHED_FILE" ]] || return 0
+
+    # fast path: skip the rewrite when this window has no finished rows. a stray
+    # field-4-shaped match in a label only costs a no-op rewrite, never a miss
+    grep -qF "$window_id" "$FINISHED_FILE" 2>/dev/null || return 0
+
+    local tmpf
+    tmpf=$(mktemp "${FINISHED_FILE}.XXXXXX") || return 0
+    if awk -F'\t' -v w="$window_id" '$4 != w' "$FINISHED_FILE" > "$tmpf" 2>/dev/null; then
+        mv "$tmpf" "$FINISHED_FILE" 2>/dev/null || rm -f "$tmpf"
+    else
+        rm -f "$tmpf"
+    fi
+}
+
 # clear all alerts for a specific window
 # usage: clear_window_alerts "session" "window" ["window_id"]
 clear_window_alerts() {
     local session="$1"
     local window="$2"
     local window_id="${3:-}"
+
+    # finished-process rows clear on the same select that dismisses alerts
+    clear_window_finished "$window_id"
 
     # remove from alerts file (any agent) with file locking
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
