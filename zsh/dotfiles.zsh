@@ -735,6 +735,9 @@ alias j="cl && jiru"                                                           #
 alias lg="cl && lazygit"                                                       # cl + lazygit
 alias ld="cl && lazydocker"                                                    # cl + lazydocker
 alias lc="cl && lazycron"                                                      # cl + lazycron
+# aerc reads config from ~/Library/Preferences/aerc on macOS by default; point it
+# at ~/.config/aerc so it matches the rest of the dotfiles (harmless on linux)
+alias aerc='aerc -C "${XDG_CONFIG_HOME:-$HOME/.config}/aerc/aerc.conf" -A "${XDG_CONFIG_HOME:-$HOME/.config}/aerc/accounts.conf" -B "${XDG_CONFIG_HOME:-$HOME/.config}/aerc/binds.conf"'  # terminal email client
 alias gols="ls ~/go/bin"                                                       # list Go binaries
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"   # clear nvim cache
 

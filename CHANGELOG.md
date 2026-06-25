@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.123] - 2026-xx-xx
+
+### Added
+- aerc: terminal email client wired into the dotfiles. `aerc.conf` (dracula styleset, threading, HTML rendered by w3m and piped into `less` for vim-style scrolling) and `binds.conf` are symlinked; `accounts.conf` is user-owned from `accounts.conf.template` with credentials pulled from the macOS keychain via `*-cred-cmd`, so no secrets land in the repo. The `aerc` shell alias passes `-C`/`-A`/`-B` so aerc reads `~/.config/aerc` instead of its macOS-default `~/Library/Preferences/aerc`. Custom message-list binds: `fu`/`fr`/`ff`/`fa` filter unread/read/flagged/all and `tu`/`tr` toggle the seen flag. `aerc/`, `scripts/install/create-symlinks.sh`, `zsh/dotfiles.zsh`, `Brewfile`
+
 ## [0.2.122] - 2026-06-25
 
 ### Added
