@@ -6,10 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.123] - 2026-xx-xx
+## [0.2.123] - 2026-06-26
 
 ### Added
 - aerc: terminal email client wired into the dotfiles. `aerc.conf` (dracula styleset, threading, HTML rendered by w3m and piped into `less` for vim-style scrolling) and `binds.conf` are symlinked; `accounts.conf` is user-owned from `accounts.conf.template` with credentials pulled from the macOS keychain via `*-cred-cmd`, so no secrets land in the repo. The `aerc` shell alias passes `-C`/`-A`/`-B` so aerc reads `~/.config/aerc` instead of its macOS-default `~/Library/Preferences/aerc`. Custom message-list binds: `fu`/`fr`/`ff`/`fa` filter unread/read/flagged/all and `tu`/`tr` toggle the seen flag. `aerc/`, `scripts/install/create-symlinks.sh`, `zsh/dotfiles.zsh`, `Brewfile`
+- Tmux: fzf switcher previews now refresh live and anchor to the bottom. Previews re-render on a 0.5s timer (`every(0.5):refresh-preview`) so a previewed pane keeps updating while the cursor sits on it, not only when you move off and back onto the row. A new `preview-pane.sh` helper replaces the inline `capture-pane`: it strips the trailing blank rows `capture-pane` emits (one line per pane row) and tails the result to the preview window height (`$FZF_PREVIEW_LINES`), so fzf's top-anchoring no longer clips the most recent rows (statusline / prompt) on full panes, while idle panes still render from the top with no blank padding. Applies to the process list (prefix + Shift+P), session (prefix + s), window (prefix + f), and instance switchers (claude/codex/opencode/copilot/nvim). `tmux/scripts/utils/preview-pane.sh`, `tmux/tmux.conf.template`
 
 ## [0.2.122] - 2026-06-25
 
