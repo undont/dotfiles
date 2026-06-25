@@ -14,6 +14,18 @@
 #   _CMD_ALERT_EXCLUDE+=(mytool "docker compose")
 
 _CMD_ALERT_MIN_SECONDS="${_CMD_ALERT_MIN_SECONDS:-1}"
+
+# running-process registry dir (kept in sync with RUNNING_DIR in
+# tmux/scripts/_lib/alerts.sh). one file per pane, written while a tracked
+# command is in flight so proclist can show what's running right now
+_CMD_RUNNING_DIR="${_CMD_RUNNING_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/running}"
+# finished-process history (kept in sync with FINISHED_FILE in
+# tmux/scripts/_lib/alerts.sh). recorded on every tracked completion so the
+# proclist "done" rows survive even commands you watched finish in place
+_CMD_FINISHED_FILE="${_CMD_FINISHED_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/finished}"
+# $EPOCHSECONDS gives a wall-clock start the proclist reader can age
+zmodload zsh/datetime 2>/dev/null || true
+
 _cmd_alert_start=-1       # -1 = no command in flight (0 is a valid SECONDS value)
 _cmd_alert_exit=0
 _cmd_alert_label=""
@@ -33,6 +45,7 @@ if (( ! ${+_CMD_ALERT_EXCLUDE} )); then
         less more man
         vim nvim v vi nano bat diffnav
         psql sqlite3 tmux
+        fg bg
     )
 fi
 
@@ -43,25 +56,52 @@ _CMD_ALERT_SCRIPT="${_CMD_ALERT_SCRIPT:-${${(%):-%x}:A:h}/cmd-alert.sh}"
 _cmd_alert_preexec() {
     _cmd_alert_exit=0
 
-    # build a short label: basename of first word + up to 2 more words
+    # build a short label from what the user typed ($1); the label uses it so
+    # it reads as entered. :t is zsh's basename, no subprocess fork
     local cmd="$1"
     local -a words
     words=("${(z)cmd}")
     local first
-    first="$(basename "${words[1]:-cmd}")"
+    first="${${words[1]:-cmd}:t}"
 
-    # skip excluded commands (interactive pagers, editors, etc.)
-    # single-word entries match the first word; multi-word entries match as a
-    # command prefix (e.g. "docker compose" excludes "docker compose up")
+    # launcher convention: aliases defined as clear-then-run (`cl && X`,
+    # `clear && X`) are interactive sessions, not background tasks. read the
+    # definition from zsh's alias map so any launcher following the convention
+    # is excluded automatically, with no per-launcher list to keep in sync
+    local _adef="${aliases[$first]:-}"
+    if [[ -n "$_adef" && "$_adef" == *"&&"* ]]; then
+        local -a _dw
+        _dw=("${(z)_adef}")
+        case "${_dw[1]}" in
+            cl|clear|c)
+                _cmd_alert_start=-1
+                _cmd_alert_label=""
+                return
+                ;;
+        esac
+    fi
+
+    # $2 is the alias-expanded command; matching its first word too catches
+    # plain aliases like gfp -> git fetch --prune (covered by the `git` entry)
+    local exp="${2:-$cmd}"
+    local -a ewords
+    ewords=("${(z)exp}")
+    local efirst
+    efirst="${${ewords[1]:-cmd}:t}"
+
+    # skip excluded commands. single-word entries match the typed or expanded
+    # first word; multi-word entries match either as a command prefix
+    # (e.g. "docker compose" excludes "docker compose up")
     local _exclude
     for _exclude in "${_CMD_ALERT_EXCLUDE[@]}"; do
         if [[ "$_exclude" == *" "* ]]; then
-            if [[ "$cmd" == "$_exclude" || "$cmd" == "$_exclude "* ]]; then
+            if [[ "$cmd" == "$_exclude" || "$cmd" == "$_exclude "* \
+               || "$exp" == "$_exclude" || "$exp" == "$_exclude "* ]]; then
                 _cmd_alert_start=-1
                 _cmd_alert_label=""
                 return
             fi
-        elif [[ "$first" == "$_exclude" ]]; then
+        elif [[ "$first" == "$_exclude" || "$efirst" == "$_exclude" ]]; then
             _cmd_alert_start=-1
             _cmd_alert_label=""
             return
@@ -89,6 +129,15 @@ _cmd_alert_preexec() {
     else
         _cmd_alert_pane=""
     fi
+
+    # register the in-flight command (one file per pane, named by pane number).
+    # fields: pane_id, start epoch, shell pid, label. removed by precmd on finish
+    if [[ -n "$_cmd_alert_pane" ]]; then
+        [[ -d "$_CMD_RUNNING_DIR" ]] || mkdir -p "$_CMD_RUNNING_DIR" 2>/dev/null
+        printf '%s\t%s\t%s\t%s\n' \
+            "$_cmd_alert_pane" "${EPOCHSECONDS:-0}" "$$" "$_cmd_alert_label" \
+            > "$_CMD_RUNNING_DIR/${_cmd_alert_pane#%}" 2>/dev/null
+    fi
 }
 
 # must run first in precmd so $? is captured before other precmd functions clobber it
@@ -104,11 +153,31 @@ _cmd_alert_precmd() {
     local elapsed=$(( SECONDS - _cmd_alert_start ))
     _cmd_alert_start=-1
 
+    # command finished: drop its in-flight registry entry (origin pane). runs
+    # for every tracked command, independent of the alert threshold below
+    if [[ -n "$_cmd_alert_pane" ]]; then
+        rm -f "$_CMD_RUNNING_DIR/${_cmd_alert_pane#%}" 2>/dev/null
+    fi
+
     # only alert if we're in tmux and command ran long enough to be worth noticing
     if [[ -z "${TMUX:-}" ]] || (( elapsed < _CMD_ALERT_MIN_SECONDS )); then
         _cmd_alert_label=""
         _cmd_alert_pane=""
         return
+    fi
+
+    # record the completion in the finished-process history (proclist "done"
+    # rows). done regardless of the window-switch guard below, so a command you
+    # watched finish in place still leaves a ✓/✗ entry. one tmux round-trip
+    local _meta
+    _meta=$(tmux display-message -p $'#S\t#{window_id}\t#W' 2>/dev/null) || _meta=""
+    if [[ -n "$_meta" ]]; then
+        local _sess _wid _wname
+        IFS=$'\t' read -r _sess _wid _wname <<< "$_meta"
+        [[ -d "${_CMD_FINISHED_FILE:h}" ]] || mkdir -p "${_CMD_FINISHED_FILE:h}" 2>/dev/null
+        printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "${EPOCHSECONDS:-0}" "$_cmd_alert_exit" "$_sess" "$_wid" "$_wname" "$_cmd_alert_label" \
+            >> "$_CMD_FINISHED_FILE" 2>/dev/null
     fi
 
     # window-switch guard: only alert if the user switched away from the origin

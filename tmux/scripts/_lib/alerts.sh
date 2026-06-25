@@ -11,6 +11,22 @@ if [[ -z "${ALERTS_FILE:-}" ]]; then
     readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 fi
 
+# running-process registry: one file per pane (named by pane number) holding an
+# in-flight tracked command. written by the zsh preexec hook, removed by precmd.
+# kept in sync with _CMD_RUNNING_DIR in scripts/hooks/cmd-alert-hook.zsh
+if [[ -z "${RUNNING_DIR:-}" ]]; then
+    readonly RUNNING_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/running"
+fi
+
+# finished-process history: appended on every tracked completion (regardless of
+# whether you switched away, unlike the alerts file which only records
+# switched-away results for the status bar). feeds the proclist "done" rows.
+# kept in sync with _CMD_FINISHED_FILE in scripts/hooks/cmd-alert-hook.zsh
+# fields: finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label
+if [[ -z "${FINISHED_FILE:-}" ]]; then
+    readonly FINISHED_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/finished"
+fi
+
 # alert file format: session:window:agent
 # future enhancement: add timestamp field for age-based sorting and auto-expiry
 # proposed format: session:window:agent:timestamp
@@ -80,10 +96,18 @@ get_agent_display() {
     esac
 }
 
+# a shell reports a signal death as exit code 128+N (SIGINT 130, SIGTERM 143,
+# SIGKILL 137, SIGHUP 129). those are interruptions, not run-to-completion
+# failures, so they get a neutral state rather than the red ✗
+_exit_code_is_signal() {
+    [[ "$1" =~ ^[0-9]+$ ]] && (( $1 > 128 ))
+}
+
 # exit code icon (separate from agent icons)
 # usage: get_exit_code_icon "exit_code"
 get_exit_code_icon() {
     local code="$1"
+    _exit_code_is_signal "$code" && { echo "⊘"; return; }
     case "$code" in
         0)   echo "✓" ;;
         *)   echo "✗" ;;
@@ -94,16 +118,25 @@ get_exit_code_icon() {
 # usage: get_exit_code_colour "exit_code"
 get_exit_code_colour() {
     local code="$1"
+    _exit_code_is_signal "$code" && { echo "#8a8f98"; return; }    # muted grey
     case "$code" in
         0)   echo "#7aab88" ;;    # muted green
         *)   echo "#c07878" ;;    # muted red
     esac
 }
 
+# running-process display (combined icon|colour, avoids subshell forks)
+# distinct from the ✓/✗ exit icons: an in-flight command has no exit code yet
+# usage: get_running_display
+get_running_display() {
+    echo "●|#d8a657"    # amber: in progress
+}
+
 # exit code display (combined icon|colour, avoids subshell forks)
 # usage: get_exit_code_display "exit_code"
 get_exit_code_display() {
     local code="$1"
+    _exit_code_is_signal "$code" && { echo "⊘|#8a8f98"; return; }    # interrupted
     case "$code" in
         0)   echo "✓|#7aab88" ;;
         *)   echo "✗|#c07878" ;;
