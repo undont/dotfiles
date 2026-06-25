@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # Migration: Remove cronboard and posting
 # these were added in 0.2.58 but are being dropped: cronboard is a brew
 # formula and posting was installed via pipx

@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # migration: convert ~/.config/yazi from a whole-directory symlink into a real
 # directory with per-file symlinks.
 #

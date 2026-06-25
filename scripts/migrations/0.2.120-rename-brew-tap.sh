@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/usr/bin/env bash
 # migration: drop the personal homebrew tap from the old github account after the
 # account rename (seanhalberthal -> undont). github redirects the old tap url for a
 # while, but once the old name is reclaimable that redirect is a liability, so we

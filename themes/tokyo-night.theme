@@ -1,4 +1,4 @@
-#!/bin/bash
+# shellcheck shell=bash
 # Tokyo Night theme
 # https://github.com/enkia/tokyo-night-vscode-theme
 
