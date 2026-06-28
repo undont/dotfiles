@@ -418,7 +418,7 @@ bind P display-popup -w 95% -h 95% -E "\
       --border-label=' j/k · g/G · spc/⏎ jump · r/R stage/run · x stop/clear · / srch · q/esc ' \
       --border-label-pos=bottom \
       --preview '~/.tmux/scripts/utils/preview-pane.sh {3}' \
-      --preview-window='right,70%,<80(bottom,40%)' \
+      --preview-window='right,55%,<60(bottom,40%)' \
       --bind 'every(0.5):refresh-preview' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
