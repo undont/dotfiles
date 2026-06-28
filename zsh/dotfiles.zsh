@@ -412,6 +412,17 @@ export MSBUILDDISABLENODEREUSE=1
 export SONAR_HOST_URL="https://sonarcloud.io"
 
 # =============================================================================
+# GIT
+# =============================================================================
+# skip the optional index.lock that read-only git commands (status, diff) take
+# just to write back a refreshed index. without this, frequent background status
+# polls collide with an in-flight commit and fail it with
+# "Unable to create '.../index.lock': File exists". the usual culprits are an
+# editor's git integration or several claude code sessions open on one worktree,
+# each refreshing status. real index writes (add, commit) still lock normally
+export GIT_OPTIONAL_LOCKS=0
+
+# =============================================================================
 # LAZYGIT
 # =============================================================================
 # load base config (symlinked from dotfiles) + personal local overrides.
