@@ -487,6 +487,9 @@ bind -T copy-mode-vi M send-keys -X end-of-line        # M = end of line (like $
 bind -T copy-mode-vi q send-keys -X cancel            # q = quit scroll mode
 bind -T copy-mode-vi Escape send-keys -X cancel       # Esc = quit scroll mode
 
+# r = clear selection + enable live-follow; refresh-on is idempotent (no toggle-off), so every press refreshes
+bind -T copy-mode-vi r send-keys -X clear-selection \; send-keys -X refresh-on
+
 # ─────────────────────────────────────────
 # Help
 # ─────────────────────────────────────────
