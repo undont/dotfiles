@@ -393,16 +393,48 @@ section "Regression: exit alerts preserved through session rename"
 setup_test_server "rename-regression-exit"
 
 tmux new-session -d -s exit-sess -n build
-echo "exit-sess:build:exit:1:make test" > "$ALERTS_FILE"
+# exit alerts are keyed on window_id (field 4); cleanup validates by id, so the
+# seed carries the real id of the build window. it survives the session move
+EXIT_WID=$(tmux display-message -t "exit-sess:build" -p '#{window_id}' 2>/dev/null)
+echo "exit-sess:build:exit:${EXIT_WID}:1:make test" > "$ALERTS_FILE"
 
 update_session_name_in_alerts "exit-sess" "exit-new"
 tmux rename-session -t "exit-sess" "exit-new" 2>/dev/null
 cleanup_stale_alerts
 
-if grep -q "^exit-new:build:exit:1:make test$" "$ALERTS_FILE" 2>/dev/null; then
+if grep -q "^exit-new:build:exit:${EXIT_WID}:1:make test$" "$ALERTS_FILE" 2>/dev/null; then
     pass "Exit alert survives session rename + cleanup"
 else
     fail "Exit alert lost after session rename + cleanup"
+fi
+
+cleanup_test_server
+
+section "Regression: exit alert keyed on window_id survives automatic-rename"
+
+setup_test_server "rename-regression-autorename"
+
+tmux new-session -d -s auto-sess -n nowname
+AUTO_WID=$(tmux display-message -t "auto-sess:nowname" -p '#{window_id}' 2>/dev/null)
+# the stored name ("make") is what the window was called mid-command; the live
+# window has since auto-renamed to "nowname". keyed on the id, cleanup must keep
+# it; a second line points at a dead id and must be GC'd
+{
+    echo "auto-sess:make:exit:${AUTO_WID}:0:make test"
+    echo "auto-sess:gone:exit:@99999:1:dead window"
+} > "$ALERTS_FILE"
+
+cleanup_stale_alerts
+
+if grep -q ":exit:${AUTO_WID}:0:make test$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "cleanup keeps exit alert with a live id despite a stale stored name"
+else
+    fail "cleanup wrongly GC'd a live exit alert because its stored name drifted"
+fi
+if grep -q ":exit:@99999:" "$ALERTS_FILE" 2>/dev/null; then
+    fail "cleanup should GC an exit alert whose window_id no longer exists"
+else
+    pass "cleanup GCs an exit alert whose window_id no longer exists"
 fi
 
 cleanup_test_server

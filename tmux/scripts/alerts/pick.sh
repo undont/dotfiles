@@ -34,7 +34,7 @@ _load_entries() {
     while IFS= read -r line; do
         [[ -z "$line" ]] && continue
 
-        IFS=':' read -r session window field3 field4 field5 <<< "$line"
+        IFS=':' read -r session window field3 field4 field5 field6 <<< "$line"
         [[ -z "$session" || -z "$window" || -z "$field3" ]] && continue
 
         # window names are stored percent-encoded; decode for display, the
@@ -48,8 +48,9 @@ _load_entries() {
         local icon colour display label
 
         if [[ "$field3" == "exit" ]]; then
-            label="$field5"
-            display=$(get_exit_code_display "$field4")
+            # exit line is session:window:exit:window_id:code:label
+            label="$field6"
+            display=$(get_exit_code_display "$field5")
             icon="${display%%|*}"
             colour="${display##*|}"
         else

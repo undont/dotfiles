@@ -215,9 +215,10 @@ build_alert_icons() {
 
         IFS=: read -r _sess _win field3 rest <<< "$line"
         if [[ "$field3" == "exit" ]]; then
-            # exit alert: rest is "code:label"
-            local code="${rest%%:*}"
-            local label="${rest#*:}"
+            # exit alert: rest is "window_id:code:label" (id is the match key)
+            local _cl="${rest#*:}"
+            local code="${_cl%%:*}"
+            local label="${_cl#*:}"
             # escape '#' to prevent tmux format injection
             label="${label//\#/##}"
             display=$(get_exit_code_display "$code")
@@ -250,7 +251,8 @@ build_alert_icons() {
 
 # set an exit code alert for the current window
 # usage: set_exit_alert "exit_code" "label" [ring_bell]
-# sets @exit_alert and @exit_alert_colour window options and adds 5-field entry to alerts file
+# sets @exit_alert* window options and adds a 6-field entry to the alerts file
+# (session:window:exit:window_id:code:label); the id is the dismiss/GC key
 set_exit_alert() {
     local code="$1"
     local label="$2"
@@ -284,27 +286,29 @@ set_exit_alert() {
         tmux set-option -wt "$target" "@exit_alert_label" "$label" 2>/dev/null
     fi
 
-    # resolve session and window names for the alerts file (needed for
-    # show.sh / list.sh). fetch them separately so a colon in the window name
-    # can't be confused with the session:window join
-    local sess="" win=""
+    # resolve session, window id and window name for the alerts file. the id is
+    # the authoritative match key (stable for the server's life, never reused);
+    # the name is volatile under automatic-rename and kept only for legacy
+    # prefix maintenance. one round-trip, window name last so an embedded tab
+    # can't shift the earlier fields
+    local sess="" win="" wid="" _meta=""
     if [[ -n "${TMUX_PANE:-}" ]]; then
-        sess=$(tmux display-message -t "$TMUX_PANE" -p '#S' 2>/dev/null || true)
-        win=$(tmux display-message -t "$TMUX_PANE" -p '#W' 2>/dev/null || true)
+        _meta=$(tmux display-message -t "$TMUX_PANE" -p $'#S\t#{window_id}\t#W' 2>/dev/null || true)
     fi
-    if [[ -z "$sess" && -n "${TMUX:-}" ]]; then
-        sess=$(tmux display-message -p '#S' 2>/dev/null || true)
-        win=$(tmux display-message -p '#W' 2>/dev/null || true)
+    if [[ -z "$_meta" && -n "${TMUX:-}" ]]; then
+        _meta=$(tmux display-message -p $'#S\t#{window_id}\t#W' 2>/dev/null || true)
     fi
+    [[ -n "$_meta" ]] && IFS=$'\t' read -r sess wid win <<< "$_meta"
 
-    # add window to alerts file with exit code and label (5-field format)
+    # add window to alerts file (6-field format:
+    # session:window:exit:window_id:code:label). window_id is the dismiss/GC key
     # session: project convention (alnum, dot, underscore, hyphen)
     # window: any non-control chars (allows spaces and colons); colons are
     # percent-encoded so they don't collide with the field separator
-    if [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
+    if [[ -n "$wid" ]] && [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
         local enc_win
         enc_win=$(alerts_encode_window "$win")
-        local entry="${sess}:${enc_win}:exit:${code}:${label}"
+        local entry="${sess}:${enc_win}:exit:${wid}:${code}:${label}"
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >> "$ALERTS_FILE"
     fi
 
@@ -454,17 +458,14 @@ clear_window_finished() {
 }
 
 # drop a window's exit alert from the status bar: the @exit_alert* options that
-# drive the icon plus its session:window:exit: line in the alerts file. agent
-# alerts on the same window are left intact. lets a dismissed proclist "done"
-# row also clear the status-right indicator. the alerts line is keyed on the
-# window name as it was at completion, so the caller passes that stored name
-# (the live window may have since renamed away from it); both fall back to the
-# live values when omitted
-# usage: clear_window_exit_alert "window_id" ["session" "window_name"]
+# drive the icon plus its exit line in the alerts file. agent alerts on the same
+# window are left intact. lets a dismissed proclist "done" row also clear the
+# status-right indicator. keyed on window_id (alerts file field 4), which is
+# stable under automatic-rename; the stored window name is not, so name-matching
+# would miss the line whenever the window auto-renamed after completion
+# usage: clear_window_exit_alert "window_id"
 clear_window_exit_alert() {
     local window_id="$1"
-    local sess="${2:-}"
-    local win="${3:-}"
     [[ -n "$window_id" ]] || return 0
 
     # unset the window options that render the status-right exit icon
@@ -473,18 +474,14 @@ clear_window_exit_alert() {
         tmux set-option -wt "$window_id" -u "$opt" 2>/dev/null || true
     done
 
-    # remove the matching exit line from the alerts file (used by show.sh)
+    # remove the matching exit line from the alerts file (used by show.sh).
+    # fields are colon-clean (session restricted, name percent-encoded, id/code
+    # colon-free), so -F: splits exit lines into exactly session:window:exit:id:…
     [[ -f "$ALERTS_FILE" ]] || return 0
-    [[ -n "$sess" ]] || sess=$(tmux display-message -t "$window_id" -p '#S' 2>/dev/null) || return 0
-    [[ -n "$win" ]] || win=$(tmux display-message -t "$window_id" -p '#W' 2>/dev/null) || return 0
-    [[ -n "$sess" && -n "$win" ]] || return 0
-
     _acquire_alerts_lock || return 0
-    local tmp_file enc_win grep_exit=0
-    enc_win=$(alerts_encode_window "$win")
+    local tmp_file
     tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
-    grep -vF "${sess}:${enc_win}:exit:" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
-    if [[ $grep_exit -le 1 ]]; then
+    if awk -F: -v w="$window_id" '!($3 == "exit" && $4 == w)' "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
         mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
     else
         rm -f "$tmp_file" 2>/dev/null
@@ -502,16 +499,19 @@ clear_window_alerts() {
     # finished-process rows clear on the same select that dismisses alerts
     clear_window_finished "$window_id"
 
-    # remove from alerts file (any agent) with file locking
+    # remove from alerts file (any agent) with file locking. agent lines match
+    # on session:window (names are stored percent-encoded, so encode the lookup);
+    # exit lines additionally match on window_id (field 4) because their stored
+    # name drifts under automatic-rename and an exact-name match would miss them
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
-        local tmp_file
+        local tmp_file enc_window
         tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
-        local grep_exit=0
-        # window names are stored percent-encoded; encode the lookup to match
-        grep -vF "${session}:$(alerts_encode_window "$window"):" "$ALERTS_FILE" > "$tmp_file" 2>/dev/null || grep_exit=$?
-
-        # exit code 0 or 1 are both success (0 = matches found, 1 = no matches/all filtered)
-        if [[ $grep_exit -le 1 ]]; then
+        enc_window=$(alerts_encode_window "$window")
+        if awk -F: -v s="$session" -v w="$enc_window" -v wid="$window_id" '
+            ($1 == s && $2 == w) { next }
+            (wid != "" && $3 == "exit" && $4 == wid) { next }
+            { print }
+        ' "$ALERTS_FILE" > "$tmp_file" 2>/dev/null; then
             mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
         else
             rm -f "$tmp_file" 2>/dev/null
@@ -549,11 +549,12 @@ cleanup_stale_alerts() {
     tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
     local cleaned=0
 
-    # read each alert and verify the session:window exists
-    # lines may be 3-field (session:window:agent) or 5-field (session:window:exit:code:label)
-    # so we read the full line and only split the first two fields for validation
+    # read each alert and verify its target window still exists
+    # lines may be 3-field (session:window:agent) or 6-field
+    # (session:window:exit:window_id:code:label), so read the leading fields and
+    # validate per type: agent alerts by window name, exit alerts by window_id
     while IFS= read -r line; do
-        IFS=':' read -r session window field3 _rest <<< "$line"
+        IFS=':' read -r session window field3 field4 _rest <<< "$line"
 
         # validate format, need at least session, window, and one more field
         if [[ -z "$session" || -z "$window" || -z "$field3" ]]; then
@@ -567,16 +568,26 @@ cleanup_stale_alerts() {
             continue
         fi
 
-        # check if window exists in session. the stored name is percent-encoded;
-        # decode it before comparing against the real tmux window names
-        local decoded_window
-        decoded_window=$(alerts_decode_window "$window")
-        if ! tmux list-windows -t "$session" -F '#{window_name}' 2>/dev/null | grep -qxF "$decoded_window"; then
-            cleaned=1
-            continue
+        if [[ "$field3" == "exit" ]]; then
+            # exit alerts are keyed on window_id (field 4). the stored name
+            # drifts under automatic-rename, so validating by name would GC live
+            # alerts; the id is stable. this also purges old nameless-id lines
+            if [[ -z "$field4" ]] || ! tmux list-windows -t "$session" -F '#{window_id}' 2>/dev/null | grep -qxF "$field4"; then
+                cleaned=1
+                continue
+            fi
+        else
+            # agent alerts: check the window name exists in the session. the
+            # stored name is percent-encoded; decode before comparing
+            local decoded_window
+            decoded_window=$(alerts_decode_window "$window")
+            if ! tmux list-windows -t "$session" -F '#{window_name}' 2>/dev/null | grep -qxF "$decoded_window"; then
+                cleaned=1
+                continue
+            fi
         fi
 
-        # window exists, keep the alert, preserve original line intact
+        # target exists, keep the alert, preserve original line intact
         echo "$line" >> "$tmp_file"
     done < "$ALERTS_FILE"
 

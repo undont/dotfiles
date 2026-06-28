@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # display agent alerts for tmux status bar (Claude, OpenCode, etc.)
 # shows one alert per session (aggregates all windows in that session)
-# also handles command exit alerts (session:window:exit:<code>:<label>)
+# also handles command exit alerts (session:window:exit:<window_id>:<code>:<label>)
 #
 # compatible with bash 3.2 (macOS stock); no associative arrays
 
@@ -40,8 +40,8 @@ _find_idx() {
 while IFS= read -r line; do
     [[ -z "$line" ]] && continue
 
-    # split on ':'; exit alerts have 5 fields, agent alerts have 3
-    IFS=':' read -r session _window field3 field4 field5 <<< "$line"
+    # split on ':'; exit alerts have 6 fields, agent alerts have 3
+    IFS=':' read -r session _window field3 _wid field5 field6 <<< "$line"
 
     # skip current session and malformed entries
     [[ "$session" == "$CURRENT_SESSION" ]] && continue
@@ -56,8 +56,8 @@ while IFS= read -r line; do
     fi
 
     if [[ "$field3" == "exit" ]]; then
-        local_code="$field4"
-        local_label="$field5"
+        local_code="$field5"
+        local_label="$field6"
         # escape '#' to prevent tmux format injection
         local_label="${local_label//\#/##}"
         display=$(get_exit_code_display "$local_code")

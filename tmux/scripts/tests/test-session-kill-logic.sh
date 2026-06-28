@@ -98,7 +98,7 @@ test_tmux new-session -d -s "$TEST_SESSION_B" -n "work" -c /tmp
 mkdir -p "$(dirname "$ALERTS_FILE")"
 {
     echo "${TEST_SESSION_A}:main:claude"
-    echo "${TEST_SESSION_A}:main:exit:1:error"
+    echo "${TEST_SESSION_A}:main:exit:@1:1:error"
     echo "${TEST_SESSION_B}:work:claude"
 } > "$ALERTS_FILE"
 

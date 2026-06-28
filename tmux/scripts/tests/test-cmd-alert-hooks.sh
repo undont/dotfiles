@@ -82,11 +82,12 @@ assert_equals "Exit 1 display"        "✗|#c07878" "$(get_exit_code_display 1)"
 
 section "Alert File Format"
 
-echo "$TEST_SESSION:testwin:exit:0:make test" > "$ALERTS_FILE"
-if grep -q "exit:0:make test" "$ALERTS_FILE"; then
-    pass "Exit alert with label written to alerts file"
+# 6-field format: session:window:exit:window_id:code:label
+echo "$TEST_SESSION:testwin:exit:@5:0:make test" > "$ALERTS_FILE"
+if grep -q "exit:@5:0:make test" "$ALERTS_FILE"; then
+    pass "Exit alert with window_id and label written to alerts file"
 else
-    fail "Exit alert should include exit code and label"
+    fail "Exit alert should include window_id, exit code and label"
 fi
 
 clear_window_alerts "$TEST_SESSION" "testwin" 2>/dev/null || true
@@ -103,12 +104,38 @@ fi
 
 # agent and exit alerts coexist correctly
 echo "other-session:main:claude" > "$ALERTS_FILE"
-echo "$TEST_SESSION:testwin:exit:1:npm run lint" >> "$ALERTS_FILE"
+echo "$TEST_SESSION:testwin:exit:@6:1:npm run lint" >> "$ALERTS_FILE"
 clear_window_alerts "$TEST_SESSION" "testwin" 2>/dev/null || true
 if [[ -f "$ALERTS_FILE" ]] && grep -q "other-session:main:claude" "$ALERTS_FILE"; then
     pass "clear_window_alerts preserves agent alerts from other sessions"
 else
     fail "clear_window_alerts should preserve unrelated entries"
+fi
+
+# exit alerts are keyed on window_id, not the (auto-rename-volatile) name:
+# clear_window_exit_alert drops the line by id even when the stored name differs
+# from the live window name
+echo "other-session:main:claude" > "$ALERTS_FILE"
+echo "$TEST_SESSION:staleoldname:exit:@42:0:make test" >> "$ALERTS_FILE"
+clear_window_exit_alert "@42" 2>/dev/null || true
+if grep -q ":exit:@42:" "$ALERTS_FILE" 2>/dev/null; then
+    fail "clear_window_exit_alert should drop the exit line by window_id"
+else
+    pass "clear_window_exit_alert drops the exit line by window_id (name-agnostic)"
+fi
+if grep -q "other-session:main:claude" "$ALERTS_FILE" 2>/dev/null; then
+    pass "clear_window_exit_alert leaves agent alerts intact"
+else
+    fail "clear_window_exit_alert should not touch agent alerts"
+fi
+
+# a non-matching id is a no-op
+echo "$TEST_SESSION:w:exit:@7:0:cmd" > "$ALERTS_FILE"
+clear_window_exit_alert "@8" 2>/dev/null || true
+if grep -q ":exit:@7:" "$ALERTS_FILE" 2>/dev/null; then
+    pass "clear_window_exit_alert leaves non-matching exit lines alone"
+else
+    fail "clear_window_exit_alert should only drop the matching window_id"
 fi
 
 # ═══════════════════════════════════════════════════════════════
