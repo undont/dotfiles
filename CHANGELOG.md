@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.123] - 2026-06-29
+## [0.2.123] - 2026-06-30
 
 ### Added
 - aerc: terminal email client wired into the dotfiles. `aerc.conf` (dracula styleset, threading, HTML rendered by w3m and piped into `less` for vim-style scrolling) and `binds.conf` are symlinked; `accounts.conf` is user-owned from `accounts.conf.template` with credentials pulled from the macOS keychain via `*-cred-cmd`, so no secrets land in the repo. The `aerc` shell alias passes `-C`/`-A`/`-B` so aerc reads `~/.config/aerc` instead of its macOS-default `~/Library/Preferences/aerc`. Custom message-list binds: `fu`/`fr`/`ff`/`fa` filter unread/read/flagged/all and `tu`/`tr` toggle the seen flag. `aerc/`, `scripts/install/create-symlinks.sh`, `zsh/dotfiles.zsh`, `Brewfile`
@@ -18,6 +18,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Tmux: copy-mode `r` clears the current selection and enables live-follow of the pane (`clear-selection` then `refresh-on`). Recent tmux changed the default `r` from a one-shot `refresh-from-pane` to a stateful `refresh-toggle`; `refresh-on` is idempotent, so every press refreshes rather than toggling follow off on alternate presses. `tmux/tmux.conf.template`
 - Tmux: the process list popup (prefix + Shift+P) preview pane is narrower (`right,55%`, falling back to a bottom split under 60 columns) so the command column has more room. `tmux/tmux.conf.template`
 - Nvim: mason installs `golangci-lint-langserver` instead of the bare `golangci-lint` binary, so Go diagnostics arrive over LSP. `nvim/lua/custom/plugins/lsp.lua`
+- Nvim: clipboard register rework. Only yanks reach the system clipboard now: a `TextYankPost` hook mirrors `y` to `"+` while `clipboard=unnamedplus` is dropped, so `d`/`c`/`x` no longer overwrite it. `<leader>v`/`<leader>V` paste the last yank (`"0p`/`"0P`) regardless of intervening deletes, replacing the old `dd`=black-hole / `dy`=cut mappings. `nvim/lua/custom/core/autocmds.lua`, `nvim/lua/custom/core/keymaps.lua`, `nvim/lua/custom/core/options.lua`, `nvim/cheatsheet.txt`
+- Nvim: gopls `workspace/symbol` is scoped to the workspace (`symbolScope = 'workspace'`), so symbol search no longer surfaces dependencies under `~/go/pkg/mod`. `nvim/lua/custom/plugins/lsp.lua`
 
 ### Fixed
 - Tmux: command exit alerts are now keyed on `window_id` rather than the window name. The alerts file gains a sixth field (`session:window:exit:window_id:code:label`) and dismissal/GC match on the id, which is stable for the server's life; the stored name drifts under automatic-rename, so a window that auto-renamed after a command finished could strand its exit indicator or have it wrongly garbage-collected. `tmux/scripts/_lib/alerts.sh`, `tmux/scripts/alerts/pick.sh`, `tmux/scripts/alerts/proclist-action.sh`, `tmux/scripts/alerts/show.sh`, `tmux/scripts/tests/test-cmd-alert-hooks.sh`, `tmux/scripts/tests/test-rename-session.sh`, `tmux/scripts/tests/test-session-kill-logic.sh`
@@ -25,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Nvim: `<leader>wh`/`<leader>wl` resized the vertical split in the wrong direction; they now shrink/grow to match the `h`/`l` mnemonic. `nvim/lua/custom/core/windows.lua`
 - Nvim: astro files behave around treesitter injections, with an `after/indent/astro.lua` override papering over an upstream astro.vim `indentkeys` issue. `nvim/after/indent/astro.lua`, `nvim/lua/custom/plugins/lsp.lua`
 - Shell: `GIT_OPTIONAL_LOCKS=0` stops read-only git commands (status, diff) taking the `index.lock` just to write back a refreshed index, so frequent background status polls (an editor's git integration, or several Claude Code sessions on one worktree) no longer collide with an in-flight commit and fail it with `Unable to create '.../index.lock': File exists`. Real index writes (add, commit) still lock normally. `zsh/dotfiles.zsh`
+- Nvim: obsidian frontmatter keeps its key order on save (`sort = false`); the builtin was alphabetising keys on every write. `nvim/lua/custom/plugins/obsidian.lua`
 
 ## [0.2.122] - 2026-06-25
 
