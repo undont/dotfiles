@@ -157,6 +157,7 @@ return {
       -- its frontmatter; otherwise the builtin would emit an empty `aliases:`
       -- line on every save.
       frontmatter = {
+        sort = false,
         func = function(note)
           local out = require('obsidian.builtin').frontmatter(note)
           out.id = nil
