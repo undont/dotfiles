@@ -1,0 +1,29 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE typemap [
+  <!ELEMENT typemap (type)+>
+  <!ATTLIST typemap xmlns CDATA #FIXED ''>
+  <!ELEMENT type EMPTY>
+  <!ATTLIST type xmlns CDATA #FIXED '' encoding NMTOKEN #IMPLIED
+    family CDATA #REQUIRED format NMTOKEN #REQUIRED foundry NMTOKEN #REQUIRED
+    fullname CDATA #REQUIRED glyphs CDATA #REQUIRED metrics CDATA #REQUIRED
+    name NMTOKEN #REQUIRED stretch NMTOKEN #REQUIRED style NMTOKEN #REQUIRED
+    version CDATA #IMPLIED weight CDATA #REQUIRED>
+]>
+<!--
+  macos-only font map for imagemagick. homebrew's imagemagick ships empty
+  type-*.xml stubs whose glyph paths resolve to nothing, so the type cache
+  ends up with zero usable fonts and any text-bearing svg (e.g. a shields.io
+  badge rendered by image.nvim) fails identify with an unable-to-read-font
+  error. point a few always-present macos system fonts at the cache instead.
+  installed only on darwin: linux imagemagick has a working fontconfig cache
+  and this would clobber it. symlinked to ~/.config/ImageMagick/type.xml, a
+  path imagemagick already searches, so brew upgrades never wipe it.
+  no backticks anywhere in this file: imagemagick's parser treats them as
+  command interpolation and silently drops the whole type cache
+-->
+<typemap>
+  <type format="ttf" name="Helvetica" fullname="Helvetica" family="Helvetica" foundry="Apple" glyphs="/System/Library/Fonts/Helvetica.ttc" stretch="normal" style="normal" weight="400" />
+  <type format="ttf" name="Arial" fullname="Arial" family="Arial" foundry="URW" glyphs="/System/Library/Fonts/Supplemental/Arial.ttf" stretch="normal" style="normal" weight="400" />
+  <type format="ttf" name="Arial-Bold" fullname="Arial Bold" family="Arial" foundry="URW" glyphs="/System/Library/Fonts/Supplemental/Arial Bold.ttf" stretch="normal" style="normal" weight="700" />
+  <type format="ttf" name="Courier-New" fullname="Courier New" family="Courier New" foundry="URW" glyphs="/System/Library/Fonts/Supplemental/Courier New.ttf" stretch="normal" style="normal" weight="400" />
+</typemap>

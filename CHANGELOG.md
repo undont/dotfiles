@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.124] - 2026-06-30
+
+### Changed
+- Nvim: image.nvim no longer renders remote images in markdown (`download_remote_images = false`). Remote badge SVGs (shields.io and the like) render poorly inline and pull in network requests on every markdown open; local screenshots and diagrams still render. `nvim/lua/custom/plugins/image.lua`
+
+### Added
+- ImageMagick: macOS font map symlinked to `~/.config/ImageMagick/type.xml`. Homebrew's imagemagick ships empty `type-*.xml` stubs whose glyph paths resolve to nothing, leaving the type cache with zero usable fonts; any text-bearing SVG (image.nvim rendering a shields.io badge in a markdown buffer) then fails `identify` with "unable to read font", which image.nvim surfaces as a Lua error. The map points a few always-present macOS system fonts (Helvetica, Arial, Courier New) at the cache. Symlinked into a path imagemagick already searches so `brew upgrade` never wipes it; installed on macOS only, since Linux imagemagick has a working fontconfig cache that this would clobber. `imagemagick/type.xml`, `scripts/install/create-symlinks.sh`
+
 ## [0.2.123] - 2026-06-30
 
 ### Added

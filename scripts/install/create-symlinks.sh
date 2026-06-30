@@ -287,6 +287,17 @@ if should_install "core"; then
     chmod 600 "$aerc_dir/accounts.conf"
 fi
 
+# ImageMagick font map (core, macOS only)
+# homebrew's imagemagick ships empty type-*.xml stubs whose glyph paths resolve
+# to nothing, so SVGs with text (image.nvim rendering shields.io badges) fail
+# `identify` with "unable to read font". point real macOS system fonts at the
+# cache. linux imagemagick has a working fontconfig cache, so skip it there
+if should_install "core" && [[ "$(uname)" == "Darwin" ]]; then
+    echo ""
+    echo "ImageMagick font map:"
+    create_link "$DOTFILES_DIR/imagemagick/type.xml" "${XDG_CONFIG_HOME:-$HOME/.config}/ImageMagick/type.xml"
+fi
+
 # statusline theme resolver (core): sourced by an AI CLI coding agent's
 # statusline (Claude Code, Copilot CLI, Antigravity CLI) to colour it from the
 # active dotfiles theme. see docs/THEME-SYSTEM.md

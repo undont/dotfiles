@@ -21,13 +21,24 @@ Config lives in the repo. The installed path is a symlink. Changes committed to
 the repo propagate on next `dotfiles update`.
 
 **Used for:** zprofile, tmux scripts, nvim plugins, launchers, the statusline
-theme resolver (`scripts/_lib/statusline-theme.sh` -> `~/.config/dotfiles/statusline-theme.sh`).
+theme resolver (`scripts/_lib/statusline-theme.sh` -> `~/.config/dotfiles/statusline-theme.sh`),
+the ImageMagick font map (`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`,
+macOS only; see the note below).
 
 yazi is symlinked **per file** (`yazi/yazi.toml`, `yazi/keymap.toml` ->
 `~/.config/yazi/`), not as a whole directory, so theme-switch can write a
 generated `~/.config/yazi/theme.toml` alongside without it landing back in the
 repo. The 0.2.109 migration converts older whole-dir symlinks. See the theme
 flavour note under Layered + the theme system.
+
+The ImageMagick font map (`imagemagick/type.xml`) only installs on macOS:
+homebrew's imagemagick ships empty `type-*.xml` stubs whose glyph paths resolve
+to nothing, so SVGs with text (image.nvim drawing a shields.io badge) fail
+`identify` with "unable to read font". The map points real macOS system fonts at
+the type cache. Linux imagemagick has a working fontconfig cache, so it is skipped
+there. **Never put a backtick anywhere in this file**, even inside a comment:
+imagemagick's config parser treats `` ` `` as command interpolation and silently
+drops the entire type cache, which reproduces the original zero-fonts failure.
 
 ### 2. Layered (symlink + local override)
 
