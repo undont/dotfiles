@@ -270,7 +270,13 @@ function M.setup()
   -- encoding and size stay neutral. mirrors mini's default format
   ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_fileinfo = function(args)
-    local ft = vim.bo.filetype
+    -- differ diff buffers carry a private `differdiff` &filetype (so foreign
+    -- `FileType <lang>` consumers, e.g. lsp, don't attach to a throwaway differ://
+    -- buffer); the real source filetype is stashed in b:differ_filetype. surface
+    -- that so the language and its icon still show while diffing. read the var, not
+    -- a require('differ...'), which would force the lazy cmd-loaded plugin to load
+    local differ_ft = vim.b.differ_filetype
+    local ft = (type(differ_ft) == 'string' and differ_ft ~= '') and differ_ft or vim.bo.filetype
     if ft == '' then
       return ''
     end
