@@ -33,8 +33,38 @@ return {
 
       local actions = require 'telescope.actions'
 
+      -- when a picker is launched from the quickfix/loclist window, telescope
+      -- opens the selection in that window by default, replacing the list with
+      -- the file. route into a real editing window instead: prefer the previous
+      -- window, else the first normal (buftype='') window in the tabpage. return
+      -- 0 (telescope's default = current window) for the common, non-qf case
+      local function get_selection_window(picker)
+        local origin = picker and picker.original_win_id
+        if not origin or not vim.api.nvim_win_is_valid(origin) then
+          return 0
+        end
+        if vim.bo[vim.api.nvim_win_get_buf(origin)].buftype ~= 'quickfix' then
+          return 0
+        end
+        local prev = vim.fn.win_getid(vim.fn.winnr '#')
+        if prev ~= 0 and prev ~= origin and vim.api.nvim_win_is_valid(prev) and vim.bo[vim.api.nvim_win_get_buf(prev)].buftype == '' then
+          return prev
+        end
+        for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
+          if win ~= origin and vim.bo[vim.api.nvim_win_get_buf(win)].buftype == '' then
+            return win
+          end
+        end
+        -- qf is the only window: open a fresh split above it to hold the file
+        -- so the list survives. telescope edits the selection into this window,
+        -- abandoning its empty [No Name] buffer
+        vim.cmd 'aboveleft new'
+        return vim.api.nvim_get_current_win()
+      end
+
       require('telescope').setup {
         defaults = {
+          get_selection_window = get_selection_window,
           -- results show full relative path (default behaviour)
           path_display = { 'filename_first' },
           file_ignore_patterns = {

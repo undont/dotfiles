@@ -34,7 +34,7 @@ ok_disp=$(get_exit_code_display 0);   ok_icon="${ok_disp%%|*}";   ok_col="${ok_d
 err_disp=$(get_exit_code_display 1);   err_icon="${err_disp%%|*}"; err_col="${err_disp##*|}"
 int_disp=$(get_exit_code_display 130); int_icon="${int_disp%%|*}"; int_col="${int_disp##*|}"
 echo ""
-printf '  %s run  %s done  %s fail  %s stop\n' \
+printf '  %s running  %s done  %s failed  %s stopped\n' \
     "$(_ansi "$run_col" "$run_icon")" \
     "$(_ansi "$ok_col" "$ok_icon")" \
     "$(_ansi "$err_col" "$err_icon")" \
@@ -93,21 +93,37 @@ if [[ -d "$RUNNING_DIR" ]]; then
     fi
 fi
 
-# ── finished rows (history file): newest first, last hour, capped at 20 ─────
+# ── finished rows (history file): newest first, last hour ───────────────────
+# the alerts file (status-right + window-status exit indicators) has no TTL of
+# its own: an exit line clears only when its window is selected or its session
+# dies. the finished file ages out at an hour, so a window you never revisit
+# kept its indicator long after the proclist "done" row had gone. when a row is
+# dropped here (aged out, or evicted to bound the file) we clear that window's
+# exit indicator too, keyed on the stable window_id, unless a retained row still
+# justifies it
 FINISHED_MAX_AGE=3600    # drop entries older than an hour
 FINISHED_MAX_SHOW=20     # show at most this many
+FINISHED_MAX_KEEP=200    # retain at most this many in the file (newest first),
+                         # bounds growth under heavy churn; kept > shown so rows
+                         # below the fold still pair with their indicator
 if [[ -f "$FINISHED_FILE" ]]; then
     cutoff=$(( now - FINISHED_MAX_AGE ))
-    kept=()        # within-age lines, for the garbage-collecting rewrite
+    declare -A drop_wids keep_wids   # windows losing / retaining a finished row
+    fresh=()       # within-age TSV lines, epoch-prefixed for newest-first sort
     done_rows=()   # display rows, prefixed with epoch for sorting
     total=0        # every line read, to decide whether a GC rewrite is needed
     while IFS="$TAB" read -r f_epoch f_exit f_sess f_wid f_wname f_label f_cmd; do
         total=$(( total + 1 ))
         [[ "$f_epoch" =~ ^[0-9]+$ ]] || continue
-        (( f_epoch >= cutoff )) || continue
-        # preserve the cmd field (rerun source) verbatim through the GC rewrite
-        kept+=("$(printf '%s%s%s%s%s%s%s%s%s%s%s%s%s' \
-            "$f_epoch" "$TAB" "$f_exit" "$TAB" "$f_sess" "$TAB" "$f_wid" "$TAB" "$f_wname" "$TAB" "$f_label" "$TAB" "$f_cmd")")
+        if (( f_epoch < cutoff )); then
+            # aged out: candidate for clearing a now-stranded exit indicator
+            [[ -n "$f_wid" ]] && drop_wids["$f_wid"]=1
+            continue
+        fi
+        # within age: retain verbatim (epoch sort-key prefix stripped on write),
+        # cmd field (rerun source) rides along untouched
+        fresh+=("$(printf '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' \
+            "$f_epoch" "$TAB" "$f_epoch" "$TAB" "$f_exit" "$TAB" "$f_sess" "$TAB" "$f_wid" "$TAB" "$f_wname" "$TAB" "$f_label" "$TAB" "$f_cmd")")
         f_label="${f_label//$TAB/ }"
         disp=$(get_exit_code_display "$f_exit")
         icon="${disp%%|*}"; col="${disp##*|}"
@@ -119,17 +135,43 @@ if [[ -f "$FINISHED_FILE" ]]; then
         done_rows+=("$(printf '%s%s%s%sdone%s%s%s%s%s%s' \
             "$f_epoch" "$TAB" "$display" "$TAB" "$TAB" "$tgt" "$TAB" "$f_epoch" "$TAB" "$f_wid")")
     done < "$FINISHED_FILE"
+
     # emit newest first, capped (awk drains stdin so sort never hits SIGPIPE)
     if (( ${#done_rows[@]} )); then
         printf '%s\n' "${done_rows[@]}" | sort -rn \
             | awk -v n="$FINISHED_MAX_SHOW" 'NR<=n' | cut -f2-
     fi
-    # garbage-collect: rewrite to just the within-age lines if any were dropped
-    if (( ${#kept[@]} != total )); then
+
+    # retain the newest FINISHED_MAX_KEEP within-age rows; rows beyond the cap
+    # (and the aged rows above) are dropped and their windows flagged for an
+    # indicator clear unless a retained row keeps the window justified
+    keep_lines=()
+    if (( ${#fresh[@]} )); then
+        idx=0
+        while IFS="$TAB" read -r _sk k_epoch k_exit k_sess k_wid k_wname k_label k_cmd; do
+            if (( idx < FINISHED_MAX_KEEP )); then
+                keep_lines+=("$(printf '%s%s%s%s%s%s%s%s%s%s%s%s%s' \
+                    "$k_epoch" "$TAB" "$k_exit" "$TAB" "$k_sess" "$TAB" "$k_wid" "$TAB" "$k_wname" "$TAB" "$k_label" "$TAB" "$k_cmd")")
+                [[ -n "$k_wid" ]] && keep_wids["$k_wid"]=1
+            else
+                [[ -n "$k_wid" ]] && drop_wids["$k_wid"]=1
+            fi
+            idx=$(( idx + 1 ))
+        done < <(printf '%s\n' "${fresh[@]}" | sort -rn)
+    fi
+
+    # rewrite the file if any line was dropped (aged, over-cap, or malformed)
+    if (( ${#keep_lines[@]} != total )); then
         tmpf=$(mktemp "${FINISHED_FILE}.XXXXXX" 2>/dev/null) || tmpf=""
         if [[ -n "$tmpf" ]]; then
-            (( ${#kept[@]} )) && printf '%s\n' "${kept[@]}" > "$tmpf" || : > "$tmpf"
+            (( ${#keep_lines[@]} )) && printf '%s\n' "${keep_lines[@]}" > "$tmpf" || : > "$tmpf"
             mv "$tmpf" "$FINISHED_FILE" 2>/dev/null || rm -f "$tmpf"
         fi
     fi
+
+    # clear exit indicators stranded by the drops above, keyed on window_id
+    for wid in "${!drop_wids[@]}"; do
+        [[ -n "${keep_wids[$wid]:-}" ]] && continue
+        clear_window_exit_alert "$wid" || true
+    done
 fi

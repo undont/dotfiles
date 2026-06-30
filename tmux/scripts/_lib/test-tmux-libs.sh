@@ -562,43 +562,55 @@ else
 fi
 
 # end-to-end against the isolated server: create a colon-named window, set an
-# alert via its pane, and confirm the file stores the encoded form
+# alert via its pane, and confirm the file stores the encoded form. tmux 3.x+
+# rejects ':' in window names set via new-window/rename-window and sanitises it
+# to '_' under automatic-rename, so a colon-named window can't be materialised
+# on those builds; skip the end-to-end checks there rather than aborting the
+# suite (the encode/decode round-trip above already covers the core logic)
 : > "$ALERTS_FILE"
-tmux new-window -t "$CURRENT_SESSION" -n "$COLON_WIN" 2>/dev/null
-COLON_WIN_ID=$(tmux list-windows -t "$CURRENT_SESSION" -F '#{window_name}|#{window_id}' 2>/dev/null | grep -F "${COLON_WIN}|" | head -1 | cut -d'|' -f2)
-tmux set-window-option -t "$COLON_WIN_ID" automatic-rename off 2>/dev/null || true
-COLON_PANE_ID=$(tmux list-panes -t "$COLON_WIN_ID" -F '#{pane_id}' 2>/dev/null | head -1)
+tmux new-window -t "$CURRENT_SESSION" -n "$COLON_WIN" 2>/dev/null || true
+COLON_WIN_ID=$(tmux list-windows -t "$CURRENT_SESSION" -F '#{window_name}|#{window_id}' 2>/dev/null | grep -F "${COLON_WIN}|" | head -1 | cut -d'|' -f2) || COLON_WIN_ID=""
 
-TMUX_PANE="$COLON_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
-if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
-    pass "    set_window_alert stores the encoded window name"
+if [[ -z "$COLON_WIN_ID" ]]; then
+    skip "    set_window_alert stores the encoded window name (tmux rejects ':' in window names)"
+    skip "    raw colon name is not written verbatim (tmux rejects ':' in window names)"
+    skip "    cleanup_stale_alerts preserves the colon-named window (tmux rejects ':' in window names)"
+    skip "    clear_window_alerts clears via the raw colon name (tmux rejects ':' in window names)"
 else
-    fail "    set_window_alert should store the encoded name (file: $(cat "$ALERTS_FILE"))"
-fi
+    tmux set-window-option -t "$COLON_WIN_ID" automatic-rename off 2>/dev/null || true
+    COLON_PANE_ID=$(tmux list-panes -t "$COLON_WIN_ID" -F '#{pane_id}' 2>/dev/null | head -1) || COLON_PANE_ID=""
 
-if grep -qF "${CURRENT_SESSION}:${COLON_WIN}:" "$ALERTS_FILE" 2>/dev/null; then
-    fail "    raw colon name must not be written verbatim"
-else
-    pass "    raw colon name is not written verbatim"
-fi
+    TMUX_PANE="$COLON_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
+    if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
+        pass "    set_window_alert stores the encoded window name"
+    else
+        fail "    set_window_alert should store the encoded name (file: $(cat "$ALERTS_FILE"))"
+    fi
 
-# cleanup_stale_alerts must keep it (decode matches the real tmux window name)
-cleanup_stale_alerts
-if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
-    pass "    cleanup_stale_alerts preserves the colon-named window"
-else
-    fail "    cleanup_stale_alerts should preserve the colon-named window"
-fi
+    if grep -qF "${CURRENT_SESSION}:${COLON_WIN}:" "$ALERTS_FILE" 2>/dev/null; then
+        fail "    raw colon name must not be written verbatim"
+    else
+        pass "    raw colon name is not written verbatim"
+    fi
 
-# clear_window_alerts with the RAW colon name removes the encoded entry
-clear_window_alerts "$CURRENT_SESSION" "$COLON_WIN" "$COLON_WIN_ID"
-if grep -qF "${CURRENT_SESSION}:${ENC_WIN}:" "$ALERTS_FILE" 2>/dev/null; then
-    fail "    clear_window_alerts should clear the encoded entry"
-else
-    pass "    clear_window_alerts clears via the raw colon name"
-fi
+    # cleanup_stale_alerts must keep it (decode matches the real tmux window name)
+    cleanup_stale_alerts
+    if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
+        pass "    cleanup_stale_alerts preserves the colon-named window"
+    else
+        fail "    cleanup_stale_alerts should preserve the colon-named window"
+    fi
 
-tmux kill-window -t "$COLON_WIN_ID" 2>/dev/null || true
+    # clear_window_alerts with the RAW colon name removes the encoded entry
+    clear_window_alerts "$CURRENT_SESSION" "$COLON_WIN" "$COLON_WIN_ID"
+    if grep -qF "${CURRENT_SESSION}:${ENC_WIN}:" "$ALERTS_FILE" 2>/dev/null; then
+        fail "    clear_window_alerts should clear the encoded entry"
+    else
+        pass "    clear_window_alerts clears via the raw colon name"
+    fi
+
+    tmux kill-window -t "$COLON_WIN_ID" 2>/dev/null || true
+fi
 
 # clean up isolated server (trap also handles this on exit)
 cleanup_test_server

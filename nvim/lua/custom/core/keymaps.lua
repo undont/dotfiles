@@ -7,10 +7,11 @@ function M.setup()
   -- clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
-  -- dd deletes without yanking; dy yanks and deletes (original dd behaviour).
-  -- the operator-pending 'y' motion means "current line" (like _), so dy = d + line
-  vim.keymap.set('n', 'dd', '"_dd')
-  vim.keymap.set('o', 'y', '_')
+  -- registers: only yanks sync to the system clipboard (see autocmds.lua), so
+  -- d/c/x never clobber it. "0 (the yank register) is never touched by deletes,
+  -- so <leader>v pastes the last yank no matter what was deleted since
+  vim.keymap.set({ 'n', 'x' }, '<leader>v', '"0p', { desc = 'Paste last yank' })
+  vim.keymap.set({ 'n', 'x' }, '<leader>V', '"0P', { desc = 'Paste last yank (before)' })
 
   -- smart i/a on empty lines: reindent via cc (which respects indentexpr)
   -- rather than dropping the cursor at column 0. uses the black hole register

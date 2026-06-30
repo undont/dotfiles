@@ -73,8 +73,8 @@ function M.setup()
   vim.keymap.set('n', '<leader>z', toggle_zoom, { desc = 'Toggle [Z]oom' })
 
   -- resize (small increments)
-  vim.keymap.set('n', '<leader>wh', '<cmd>vertical resize -5<CR>', { desc = 'Resize [H] left' })
-  vim.keymap.set('n', '<leader>wl', '<cmd>vertical resize +5<CR>', { desc = 'Resize [L] right' })
+  vim.keymap.set('n', '<leader>wh', '<cmd>vertical resize +5<CR>', { desc = 'Resize [H] left' })
+  vim.keymap.set('n', '<leader>wl', '<cmd>vertical resize -5<CR>', { desc = 'Resize [L] right' })
   vim.keymap.set('n', '<leader>wj', resize_height 'resize -5', { desc = 'Resize [J] down' })
   vim.keymap.set('n', '<leader>wk', resize_height 'resize +5', { desc = 'Resize [K] up' })
 

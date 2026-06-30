@@ -10,12 +10,17 @@ vim.filetype.add {
 local M = {}
 
 function M.setup()
-  -- highlight on yank
+  -- highlight on yank, and mirror only yanks (not deletes/changes) to the
+  -- system clipboard. clipboard is otherwise decoupled (see options.lua), so
+  -- d/c/x leave the clipboard untouched while y still syncs it
   vim.api.nvim_create_autocmd('TextYankPost', {
-    desc = 'Highlight when yanking (copying) text',
+    desc = 'Highlight on yank; sync yanks to the system clipboard',
     group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
     callback = function()
       vim.hl.on_yank()
+      if vim.v.event.operator == 'y' then
+        vim.fn.setreg('+', vim.v.event.regcontents, vim.v.event.regtype)
+      end
     end,
   })
 

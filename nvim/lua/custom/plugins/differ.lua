@@ -40,10 +40,11 @@ return {
     build = 'make go-build',
     cmd = 'Differ',
     keys = {
-      { '<leader>do', '<cmd>Differ<CR>', desc = '[D]iff [O]pen (vs index)' },
+      { '<leader>do', '<cmd>Differ HEAD<CR>', desc = '[D]iff [O]pen (vs index)' },
       { '<leader>dc', '<cmd>Differ close<CR>', desc = '[D]iff [C]lose' },
       { '<leader>dt', '<cmd>Differ base<CR>', desc = '[D]iff branch [T]otal (vs base)' },
       { '<leader>de', '<cmd>Differ gofile<CR>', desc = '[D]iff [E]dit file' },
+      { '<leader>dd', '<cmd>Differ panel<CR>', desc = '[D]iff panel toggle' },
       { '<leader>dh', '<cmd>Differ log<CR>', desc = '[D]iff file [H]istory' },
       { '<leader>dp', '<cmd>Differ log origin/HEAD...HEAD<CR>', desc = '[D]iff [P]R review' },
       { '<leader>dl', '<cmd>Differ layout<CR>', desc = '[D]iff change [L]ayout' },
@@ -79,6 +80,31 @@ return {
       -- :D alias is a cmdline abbrev defined at startup above, not command_alias,
       -- so it survives a cold start before this config runs
       require('differ').setup {}
+
+      -- pin a permanent <Space>/]/[ to which-key on differ buffers, mirroring the
+      -- diffview workaround in pr-review.lua. which-key's auto-trigger system has
+      -- suspension windows (ModeChanged, BufNew) where the trigger keymap is absent,
+      -- and each wk.add calls Buf.clear() which drops all triggers globally. differ's
+      -- buffers are nofile and (for diffs) carry the source filetype, so they aren't
+      -- matched by the diffview FileType workaround and fall into that gap. a .cs diff
+      -- makes it reliable: the roslyn/dotnet open churn (User RealDotnetFile, semantic
+      -- token refresh, scan_files buffer create/delete) fires the very events that hit
+      -- the suspension windows. every differ buffer is named differ://, so key off the
+      -- name; a plain buffer-local map isn't managed by the trigger system, so it survives
+      vim.api.nvim_create_autocmd('BufWinEnter', {
+        group = vim.api.nvim_create_augroup('differ-whichkey', { clear = true }),
+        callback = function(ev)
+          if not vim.api.nvim_buf_get_name(ev.buf):match '^differ://' then
+            return
+          end
+          local wk = require 'which-key'
+          for _, key in ipairs { ' ', ']', '[' } do
+            vim.keymap.set('n', key, function()
+              wk.show(key)
+            end, { buffer = ev.buf })
+          end
+        end,
+      })
     end,
   },
 }

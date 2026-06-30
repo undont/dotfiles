@@ -8,6 +8,7 @@
 
 # Taps
 tap "Adembc/homebrew-tap"
+tap "charmbracelet/tap"
 tap "libsql/sqld"
 tap "morantron/tmux-fingers"
 tap "neur0map/tap"
@@ -45,6 +46,10 @@ cask "codexbar" # Menu bar usage monitor for Codex and Claude
 # Git & GitHub
 brew "gh"
 brew "lazygit"
+
+# Email
+brew "aerc"          # Terminal email client (compose in nvim)
+brew "w3m"           # HTML mail rendering for aerc's html filter
 
 # Search & Navigation
 brew "ripgrep"       # >= 13.0
@@ -152,6 +157,7 @@ brew "asciinema"                     # Terminal session recorder
 brew "figlet"                        # ASCII art text banners
 brew "toilet"                        # Unicode/colour text banners (figlet-compatible)
 brew "chafa"                         # Terminal image renderer (used by music.nvim)
+brew "charmbracelet/tap/freeze"      # Render code/terminal output to an image
 brew "undont/tap/lazycron"   # Cron job manager TUI
 brew "undont/tap/jiru"       # Jira TUI app
 brew "neur0map/tap/gpk"              # Unified package manager TUI

@@ -15,8 +15,9 @@ kickstart; the diverged debug/neo-tree/gitsigns specs moved to
 `custom/plugins/`.
 
 `core/keymaps.lua` is a slim entry point: it defines a few fundamental
-editing tweaks (`<Esc>` hl-clear, `dd`/`dy`, smart `i`/`a`, `m`/`M`/`gm`
-line nav, terminal escape, `<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
+editing tweaks (`<Esc>` hl-clear, `<leader>v` paste-last-yank, smart `i`/`a`,
+`m`/`M`/`gm` line nav, terminal escape,
+`<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
 and then calls `setup()` on the focused modules: core (folding, windows,
 macos-nav, refresh, spellcheck) and features (lists, build, binary-view).
 Each focused module owns its own keymaps — add new ones where they belong

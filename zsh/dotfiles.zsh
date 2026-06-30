@@ -412,6 +412,17 @@ export MSBUILDDISABLENODEREUSE=1
 export SONAR_HOST_URL="https://sonarcloud.io"
 
 # =============================================================================
+# GIT
+# =============================================================================
+# skip the optional index.lock that read-only git commands (status, diff) take
+# just to write back a refreshed index. without this, frequent background status
+# polls collide with an in-flight commit and fail it with
+# "Unable to create '.../index.lock': File exists". the usual culprits are an
+# editor's git integration or several claude code sessions open on one worktree,
+# each refreshing status. real index writes (add, commit) still lock normally
+export GIT_OPTIONAL_LOCKS=0
+
+# =============================================================================
 # LAZYGIT
 # =============================================================================
 # load base config (symlinked from dotfiles) + personal local overrides.
@@ -735,6 +746,9 @@ alias j="cl && jiru"                                                           #
 alias lg="cl && lazygit"                                                       # cl + lazygit
 alias ld="cl && lazydocker"                                                    # cl + lazydocker
 alias lc="cl && lazycron"                                                      # cl + lazycron
+# aerc reads config from ~/Library/Preferences/aerc on macOS by default; point it
+# at ~/.config/aerc so it matches the rest of the dotfiles (harmless on linux)
+alias aerc='aerc -C "${XDG_CONFIG_HOME:-$HOME/.config}/aerc/aerc.conf" -A "${XDG_CONFIG_HOME:-$HOME/.config}/aerc/accounts.conf" -B "${XDG_CONFIG_HOME:-$HOME/.config}/aerc/binds.conf"'  # terminal email client
 alias gols="ls ~/go/bin"                                                       # list Go binaries
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'"   # clear nvim cache
 
@@ -745,6 +759,81 @@ nvim-sync() {
   nvim --headless "+Lazy! sync" +qa
   printf "\033[0;32m✔\033[0m Neovim plugins synced\n"
 }
+
+# render code or terminal output to an image, defaulting to a mono / nerd font.
+# freeze's built-in default points at an uninstalled family and silently falls
+# back to a proportional sans, so force a real monospace family. pass -F to pick
+# another installed mono font via fzf; the choice persists in $FREEZE_FONT for
+# the session (bare `freeze -F` just sets it). an explicit --font.family /
+# --font.file always wins.
+# @cheat: freeze [-F] <file> | render code/output to an image (mono font)
+freeze() {
+  emulate -L zsh
+  local default_font="JetBrainsMono Nerd Font Mono"
+  local -a args
+  local a picked=0
+
+  for a in "$@"; do
+    case "$a" in
+      -F|--pick-font) picked=1 ;;
+      *) args+=("$a") ;;
+    esac
+  done
+
+  if (( picked )); then
+    local chosen
+    # installed monospace families, collapsed to base names: drop style/weight
+    # variants, the non-mono "Nerd Font" spelling and the NF/NFM abbreviations
+    # (keeping Monaspace, whose canonical family name ends in NF)
+    chosen=$(fc-list :spacing=mono family 2>/dev/null \
+      | tr ',' '\n' | sed 's/^[[:space:]]*//; s/[[:space:]]*$//' \
+      | grep -v '^\.' | grep -viE 'emoji|lastresort|times lt mm' \
+      | grep -viE 'extrabold|extralight|semibold|semiwide|medium|light|thin|bold|italic|wide|narrow|black|retina|condensed|oblique' \
+      | awk '/ Nerd Font$/ {next} /Monaspace/ {print; next} / NFM?$/ {next} {print}' \
+      | sort -u \
+      | fzf --prompt='freeze font ❯ ' --height=40% --reverse)
+    [[ -n "$chosen" ]] && export FREEZE_FONT="$chosen" \
+      && printf '\033[0;32m✔\033[0m freeze font → %s\n' "$chosen"
+    (( ${#args} )) || return 0
+  fi
+
+  if [[ "${args[*]}" != *--font.family* && "${args[*]}" != *--font.file* ]]; then
+    args=(--font.family "${FREEZE_FONT:-$default_font}" "${args[@]}")
+  fi
+
+  command freeze "${args[@]}"
+}
+
+# completion for the freeze wrapper: carapace's freeze spec completes flags and
+# their values (-l languages, -t themes, ...) but offers nothing for the file
+# positional and errors on our synthetic -F. delegate to carapace with -F hidden,
+# then add file completion for the positional (skipped after a non-file value
+# flag so languages/themes aren't mixed with filenames). wins over carapace's
+# catch-all because this compdef runs after it
+_freeze() {
+  local -a _ws _fw
+  local _cur _i _rm
+
+  if (( $+functions[_carapace_completer] )); then
+    _ws=("${words[@]}"); _cur=$CURRENT; _rm=0
+    for (( _i = 1; _i <= $#words; _i++ )); do
+      if (( _i != CURRENT )) && [[ ${words[_i]} == (-F|--pick-font) ]]; then
+        (( _i < CURRENT )) && (( _rm++ ))
+        continue
+      fi
+      _fw+=("${words[_i]}")
+    done
+    words=("${_fw[@]}"); (( CURRENT -= _rm ))
+    _carapace_completer
+    words=("${_ws[@]}"); CURRENT=$_cur
+  fi
+
+  case ${words[CURRENT-1]} in
+    -l|--language|-t|--theme|-w|--wrap|-x|--execute|-b|--background|-m|--margin|-p|--padding|-W|--width|-H|--height|-r|--border.radius|--border.width|--border.color|--shadow.blur|--shadow.x|--shadow.y|--font.family|--font.size|--line-height) ;;
+    *) _files; compadd -- -F --pick-font ;;
+  esac
+}
+(( $+functions[compdef] )) && compdef _freeze freeze
 
 alias brewup="brew update && brew upgrade"                                     # brew update + upgrade
 alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'                                                                                            # kill all node procs

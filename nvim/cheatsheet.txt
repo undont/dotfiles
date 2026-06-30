@@ -59,10 +59,10 @@ Telescope: send selected entries to loclist | <M-g>
 ## editing @editing
 Insert at/after cursor | i / a
 New line below/above | o / O
-Delete line (no yank) | dd
-Yank and delete (cut) | dy
+Delete line | dd
 Yank line | yy
 Paste after/before | p / P
+Paste last yank | <leader>v / <leader>V
 Undo / redo | u / <C-r>
 Repeat last action | .
 Insert space at cursor | <leader>i
@@ -228,7 +228,7 @@ To Title Case | crt
 Case-aware substitute | :S/{from}/{to}/g
 Subvert (multi-form sub) | :Subvert/facilit{y,ies}/building{,s}/g
 
-## diff @diff
+## diff @differ
 Diff open (vs index) | <leader>do
 Diff close | <leader>dc
 Diff branch total (vs base) | <leader>dt
@@ -236,6 +236,7 @@ Diff branch by ticket | <leader>dT
 Diff file history | <leader>dh
 Diff PR-range review | <leader>dp
 Diff edit file | <leader>de
+Diff hide/show panel | <leader>dd
 Diff change layout | <leader>dl
 Next/prev hunk | ]c / [c
 Next/prev file | ]f / [f

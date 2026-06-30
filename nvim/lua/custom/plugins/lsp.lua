@@ -276,6 +276,8 @@ return {
       vim.lsp.config('gopls', {
         settings = {
           gopls = {
+            -- restrict workspace/symbol to our own modules, not deps in ~/go/pkg/mod
+            symbolScope = 'workspace',
             codelenses = {
               generate = true,
               regenerate_cgo = true,
@@ -363,7 +365,7 @@ return {
             'prettier',
             'stylua',
             -- linters
-            'golangci-lint',
+            'golangci-lint-langserver',
             'ruff', -- Python lint + format
             -- go codegen helpers (struct tags, iferr); wired in features/go.lua
             'gomodifytags',
@@ -408,8 +410,21 @@ return {
         if vim.g.disable_autoformat or vim.b[bufnr].disable_autoformat then
           return
         end
+        -- prettier (esp. with prettier-plugin-astro) and other node-based
+        -- formatters pay ~1.5s of startup per run; native binaries are fast
+        local slow_ft = {
+          astro = true,
+          javascript = true,
+          javascriptreact = true,
+          json = true,
+          typescript = true,
+          typescriptreact = true,
+          yaml = true,
+          cs = true,
+          swift = true,
+        }
         return {
-          timeout_ms = 500,
+          timeout_ms = slow_ft[vim.bo[bufnr].filetype] and 3000 or 500,
           lsp_format = 'fallback',
         }
       end,

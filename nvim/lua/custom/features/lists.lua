@@ -392,6 +392,9 @@ function M.setup()
         vim.keymap.set('n', ']' .. s, '<Nop>', { buffer = ev.buf, silent = true })
         vim.keymap.set('n', '[' .. s, '<Nop>', { buffer = ev.buf, silent = true })
       end
+      -- qf buffers are nomodifiable, so bare `o` (open line) only errors; reuse
+      -- it to jump to the entry under the cursor, same as <CR>
+      vim.keymap.set('n', 'o', '<CR>', { buffer = ev.buf, silent = true, remap = true, desc = 'Open entry under cursor' })
     end,
   })
 
