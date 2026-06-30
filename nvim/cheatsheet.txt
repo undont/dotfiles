@@ -215,6 +215,12 @@ Stage current buffer | <leader>Gw
 Open on GitHub | <leader>Go (normal/visual)
 Run any git command | :G {args}
 
+## mugshot @mugshot
+Git blame card (avatar) | gb
+In-card open commit | o
+In-card copy sha | y
+In-card open PR | p
+
 ## coerce @coerce
 To snake_case | crs
 To camelCase | crc
