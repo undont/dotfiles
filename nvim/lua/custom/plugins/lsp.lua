@@ -276,6 +276,8 @@ return {
       vim.lsp.config('gopls', {
         settings = {
           gopls = {
+            -- restrict workspace/symbol to our own modules, not deps in ~/go/pkg/mod
+            symbolScope = 'workspace',
             codelenses = {
               generate = true,
               regenerate_cgo = true,
