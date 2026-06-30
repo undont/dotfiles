@@ -6,11 +6,15 @@
 # compatible with bash 3.2 (macOS stock); no associative arrays
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
+
+# resolve the path for the pre-source bail-out without binding ALERTS_FILE: the
+# library declares that name readonly when it loads, so assigning it here first
+# would trip a readonly error if the source order were ever reversed
+_alerts_file="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 
 # bail before spawning tmux or sourcing libs; this runs every status-interval
 # and the common case is no alerts at all
-if [[ ! -f "$ALERTS_FILE" ]] || [[ ! -s "$ALERTS_FILE" ]]; then
+if [[ ! -f "$_alerts_file" ]] || [[ ! -s "$_alerts_file" ]]; then
     exit 0
 fi
 

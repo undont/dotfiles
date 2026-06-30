@@ -176,9 +176,15 @@ _cmd_alert_precmd() {
 
     # record the completion in the finished-process history (proclist "done"
     # rows). done regardless of the window-switch guard below, so a command you
-    # watched finish in place still leaves a ✓/✗ entry. one tmux round-trip
-    local _meta
-    _meta=$(tmux display-message -p $'#S\t#{window_id}\t#W' 2>/dev/null) || _meta=""
+    # watched finish in place still leaves a ✓/✗ entry. target the origin pane
+    # explicitly: this precmd runs after the command, and by the time an alert
+    # fires you have usually switched away, so a bare `display-message -p` would
+    # resolve to the origin session's *active* window and file the row under the
+    # wrong window (the same gotcha the view guard below documents). one round-trip
+    local _meta=""
+    if [[ -n "$_cmd_alert_pane" ]]; then
+        _meta=$(tmux display-message -t "$_cmd_alert_pane" -p $'#S\t#{window_id}\t#W' 2>/dev/null) || _meta=""
+    fi
     if [[ -n "$_meta" ]]; then
         local _sess _wid _wname
         IFS=$'\t' read -r _sess _wid _wname <<< "$_meta"
