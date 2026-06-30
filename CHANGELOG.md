@@ -6,6 +6,15 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.124] - 2026-06-30
+
+### Changed
+- Nvim: image.nvim no longer renders remote images in markdown (`download_remote_images = false`). Remote badge SVGs (shields.io and the like) render poorly inline and pull in network requests on every markdown open; local screenshots and diagrams still render. `nvim/lua/custom/plugins/image.lua`
+
+### Added
+- Nvim: mugshot.nvim plugin spec for a gitlens-style blame card on the current line, triggered with `gb` (`[G]it [B]lame card`), dismissed with `q`/`<Esc>`; in-card gestures open the commit (`o`), copy the sha (`y`), and open the PR (`p`). The author's GitHub avatar renders inline via image.nvim, which is pinned as a hard dependency so the card works in any filetype (image.nvim itself only loads on markdown). Distinct from fugitive's `<leader>Gb` and gitsigns inline blame, which both stay. `nvim/lua/custom/plugins/mugshot.lua`, `nvim/cheatsheet.txt`
+- ImageMagick: macOS font map symlinked to `~/.config/ImageMagick/type.xml`. Homebrew's imagemagick ships empty `type-*.xml` stubs whose glyph paths resolve to nothing, leaving the type cache with zero usable fonts; any text-bearing SVG (image.nvim rendering a shields.io badge in a markdown buffer) then fails `identify` with "unable to read font", which image.nvim surfaces as a Lua error. The map points a few always-present macOS system fonts (Helvetica, Arial, Courier New) at the cache. Symlinked into a path imagemagick already searches so `brew upgrade` never wipes it; installed on macOS only, since Linux imagemagick has a working fontconfig cache that this would clobber. `imagemagick/type.xml`, `scripts/install/create-symlinks.sh`
+
 ## [0.2.123] - 2026-06-30
 
 ### Added
