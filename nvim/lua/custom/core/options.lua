@@ -21,12 +21,6 @@ function M.setup()
   -- don't show mode in command line (shown in statusline)
   vim.o.showmode = false
 
-  -- sync clipboard between OS and nvim
-  -- schedule after UiEnter to avoid increasing startup time
-  vim.schedule(function()
-    vim.o.clipboard = 'unnamedplus'
-  end)
-
   -- indentation
   vim.o.tabstop = 4
   vim.o.breakindent = true

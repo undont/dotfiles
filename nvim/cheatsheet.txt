@@ -59,10 +59,10 @@ Telescope: send selected entries to loclist | <M-g>
 ## editing @editing
 Insert at/after cursor | i / a
 New line below/above | o / O
-Delete line (no yank) | dd
-Yank and delete (cut) | dy
+Delete line | dd
 Yank line | yy
 Paste after/before | p / P
+Paste last yank | <leader>v / <leader>V
 Undo / redo | u / <C-r>
 Repeat last action | .
 Insert space at cursor | <leader>i
