@@ -181,6 +181,9 @@ if should_install "core" && is_linux; then
         echo "  Or download a release from https://github.com/Schniz/fnm/releases"
     fi
 
+    # Nerd Fonts (cask "font-*-nerd-font" on macOS; manual TTF install on Linux)
+    "$SCRIPT_DIR/install-fonts.sh" || warn "Nerd Font install failed — see output above."
+
     echo ""
 fi
 
