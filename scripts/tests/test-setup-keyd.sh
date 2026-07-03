@@ -33,6 +33,17 @@ else
     fail "Should error when config not found (got: $output)"
 fi
 
+# test: shipped config is valid keyd syntax — exactly one [ids] section.
+# a second [ids] block silently breaks device matching (keyd grabs nothing),
+# which is how the Apple-override block regressed all keyboards.
+KEYD_CONF="$SCRIPT_DIR/../../keyd/default.conf"
+ids_count=$(grep -c '^\[ids\]' "$KEYD_CONF" 2>/dev/null || echo 0)
+if [[ "$ids_count" -eq 1 ]]; then
+    pass "keyd config has exactly one [ids] section"
+else
+    fail "keyd config must have exactly one [ids] section (found $ids_count)"
+fi
+
 # note: package installation and systemd paths require sudo, skip in CI
 skip "Package install path requires sudo"
 skip "systemd service management requires sudo"

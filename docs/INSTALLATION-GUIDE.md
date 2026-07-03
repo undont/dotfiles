@@ -383,7 +383,7 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 keyd is a Linux keyboard remapping daemon, the equivalent of Karabiner Elements on macOS. It provides system-level key remapping that works across all applications, including:
 - Caps Lock → Escape
 - Right Alt → Control
-- Grave/Tilde ↔ Non-US Backslash (Apple keyboard layout fix)
+- Grave/Tilde ↔ Non-US Backslash (UK/ISO layout swap)
 
 **What you'll see**:
 ```
