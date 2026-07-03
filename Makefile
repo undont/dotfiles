@@ -67,7 +67,7 @@ lint: lint-shell lint-zsh lint-lua theme-check ## Run all linters
 
 lint-shell: ## Run ShellCheck on shell scripts
 	@printf '\033[1;36mRunning ShellCheck...\033[0m\n'
-	@shellcheck -x install.sh scripts/install/*.sh scripts/_lib/*.sh
+	@shellcheck -x install.sh scripts/install/*.sh scripts/install/slices/*.sh scripts/_lib/*.sh
 	@shellcheck -x tmux/scripts/*/*.sh tmux/scripts/_lib/*.sh
 	@shellcheck -x scripts/dotfiles scripts/run-tests.sh
 	@shellcheck -x launchers/*

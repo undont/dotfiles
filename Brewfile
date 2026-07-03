@@ -5,6 +5,13 @@
 #   @preset: minimal - included in minimal, core, and full
 #   @preset: core    - included in core and full
 #   @preset: full    - included in full only
+#
+# Slice tags (optional, additive):
+#   @slice: <name>   - also installable on its own via `install.sh <name>` or
+#                      `scripts/install/slices/<name>.sh`. A line may list
+#                      several, e.g. "@slice: nvim, search". Slice tags do not
+#                      affect preset filtering; they only name the package so a
+#                      slice can pull it in without duplicating the list.
 
 # Taps
 tap "Adembc/homebrew-tap"
@@ -35,8 +42,8 @@ brew "carapace"               # Multi-shell completion provider (bridges zsh com
 # =============================================================================
 
 # Editors
-brew "neovim"            # >= 0.11 required for nvim-treesitter
-brew "tree-sitter-cli"   # Required by nvim-treesitter for parser compilation
+brew "neovim"            # >= 0.11 required for nvim-treesitter; @slice: nvim
+brew "tree-sitter-cli"   # Required by nvim-treesitter for parser compilation; @slice: nvim
 cask "visual-studio-code"
 
 # AI Coding Assistants
@@ -52,8 +59,8 @@ brew "aerc"          # Terminal email client (compose in nvim)
 brew "w3m"           # HTML mail rendering for aerc's html filter
 
 # Search & Navigation
-brew "ripgrep"       # >= 13.0
-brew "fd"            # Fast find alternative
+brew "ripgrep"       # >= 13.0; @slice: nvim (telescope live-grep)
+brew "fd"            # Fast find alternative; @slice: nvim (telescope find-files)
 brew "tree"
 brew "jq"
 brew "yq"            # YAML processor (used by gh-dash local merge)
@@ -61,7 +68,7 @@ brew "wget"
 brew "bat"           # Cat with syntax highlighting
 brew "diffnav"       # Diff navigator for GitHub PRs
 brew "monolith" unless OS.linux? && Hardware::CPU.arm?  # No Linux ARM bottle
-brew "zoxide"        # smart cd replacement
+brew "zoxide"        # smart cd replacement; @slice: zoxide
 
 # File Manager
 brew "yazi"          # Terminal file manager
@@ -175,8 +182,9 @@ cask "ghostty"
 cask "gcloud-cli"
 
 # Nerd Fonts for terminal icons
-cask "font-meslo-lg-nerd-font"
-cask "font-jetbrains-mono-nerd-font"
+cask "font-meslo-lg-nerd-font"      # @slice: nerd-fonts
+cask "font-jetbrains-mono-nerd-font" # @slice: nerd-fonts
+cask "font-monaspace-nf"
 
 # =============================================================================
 # @preset: full

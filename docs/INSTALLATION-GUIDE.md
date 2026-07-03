@@ -115,6 +115,35 @@ Components: zsh, tmux, nvim, ghostty, AI/CLI tools, session launch scripts
 Proceed with core installation? [y/N]
 ```
 
+### Slices: adding individual components
+
+Presets are coarse tiers; slices let you add individual components on top of any preset without stepping up a whole tier. Pass slice names as bare arguments:
+
+```bash
+./install.sh --minimal nvim zoxide nerd-fonts
+./install.sh --list-slices     # list available slices
+```
+
+How they work:
+
+1. **Self-contained scripts**: Each slice is a standalone, idempotent script under `scripts/install/slices/<name>.sh` that owns one component (its packages, config, and post-install). You can run one directly, e.g. `scripts/install/slices/nvim.sh`.
+
+2. **Single-sourced packages**: A slice's Homebrew packages are tagged in the `Brewfile` with `@slice: <name>`, so package lists are never duplicated. Slice tags do not affect preset filtering.
+
+3. **Dependencies**: A slice can require others; these are resolved automatically. For example, `nvim` pulls in `nerd-fonts`.
+
+4. **Persistence**: Requested slices are saved to `~/.config/dotfiles/slices` and replayed by `dotfiles update`, so add-ons stay current. They appear under "Slices" in `dotfiles status`.
+
+Shipped slices: `nvim` (pulls in `nerd-fonts`), `zoxide`, `nerd-fonts`. Run `./install.sh --list-slices` for the current list.
+
+After install, manage slices with the `dotfiles slice` command:
+
+```bash
+dotfiles slice                 # list installed and available slices
+dotfiles slice add zoxide      # install a slice and start tracking it
+dotfiles slice remove zoxide   # stop tracking (packages/config stay in place)
+```
+
 ---
 
 ## Installation Steps

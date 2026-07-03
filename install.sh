@@ -11,6 +11,7 @@ export DOTFILES_DIR
 # source shared utilities
 source "$DOTFILES_DIR/scripts/_lib/common.sh"
 source "$DOTFILES_DIR/scripts/_lib/rollback.sh"
+source "$DOTFILES_DIR/scripts/_lib/slices.sh"
 
 # preset definitions:
 #   minimal - zsh + tmux only (servers, remote machines)
@@ -52,6 +53,7 @@ UPDATE_MODE=0
 AUTO_YES=0
 SKIP_STEPS=""
 PRESET="full"  # default preset
+EXTRA_SLICES=()  # components added on top of the preset (e.g. `install.sh --minimal nvim`)
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -96,42 +98,68 @@ while [[ $# -gt 0 ]]; do
             AUTO_YES=1
             shift
             ;;
-        -h|--help)
-            echo "Usage: ./install.sh [PRESET] [OPTIONS]"
+        --list-slices)
+            echo "Available slices (add on top of any preset):"
             echo ""
-            echo "Presets:"
+            slice_list_verbose
+            echo ""
+            echo "Usage: ./install.sh [PRESET] <slice>..."
+            echo "Example: ./install.sh --minimal nvim zoxide nerd-fonts"
+            exit 0
+            ;;
+        -h|--help)
+            echo "Usage: ./install.sh [PRESET] [SLICE...] [OPTIONS]"
+            echo ""
+            echo "Presets (pick one; default --full):"
             echo "  --minimal        Install zsh + tmux only (servers, remote machines)"
             echo "  --core           Install zsh, tmux, nvim, ghostty, CLI/AI tools"
             echo "  --full           Install everything including macOS apps (default)"
             echo ""
+            echo "Slices (add individual components on top of a preset):"
+            echo "  Pass one or more slice names as bare arguments to install just those"
+            echo "  components (and their dependencies) on top of the chosen preset. Each"
+            echo "  slice is idempotent and is replayed by 'dotfiles update' to stay current."
+            echo ""
+            echo "  --list-slices    List available slices and exit"
+            echo ""
             echo "Options:"
             echo "  --skip-backup    Skip backing up existing config files"
             echo "  --skip-brew      Skip Homebrew installation and packages"
-            echo "  --skip-steps L   Skip comma-separated list of steps (homebrew,packages,symlinks,keyd)"
+            echo "  --skip-steps L   Skip comma-separated list of steps"
+            echo "                   (homebrew,packages,symlinks,keyd,slices)"
             echo "  --check-only     Only run prerequisite and health checks"
             echo "  --update         Update mode (skips logo, uses update terminology)"
             echo "  --yes, -y        Skip confirmation prompt"
             echo "  -h, --help       Show this help message"
             echo ""
             echo "Examples:"
-            echo "  ./install.sh                # Full installation (default)"
-            echo "  ./install.sh --core         # Cross-platform dev setup"
-            echo "  ./install.sh --minimal      # Lightweight server setup"
+            echo "  ./install.sh                          # Full installation (default)"
+            echo "  ./install.sh --core                   # Cross-platform dev setup"
+            echo "  ./install.sh --minimal                # Lightweight server setup"
+            echo "  ./install.sh --minimal nvim           # Minimal + Neovim (pulls in nerd-fonts)"
+            echo "  ./install.sh --minimal nvim zoxide    # Minimal + a couple of add-ons"
+            echo "  ./install.sh --list-slices            # See what can be added"
             echo ""
             echo "To rollback a failed installation:"
             echo "  ./scripts/install/rollback.sh"
             exit 0
             ;;
-        *)
+        -*)
             error "Unknown option: $1"
+            echo "Run './install.sh --help' for usage, or '--list-slices' for add-on components."
             exit 1
+            ;;
+        *)
+            # bare word: a slice name to add on top of the preset (validated below)
+            EXTRA_SLICES+=("$1")
+            shift
             ;;
     esac
 done
 
 # validate --skip-steps against known step names
 if [[ -n "$SKIP_STEPS" ]]; then
-    VALID_STEPS="homebrew,packages,symlinks,keyd"
+    VALID_STEPS="homebrew,packages,symlinks,keyd,slices"
     IFS=',' read -ra _skip_arr <<< "$SKIP_STEPS"
     for _step in "${_skip_arr[@]}"; do
         if [[ ",$VALID_STEPS," != *",$_step,"* ]]; then
@@ -163,6 +191,22 @@ esac
 
 # export preset for sub-scripts
 export DOTFILES_PRESET="$PRESET"
+
+# validate + resolve requested slices (add-on components on top of the preset).
+# RESOLVED_SLICES expands transitive requires, dependency-first (e.g. nvim pulls
+# in nerd-fonts), and is deduped.
+RESOLVED_SLICES=()
+if [[ ${#EXTRA_SLICES[@]} -gt 0 ]]; then
+    for _slice in "${EXTRA_SLICES[@]}"; do
+        if ! slice_exists "$_slice"; then
+            error "Unknown slice: $_slice"
+            echo "Run './install.sh --list-slices' to see available slices."
+            exit 1
+        fi
+    done
+    mapfile -t RESOLVED_SLICES < <(slice_resolve "${EXTRA_SLICES[@]}")
+    unset _slice
+fi
 
 # step labels: update mode uses shorter verbs since the header already says "Applying Updates"
 if [[ $UPDATE_MODE -eq 1 ]]; then
@@ -208,6 +252,9 @@ if [[ $UPDATE_MODE -eq 0 ]]; then
             fi
             ;;
     esac
+fi
+if [[ ${#RESOLVED_SLICES[@]} -gt 0 ]]; then
+    echo "Added slices: ${CYAN}${RESOLVED_SLICES[*]}${NC}"
 fi
 echo ""
 
@@ -313,6 +360,37 @@ if ! is_step_skipped "symlinks"; then
     record_step "symlinks"
 else
     print_skip 5 "symlinks" "unchanged"
+fi
+
+# step 5b: install add-on slices (components requested on top of the preset).
+# each slice installs its own Brewfile packages + config, and is idempotent,
+# so re-running is safe (and how `dotfiles update` keeps add-ons current).
+if [[ ${#RESOLVED_SLICES[@]} -gt 0 ]] && ! is_step_skipped "slices"; then
+    echo ""
+    print_step 5b "Installing added slices: ${RESOLVED_SLICES[*]}..."
+    slices_failed=0
+    for _slice in "${RESOLVED_SLICES[@]}"; do
+        if ! "$DOTFILES_DIR/scripts/install/slices/$_slice.sh" all; then
+            warn "Slice '$_slice' reported issues (see above)."
+            slices_failed=1
+        fi
+    done
+    unset _slice
+    [[ $slices_failed -eq 0 ]] && success "Added slices installed."
+    record_step "slices"
+
+    # persist requested slices so `dotfiles update` replays them and keeps the
+    # add-ons current. store the user's explicit requests (not resolved deps);
+    # requires are re-expanded on each run
+    slices_state_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/slices"
+    mkdir -p "$(dirname "$slices_state_file")"
+    {
+        [[ -f "$slices_state_file" ]] && cat "$slices_state_file"
+        printf '%s\n' "${EXTRA_SLICES[@]}"
+    } | grep -v '^[[:space:]]*$' | sort -u > "$slices_state_file.tmp"
+    mv "$slices_state_file.tmp" "$slices_state_file"
+elif is_step_skipped "slices"; then
+    print_skip 5b "added slices" "unchanged"
 fi
 
 # step 6: install plugin managers

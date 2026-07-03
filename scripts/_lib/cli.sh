@@ -18,6 +18,7 @@ _DOTFILES_CLI_SH_LOADED=1
 : "${DOTFILES_DIR:?DOTFILES_DIR must be set before sourcing cli.sh}"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 PRESET_FILE="$CONFIG_DIR/preset"
+SLICES_FILE="$CONFIG_DIR/slices"
 STATE_DIR="$CONFIG_DIR/.state"
 
 # ── Preset / branch ────────────────────────────────────────────────────
@@ -28,6 +29,46 @@ get_preset() {
         cat "$PRESET_FILE"
     else
         echo "full"
+    fi
+}
+
+# get the saved add-on slices (one per line), empty if none. these are extra
+# components installed on top of the preset (e.g. `install.sh --minimal nvim`);
+# `dotfiles update` replays them so they stay current.
+get_slices() {
+    [[ -f "$SLICES_FILE" ]] || return 0
+    grep -v '^[[:space:]]*$' "$SLICES_FILE" 2>/dev/null || true
+}
+
+# true if a slice name is in the saved set
+slice_is_saved() {
+    [[ -f "$SLICES_FILE" ]] && grep -qxF "$1" "$SLICES_FILE"
+}
+
+# add slice names to the saved set (union, deduped, sorted)
+slices_add_saved() {
+    mkdir -p "$(dirname "$SLICES_FILE")"
+    {
+        [[ -f "$SLICES_FILE" ]] && cat "$SLICES_FILE"
+        printf '%s\n' "$@"
+    } | grep -v '^[[:space:]]*$' | sort -u > "$SLICES_FILE.tmp"
+    mv "$SLICES_FILE.tmp" "$SLICES_FILE"
+}
+
+# remove slice names from the saved set; deletes the file when it empties out
+slices_remove_saved() {
+    [[ -f "$SLICES_FILE" ]] || return 0
+    local tmp name
+    tmp="$(mktemp)"
+    cp "$SLICES_FILE" "$tmp"
+    for name in "$@"; do
+        grep -vxF "$name" "$tmp" > "$tmp.next" || true
+        mv "$tmp.next" "$tmp"
+    done
+    if [[ -s "$tmp" ]]; then
+        mv "$tmp" "$SLICES_FILE"
+    else
+        rm -f "$tmp" "$SLICES_FILE"
     fi
 }
 

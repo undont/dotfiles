@@ -8,6 +8,10 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CREATE_SYMLINKS="$DOTFILES_DIR/scripts/install/create-symlinks.sh"
+# the link helpers (create_link/copy_config/install_local) now live in a shared
+# lib so slices can reuse them; nvim's config was extracted into its own slice
+SYMLINK_LIB="$DOTFILES_DIR/scripts/_lib/symlink.sh"
+NVIM_SLICE="$DOTFILES_DIR/scripts/install/slices/nvim.sh"
 
 # source shared test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
@@ -40,6 +44,9 @@ fi
 section "Library Dependencies"
 
 script_content=$(cat "$CREATE_SYMLINKS")
+# link helpers live in symlink.sh; nvim config lives in the nvim slice
+symlink_content=$(cat "$SYMLINK_LIB")
+nvim_slice_content=$(cat "$NVIM_SLICE")
 
 if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
     pass "Sources common.sh"
@@ -51,6 +58,18 @@ if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
     pass "Sources rollback.sh"
 else
     fail "Should source rollback.sh"
+fi
+
+if [[ "$script_content" == *'_lib/symlink.sh'* ]]; then
+    pass "Sources symlink.sh (shared link helpers)"
+else
+    fail "Should source symlink.sh"
+fi
+
+if [[ "$script_content" == *'_lib/slices.sh'* ]]; then
+    pass "Sources slices.sh (delegates tool config to slices)"
+else
+    fail "Should source slices.sh"
 fi
 
 # ═══════════════════════════════════════════════════════════════
@@ -96,10 +115,10 @@ else
     fail "Should use should_install for core"
 fi
 
-if [[ "$script_content" == *'.config/nvim'* ]]; then
-    pass "Links nvim config (core)"
+if [[ "$script_content" == *'slice_run nvim link'* ]] && [[ "$nvim_slice_content" == *'.config/nvim'* ]]; then
+    pass "Links nvim config (core, delegated to nvim slice)"
 else
-    fail "Should link nvim config for core preset"
+    fail "Should link nvim config for core preset (via nvim slice)"
 fi
 
 if [[ "$script_content" == *'ghostty'* ]]; then
@@ -150,19 +169,19 @@ fi
 
 section "create_link Function"
 
-if [[ "$script_content" == *'create_link()'* ]]; then
-    pass "Defines create_link function"
+if [[ "$symlink_content" == *'create_link()'* ]]; then
+    pass "Defines create_link function (in symlink.sh)"
 else
-    fail "Should define create_link function"
+    fail "Should define create_link function in symlink.sh"
 fi
 
-if [[ "$script_content" == *'record_symlink'* ]]; then
+if [[ "$symlink_content" == *'record_symlink'* ]]; then
     pass "Records symlinks for rollback"
 else
     fail "Should record symlinks for rollback"
 fi
 
-if [[ "$script_content" == *'ln -sf'* ]]; then
+if [[ "$symlink_content" == *'ln -sf'* ]]; then
     pass "Uses ln -sf for symlink creation"
 else
     fail "Should use ln -sf"
@@ -180,13 +199,13 @@ fi
 
 section "Backup on Conflict"
 
-if [[ "$script_content" == *'.dotfiles-backup'* ]]; then
+if [[ "$symlink_content" == *'.dotfiles-backup'* ]]; then
     pass "Backs up to .dotfiles-backup directory"
 else
     fail "Should back up to .dotfiles-backup"
 fi
 
-if [[ "$script_content" == *'mv "$dest"'* ]]; then
+if [[ "$symlink_content" == *'mv "$dest"'* ]]; then
     pass "Moves existing files before symlinking"
 else
     fail "Should move existing files before symlinking"
@@ -222,10 +241,10 @@ else
     fail "Should create tmux local override"
 fi
 
-if [[ "$script_content" == *'local.lua.template'* ]]; then
-    pass "Creates nvim local override from template"
+if [[ "$nvim_slice_content" == *'local.lua.template'* ]]; then
+    pass "Creates nvim local override from template (in nvim slice)"
 else
-    fail "Should create nvim local override"
+    fail "nvim slice should create nvim local override"
 fi
 
 if [[ "$script_content" == *'local.template'* ]]; then
@@ -258,20 +277,20 @@ fi
 
 section "copy_config Function"
 
-if [[ "$script_content" == *'copy_config()'* ]]; then
-    pass "Defines copy_config function"
+if [[ "$symlink_content" == *'copy_config()'* ]]; then
+    pass "Defines copy_config function (in symlink.sh)"
 else
-    fail "Should define copy_config function"
+    fail "Should define copy_config function in symlink.sh"
 fi
 
 # copy_config should handle three states: symlink, missing, existing
-if [[ "$script_content" == *'-L "$dest"'* ]]; then
+if [[ "$symlink_content" == *'-L "$dest"'* ]]; then
     pass "copy_config detects existing symlinks"
 else
     fail "copy_config should detect existing symlinks"
 fi
 
-if [[ "$script_content" == *'cp "$source" "$dest"'* ]]; then
+if [[ "$symlink_content" == *'cp "$source" "$dest"'* ]]; then
     pass "copy_config copies files (not symlinks)"
 else
     fail "copy_config should copy files"
@@ -317,8 +336,8 @@ source "$DOTFILES_DIR/scripts/_lib/colours.sh"
 success() { :; }
 info() { :; }
 
-# re-source the function
-eval "$(sed -n '/^copy_config()/,/^}/p' "$CREATE_SYMLINKS")"
+# re-source the function (now defined in the shared symlink lib)
+eval "$(sed -n '/^copy_config()/,/^}/p' "$SYMLINK_LIB")"
 
 # test 1: copies to new destination
 echo "test content" > "$TEST_DIR/source.conf"

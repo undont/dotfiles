@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+- Install slices: individual components installable on top of any preset. Pass slice names as bare arguments, e.g. `./install.sh --minimal nvim zoxide nerd-fonts`, to add just those components (and their dependencies) without stepping up to a whole preset tier. Each slice is a standalone, idempotent script under `scripts/install/slices/<name>.sh` that owns one component: its Homebrew packages (read from the Brewfile via a `@slice: <name>` tag, so package lists are never duplicated), plus its config/symlink and post-install steps. Slices can also be run directly (`scripts/install/slices/nvim.sh`). Ships with `nvim` (pulls in `nerd-fonts`), `zoxide`, and `nerd-fonts`. `./install.sh --list-slices` lists them. Requested slices are saved to `~/.config/dotfiles/slices` and replayed by `dotfiles update` so add-ons stay current, and shown under "Slices" in `dotfiles status`. `install.sh`, `scripts/_lib/slices.sh`, `scripts/_lib/symlink.sh`, `scripts/install/slices/`, `scripts/install/create-symlinks.sh`, `scripts/dotfiles`, `scripts/_lib/cli.sh`, `Brewfile`
+- `dotfiles slice` subcommand to manage add-on slices after install: `dotfiles slice list` shows installed and available slices, `dotfiles slice add <name>...` installs and starts tracking them (dependencies resolved automatically), and `dotfiles slice remove <name>...` stops tracking them (packages and config are left in place). `scripts/dotfiles`, `scripts/_lib/cli.sh`
+- The `create_link`/`copy_config`/`install_local` link helpers moved from `create-symlinks.sh` into a shared `scripts/_lib/symlink.sh` so slice scripts can reuse them; Neovim's config install was extracted into the `nvim` slice and `create-symlinks.sh` now delegates to it, keeping a single source of truth for both the preset path and standalone installs. `scripts/_lib/symlink.sh`, `scripts/install/create-symlinks.sh`, `scripts/install/slices/nvim.sh`
+
 ## [0.2.124] - 2026-06-30
 
 ### Changed

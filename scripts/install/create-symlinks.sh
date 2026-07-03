@@ -11,92 +11,13 @@ export DOTFILES_DIR
 
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/rollback.sh"
+# create_link / copy_config / install_local live here so slice scripts can
+# reuse them (source order matters: common + rollback must load first)
+source "$SCRIPT_DIR/../_lib/symlink.sh"
+source "$SCRIPT_DIR/../_lib/slices.sh"
 
 PRESET="${DOTFILES_PRESET:-full}"
 FAILED=0
-
-create_link() {
-    local source="$1"
-    local dest="$2"
-
-    # validate source exists before creating symlink
-    if [[ ! -e "$source" && ! -L "$source" ]]; then
-        printf "${RED}FAILED:${NC} Source not found: %s\n" "$source"
-        FAILED=1
-        return 1
-    fi
-
-    # ensure parent directory exists
-    mkdir -p "$(dirname "$dest")"
-
-    # remove existing symlink if present
-    if [[ -L "$dest" ]]; then
-        rm "$dest"
-    fi
-
-    # if destination exists and is not a symlink, back it up inline
-    if [[ -e "$dest" ]]; then
-        local backup_base="$HOME/.dotfiles-backup"
-        local backup_dir
-        backup_dir="$backup_base/inline-$(date +%Y%m%d-%H%M%S)-$$"
-        mkdir -p "$backup_base"
-        chmod 700 "$backup_base"
-        mkdir -p "$backup_dir"
-        chmod 700 "$backup_dir"
-
-        local relative_path="${dest#"$HOME"/}"
-        local backup_path="$backup_dir/$relative_path"
-        mkdir -p "$(dirname "$backup_path")"
-
-        mv "$dest" "$backup_path"
-        printf "${YELLOW}Backed up:${NC} %s -> %s\n" "$dest" "$backup_path"
-    fi
-
-    # create symlink
-    if ln -sf "$source" "$dest"; then
-        printf "${GREEN}Created:${NC} %s -> %s\n" "$dest" "$source"
-        # record for rollback
-        record_symlink "$dest" "$source"
-        return 0
-    else
-        printf "${RED}FAILED:${NC} Could not create symlink %s\n" "$dest"
-        FAILED=1
-        return 1
-    fi
-}
-
-# copy config file from repo to destination (copy-on-install pattern).
-# if destination already exists, keeps it untouched (user-owned)
-copy_config() {
-    local source="$1"
-    local dest="$2"
-
-    # ensure parent directory exists
-    mkdir -p "$(dirname "$dest")"
-
-    if [[ ! -e "$dest" ]]; then
-        cp "$source" "$dest"
-        success "Created $dest from dotfiles"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
-    else
-        info "Kept existing $dest"
-    fi
-}
-
-# install a local override file from template (never overwrite user customisations)
-install_local() {
-    local template="$1"
-    local dest="$2"
-
-    mkdir -p "$(dirname "$dest")"
-    if [[ ! -f "$dest" ]]; then
-        cp "$template" "$dest"
-        success "Created $dest from template"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
-    else
-        info "Kept existing $dest"
-    fi
-}
 
 
 print_section "Creating symlinks"
@@ -153,28 +74,12 @@ create_link "$DOTFILES_DIR/formatters/prettierrc.json" "$HOME/.prettierrc"
 create_link "$DOTFILES_DIR/formatters/editorconfig" "$HOME/.editorconfig"
 
 # nvim (core)
+# config lives in the nvim slice (single source of truth), so both the preset
+# path here and standalone `install.sh --minimal nvim` share the same logic.
+# link only: packages come from the Brewfile core section via install-packages.
 if should_install "core"; then
     echo ""
-    echo "Neovim configuration:"
-    create_link "$DOTFILES_DIR/nvim" "$HOME/.config/nvim"
-
-    install_local "$DOTFILES_DIR/nvim/local.lua.template" "$HOME/.config/nvim/local.lua"
-
-    # install .luarc.json (lua_ls workspace config) from the template. the
-    # dotfiles repo root is lua_ls's workspace, so .luarc.json lives there.
-    # kept machine-local (gitignored) so diagnostics can be tweaked per machine.
-    # plugin and nvim runtime type libraries are supplied on demand by
-    # lazydev.nvim, so there is no machine-specific path to substitute
-    cp "$DOTFILES_DIR/.luarc.json.template" "$DOTFILES_DIR/.luarc.json"
-    success "Installed $DOTFILES_DIR/.luarc.json (lua_ls workspace config)"
-
-    # user spell dictionary (zg adds words here, repo dictionary has shared terms)
-    user_spell_dir="${XDG_DATA_HOME:-$HOME/.local/share}/nvim/spell"
-    mkdir -p "$user_spell_dir"
-    if [[ ! -f "$user_spell_dir/en.utf-8.add" ]]; then
-        touch "$user_spell_dir/en.utf-8.add"
-        success "Created user spell dictionary at $user_spell_dir/en.utf-8.add"
-    fi
+    slice_run nvim link || FAILED=1
 fi
 
 # Hammerspoon (full)

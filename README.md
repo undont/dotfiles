@@ -42,6 +42,25 @@ cd ~/dotfiles
 
 The installer backs up existing configs, installs Homebrew packages filtered by preset, creates symlinks, sets up plugin managers, and runs a health check. Your preset is saved so `dotfiles update` remembers it.
 
+### Slices: add individual components
+
+Want a lightweight box but with just Neovim and a couple of tools? Pass slice names as bare arguments on top of any preset:
+
+```bash
+./install.sh --minimal nvim zoxide nerd-fonts   # minimal + just these
+./install.sh --list-slices                       # see what can be added
+```
+
+Each slice installs its own packages and config (and any dependencies: `nvim` pulls in `nerd-fonts`), is idempotent, and can also be run on its own (`scripts/install/slices/nvim.sh`). Added slices are saved and replayed by `dotfiles update`, and shown under "Slices" in `dotfiles status`.
+
+After install, manage slices with the `dotfiles slice` command:
+
+```bash
+dotfiles slice              # list installed + available slices
+dotfiles slice add zoxide   # install a slice and start tracking it
+dotfiles slice remove zoxide # stop tracking (leaves packages/config in place)
+```
+
 <details>
 <summary><b>All installation options</b></summary>
 
@@ -50,6 +69,8 @@ The installer backs up existing configs, installs Homebrew packages filtered by 
 ./install.sh --minimal    # lightweight server setup
 ./install.sh --core       # cross-platform dev setup
 ./install.sh --full       # everything including macOS apps
+./install.sh --minimal nvim zoxide  # a preset plus individual slices
+./install.sh --list-slices # list add-on slices and exit
 ./install.sh --skip-brew  # skip Homebrew/package installation
 ./install.sh --skip-backup # skip backing up existing configs
 ./install.sh --check-only  # only run prerequisite and health checks

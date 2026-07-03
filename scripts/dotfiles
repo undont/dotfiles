@@ -581,6 +581,7 @@ cmd_help() {
     case "$topic" in
         -u) topic="update" ;;
         -s) topic="status" ;;
+        slices) topic="slice" ;;
         -t) topic="theme" ;;
         -l) topic="links" ;;
         -d) topic="diff" ;;
@@ -772,6 +773,138 @@ cmd_set() {
     info "Run 'source ~/.zshrc' or open a new shell to apply."
 }
 
+# ─── Slices (add-on components on top of the preset) ───────────────────
+
+# list saved (installed) and available-to-add slices. requires slices.sh sourced.
+_slice_cmd_list() {
+    local saved name desc
+    saved="$(get_slices)"
+
+    print_header "Slices"
+    printf "${GREY}Add-on components installed on top of the '%s' preset.${NC}\n\n" "$(get_preset)"
+
+    if [[ -n "$saved" ]]; then
+        printf "${CYAN}Installed${NC} ${GREY}(replayed by 'dotfiles update')${NC}\n"
+        while read -r name; do
+            [[ -n "$name" ]] || continue
+            desc="$(slice_desc "$name" 2>/dev/null)"
+            printf "  ${GREEN}✓${NC} %-14s %s\n" "$name" "$desc"
+        done <<< "$saved"
+        echo ""
+    else
+        printf "${GREY}No slices added yet.${NC}\n\n"
+    fi
+
+    local shown=0
+    printf "${CYAN}Available to add${NC}\n"
+    while read -r name; do
+        [[ -n "$name" ]] || continue
+        if ! printf '%s\n' "$saved" | grep -qxF "$name"; then
+            desc="$(slice_desc "$name" 2>/dev/null)"
+            printf "  ${GREY}○ %-14s %s${NC}\n" "$name" "$desc"
+            shown=1
+        fi
+    done < <(slice_list)
+    [[ $shown -eq 0 ]] && printf "  ${GREY}(all slices already added)${NC}\n"
+    echo ""
+
+    printf "  Add:    ${CYAN}dotfiles slice add <name>...${NC}\n"
+    printf "  Remove: ${CYAN}dotfiles slice remove <name>...${NC}\n"
+}
+
+# install slice(s) now and start tracking them. requires slices.sh sourced.
+_slice_cmd_add() {
+    if [[ $# -eq 0 ]]; then
+        error "Usage: dotfiles slice add <name>..."
+        printf "  Run: ${CYAN}dotfiles slice list${NC}\n" >&2
+        return 2
+    fi
+
+    local name
+    for name in "$@"; do
+        if ! slice_exists "$name"; then
+            error "Unknown slice: $name"
+            printf "  Run: ${CYAN}dotfiles slice list${NC}\n" >&2
+            return 2
+        fi
+    done
+
+    # resolve transitive deps (nvim -> nerd-fonts) and install each
+    local resolved=() s failed=0
+    mapfile -t resolved < <(slice_resolve "$@")
+    for s in "${resolved[@]}"; do
+        printf "${CYAN}Installing slice:${NC} %s\n" "$s"
+        if ! "$DOTFILES_DIR/scripts/install/slices/$s.sh" all; then
+            warn "Slice '$s' reported issues (see above)."
+            failed=1
+        fi
+    done
+
+    # persist the explicit requests (deps re-expand on each update)
+    slices_add_saved "$@"
+
+    echo ""
+    if [[ $failed -eq 0 ]]; then
+        success "Added: $*"
+    else
+        warn "Added with warnings: $*"
+    fi
+    printf "  ${GREY}Saved to ~/.config/dotfiles/slices; kept current by 'dotfiles update'.${NC}\n"
+}
+
+# stop tracking slice(s). does not uninstall packages/config.
+_slice_cmd_remove() {
+    if [[ $# -eq 0 ]]; then
+        error "Usage: dotfiles slice remove <name>..."
+        return 2
+    fi
+
+    local name removed=()
+    for name in "$@"; do
+        if slice_is_saved "$name"; then
+            removed+=("$name")
+        else
+            warn "Slice '$name' is not tracked; skipping."
+        fi
+    done
+    [[ ${#removed[@]} -eq 0 ]] && return 0
+
+    slices_remove_saved "${removed[@]}"
+    success "Stopped tracking: ${removed[*]}"
+    printf "  ${GREY}'dotfiles update' will no longer replay these. Installed packages and\n"
+    printf "  config are left in place; remove them manually if you want them gone.${NC}\n"
+}
+
+cmd_slice() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help) _help_slice; return 0 ;;
+            --)        shift; break ;;
+            -*)        unknown_flag slice "$1"; return $? ;;
+            *)         break ;;
+        esac
+    done
+
+    # slice framework (discovery, resolution, metadata); common.sh + cli.sh
+    # are already sourced by the dispatcher bootstrap
+    # shellcheck disable=SC1091
+    source "$DOTFILES_DIR/scripts/_lib/slices.sh"
+
+    local action="${1:-list}"
+    shift || true
+
+    case "$action" in
+        list|ls)   _slice_cmd_list ;;
+        add)       _slice_cmd_add "$@" ;;
+        remove|rm) _slice_cmd_remove "$@" ;;
+        *)
+            error "Unknown slice action: $action (use list, add, or remove)"
+            printf "  Run: ${CYAN}dotfiles help slice${NC}\n" >&2
+            return 2
+            ;;
+    esac
+}
+
 cmd_status() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -801,6 +934,9 @@ cmd_status() {
     [[ -n "$updated" ]]  && printf "${CYAN}Updated:${NC}   %s\n" "$updated"
 
     printf "${CYAN}Preset:${NC}    %s\n" "$preset"
+    local slices_list
+    slices_list=$(get_slices | paste -sd, - | sed 's/,/, /g')
+    [[ -n "$slices_list" ]] && printf "${CYAN}Slices:${NC}    %s ${GREY}(added on top of %s)${NC}\n" "$slices_list" "$preset"
     local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
     [[ -f "$theme_file" ]] && printf "${CYAN}Theme:${NC}     %s\n" "$(<"$theme_file")"
     printf "${CYAN}Branch:${NC}    %s\n" "$(git -C "$DOTFILES_DIR" rev-parse --abbrev-ref HEAD)"
@@ -1087,6 +1223,13 @@ cmd_update() {
     local install_args=("--$preset" --skip-backup --update --yes)
     [[ -n "$skip_steps" ]] && install_args+=(--skip-steps "$skip_steps")
 
+    # replay any add-on slices installed on top of the preset so they stay
+    # current (e.g. `install.sh --minimal nvim` saved "nvim"). passed as bare
+    # positional args; install.sh re-expands their dependencies
+    local saved_slices=()
+    mapfile -t saved_slices < <(get_slices)
+    [[ ${#saved_slices[@]} -gt 0 ]] && install_args+=("${saved_slices[@]}")
+
     if ! "$DOTFILES_DIR/install.sh" "${install_args[@]}"; then
         _print_update_notices
         error "Update failed — check output above"
@@ -1267,6 +1410,35 @@ EXAMPLES
 EOF
 }
 
+_help_slice() {
+    cat << 'EOF'
+dotfiles slice — manage add-on components installed on top of your preset
+
+USAGE
+  dotfiles slice [list]              List installed and available slices
+  dotfiles slice add <name>...       Install slice(s) and track them
+  dotfiles slice remove <name>...    Stop tracking slice(s)
+
+DESCRIPTION
+  Slices are individual components (e.g. nvim, zoxide, nerd-fonts) added on
+  top of any preset. 'add' installs them immediately, saves them to
+  ~/.config/dotfiles/slices, and 'dotfiles update' replays them so they stay
+  current. Dependencies resolve automatically (nvim pulls in nerd-fonts).
+
+  'remove' only stops tracking a slice; its packages and config are left in
+  place.
+
+OPTIONS
+  -h, --help     Show this help
+
+EXAMPLES
+  dotfiles slice                     # list installed + available
+  dotfiles slice add nvim            # install + track nvim (and nerd-fonts)
+  dotfiles slice add zoxide
+  dotfiles slice remove zoxide
+EOF
+}
+
 _help_status() {
     cat << 'EOF'
 dotfiles status — show version, sync status, and local changes
@@ -1378,6 +1550,7 @@ COMMANDS
   status    -s    Version, sync status, local changes
   health          Run full health check
   set             Configure DEV_ROOT / PROJECTS_ROOT
+  slice           Add/remove components on top of your preset
   theme     -t    Manage colour themes
   links     -l    Show managed symlinks
   diff      -d    Show copy-on-install file diffs
@@ -1419,6 +1592,7 @@ main() {
         status|-s)              cmd_status    "$@" ;;
         health)                 cmd_health    "$@" ;;
         set)                    cmd_set       "$@" ;;
+        slice|slices)           cmd_slice     "$@" ;;
         theme|-t)               cmd_theme     "$@" ;;
         links|-l)               cmd_links     "$@" ;;
         diff|-d)                cmd_diff      "$@" ;;
