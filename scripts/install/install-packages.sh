@@ -184,6 +184,11 @@ if should_install "core" && is_linux; then
     # Nerd Fonts (cask "font-*-nerd-font" on macOS; manual TTF install on Linux)
     "$SCRIPT_DIR/install-fonts.sh" || warn "Nerd Font install failed — see output above."
 
+    # Ghostty theme catalogue (bundled with Ghostty on macOS and on distros that
+    # package it; fetched into the user dir where Ghostty is unavailable so
+    # `dotfiles theme generate` still works)
+    "$SCRIPT_DIR/install-ghostty-themes.sh" || warn "Ghostty theme catalogue install failed — see output above."
+
     echo ""
 fi
 
