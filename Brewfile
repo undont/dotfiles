@@ -184,7 +184,7 @@ cask "gcloud-cli"
 # Nerd Fonts for terminal icons
 cask "font-meslo-lg-nerd-font"      # @slice: nerd-fonts
 cask "font-jetbrains-mono-nerd-font" # @slice: nerd-fonts
-cask "font-monaspace-nf"
+cask "font-monaspace-nf"            # Monaspace Neon NF; @slice: nerd-fonts
 
 # =============================================================================
 # @preset: full
