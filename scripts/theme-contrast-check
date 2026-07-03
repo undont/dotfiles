@@ -15,13 +15,27 @@ calculate_contrast() {
     local colour2="$2"
 
     awk -v c1="$colour1" -v c2="$colour2" '
+    function hex2num(s,   n, i, d) {
+        # portable hex parse: gawk coerces "0xNN"+0 to a number, but mawk (the
+        # default awk on Debian / Raspberry Pi OS) yields 0, turning every colour
+        # black and every contrast ratio into a spurious 1.00:1.
+        n = 0
+        s = tolower(s)
+        for (i = 1; i <= length(s); i++) {
+            d = index("0123456789abcdef", substr(s, i, 1)) - 1
+            if (d < 0) d = 0
+            n = n * 16 + d
+        }
+        return n
+    }
+
     function parse_hex(hex) {
         # Remove # prefix
         gsub(/^#/, "", hex)
         # Extract RGB components
-        r = ("0x" substr(hex, 1, 2)) + 0
-        g = ("0x" substr(hex, 3, 2)) + 0
-        b = ("0x" substr(hex, 5, 2)) + 0
+        r = hex2num(substr(hex, 1, 2))
+        g = hex2num(substr(hex, 3, 2))
+        b = hex2num(substr(hex, 5, 2))
         return r " " g " " b
     }
 
