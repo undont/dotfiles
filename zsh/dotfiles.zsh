@@ -49,6 +49,25 @@ esac
 export HOMEBREW_REQUIRE_TAP_TRUST=1
 
 # =============================================================================
+# HOMEBREW ENVIRONMENT (non-login shells)
+# =============================================================================
+# ~/.zprofile runs `brew shellenv` for LOGIN shells. macOS terminals start a
+# login shell, so that covers them; but most Linux terminal emulators
+# (LXTerminal on Raspberry Pi OS, gnome-terminal, ...) open a NON-login
+# interactive shell that skips ~/.zprofile, leaving brew — and everything it
+# installs (fzf, direnv, gh) — off PATH. Re-run shellenv here, guarded so login
+# shells that already ran it are a no-op, so non-login shells match.
+if (( ! $+commands[brew] )); then
+  for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
+    if [[ -x "$_brew" ]]; then
+      eval "$("$_brew" shellenv)"
+      break
+    fi
+  done
+  unset _brew
+fi
+
+# =============================================================================
 # FILE DESCRIPTOR LIMIT
 # =============================================================================
 # macOS default soft limit is 256, too low for nvim plugins that spawn many
@@ -184,7 +203,12 @@ _cached_eval() {
   local cache_file="$cache_dir/$name.zsh"
   local bin_path="${commands[$name]}"
 
-  if [[ -n "$bin_path" && -s "$cache_file" && "$cache_file" -nt "$bin_path" ]]; then
+  # tool not installed (or not on PATH): skip silently rather than running the
+  # hook and printing "command not found" on every prompt. minimal installs
+  # legitimately lack direnv/fzf.
+  [[ -n "$bin_path" ]] || return 0
+
+  if [[ -s "$cache_file" && "$cache_file" -nt "$bin_path" ]]; then
     source "$cache_file"
   else
     [[ -d "$cache_dir" ]] || mkdir -p "$cache_dir"
