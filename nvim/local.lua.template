@@ -19,6 +19,12 @@
 --   vim.o.wrap = true
 --   vim.keymap.set('n', '<leader>xx', ':!echo hello<CR>')
 --
+-- skip Mason auto-installing LSP servers / DAP adapters on lightweight boxes
+-- (e.g. a Raspberry Pi) that lack node/go/dotnet to build them. nvim still
+-- works and already-installed servers still attach; this just stops the
+-- failed-install retries. install runtimes later and flip this off to resume.
+--   vim.g.disable_mason_auto_install = true
+--
 -- music player backend (default: apple_music), deferred until plugin loads:
 --   vim.schedule(function()
 --     require('music.config').options.preferred_backend = 'spotify'
