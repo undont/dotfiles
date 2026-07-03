@@ -87,7 +87,9 @@ return {
       -- same session, leaving installs stuck mid-flight (lockfile collision)
       automatic_installation = false,
       handlers = {},
-      ensure_installed = { 'delve', 'coreclr', 'debugpy', 'js', 'codelldb' },
+      -- respect the per-machine Mason opt-out (see custom/plugins/lsp.lua):
+      -- lightweight boxes without go/dotnet/node can't build these adapters.
+      ensure_installed = vim.g.disable_mason_auto_install and {} or { 'delve', 'coreclr', 'debugpy', 'js', 'codelldb' },
     }
 
     -- single bottom panel with a winbar to switch sections (scopes is the
