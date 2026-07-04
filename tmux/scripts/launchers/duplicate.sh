@@ -57,7 +57,7 @@ chmod +x "$USER_LAUNCHERS/$copy_name"
 
 # update the @description tag to indicate it's a copy
 if grep -q '# @description:' "$USER_LAUNCHERS/$copy_name" 2>/dev/null; then
-    sed -i '' "s/# @description: .*/# @description: Copy of $name/" "$USER_LAUNCHERS/$copy_name"
+    sed_inplace "s/# @description: .*/# @description: Copy of $name/" "$USER_LAUNCHERS/$copy_name"
 fi
 
 # output the copy name so the caller can hand off to the wizard

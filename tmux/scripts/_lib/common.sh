@@ -402,3 +402,23 @@ mod_key() {
         printf 'Alt'
     fi
 }
+
+# portable in-place sed (macOS BSD sed vs GNU sed)
+# writes to a temp file first to prevent corruption on sed errors
+# usage: sed_inplace 'sed-expression' file
+sed_inplace() {
+    local args=("$@")
+    local file="${args[-1]}"
+    local sed_args=("${args[@]:0:${#args[@]}-1}")
+    local tmp
+    tmp=$(mktemp "${file}.XXXXXX") || return 1
+    # preserve the original file's permissions across the swap (mktemp
+    # defaults to 600, which would silently drop e.g. an executable bit)
+    cp -p "$file" "$tmp" 2>/dev/null
+    if sed "${sed_args[@]}" "$file" > "$tmp"; then
+        mv "$tmp" "$file"
+    else
+        rm -f "$tmp"
+        return 1
+    fi
+}
