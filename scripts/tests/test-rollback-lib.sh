@@ -46,8 +46,12 @@ else
     fail "Should create state directory"
 fi
 
-# check permissions
-dir_perms=$(stat -f %Lp "$ROLLBACK_STATE_DIR" 2>/dev/null) || dir_perms=$(stat -c %a "$ROLLBACK_STATE_DIR" 2>/dev/null) || dir_perms="unknown"
+# check permissions (macOS and Linux have different stat syntax)
+if [[ "$(uname)" == "Darwin" ]]; then
+    dir_perms=$(stat -f %Lp "$ROLLBACK_STATE_DIR" 2>/dev/null) || dir_perms="unknown"
+else
+    dir_perms=$(stat -c %a "$ROLLBACK_STATE_DIR" 2>/dev/null) || dir_perms="unknown"
+fi
 if [[ "$dir_perms" == "700" ]]; then
     pass "State directory has 700 permissions"
 else

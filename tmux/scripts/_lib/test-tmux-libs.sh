@@ -117,7 +117,11 @@ assert_permissions() {
     local expected="$3"
     local actual
     # macOS and Linux have different stat syntax
-    actual=$(stat -f %Lp "$path" 2>/dev/null || stat -c %a "$path" 2>/dev/null)
+    if [[ "$(uname)" == "Darwin" ]]; then
+        actual=$(stat -f %Lp "$path" 2>/dev/null)
+    else
+        actual=$(stat -c %a "$path" 2>/dev/null)
+    fi
     if [[ "$actual" == "$expected" ]]; then
         pass "$desc"
     else

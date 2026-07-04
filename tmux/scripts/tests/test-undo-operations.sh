@@ -89,8 +89,13 @@ if [[ -f "$UNDO_STATE" ]]; then
     fi
 fi
 
-# verify undo file permissions
-if [[ "$(stat -f %Lp "$UNDO_FILE")" == "600" ]]; then
+# verify undo file permissions (macOS and Linux have different stat syntax)
+if [[ "$(uname)" == "Darwin" ]]; then
+    undo_file_perms=$(stat -f %Lp "$UNDO_FILE" 2>/dev/null)
+else
+    undo_file_perms=$(stat -c %a "$UNDO_FILE" 2>/dev/null)
+fi
+if [[ "$undo_file_perms" == "600" ]]; then
     pass "Undo file has secure permissions (600)"
 else
     fail "Undo file should have 600 permissions"
