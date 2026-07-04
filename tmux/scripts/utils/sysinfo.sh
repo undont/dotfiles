@@ -57,16 +57,35 @@ ram_icon="${ram_icon%\"}"; ram_icon="${ram_icon#\"}"
 battery_scripts="$plugin_root/tmux-battery/scripts"
 cpu_scripts="$plugin_root/tmux-cpu/scripts"
 
-batt_bg=$("$battery_scripts/battery_color_charge.sh" bg 2>/dev/null) || batt_bg=""
-batt_icon=$("$battery_scripts/battery_icon_status.sh" 2>/dev/null) || batt_icon=""
-batt_pct=$("$battery_scripts/battery_percentage.sh" 2>/dev/null) || batt_pct=""
+# tmux-battery has no "no battery" case of its own: on machines with no
+# battery (desktops, most SBCs) upower only exposes the synthetic
+# DisplayDevice, so the plugin reports an "unknown" status and 0% instead of
+# nothing. Detect real battery hardware ourselves and skip the segment
+# entirely when there isn't any.
+has_battery() {
+    if command -v pmset >/dev/null 2>&1; then
+        pmset -g batt 2>/dev/null | grep -q "No batteries available" && return 1
+        return 0
+    else
+        compgen -G "/sys/class/power_supply/BAT*" >/dev/null 2>&1
+    fi
+}
+
+battery_segment=""
+if has_battery; then
+    batt_bg=$("$battery_scripts/battery_color_charge.sh" bg 2>/dev/null) || batt_bg=""
+    batt_icon=$("$battery_scripts/battery_icon_status.sh" 2>/dev/null) || batt_icon=""
+    batt_pct=$("$battery_scripts/battery_percentage.sh" 2>/dev/null) || batt_pct=""
+    battery_segment="${batt_bg}#[fg=${fg}] ${batt_icon} ${batt_pct} "
+fi
+
 cpu_bg=$("$cpu_scripts/cpu_bg_color.sh" 2>/dev/null) || cpu_bg=""
 cpu_pct=$("$cpu_scripts/cpu_percentage.sh" 2>/dev/null) || cpu_pct=""
 ram_bg=$("$cpu_scripts/ram_bg_color.sh" 2>/dev/null) || ram_bg=""
 ram_pct=$("$cpu_scripts/ram_percentage.sh" 2>/dev/null) || ram_pct=""
 
 # mirrors the segment layout previously inlined in status-right
-payload="${batt_bg}#[fg=${fg}] ${batt_icon} ${batt_pct} ${cpu_bg}#[fg=${fg}] ${cpu_icon} ${cpu_pct} ${ram_bg}#[fg=${fg}] ${ram_icon} ${ram_pct} "
+payload="${battery_segment}${cpu_bg}#[fg=${fg}] ${cpu_icon} ${cpu_pct} ${ram_bg}#[fg=${fg}] ${ram_icon} ${ram_pct} "
 
 mkdir -p "$CACHE_DIR"
 printf '%s\n%s\n' "$now" "$payload" > "$CACHE_FILE"
