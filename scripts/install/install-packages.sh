@@ -73,7 +73,7 @@ else
         echo "Check the output above for details."
         echo ""
         echo "You can retry failed packages with:"
-        echo "  brew bundle install --upgrade --file=$DOTFILES_DIR/Brewfile"
+        echo "  ./install.sh --$PRESET"
     fi
 fi
 
@@ -122,6 +122,29 @@ if is_linux; then
         elif [[ -x "$BREW_BIN/gcc" ]] && [[ ! -e "$BREW_BIN/cc" ]]; then
             ln -sf "$BREW_BIN/gcc" "$BREW_BIN/cc"
             success "cc symlink created (-> brew gcc, fallback)"
+        fi
+    fi
+fi
+
+# postgresql@17: homebrew-core's post_install hardcodes
+# `initdb --locale=en_US.UTF-8`, which fails on Linux systems that haven't
+# generated that locale (common outside US locale setups; macOS ships it by
+# default so this never bites there). When that happens the bottle still
+# installs but the data cluster is left uninitialized, so finish the job here
+# with a UTF-8 locale that actually exists on this machine.
+if is_linux && command_exists brew && brew list postgresql@17 &>/dev/null; then
+    PG_DATADIR="$(brew --prefix)/var/postgresql@17"
+    if [[ -d "$PG_DATADIR" ]] && [[ ! -f "$PG_DATADIR/PG_VERSION" ]]; then
+        PG_LOCALE=$(locale -a | grep -im1 '^en_US\.utf-\?8$')
+        PG_LOCALE="${PG_LOCALE:-$(locale -a | grep -im1 'utf-\?8$')}"
+        PG_LOCALE="${PG_LOCALE:-C}"
+        echo "Initializing postgresql@17 data cluster (locale: $PG_LOCALE)..."
+        if LC_ALL="$PG_LOCALE" "$(brew --prefix)/opt/postgresql@17/bin/initdb" \
+            --locale="$PG_LOCALE" -E UTF-8 "$PG_DATADIR"; then
+            success "postgresql@17 cluster initialized"
+        else
+            warn "postgresql@17 initdb failed — initialize manually:"
+            echo "  initdb --locale=$PG_LOCALE -E UTF-8 $PG_DATADIR"
         fi
     fi
 fi

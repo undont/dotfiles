@@ -45,7 +45,7 @@ cask "codexbar" # Menu bar usage monitor for Codex and Claude
 
 # Git & GitHub
 brew "gh"
-brew "lazygit"
+brew "lazygit"       # Git TUI
 
 # Email
 brew "aerc"          # Terminal email client (compose in nvim)
