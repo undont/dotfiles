@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.126] - 2026-07-05
+
 ### Changed
 
 - Nvim: `<leader>dT` (diff by ticket) moves from diffview.nvim to differ.nvim, reusing the same ticket/commit-grep discovery (`features/ticket.lua`). differ's existing revspec grammar (single-rev vs worktree, two-dot range) already covers both shapes the feature needs, so no differ-side change was required. `nvim/lua/custom/plugins/differ.lua`
@@ -20,7 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - Monaspace Neon Nerd Font added to the font set on both platforms: the `font-monaspace-nf` cask on macOS and fetched from githubnext/monaspace's own NF build on Linux via `install-fonts.sh`. `Brewfile`, `scripts/install/install-fonts.sh`
 - Ghostty theme catalogue fetched on Linux boxes without Ghostty installed. `dotfiles theme generate` reads Ghostty's bundled theme files as its source of truth, which don't exist on distros that don't package Ghostty (e.g. Debian, Raspberry Pi OS); `install-ghostty-themes.sh` populates `~/.local/share/ghostty/themes` from `mbadolato/iTerm2-Color-Schemes`'s ready-made `ghostty/` directory via a sparse clone, so theme generation works without the Ghostty binary. `scripts/install/install-ghostty-themes.sh`, `scripts/install/install-packages.sh`
-- Tmux: poke status segment in status-right (`poke render`) shows pending team pokes, with prefix + b to dismiss them (`poke clear`). Not a dotfiles-managed tool: the segment renders empty and the binding is a no-op when the `poke` CLI isn't installed. `tmux/tmux.conf.template`
+- Tmux: poke status segment in status-right (`poke render`) shows pending team pokes, with prefix + b to dismiss them (`poke clear`).
 
 ### Changed
 
