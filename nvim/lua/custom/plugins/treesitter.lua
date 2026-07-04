@@ -43,9 +43,13 @@ return {
       -- purge stale/bundled parsers before installing (ABI-mismatch guard)
       require('custom.features.treesitter-parsers').purge_if_updated()
 
-      -- install any parsers from the list that aren't already on disk
+      -- install any parsers from the list that aren't already on disk, or whose
+      -- highlights query file isn't on runtimepath (a stray/legacy parser binary
+      -- can satisfy `language.inspect` while shipping no query). a file existence
+      -- check, not query.get: compiling every query here costs ~800ms of startup
       local missing = vim.tbl_filter(function(lang)
-        return not pcall(vim.treesitter.language.inspect, lang)
+        local ok = pcall(vim.treesitter.language.inspect, lang)
+        return not ok or #vim.api.nvim_get_runtime_file('queries/' .. lang .. '/highlights.scm', false) == 0
       end, parsers)
       if #missing > 0 then
         require('nvim-treesitter').install(missing):wait(120000)

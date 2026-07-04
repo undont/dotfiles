@@ -11,92 +11,12 @@ export DOTFILES_DIR
 
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/rollback.sh"
+# create_link / copy_config / install_local (source order matters: common +
+# rollback must load first)
+source "$SCRIPT_DIR/../_lib/symlink.sh"
 
 PRESET="${DOTFILES_PRESET:-full}"
 FAILED=0
-
-create_link() {
-    local source="$1"
-    local dest="$2"
-
-    # validate source exists before creating symlink
-    if [[ ! -e "$source" && ! -L "$source" ]]; then
-        printf "${RED}FAILED:${NC} Source not found: %s\n" "$source"
-        FAILED=1
-        return 1
-    fi
-
-    # ensure parent directory exists
-    mkdir -p "$(dirname "$dest")"
-
-    # remove existing symlink if present
-    if [[ -L "$dest" ]]; then
-        rm "$dest"
-    fi
-
-    # if destination exists and is not a symlink, back it up inline
-    if [[ -e "$dest" ]]; then
-        local backup_base="$HOME/.dotfiles-backup"
-        local backup_dir
-        backup_dir="$backup_base/inline-$(date +%Y%m%d-%H%M%S)-$$"
-        mkdir -p "$backup_base"
-        chmod 700 "$backup_base"
-        mkdir -p "$backup_dir"
-        chmod 700 "$backup_dir"
-
-        local relative_path="${dest#"$HOME"/}"
-        local backup_path="$backup_dir/$relative_path"
-        mkdir -p "$(dirname "$backup_path")"
-
-        mv "$dest" "$backup_path"
-        printf "${YELLOW}Backed up:${NC} %s -> %s\n" "$dest" "$backup_path"
-    fi
-
-    # create symlink
-    if ln -sf "$source" "$dest"; then
-        printf "${GREEN}Created:${NC} %s -> %s\n" "$dest" "$source"
-        # record for rollback
-        record_symlink "$dest" "$source"
-        return 0
-    else
-        printf "${RED}FAILED:${NC} Could not create symlink %s\n" "$dest"
-        FAILED=1
-        return 1
-    fi
-}
-
-# copy config file from repo to destination (copy-on-install pattern).
-# if destination already exists, keeps it untouched (user-owned)
-copy_config() {
-    local source="$1"
-    local dest="$2"
-
-    # ensure parent directory exists
-    mkdir -p "$(dirname "$dest")"
-
-    if [[ ! -e "$dest" ]]; then
-        cp "$source" "$dest"
-        success "Created $dest from dotfiles"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
-    else
-        info "Kept existing $dest"
-    fi
-}
-
-# install a local override file from template (never overwrite user customisations)
-install_local() {
-    local template="$1"
-    local dest="$2"
-
-    mkdir -p "$(dirname "$dest")"
-    if [[ ! -f "$dest" ]]; then
-        cp "$template" "$dest"
-        success "Created $dest from template"
-        printf '  %s→%s Edit with: nvim %s\n' "${CYAN}" "${NC}" "$dest"
-    else
-        info "Kept existing $dest"
-    fi
-}
 
 
 print_section "Creating symlinks"
@@ -153,6 +73,7 @@ create_link "$DOTFILES_DIR/formatters/prettierrc.json" "$HOME/.prettierrc"
 create_link "$DOTFILES_DIR/formatters/editorconfig" "$HOME/.editorconfig"
 
 # nvim (core)
+# link only: packages come from the Brewfile core section via install-packages.
 if should_install "core"; then
     echo ""
     echo "Neovim configuration:"
@@ -250,16 +171,18 @@ if should_install "core"; then
 fi
 
 # LazyGit / LazyDocker (core)
+# link only: packages come from the Brewfile core section
 if should_install "core"; then
     echo ""
     echo "LazyGit configuration:"
-    # use ~/.config/lazygit/ on all platforms (LG_CONFIG_FILE overrides the default path)
     lazygit_dir="$HOME/.config/lazygit"
     mkdir -p "$lazygit_dir"
 
     create_link "$DOTFILES_DIR/lazygit/config.yml" "$lazygit_dir/config.yml"
     install_local "$DOTFILES_DIR/lazygit/local.yml.template" "$lazygit_dir/local.yml"
 
+    echo ""
+    echo "LazyDocker configuration:"
     # lazydocker: keep as copy-on-install (no include mechanism)
     if [[ "$(uname)" == "Darwin" ]]; then
         lazydocker_dir="$HOME/Library/Application Support/lazydocker"

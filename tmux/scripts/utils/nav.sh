@@ -25,10 +25,17 @@ ensure_dir() {
 }
 
 # get current window ID, uses tmux display-message when a client is attached,
-# falls back to querying the active window across all sessions (works detached)
+# falls back to querying the active window across all sessions (works detached).
+# the unscoped display-message query is only trustworthy when $TMUX confirms
+# we're actually inside an attached client -- run without one (e.g. detached,
+# or invoked from a plain shell), tmux still answers it but silently picks an
+# arbitrary session when more than one exists on the server, rather than
+# erroring, so it must not be used to detect "am I attached".
 get_current_window() {
-    tmux display-message -p '#{window_id}' 2>/dev/null && return
-    # fallback for detached sessions (e.g. test environments)
+    if [[ -n "${TMUX:-}" ]]; then
+        tmux display-message -p '#{window_id}' 2>/dev/null && return
+    fi
+    # detached (or no client): scan for the active window across all sessions
     tmux list-windows -a -F '#{window_active} #{window_id}' 2>/dev/null | awk '/^1 /{print $2; exit}'
 }
 

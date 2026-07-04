@@ -219,7 +219,10 @@ else
 fi
 
 # verify no remaining sed -i '' calls outside of sed_inplace (exclude common.sh and this test file)
-other_sed_files=$(grep -rl "sed -i ''" "$DOTFILES_ROOT/scripts/" 2>/dev/null | grep -v '_lib/common.sh' | grep -v 'test-linux-compat.sh' || true)
+# scans both scripts/ (installer) and tmux/scripts/ (tmux tooling has its own
+# sed_inplace in tmux/scripts/_lib/common.sh)
+other_sed_files=$(grep -rl "sed -i ''" "$DOTFILES_ROOT/scripts/" "$DOTFILES_ROOT/tmux/scripts/" 2>/dev/null \
+    | grep -v '_lib/common.sh' | grep -v 'test-linux-compat.sh' || true)
 if [[ -z "$other_sed_files" ]]; then
     pass "no sed -i '' calls outside of sed_inplace helper"
 else

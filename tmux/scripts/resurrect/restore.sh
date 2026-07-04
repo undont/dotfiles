@@ -176,7 +176,11 @@ list_sessions() {
         windows=${windows//[$'\n\r']/}  # strip newlines
         panes=$(grep -c '^pane' "$f" 2>/dev/null || echo 0)
         panes=${panes//[$'\n\r']/}  # strip newlines
-        modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$f" 2>/dev/null || stat -c "%y" "$f" 2>/dev/null | cut -d. -f1)
+        if [[ "$(uname)" == "Darwin" ]]; then
+            modified=$(stat -f "%Sm" -t "%Y-%m-%d %H:%M" "$f" 2>/dev/null)
+        else
+            modified=$(stat -c "%y" "$f" 2>/dev/null | cut -d. -f1)
+        fi
 
         # check if session currently exists
         if tmux has-session -t "${session}" 2>/dev/null; then

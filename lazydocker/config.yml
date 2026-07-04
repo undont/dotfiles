@@ -12,8 +12,9 @@ gui:
       - reverse
 
 # Pretty-print docker's RFC3339Nano timestamps via format-logs.awk (sibling file).
-# Path is hardcoded to the macOS lazydocker config dir — Linux users should
-# change it to $HOME/.config/lazydocker/format-logs.awk.
+# format-logs.awk lives in a platform-specific dir (macOS: Library/Application
+# Support/lazydocker, Linux: .config/lazydocker), so the path is resolved at
+# runtime via `uname` rather than hardcoded to one platform.
 #
 # Coverage:
 #   - allLogs (project "Logs" tab): shell-based → native pipe.
@@ -21,9 +22,9 @@ gui:
 #   - Single-container Logs tab uses the Docker API directly and can't be
 #     reformatted, so logs.timestamps is left off below.
 commandTemplates:
-  viewServiceLogs: 'sh -c ''{{ .DockerCompose }} logs --follow --timestamps --no-log-prefix {{ .Service.Name }} | awk -f "$HOME/Library/Application Support/lazydocker/format-logs.awk"'''
-  allLogs: '{{ .DockerCompose }} logs --tail=300 --follow --timestamps --no-log-prefix | awk -f $HOME/Library/Application\ Support/lazydocker/format-logs.awk'
-  viewAllLogs: 'sh -c ''{{ .DockerCompose }} logs --timestamps --no-log-prefix | awk -f "$HOME/Library/Application Support/lazydocker/format-logs.awk"'''
+  viewServiceLogs: 'sh -c ''{{ .DockerCompose }} logs --follow --timestamps --no-log-prefix {{ .Service.Name }} | awk -f "$( [ $(uname) = Darwin ] && printf %s "$HOME/Library/Application Support/lazydocker" || printf %s "$HOME/.config/lazydocker" )/format-logs.awk"'''
+  allLogs: '{{ .DockerCompose }} logs --tail=300 --follow --timestamps --no-log-prefix | awk -f "$( [ $(uname) = Darwin ] && printf %s "$HOME/Library/Application Support/lazydocker" || printf %s "$HOME/.config/lazydocker" )/format-logs.awk"'
+  viewAllLogs: 'sh -c ''{{ .DockerCompose }} logs --timestamps --no-log-prefix | awk -f "$( [ $(uname) = Darwin ] && printf %s "$HOME/Library/Application Support/lazydocker" || printf %s "$HOME/.config/lazydocker" )/format-logs.awk"'''
 
 logs:
   timestamps: false

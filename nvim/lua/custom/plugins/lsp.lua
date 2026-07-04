@@ -330,8 +330,15 @@ return {
       -- (BufReadPre, including diffview/octo diff buffers) finish opening
       -- first. servers register/attach a few ms later, invisible in practice
       vim.schedule(function()
+        -- per-machine opt-out for lightweight boxes (e.g. a Raspberry Pi) that
+        -- lack the language runtimes (node/go/dotnet) Mason needs to build most
+        -- servers. set `vim.g.disable_mason_auto_install = true` in
+        -- ~/.config/nvim/local.lua to skip auto-install; servers that are
+        -- already installed still enable and attach normally.
+        local mason_auto_install = not vim.g.disable_mason_auto_install
+
         require('mason-lspconfig').setup {
-          ensure_installed = vim.tbl_keys(servers or {}),
+          ensure_installed = mason_auto_install and vim.tbl_keys(servers or {}) or {},
           automatic_installation = false,
           automatic_enable = {
             exclude = { 'omnisharp' }, -- using roslyn.nvim instead
@@ -339,7 +346,7 @@ return {
         }
 
         require('mason-tool-installer').setup {
-          ensure_installed = {
+          ensure_installed = mason_auto_install and {
             -- LSP servers
             'astro',
             'bashls',
@@ -370,7 +377,7 @@ return {
             -- go codegen helpers (struct tags, iferr); wired in features/go.lua
             'gomodifytags',
             'iferr',
-          },
+          } or {},
         }
       end)
     end,

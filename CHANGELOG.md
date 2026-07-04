@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.125] - 2026-07-04
+
+### Added
+- Monaspace Neon Nerd Font added to the font set on both platforms: the `font-monaspace-nf` cask on macOS and fetched from githubnext/monaspace's own NF build on Linux via `install-fonts.sh`. `Brewfile`, `scripts/install/install-fonts.sh`
+- Ghostty theme catalogue fetched on Linux boxes without Ghostty installed. `dotfiles theme generate` reads Ghostty's bundled theme files as its source of truth, which don't exist on distros that don't package Ghostty (e.g. Debian, Raspberry Pi OS); `install-ghostty-themes.sh` populates `~/.local/share/ghostty/themes` from `mbadolato/iTerm2-Color-Schemes`'s ready-made `ghostty/` directory via a sparse clone, so theme generation works without the Ghostty binary. `scripts/install/install-ghostty-themes.sh`, `scripts/install/install-packages.sh`
+- Tmux: poke status segment in status-right (`poke render`) shows pending team pokes, with prefix + b to dismiss them (`poke clear`). Not a dotfiles-managed tool: the segment renders empty and the binding is a no-op when the `poke` CLI isn't installed. `tmux/tmux.conf.template`
+
+### Changed
+- Tmux: the process list popup's running rows sort most recently started first, instead of longest-running first. `tmux/scripts/alerts/proclist.sh`
+
+### Fixed
+- Installer: `postgresql@17`'s data cluster is initialized on Linux when Homebrew's own `post_install` locale (`en_US.UTF-8`) doesn't exist on the machine. Outside US locale setups (common on Linux; macOS ships that locale by default) the bottle installs but leaves the cluster uninitialized, so this finishes the job with a UTF-8 locale that's actually present. `scripts/install/install-packages.sh`
+- Nvim: treesitter setup reinstalls parsers whose `highlights.scm` is missing from the runtimepath. A stray or legacy parser binary can satisfy the `language.inspect` probe while shipping no query files, which previously skipped the install and left that language unhighlighted; the check is file existence rather than query compilation to keep startup fast. `nvim/lua/custom/plugins/treesitter.lua`
+- LazyDocker: `format-logs.awk`'s path is resolved at runtime via `uname` instead of hardcoded to the macOS `Library/Application Support` directory, so Linux's `.config/lazydocker` location works without a manual edit. `lazydocker/config.yml`
+- Tmux: the resurrect session list's "modified" timestamp column no longer shows garbled output on Linux. GNU `stat -f` is a *filesystem*-info flag, not BSD's format-string flag, so the previous `stat -f ... || stat -c ...` fallback never triggered -- the BSD call "succeeds" with unrelated filesystem info instead of erroring. Branches explicitly on `uname` instead. `tmux/scripts/resurrect/restore.sh`
+- Tmux: duplicating a launcher (`launchers/duplicate.sh`) silently failed on Linux. It used BSD `sed -i ''` syntax, which GNU sed parses as an entirely different (and erroring) invocation; under `set -e` the script died right after copying the file but before printing the new name or updating its `@description` tag. Tmux scripts get their own `sed_inplace` helper (mirroring the installer's), which also now preserves the original file's permissions across its temp-file swap -- `mktemp` defaults to 600, which was silently dropping the executable bit `chmod +x` had just set. `tmux/scripts/_lib/common.sh`, `tmux/scripts/launchers/duplicate.sh`, `scripts/_lib/common.sh`, `scripts/tests/test-linux-compat.sh`
+- Tmux: `nav.sh back`/`forward` could resolve to the wrong tmux session's active window when invoked with no attached client and more than one session on the server. The unscoped `tmux display-message -p` query still answers in that case, but arbitrarily picks a session rather than erroring, silently corrupting the navigation history. Now only trusted when `$TMUX` confirms an attached client; otherwise falls straight to the existing all-sessions active-window scan. `tmux/scripts/utils/nav.sh`
+
 ## [0.2.124] - 2026-06-30
 
 ### Changed

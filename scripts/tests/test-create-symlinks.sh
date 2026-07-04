@@ -8,6 +8,8 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CREATE_SYMLINKS="$DOTFILES_DIR/scripts/install/create-symlinks.sh"
+# the link helpers (create_link/copy_config/install_local) live in a shared lib
+SYMLINK_LIB="$DOTFILES_DIR/scripts/_lib/symlink.sh"
 
 # source shared test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
@@ -40,6 +42,8 @@ fi
 section "Library Dependencies"
 
 script_content=$(cat "$CREATE_SYMLINKS")
+# link helpers live in symlink.sh
+symlink_content=$(cat "$SYMLINK_LIB")
 
 if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
     pass "Sources common.sh"
@@ -51,6 +55,12 @@ if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
     pass "Sources rollback.sh"
 else
     fail "Should source rollback.sh"
+fi
+
+if [[ "$script_content" == *'_lib/symlink.sh'* ]]; then
+    pass "Sources symlink.sh (shared link helpers)"
+else
+    fail "Should source symlink.sh"
 fi
 
 # ═══════════════════════════════════════════════════════════════
@@ -102,6 +112,18 @@ else
     fail "Should link nvim config for core preset"
 fi
 
+if [[ "$script_content" == *'.config/lazygit'* ]]; then
+    pass "Links lazygit config (core)"
+else
+    fail "Should link lazygit config for core preset"
+fi
+
+if [[ "$script_content" == *'.config/lazydocker'* ]]; then
+    pass "Links lazydocker config (core)"
+else
+    fail "Should link lazydocker config for core preset"
+fi
+
 if [[ "$script_content" == *'ghostty'* ]]; then
     pass "Handles ghostty config (core)"
 else
@@ -150,19 +172,19 @@ fi
 
 section "create_link Function"
 
-if [[ "$script_content" == *'create_link()'* ]]; then
-    pass "Defines create_link function"
+if [[ "$symlink_content" == *'create_link()'* ]]; then
+    pass "Defines create_link function (in symlink.sh)"
 else
-    fail "Should define create_link function"
+    fail "Should define create_link function in symlink.sh"
 fi
 
-if [[ "$script_content" == *'record_symlink'* ]]; then
+if [[ "$symlink_content" == *'record_symlink'* ]]; then
     pass "Records symlinks for rollback"
 else
     fail "Should record symlinks for rollback"
 fi
 
-if [[ "$script_content" == *'ln -sf'* ]]; then
+if [[ "$symlink_content" == *'ln -sf'* ]]; then
     pass "Uses ln -sf for symlink creation"
 else
     fail "Should use ln -sf"
@@ -180,13 +202,13 @@ fi
 
 section "Backup on Conflict"
 
-if [[ "$script_content" == *'.dotfiles-backup'* ]]; then
+if [[ "$symlink_content" == *'.dotfiles-backup'* ]]; then
     pass "Backs up to .dotfiles-backup directory"
 else
     fail "Should back up to .dotfiles-backup"
 fi
 
-if [[ "$script_content" == *'mv "$dest"'* ]]; then
+if [[ "$symlink_content" == *'mv "$dest"'* ]]; then
     pass "Moves existing files before symlinking"
 else
     fail "Should move existing files before symlinking"
@@ -258,20 +280,20 @@ fi
 
 section "copy_config Function"
 
-if [[ "$script_content" == *'copy_config()'* ]]; then
-    pass "Defines copy_config function"
+if [[ "$symlink_content" == *'copy_config()'* ]]; then
+    pass "Defines copy_config function (in symlink.sh)"
 else
-    fail "Should define copy_config function"
+    fail "Should define copy_config function in symlink.sh"
 fi
 
 # copy_config should handle three states: symlink, missing, existing
-if [[ "$script_content" == *'-L "$dest"'* ]]; then
+if [[ "$symlink_content" == *'-L "$dest"'* ]]; then
     pass "copy_config detects existing symlinks"
 else
     fail "copy_config should detect existing symlinks"
 fi
 
-if [[ "$script_content" == *'cp "$source" "$dest"'* ]]; then
+if [[ "$symlink_content" == *'cp "$source" "$dest"'* ]]; then
     pass "copy_config copies files (not symlinks)"
 else
     fail "copy_config should copy files"
@@ -280,7 +302,7 @@ fi
 section "Copy-on-Install Configs"
 
 # these configs should use copy_config, NOT create_link
-for config in "btop.conf" "karabiner.json" "lazydocker/config.yml"; do
+for config in "btop.conf" "karabiner.json"; do
     config_name=$(basename "$config")
     # check the config appears in a copy_config call, not create_link
     if echo "$script_content" | grep -q "copy_config.*$config_name"; then
@@ -289,6 +311,12 @@ for config in "btop.conf" "karabiner.json" "lazydocker/config.yml"; do
         fail "$config_name should use copy_config (not create_link)"
     fi
 done
+
+if echo "$script_content" | grep -q "copy_config.*config.yml"; then
+    pass "lazydocker config.yml uses copy_config"
+else
+    fail "lazydocker config.yml should use copy_config"
+fi
 
 # hammerspoon uses layered pattern (symlink + local override)
 if echo "$script_content" | grep -q 'create_link.*hammerspoon.*init\.lua'; then
@@ -317,8 +345,8 @@ source "$DOTFILES_DIR/scripts/_lib/colours.sh"
 success() { :; }
 info() { :; }
 
-# re-source the function
-eval "$(sed -n '/^copy_config()/,/^}/p' "$CREATE_SYMLINKS")"
+# re-source the function (now defined in the shared symlink lib)
+eval "$(sed -n '/^copy_config()/,/^}/p' "$SYMLINK_LIB")"
 
 # test 1: copies to new destination
 echo "test content" > "$TEST_DIR/source.conf"

@@ -45,7 +45,7 @@ cask "codexbar" # Menu bar usage monitor for Codex and Claude
 
 # Git & GitHub
 brew "gh"
-brew "lazygit"
+brew "lazygit"       # Git TUI
 
 # Email
 brew "aerc"          # Terminal email client (compose in nvim)
@@ -177,6 +177,7 @@ cask "gcloud-cli"
 # Nerd Fonts for terminal icons
 cask "font-meslo-lg-nerd-font"
 cask "font-jetbrains-mono-nerd-font"
+cask "font-monaspace-nf"            # Monaspace Neon NF
 
 # =============================================================================
 # @preset: full

@@ -21,8 +21,18 @@ if [[ ! -f "$KEYD_CONF" ]]; then
     exit 1
 fi
 
+# resolve the keyd binary: Debian/Raspberry Pi OS ship it as keyd.rvaiya
+# (renamed to avoid a namespace clash), other distros use plain keyd.
+keyd_bin() {
+    if command_exists keyd; then
+        echo keyd
+    elif command_exists keyd.rvaiya; then
+        echo keyd.rvaiya
+    fi
+}
+
 # install keyd if not present
-if ! command_exists keyd; then
+if [[ -z "$(keyd_bin)" ]]; then
     echo "Installing keyd..."
     install_system_package "keyd" "fatal"
 fi
@@ -48,9 +58,10 @@ else
 fi
 
 # reload config in case service was already running
-sudo keyd reload 2>/dev/null || true
+KEYD_BIN="$(keyd_bin)"
+[[ -n "$KEYD_BIN" ]] && sudo "$KEYD_BIN" reload 2>/dev/null || true
 
 success "keyd setup complete"
 echo "  Caps Lock -> Escape (global)"
 echo "  Right Alt -> Control (global)"
-echo "  Grave/Tilde <-> Non-US Backslash (Apple keyboard only)"
+echo "  Grave/Tilde <-> Non-US Backslash (global)"
