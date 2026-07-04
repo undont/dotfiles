@@ -20,6 +20,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Installer: `postgresql@17`'s data cluster is initialized on Linux when Homebrew's own `post_install` locale (`en_US.UTF-8`) doesn't exist on the machine. Outside US locale setups (common on Linux; macOS ships that locale by default) the bottle installs but leaves the cluster uninitialized, so this finishes the job with a UTF-8 locale that's actually present. `scripts/install/install-packages.sh`
 - Nvim: treesitter setup reinstalls parsers whose `highlights.scm` is missing from the runtimepath. A stray or legacy parser binary can satisfy the `language.inspect` probe while shipping no query files, which previously skipped the install and left that language unhighlighted; the check is file existence rather than query compilation to keep startup fast. `nvim/lua/custom/plugins/treesitter.lua`
 - LazyDocker: `format-logs.awk`'s path is resolved at runtime via `uname` instead of hardcoded to the macOS `Library/Application Support` directory, so Linux's `.config/lazydocker` location works without a manual edit. `lazydocker/config.yml`
+- Tmux: the resurrect session list's "modified" timestamp column no longer shows garbled output on Linux. GNU `stat -f` is a *filesystem*-info flag, not BSD's format-string flag, so the previous `stat -f ... || stat -c ...` fallback never triggered -- the BSD call "succeeds" with unrelated filesystem info instead of erroring. Branches explicitly on `uname` instead. `tmux/scripts/resurrect/restore.sh`
 
 ## [0.2.124] - 2026-06-30
 
