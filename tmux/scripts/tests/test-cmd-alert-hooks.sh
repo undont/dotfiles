@@ -448,6 +448,53 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
+# kill-suppress marker: proclist's x-binding drops a marker file before
+# interrupting a tracked command; precmd must skip both the alert and the
+# finished-history row for that completion, and consume (delete) the marker
+# ═══════════════════════════════════════════════════════════════
+
+section "Kill Suppress Marker"
+
+if command -v zsh &>/dev/null; then
+    SUP_AF="$ALERT_TEST_DIR/alerts-suppress"
+    SUP_FF="$ALERT_TEST_DIR/fin-suppress"
+    SUP_DIR="$ALERT_TEST_DIR/suppress-marker"
+    : > "$SUP_AF"
+    mkdir -p "$SUP_DIR"
+    S_SP=$(test_tmux display-message -p '#{socket_path}' 2>/dev/null)
+    S_PID=$(test_tmux display-message -p '#{pid}' 2>/dev/null)
+    S_PANE=$(test_tmux display-message -t "$TEST_SESSION:testwin" -p '#{pane_id}' 2>/dev/null)
+    : > "$SUP_DIR/${S_PANE#%}"
+    suppress_out=$(TMUX="$S_SP,$S_PID,0" TMUX_PANE="$S_PANE" \
+        ALERTS_FILE="$SUP_AF" \
+        _CMD_FINISHED_FILE="$SUP_FF" \
+        _CMD_RUNNING_DIR="$ALERT_TEST_DIR/run-suppress" \
+        _CMD_SUPPRESS_DIR="$SUP_DIR" \
+        _CMD_ALERT_SCRIPT="$HOOKS_DIR/cmd-alert.sh" \
+        _CMD_ALERT_MIN_SECONDS=0 \
+        zsh -c '
+            source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+            _cmd_alert_start=0
+            _cmd_alert_pane="'"$S_PANE"'"
+            _cmd_alert_label="killedjob"
+            _cmd_alert_cmd="sleep 100"
+            false; _cmd_alert_precmd
+            echo "alerts:$(cat "'"$SUP_AF"'" 2>/dev/null)"
+            echo "finished:$(cat "'"$SUP_FF"'" 2>/dev/null)"
+            echo "marker:$([[ -e "'"$SUP_DIR/${S_PANE#%}"'" ]] && echo present || echo gone)"
+        ' 2>/dev/null)
+    if [[ "$suppress_out" == *"alerts:"$'\n'* || "$suppress_out" == *$'\n'"finished:"* ]] \
+        && [[ "$suppress_out" != *"killedjob"* ]] \
+        && [[ "$suppress_out" == *"marker:gone"* ]]; then
+        pass "suppressed kill writes no alert or finished row, and consumes the marker"
+    else
+        fail "suppressed kill should skip alert+finished row and remove marker (got: '$suppress_out')"
+    fi
+else
+    skip "zsh not available — skipping kill-suppress marker test"
+fi
+
+# ═══════════════════════════════════════════════════════════════
 # cmd-alert.sh: graceful handling without tmux
 # ═══════════════════════════════════════════════════════════════
 

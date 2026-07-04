@@ -23,6 +23,11 @@ _CMD_RUNNING_DIR="${_CMD_RUNNING_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-ale
 # tmux/scripts/_lib/alerts.sh). recorded on every tracked completion so the
 # proclist "done" rows survive even commands you watched finish in place
 _CMD_FINISHED_FILE="${_CMD_FINISHED_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/finished}"
+# kill-suppress markers (kept in sync with SUPPRESS_DIR in
+# tmux/scripts/_lib/alerts.sh). one file per pane, touched by
+# proclist-action.sh right before it interrupts a tracked command; precmd
+# checks for it below to skip the alert + finished row for that intentional kill
+_CMD_SUPPRESS_DIR="${_CMD_SUPPRESS_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/suppress}"
 # $EPOCHSECONDS gives a wall-clock start the proclist reader can age
 zmodload zsh/datetime 2>/dev/null || true
 
@@ -164,6 +169,21 @@ _cmd_alert_precmd() {
     # for every tracked command, independent of the alert threshold below
     if [[ -n "$_cmd_alert_pane" ]]; then
         rm -f "$_CMD_RUNNING_DIR/${_cmd_alert_pane#%}" 2>/dev/null
+    fi
+
+    # proclist's x-binding marks an intentional kill before it interrupts the
+    # pane; honour that by skipping both the finished row and the alert below,
+    # so only this kill is silent, a manually-typed Ctrl-C still gets the
+    # usual ⊘ treatment
+    if [[ -n "$_cmd_alert_pane" ]]; then
+        local _suppress_marker="$_CMD_SUPPRESS_DIR/${_cmd_alert_pane#%}"
+        if [[ -e "$_suppress_marker" ]]; then
+            rm -f "$_suppress_marker" 2>/dev/null
+            _cmd_alert_label=""
+            _cmd_alert_cmd=""
+            _cmd_alert_pane=""
+            return
+        fi
     fi
 
     # only alert if we're in tmux and command ran long enough to be worth noticing
