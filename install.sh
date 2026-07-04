@@ -99,7 +99,7 @@ while [[ $# -gt 0 ]]; do
         -h|--help)
             echo "Usage: ./install.sh [PRESET] [OPTIONS]"
             echo ""
-            echo "Presets:"
+            echo "Presets (pick one; default --full):"
             echo "  --minimal        Install zsh + tmux only (servers, remote machines)"
             echo "  --core           Install zsh, tmux, nvim, ghostty, CLI/AI tools"
             echo "  --full           Install everything including macOS apps (default)"
@@ -107,23 +107,30 @@ while [[ $# -gt 0 ]]; do
             echo "Options:"
             echo "  --skip-backup    Skip backing up existing config files"
             echo "  --skip-brew      Skip Homebrew installation and packages"
-            echo "  --skip-steps L   Skip comma-separated list of steps (homebrew,packages,symlinks,keyd)"
+            echo "  --skip-steps L   Skip comma-separated list of steps"
+            echo "                   (homebrew,packages,symlinks,keyd)"
             echo "  --check-only     Only run prerequisite and health checks"
             echo "  --update         Update mode (skips logo, uses update terminology)"
             echo "  --yes, -y        Skip confirmation prompt"
             echo "  -h, --help       Show this help message"
             echo ""
             echo "Examples:"
-            echo "  ./install.sh                # Full installation (default)"
-            echo "  ./install.sh --core         # Cross-platform dev setup"
-            echo "  ./install.sh --minimal      # Lightweight server setup"
+            echo "  ./install.sh                          # Full installation (default)"
+            echo "  ./install.sh --core                   # Cross-platform dev setup"
+            echo "  ./install.sh --minimal                # Lightweight server setup"
             echo ""
             echo "To rollback a failed installation:"
             echo "  ./scripts/install/rollback.sh"
             exit 0
             ;;
-        *)
+        -*)
             error "Unknown option: $1"
+            echo "Run './install.sh --help' for usage."
+            exit 1
+            ;;
+        *)
+            error "Unexpected argument: $1"
+            echo "Run './install.sh --help' for usage."
             exit 1
             ;;
     esac
