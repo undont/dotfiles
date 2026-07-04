@@ -11,6 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 - Monaspace Neon Nerd Font added to the font set on both platforms: the `font-monaspace-nf` cask on macOS and fetched from githubnext/monaspace's own NF build on Linux via `install-fonts.sh`. `Brewfile`, `scripts/install/install-fonts.sh`
 - Ghostty theme catalogue fetched on Linux boxes without Ghostty installed. `dotfiles theme generate` reads Ghostty's bundled theme files as its source of truth, which don't exist on distros that don't package Ghostty (e.g. Debian, Raspberry Pi OS); `install-ghostty-themes.sh` populates `~/.local/share/ghostty/themes` from `mbadolato/iTerm2-Color-Schemes`'s ready-made `ghostty/` directory via a sparse clone, so theme generation works without the Ghostty binary. `scripts/install/install-ghostty-themes.sh`, `scripts/install/install-packages.sh`
+- Tmux: poke status segment in status-right (`poke render`) shows pending team pokes, with prefix + b to dismiss them (`poke clear`). Not a dotfiles-managed tool: the segment renders empty and the binding is a no-op when the `poke` CLI isn't installed. `tmux/tmux.conf.template`
 
 ### Changed
 - Tmux: the process list popup's running rows sort most recently started first, instead of longest-running first. `tmux/scripts/alerts/proclist.sh`

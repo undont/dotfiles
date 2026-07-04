@@ -563,9 +563,14 @@ set -g status-left '#[fg={{TMUX_ACCENT_CYAN}}]#(~/.tmux/scripts/utils/dotfiles-s
 set -g @sysinfo_fg "{{TMUX_STATUS_FG}}"
 set -g @sysinfo_cpu_icon ""
 set -g @sysinfo_ram_icon ""
-set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#(~/.tmux/scripts/utils/sysinfo.sh),}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M:%S '
+set -g status-right '#(~/.tmux/scripts/alerts/show.sh)#(poke render) #{?window_zoomed_flag,#[fg={{TMUX_STATUS_BELL_FG}}]Z ,}#{?#{e|>=:#{client_width},80},#(~/.tmux/scripts/utils/sysinfo.sh),}#[bg={{TMUX_BG_SECONDARY}},fg={{TMUX_STATUS_FG}}] #{?#{e|>=:#{client_width},80},%a %h-%d ,}%H:%M:%S '
 set -g status-left-length 30
 set -g status-right-length 150
+
+# ─────────────────────────────────────────
+# Poke Config
+# ─────────────────────────────────────────
+bind-key b run-shell "poke clear"
 
 # window tabs: inactive=grey, active=purple highlight, bell/alert=pink
 setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@codex_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@copilot_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
