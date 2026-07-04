@@ -30,6 +30,7 @@ Version-gated scripts in `scripts/migrations/` run automatically during `dotfile
 **Naming convention:** `<version>-<description>.sh` -- the version prefix determines when the migration runs. It executes for users upgrading through that version (range: `(old_version, new_version]`).
 
 **How to create a migration:**
+
 1. Create `scripts/migrations/<version>-<description>.sh` (use the CHANGELOG version being released)
 2. Use `set -euo pipefail`, keep it idempotent (safe to run twice)
 3. Use `echo` for status messages (indented with 4 spaces to align with the migration runner output)

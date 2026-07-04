@@ -15,6 +15,7 @@ provides the graceful SIGTERM → wait → SIGKILL termination shared by the
 ## Template Conventions
 
 **Navigation hint formatting** in `tmux/tmux.conf.template`:
+
 - **Comments** use brackets: `# Navigation: j/k (↓/↑), g/G (top/bottom)`
 - **Border labels** (fzf `--border-label`) omit brackets: `j/k ↓/↑ · g/G top/bottom · ...`
 - Use arrow icons (`↓/↑`) instead of words for up/down direction

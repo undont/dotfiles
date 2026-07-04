@@ -65,20 +65,22 @@ cd ~/dotfiles
 
 The installer supports three presets to customise what gets installed:
 
-| Preset | Flag | Components | Use Case |
-|--------|------|------------|----------|
-| **Minimal** | `--minimal` | zsh, tmux | Servers, remote machines, SSH environments |
-| **Core** | `--core` | + nvim, ghostty, AI/CLI tools, session launch scripts | Linux desktop, cross-platform development |
-| **Full** | `--full` | + Hammerspoon, Karabiner (macOS) / keyd (Linux) | Power user (default) |
+| Preset      | Flag        | Components                                            | Use Case                                   |
+| ----------- | ----------- | ----------------------------------------------------- | ------------------------------------------ |
+| **Minimal** | `--minimal` | zsh, tmux                                             | Servers, remote machines, SSH environments |
+| **Core**    | `--core`    | + nvim, ghostty, AI/CLI tools, session launch scripts | Linux desktop, cross-platform development  |
+| **Full**    | `--full`    | + Hammerspoon, Karabiner (macOS) / keyd (Linux)       | Power user (default)                       |
 
 ### Preset Details
 
 **Minimal** (`--minimal`):
+
 - Shell: zsh with Powerlevel10k prompt
 - Terminal multiplexer: tmux with custom keybindings
 - Ideal for: SSH servers, containers, remote development
 
 **Core** (`--core`):
+
 - Everything in Minimal, plus:
 - Editor: Neovim with LSP, Telescope, and plugins
 - Terminal: Ghostty configuration
@@ -87,6 +89,7 @@ The installer supports three presets to customise what gets installed:
 - Ideal for: Linux desktops, cross-platform setups
 
 **Full** (`--full`, default):
+
 - Everything in Core, plus:
 - macOS: Hammerspoon (window automation), Karabiner Elements (keyboard customisation)
 - Linux: keyd (keyboard remapping daemon, Karabiner equivalent)
@@ -124,6 +127,7 @@ Proceed with core installation? [y/N]
 **Script**: `scripts/install/install-homebrew.sh`
 
 **What it does**:
+
 - Checks if Homebrew is already installed
 - If not present: installs Xcode Command Line Tools (macOS), then Homebrew
 - If present: runs `brew update` to fetch latest package definitions
@@ -135,13 +139,14 @@ Homebrew is the package manager used to install all other tools. Without it, you
 
 **Platform differences**:
 
-| Platform | Homebrew Path | Notes |
-|----------|---------------|-------|
-| macOS (Apple Silicon) | `/opt/homebrew` | Default for M1/M2/M3 Macs |
-| macOS (Intel) | `/usr/local` | Default for Intel Macs |
-| Linux | `/home/linuxbrew/.linuxbrew` | Linuxbrew |
+| Platform              | Homebrew Path                | Notes                     |
+| --------------------- | ---------------------------- | ------------------------- |
+| macOS (Apple Silicon) | `/opt/homebrew`              | Default for M1/M2/M3 Macs |
+| macOS (Intel)         | `/usr/local`                 | Default for Intel Macs    |
+| Linux                 | `/home/linuxbrew/.linuxbrew` | Linuxbrew                 |
 
 **What you'll see**:
+
 ```
 [1/12] Installing/updating Homebrew...
   ✓ Homebrew already installed
@@ -156,6 +161,7 @@ Homebrew is the package manager used to install all other tools. Without it, you
 **Script**: `scripts/install/install-packages.sh`
 
 **What it does**:
+
 - Runs `brew bundle install` using the `Brewfile` in the repository root
 - Installs all formulae (command-line tools) and casks (GUI applications)
 - Runs post-installation setup for specific tools:
@@ -169,19 +175,20 @@ The Brewfile is a declarative list of all tools needed for the development envir
 
 **Categories of packages installed**:
 
-| Category | Examples |
-|----------|----------|
-| Shell & Terminal | zsh, tmux, powerlevel10k, fzf, direnv, carapace, zoxide |
-| Editors | neovim |
-| AI Tools | opencode (Claude/Codex/Copilot install separately) |
-| Git Tools | gh (GitHub CLI), lazygit, diffnav, act |
-| Search & Navigation | ripgrep, fd, tree, jq, yq, bat, zoxide |
-| Languages | fnm (Node.js), bun, Go, Python 3.13 + uv, openjdk, dotnet-sdk |
-| Databases | postgresql@17, mongosh, sqld |
-| macOS Apps | ghostty, hammerspoon, karabiner-elements, raycast, music-presence |
-| Fonts | Meslo LG Nerd Font, JetBrains Mono Nerd Font |
+| Category            | Examples                                                          |
+| ------------------- | ----------------------------------------------------------------- |
+| Shell & Terminal    | zsh, tmux, powerlevel10k, fzf, direnv, carapace, zoxide           |
+| Editors             | neovim                                                            |
+| AI Tools            | opencode (Claude/Codex/Copilot install separately)                |
+| Git Tools           | gh (GitHub CLI), lazygit, diffnav, act                            |
+| Search & Navigation | ripgrep, fd, tree, jq, yq, bat, zoxide                            |
+| Languages           | fnm (Node.js), bun, Go, Python 3.13 + uv, openjdk, dotnet-sdk     |
+| Databases           | postgresql@17, mongosh, sqld                                      |
+| macOS Apps          | ghostty, hammerspoon, karabiner-elements, raycast, music-presence |
+| Fonts               | Meslo LG Nerd Font, JetBrains Mono Nerd Font                      |
 
 **What you'll see**:
+
 ```
 [2/12] Installing packages from Brewfile...
   Installing neovim...
@@ -199,6 +206,7 @@ The Brewfile is a declarative list of all tools needed for the development envir
 **Script**: `scripts/install/check-prerequisites.sh`
 
 **What it does**:
+
 - Verifies the two tools needed to bootstrap the install: `git` and `brew`
 - Provides installation hints if either is missing
 - Returns success only if both are present
@@ -208,12 +216,13 @@ The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, 
 
 **Tools checked**:
 
-| Tool | Hint if missing |
-|------|-----------------|
-| `git` | macOS: `xcode-select --install`; Linux: system package manager |
-| `brew` | See https://brew.sh |
+| Tool   | Hint if missing                                                |
+| ------ | -------------------------------------------------------------- |
+| `git`  | macOS: `xcode-select --install`; Linux: system package manager |
+| `brew` | See https://brew.sh                                            |
 
 **What you'll see**:
+
 ```
 [3/12] Checking prerequisites...
   ✓ git
@@ -228,6 +237,7 @@ The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, 
 **Script**: `scripts/install/backup-existing.sh`
 
 **What it does**:
+
 - Creates a timestamped backup directory: `~/.dotfiles-backup/YYYYMMDD-HHMMSS-PID/`
 - Copies any existing configuration files that will be replaced
 - Records the backup location for potential rollback
@@ -237,17 +247,18 @@ If you have existing configurations (especially customised ones), this step ensu
 
 **Files backed up (if they exist)**:
 
-| Component | Preset | Files/Directories |
-|-----------|--------|-------------------|
-| Zsh | minimal | `.zshrc`, `.zprofile`, `.p10k.zsh`, `.zsh/` |
-| Tmux | minimal | `.tmux.conf`, `.tmux/` |
-| Neovim | core | `.config/nvim/` |
-| Ghostty | core | `.config/ghostty/` |
-| Yazi | core | `.config/yazi/` |
-| Hammerspoon | full | `.hammerspoon/` |
-| Karabiner | full | `.config/karabiner/` |
+| Component   | Preset  | Files/Directories                           |
+| ----------- | ------- | ------------------------------------------- |
+| Zsh         | minimal | `.zshrc`, `.zprofile`, `.p10k.zsh`, `.zsh/` |
+| Tmux        | minimal | `.tmux.conf`, `.tmux/`                      |
+| Neovim      | core    | `.config/nvim/`                             |
+| Ghostty     | core    | `.config/ghostty/`                          |
+| Yazi        | core    | `.config/yazi/`                             |
+| Hammerspoon | full    | `.hammerspoon/`                             |
+| Karabiner   | full    | `.config/karabiner/`                        |
 
 **What you'll see**:
+
 ```
 [4/12] Backing up existing configuration...
   Created backup directory: ~/.dotfiles-backup/20260111-143022-12345/
@@ -257,6 +268,7 @@ If you have existing configurations (especially customised ones), this step ensu
 ```
 
 **Skip this step**:
+
 ```bash
 ./install.sh --skip-backup
 ```
@@ -268,6 +280,7 @@ If you have existing configurations (especially customised ones), this step ensu
 **Script**: `scripts/install/create-symlinks.sh`
 
 **What it does**:
+
 - Removes any old symlinks that point to incorrect locations
 - Creates parent directories as needed (e.g., `~/.config/`)
 - Creates symbolic links from the dotfiles repository to your home directory
@@ -275,6 +288,7 @@ If you have existing configurations (especially customised ones), this step ensu
 
 **Why this matters**:
 Symlinks are the core mechanism that makes dotfiles work. Instead of copying files, symlinks point to files in the repository. This means:
+
 - Changes you make are automatically tracked in git
 - `git pull` immediately updates your configuration
 - You can easily sync configurations across machines
@@ -328,6 +342,7 @@ Karabiner (full):
 ```
 
 **What you'll see**:
+
 ```
 [5/12] Creating symlinks...
   ✓ Created personal ~/.zshrc (sources dotfiles framework)
@@ -342,6 +357,7 @@ Karabiner (full):
 ### Step 6: Install Plugin Managers
 
 **What it does**:
+
 - **TPM (Tmux Plugin Manager)**: Clones the repository to `~/.tmux/plugins/tpm`
 - **lazy.nvim**: Auto-installed by Neovim configuration on first launch
 
@@ -349,17 +365,20 @@ Karabiner (full):
 Plugin managers handle downloading, updating, and loading plugins for tmux and Neovim. Without them, you'd need to manually manage dozens of plugins.
 
 **TPM (Tmux)**:
+
 - Installed to: `~/.tmux/plugins/tpm`
 - Plugins defined in: `~/.tmux.conf` (look for `set -g @plugin`)
 - Install plugins: Inside tmux, press `` ` + I `` (backtick, then capital I)
 - Update plugins: Inside tmux, press `` ` + U ``
 
 **lazy.nvim (Neovim)**:
+
 - Auto-installed on first Neovim launch
 - Plugins defined in: `~/.config/nvim/lua/custom/plugins/`
 - Install/update: Run `:Lazy sync` in Neovim
 
 **What you'll see**:
+
 ```
 [6/12] Installing plugin managers...
   ✓ TPM installed to ~/.tmux/plugins/tpm
@@ -373,6 +392,7 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 **Script**: `scripts/install/setup-keyd.sh`
 
 **What it does**:
+
 - Skipped on macOS (uses Karabiner Elements instead)
 - Installs keyd via the system package manager if not present
 - Deploys the keyd config from `keyd/default.conf` to `/etc/keyd/default.conf`
@@ -381,11 +401,13 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 
 **Why this matters**:
 keyd is a Linux keyboard remapping daemon, the equivalent of Karabiner Elements on macOS. It provides system-level key remapping that works across all applications, including:
+
 - Caps Lock → Escape
 - Right Alt → Control
 - Grave/Tilde ↔ Non-US Backslash (UK/ISO layout swap)
 
 **What you'll see**:
+
 ```
 [7/12] Setting up keyd (keyboard remapping)...
   ✓ Deployed keyd config to /etc/keyd/default.conf
@@ -394,6 +416,7 @@ keyd is a Linux keyboard remapping daemon, the equivalent of Karabiner Elements 
 ```
 
 On macOS, or if the full preset isn't selected:
+
 ```
   ⊘ Skipping keyd setup (macOS)
 ```
@@ -405,6 +428,7 @@ On macOS, or if the full preset isn't selected:
 **Script**: `scripts/install/set-default-shell.sh`
 
 **What it does**:
+
 - Checks if zsh is already the default login shell
 - If not, adds zsh to `/etc/shells` (if missing) and runs `chsh` to set it
 - May require sudo for adding to `/etc/shells`
@@ -413,12 +437,14 @@ On macOS, or if the full preset isn't selected:
 The dotfiles expect zsh as the login shell. On some Linux distributions, bash is the default. This step ensures zsh is set as the default so the shell configuration loads automatically on login.
 
 **What you'll see**:
+
 ```
 [8/12] Setting default shell...
   Default shell is already zsh.
 ```
 
 Or, if the shell needs changing:
+
 ```
 [8/12] Setting default shell...
   Changing default shell to zsh (/usr/bin/zsh)...
@@ -430,17 +456,20 @@ Or, if the shell needs changing:
 ### Step 9: Setup Secrets File
 
 **What it does**:
+
 - Creates `~/.config/zsh/secrets.zsh` if it doesn't exist
 - Copies from template (`zsh/secrets.zsh.template`) if available
 - Sets file permissions to 600 (read/write for owner only)
 
 **Why this matters**:
 The secrets file is where you store sensitive environment variables like API keys. It's:
+
 - Stored in XDG location (`~/.config/zsh/`)
 - Only readable by you (permissions 600)
 - Sourced by the zsh framework on shell startup
 
 **Example secrets file content**:
+
 ```bash
 # ~/.config/zsh/secrets.zsh
 
@@ -457,6 +486,7 @@ export AWS_SECRET_ACCESS_KEY="..."
 ```
 
 **What you'll see**:
+
 ```
 [9/12] Setting up secrets file...
   ✓ Created secrets file from template
@@ -471,6 +501,7 @@ export AWS_SECRET_ACCESS_KEY="..."
 **Script**: `scripts/install/health-check.sh`
 
 **What it does**:
+
 - Verifies all symlinks point to correct locations
 - Checks that plugin managers are installed
 - Validates secrets file exists with correct permissions
@@ -481,18 +512,19 @@ The health check confirms the installation completed successfully. It catches is
 
 **Checks performed**:
 
-| Check | Preset | What it verifies |
-|-------|--------|------------------|
-| Symlinks | minimal | `.zprofile`, `.prettierrc`, `.editorconfig`, `.tmux`, `.tmux.conf`, dotfiles CLI |
-| Files | minimal | `.p10k.zsh` and generated `tmux.conf` exist |
-| Symlinks | core | `nvim` config, `lazygit` config, `dash-repo-sync` |
-| Files | core | generated `ghostty/config`, `ghostty/local`, `gh-dash/config.yml` |
-| Symlinks | full | `hammerspoon/init.lua`; `karabiner.json` (file check) |
-| TPM | minimal | `~/.tmux/plugins/tpm` exists |
-| lazy.nvim | core | `~/.local/share/nvim/lazy` exists (after first nvim launch) |
-| Secrets | minimal | `~/.config/zsh/secrets.zsh` exists |
+| Check     | Preset  | What it verifies                                                                 |
+| --------- | ------- | -------------------------------------------------------------------------------- |
+| Symlinks  | minimal | `.zprofile`, `.prettierrc`, `.editorconfig`, `.tmux`, `.tmux.conf`, dotfiles CLI |
+| Files     | minimal | `.p10k.zsh` and generated `tmux.conf` exist                                      |
+| Symlinks  | core    | `nvim` config, `lazygit` config, `dash-repo-sync`                                |
+| Files     | core    | generated `ghostty/config`, `ghostty/local`, `gh-dash/config.yml`                |
+| Symlinks  | full    | `hammerspoon/init.lua`; `karabiner.json` (file check)                            |
+| TPM       | minimal | `~/.tmux/plugins/tpm` exists                                                     |
+| lazy.nvim | core    | `~/.local/share/nvim/lazy` exists (after first nvim launch)                      |
+| Secrets   | minimal | `~/.config/zsh/secrets.zsh` exists                                               |
 
 **What you'll see**:
+
 ```
 [10/12] Running health check...
   ✓ All symlinks verified
@@ -506,6 +538,7 @@ The health check confirms the installation completed successfully. It catches is
 ### Step 11: Save Preset Configuration
 
 **What it does**:
+
 - Saves your selected preset to `~/.config/dotfiles/preset`
 - This allows `dotfiles update` to remember your preset choice
 
@@ -513,6 +546,7 @@ The health check confirms the installation completed successfully. It catches is
 When you run `dotfiles update` later, it reads the saved preset so it can run the correct installation steps without requiring you to specify the preset again.
 
 **What you'll see**:
+
 ```
 [11/12] Saving preset configuration...
   ✓ Preset 'core' saved to ~/.config/dotfiles/preset
@@ -523,6 +557,7 @@ When you run `dotfiles update` later, it reads the saved preset so it can run th
 ### Step 12: Configure Project Directories
 
 **What it does**:
+
 - Prompts you to set `DEV_ROOT`, your main development directory (default: `~/src`)
 - Optionally prompts for `PROJECTS_ROOT`, a secondary directory for side projects, playgrounds, etc.
 - Writes the exports to your `~/.zshrc` using `update_zshrc_export()`
@@ -533,6 +568,7 @@ When you run `dotfiles update` later, it reads the saved preset so it can run th
 The launcher picker (`` ` p ``) and `dotfiles set` command use these paths for dynamic project discovery. Setting them during installation means the launcher can find your projects immediately.
 
 **What you'll see**:
+
 ```
 [12/12] Project directories (optional)...
   DEV_ROOT sets your main development directory for the launcher picker.
@@ -546,6 +582,7 @@ The launcher picker (`` ` p ``) and `dotfiles set` command use these paths for d
 ```
 
 **Non-interactive mode**: When the installer runs non-interactively (e.g., piped or in CI), this step is skipped. You can configure directories later:
+
 ```bash
 dotfiles set dev ~/src
 dotfiles set projects ~/playground
@@ -557,25 +594,26 @@ dotfiles set projects ~/playground
 
 ### Presets
 
-| Option | Description |
-|--------|-------------|
-| `--minimal` | Install zsh + tmux only (servers, remote machines) |
-| `--core` | Install zsh, tmux, nvim, ghostty, AI/CLI tools |
-| `--full` | Install everything including platform-specific apps (default) |
+| Option      | Description                                                   |
+| ----------- | ------------------------------------------------------------- |
+| `--minimal` | Install zsh + tmux only (servers, remote machines)            |
+| `--core`    | Install zsh, tmux, nvim, ghostty, AI/CLI tools                |
+| `--full`    | Install everything including platform-specific apps (default) |
 
 ### Other Options
 
-| Option | Description |
-|--------|-------------|
-| `--skip-brew` | Skip Homebrew installation and package installation (steps 1-2) |
-| `--skip-backup` | Skip backing up existing configuration (step 4) |
+| Option           | Description                                                                                                              |
+| ---------------- | ------------------------------------------------------------------------------------------------------------------------ |
+| `--skip-brew`    | Skip Homebrew installation and package installation (steps 1-2)                                                          |
+| `--skip-backup`  | Skip backing up existing configuration (step 4)                                                                          |
 | `--skip-steps L` | Skip a comma-separated list of steps (`homebrew,packages,symlinks,keyd`), used by `dotfiles update` for incremental runs |
-| `--check-only` | Only run prerequisite and health checks, make no changes |
-| `--update` | Update mode (skips logo, uses update terminology) |
-| `--yes`, `-y` | Skip the preset confirmation prompt |
-| `-h`, `--help` | Show help message |
+| `--check-only`   | Only run prerequisite and health checks, make no changes                                                                 |
+| `--update`       | Update mode (skips logo, uses update terminology)                                                                        |
+| `--yes`, `-y`    | Skip the preset confirmation prompt                                                                                      |
+| `-h`, `--help`   | Show help message                                                                                                        |
 
 **Examples**:
+
 ```bash
 # Full installation (default)
 ./install.sh
@@ -700,11 +738,13 @@ dotfiles set projects ~/playground
 ### Desktop Applications
 
 **macOS (Casks)**:
+
 - **Ghostty**: Fast, GPU-accelerated terminal emulator
 - **Hammerspoon**: Lua-based automation (window management, etc.)
 - **Karabiner Elements**: Keyboard customisation
 
 **Linux**:
+
 - **Ghostty**: Installed via system package manager (not brew)
 - **keyd**: Keyboard remapping daemon (Caps Lock → Escape, Right Alt → Control)
 
@@ -735,6 +775,7 @@ If you need to undo the installation:
 ```
 
 This will:
+
 - Remove all symlinks created during installation
 - Restore files from the backup directory
 - Clean up installation state
@@ -771,6 +812,7 @@ To completely remove the dotfiles installation:
 ```
 
 The uninstall script:
+
 - Removes all symlinks created during installation
 - Optionally restores files from your most recent backup
 - Optionally removes Homebrew packages (filtered by your saved preset)

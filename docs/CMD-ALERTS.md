@@ -25,30 +25,34 @@ The hooks (`preexec`/`precmd`) are registered in `zsh/dotfiles.zsh` and run tran
 
 ## Alert Display
 
-
-| Result  | Icon | Colour | Meaning                                       |
-|---------|------|--------|-----------------------------------------------|
-| Pass    | ✓    | Green  | Exit code 0                                   |
-| Fail    | ✗    | Red    | Exit code non-zero                            |
-| Stopped | ⊘    | Grey   | Killed by a signal (exit > 128, e.g. Ctrl-C)  |
+| Result  | Icon | Colour | Meaning                                      |
+| ------- | ---- | ------ | -------------------------------------------- |
+| Pass    | ✓    | Green  | Exit code 0                                  |
+| Fail    | ✗    | Red    | Exit code non-zero                           |
+| Stopped | ⊘    | Grey   | Killed by a signal (exit > 128, e.g. Ctrl-C) |
 
 A process terminated by a signal exits with `128 + signal` (Ctrl-C is 130, SIGTERM 143, SIGKILL 137). Those are interruptions you caused, not run-to-completion failures, so they show neutral grey rather than red.
 
 ### Status bar
+
 Icons appear in the right side of the status bar for commands in **other sessions**, showing `session:command` for context:
+
 - `✓ dev:make test`: tests passed in the `dev` session
 - `✗ build:npm run lint`: linting failed in the `build` session
 
 Same-session alerts only highlight the window tab (no status bar entry).
 
 ### Window tabs
+
 The window tab colour changes:
+
 - Green for pass
 - Red for fail
 
 ## Conditions for Alerting
 
 An alert fires only when **all** of the following are true:
+
 1. You are inside tmux
 2. You moved away before the command finished, to a different window **or** a different session
 3. The command is not in the exclude list
@@ -78,19 +82,21 @@ fg bg
 
 `fg`/`bg` are excluded because they resume a suspended job rather than run a process of their own: tracking `fg` would mislabel a resumed session as a running `fg`.
 
-| Exclude entry | Matches | Doesn't match |
-|---|---|---|
-| `git` | `git diff`, `git push`, `git log` | `gitk` |
-| `gdn` | `gdn` | - |
-| `docker` | `docker compose up`, `docker run` | `dockerd` |
+| Exclude entry | Matches                           | Doesn't match |
+| ------------- | --------------------------------- | ------------- |
+| `git`         | `git diff`, `git push`, `git log` | `gitk`        |
+| `gdn`         | `gdn`                             | -             |
+| `docker`      | `docker compose up`, `docker run` | `dockerd`     |
 
 **Override** before sourcing:
+
 ```zsh
 _CMD_ALERT_EXCLUDE=(less man git)
 source ~/dotfiles/scripts/hooks/cmd-alert-hook.zsh
 ```
 
 **Append** after sourcing:
+
 ```zsh
 _CMD_ALERT_EXCLUDE+=(mytool "docker compose")
 ```
@@ -99,12 +105,12 @@ _CMD_ALERT_EXCLUDE+=(mytool "docker compose")
 
 The label shown in the status bar is built from the command line:
 
-| Command | Label |
-|---------|-------|
-| `make test` | `make test` |
-| `npm run build` | `npm run build` |
-| `./scripts/run-tests.sh --verbose` | `run-tests.sh --verbose` |
-| `docker compose -f prod.yml up --build` | `docker compose…` |
+| Command                                 | Label                    |
+| --------------------------------------- | ------------------------ |
+| `make test`                             | `make test`              |
+| `npm run build`                         | `npm run build`          |
+| `./scripts/run-tests.sh --verbose`      | `run-tests.sh --verbose` |
+| `docker compose -f prod.yml up --build` | `docker compose…`        |
 
 Rules: basename the first word, use as-is if ≤ 3 words, otherwise first 2 words + `…`.
 
@@ -122,14 +128,14 @@ Exit alerts only fire once a command has finished. The process list (prefix + Sh
 
 Running rows come from a per-pane registry the `preexec` hook writes while a tracked command is in flight, and the `precmd` hook removes on completion. Finished rows come from a separate history the `precmd` hook appends on **every** tracked completion, regardless of whether you switched away: that is what lets a command you watched finish in place still leave a ✓/✗/⊘ entry (the switch-away-gated alerts file only drives the status bar). History keeps the most recent 20 entries within the last hour. The same exclude list governs both halves, so they agree on what counts as a process.
 
-| Key | Action |
-|-----|--------|
-| <kbd>j</kbd>/<kbd>k</kbd>, <kbd>g</kbd>/<kbd>G</kbd> | move / jump to top or bottom |
-| <kbd>Space</kbd>/<kbd>Enter</kbd> | switch to the selected process's window |
-| <kbd>r</kbd> | rerun a finished command: stage it on its origin window's prompt and jump there, no Enter, ready to edit |
-| <kbd>R</kbd> | stage the command and run it straight away |
-| <kbd>x</kbd> | interrupt a running process (sends Ctrl-C) or dismiss a finished one from history |
-| <kbd>/</kbd> | search; <kbd>Esc</kbd> returns to navigation |
+| Key                                                  | Action                                                                                                   |
+| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
+| <kbd>j</kbd>/<kbd>k</kbd>, <kbd>g</kbd>/<kbd>G</kbd> | move / jump to top or bottom                                                                             |
+| <kbd>Space</kbd>/<kbd>Enter</kbd>                    | switch to the selected process's window                                                                  |
+| <kbd>r</kbd>                                         | rerun a finished command: stage it on its origin window's prompt and jump there, no Enter, ready to edit |
+| <kbd>R</kbd>                                         | stage the command and run it straight away                                                               |
+| <kbd>x</kbd>                                         | interrupt a running process (sends Ctrl-C) or dismiss a finished one from history                        |
+| <kbd>/</kbd>                                         | search; <kbd>Esc</kbd> returns to navigation                                                             |
 
 Rerun reads the full command (stored as typed, so `$VAR` references stay references and are re-expanded by the shell on rerun) from the finished history by key, so the raw text never crosses the fzf/shell boundary. `R` types into whatever the target pane's foreground is, so it is safest at an idle prompt; `r` is the safe default when in doubt.
 
@@ -138,6 +144,7 @@ Running entries are self-cleaning: the `precmd` hook removes them on completion,
 ## Clearing Alerts
 
 Alerts clear automatically when you switch to the window. You can also manually clear:
+
 ```bash
 alerts-clear    # Alias for rm -rf ~/.config/tmux-alerts
 ```

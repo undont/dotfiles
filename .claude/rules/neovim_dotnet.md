@@ -60,7 +60,7 @@ one file. `<leader>xm` is what opens 100 at once.)
 
 Fix: `scan_files` partitions the readable paths into chunks of `SCAN_BATCH_SIZE`
 (default 12) and runs them strictly sequentially — load chunk, snapshot its
-diagnostics via `scan_runner`, delete the chunk's *created* buffers (the
+diagnostics via `scan_runner`, delete the chunk's _created_ buffers (the
 `nvim_buf_delete` sends `didClose`, dropping them from roslyn's open-doc set),
 then `vim.schedule` the next chunk so the close round-trips before the next
 `didOpen`. Peak open-file count, and thus analyzer memory, stays bounded
@@ -116,7 +116,7 @@ snapshot-collection time as a second line of defence.
 **Why they evade `patch_diagnostic_set` — partially resolved.** Field evidence
 (2026-06): the snapshot filter eliminated the phantoms, so the diagnostics do
 carry `code == 'IDE0079'` and the bypass is real. Eliminated explanations:
-`bufload()` *does* run filetype detection (so the `filetype == 'cs'` gate
+`bufload()` _does_ run filetype detection (so the `filetype == 'cs'` gate
 passes for scan buffers); the pull path resolves `vim.diagnostic.set`
 dynamically (`$VIMRUNTIME/lua/vim/lsp/diagnostic.lua`); roslyn.nvim holds no
 cached reference to it. One unconfirmed suspect: `RealDotnetFile` (which
@@ -148,10 +148,11 @@ visible flicker on `.cs` open.
 We disable it by setting `server_capabilities.semanticTokensProvider.range =
 false` in an `LspAttach` autocmd for the roslyn client. `LspAttach` is the
 correct hook: Neovim's `Client:on_attach` schedules `STHighlighter:on_attach`
-*after* the `LspAttach` callbacks finish (`client.lua:1159`), so the capability
+_after_ the `LspAttach` callbacks finish (`client.lua:1159`), so the capability
 is flipped before the semantic-token handler reads it.
 
 **Why other approaches don't work:**
+
 - A client-level `capabilities` override at config time — the shallow merge on
   `textDocument` wipes sibling capabilities (completion, hover, etc.) and breaks
   the LSP entirely.
@@ -163,7 +164,7 @@ is flipped before the semantic-token handler reads it.
 Neovim requests tokens on attach (before the solution loads) and gets
 empty/stale tokens; Roslyn never sends `workspace/semanticTokens/refresh` when
 analysis completes. `workspace/projectInitializationComplete` (the
-`RoslynInitialized` user event) fires *before* per-file semantic analysis is
+`RoslynInitialized` user event) fires _before_ per-file semantic analysis is
 done, so refreshing there lands stale and needs a manual `<leader>lt` a second
 later to settle. Instead we debounce-refresh (300ms) all `.cs` buffers on
 Roslyn's LSP progress `end` notifications, which fire as each background-analysis
@@ -171,13 +172,13 @@ chunk finishes. The debounce bounds cost during warmup (many `end` events
 cluster) while still catching later analyses (branch switches, dependency
 restores).
 
-The progress-`end` refresh is keyed to *project-wide* timing, so it races any
+The progress-`end` refresh is keyed to _project-wide_ timing, so it races any
 given buffer's analysis: if the last relevant `end` fires before the visible
 buffer's tokens are ready, colours sit stale until a manual `<leader>lt`. That
 race has always existed; its margin shrank noticeably under workstation GC
 (`DOTNET_gcServer=0`, above) because faster warmup makes the `end` events finish
 sooner relative to per-file analysis — surfacing as flaky semantic colours that
-"sometimes work". So there's a *second*, per-file refresh trigger:
+"sometimes work". So there's a _second_, per-file refresh trigger:
 `force_refresh` on a buffer's `DiagnosticChanged`, debounced 250ms
 (last-scheduled-wins via a per-buffer seq token) and gated to **visible** roslyn
 `.cs` buffers. A file's `DiagnosticChanged` is the reliable per-file signal —
@@ -217,7 +218,7 @@ in `init`) to prevent `vim.lsp.enable` firing before `lock_target` and
 
 **Load-bearing on Neovim 0.12 — do not remove (verified 2026-06-01).** It looks
 like the 0.12 lazy native-config model makes this redundant; it does not.
-lazy.nvim sources a plugin's `plugin/*.lua` *before* running its `config`
+lazy.nvim sources a plugin's `plugin/*.lua` _before_ running its `config`
 (`loader.lua` `_load`: `packadd` then `config`), so without the
 `vim.g.loaded_roslyn_plugin` block, `vim.lsp.enable('roslyn')` fires before
 `resolve_solution_target()` / `setup(opts)` / `vim.lsp.config()`. And because we
@@ -227,7 +228,7 @@ synchronously runs `doautoall('nvim.lsp.enable FileType')` (`lsp.lua`, gated by
 then — with roslyn's defaults (`lock_target = false`, `ignore_target = nil`) and
 no `csharp|...` settings. Result: wrong solution target (or a multi-solution
 picker) and an unconfigured client. The deferred `dofile` is what forces
-`vim.lsp.enable` to run *after* our config.
+`vim.lsp.enable` to run _after_ our config.
 
 ## Roslyn During Diffview / Octo
 
@@ -246,6 +247,7 @@ doesn't auto-attach to them anyway. The "hundreds of diff buffers freezing
 roslyn" concern is handled by Neovim itself.
 
 What we do keep:
+
 - **`vim.g.roslyn_suppressed` flag** — set on `FileType octo`/`DiffviewFiles`/
   `DiffviewFileHistory`, cleared by `maybe_clear_roslyn_flag` (deferred 500ms
   on `BufEnter *.cs`) once `diffview.lib.get_current_view()` is nil and no

@@ -6,10 +6,10 @@ servers. Config lives in `nvim/lua/custom/plugins/sonarlint.lua`.
 
 Two per-project files drive it, both under `.sonarlint/` at the project root:
 
-| File | Purpose |
-|---|---|
-| `connectedMode.json` | Binds the project to a SonarCloud project key (connected mode) |
-| `localRules.json` | Project-local rule overrides (works in both standalone and connected mode) |
+| File                 | Purpose                                                                    |
+| -------------------- | -------------------------------------------------------------------------- |
+| `connectedMode.json` | Binds the project to a SonarCloud project key (connected mode)             |
+| `localRules.json`    | Project-local rule overrides (works in both standalone and connected mode) |
 
 `connectedMode.json` follows the same convention as the JetBrains/VSCode "SonarQube
 for IDE" plugins: `{ "projectKey": "my-org_my-project" }`.
@@ -44,11 +44,11 @@ Both top-level fields are optional: supply `rules`, `overrides`, or both.
 
 A rule value is either a bare severity or the array form for parameterised rules:
 
-| Form | Example | Meaning |
-|---|---|---|
-| Severity string | `"off"`, `"warn"`, `"error"` | Enable or disable the rule |
-| Severity number | `0`, `1`, `2` | Same, ESLint's numeric severities |
-| Array | `["error", { "param": "value" }]` | Severity plus named rule parameters |
+| Form            | Example                           | Meaning                             |
+| --------------- | --------------------------------- | ----------------------------------- |
+| Severity string | `"off"`, `"warn"`, `"error"`      | Enable or disable the rule          |
+| Severity number | `0`, `1`, `2`                     | Same, ESLint's numeric severities   |
+| Array           | `["error", { "param": "value" }]` | Severity plus named rule parameters |
 
 **Severity maps to two states, not three.** SonarLint has no warn/error split, so
 `"warn"`/`1` and `"error"`/`2` both map to level `"on"`; only `"off"`/`0` silences a
@@ -167,15 +167,15 @@ the override matchers, so the warning clears without a restart.
 The test globs are per language, so the "in test files" action only appears for
 languages with a settled test-naming convention:
 
-| Language | Test globs |
-|---|---|
-| Go | `**/*_test.go` |
-| Python | `**/test_*.py`, `**/*_test.py` |
+| Language   | Test globs                                          |
+| ---------- | --------------------------------------------------- |
+| Go         | `**/*_test.go`                                      |
+| Python     | `**/test_*.py`, `**/*_test.py`                      |
 | JavaScript | `**/*.test.js`, `**/*.spec.js` (+ `.jsx` for React) |
 | TypeScript | `**/*.test.ts`, `**/*.spec.ts` (+ `.tsx` for React) |
-| C# | `**/*Tests.cs`, `**/*Test.cs` |
-| C / C++ | `**/*_test.c`, `**/*_test.cpp`, `**/*_test.cc` |
-| PHP | `**/*Test.php` |
+| C#         | `**/*Tests.cs`, `**/*Test.cs`                       |
+| C / C++    | `**/*_test.c`, `**/*_test.cpp`, `**/*_test.cc`      |
+| PHP        | `**/*Test.php`                                      |
 
 The actions are injected into SonarLint's own code-action response, so they sit
 directly under its "Show issue details" / "Deactivate rule" entries rather than

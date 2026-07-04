@@ -34,11 +34,11 @@ cd ~/dotfiles
 
 ### Install presets
 
-| Preset | Components | Use case |
-|--------|------------|----------|
-| `--minimal` | zsh, tmux | servers, remote machines, SSH |
-| `--core` | + nvim, ghostty, AI/CLI tools, launchers | Linux desktop, cross-platform dev |
-| `--full` | + Hammerspoon, Karabiner, Raycast, music-presence | macOS power user (default) |
+| Preset      | Components                                        | Use case                          |
+| ----------- | ------------------------------------------------- | --------------------------------- |
+| `--minimal` | zsh, tmux                                         | servers, remote machines, SSH     |
+| `--core`    | + nvim, ghostty, AI/CLI tools, launchers          | Linux desktop, cross-platform dev |
+| `--full`    | + Hammerspoon, Karabiner, Raycast, music-presence | macOS power user (default)        |
 
 The installer backs up existing configs, installs Homebrew packages filtered by preset, creates symlinks, sets up plugin managers, and runs a health check. Your preset is saved so `dotfiles update` remembers it.
 
@@ -159,15 +159,15 @@ An AI CLI coding agent's statusline can follow the active theme too, for agents 
 
 Themes are pure colour palettes; anything else you want to customise (fonts, cursor style, extra keybindings, per-machine settings) goes in the per-tool `local.*` files, which sit alongside the theme-generated configs and never get touched by `dotfiles update`:
 
-| Tool | Override file |
-|------|---------------|
-| Tmux | `~/.config/tmux/local.conf` |
-| Neovim | `~/.config/nvim/local.lua` |
-| Ghostty | `~/.config/ghostty/local` |
-| gh-dash | `~/.config/gh-dash/local.yml` |
-| LazyGit | `~/.config/lazygit/local.yml` |
-| Hammerspoon | `~/.hammerspoon/local.lua` |
-| Zsh | `~/.zshrc` (your personal config) |
+| Tool        | Override file                     |
+| ----------- | --------------------------------- |
+| Tmux        | `~/.config/tmux/local.conf`       |
+| Neovim      | `~/.config/nvim/local.lua`        |
+| Ghostty     | `~/.config/ghostty/local`         |
+| gh-dash     | `~/.config/gh-dash/local.yml`     |
+| LazyGit     | `~/.config/lazygit/local.yml`     |
+| Hammerspoon | `~/.hammerspoon/local.lua`        |
+| Zsh         | `~/.zshrc` (your personal config) |
 
 See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the architecture.
 
@@ -179,35 +179,35 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the architecture.
 
 ### My own tools
 
-| Tool | What it does |
-|------|--------------|
+| Tool                                               | What it does                                                                               |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | [supplyscan](https://github.com/undont/supplyscan) | Go CLI / MCP that scans JS-ecosystem projects for vulnerabilities and supply-chain attacks |
-| [jiru](https://github.com/undont/jiru) | Bubble Tea TUI for managing Jira issues and Confluence pages |
-| [seeql](https://github.com/undont/seeql) | SQL client TUI |
-| [lazycron](https://github.com/undont/lazycron) | Cron job manager TUI |
-| [gh-bench](https://github.com/undont/gh-bench) | `gh` CLI extension for benchmarking GitHub Actions and tracking failures |
+| [jiru](https://github.com/undont/jiru)             | Bubble Tea TUI for managing Jira issues and Confluence pages                               |
+| [seeql](https://github.com/undont/seeql)           | SQL client TUI                                                                             |
+| [lazycron](https://github.com/undont/lazycron)     | Cron job manager TUI                                                                       |
+| [gh-bench](https://github.com/undont/gh-bench)     | `gh` CLI extension for benchmarking GitHub Actions and tracking failures                   |
 
 ### gh CLI extensions (auto-installed)
 
-| Extension | What it does |
-|-----------|--------------|
-| [gh-dash](https://github.com/dlvhdr/gh-dash) | Terminal dashboard for GitHub PRs, issues, and repos. Themed and re-skinned by `dotfiles theme`. |
-| [gh-enhance](https://github.com/dlvhdr/gh-enhance) | Enhanced PR view and review workflow on top of `gh pr`. |
+| Extension                                          | What it does                                                                                     |
+| -------------------------------------------------- | ------------------------------------------------------------------------------------------------ |
+| [gh-dash](https://github.com/dlvhdr/gh-dash)       | Terminal dashboard for GitHub PRs, issues, and repos. Themed and re-skinned by `dotfiles theme`. |
+| [gh-enhance](https://github.com/dlvhdr/gh-enhance) | Enhanced PR view and review workflow on top of `gh pr`.                                          |
 
 Bundled helper: **`dash-repo-sync`** (in `~/.local/bin/`) scans `DEV_ROOT` and `PROJECTS_ROOT` for git repos with GitHub remotes, syncs them into gh-dash's `repoPaths`, and prunes stale entries. Wildcard entries are preserved. Run on demand; pass `--dry-run` to preview changes
 
 ### Other tools included
 
-| Category | Tools |
-|----------|-------|
-| Shell completion | `carapace` (multi-shell completion bridge), `zsh-autosuggestions`, `direnv` |
-| Git & GitHub | `gh`, `lazygit`, `diffnav`, `act` (run GitHub Actions locally) |
-| Containers & shells | `lazydocker`, `lazyssh`, `cloudflared` |
-| Search & files | `fd`, `ripgrep`, `bat`, `jq`, `yq`, `zoxide`, `fzf`, `yazi` (file manager), `poppler` (PDF previews), `ffmpegthumbnailer` (video previews), `resvg` (SVG previews), `sevenzip` (archive previews) |
-| System | `btop`, `gdu` (disk usage TUI), `fastfetch` |
-| Media & display | `ffmpeg`, `imagemagick`, `chafa`, `glow` |
-| Terminal extras | `asciinema`, `figlet`, `toilet`, `tmux-fingers` |
-| Languages | `fnm`, `bun` (Node), `go`, `python@3.13`, `openjdk` (Java), `dotnet-sdk` (.NET) |
+| Category            | Tools                                                                                                                                                                                             |
+| ------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| Shell completion    | `carapace` (multi-shell completion bridge), `zsh-autosuggestions`, `direnv`                                                                                                                       |
+| Git & GitHub        | `gh`, `lazygit`, `diffnav`, `act` (run GitHub Actions locally)                                                                                                                                    |
+| Containers & shells | `lazydocker`, `lazyssh`, `cloudflared`                                                                                                                                                            |
+| Search & files      | `fd`, `ripgrep`, `bat`, `jq`, `yq`, `zoxide`, `fzf`, `yazi` (file manager), `poppler` (PDF previews), `ffmpegthumbnailer` (video previews), `resvg` (SVG previews), `sevenzip` (archive previews) |
+| System              | `btop`, `gdu` (disk usage TUI), `fastfetch`                                                                                                                                                       |
+| Media & display     | `ffmpeg`, `imagemagick`, `chafa`, `glow`                                                                                                                                                          |
+| Terminal extras     | `asciinema`, `figlet`, `toilet`, `tmux-fingers`                                                                                                                                                   |
+| Languages           | `fnm`, `bun` (Node), `go`, `python@3.13`, `openjdk` (Java), `dotnet-sdk` (.NET)                                                                                                                   |
 
 ### Tap trust
 
@@ -233,61 +233,61 @@ Homebrew is set to require explicit trust for non-official taps (`HOMEBREW_REQUI
 
 ### Tmux
 
-| Action | Keybinding |
-|--------|------------|
-| Prefix | <kbd>`</kbd> |
-| Help popup | <kbd>`</kbd> <kbd>h</kbd> |
-| Launcher picker | <kbd>`</kbd> <kbd>p</kbd> |
-| Process list | <kbd>`</kbd> <kbd>Shift</kbd>+<kbd>P</kbd> |
-| Theme picker | <kbd>`</kbd> <kbd>t</kbd> |
-| Save session | <kbd>`</kbd> <kbd>w</kbd> |
-| Session switcher | <kbd>`</kbd> <kbd>s</kbd> |
-| Window switcher | <kbd>`</kbd> <kbd>f</kbd> |
-| URL picker | <kbd>`</kbd> <kbd>u</kbd> |
-| Navigate back | <kbd>`</kbd> <kbd>-</kbd> |
-| Navigate forward | <kbd>`</kbd> <kbd>=</kbd> |
-| Rename window | <kbd>Opt/Alt</kbd>+<kbd>r</kbd> |
-| Close pane | <kbd>Opt/Alt</kbd>+<kbd>s</kbd> |
-| Close window | <kbd>Opt/Alt</kbd>+<kbd>x</kbd> |
-| Undo pane/window | <kbd>Opt/Alt</kbd>+<kbd>u</kbd> |
-| Reload local overrides | <kbd>`</kbd> <kbd>r</kbd> |
-| Reload all shells | <kbd>`</kbd> <kbd>R</kbd> |
+| Action                 | Keybinding                                 |
+| ---------------------- | ------------------------------------------ |
+| Prefix                 | <kbd>`</kbd>                               |
+| Help popup             | <kbd>`</kbd> <kbd>h</kbd>                  |
+| Launcher picker        | <kbd>`</kbd> <kbd>p</kbd>                  |
+| Process list           | <kbd>`</kbd> <kbd>Shift</kbd>+<kbd>P</kbd> |
+| Theme picker           | <kbd>`</kbd> <kbd>t</kbd>                  |
+| Save session           | <kbd>`</kbd> <kbd>w</kbd>                  |
+| Session switcher       | <kbd>`</kbd> <kbd>s</kbd>                  |
+| Window switcher        | <kbd>`</kbd> <kbd>f</kbd>                  |
+| URL picker             | <kbd>`</kbd> <kbd>u</kbd>                  |
+| Navigate back          | <kbd>`</kbd> <kbd>-</kbd>                  |
+| Navigate forward       | <kbd>`</kbd> <kbd>=</kbd>                  |
+| Rename window          | <kbd>Opt/Alt</kbd>+<kbd>r</kbd>            |
+| Close pane             | <kbd>Opt/Alt</kbd>+<kbd>s</kbd>            |
+| Close window           | <kbd>Opt/Alt</kbd>+<kbd>x</kbd>            |
+| Undo pane/window       | <kbd>Opt/Alt</kbd>+<kbd>u</kbd>            |
+| Reload local overrides | <kbd>`</kbd> <kbd>r</kbd>                  |
+| Reload all shells      | <kbd>`</kbd> <kbd>R</kbd>                  |
 
 </td><td>
 
 ### Neovim
 
-| Action | Keybinding |
-|--------|------------|
-| Leader | <kbd>Space</kbd> |
-| Cheatsheet | <kbd>Space</kbd> <kbd>?</kbd> |
-| Find files | <kbd>Space</kbd> <kbd>s</kbd> <kbd>f</kbd> |
-| Find files (regex) | <kbd>Space</kbd> <kbd>s</kbd> <kbd>F</kbd> |
-| Live grep | <kbd>Space</kbd> <kbd>s</kbd> <kbd>g</kbd> |
-| File explorer | <kbd>Space</kbd> <kbd>e</kbd> |
-| Git (LazyGit) | <kbd>Space</kbd> <kbd>g</kbd> |
-| Build (quickfix) | <kbd>Space</kbd> <kbd>q</kbd> |
-| Format | <kbd>Space</kbd> <kbd>f</kbd> |
-| Test nearest | <kbd>Space</kbd> <kbd>t</kbd> <kbd>t</kbd> |
-| Diagnostics (live list) | <kbd>Space</kbd> <kbd>x</kbd> <kbd>x</kbd> |
-| Git-modified diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>m</kbd> |
-| Branch diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>b</kbd> |
+| Action                    | Keybinding                                 |
+| ------------------------- | ------------------------------------------ |
+| Leader                    | <kbd>Space</kbd>                           |
+| Cheatsheet                | <kbd>Space</kbd> <kbd>?</kbd>              |
+| Find files                | <kbd>Space</kbd> <kbd>s</kbd> <kbd>f</kbd> |
+| Find files (regex)        | <kbd>Space</kbd> <kbd>s</kbd> <kbd>F</kbd> |
+| Live grep                 | <kbd>Space</kbd> <kbd>s</kbd> <kbd>g</kbd> |
+| File explorer             | <kbd>Space</kbd> <kbd>e</kbd>              |
+| Git (LazyGit)             | <kbd>Space</kbd> <kbd>g</kbd>              |
+| Build (quickfix)          | <kbd>Space</kbd> <kbd>q</kbd>              |
+| Format                    | <kbd>Space</kbd> <kbd>f</kbd>              |
+| Test nearest              | <kbd>Space</kbd> <kbd>t</kbd> <kbd>t</kbd> |
+| Diagnostics (live list)   | <kbd>Space</kbd> <kbd>x</kbd> <kbd>x</kbd> |
+| Git-modified diagnostics  | <kbd>Space</kbd> <kbd>x</kbd> <kbd>m</kbd> |
+| Branch diagnostics        | <kbd>Space</kbd> <kbd>x</kbd> <kbd>b</kbd> |
 | Ticket-commit diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>T</kbd> |
-| Project-wide diagnostics | <kbd>Space</kbd> <kbd>x</kbd> <kbd>S</kbd> |
-| Grep yank to quickfix | <kbd>Space</kbd> <kbd>x</kbd> <kbd>/</kbd> |
-| PR diff review | <kbd>Space</kbd> <kbd>d</kbd> <kbd>p</kbd> |
+| Project-wide diagnostics  | <kbd>Space</kbd> <kbd>x</kbd> <kbd>S</kbd> |
+| Grep yank to quickfix     | <kbd>Space</kbd> <kbd>x</kbd> <kbd>/</kbd> |
+| PR diff review            | <kbd>Space</kbd> <kbd>d</kbd> <kbd>p</kbd> |
 
 </td><td>
 
 ### Zsh
 
-| Action | Keybinding |
-|--------|------------|
-| History search | <kbd>Ctrl</kbd>+<kbd>R</kbd> |
-| File finder | <kbd>Ctrl</kbd>+<kbd>T</kbd> |
-| Directory history | <kbd>Opt/Alt</kbd>+<kbd>A</kbd> |
-| Edit command in editor | <kbd>Ctrl</kbd>+<kbd>G</kbd> |
-| Expand alias under cursor | <kbd>Spacebar</kbd> |
+| Action                    | Keybinding                      |
+| ------------------------- | ------------------------------- |
+| History search            | <kbd>Ctrl</kbd>+<kbd>R</kbd>    |
+| File finder               | <kbd>Ctrl</kbd>+<kbd>T</kbd>    |
+| Directory history         | <kbd>Opt/Alt</kbd>+<kbd>A</kbd> |
+| Edit command in editor    | <kbd>Ctrl</kbd>+<kbd>G</kbd>    |
+| Expand alias under cursor | <kbd>Spacebar</kbd>             |
 
 </td></tr>
 </table>

@@ -7,165 +7,171 @@ description: Commit staged changes and push. Offer to create a PR if none exists
 ## Pre-Commit Validation
 
 1. **Git Status Check**:
-    - Run `git status` to see all modified and untracked files
-    - Verify you are on the correct branch
-    - Ensure working directory has changes to commit
+   - Run `git status` to see all modified and untracked files
+   - Verify you are on the correct branch
+   - Ensure working directory has changes to commit
 
 2. **Quality Checks** (mirrors CI workflow):
-    - **Lua files** (nvim/): Run `stylua --check nvim/` to verify formatting
-      - If check fails, run `stylua nvim/` to auto-format
-    - **ShellCheck** (if shell scripts changed):
-      ```bash
-      # Standard exclusions used by CI
-      # Check installation scripts
-      shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 install.sh
-      shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 scripts/install/*.sh
-      shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 scripts/_lib/*.sh
-      shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 scripts/hooks/*.sh
-      
-      # Check tmux scripts
-      shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 tmux/.tmux/scripts/*.sh
-      shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 tmux/.tmux/scripts/_lib/*.sh
-      
-      # Check bin utilities (shell scripts only)
-      for f in bin/*; do
-        if file "$f" | grep -q "shell script"; then
-          shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 "$f"
-        fi
-      done
-      ```
-    - **Syntax check** (for changed shell files):
-      ```bash
-      bash -n <file.sh>   # for .sh files
-      zsh -n <file.zsh>   # for .zsh files
-      ```
-    - **Tmux script tests**: Run `tmux/.tmux/scripts/_lib/test.sh` to verify library functions
-      - Tests gracefully skip tmux-dependent tests when not in tmux
-    - **CRITICAL**: Do not proceed with commit if quality checks fail. Fix issues first.
+   - **Lua files** (nvim/): Run `stylua --check nvim/` to verify formatting
+     - If check fails, run `stylua nvim/` to auto-format
+   - **ShellCheck** (if shell scripts changed):
+     ```bash
+     # Standard exclusions used by CI
+     # Check installation scripts
+     shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 install.sh
+     shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 scripts/install/*.sh
+     shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 scripts/_lib/*.sh
+     shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 scripts/hooks/*.sh
+
+     # Check tmux scripts
+     shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 tmux/.tmux/scripts/*.sh
+     shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 tmux/.tmux/scripts/_lib/*.sh
+
+     # Check bin utilities (shell scripts only)
+     for f in bin/*; do
+       if file "$f" | grep -q "shell script"; then
+         shellcheck -x -e SC1091 -e SC2059 -e SC2015 -e SC2016 -e SC2034 "$f"
+       fi
+     done
+     ```
+   - **Syntax check** (for changed shell files):
+     ```bash
+     bash -n <file.sh>   # for .sh files
+     zsh -n <file.zsh>   # for .zsh files
+     ```
+   - **Tmux script tests**: Run `tmux/.tmux/scripts/_lib/test.sh` to verify library functions
+     - Tests gracefully skip tmux-dependent tests when not in tmux
+   - **CRITICAL**: Do not proceed with commit if quality checks fail. Fix issues first.
 
 3. **Change Review**:
-    - Review `git diff` for all modified files
-    - **Always diff staged changes against `HEAD`** (`git diff --staged HEAD`) so you
-      see the complete delta the commit will introduce — not just the edits made in the
-      current session. The working tree may already contain pre-existing modifications
-      from earlier work, and CHANGELOG/version decisions depend on knowing the full
-      picture (e.g. whether the latest version entry has already been released or is
-      still `[Unreleased]`-equivalent).
-    - For dotfiles, pay special attention to:
-      - `zsh/` - Shell configuration changes
-      - `nvim/` - Neovim configuration and plugins
-      - `tmux/` - Tmux configuration
-      - `bin/` - Custom scripts
-    - **CRITICAL**: Never commit files in `.gitignore` (secrets, plugin directories, generated files)
+   - Review `git diff` for all modified files
+   - **Always diff staged changes against `HEAD`** (`git diff --staged HEAD`) so you
+     see the complete delta the commit will introduce — not just the edits made in the
+     current session. The working tree may already contain pre-existing modifications
+     from earlier work, and CHANGELOG/version decisions depend on knowing the full
+     picture (e.g. whether the latest version entry has already been released or is
+     still `[Unreleased]`-equivalent).
+   - For dotfiles, pay special attention to:
+     - `zsh/` - Shell configuration changes
+     - `nvim/` - Neovim configuration and plugins
+     - `tmux/` - Tmux configuration
+     - `bin/` - Custom scripts
+   - **CRITICAL**: Never commit files in `.gitignore` (secrets, plugin directories, generated files)
 
 4. **Documentation Update** (MANDATORY):
-    - **STOP**: You MUST complete this step before proceeding to commit
-    - **Read the relevant documentation files** based on which directories have changes:
+   - **STOP**: You MUST complete this step before proceeding to commit
+   - **Read the relevant documentation files** based on which directories have changes:
 
-    | Directory with changes | Documentation files to read |
-    |------------------------|----------------------------|
-    | `tmux/` | `tmux/tmux-help.template` |
-    | `nvim/` | `nvim/cheatsheet.txt` |
-    | Any | `README.md` |
+   | Directory with changes | Documentation files to read |
+   | ---------------------- | --------------------------- |
+   | `tmux/`                | `tmux/tmux-help.template`   |
+   | `nvim/`                | `nvim/cheatsheet.txt`       |
+   | Any                    | `README.md`                 |
+   - **Compare changes against documentation content** - for each changed file, check if:
+     - New keybindings or keyboard shortcuts were added/changed
+     - New features, commands, or scripts were added
+     - Installation steps or prerequisites changed
+     - Directory structure or file locations changed
+     - New custom scripts added to `bin/`
+   - **If ANY documentation updates are needed**:
+     - Update the README/help files BEFORE creating the commit
+     - Stage the documentation changes along with the other changes
+   - **If unsure**: Ask the user whether documentation updates are needed
+   - **Do NOT skip this step** - documentation drift causes confusion
 
-    - **Compare changes against documentation content** - for each changed file, check if:
-      - New keybindings or keyboard shortcuts were added/changed
-      - New features, commands, or scripts were added
-      - Installation steps or prerequisites changed
-      - Directory structure or file locations changed
-      - New custom scripts added to `bin/`
-    - **If ANY documentation updates are needed**:
-      - Update the README/help files BEFORE creating the commit
-      - Stage the documentation changes along with the other changes
-    - **If unsure**: Ask the user whether documentation updates are needed
-    - **Do NOT skip this step** - documentation drift causes confusion
+   - **Rules sweep (`.claude/rules/`)**: After the README/help check, also sweep
+     `.claude/rules/` for any rule files whose guidance may be affected by the
+     changes. Match changed areas to relevant rule files, e.g.:
 
-    - **Rules sweep (`.claude/rules/`)**: After the README/help check, also sweep
-      `.claude/rules/` for any rule files whose guidance may be affected by the
-      changes. Match changed areas to relevant rule files, e.g.:
-
-      | Changed area | Rule files to review |
-      |--------------|---------------------|
-      | `nvim/` | `.claude/rules/neovim.md`, `.claude/rules/neovim_dotnet.md` |
-      | `tmux/` | `.claude/rules/tmux.md` |
-      | `zsh/`, shell scripts | `.claude/rules/shell.md` |
-      | `scripts/install/`, `install.sh` | `.claude/rules/install.md` |
-      | Test infrastructure | `.claude/rules/tests.md` |
-      | Theme system | `.claude/rules/themes.md` |
-      | Documentation conventions | `.claude/rules/docs.md` |
-
-      - Read the relevant rule files and check whether the new behaviour, file
-        paths, conventions, or workflows they describe are still accurate.
-      - If a rule is now wrong, incomplete, or missing guidance the change implies,
-        update it and stage the change with the commit.
-      - If unsure whether a rule update is warranted, ask the user.
+     | Changed area                     | Rule files to review                                        |
+     | -------------------------------- | ----------------------------------------------------------- |
+     | `nvim/`                          | `.claude/rules/neovim.md`, `.claude/rules/neovim_dotnet.md` |
+     | `tmux/`                          | `.claude/rules/tmux.md`                                     |
+     | `zsh/`, shell scripts            | `.claude/rules/shell.md`                                    |
+     | `scripts/install/`, `install.sh` | `.claude/rules/install.md`                                  |
+     | Test infrastructure              | `.claude/rules/tests.md`                                    |
+     | Theme system                     | `.claude/rules/themes.md`                                   |
+     | Documentation conventions        | `.claude/rules/docs.md`                                     |
+     - Read the relevant rule files and check whether the new behaviour, file
+       paths, conventions, or workflows they describe are still accurate.
+     - If a rule is now wrong, incomplete, or missing guidance the change implies,
+       update it and stage the change with the commit.
+     - If unsure whether a rule update is warranted, ask the user.
 
 5. **CHANGELOG Update**:
-    - Update `CHANGELOG.md` for user-facing changes
-    - **When to update**: `fix:`, `add:`, `update:`, `breaking:` commits
-    - **Skip for**: `refactor:`, `test:`, `docs:`, `chore:` commits
-      — but when you skip the bump, the `release-guard` CI job will fail the
-      push/PR (commits past the latest tag with no new dated heading) **unless**
-      a commit message in the range contains `[skip release]`. Add that marker
-      to the commit subject for genuinely non-release changes, e.g.
-      `docs: tidy README [skip release]`.
+   - Update `CHANGELOG.md` for user-facing changes
+   - **When to update**: `fix:`, `add:`, `update:`, `breaking:` commits
+   - **Skip for**: `refactor:`, `test:`, `docs:`, `chore:` commits
+     — but when you skip the bump, the `release-guard` CI job will fail the
+     push/PR (commits past the latest tag with no new dated heading) **unless**
+     a commit message in the range contains `[skip release]`. Add that marker
+     to the commit subject for genuinely non-release changes, e.g.
+     `docs: tidy README [skip release]`.
 
-    - **MANDATORY pre-commit gate — a dated version heading MUST exist**:
-      Before running `git commit`, the topmost numbered heading in `CHANGELOG.md`
-      MUST be `## [X.Y.Z] - YYYY-MM-DD` with today's date — not `## [Unreleased]`,
-      not a stale date from a previous session. Verify with:
-      ```bash
-      # First numbered heading (skips [Unreleased]) — this is what auto-tag will tag
-      grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1
-      # Must show today's date AND a version that isn't already tagged:
-      git tag --list 'v*' | sort -V | tail -3
-      ```
-      **Why this matters:** the `auto-tag` CI job runs on every push to `main` and
-      extracts the topmost dated version from CHANGELOG.md (it skips `[Unreleased]`).
-      If that heading is missing, stale, or already tagged, the new code lands on
-      `main` with no `vX.Y.Z` tag — and there's no way to re-trigger the job
-      without another push.
+   - **MANDATORY pre-commit gate — a dated version heading MUST exist**:
+     Before running `git commit`, the topmost numbered heading in `CHANGELOG.md`
+     MUST be `## [X.Y.Z] - YYYY-MM-DD` with today's date — not `## [Unreleased]`,
+     not a stale date from a previous session. Verify with:
 
-    - **CHANGELOG layout convention for this repo**:
-      `[Unreleased]` is kept as an empty placeholder at the top, and a new dated
-      `## [X.Y.Z] - YYYY-MM-DD` heading is added immediately below it. Do **not**
-      rename `[Unreleased]` to the new version — leave it as a persistent header.
-      ```markdown
-      ## [Unreleased]
+     ```bash
+     # First numbered heading (skips [Unreleased]) — this is what auto-tag will tag
+     grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1
+     # Must show today's date AND a version that isn't already tagged:
+     git tag --list 'v*' | sort -V | tail -3
+     ```
 
-      ## [0.2.92] - 2026-05-15
+     **Why this matters:** the `auto-tag` CI job runs on every push to `main` and
+     extracts the topmost dated version from CHANGELOG.md (it skips `[Unreleased]`).
+     If that heading is missing, stale, or already tagged, the new code lands on
+     `main` with no `vX.Y.Z` tag — and there's no way to re-trigger the job
+     without another push.
 
-      ### Added
-      - New feature or capability
+   - **CHANGELOG layout convention for this repo**:
+     `[Unreleased]` is kept as an empty placeholder at the top, and a new dated
+     `## [X.Y.Z] - YYYY-MM-DD` heading is added immediately below it. Do **not**
+     rename `[Unreleased]` to the new version — leave it as a persistent header.
 
-      ### Changed
-      - Changes to existing functionality
+     ```markdown
+     ## [Unreleased]
 
-      ### Fixed
-      - Bug fixes
+     ## [0.2.92] - 2026-05-15
 
-      ### Removed
-      - Removed features
+     ### Added
 
-      ## [0.2.91] - 2026-05-08
-      ...
-      ```
+     - New feature or capability
 
-    - **Version Bumping**:
-      - Use semantic versioning: `MAJOR.MINOR.PATCH`
-        - `PATCH`: Bug fixes, minor improvements (`fix:`)
-        - `MINOR`: New features, enhancements (`add:`, `update:`)
-        - `MAJOR`: Breaking changes (`breaking:`)
-      - **During work on a feature branch:** entries may be appended under the
-        existing top dated heading (don't create a new one for every iteration).
-      - **At commit-and-push time:** if the topmost dated heading is already
-        tagged (`git tag --list 'v<that-version>'` returns it), insert a new
-        `## [X.Y.Z] - YYYY-MM-DD` heading below `[Unreleased]` and move the
-        accumulated entries under it.
-      - If the user has already added a fresh dated heading, leave it alone —
-        just confirm the date is today's and that the version isn't tagged yet.
+     ### Changed
 
-    - Stage CHANGELOG.md with your other changes
+     - Changes to existing functionality
+
+     ### Fixed
+
+     - Bug fixes
+
+     ### Removed
+
+     - Removed features
+
+     ## [0.2.91] - 2026-05-08
+
+     ...
+     ```
+
+   - **Version Bumping**:
+     - Use semantic versioning: `MAJOR.MINOR.PATCH`
+       - `PATCH`: Bug fixes, minor improvements (`fix:`)
+       - `MINOR`: New features, enhancements (`add:`, `update:`)
+       - `MAJOR`: Breaking changes (`breaking:`)
+     - **During work on a feature branch:** entries may be appended under the
+       existing top dated heading (don't create a new one for every iteration).
+     - **At commit-and-push time:** if the topmost dated heading is already
+       tagged (`git tag --list 'v<that-version>'` returns it), insert a new
+       `## [X.Y.Z] - YYYY-MM-DD` heading below `[Unreleased]` and move the
+       accumulated entries under it.
+     - If the user has already added a fresh dated heading, leave it alone —
+       just confirm the date is today's and that the version isn't tagged yet.
+
+   - Stage CHANGELOG.md with your other changes
 
 ## Commit Process
 
@@ -182,6 +188,7 @@ description: Commit staged changes and push. Offer to create a PR if none exists
 > ⚠️ **Auto-release depends on this.** The CI `auto-tag` job runs on every push to `main` and creates a `vX.Y.Z` tag from the CHANGELOG version. If the commit lands on `main` without a proper prefix (e.g. a raw PR merge message), the auto-tag job may have already run against the old CHANGELOG and the new version will never get tagged.
 
 Use lowercase prefixes with colon:
+
 - `add:` - New configuration, scripts, or features
 - `update:` - Changes to existing configuration
 - `fix:` - Bug fixes or corrections
@@ -190,6 +197,7 @@ Use lowercase prefixes with colon:
 - `chore:` - Maintenance tasks
 
 **Format**:
+
 ```
 <prefix>: <concise description>
 
@@ -197,6 +205,7 @@ Use lowercase prefixes with colon:
 ```
 
 **Examples**:
+
 ```
 add: zsh aliases for docker management
 update: nvim telescope keybindings for better ergonomics
@@ -205,6 +214,7 @@ refactor: split zsh config into modular files
 ```
 
 **Rules**:
+
 - **Always use a prefix** — no exceptions, even for squash-merged PRs
 - Keep subject line under 72 characters
 - Use imperative mood ("add feature" not "added feature")
@@ -215,29 +225,31 @@ refactor: split zsh config into modular files
 ### Execute Commit and Push
 
 1. **Branch Strategy** (CRITICAL):
-    - **NEVER push directly to `main`** unless the commit is `docs:` only
-    - If on `main`, create a feature branch first:
-      ```bash
-      git checkout -b <branch-name>
-      ```
-    - Branch naming: Use descriptive kebab-case (e.g., `update-nvim-lsp-config`, `add-fzf-aliases`)
-    - **Exception**: `docs:` commits (documentation-only changes) may be pushed directly to `main`
+   - **NEVER push directly to `main`** unless the commit is `docs:` only
+   - If on `main`, create a feature branch first:
+     ```bash
+     git checkout -b <branch-name>
+     ```
+   - Branch naming: Use descriptive kebab-case (e.g., `update-nvim-lsp-config`, `add-fzf-aliases`)
+   - **Exception**: `docs:` commits (documentation-only changes) may be pushed directly to `main`
 
 2. Stage relevant files:
-    ```bash
-    git add <files>
-    ```
+
+   ```bash
+   git add <files>
+   ```
 
 3. Create commit:
-    ```bash
-    git commit -m "<prefix>: <description>"
-    ```
+
+   ```bash
+   git commit -m "<prefix>: <description>"
+   ```
 
 4. Push to remote:
-    ```bash
-    git push -u origin <branch>
-    ```
-    **Note**: Version tags are created automatically by CI when merged to main. The `auto-tag` job reads the latest version from CHANGELOG.md and creates a `vX.Y.Z` tag if it doesn't already exist. No manual tagging needed.
+   ```bash
+   git push -u origin <branch>
+   ```
+   **Note**: Version tags are created automatically by CI when merged to main. The `auto-tag` job reads the latest version from CHANGELOG.md and creates a `vX.Y.Z` tag if it doesn't already exist. No manual tagging needed.
 
 ## Pull Request Handling
 
@@ -302,6 +314,7 @@ EOF
 ## Notes
 
 ### Project Structure
+
 ```
 dotfiles/
 ├── zsh/              # Zsh shell configuration
@@ -320,12 +333,15 @@ dotfiles/
 ```
 
 ### Quality Tools Available
+
 - **stylua**: Lua formatter for nvim/ directory (config in `nvim/.stylua.toml`)
 - **shellcheck**: Shell script linter (run by CI on all .sh files)
 - **luacheck**: Lua linter for nvim/ (advisory in CI, run locally with `luacheck nvim/lua/`)
 
 ### CI Workflow
+
 The following checks run on push/PR to main (see `.github/workflows/ci.yml`):
+
 1. **ShellCheck** - Lints all shell scripts with standard exclusions
 2. **Library Tests** - Runs tmux and installation library tests
 3. **Syntax Check** - Validates bash and zsh syntax
@@ -334,11 +350,13 @@ The following checks run on push/PR to main (see `.github/workflows/ci.yml`):
 6. **Auto Tag** - On push to main only: creates a git tag from CHANGELOG.md version if new
 
 ### Release Management
+
 Tags are created automatically by the `auto-tag` CI job when changes are merged to main. The job extracts the latest version from CHANGELOG.md and creates a `vX.Y.Z` tag if it doesn't already exist. Do NOT create tags manually.
 
 The `release-guard` job (`scripts/ci/check-release-version.sh`) backs this up: it fails any push or PR that adds commits on top of the latest release tag without a new dated `## [X.Y.Z]` heading — catching the case where entries are left under `[Unreleased]` and silently never released. For changes that intentionally ship no release (docs/tooling housekeeping), put `[skip release]` in a commit message in the range to bypass it.
 
 ### Files to Never Commit
+
 - `zsh/.zsh/.secrets.zsh` - Contains API keys
 - `tmux/.tmux/plugins/` - Managed by TPM
 - `tmux/.tmux/resurrect/` - Runtime session data

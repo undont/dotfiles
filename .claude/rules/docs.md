@@ -3,12 +3,14 @@
 After completing any code change, check whether relevant documentation needs updating. This is a final step -- do it after the implementation is done, not during.
 
 **Key documentation locations:**
+
 - `README.md` -- feature summaries, keybindings, aliases
 - `zsh/dotfiles.zsh` -- shell aliases/functions; `dotfiles aliases` parses this file
 - `CLAUDE.md` -- architecture, conventions, common commands
 - `docs/` -- detailed guides (theme system, agent hooks, troubleshooting, etc.)
 
 **What to check:**
+
 - New aliases -> add the `alias` line in `zsh/dotfiles.zsh` with a trailing
   `# description` comment; the `dotfiles aliases` cheatsheet picks it up
   automatically. Aliases without a description are silently skipped (curated).

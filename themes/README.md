@@ -77,11 +77,11 @@ All themes must pass WCAG 2.1 contrast ratio checks to ensure readability.
 
 ### Requirements
 
-| Check | Minimum ratio | What it covers |
-|-------|--------------|----------------|
-| All readable text | 4.5:1 | FG on BG, muted text, accents, palette colours |
-| Palette as background | 4.5:1 | Best of black/white text on each palette colour |
-| Selection text | 3.0:1 | UI highlight (Ghostty selection) |
+| Check                 | Minimum ratio | What it covers                                  |
+| --------------------- | ------------- | ----------------------------------------------- |
+| All readable text     | 4.5:1         | FG on BG, muted text, accents, palette colours  |
+| Palette as background | 4.5:1         | Best of black/white text on each palette colour |
+| Selection text        | 3.0:1         | UI highlight (Ghostty selection)                |
 
 ### Running the Contrast Checker
 
@@ -108,7 +108,7 @@ scripts/theme-contrast-check --fix themes/my-theme.theme
 ### Tips for Fixing Contrast Issues
 
 - **Lighten foreground colours** rather than darkening backgrounds (preserves theme character)
-- **FG_SECONDARY** is the most common failure — it needs to pass 4.5:1 on *both* BG_PRIMARY and BG_SECONDARY
+- **FG_SECONDARY** is the most common failure — it needs to pass 4.5:1 on _both_ BG_PRIMARY and BG_SECONDARY
 - **GHOSTTY_PALETTE_8** should match or be close to FG_SECONDARY
 - Use [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) for quick manual checks
 - Test visually with `dotfiles theme switch <name>` and open Neovim, LazyGit, and Neo-tree
