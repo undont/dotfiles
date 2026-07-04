@@ -26,6 +26,7 @@ brew "tmux"
 brew "neovim"
 cask "ghostty"
 # @preset: full
+brew "full-only-formula"
 cask "hammerspoon"
 EOF
 
@@ -59,10 +60,26 @@ fi
 
 # test full filtering
 full_output=$(filter_brewfile "full" "$TEST_BREWFILE")
-if [[ "$full_output" == *'cask "hammerspoon"'* ]]; then
-    pass "full preset includes hammerspoon"
+if [[ "$full_output" == *'brew "full-only-formula"'* ]]; then
+    pass "full preset includes full-tier formula"
 else
-    fail "full preset should include hammerspoon"
+    fail "full preset should include full-tier formula"
+fi
+
+# casks are stripped on Linux regardless of preset tier (see brewfile.sh),
+# so hammerspoon's presence in "full" output is platform-dependent
+if is_macos; then
+    if [[ "$full_output" == *'cask "hammerspoon"'* ]]; then
+        pass "full preset includes hammerspoon (macOS)"
+    else
+        fail "full preset should include hammerspoon on macOS"
+    fi
+else
+    if [[ "$full_output" != *'cask "hammerspoon"'* ]]; then
+        pass "full preset excludes hammerspoon (casks stripped on Linux)"
+    else
+        fail "full preset should exclude hammerspoon on Linux (casks are macOS-only)"
+    fi
 fi
 
 # test invalid preset handling
@@ -143,7 +160,7 @@ fi
 # verify the filtered file contains expected content
 if [[ -f "$FILTERED" ]]; then
     filtered_content=$(cat "$FILTERED")
-    if [[ "$filtered_content" == *'cask "hammerspoon"'* ]]; then
+    if [[ "$filtered_content" == *'brew "full-only-formula"'* ]]; then
         pass "Filtered file contains correct content"
     else
         fail "Filtered file should contain full preset content"

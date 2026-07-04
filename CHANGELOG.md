@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.125] - 2026-07-03
+## [0.2.125] - 2026-07-04
 
 ### Added
 - Monaspace Neon Nerd Font added to the font set on both platforms: the `font-monaspace-nf` cask on macOS and fetched from githubnext/monaspace's own NF build on Linux via `install-fonts.sh`. `Brewfile`, `scripts/install/install-fonts.sh`
