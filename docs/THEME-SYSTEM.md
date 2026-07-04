@@ -98,19 +98,19 @@ install (core preset). Sourcing it reads `current-theme`, parses the matching
 `.theme` file, and sets `SL_*` variables holding ANSI 24-bit foreground escapes
 mapped from the theme palette:
 
-| Variable | Theme source | Role |
-|---|---|---|
-| `SL_MODEL` | pink | model name |
-| `SL_DIR` / `SL_REMAINING` | fg_primary | directory, remaining % |
-| `SL_BRANCH` | cyan | git branch |
-| `SL_TIME` | yellow | duration |
-| `SL_CONTEXT` | purple | context metrics |
-| `SL_STAGED` / `SL_LINES_ADD` | green † | staged files, additions |
-| `SL_MODIFIED` | yellow → orange † | modified files |
-| `SL_DELETED` / `SL_LINES_DEL` | red † | deleted files, removals |
-| `SL_WARNING` | yellow → amber † | warnings, context pressure |
-| `SL_UNTRACKED` / `SL_BRACKET` | fg_secondary | untracked files, brackets |
-| `SL_SEP` | fg_secondary→bg blend | separators |
+| Variable                      | Theme source          | Role                       |
+| ----------------------------- | --------------------- | -------------------------- |
+| `SL_MODEL`                    | pink                  | model name                 |
+| `SL_DIR` / `SL_REMAINING`     | fg_primary            | directory, remaining %     |
+| `SL_BRANCH`                   | cyan                  | git branch                 |
+| `SL_TIME`                     | yellow                | duration                   |
+| `SL_CONTEXT`                  | purple                | context metrics            |
+| `SL_STAGED` / `SL_LINES_ADD`  | green †               | staged files, additions    |
+| `SL_MODIFIED`                 | yellow → orange †     | modified files             |
+| `SL_DELETED` / `SL_LINES_DEL` | red †                 | deleted files, removals    |
+| `SL_WARNING`                  | yellow → amber †      | warnings, context pressure |
+| `SL_UNTRACKED` / `SL_BRACKET` | fg_secondary          | untracked files, brackets  |
+| `SL_SEP`                      | fg_secondary→bg blend | separators                 |
 
 **† Hue-locked.** Additions/deletions/modifications and warnings carry universal
 meaning (add = green, delete = red, modify/warn = amber), so these roles keep the
@@ -255,6 +255,7 @@ generate_nvim_colourscheme()  -- Output nvim/colors/generated/<name>.lua
 ### Lua Libraries
 
 **`scripts/_lib/colour-utils.lua`**: Core colour manipulation
+
 - `hex_to_rgb` / `rgb_to_hex`: Hex string <-> RGB conversion (validates input)
 - `rgb_to_hsl` / `hsl_to_rgb`: HSL colour space conversion
 - `luminance()`: WCAG 2.1 relative luminance
@@ -264,6 +265,7 @@ generate_nvim_colourscheme()  -- Output nvim/colors/generated/<name>.lua
 - `blend()`: Linear interpolation between two colours
 
 **`scripts/_lib/generate-theme.lua`**: Theme generation engine
+
 - `parse_ghostty_theme()`: Parse Ghostty theme files
 - `extract_colours()`: Soften ANSI black, map palette to semantic colour roles
 - `apply_wcag_corrections()`: Auto-correct for accessibility

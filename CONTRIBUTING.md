@@ -46,15 +46,19 @@ the new dated heading directly below it (don't rename `[Unreleased]`):
 ## [0.3.0] - 2026-06-01
 
 ### Added
+
 - Tmux: new `@thing` option that does X (where it lives, how to enable it)
 
 ### Changed
+
 - ...
 
 ### Fixed
+
 - ...
 
 ### Removed
+
 - ...
 ```
 
@@ -63,7 +67,7 @@ the new dated heading directly below it (don't rename `[Unreleased]`):
 - Bump per [semver](https://semver.org): `PATCH` for fixes/small tweaks, `MINOR`
   for new features, `MAJOR` for breaking changes.
 - Write entries the way the existing ones read: specific, naming the files and
-  options touched, and explaining the *why* where it isn't obvious. British
+  options touched, and explaining the _why_ where it isn't obvious. British
   English throughout.
 - The changelog edit goes in the **same commit** as the change it documents — a
   follow-up `docs:` commit misses the auto-tag window.
@@ -80,14 +84,14 @@ a `[skip release]` marker — so the choice is always explicit.
 
 Commit subjects and PR titles use a lowercase prefix:
 
-| Prefix | For |
-|---|---|
-| `add:` | new config, scripts, or features |
-| `update:` | changes to existing config |
-| `fix:` | bug fixes |
+| Prefix      | For                                    |
+| ----------- | -------------------------------------- |
+| `add:`      | new config, scripts, or features       |
+| `update:`   | changes to existing config             |
+| `fix:`      | bug fixes                              |
 | `refactor:` | restructuring with no behaviour change |
-| `docs:` | documentation only |
-| `chore:` | maintenance |
+| `docs:`     | documentation only                     |
+| `chore:`    | maintenance                            |
 
 - Imperative mood, subject under ~72 characters.
 - No version numbers in subjects or PR titles.

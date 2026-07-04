@@ -29,18 +29,18 @@ Common issues and solutions for the dotfiles configuration.
 
 Quick reference for error messages and where to find solutions:
 
-| Error Message | Likely Cause | Solution |
-|---------------|--------------|----------|
-| `Permission denied: ./install.sh` | Scripts not executable | [Permission Denied](#permission-denied-on-scripts) |
-| `command not found: fnm` | fnm not installed | [fnm Not Working](#fnm--nodejs-not-working) |
-| `command not found: node` | Node.js not installed via fnm | [fnm Not Working](#fnm--nodejs-not-working) |
-| `already exists and is not a symlink` | Existing config files | [Installation Failed](#installation-failed-mid-way) |
-| `Directory not found: ...` | Launcher project path wrong | Check PROJECT_DIR in the launcher script |
-| `tmux: command not found` | tmux not installed | Run `brew install tmux` |
-| `no matches found` (fzf) | No results for search | Expand search query |
-| `ANDROID_HOME: unbound variable` | ANDROID_HOME not set | See [ANDROID_HOME Issues](#android_home-issues) |
-| `lazy.nvim: not found` | Neovim plugin manager not installed | Launch `nvim`, lazy.nvim auto-installs |
-| `LSP server not found` | Mason LSP not installed | Run `:Mason` in Neovim, install server |
+| Error Message                         | Likely Cause                        | Solution                                            |
+| ------------------------------------- | ----------------------------------- | --------------------------------------------------- |
+| `Permission denied: ./install.sh`     | Scripts not executable              | [Permission Denied](#permission-denied-on-scripts)  |
+| `command not found: fnm`              | fnm not installed                   | [fnm Not Working](#fnm--nodejs-not-working)         |
+| `command not found: node`             | Node.js not installed via fnm       | [fnm Not Working](#fnm--nodejs-not-working)         |
+| `already exists and is not a symlink` | Existing config files               | [Installation Failed](#installation-failed-mid-way) |
+| `Directory not found: ...`            | Launcher project path wrong         | Check PROJECT_DIR in the launcher script            |
+| `tmux: command not found`             | tmux not installed                  | Run `brew install tmux`                             |
+| `no matches found` (fzf)              | No results for search               | Expand search query                                 |
+| `ANDROID_HOME: unbound variable`      | ANDROID_HOME not set                | See [ANDROID_HOME Issues](#android_home-issues)     |
+| `lazy.nvim: not found`                | Neovim plugin manager not installed | Launch `nvim`, lazy.nvim auto-installs              |
+| `LSP server not found`                | Mason LSP not installed             | Run `:Mason` in Neovim, install server              |
 
 ---
 
@@ -51,6 +51,7 @@ Quick reference for error messages and where to find solutions:
 **Symptom**: Install script exited with error before completion, partial configuration applied.
 
 **Diagnosis**:
+
 ```bash
 # Check if rollback state exists
 ls -la ~/dotfiles/.install-state/
@@ -60,6 +61,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
 ```
 
 **Solution**:
+
 ```bash
 # Option 1: Run rollback to restore original configuration
 ./scripts/install/rollback.sh
@@ -74,6 +76,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
 **Common Installation Failures**:
 
 1. **Homebrew installation fails**:
+
    ```bash
    # Install Homebrew manually first
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -83,6 +86,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
    ```
 
 2. **Existing config files conflict**:
+
    ```bash
    # The install script backs up existing files automatically
    # If it fails, check for files that aren't symlinks:
@@ -97,6 +101,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
    ```
 
 3. **TPM (Tmux Plugin Manager) clone fails**:
+
    ```bash
    # Manually clone TPM
    git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
@@ -115,6 +120,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
    ```
 
 **Notes**:
+
 - The install script records rollback state in `.install-state/` (symlinks, backup locations, completed steps)
 - Backups are created in `~/.dotfiles-backup/` by the backup step
 - Rollback script uses both state files and backups to restore previous configuration
@@ -124,6 +130,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
 **Symptom**: Configuration not loading, symlinks pointing to wrong location.
 
 **Diagnosis**:
+
 ```bash
 # Check symlink targets
 ls -la ~/.zshrc ~/.tmux.conf ~/.config/nvim
@@ -133,6 +140,7 @@ ls -la ~/.zshrc ~/.tmux.conf ~/.config/nvim
 ```
 
 **Solution**:
+
 ```bash
 # Re-run installation
 ./install.sh
@@ -147,6 +155,7 @@ ln -sf ~/dotfiles/zsh/zprofile ~/.zprofile
 **Symptom**: `Permission denied` when running install.sh or scripts.
 
 **Solution**:
+
 ```bash
 chmod +x install.sh scripts/*.sh
 ```
@@ -156,6 +165,7 @@ chmod +x install.sh scripts/*.sh
 **Symptom**: Need to restore original configuration after installation.
 
 **Solution**:
+
 ```bash
 # Find your backup
 ls -la ~/.dotfiles-backup/
@@ -175,18 +185,19 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
 
 **Known Differences**:
 
-| Feature | macOS | Linux |
-|---------|-------|-------|
-| Homebrew path | `/opt/homebrew` | `/home/linuxbrew/.linuxbrew` |
-| Cask apps | Hammerspoon, Karabiner | Not available (macOS-only casks) |
-| Clipboard | `pbcopy` / `pbpaste` | `xclip` or `xsel` |
-| Package manager | `brew` | `brew` (Linuxbrew) or native (`apt`, `yum`) |
+| Feature         | macOS                  | Linux                                       |
+| --------------- | ---------------------- | ------------------------------------------- |
+| Homebrew path   | `/opt/homebrew`        | `/home/linuxbrew/.linuxbrew`                |
+| Cask apps       | Hammerspoon, Karabiner | Not available (macOS-only casks)            |
+| Clipboard       | `pbcopy` / `pbpaste`   | `xclip` or `xsel`                           |
+| Package manager | `brew`                 | `brew` (Linuxbrew) or native (`apt`, `yum`) |
 
 **Symptom**: Commands not found or apps not available on Linux.
 
 **Solution**:
 
 1. **Homebrew path not in PATH**:
+
    ```bash
    # Add to ~/.zshrc (already handled by dotfiles)
    eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
@@ -196,6 +207,7 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
    ```
 
 2. **Cask applications**:
+
    ```bash
    # Skip macOS-only casks during install
    # Edit Brewfile and comment out:
@@ -208,6 +220,7 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
    ```
 
 3. **Clipboard commands**:
+
    ```bash
    # Install xclip for Linux
    sudo apt install xclip  # Debian/Ubuntu
@@ -233,6 +246,7 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
 **Symptom**: Homebrew commands not found, or wrong architecture binaries.
 
 **Diagnosis**:
+
 ```bash
 # Check architecture
 uname -m
@@ -248,6 +262,7 @@ echo $HOMEBREW_PREFIX
 **Solution**:
 
 1. **Homebrew in wrong location**:
+
    ```bash
    # Apple Silicon: reinstall to /opt/homebrew
    /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
@@ -263,6 +278,7 @@ echo $HOMEBREW_PREFIX
    ```
 
 **Notes**:
+
 - The dotfiles detect architecture automatically via `common.sh`
 - Most packages are universal or have ARM64 builds now
 - If a package requires Rosetta 2, Homebrew will warn you
@@ -276,6 +292,7 @@ echo $HOMEBREW_PREFIX
 **Symptom**: Terminal takes more than 500ms to start.
 
 **Diagnosis**:
+
 ```bash
 # Time shell startup
 time zsh -i -c exit
@@ -287,11 +304,13 @@ zprof
 ```
 
 **Common Causes**:
+
 1. NVM instead of fnm (300-500ms slower)
 2. Uncached completions
 3. Too many plugins
 
 **Solution**:
+
 - Use fnm instead of NVM (already configured)
 - Ensure compinit caching is working
 - Check `~/.zcompdump` exists and is recent
@@ -301,6 +320,7 @@ zprof
 **Symptom**: `command not found: node`, `command not found: fnm`, or Node.js version not switching.
 
 **Diagnosis**:
+
 ```bash
 # Check if fnm is installed
 which fnm
@@ -321,6 +341,7 @@ echo $FNM_DIR
 **Solution**:
 
 1. **fnm not installed**:
+
    ```bash
    # Install via Homebrew
    brew install fnm
@@ -334,6 +355,7 @@ echo $FNM_DIR
    ```
 
 2. **fnm not initialised**:
+
    ```bash
    # The dotfiles framework (zsh/dotfiles.zsh) handles this automatically.
    # If missing, add to your ~/.zshrc:
@@ -344,6 +366,7 @@ echo $FNM_DIR
    ```
 
 3. **No Node.js version installed**:
+
    ```bash
    # List available versions
    fnm list-remote
@@ -359,6 +382,7 @@ echo $FNM_DIR
    ```
 
 4. **Node version not switching automatically**:
+
    ```bash
    # Ensure --use-on-cd is in fnm env command
    eval "$(fnm env --use-on-cd)"
@@ -380,6 +404,7 @@ echo $FNM_DIR
    ```
 
 **Notes**:
+
 - fnm is a fast Node.js version manager (replaces nvm)
 - `.nvmrc` and `.node-version` files trigger automatic version switching
 - Default version is used when no version file exists
@@ -390,6 +415,7 @@ echo $FNM_DIR
 **Symptom**: Error about `ANDROID_HOME` being unbound or invalid PATH entry `/platform-tools`.
 
 **Diagnosis**:
+
 ```bash
 # Check if ANDROID_HOME is set
 echo $ANDROID_HOME
@@ -401,6 +427,7 @@ echo $PATH | tr ':' '\n' | grep platform-tools
 **Solution**:
 
 1. **ANDROID_HOME not set but needed**:
+
    ```bash
    # Add to ~/.config/zsh/secrets.zsh
    export ANDROID_HOME="$HOME/Library/Android/sdk"  # macOS
@@ -413,12 +440,14 @@ echo $PATH | tr ':' '\n' | grep platform-tools
 2. **ANDROID_HOME undefined but PATH entry added** (bug fixed in quick wins):
 
    **Old .zshrc (buggy)**:
+
    ```bash
    # Line 168 - WRONG
    export PATH=$PATH:$ANDROID_HOME/platform-tools
    ```
 
    **Fixed .zshrc**:
+
    ```bash
    # Line 168 - CORRECT
    [[ -n "$ANDROID_HOME" ]] && export PATH=$PATH:$ANDROID_HOME/platform-tools
@@ -427,6 +456,7 @@ echo $PATH | tr ':' '\n' | grep platform-tools
    If you're experiencing this, update your `.zshrc` to use the conditional version.
 
 **Notes**:
+
 - `ANDROID_HOME` is only needed for Android development
 - If you don't develop for Android, you can ignore this
 - The conditional check prevents invalid PATH entries
@@ -436,6 +466,7 @@ echo $PATH | tr ':' '\n' | grep platform-tools
 **Symptom**: Plain prompt instead of styled prompt.
 
 **Diagnosis**:
+
 ```bash
 # Check if p10k is installed
 ls -la ~/.p10k.zsh
@@ -445,6 +476,7 @@ ls -la ~/.cache/p10k-instant-prompt-*.zsh
 ```
 
 **Solution**:
+
 ```bash
 # Re-run p10k configuration
 p10k configure
@@ -458,6 +490,7 @@ rm -f ~/.cache/p10k-instant-prompt-*.zsh
 **Symptom**: Ctrl+R, Ctrl+T, or Alt+C not triggering fzf.
 
 **Diagnosis**:
+
 ```bash
 # Check if fzf is installed
 which fzf
@@ -467,6 +500,7 @@ ls -la /opt/homebrew/opt/fzf/shell/key-bindings.zsh
 ```
 
 **Solution**:
+
 ```bash
 # Install fzf with keybindings
 $(brew --prefix)/opt/fzf/install
@@ -481,6 +515,7 @@ $(brew --prefix)/opt/fzf/install
 **Symptom**: Tmux plugins not loading after installation.
 
 **Diagnosis**:
+
 ```bash
 # Check TPM installation
 ls -la ~/.tmux/plugins/tpm
@@ -490,6 +525,7 @@ ls -la ~/.tmux/plugins/
 ```
 
 **Solution**:
+
 ```bash
 # Install TPM
 git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
@@ -504,6 +540,7 @@ git clone https://github.com/tmux-plugins/tpm ~/.tmux/plugins/tpm
 **Symptom**: Backtick (`) not registering as prefix.
 
 **Diagnosis**:
+
 ```bash
 # Check prefix setting
 tmux show-option -g prefix
@@ -513,6 +550,7 @@ tmux list-keys | grep prefix
 ```
 
 **Solution**:
+
 ```bash
 # Reload tmux config
 tmux source-file ~/.config/tmux/tmux.conf
@@ -526,6 +564,7 @@ tmux kill-server && tmux
 **Symptom**: Wrong colours, no true colour support.
 
 **Diagnosis**:
+
 ```bash
 # Check TERM setting
 echo $TERM
@@ -535,6 +574,7 @@ printf "\x1b[38;2;255;100;0mTrue Colour Test\x1b[0m\n"
 ```
 
 **Solution**:
+
 ```bash
 # Ensure terminal supports true colour
 # In Ghostty config:
@@ -549,6 +589,7 @@ TERM=xterm-256color tmux
 **Symptom**: Alt+u not restoring killed panes/windows.
 
 **Diagnosis**:
+
 ```bash
 # Check undo files exist (XDG location)
 ls -la ~/.cache/tmux/undo/
@@ -563,6 +604,7 @@ ls -la ~/.tmux/scripts/sessions/undo.sh
 ```
 
 **Solution**:
+
 ```bash
 # Make scripts executable
 chmod +x ~/.tmux/scripts/**/*.sh
@@ -581,6 +623,7 @@ chmod +x ~/.tmux/scripts/**/*.sh
 **Symptom**: Errors on startup, missing functionality.
 
 **Diagnosis**:
+
 ```bash
 # Check lazy.nvim installation
 ls -la ~/.local/share/nvim/lazy/
@@ -590,6 +633,7 @@ nvim --headless "+Lazy! sync" +qa
 ```
 
 **Solution**:
+
 ```bash
 # Clear plugin cache and reinstall
 rm -rf ~/.local/share/nvim/lazy/
@@ -604,6 +648,7 @@ nvim
 **Symptom**: No autocomplete, go-to-definition not working.
 
 **Diagnosis**:
+
 ```vim
 " In Neovim
 :LspInfo
@@ -611,6 +656,7 @@ nvim
 ```
 
 **Solution**:
+
 ```vim
 " Install missing language servers
 :MasonInstall pyright typescript-language-server lua-language-server gopls
@@ -621,12 +667,14 @@ nvim
 **Symptom**: No Copilot suggestions appearing.
 
 **Diagnosis**:
+
 ```vim
 :Copilot status
 :Copilot auth
 ```
 
 **Solution**:
+
 ```vim
 " Authenticate with GitHub
 :Copilot auth
@@ -640,6 +688,7 @@ server to start. The config uses the standalone binary server (`server.type =
 'binary'`), which auto-downloads and has no Node dependency, so a missing or
 out-of-shell `node` no longer breaks completions. If you previously relied on
 the Node server and it stopped working, confirm the binary downloaded:
+
 ```vim
 :checkhealth copilot
 ```
@@ -658,6 +707,7 @@ an empty bearer.
 **Solution**: the config pins the copilot.vim app token (the `Iv1.*` entry) so
 duplicates no longer break it; restart Neovim to pick up a fresh token. To check
 which entries are still valid without printing secrets:
+
 ```bash
 python3 - <<'PY'
 import json, urllib.request

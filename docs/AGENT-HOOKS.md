@@ -18,12 +18,12 @@ User sends a message
 
 Each agent has a dedicated icon and colour in the status bar:
 
-| Agent    | Icon | Colour  |
-|----------|------|---------|
-| Claude   | ⚡   | Yellow  |
-| Codex    | ⌘   | Cyan    |
-| OpenCode |    | Purple  |
-| Copilot  |    | Blue    |
+| Agent    | Icon | Colour |
+| -------- | ---- | ------ |
+| Claude   | ⚡   | Yellow |
+| Codex    | ⌘    | Cyan   |
+| OpenCode |     | Purple |
+| Copilot  |     | Blue   |
 
 ## File Layout
 
@@ -149,9 +149,7 @@ bun install opencode-tmux-alert
 
 ```json
 {
-  "plugin": [
-    "opencode-tmux-alert"
-  ]
+  "plugin": ["opencode-tmux-alert"]
 }
 ```
 
@@ -292,6 +290,7 @@ tmux/scripts/alerts/clear.sh
 ## Adding a New Agent
 
 1. Create wrapper scripts in `scripts/hooks/wrappers/`:
+
    ```bash
    # myagent-alert.sh
    SCRIPT_DIR="${BASH_SOURCE%/*}/.."
@@ -303,6 +302,7 @@ tmux/scripts/alerts/clear.sh
    ```
 
 2. Add an icon and colour in `tmux/scripts/_lib/alerts.sh`:
+
    ```bash
    # In get_agent_display()
    myagent) echo "🔧|#50fa7b" ;;

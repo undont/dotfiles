@@ -48,14 +48,14 @@ overwritten by `dotfiles update`.
 
 **Used for:** tmux, ghostty, nvim, lazygit, hammerspoon, gh-dash.
 
-| Tool | Local override | Mechanism |
-|---|---|---|
-| tmux | `~/.config/tmux/local.conf` | `source-file -q` at end of config |
-| ghostty | `~/.config/ghostty/local` | `config-file =` at end of config |
-| nvim | `~/.config/nvim/local.lua` | `dofile(local_config)` in init.lua |
-| lazygit | `~/.config/lazygit/local.yml` | `LG_CONFIG_FILE="base,local"` env var |
-| hammerspoon | `~/.hammerspoon/local.lua` | `pcall(require, "local")` at end of init.lua |
-| gh-dash | `~/.config/gh-dash/local.yml` | `yq` deep-merge after `dotfiles theme` generation |
+| Tool        | Local override                | Mechanism                                         |
+| ----------- | ----------------------------- | ------------------------------------------------- |
+| tmux        | `~/.config/tmux/local.conf`   | `source-file -q` at end of config                 |
+| ghostty     | `~/.config/ghostty/local`     | `config-file =` at end of config                  |
+| nvim        | `~/.config/nvim/local.lua`    | `dofile(local_config)` in init.lua                |
+| lazygit     | `~/.config/lazygit/local.yml` | `LG_CONFIG_FILE="base,local"` env var             |
+| hammerspoon | `~/.hammerspoon/local.lua`    | `pcall(require, "local")` at end of init.lua      |
+| gh-dash     | `~/.config/gh-dash/local.yml` | `yq` deep-merge after `dotfiles theme` generation |
 
 ### 3. Copy-on-install
 
