@@ -230,7 +230,7 @@ no `csharp|...` settings. Result: wrong solution target (or a multi-solution
 picker) and an unconfigured client. The deferred `dofile` is what forces
 `vim.lsp.enable` to run _after_ our config.
 
-## Roslyn During Diffview / Octo
+## Roslyn During Octo Review
 
 **Roslyn is NOT suppressed during review.** Earlier iterations called
 `vim.lsp.enable('roslyn', false)` on review entry to block new attaches, but
@@ -242,16 +242,14 @@ loaded `.cs` buffer — that's what produced the post-`<leader>de` editor freeze
 
 Why we don't need to block attaches: Neovim's built-in `lsp_enable_callback`
 skips buffers whose `buftype` isn't `''` or `'help'`. Octo review buffers use
-`buftype=nofile`, diffview file diff buffers use `buftype=nowrite`. So roslyn
-doesn't auto-attach to them anyway. The "hundreds of diff buffers freezing
-roslyn" concern is handled by Neovim itself.
+`buftype=nofile`, and differ's diff/panel/history buffers are `buftype=nofile`
+too. So roslyn doesn't auto-attach to them anyway.
 
 What we do keep:
 
-- **`vim.g.roslyn_suppressed` flag** — set on `FileType octo`/`DiffviewFiles`/
-  `DiffviewFileHistory`, cleared by `maybe_clear_roslyn_flag` (deferred 500ms
-  on `BufEnter *.cs`) once `diffview.lib.get_current_view()` is nil and no
-  `octo` buffers remain.
+- **`vim.g.roslyn_suppressed` flag** — set on `FileType octo`, cleared by
+  `maybe_clear_roslyn_flag` (deferred 500ms on `BufEnter *.cs`) once no `octo`
+  buffers remain.
 - **Notify filtering** lives in the wrap inside `ui.lua`'s fidget config (NOT
   here). Fidget's `override_vim_notify = true` overwrites `vim.notify` at
   setup time, blowing away wraps installed at module load — so the single
@@ -262,28 +260,15 @@ What we do keep:
   unblock roslyn.nvim's plugin file (gated by `vim.g.loaded_roslyn_plugin`)
   after our `lock_target` / `ignore_target` config is applied.
 
-## Diffview Edit (`<leader>de`) — No Treesitter Pre-warming
-
-`edit_diff_file()` in `pr-review.lua` used to pre-load the target buffer and
-force a synchronous Treesitter parse before leaving diffview.
-
-That made highlighting feel instant after the switch, but it also blocked the
-editor for large `.cs`, `.ts`, and `.tsx` files because the parse happened on
-the hot path for `<leader>de`.
-
-Current behavior: no pre-warm. `<leader>de` closes diffview and edits the file
-immediately, leaving Treesitter to initialize on the normal buffer-open path.
-This trades "instant highlighting" for a responsive editor, which is the
-correct default for large projects.
-
-## Which-Key in Diffview
+## Which-Key on Differ Buffers
 
 Which-key's trigger system has brief suspension windows (`ModeChanged`, `BufNew`)
-where the `<Space>` trigger keymap is absent. In diffview panels, a permanent
-buffer-local `<Space>` keymap calls `require('which-key').show(' ')` directly,
-bypassing the fragile trigger system. This is set via `FileType` autocmd for
-`DiffviewFiles`/`DiffviewFileHistory` in `pr-review.lua`.
+where the `<Space>` trigger keymap is absent. On differ buffers, a permanent
+buffer-local `<Space>`/`]`/`[` keymap calls `require('which-key').show(key)`
+directly, bypassing the fragile trigger system. This is set via a `BufWinEnter`
+autocmd keyed on the `differ://` buffer name in `plugins/differ.lua`. Octo has
+no equivalent pin.
 
 The `wk.add` BufEnter callback in `ui.lua` also skips `buftype ~= ''` buffers
-(diffview, telescope, neo-tree) and caches visibility state to avoid unnecessary
-`Buf.clear()` calls that remove all triggers globally.
+(differ, octo, telescope, neo-tree) and caches visibility state to avoid
+unnecessary `Buf.clear()` calls that remove all triggers globally.

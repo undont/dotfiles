@@ -19,7 +19,7 @@ require('custom.features.tag-rename').setup()
 -- bootstrap and load plugins
 require('custom.lazy-bootstrap').setup()
 
--- apply colourscheme before plugins load so gitsigns, diffview, etc.
+-- apply colourscheme before plugins load so gitsigns, differ, etc.
 -- pick up the correct highlight groups during their own setup
 require('custom.core.theme').setup()
 

@@ -66,7 +66,7 @@ local function analyzer_jars()
   return jars
 end
 
--- suppress sonarlint when entering diff/review contexts (Octo, Diffview).
+-- suppress sonarlint when entering an Octo review context.
 -- strategy: leave existing clients running (they continue analysing the
 -- pre-review buffers), but block new attaches via the FileType-handler gate
 -- installed in config(). this avoids a JVM cold-start cost when leaving
@@ -114,7 +114,7 @@ local function try_restore_sonarlint()
 end
 
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = { 'octo', 'DiffviewFiles', 'DiffviewFileHistory' },
+  pattern = 'octo',
   callback = suppress_sonarlint,
 })
 

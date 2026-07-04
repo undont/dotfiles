@@ -26,7 +26,7 @@ function M.setup()
 
   -- auto-reload: check for external changes on focus/cursor events.
   -- BufEnter is deliberately omitted: it cascades :checktime across every
-  -- loaded buffer each time a plugin (e.g. diffview) spawns buffers, which
+  -- loaded buffer each time a plugin (e.g. differ) spawns buffers, which
   -- can race with the autosave below and surface a `(L)oad File` prompt
   -- when `autoread` is bypassed by a transiently modified buffer.
   local reload_group = vim.api.nvim_create_augroup('auto-reload', { clear = true })
@@ -41,7 +41,7 @@ function M.setup()
   })
 
   -- force reload on external change. `autoread` is silently bypassed when a
-  -- buffer is `modified` (e.g. diffview's transient mid-layout buffers), which
+  -- buffer is `modified` (e.g. a plugin's transient mid-layout buffers), which
   -- surfaces the `(L)oad File` prompt. auto-save below flushes local edits to
   -- disk on focus/buffer leave, so discarding the in-memory copy is safe.
   vim.api.nvim_create_autocmd('FileChangedShell', {
@@ -144,7 +144,7 @@ function M.setup()
   })
   vim.api.nvim_set_hl(0, 'LazyDimmed', { link = 'Comment' })
 
-  -- dynamic diff highlights (diffview, octo)
+  -- dynamic diff highlights (differ, octo)
   local diff_highlights = require 'custom.core.diff-highlights'
   diff_highlights.setup()
 
@@ -187,10 +187,8 @@ function M.setup()
   -- fire `User RealDotnetFile` only for cs/razor outside a review context.
   -- lets heavy dotnet plugins (roslyn.nvim) lazy-load on this event instead
   -- of `ft = 'cs'`, so cold-start `<leader>do` from a dashboard doesn't pay
-  -- their config cost just to render diff buffers. buftype alone isn't enough
-  -- because diffview's right-pane index buffers use `buftype=''` (they're
-  -- editable for staging), so we also check for an active diffview view or
-  -- any loaded octo buffer.
+  -- their config cost just to render diff buffers. buftype alone isn't
+  -- checked in isolation, so also gate on any loaded octo buffer.
   local review_context = require 'custom.core.review-context'
 
   vim.api.nvim_create_autocmd('FileType', {
@@ -256,7 +254,7 @@ function M.setup()
   -- clean up unnamed empty buffers when opening a file
   -- removes the default [No Name] buffer that nvim creates at startup
   -- deferred via vim.schedule to avoid interfering with plugin layout creation
-  -- (e.g. diffview's find_pivot triggers BufEnter mid-layout via 1windo)
+  -- (a plugin's window-splitting during layout setup can trigger BufEnter mid-layout)
   local cleanup_group = vim.api.nvim_create_augroup('cleanup-empty-buffers', { clear = true })
   vim.api.nvim_create_autocmd('BufEnter', {
     desc = 'Delete unnamed empty buffers',

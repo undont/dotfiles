@@ -6,7 +6,7 @@
 
 local M = {}
 
---- prevent LSP servers from attaching to non-file:// buffers (diffview://,
+--- prevent LSP servers from attaching to non-file:// buffers (differ://,
 --- octo://, fugitive://, etc.). without this, servers like gopls log JSON-RPC
 --- parse errors when nvim sends didOpen with a non-file URI
 function M.patch_lsp_start()
@@ -15,7 +15,7 @@ function M.patch_lsp_start()
     opts = opts or {}
     local bufnr = opts.bufnr or vim.api.nvim_get_current_buf()
     -- buffer can be wiped between when lsp_enable_callback queues the start
-    -- and when this scheduled callback fires (e.g. diffview disposing diff
+    -- and when this scheduled callback fires (e.g. differ disposing diff
     -- buffers); abort silently in that case
     if not vim.api.nvim_buf_is_valid(bufnr) then
       return nil

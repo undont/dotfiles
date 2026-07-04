@@ -5,7 +5,7 @@ local lsp_fix_all = require 'custom.features.lsp-fix-all'
 local lsp_patches = require 'custom.features.lsp-patches'
 local roslyn_diagnostics = require 'custom.features.roslyn-diagnostics'
 
---- true only for ordinary on-disk file buffers. Diffview/fugitive views and
+--- true only for ordinary on-disk file buffers. differ/fugitive views and
 --- other plugin buffers carry a `scheme://` name and/or a non-empty `buftype`;
 --- formatting them is meaningless and crashes formatters like csharpier, which
 --- tries to resolve a config directory from the bogus URI path
@@ -67,7 +67,7 @@ end
 --- the default handler applies the workspace edit to every affected file but
 --- leaves the ones that weren't already open as unsaved background buffers.
 --- those never fire the autosave (no TextChanged/BufLeave), so renamed symbols
---- in other modules stay off disk: invisible to Diffview (which diffs disk)
+--- in other modules stay off disk: invisible to differ (which diffs disk)
 --- and piling up as a "save changes?" cascade on :qa. mirror the default, then
 --- flush every touched buffer, consistent with the auto-save autocmd
 local function rename_and_save(_, result, ctx)
@@ -327,7 +327,7 @@ return {
       -- defer mason setups: their `setup{}` calls do tool-install verification
       -- and per-server enable iteration that can take many seconds on cold
       -- start. running them in vim.schedule lets the triggering buffer
-      -- (BufReadPre, including diffview/octo diff buffers) finish opening
+      -- (BufReadPre, including differ/octo diff buffers) finish opening
       -- first. servers register/attach a few ms later, invisible in practice
       vim.schedule(function()
         -- per-machine opt-out for lightweight boxes (e.g. a Raspberry Pi) that

@@ -9,7 +9,7 @@ local function refresh_nvim()
     vim.cmd 'Neotree close'
   end)
   pcall(function()
-    vim.cmd 'DiffviewClose'
+    vim.cmd 'Differ close'
   end)
 
   -- close all splits so the window fills the terminal before wiping buffers

@@ -1,10 +1,11 @@
 -- differ.nvim: local diffs, file history, staging, pr review, merge conflicts,
--- all through one renderer with the same UX. owns the <leader>d* launchers
--- (replacing diffview, which keeps <leader>dT for diff-by-ticket) and the
--- <leader>p* pr launchers (replacing octo, which stays installed as a fallback,
--- reachable via :Octo). thread/comment actions are in-diff gestures bound by
--- differ itself in the pr diff: ga comment, gp reply, gr resolve, gx delete,
--- gc collapse, ]t/[t thread nav.
+-- all through one renderer with the same UX. owns every <leader>d* launcher,
+-- including dT (diff by ticket, reusing features/ticket.lua's commit discovery;
+-- differ's own revspec grammar covers both shapes it needs, so no plugin-side
+-- change was required), and the <leader>p* pr launchers (replacing octo, which
+-- stays installed as a fallback, reachable via :Octo). thread/comment actions
+-- are in-diff gestures bound by differ itself in the pr diff: ga comment,
+-- gp reply, gr resolve, gx delete, gc collapse, ]t/[t thread nav.
 
 -- the build hook compiles the go sidecar (pr review) on install/update; it needs
 -- go + make on PATH. local diffs work without it.
@@ -43,6 +44,27 @@ return {
       { '<leader>do', '<cmd>Differ HEAD<CR>', desc = '[D]iff [O]pen (vs index)' },
       { '<leader>dc', '<cmd>Differ close<CR>', desc = '[D]iff [C]lose' },
       { '<leader>dt', '<cmd>Differ base<CR>', desc = '[D]iff branch [T]otal (vs base)' },
+      {
+        '<leader>dT',
+        function()
+          -- commit discovery shared with <leader>xT / <leader>lT (features/ticket.lua).
+          -- both revspecs below are native :Differ grammar (rev vs worktree, two-dot
+          -- range), so no differ-side support was needed for this
+          require('custom.features.ticket').prompt_commits(function(ctx)
+            local oldest, newest = ctx.commits[#ctx.commits], ctx.commits[1]
+            if newest == ctx.head then
+              -- single-rev form diffs against the working tree, so uncommitted
+              -- and untracked changes are included
+              vim.cmd(('Differ %s^'):format(oldest))
+            else
+              -- commits exist after the newest match; a working-tree diff would
+              -- include them, so stick to the fixed range
+              vim.cmd(('Differ %s^..%s'):format(oldest, newest))
+            end
+          end)
+        end,
+        desc = '[D]iff branch by [T]icket',
+      },
       { '<leader>de', '<cmd>Differ gofile<CR>', desc = '[D]iff [E]dit file' },
       { '<leader>dd', '<cmd>Differ panel<CR>', desc = '[D]iff panel toggle' },
       { '<leader>dh', '<cmd>Differ log<CR>', desc = '[D]iff file [H]istory' },
@@ -81,16 +103,14 @@ return {
       -- so it survives a cold start before this config runs
       require('differ').setup {}
 
-      -- pin a permanent <Space>/]/[ to which-key on differ buffers, mirroring the
-      -- diffview workaround in pr-review.lua. which-key's auto-trigger system has
-      -- suspension windows (ModeChanged, BufNew) where the trigger keymap is absent,
-      -- and each wk.add calls Buf.clear() which drops all triggers globally. differ's
-      -- buffers are nofile and (for diffs) carry the source filetype, so they aren't
-      -- matched by the diffview FileType workaround and fall into that gap. a .cs diff
-      -- makes it reliable: the roslyn/dotnet open churn (User RealDotnetFile, semantic
-      -- token refresh, scan_files buffer create/delete) fires the very events that hit
-      -- the suspension windows. every differ buffer is named differ://, so key off the
-      -- name; a plain buffer-local map isn't managed by the trigger system, so it survives
+      -- pin a permanent <Space>/]/[ to which-key on differ buffers. which-key's
+      -- auto-trigger system has suspension windows (ModeChanged, BufNew) where the
+      -- trigger keymap is absent, and each wk.add calls Buf.clear() which drops all
+      -- triggers globally. a .cs diff makes it reliable: the roslyn/dotnet open churn
+      -- (User RealDotnetFile, semantic token refresh, scan_files buffer create/delete)
+      -- fires the very events that hit the suspension windows. every differ buffer is
+      -- named differ://, so key off the name; a plain buffer-local map isn't managed
+      -- by the trigger system, so it survives
       vim.api.nvim_create_autocmd('BufWinEnter', {
         group = vim.api.nvim_create_augroup('differ-whichkey', { clear = true }),
         callback = function(ev)

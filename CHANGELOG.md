@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- Nvim: `<leader>dT` (diff by ticket) moves from diffview.nvim to differ.nvim, reusing the same ticket/commit-grep discovery (`features/ticket.lua`). differ's existing revspec grammar (single-rev vs worktree, two-dot range) already covers both shapes the feature needs, so no differ-side change was required. `nvim/lua/custom/plugins/differ.lua`
+
+### Removed
+
+- Nvim: diffview.nvim dropped entirely, its last live keymap (`<leader>dT`) having moved to differ.nvim. Removed its plugin spec, upstream-bug patches, and buffer-local which-key/fold-compat wiring from `pr-review.lua`; deleted `features/diff-edit.lua` (its diffview close-wrapper and octo edit-file branch were only ever reachable through diffview's own `FileType` autocmd, so both were dead once it's gone). Review-context detection, roslyn/sonarlint suppression gates, the gitsigns buffer skip, and the zoom/refresh/which-key/diff-highlight integrations now cover octo (and differ, where applicable) only. `nvim/lua/custom/plugins/pr-review.lua`, `nvim/lua/custom/core/review-context.lua`, `nvim/lua/custom/core/windows.lua`, `nvim/lua/custom/core/refresh.lua`, `nvim/lua/custom/core/diff-highlights.lua`, `nvim/lua/custom/plugins/sonarlint.lua`, `nvim/lua/custom/plugins/dotnet.lua`, `nvim/lua/custom/plugins/gitsigns.lua`, `nvim/lua/custom/plugins/ui.lua`
+
 ## [0.2.125] - 2026-07-04
 
 ### Added

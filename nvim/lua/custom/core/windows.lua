@@ -2,11 +2,11 @@
 
 local M = {}
 
--- in-tab zoom state, keyed by tabpage. Diffview (and octo's review, a diffview
--- fork) can't use the `tab split` zoom: each scopes its view (and every panel
--- keymap, e.g. j/k -> next/prev entry) to the tabpage, so a new tab detaches
--- them and the keys go dead. for those we maximise the window in place instead,
--- stashing the layout to restore later
+-- in-tab zoom state, keyed by tabpage. octo's review can't use the `tab split`
+-- zoom: it scopes its view (and every panel keymap, e.g. j/k -> next/prev
+-- entry) to the tabpage, so a new tab detaches them and the keys go dead. for
+-- that we maximise the window in place instead, stashing the layout to
+-- restore later
 local zoom_state = {}
 
 local in_scoped_view = require('custom.core.review-context').is_scoped_view
