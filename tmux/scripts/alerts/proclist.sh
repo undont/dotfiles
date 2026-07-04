@@ -59,7 +59,7 @@ done < <(tmux list-panes -a -F \
     "#{pane_id}${TAB}#{session_name}${TAB}#{window_index}${TAB}#{pane_index}${TAB}#{window_id}${TAB}#{window_name}" \
     2>/dev/null)
 
-# ── running rows (registry), longest-running first ──────────────────────────
+# ── running rows (registry), most recently started first ────────────────────
 now=$(date +%s)
 if [[ -d "$RUNNING_DIR" ]]; then
     run_rows=()
@@ -89,7 +89,7 @@ if [[ -d "$RUNNING_DIR" ]]; then
             "$elapsed" "$TAB" "$display" "$TAB" "$TAB" "$target" "$TAB" "$r_pane" "$TAB")")
     done
     if (( ${#run_rows[@]} )); then
-        printf '%s\n' "${run_rows[@]}" | sort -rn | cut -f2-
+        printf '%s\n' "${run_rows[@]}" | sort -n | cut -f2-
     fi
 fi
 
