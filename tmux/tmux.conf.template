@@ -225,7 +225,7 @@ bind c display-popup -w 95% -h 95% -E "\
       --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
       --border-label-pos=bottom \
       --preview '~/.tmux/scripts/utils/preview-pane.sh {2}' \
-      --preview-window='right,55%,<60(bottom,40%)' \
+      --preview-window='right,65%,<60(bottom,40%)' \
       --bind 'every(0.5):refresh-preview' \
       --bind 'every(2):reload-sync(~/.tmux/scripts/instances/claude.sh)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
