@@ -126,10 +126,18 @@ else
     fail "Should expose AGENT_STUCK_SECS override"
 fi
 
-if [[ "$script_content" == *'spin_re'* ]] && [[ "$script_content" == *'pane_title'* ]]; then
+if [[ "$script_content" == *'_title_has_spinner'* ]] && [[ "$script_content" == *'pane_title'* ]]; then
     pass "Corroborates stuck via pane title spinner"
 else
     fail "Should corroborate stuck via pane title spinner"
+fi
+
+# the spinner check must be locale-independent (byte-based, not a codepoint
+# range that a C locale would mis-match)
+if [[ "$script_content" == *'od -An -tx1'* ]]; then
+    pass "Spinner check tests raw utf-8 bytes (locale-independent)"
+else
+    fail "Spinner check should be byte-based, not a locale-sensitive range"
 fi
 
 if [[ "$script_content" == *'_fmt_elapsed'* ]]; then

@@ -61,8 +61,18 @@ fi
 
 TAB=$(printf '\t')
 now=$(date +%s)
-# claude's title starts with a braille spinner char (U+2800-U+28FF) while working
-spin_re=$'^[\u2800-\u28ff]'
+
+# claude code shows a braille char (U+2800-U+28FF) in the pane title while
+# working, and U+2733 (\u2733) when idle. test the raw leading utf-8 bytes (E2 with
+# a second byte in A0-A3 is exactly the braille block) rather than a codepoint
+# range: a C/POSIX locale collapses [\u2800-\u28ff] to a byte range that also matches \u2733,
+# which would silently hide every stuck instance. called only for stale working
+# panes, so the fork is rare
+_title_has_spinner() {
+    local hex
+    hex=$(printf '%s' "$1" | od -An -tx1 -N2 2>/dev/null | tr -d ' \n')
+    case "$hex" in e2a0 | e2a1 | e2a2 | e2a3) return 0 ;; *) return 1 ;; esac
+}
 
 # store results; track panes for the stale-state sweep below
 claude_panes=()
@@ -95,7 +105,7 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
             age_str=$(_fmt_elapsed "$age")
             # stuck: nominally working, no hook event for a while, and the
             # pane title no longer shows the spinner
-            if [[ "$state" == "working" ]] && (( age > STUCK_SECS )) && [[ ! "$title" =~ $spin_re ]]; then
+            if [[ "$state" == "working" ]] && (( age > STUCK_SECS )) && ! _title_has_spinner "$title"; then
                 state="stuck"
             fi
         fi
