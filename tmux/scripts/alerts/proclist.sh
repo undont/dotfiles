@@ -12,21 +12,7 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# ansi-colour a string: _ansi "#rrggbb" "text"
-_ansi() {
-    local c="$1" text="$2"
-    printf '\033[38;2;%d;%d;%dm%s\033[0m' \
-        "0x${c:1:2}" "0x${c:3:2}" "0x${c:5:2}" "$text"
-}
-
-# humanise elapsed seconds: 45s, 12m, 1h03m
-_fmt_elapsed() {
-    local s="$1"
-    if (( s < 60 )); then printf '%ds' "$s"
-    elif (( s < 3600 )); then printf '%dm' "$(( s / 60 ))"
-    else printf '%dh%02dm' "$(( s / 3600 ))" "$(( (s % 3600) / 60 ))"
-    fi
-}
+# _ansi and _fmt_elapsed come from _lib/alerts.sh
 
 # legend header (3 lines, matched by --header-lines=3 in the binding)
 run_disp=$(get_running_display);     run_icon="${run_disp%%|*}";  run_col="${run_disp##*|}"

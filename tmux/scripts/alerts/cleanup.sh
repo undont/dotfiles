@@ -7,3 +7,4 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
 cleanup_stale_alerts || true
+cleanup_stale_agent_state || true

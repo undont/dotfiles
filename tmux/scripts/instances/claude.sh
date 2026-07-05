@@ -1,12 +1,20 @@
 #!/usr/bin/env bash
 # list all running Claude Code instances across all tmux sessions
-# shows session, window, and pane information for each instance
+# emits a 7-line header (logo + state legend) then tab-delimited rows for fzf:
+#   {1}=display(shown)  {2}=jump/preview target session:window.pane
+# state comes from the agent-state registry (AGENT_STATE_DIR), written by the
+# claude code hooks (scripts/hooks/agent-state.sh); "stuck" is derived here
+# from event age plus the pane title losing claude's braille spinner
 
 set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
+source "$SCRIPT_DIR/../_lib/process.sh"
+
+# a working state older than this with no spinner in the title reads as stuck
+STUCK_SECS="${AGENT_STUCK_SECS:-120}"
 
 # check if tmux is available
 if ! command -v tmux &>/dev/null; then
@@ -19,7 +27,8 @@ if ! tmux list-sessions &>/dev/null; then
 fi
 
 # build set of PIDs that are ancestors of an active (non-suspended) claude process
-# walks up the process tree so wrapper scripts (e.g., ralph -> claude) are detected
+# walks up the process tree so wrapper scripts (e.g., ralph -> claude) are detected.
+# match_process_pids also catches versioned binaries pgrep -x can't see
 declare -A active_claude_ppids
 while IFS= read -r cpid; do
     state=$(ps -o state= -p "$cpid" 2>/dev/null) || continue
@@ -34,7 +43,7 @@ while IFS= read -r cpid; do
         active_claude_ppids[$ppid]=1
         pid="$ppid"
     done
-done < <(pgrep -x claude 2>/dev/null)
+done < <(match_process_pids claude)
 
 # pre-fetch window names: "session:window_index window_name"
 declare -A window_names
@@ -50,35 +59,77 @@ if [[ -f "$ALERTS_FILE" ]]; then
     alerts_content=$(<"$ALERTS_FILE")
 fi
 
-# store results
-claude_panes=()
+TAB=$(printf '\t')
+now=$(date +%s)
+# claude's title starts with a braille spinner char (U+2800-U+28FF) while working
+spin_re=$'^[\u2800-\u28ff]'
 
-# iterate through all panes in all sessions, sorted by last viewed (most recent first)
-while IFS= read -r line; do
-    # parse: "last_viewed session:window_index.pane_index pane_pid"
-    rest="${line#* }"          # strip last_viewed
-    target="${rest%% *}"       # session:window_index.pane_index
-    pane_pid="${rest##* }"     # pane_pid
+# store results; track panes for the stale-state sweep below
+claude_panes=()
+declare -A pane_seen pane_has_claude
+
+# iterate through all panes in all sessions, sorted by last viewed (most recent
+# first). pane_title is last so an embedded tab in it can't shift other fields
+while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid title; do
+    [[ -n "$pane_id" ]] || continue
+    pane_seen[$pane_id]=1
 
     # check if this pane has an active claude child
     [[ -n "${active_claude_ppids[$pane_pid]:-}" ]] || continue
+    pane_has_claude[$pane_id]=1
 
-    # extract session and window_idx for lookups
-    session="${target%%:*}"
-    win_pane="${target#*:}"
-    window_idx="${win_pane%%.*}"
-
+    target="${session}:${window_idx}.${pane_idx}"
     window_name="${window_names["${session}:${window_idx}"]:-}"
+
+    # state + age from the registry (agent/state/epoch lead the line and are
+    # always non-empty, so a plain tab read is safe)
+    state="" age_str=""
+    state_file="$AGENT_STATE_DIR/$pane_id"
+    if [[ -f "$state_file" ]]; then
+        s_agent="" s_state="" s_epoch=""
+        IFS="$TAB" read -r s_agent s_state s_epoch _ < "$state_file" || true
+        if [[ "$s_agent" == "claude" && -n "$s_state" && "$s_epoch" =~ ^[0-9]+$ ]]; then
+            state="$s_state"
+            age=$(( now - s_epoch ))
+            (( age < 0 )) && age=0
+            age_str=$(_fmt_elapsed "$age")
+            # stuck: nominally working, no hook event for a while, and the
+            # pane title no longer shows the spinner
+            if [[ "$state" == "working" ]] && (( age > STUCK_SECS )) && [[ ! "$title" =~ $spin_re ]]; then
+                state="stuck"
+            fi
+        fi
+    fi
+
+    sdisp=$(get_agent_state_display "$state")
+    row="$(_ansi "${sdisp##*|}" "${sdisp%%|*}")  ${session}:${window_name}"
+    [[ -n "$age_str" ]] && row="${row}  ${age_str}"
 
     # check if this window has an alert for claude (names stored percent-encoded)
     if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${session}:$(alerts_encode_window "$window_name"):claude$" 2>/dev/null; then
         display=$(get_agent_display "claude")
-        icon="${display%%|*}"
-        claude_panes+=("${target} ${window_name} ${icon}")
-    else
-        claude_panes+=("${target} ${window_name}")
+        row="${row}  ${display%%|*}"
     fi
-done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
+
+    claude_panes+=("${row}${TAB}${target}")
+done < <(tmux list-panes -a -F "#{?#{@pane-viewed},#{@pane-viewed},0}${TAB}#{session_name}${TAB}#{window_index}${TAB}#{pane_index}${TAB}#{pane_id}${TAB}#{pane_pid}${TAB}#{pane_title}" | sort -rn)
+
+# opportunistic GC: drop state files (and tmp litter) for panes that are gone,
+# and claude files for panes whose claude has exited. other agents' files are
+# left for their own listers
+if [[ -d "$AGENT_STATE_DIR" ]]; then
+    for f in "$AGENT_STATE_DIR"/*; do
+        [[ -e "$f" ]] || continue
+        fname="${f##*/}"
+        if [[ -z "${pane_seen[$fname]:-}" ]]; then
+            rm -f "$f"
+        elif [[ -z "${pane_has_claude[$fname]:-}" ]]; then
+            f_agent=""
+            IFS="$TAB" read -r f_agent _ < "$f" || true
+            [[ "$f_agent" == "claude" ]] && rm -f "$f"
+        fi
+    done
+fi
 
 # add Claude Code ghost at top (Anthropic terracotta: #D77757 = 215;119;87)
 echo ""
@@ -87,12 +138,26 @@ printf "\033[38;2;215;119;87m▝▜█████▛▘\033[0m\n"
 printf "\033[38;2;215;119;87m  ▘▘ ▝▝\033[0m\n"
 echo ""
 
-# display results (empty list shows just the logo)
+# state legend (line 6 of the 7-line header)
+l_working=$(get_agent_state_display working)
+l_input=$(get_agent_state_display needs-input)
+l_idle=$(get_agent_state_display idle)
+l_error=$(get_agent_state_display error)
+l_stuck=$(get_agent_state_display stuck)
+printf '  %s working  %s input  %s idle  %s error  %s stuck\n' \
+    "$(_ansi "${l_working##*|}" "${l_working%%|*}")" \
+    "$(_ansi "${l_input##*|}" "${l_input%%|*}")" \
+    "$(_ansi "${l_idle##*|}" "${l_idle%%|*}")" \
+    "$(_ansi "${l_error##*|}" "${l_error%%|*}")" \
+    "$(_ansi "${l_stuck##*|}" "${l_stuck%%|*}")"
+echo ""
+
+# display results (empty list shows just the header)
 if [[ ${#claude_panes[@]} -eq 0 ]]; then
     exit 0
 fi
 
-# simple list below ghost
+# tab-delimited rows below the header
 for pane_info in "${claude_panes[@]}"; do
-    echo "$pane_info"
+    printf '%s\n' "$pane_info"
 done

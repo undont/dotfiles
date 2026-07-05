@@ -38,6 +38,15 @@ if [[ -z "${SUPPRESS_DIR:-}" ]]; then
     readonly SUPPRESS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/suppress"
 fi
 
+# agent-state registry: one file per pane (named by pane id, e.g. %12) holding
+# the last hook-reported state for the agent running in it. written by
+# scripts/hooks/agent-state.sh, removed on SessionEnd and by stale-file GC.
+# fields: agent<tab>state<tab>epoch<tab>event<tab>session_id<tab>cwd
+# (cwd last so an embedded tab can't shift earlier fields)
+if [[ -z "${AGENT_STATE_DIR:-}" ]]; then
+    readonly AGENT_STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/agent-state"
+fi
+
 # alert file format: session:window:agent
 # future enhancement: add timestamp field for age-based sorting and auto-expiry
 # proposed format: session:window:agent:timestamp
@@ -64,6 +73,22 @@ alerts_decode_window() {
     s="${s//%3A/:}"
     s="${s//%25/%}"
     printf '%s' "$s"
+}
+
+# ansi-colour a string: _ansi "#rrggbb" "text"
+_ansi() {
+    local c="$1" text="$2"
+    printf '\033[38;2;%d;%d;%dm%s\033[0m' \
+        "0x${c:1:2}" "0x${c:3:2}" "0x${c:5:2}" "$text"
+}
+
+# humanise elapsed seconds: 45s, 12m, 1h03m
+_fmt_elapsed() {
+    local s="$1"
+    if (( s < 60 )); then printf '%ds' "$s"
+    elif (( s < 3600 )); then printf '%dm' "$(( s / 60 ))"
+    else printf '%dh%02dm' "$(( s / 3600 ))" "$(( (s % 3600) / 60 ))"
+    fi
 }
 
 # get agent icon (compatible with bash 3.2, no associative arrays)
@@ -104,6 +129,21 @@ get_agent_display() {
         opencode) echo "|#bd93f9" ;;
         copilot)  echo "|#58a6ff" ;;
         *)        echo "󱜙|#6272a4" ;;
+    esac
+}
+
+# get agent state display icon and colour (inlined to avoid subshell forks)
+# states come from the agent-state registry; "stuck" is derived at render time
+# usage: get_agent_state_display "state"
+# returns: "icon|colour"
+get_agent_state_display() {
+    case "$1" in
+        working)     echo "●|#d8a657" ;;    # amber: in progress
+        needs-input) echo "◐|#f1fa8c" ;;    # yellow: waiting on permission/question
+        idle)        echo "○|#8a8f98" ;;    # muted grey: finished, awaiting prompt
+        error)       echo "✗|#c07878" ;;    # muted red: turn died on an API error
+        stuck)       echo "⚠|#d77757" ;;    # terracotta: working but no recent activity
+        *)           echo "·|#6272a4" ;;    # unknown: no state recorded
     esac
 }
 
@@ -612,6 +652,24 @@ cleanup_stale_alerts() {
     fi
 
     _release_alerts_lock
+}
+
+# drop agent-state files whose pane no longer exists. per-pane files are
+# independent, so no locking is needed; catches orphans left by crashed agents
+# or a tmux server restart (SessionEnd handles the normal exit path)
+# usage: cleanup_stale_agent_state
+cleanup_stale_agent_state() {
+    [[ -d "$AGENT_STATE_DIR" ]] || return 0
+
+    local live_panes
+    live_panes=$(tmux list-panes -a -F '#{pane_id}' 2>/dev/null) || return 0
+
+    local f pane
+    for f in "$AGENT_STATE_DIR"/*; do
+        [[ -e "$f" ]] || continue
+        pane="${f##*/}"
+        grep -qxF "$pane" <<< "$live_panes" || rm -f "$f"
+    done
 }
 
 # update window name in alerts file (for window renames)
