@@ -83,6 +83,7 @@ The installer supports three presets to customise what gets installed:
 
 - Everything in Minimal, plus:
 - Editor: Neovim with LSP, Telescope, and plugins
+- Editor: Zed keymap/tasks (settings.json copied once, then user-owned)
 - Terminal: Ghostty configuration
 - AI Tools: OpenCode (brewed); Claude Code, Codex, Copilot CLIs install separately
 - Session launchers (`dev`, `github`, `btop`, `docker`, `dotfiles`, `config`)
@@ -337,6 +338,12 @@ Session Launchers (core):
 Hammerspoon (full):
   ~/.hammerspoon           -> ~/dotfiles/hammerspoon
 
+Zed (core):
+  ~/.config/zed/keymap.json  -> ~/dotfiles/zed/keymap.json
+  ~/.config/zed/tasks.json   -> ~/dotfiles/zed/tasks.json
+  ~/.config/zed/settings.json   Copy from ~/dotfiles/zed/settings.json (copy-on-install; mixes
+                                shareable prefs with per-machine font/theme, no include mechanism)
+
 Karabiner (full):
   ~/.config/karabiner/karabiner.json -> ~/dotfiles/karabiner/karabiner.json
 ```
@@ -516,8 +523,8 @@ The health check confirms the installation completed successfully. It catches is
 | --------- | ------- | -------------------------------------------------------------------------------- |
 | Symlinks  | minimal | `.zprofile`, `.prettierrc`, `.editorconfig`, `.tmux`, `.tmux.conf`, dotfiles CLI |
 | Files     | minimal | `.p10k.zsh` and generated `tmux.conf` exist                                      |
-| Symlinks  | core    | `nvim` config, `lazygit` config, `dash-repo-sync`                                |
-| Files     | core    | generated `ghostty/config`, `ghostty/local`, `gh-dash/config.yml`                |
+| Symlinks  | core    | `nvim` config, `lazygit` config, `dash-repo-sync`, `zed/keymap.json`, `zed/tasks.json` |
+| Files     | core    | generated `ghostty/config`, `ghostty/local`, `gh-dash/config.yml`, `zed/settings.json` (copy-on-install) |
 | Symlinks  | full    | `hammerspoon/init.lua`; `karabiner.json` (file check)                            |
 | TPM       | minimal | `~/.tmux/plugins/tpm` exists                                                     |
 | lazy.nvim | core    | `~/.local/share/nvim/lazy` exists (after first nvim launch)                      |

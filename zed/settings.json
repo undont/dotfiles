@@ -1,0 +1,124 @@
+// Zed settings
+//
+// For information on how to configure Zed, see the Zed
+// documentation: https://zed.dev/docs/configuring-zed
+//
+// To see all of Zed's default settings without changing your
+// custom settings, run `zed: open default settings` from the
+// command palette (cmd-shift-p / ctrl-shift-p)
+{
+  "git_panel": {
+    "tree_view": false,
+  },
+  "collaboration_panel": {
+    "button": false
+  },
+  "calls": {
+    "mute_on_join": true
+  },
+  "active_pane_modifiers": {
+    "inactive_opacity": 0.7
+  },
+  "use_system_window_tabs": false,
+  "preview_tabs": {
+    "enable_preview_from_file_finder": true
+  },
+  "tab_bar": {
+    "show": true
+  },
+  "tabs": {
+    "file_icons": true,
+    "git_status": true
+  },
+  "title_bar": {
+    "show_menus": true,
+    "show_branch_status_icon": true
+  },
+  "status_bar": {
+    "show_active_file": true
+  },
+  "use_system_prompts": true,
+  "debugger": {
+    "dock": "bottom"
+  },
+  "terminal": {
+    "show_count_badge": false,
+    "button": true,
+    "flexible": true,
+    "dock": "right"
+  },
+  "git": {
+    "disable_git": false,
+    "inline_blame": {
+      "enabled": false
+    }
+  },
+  "project_panel": {
+    "dock": "left",
+    "drag_and_drop": false
+  },
+  "proxy": "",
+  "disable_ai": true,
+  "relative_line_numbers": "enabled",
+  "diff_view_style": "unified",
+  "which_key": {
+    "enabled": true
+  },
+  "ui_font_family": "Monaspace Neon NF",
+  "buffer_line_height": "comfortable",
+  "buffer_font_family": "Monaspace Neon NF",
+  "minimap": {
+    "show": "never"
+  },
+  "cursor_shape": "bar",
+  "autosave": {
+    "after_delay": {
+      "milliseconds": 1000
+    }
+  },
+  "file_types": {
+    "go": ["*.go"]
+  },
+  "tab_size": 2,
+  "languages": {
+    "Lua": {
+      "tab_size": 2,
+      "formatter": {
+        "external": {
+          "command": "stylua",
+          "arguments": [
+            "--stdin-filepath",
+            "{buffer_path}",
+            "--search-parent-directories",
+            "-"
+          ]
+        }
+      }
+    },
+    "Python": {
+      "tab_size": 4
+    },
+    "Go": {
+      "hard_tabs": true
+    }
+  },
+  "base_keymap": "VSCode",
+  "telemetry": {
+    "diagnostics": false,
+    "metrics": false,
+    "anthropic_retention": false
+  },
+  "vim_mode": true,
+  "icon_theme": {
+    "mode": "system",
+    "light": "Zed (Default)",
+    "dark": "Material Icon Theme"
+  },
+  "ui_font_size": 20.0,
+  "buffer_font_size": 20.0,
+  "theme": {
+    "mode": "system",
+    "light": "Gruvbox Light",
+    "dark": "Kanagawa Dragon"
+  }
+}

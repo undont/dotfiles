@@ -25,7 +25,7 @@ return {
       },
       panel = { enabled = false },
       filetypes = {
-        markdown = true,
+        markdown = false,
         yaml = true,
         help = false,
         gitcommit = false,
@@ -48,6 +48,11 @@ return {
       should_attach = function(bufnr, bufname)
         -- preserve default checks: skip unlisted and special buffers (e.g. Telescope prompts)
         if not vim.bo[bufnr].buflisted or vim.bo[bufnr].buftype ~= '' then
+          return false
+        end
+        -- ssh keys/config have no distinguishing filetype, so block by path instead
+        local ssh_dir = vim.fn.resolve(vim.fn.expand '~/.ssh') .. '/'
+        if bufname:sub(1, #ssh_dir) == ssh_dir then
           return false
         end
         local patterns = { '%.env', 'secret', 'credential', '%.key$', '%.pem$', '%.secrets%.zsh' }

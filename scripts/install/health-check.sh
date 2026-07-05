@@ -224,6 +224,13 @@ if should_install "core"; then
     check_file "$HOME/.config/ghostty/local" "ghostty local override"
 fi
 
+# Zed (core)
+if should_install "core"; then
+    check_symlink "$HOME/.config/zed/keymap.json" "$DOTFILES_DIR/zed/keymap.json" "zed keymap"
+    check_symlink "$HOME/.config/zed/tasks.json" "$DOTFILES_DIR/zed/tasks.json" "zed tasks"
+    check_file "$HOME/.config/zed/settings.json" "zed settings (copy-on-install)"
+fi
+
 # Karabiner (full)
 if should_install "full"; then
     check_file "$HOME/.config/karabiner/karabiner.json" "karabiner config"

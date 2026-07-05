@@ -1,0 +1,179 @@
+// Zed keymap — nvim-parity layer
+//
+// Mirrors ~/dotfiles/nvim's keybindings as closely as Zed's vim mode allows.
+// Leader is <space> (matches nvim's mapleader) but Zed has no mapleader variable,
+// so every leader sequence below is spelled out literally as "space ...".
+//
+// Reference: https://zed.dev/docs/key-bindings, https://zed.dev/docs/vim
+// To see Zed's own defaults: "zed: open default keymap" from the command palette.
+[
+  // pane management — mirrors tmux's alt-hjkl scheme (tmux/tmux.conf.template),
+  // global so it works from any mode/panel, not just normal-mode editing.
+  {
+    "context": "Workspace",
+    "bindings": {
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-j": "workspace::ActivatePaneDown",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-l": "workspace::ActivatePaneRight",
+      "alt-\\": "pane::SplitRight",
+      "alt-'": "pane::SplitLeft",
+      "alt--": "pane::SplitDown",
+      "alt-=": "pane::SplitUp",
+      "alt-shift-h": "vim::ResizePaneLeft",
+      "alt-shift-j": "vim::ResizePaneDown",
+      "alt-shift-k": "vim::ResizePaneUp",
+      "alt-shift-l": "vim::ResizePaneRight",
+      "alt-z": "vim::MaximizePane",
+      "alt-)": "vim::ResetPaneSizes"
+    }
+  },
+
+  // dock-panel toggles — unlike the modifier chords Zed's own defaults use
+  // (cmd-shift-e/b/d, ctrl-shift-g), these are bare "space X" sequences, so a
+  // bare "Workspace" scope is unsafe: every text input in Zed (chat, commit
+  // messages, rename, search...) is itself an Editor node nested somewhere
+  // under Workspace, and nothing more specific claims plain space/e/o/d/g
+  // there, so the keystrokes would fire the toggle instead of inserting text.
+  // Two rules cover every case without that risk: the first fires while
+  // actively coding in normal mode; the second is the "everywhere else"
+  // fallback (blank workspace, browsing a panel's tree/list) but explicitly
+  // excludes any focus path containing an Editor at all, which also covers a
+  // panel's own inline rename/commit input. Use Toggle (open/close), not
+  // Zed's default ToggleFocus (focus-only, never closes). Raycast's
+  // app-switcher hotkeys also claim cmd-shift-e/b globally, so those
+  // defaults never reach Zed at all.
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      "space e": "project_panel::Toggle",
+      "space o": "outline_panel::Toggle",
+      "space d": "debug_panel::Toggle",
+      "space g": "git_panel::Toggle"
+    }
+  },
+  {
+    "context": "Workspace && !Editor",
+    "bindings": {
+      "space e": "project_panel::Toggle",
+      "space o": "outline_panel::Toggle",
+      "space d": "debug_panel::Toggle",
+      "space g": "git_panel::Toggle"
+    }
+  },
+
+  // ctrl-hjkl are already claimed by Zed at the Editor node (backspace/scroll-center/
+  // kill-ring-cut) and by vim mode itself (ctrl-j == vim::Down), both of which sit
+  // at the same or deeper tree level than "Workspace" and so win by default. Zed's
+  // precedence rule is tree-depth first, matching order only as a tiebreak at the
+  // same depth — a Workspace-level binding can never beat an Editor-level one, no
+  // matter how specific its context string looks. This block re-overrides them at
+  // Editor level (VimControl == normal/visual/operator, so insert-mode ctrl-h still
+  // backspaces, matching real vim). Excludes showing_code_actions/showing_completions
+  // so it never ties with the context-menu ctrl-j/k block below — code actions
+  // triggered from normal mode (g r f) keep VimControl true while the menu is open.
+  {
+    "context": "Editor && VimControl && !showing_code_actions && !showing_completions",
+    "bindings": {
+      "ctrl-h": "workspace::ActivatePaneLeft",
+      "ctrl-j": "workspace::ActivatePaneDown",
+      "ctrl-k": "workspace::ActivatePaneUp",
+      "ctrl-l": "workspace::ActivatePaneRight"
+    }
+  },
+
+  // code-action / completion popup navigation — ctrl-j/k alongside Zed's own
+  // ctrl-n/ctrl-p (emacs-style), matching the Picker ctrl-j/k pattern below.
+  {
+    "context": "Editor && (showing_code_actions || showing_completions)",
+    "bindings": {
+      "ctrl-j": "editor::ContextMenuNext",
+      "ctrl-k": "editor::ContextMenuPrevious"
+    }
+  },
+
+  // core motions — m/M/gm swap, matches nvim/lua/custom/core/keymaps.lua.
+  // Native motions, not SendKeystrokes, so counts/operator-pending/visual all work.
+  {
+    "context": "Editor && VimControl",
+    "bindings": {
+      "m": "vim::FirstNonWhitespace", // was "^"
+      "shift-m": "vim::EndOfLine", // was window-middle; nvim trades that away too
+      "g m": "vim::PushMark" // native mark-set, relocated off bare "m"
+    }
+  },
+
+  // picker/menu navigation — ctrl-j/k alongside Zed's own ctrl-n/p, matching nvim's
+  // Telescope <C-j>/<C-k> next/prev selection (telescope.lua:75-102). Scoped to the
+  // picker's own text input so it doesn't fight the pane-nav ctrl-j/k above.
+  {
+    "context": "Picker > Editor",
+    "bindings": {
+      "ctrl-j": "menu::SelectNext",
+      "ctrl-k": "menu::SelectPrevious"
+    }
+  },
+
+  // vim mode binds project-panel enter to OpenPermanent (a different action than a
+  // plain click's Open), which is meant to skip preview-tab reuse — but that's also
+  // where the new-pane behaviour was coming from. Force it to match click exactly.
+  // "o" is a default split shortcut (OpenSplitHorizontal) — same fix, same reason.
+  {
+    "context": "ProjectPanel && not_editing",
+    "bindings": {
+      "enter": "project_panel::Open",
+      "o": "project_panel::Open"
+    }
+  },
+
+  // leader-key workflows (leader = space). Zed's vim mode already ships gd/gD/gy/gi/
+  // grn/grr/gri/gra/gx/K/ctrl-a/ctrl-x/]c/[c/ys/cs/ds natively matching nvim almost
+  // exactly — nothing to add there. This block only fills the remaining gaps.
+  {
+    "context": "Editor && vim_mode == normal",
+    "bindings": {
+      // LSP — gr* aliases nvim added on top of the neovim-0.11 defaults
+      "g r d": "editor::GoToDefinition",
+      "g r shift-d": "editor::GoToDeclaration",
+      "g r t": "editor::GoToTypeDefinition",
+      "g r f": "editor::ToggleCodeActions", // closest to "fix all"; pick the fix from the menu
+      "g shift-o": "outline::Toggle", // nvim gO — document symbols
+      "g shift-w": "project_symbols::Toggle", // nvim gW — workspace symbols
+      "space f": "editor::Format",
+      "space l r": "editor::RestartLanguageServer",
+      "space l h": "editor::ToggleInlayHints",
+      "space l l": "lsp_tool::ToggleMenu", // was ctrl-cmd-l (global default)
+
+      // folding — zr/zc/zm -> zR/zC/zM, matches nvim/lua/custom/core/folding.lua
+      "z r": "editor::UnfoldAll",
+      "z c": "editor::FoldRecursive",
+      "z m": "editor::FoldAll",
+
+      // fuzzy-finding — Telescope pickers -> Zed's equivalent panels
+      "space s f": "file_finder::Toggle",
+      "space s g": "pane::DeploySearch",
+      "space s s": "command_palette::Toggle",
+      "space s d": "diagnostics::Deploy",
+      "space space": "tab_switcher::Toggle", // nvim's <leader><leader> buffer picker
+
+      // file explorer / buffers
+      "space b d": "pane::CloseActiveItem",
+      "space b a": "pane::CloseAllItems",
+
+      // git hunks — gitsigns' <leader>H* -> native git actions (]c/[c already native)
+      "space H s": "git::ToggleStaged",
+      "space H r": "git::Restore",
+      "space H S": "git::StageAll",
+      "space H b": "editor::BlameHover",
+      "space H B": "editor::ToggleGitBlameInline",
+
+      // diagnostics quickfix-equivalent (Zed has no quickfix list)
+      "space x x": "diagnostics::Deploy",
+
+      // no direct equivalents exist for these nvim workflows; closest substitutes:
+      "space q": "task::Spawn" // was auto-detected project build (build.lua) — Zed has no
+      // marker-file detection, so ~/.config/zed/tasks.json lists one entry per project
+      // type instead and this opens a picker over them
+    }
+  }
+]

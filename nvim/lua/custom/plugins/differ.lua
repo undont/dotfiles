@@ -41,7 +41,7 @@ return {
     build = 'make go-build',
     cmd = 'Differ',
     keys = {
-      { '<leader>do', '<cmd>Differ HEAD<CR>', desc = '[D]iff [O]pen (vs index)' },
+      { '<leader>do', '<cmd>Differ<CR>', desc = '[D]iff [O]pen (vs index)' },
       { '<leader>dc', '<cmd>Differ close<CR>', desc = '[D]iff [C]lose' },
       { '<leader>dt', '<cmd>Differ base<CR>', desc = '[D]iff branch [T]otal (vs base)' },
       {

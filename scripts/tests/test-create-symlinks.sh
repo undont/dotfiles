@@ -142,6 +142,18 @@ else
     fail "Should handle gh-dash for core preset"
 fi
 
+if echo "$script_content" | grep -q 'create_link.*zed/keymap\.json'; then
+    pass "Links zed keymap.json (core)"
+else
+    fail "Should link zed keymap.json for core preset"
+fi
+
+if echo "$script_content" | grep -q 'create_link.*zed/tasks\.json'; then
+    pass "Links zed tasks.json (core)"
+else
+    fail "Should link zed tasks.json for core preset"
+fi
+
 # ═══════════════════════════════════════════════════════════════
 # Full Preset Symlinks
 # ═══════════════════════════════════════════════════════════════
@@ -302,7 +314,7 @@ fi
 section "Copy-on-Install Configs"
 
 # these configs should use copy_config, NOT create_link
-for config in "btop.conf" "karabiner.json"; do
+for config in "btop.conf" "karabiner.json" "settings.json"; do
     config_name=$(basename "$config")
     # check the config appears in a copy_config call, not create_link
     if echo "$script_content" | grep -q "copy_config.*$config_name"; then
@@ -385,6 +397,8 @@ declare -a SOURCE_FILES=(
     "tmux/local.conf.template"
     "gh-dash/config.yml.template"
     "scripts/dotfiles"
+    "zed/keymap.json"
+    "zed/tasks.json"
 )
 
 for src_file in "${SOURCE_FILES[@]}"; do
@@ -404,6 +418,7 @@ declare -a COPY_SOURCES=(
     "hammerspoon/init.lua"
     "lazygit/config.yml"
     "lazydocker/config.yml"
+    "zed/settings.json"
 )
 
 for src_file in "${COPY_SOURCES[@]}"; do
@@ -437,8 +452,21 @@ else
     fail "Uninstall SYMLINKS should contain hammerspoon init.lua symlink"
 fi
 
+# zed splits keymap.json/tasks.json (symlinked) from settings.json (copy-on-install)
+if echo "$uninstall_content" | grep -A 30 '^SYMLINKS=(' | grep -q 'zed/keymap\.json'; then
+    pass "Uninstall SYMLINKS contains zed keymap.json (symlinked)"
+else
+    fail "Uninstall SYMLINKS should contain zed keymap.json symlink"
+fi
+
+if echo "$uninstall_content" | grep -A 30 '^SYMLINKS=(' | grep -q 'zed/settings\.json'; then
+    fail "Uninstall SYMLINKS should not contain zed settings.json (copy-on-install)"
+else
+    pass "Uninstall SYMLINKS does not contain zed settings.json"
+fi
+
 # should have preservation warnings for user-owned configs
-for config in "btop" "karabiner" "hammerspoon" "lazygit" "lazydocker"; do
+for config in "btop" "karabiner" "hammerspoon" "lazygit" "lazydocker" "zed"; do
     if [[ "$uninstall_content" == *"personal config"*"$config"* ]] || [[ "$uninstall_content" == *"$config"*"personal config"* ]]; then
         pass "Uninstall preserves $config with warning"
     else

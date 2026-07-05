@@ -357,6 +357,20 @@ if command -v zsh &>/dev/null; then
         echo "$_cmd_alert_label"
     ' 2>/dev/null)
     assert_equals "Path-prefixed command strips ./ from basename" "run-tests.sh --verbose" "$label"
+
+    # nested launcher alias (regression: config -> v -> "cl && nvim" used to
+    # slip through because the old guard only read the typed alias's own
+    # definition (aliases[config] = "v ~/.config", no "&&"), missing that v
+    # itself is a clear-then-run launcher. $2 is what zsh actually passes to
+    # preexec: the fully alias-expanded command, resolved through the whole
+    # chain
+    start=$(zsh -c '
+        source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+        _cmd_alert_preexec "config" "clear && nvim ~/.config"
+        echo "$_cmd_alert_start:[$_cmd_alert_label]"
+    ' 2>/dev/null)
+    assert_equals "Nested clear-then-run alias (config -> v -> cl && nvim) is excluded" \
+        "-1:[]" "$start"
 else
     skip "zsh not available — skipping label truncation tests"
 fi

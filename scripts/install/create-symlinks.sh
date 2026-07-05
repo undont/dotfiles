@@ -122,6 +122,23 @@ if should_install "core"; then
     install_local "$DOTFILES_DIR/ghostty/local.template" "$HOME/.config/ghostty/local"
 fi
 
+# Zed (core)
+# keymap.json/tasks.json are pure shareable config (no personal/machine values,
+# and Zed's own writers -- GUI keymap editor, atomic settings save -- write
+# through the symlink or the canonicalised target rather than replacing it, so
+#symlinking is safe). settings.json mixes shareable prefs with per-machine
+# ones (font size, theme) and Zed has no include/override mechanism to split
+# them, so it stays copy-on-install like btop/karabiner.
+if should_install "core"; then
+    echo ""
+    echo "Zed configuration:"
+    mkdir -p "$HOME/.config/zed"
+
+    create_link "$DOTFILES_DIR/zed/keymap.json" "$HOME/.config/zed/keymap.json"
+    create_link "$DOTFILES_DIR/zed/tasks.json" "$HOME/.config/zed/tasks.json"
+    copy_config "$DOTFILES_DIR/zed/settings.json" "$HOME/.config/zed/settings.json"
+fi
+
 # Karabiner (full)
 if should_install "full"; then
     echo ""
@@ -251,7 +268,7 @@ if [[ -x "$DOTFILES_DIR/scripts/theme-switch" ]]; then
         "$DOTFILES_DIR/scripts/theme-switch" dracula --quiet
     }
     success "Generated themed configurations"
-    
+
     # create compatibility symlink from ~/.tmux.conf to XDG location
     # (do this after theme-switch generates the file)
     echo ""

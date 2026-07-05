@@ -1,6 +1,6 @@
 # CLAUDE.md
 
-Personal dotfiles for macOS/Linux development environment. Manages configuration for zsh, tmux, neovim, hammerspoon, ghostty, and karabiner.
+Personal dotfiles for macOS/Linux development environment. Manages configuration for zsh, tmux, neovim, zed, hammerspoon, ghostty, and karabiner.
 
 ## Quick Reference
 
@@ -23,7 +23,19 @@ the repo propagate on next `dotfiles update`.
 **Used for:** zprofile, tmux scripts, nvim plugins, launchers, the statusline
 theme resolver (`scripts/_lib/statusline-theme.sh` -> `~/.config/dotfiles/statusline-theme.sh`),
 the ImageMagick font map (`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`,
-macOS only; see the note below).
+macOS only; see the note below), zed's `keymap.json` and `tasks.json`.
+
+Zed has no include/override mechanism for its config files (confirmed against
+upstream source: no `include`/`import` directive in `settings.json` or
+`keymap.json`, and no per-machine local file it auto-loads), so it can't use
+the layered pattern below. `keymap.json`/`tasks.json` carry no personal or
+machine-specific values, so they're plain symlinks. Zed's own writers are safe
+to symlink under: the GUI keymap editor writes through the symlink with a
+plain `fs::write` (no rename), and the settings editor canonicalises the path
+before its atomic tempfile-rename, so it lands on the resolved repo file
+rather than replacing the symlink. `settings.json` itself mixes shareable
+prefs with per-machine ones (font size, theme) with no way to split them, so
+it stays copy-on-install instead (see below).
 
 yazi is symlinked **per file** (`yazi/yazi.toml`, `yazi/keymap.toml` ->
 `~/.config/yazi/`), not as a whole directory, so theme-switch can write a
@@ -63,7 +75,7 @@ Config is copied on first install, then becomes fully user-owned. Repo changes d
 **not** propagate. If you improve a copy-on-install config, document the change in
 `CHANGELOG.md` so users know to apply it manually.
 
-**Used for:** btop, lazydocker, karabiner, zshrc.
+**Used for:** btop, lazydocker, karabiner, zshrc, zed's `settings.json`.
 
 ## Change Guidelines
 

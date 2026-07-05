@@ -1,0 +1,53 @@
+// Global tasks — space q (keymap.json) opens a picker over this list.
+//
+// Unlike nvim's <leader>q (nvim/lua/custom/features/build.lua), which auto-detects
+// project type from marker files and runs the one matching command, Zed's task
+// system has no such detection — this is a static menu, so pick the entry that
+// matches the project you're in.
+[
+  {
+    "label": "go vet",
+    "command": "go vet ./...",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "check (npm/pnpm/yarn/bun)",
+    "command": "if [ -f bun.lockb ] || [ -f bun.lock ]; then bun run check; elif [ -f pnpm-lock.yaml ]; then pnpm run check; elif [ -f yarn.lock ]; then yarn check; else npm run check; fi",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "tsc --noEmit",
+    "command": "if [ -f bun.lockb ] || [ -f bun.lock ]; then bun run tsc --noEmit --pretty false; elif [ -f pnpm-lock.yaml ]; then pnpm exec tsc --noEmit --pretty false; elif [ -f yarn.lock ]; then yarn tsc --noEmit --pretty false; else npx tsc --noEmit --pretty false; fi",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "dotnet build",
+    "command": "dotnet build --no-incremental -consoleloggerparameters:NoSummary",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "make",
+    "command": "make",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "make build",
+    "command": "make build",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "make check",
+    "command": "make check",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "make test",
+    "command": "make test",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  },
+  {
+    "label": "make lint",
+    "command": "make lint",
+    "cwd": "$ZED_WORKTREE_ROOT"
+  }
+]
