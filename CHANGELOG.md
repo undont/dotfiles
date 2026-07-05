@@ -8,6 +8,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [0.2.126] - 2026-07-05
 
+### Added
+
+- Tmux: process list `x` binding now suppresses the alert + finished row for the process it interrupts. It touches a per-pane marker right before sending Ctrl-C; the shell's precmd hook consumes and deletes it on that completion, so only an intentional kill from proclist goes silent, a manually-typed Ctrl-C still gets the usual ⊘ treatment. Orphaned markers (pane died with the command) are pruned after 10s. `scripts/hooks/cmd-alert-hook.zsh`, `tmux/scripts/_lib/alerts.sh`, `tmux/scripts/alerts/proclist-action.sh`, `tmux/scripts/alerts/proclist.sh`, `tmux/scripts/tests/test-cmd-alert-hooks.sh`, `docs/CMD-ALERTS.md`
+
 ### Changed
 
 - Nvim: `<leader>dT` (diff by ticket) moves from diffview.nvim to differ.nvim, reusing the same ticket/commit-grep discovery (`features/ticket.lua`). differ's existing revspec grammar (single-rev vs worktree, two-dot range) already covers both shapes the feature needs, so no differ-side change was required. `nvim/lua/custom/plugins/differ.lua`
