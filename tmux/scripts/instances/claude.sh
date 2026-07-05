@@ -24,6 +24,8 @@ declare -A active_claude_ppids
 while IFS= read -r cpid; do
     state=$(ps -o state= -p "$cpid" 2>/dev/null) || continue
     [[ "$state" == T* ]] && continue
+    # include claude itself: tmux new-window 'claude ...' execs claude as the pane process
+    active_claude_ppids[$cpid]=1
     pid="$cpid"
     while true; do
         ppid=$(ps -o ppid= -p "$pid" 2>/dev/null) || break

@@ -85,6 +85,8 @@ SYMLINKS=(
     "$HOME/.config/lazygit/config.yml"
     "$HOME/.config/yazi/yazi.toml"
     "$HOME/.config/yazi/keymap.toml"
+    "$HOME/.config/zed/keymap.json"
+    "$HOME/.config/zed/tasks.json"
     # full
     "$HOME/.hammerspoon/init.lua"
 )
@@ -268,6 +270,11 @@ fi
 karabiner_conf="$HOME/.config/karabiner/karabiner.json"
 if [[ -f "$karabiner_conf" ]]; then
     warn "Kept $karabiner_conf (personal config — remove manually if desired)"
+fi
+
+zed_settings="$HOME/.config/zed/settings.json"
+if [[ -f "$zed_settings" ]]; then
+    warn "Kept $zed_settings (personal config — remove manually if desired)"
 fi
 
 hammerspoon_dir="$HOME/.hammerspoon"

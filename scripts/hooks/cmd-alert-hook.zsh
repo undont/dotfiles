@@ -70,15 +70,23 @@ _cmd_alert_preexec() {
     local first
     first="${${words[1]:-cmd}:t}"
 
-    # launcher convention: aliases defined as clear-then-run (`cl && X`,
-    # `clear && X`) are interactive sessions, not background tasks. read the
-    # definition from zsh's alias map so any launcher following the convention
-    # is excluded automatically, with no per-launcher list to keep in sync
-    local _adef="${aliases[$first]:-}"
-    if [[ -n "$_adef" && "$_adef" == *"&&"* ]]; then
-        local -a _dw
-        _dw=("${(z)_adef}")
-        case "${_dw[1]}" in
+    # $2 is the alias-expanded command, recursively through nested aliases
+    # (zsh resolves the whole chain before preexec runs); matching its first
+    # word too catches plain aliases like gfp -> git fetch --prune (covered
+    # by the `git` entry)
+    local exp="${2:-$cmd}"
+    local -a ewords
+    ewords=("${(z)exp}")
+    local efirst
+    efirst="${${ewords[1]:-cmd}:t}"
+
+    # launcher convention: aliases that expand to clear-then-run (`cl && X`,
+    # `clear && X`) are interactive sessions, not background tasks. checked
+    # against the fully-expanded command rather than the typed alias's own
+    # definition, so a chain like config -> v -> "cl && nvim" is still
+    # recognised even though `config` itself never mentions cl/clear
+    if [[ "$exp" == *"&&"* ]]; then
+        case "$efirst" in
             cl|clear|c)
                 _cmd_alert_start=-1
                 _cmd_alert_label=""
@@ -86,14 +94,6 @@ _cmd_alert_preexec() {
                 ;;
         esac
     fi
-
-    # $2 is the alias-expanded command; matching its first word too catches
-    # plain aliases like gfp -> git fetch --prune (covered by the `git` entry)
-    local exp="${2:-$cmd}"
-    local -a ewords
-    ewords=("${(z)exp}")
-    local efirst
-    efirst="${${ewords[1]:-cmd}:t}"
 
     # skip excluded commands. single-word entries match the typed or expanded
     # first word; multi-word entries match either as a command prefix

@@ -37,7 +37,7 @@ brew "carapace"               # Multi-shell completion provider (bridges zsh com
 # Editors
 brew "neovim"            # >= 0.11 required for nvim-treesitter
 brew "tree-sitter-cli"   # Required by nvim-treesitter for parser compilation
-cask "visual-studio-code"
+cask "zed"               # editor
 
 # AI Coding Assistants
 brew "opencode"

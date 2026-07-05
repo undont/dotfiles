@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.127] - 2026-07-05
+
+### Added
+
+- Zed: `keymap.json` and `tasks.json` are now symlinked from the repo (`zed/`); `settings.json` is copy-on-install since it mixes shareable prefs with per-machine font/theme values and Zed has no include/override mechanism to split them. Verified against upstream source that Zed's own writers (GUI keymap editor, atomic settings save) write through the symlink or its canonicalised target rather than replacing it. `scripts/install/create-symlinks.sh`, `scripts/install/health-check.sh`, `scripts/install/uninstall.sh`, `scripts/tests/test-create-symlinks.sh`, `zed/keymap.json`, `zed/tasks.json`, `zed/settings.json`, `CLAUDE.md`, `docs/INSTALLATION-GUIDE.md`
+- `zed` cask to the Brewfile (Editors section), replacing `visual-studio-code`. `Brewfile`
+- Copilot: buffers under `~/.ssh` are now blocked by path, since ssh keys/config have no distinguishing filetype to catch with the existing pattern list. `nvim/lua/custom/plugins/copilot.lua`
+
+### Changed
+
+- Copilot: markdown suggestions disabled (`filetypes.markdown` now `false`). `nvim/lua/custom/plugins/copilot.lua`
+- Nvim: `<leader>do` now opens `Differ` (working tree) instead of `Differ HEAD` (vs index). `nvim/lua/custom/plugins/differ.lua`
+
+### Fixed
+
+- cmd-alert-hook: the clear-then-run launcher check now reads the fully alias-expanded command (`$2`) instead of the typed alias's own definition, so nested launcher chains (e.g. `config` -> `v` -> `cl && nvim`) are recognised even though the outer alias never mentions `cl`/`clear` itself. `scripts/hooks/cmd-alert-hook.zsh`, `tmux/scripts/tests/test-cmd-alert-hooks.sh`
+- tmux claude instance detection: the claude process's own pid is now included in the active-ppid set, since `tmux new-window 'claude ...'` execs claude as the pane process rather than spawning it as a child. `tmux/scripts/instances/claude.sh`
+
+### Removed
+
+- `visual-studio-code` cask from the Brewfile
+
 ## [0.2.126] - 2026-07-05
 
 ### Added

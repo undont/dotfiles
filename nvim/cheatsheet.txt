@@ -235,7 +235,7 @@ Case-aware substitute | :S/{from}/{to}/g
 Subvert (multi-form sub) | :Subvert/facilit{y,ies}/building{,s}/g
 
 ## diff @differ
-Diff open (vs index) | <leader>do
+Diff open (working tree) | <leader>do
 Diff close | <leader>dc
 Diff branch total (vs base) | <leader>dt
 Diff branch by ticket | <leader>dT
