@@ -46,9 +46,6 @@ return {
 
       wk.setup {
         delay = 0, -- show immediately for snappy feel
-        filter = function(mapping)
-          return mapping.desc ~= 'diffview_ignore'
-        end,
         win = {
           no_overlap = false,
         },
@@ -70,7 +67,7 @@ return {
           { '<leader>o', group = '[O]bsidian', icon = { icon = '󱞁 ', color = 'purple' } },
           { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'red' } },
 
-          -- ── always-visible (non-code contexts like Octo, diffview) ──
+          -- ── always-visible (non-code contexts like Octo, differ) ──
           { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' } },
 
           -- ── always-visible (qf/loclist commands work in any buffer) ──
@@ -140,12 +137,12 @@ return {
       -- each wk.add internally calls Buf.clear() which removes ALL trigger
       -- keymaps from ALL buffers, creating a brief window where which-key
       -- can't intercept <leader>. caching prevents this during rapid buffer
-      -- transitions (e.g. diffview file navigation)
+      -- transitions (e.g. differ file navigation)
       local prev_vis = {}
 
       local function update_filetype_groups()
         -- only update for real file buffers; preserve previous state in
-        -- special contexts (diffview, telescope, neo-tree, etc.)
+        -- special contexts (differ, telescope, neo-tree, etc.)
         if vim.bo.buftype ~= '' then
           return
         end

@@ -1,6 +1,6 @@
 -- git file/commit discovery shared by the scan, diff and picker keymaps.
 --
--- ticket-scoped commit discovery behind <leader>dT (diffview), <leader>xT
+-- ticket-scoped commit discovery behind <leader>dT (differ), <leader>xT
 -- (all-LSP diagnostics scan) and <leader>lT (sonar scan): merge-base with
 -- main, ticket default pulled from the branch name, commit subjects grepped
 -- with --fixed-strings in base..HEAD.
@@ -10,7 +10,7 @@
 -- always operate on the same file set.
 --
 -- branch discovery behind <leader>xb (all-LSP) and <leader>lb (sonar) scans:
--- every file changed vs merge-base(main), mirroring <leader>dt's diffview
+-- every file changed vs merge-base(main), mirroring <leader>dt's differ
 
 local M = {}
 
@@ -143,7 +143,7 @@ end
 --- branch work plus uncommitted/untracked changes. the single-rev
 --- `diff <base>` form (no second rev) diffs the merge-base against the
 --- working tree, so it already includes dirty files, the same semantics as
---- <leader>dt's single-rev DiffviewOpen. deletions are filtered out (ACMR;
+--- <leader>dt's `:Differ base`. deletions are filtered out (ACMR;
 --- renames keep the new path) since a scan can't use a missing file. returns
 --- nil (with a notify) outside a git repo or when no merge-base with main
 --- @return string[]?

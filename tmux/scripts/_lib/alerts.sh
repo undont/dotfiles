@@ -28,6 +28,16 @@ if [[ -z "${FINISHED_FILE:-}" ]]; then
     readonly FINISHED_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/finished"
 fi
 
+# kill-suppress markers: one file per pane, touched by proclist-action.sh
+# right before it sends the interrupting Ctrl-C. the shell's precmd hook
+# checks for this marker on completion and, if present, skips both the
+# finished-history row and the status-right alert, since the kill was
+# intentional rather than a run-to-completion result. kept in sync with
+# _CMD_SUPPRESS_DIR in scripts/hooks/cmd-alert-hook.zsh
+if [[ -z "${SUPPRESS_DIR:-}" ]]; then
+    readonly SUPPRESS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/suppress"
+fi
+
 # alert file format: session:window:agent
 # future enhancement: add timestamp field for age-based sorting and auto-expiry
 # proposed format: session:window:agent:timestamp

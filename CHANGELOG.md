@@ -6,13 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.126] - 2026-07-05
+
+### Added
+
+- Tmux: process list `x` binding now suppresses the alert + finished row for the process it interrupts. It touches a per-pane marker right before sending Ctrl-C; the shell's precmd hook consumes and deletes it on that completion, so only an intentional kill from proclist goes silent, a manually-typed Ctrl-C still gets the usual ⊘ treatment. Orphaned markers (pane died with the command) are pruned after 10s. `scripts/hooks/cmd-alert-hook.zsh`, `tmux/scripts/_lib/alerts.sh`, `tmux/scripts/alerts/proclist-action.sh`, `tmux/scripts/alerts/proclist.sh`, `tmux/scripts/tests/test-cmd-alert-hooks.sh`, `docs/CMD-ALERTS.md`
+
+### Changed
+
+- Nvim: `<leader>dT` (diff by ticket) moves from diffview.nvim to differ.nvim, reusing the same ticket/commit-grep discovery (`features/ticket.lua`). differ's existing revspec grammar (single-rev vs worktree, two-dot range) already covers both shapes the feature needs, so no differ-side change was required. `nvim/lua/custom/plugins/differ.lua`
+
+### Removed
+
+- Nvim: diffview.nvim dropped entirely, its last live keymap (`<leader>dT`) having moved to differ.nvim. Removed its plugin spec, upstream-bug patches, and buffer-local which-key/fold-compat wiring from `pr-review.lua`; deleted `features/diff-edit.lua` (its diffview close-wrapper and octo edit-file branch were only ever reachable through diffview's own `FileType` autocmd, so both were dead once it's gone). Review-context detection, roslyn/sonarlint suppression gates, the gitsigns buffer skip, and the zoom/refresh/which-key/diff-highlight integrations now cover octo (and differ, where applicable) only. `nvim/lua/custom/plugins/pr-review.lua`, `nvim/lua/custom/core/review-context.lua`, `nvim/lua/custom/core/windows.lua`, `nvim/lua/custom/core/refresh.lua`, `nvim/lua/custom/core/diff-highlights.lua`, `nvim/lua/custom/plugins/sonarlint.lua`, `nvim/lua/custom/plugins/dotnet.lua`, `nvim/lua/custom/plugins/gitsigns.lua`, `nvim/lua/custom/plugins/ui.lua`
+
 ## [0.2.125] - 2026-07-04
 
 ### Added
 
 - Monaspace Neon Nerd Font added to the font set on both platforms: the `font-monaspace-nf` cask on macOS and fetched from githubnext/monaspace's own NF build on Linux via `install-fonts.sh`. `Brewfile`, `scripts/install/install-fonts.sh`
 - Ghostty theme catalogue fetched on Linux boxes without Ghostty installed. `dotfiles theme generate` reads Ghostty's bundled theme files as its source of truth, which don't exist on distros that don't package Ghostty (e.g. Debian, Raspberry Pi OS); `install-ghostty-themes.sh` populates `~/.local/share/ghostty/themes` from `mbadolato/iTerm2-Color-Schemes`'s ready-made `ghostty/` directory via a sparse clone, so theme generation works without the Ghostty binary. `scripts/install/install-ghostty-themes.sh`, `scripts/install/install-packages.sh`
-- Tmux: poke status segment in status-right (`poke render`) shows pending team pokes, with prefix + b to dismiss them (`poke clear`). Not a dotfiles-managed tool: the segment renders empty and the binding is a no-op when the `poke` CLI isn't installed. `tmux/tmux.conf.template`
+- Tmux: poke status segment in status-right (`poke render`) shows pending team pokes, with prefix + b to dismiss them (`poke clear`).
 
 ### Changed
 

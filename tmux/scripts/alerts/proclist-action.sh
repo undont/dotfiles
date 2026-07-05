@@ -15,6 +15,13 @@ B="${4:-}"
 
 case "$TYPE" in
     run)
+        # mark this pane's next completion as an intentional kill so precmd
+        # (cmd-alert-hook.zsh) skips the alert + finished-history row for it;
+        # written before the interrupt to avoid a race with a fast exit
+        if [[ -n "$A" ]]; then
+            mkdir -p "$SUPPRESS_DIR" 2>/dev/null
+            : > "$SUPPRESS_DIR/${A#%}" 2>/dev/null || true
+        fi
         # interrupt the pane's foreground command; the shell's precmd then
         # clears the registry. remove the file too so the list updates at once
         [[ -n "$TARGET" ]] && tmux send-keys -t "$TARGET" C-c 2>/dev/null || true

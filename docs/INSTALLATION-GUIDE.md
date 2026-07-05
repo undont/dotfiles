@@ -733,7 +733,7 @@ dotfiles set projects ~/playground
 - **Treesitter**: Advanced syntax highlighting
 - **Telescope**: Fuzzy finder for files, grep, buffers
 - **GitHub Copilot**: AI code completion (requires authentication)
-- **Diffs and PR review**: differ.nvim for local diffs, file history, staging, and GitHub PR review in-editor (diffview for diff-by-ticket, Octo.nvim as a `:Octo` fallback)
+- **Diffs and PR review**: differ.nvim for local diffs, file history, staging, GitHub PR review, and diff-by-ticket in-editor (Octo.nvim as a `:Octo` fallback)
 
 ### Desktop Applications
 

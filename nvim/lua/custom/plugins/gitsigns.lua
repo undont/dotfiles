@@ -20,13 +20,6 @@ return {
       numhl = false,
       linehl = false,
       on_attach = function(bufnr)
-        -- skip diffview buffers: gutter signs are useless in diff panes and
-        -- each attachment spawns git subprocesses, risking EMFILE exhaustion
-        local bufname = vim.api.nvim_buf_get_name(bufnr)
-        if bufname:match 'diffview://' then
-          return false
-        end
-
         local gitsigns = require 'gitsigns'
 
         local function map(mode, l, r, mopts)

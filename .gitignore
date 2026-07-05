@@ -42,7 +42,7 @@ nvim/colors/generated/
 
 # AI Code Assistants
 .claude/*
-!.claude/skills/
+.claude/skills/
 !.claude/rules/
 .opencode
 

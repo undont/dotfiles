@@ -29,11 +29,10 @@ local function resolve_solution_target()
   end
 end
 
--- Roslyn during diff/review contexts (Diffview, Octo).
+-- Roslyn during an Octo review context.
 -- strategy: do NOTHING to the LSP client. nvim's `lsp_enable_callback`
--- skips buffers with `buftype` other than '' or 'help', and diff buffers
--- have buftype=nofile (octo, diffview file_history) or buftype=nowrite
--- (diffview file diffs), so roslyn never auto-attaches to them anyway.
+-- skips buffers with `buftype` other than '' or 'help', and octo review
+-- buffers have buftype=nofile, so roslyn never auto-attaches to them anyway.
 -- we previously called `vim.lsp.enable('roslyn', false)` to "block new
 -- attaches", but that ALSO stops every running roslyn client (per the
 -- vim.lsp.enable contract: "stops related LSP clients and servers"),
@@ -56,15 +55,14 @@ local function source_deferred_plugin()
 end
 
 vim.api.nvim_create_autocmd('FileType', {
-  pattern = { 'octo', 'DiffviewFiles', 'DiffviewFileHistory' },
+  pattern = 'octo',
   callback = function()
     vim.g.roslyn_suppressed = true
   end,
 })
 
--- clear the flag once the review context is fully torn down. Diffview
--- buffers can linger after close, so check the active view (not buffer
--- filetypes) plus any remaining octo buffers
+-- clear the flag once the review context is fully torn down (no octo
+-- buffers remain)
 local function maybe_clear_roslyn_flag()
   if not vim.g.roslyn_suppressed then
     return
@@ -87,9 +85,9 @@ vim.api.nvim_create_autocmd('BufEnter', {
 return {
   -- Roslyn LSP via roslyn.nvim (diagnostics, go-to-def, hover, completions)
   -- loads on `User RealDotnetFile` (fired by core/autocmds.lua only for
-  -- buftype='' cs/razor buffers). diff buffers in diffview/octo have
-  -- buftype=nowrite/nofile, so they don't trigger this and roslyn.nvim's
-  -- ~1.8s config cost stays off the cold-`<leader>do` critical path
+  -- buftype='' cs/razor buffers). differ and octo diff/review buffers are
+  -- buftype=nofile, so they don't trigger this and roslyn.nvim's ~1.8s
+  -- config cost stays off the cold-`<leader>do` critical path
   {
     'seblyng/roslyn.nvim',
     event = 'User RealDotnetFile',

@@ -93,6 +93,19 @@ if [[ -d "$RUNNING_DIR" ]]; then
     fi
 fi
 
+# prune stale kill-suppress markers: precmd consumes and removes its own
+# marker on completion, but if the interrupted command took the whole pane
+# down with it (no further precmd ever fires), the marker would otherwise sit
+# forever. anything older than a normal command-exit turnaround is orphaned
+SUPPRESS_MAX_AGE=10
+if [[ -d "$SUPPRESS_DIR" ]]; then
+    for f in "$SUPPRESS_DIR"/*; do
+        [[ -e "$f" ]] || continue
+        mtime=$(stat -f %m "$f" 2>/dev/null || stat -c %Y "$f" 2>/dev/null) || continue
+        (( now - mtime > SUPPRESS_MAX_AGE )) && rm -f "$f"
+    done
+fi
+
 # ── finished rows (history file): newest first, last hour ───────────────────
 # the alerts file (status-right + window-status exit indicators) has no TTL of
 # its own: an exit line clears only when its window is selected or its session

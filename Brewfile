@@ -79,6 +79,7 @@ brew "bear"     # Generates compile_commands.json for clang tooling (C/C++/ObjC)
 
 # Tmux Extras
 brew "morantron/tmux-fingers/tmux-fingers" # Quick pattern copy (requires gcc on Linux)
+brew "undont/tap/poke"                     # Terminal-native teammate pokes (tmux status segment)
 
 # =============================================================================
 # @preset: core

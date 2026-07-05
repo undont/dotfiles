@@ -404,7 +404,7 @@ end
 
 -- branch-total scan: the diagnostic-scan analogue of <leader>dt. same
 -- merge-base discovery (shared via features/ticket.lua) but instead of opening a
--- diffview it scans every file changed on the branch vs main and dumps their
+-- diff it scans every file changed on the branch vs main and dumps their
 -- diagnostics into the quickfix
 local function open_branch_scan()
   local paths = require('custom.features.ticket').branch_files()
@@ -477,7 +477,7 @@ local function open_project_scan()
 end
 
 -- ticket-scoped scan: same commit discovery as <leader>dT and <leader>lT
--- (shared via features/ticket.lua) but instead of opening a diffview it scans
+-- (shared via features/ticket.lua) but instead of opening a diff it scans
 -- the union of files touched by exactly the matched commits and dumps their
 -- diagnostics into the quickfix
 local function open_ticket_scan()
