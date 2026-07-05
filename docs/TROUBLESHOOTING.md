@@ -614,6 +614,32 @@ chmod +x ~/.tmux/scripts/**/*.sh
 # macos-option-as-alt = true
 ```
 
+### Claude Switcher Shows No State Icons
+
+**Symptom**: The Claude instance switcher (prefix + c) lists instances but every row shows the grey `·` placeholder instead of working/idle/input icons.
+
+**Diagnosis**:
+
+```bash
+# state files should appear while a hooked claude session runs
+ls ~/.config/tmux-alerts/agent-state/
+
+# feed the hook a fake event; a state file should appear for your pane
+echo '{"hook_event_name":"Stop","session_id":"t","cwd":"/tmp"}' \
+  | ~/dotfiles/scripts/hooks/wrappers/claude-state.sh
+cat ~/.config/tmux-alerts/agent-state/"$TMUX_PANE"
+
+# the hook needs jq
+command -v jq
+```
+
+**Solution**:
+
+- Wire the `claude-state.sh` hooks into Claude Code's `settings.json` (see [AGENT-HOOKS.md](AGENT-HOOKS.md))
+- Hook settings only apply to new Claude Code sessions; restart instances that were already running
+- Install `jq` if missing (`brew install jq`); the hook exits silently without it
+- Stale files from a tmux server restart clear themselves the next time the switcher opens
+
 ---
 
 ## Neovim Issues
