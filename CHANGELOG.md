@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.129] - 2026-07-06
+
+### Fixed
+
+- Popup transparency and window-title underlines broken by new tmux master defaults: upstream commit `8c55a388` gave popups and menus an opaque theme-grey background and `f59921ce` made the current window title default to underscore. `popup-style`, `popup-border-style`, `menu-style`, `menu-border-style`, and `window-status-current-style` are now pinned to `default` so they inherit the pane background and theme as before. `tmux/tmux.conf.template`
+
 ## [0.2.128] - 2026-07-06
 
 ### Added
