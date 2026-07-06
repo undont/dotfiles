@@ -53,12 +53,6 @@ while IFS= read -r wline; do
     window_names["$key"]="$name"
 done < <(tmux list-windows -a -F '#{session_name}:#{window_index} #{window_name}')
 
-# pre-load alerts file content (if it exists)
-alerts_content=""
-if [[ -f "$ALERTS_FILE" ]]; then
-    alerts_content=$(<"$ALERTS_FILE")
-fi
-
 TAB=$(printf '\t')
 now=$(date +%s)
 
@@ -117,12 +111,6 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
     sdisp=$(get_agent_state_display "$state")
     row="$(_ansi "${sdisp##*|}" "${sdisp%%|*}")  ${session}:${window_name}"
     [[ -n "$age_str" ]] && row="${row}  ${age_str}"
-
-    # check if this window has an alert for claude (names stored percent-encoded)
-    if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${session}:$(alerts_encode_window "$window_name"):claude$" 2>/dev/null; then
-        display=$(get_agent_display "claude")
-        row="${row}  ${display%%|*}"
-    fi
 
     claude_panes+=("${row}${TAB}${target}")
 done < <(tmux list-panes -a -F "#{?#{@pane-viewed},#{@pane-viewed},0}${TAB}#{session_name}${TAB}#{window_index}${TAB}#{pane_index}${TAB}#{pane_id}${TAB}#{pane_pid}${TAB}#{pane_title}" | sort -rn)

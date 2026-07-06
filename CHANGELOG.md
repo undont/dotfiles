@@ -24,6 +24,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 - `_ansi` and `_fmt_elapsed` moved from `proclist.sh` into `tmux/scripts/_lib/alerts.sh` so the instance switchers can share them. `tmux/scripts/alerts/proclist.sh`
 
+### Removed
+
+- Redundant per-row alert icon (⚡) in the Claude instance switcher: the state dot already shows idle/needs-input in this Claude-only view, so the alert lookup was dropped. `tmux/scripts/instances/claude.sh`, `tmux/scripts/tests/test-list-claude.sh`
+
 ## [0.2.127] - 2026-07-05
 
 ### Added

@@ -93,17 +93,12 @@ else
     fail "Should emit tab-delimited display/target rows"
 fi
 
-# check for alert indicator integration
-if [[ "$script_content" == *'ALERTS_FILE'* ]]; then
-    pass "Integrates with Claude alerts system"
+# the alert icon was dropped once agent-state's idle/needs-input dot covered
+# the same signal in this claude-only view; no per-row alert lookup remains
+if [[ "$script_content" != *'ALERTS_FILE'* ]]; then
+    pass "Does not duplicate alerts with the state indicator"
 else
-    fail "Should integrate with Claude alerts"
-fi
-
-if [[ "$script_content" == *'get_agent_display'* ]]; then
-    pass "Uses agent-specific indicator for alerts"
-else
-    fail "Should use agent-specific indicator"
+    fail "Should not integrate with the alerts file (state indicator covers it)"
 fi
 
 section "Agent State Rendering"
