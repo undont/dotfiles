@@ -16,10 +16,11 @@ A detailed explanation of what each step of the installation process does and wh
   - [Step 6: Install Plugin Managers](#step-6-install-plugin-managers)
   - [Step 7: Setup keyd (Linux)](#step-7-setup-keyd-linux)
   - [Step 8: Set Default Shell](#step-8-set-default-shell)
-  - [Step 9: Setup Secrets File](#step-9-setup-secrets-file)
-  - [Step 10: Run Health Check](#step-10-run-health-check)
-  - [Step 11: Save Preset Configuration](#step-11-save-preset-configuration)
-  - [Step 12: Configure Project Directories](#step-12-configure-project-directories)
+  - [Step 9: Set Default Apps (macOS)](#step-9-set-default-apps-macos)
+  - [Step 10: Setup Secrets File](#step-10-setup-secrets-file)
+  - [Step 11: Run Health Check](#step-11-run-health-check)
+  - [Step 12: Save Preset Configuration](#step-12-save-preset-configuration)
+  - [Step 13: Configure Project Directories](#step-13-configure-project-directories)
 - [Command-Line Options](#command-line-options)
 - [Post-Installation](#post-installation)
 - [What Gets Installed](#what-gets-installed)
@@ -149,7 +150,7 @@ Homebrew is the package manager used to install all other tools. Without it, you
 **What you'll see**:
 
 ```
-[1/12] Installing/updating Homebrew...
+[1/13] Installing/updating Homebrew...
   ✓ Homebrew already installed
   ✓ Updated Homebrew
   ✓ Analytics disabled
@@ -191,7 +192,7 @@ The Brewfile is a declarative list of all tools needed for the development envir
 **What you'll see**:
 
 ```
-[2/12] Installing packages from Brewfile...
+[2/13] Installing packages from Brewfile...
   Installing neovim...
   Installing ripgrep...
   Installing tmux...
@@ -213,7 +214,7 @@ The Brewfile is a declarative list of all tools needed for the development envir
 - Returns success only if both are present
 
 **Why this matters**:
-The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, language toolchains, etc.) is installed by `brew bundle` in Step 2, so gating on them here would just produce false-MISSING noise on a fresh machine. The full toolchain is audited later by Step 10 (`health-check.sh`).
+The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, language toolchains, etc.) is installed by `brew bundle` in Step 2, so gating on them here would just produce false-MISSING noise on a fresh machine. The full toolchain is audited later by Step 11 (`health-check.sh`).
 
 **Tools checked**:
 
@@ -225,7 +226,7 @@ The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, 
 **What you'll see**:
 
 ```
-[3/12] Checking prerequisites...
+[3/13] Checking prerequisites...
   ✓ git
   ✓ Homebrew
   ✓ Bootstrap prerequisites present: install can proceed.
@@ -261,7 +262,7 @@ If you have existing configurations (especially customised ones), this step ensu
 **What you'll see**:
 
 ```
-[4/12] Backing up existing configuration...
+[4/13] Backing up existing configuration...
   Created backup directory: ~/.dotfiles-backup/20260111-143022-12345/
   ✓ Backed up .zshrc
   ✓ Backed up .tmux.conf
@@ -351,7 +352,7 @@ Karabiner (full):
 **What you'll see**:
 
 ```
-[5/12] Creating symlinks...
+[5/13] Creating symlinks...
   ✓ Created personal ~/.zshrc (sources dotfiles framework)
   ✓ ~/.zprofile -> ~/dotfiles/zsh/zprofile
   ✓ ~/.tmux -> ~/dotfiles/tmux
@@ -387,7 +388,7 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 **What you'll see**:
 
 ```
-[6/12] Installing plugin managers...
+[6/13] Installing plugin managers...
   ✓ TPM installed to ~/.tmux/plugins/tpm
   ✓ lazy.nvim will auto-install on first Neovim launch
 ```
@@ -416,7 +417,7 @@ keyd is a Linux keyboard remapping daemon, the equivalent of Karabiner Elements 
 **What you'll see**:
 
 ```
-[7/12] Setting up keyd (keyboard remapping)...
+[7/13] Setting up keyd (keyboard remapping)...
   ✓ Deployed keyd config to /etc/keyd/default.conf
   ✓ keyd service enabled and started
   ✓ keyd setup complete
@@ -446,21 +447,44 @@ The dotfiles expect zsh as the login shell. On some Linux distributions, bash is
 **What you'll see**:
 
 ```
-[8/12] Setting default shell...
+[8/13] Setting default shell...
   Default shell is already zsh.
 ```
 
 Or, if the shell needs changing:
 
 ```
-[8/12] Setting default shell...
+[8/13] Setting default shell...
   Changing default shell to zsh (/usr/bin/zsh)...
   ✓ Default shell changed to zsh
 ```
 
 ---
 
-### Step 9: Setup Secrets File
+### Step 9: Set Default Apps (macOS)
+
+**Script**: `scripts/install/set-default-apps.sh`
+
+**What it does**:
+
+- macOS only; skipped on Linux
+- Sets Zed as the default handler for code file types via `duti`
+- Refreshes Zed's LaunchServices registration first, so the binding actually wins over other apps that claim the same type
+- Skips extensions that have no stable system UTI: these resolve to an ephemeral `dyn.*` type that LaunchServices refuses to bind. Zed already opens some of them (such as `go` and `jsx`) via its own bundle, so nothing is lost
+
+**Why this matters**:
+Double-clicking a source file in Finder should open Zed, not a browser or an unrelated app. Setting handlers by extension alone is unreliable: a stale LaunchServices registration silently lets a competing app keep winning, so Zed is re-registered before the bindings are written. The step is idempotent, so `dotfiles update` re-runs it safely.
+
+**What you'll see**:
+
+```
+[9/13] Setting default apps...
+  ✓ Zed set as default for 9 code file types (5 skipped, no stable type)
+```
+
+---
+
+### Step 10: Setup Secrets File
 
 **What it does**:
 
@@ -495,7 +519,7 @@ export AWS_SECRET_ACCESS_KEY="..."
 **What you'll see**:
 
 ```
-[9/12] Setting up secrets file...
+[10/13] Setting up secrets file...
   ✓ Created secrets file from template
   ✓ Set permissions to 600
   ! Edit ~/.config/zsh/secrets.zsh to add your API keys
@@ -503,7 +527,7 @@ export AWS_SECRET_ACCESS_KEY="..."
 
 ---
 
-### Step 10: Run Health Check
+### Step 11: Run Health Check
 
 **Script**: `scripts/install/health-check.sh`
 
@@ -533,7 +557,7 @@ The health check confirms the installation completed successfully. It catches is
 **What you'll see**:
 
 ```
-[10/12] Running health check...
+[11/13] Running health check...
   ✓ All symlinks verified
   ✓ TPM installed
   ✓ Secrets file configured
@@ -542,7 +566,7 @@ The health check confirms the installation completed successfully. It catches is
 
 ---
 
-### Step 11: Save Preset Configuration
+### Step 12: Save Preset Configuration
 
 **What it does**:
 
@@ -555,13 +579,13 @@ When you run `dotfiles update` later, it reads the saved preset so it can run th
 **What you'll see**:
 
 ```
-[11/12] Saving preset configuration...
+[12/13] Saving preset configuration...
   ✓ Preset 'core' saved to ~/.config/dotfiles/preset
 ```
 
 ---
 
-### Step 12: Configure Project Directories
+### Step 13: Configure Project Directories
 
 **What it does**:
 
@@ -577,7 +601,7 @@ The launcher picker (`` ` p ``) and `dotfiles set` command use these paths for d
 **What you'll see**:
 
 ```
-[12/12] Project directories (optional)...
+[13/13] Project directories (optional)...
   DEV_ROOT sets your main development directory for the launcher picker.
   Default: /Users/you/src
   Enter path (or press Enter for default, "skip" to skip):
@@ -703,7 +727,7 @@ nvim ~/.config/zsh/secrets.zsh
 
 ### 6. Configure Project Directories
 
-Shown only if `DEV_ROOT` or `PROJECTS_ROOT` aren't set in `~/.zshrc`. If you skipped the interactive prompt during Step 12, configure them now:
+Shown only if `DEV_ROOT` or `PROJECTS_ROOT` aren't set in `~/.zshrc`. If you skipped the interactive prompt during Step 13, configure them now:
 
 ```bash
 dotfiles set dev ~/src

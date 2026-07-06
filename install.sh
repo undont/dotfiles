@@ -367,9 +367,19 @@ print_step 8 "Setting default shell..."
 "$DOTFILES_DIR/scripts/install/set-default-shell.sh"
 record_step "default-shell"
 
-# step 9: create secrets file if needed
+# step 9: set default apps (macOS: route code files to Zed)
 echo ""
-print_step 9 "Setting up secrets..."
+if is_macos; then
+    print_step 9 "Setting default apps..."
+    "$DOTFILES_DIR/scripts/install/set-default-apps.sh"
+    record_step "default-apps"
+else
+    print_skip 9 "default apps" "macOS only"
+fi
+
+# step 10: create secrets file if needed
+echo ""
+print_step 10 "Setting up secrets..."
 SECRETS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 mkdir -p "$SECRETS_DIR"
 
@@ -393,9 +403,9 @@ else
 fi
 record_step "secrets"
 
-# step 10: run health check
+# step 11: run health check
 echo ""
-print_step 10 "Running health check..."
+print_step 11 "Running health check..."
 if "$DOTFILES_DIR/scripts/install/health-check.sh"; then
     success "Health check passed"
 else
@@ -403,18 +413,18 @@ else
 fi
 record_step "health-check"
 
-# step 11: save preset for future updates
+# step 12: save preset for future updates
 echo ""
-print_step 11 "Saving preset configuration..."
+print_step 12 "Saving preset configuration..."
 PRESET_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 mkdir -p "$PRESET_CONFIG_DIR"
 echo "$PRESET" > "$PRESET_CONFIG_DIR/preset"
 success "Preset '$PRESET' saved to $PRESET_CONFIG_DIR/preset"
 record_step "save-preset"
 
-# step 12: configure project directories (optional)
+# step 13: configure project directories (optional)
 echo ""
-print_step 12 "Project directories (optional)..."
+print_step 13 "Project directories (optional)..."
 
 state_dir="$PRESET_CONFIG_DIR/.state"
 dirs_asked_file="$state_dir/prompted"
