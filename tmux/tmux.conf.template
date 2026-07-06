@@ -423,6 +423,7 @@ bind P display-popup -w 95% -h 95% -E "\
       --preview '~/.tmux/scripts/utils/preview-pane.sh {3}' \
       --preview-window='right,55%,<60(bottom,40%)' \
       --bind 'every(0.5):refresh-preview' \
+      --bind 'every(2):reload-sync(~/.tmux/scripts/alerts/proclist.sh)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
