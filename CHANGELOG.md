@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Claude switcher layout reworked to the proclist pattern: tab-delimited rows with the jump target hidden (`--with-nth=1`), a 60% preview that drops to a bottom split below 60 columns, and a state legend in the header, so rows have room for state and age. `tmux/tmux.conf.template`, `tmux/scripts/instances/claude.sh`
 - Zed: in the project-search results view (`space s g` / `cmd-shift-f`), `n`/`shift-n` step to the next/previous match. Scoped to the results view (`ProjectSearchView > Editor`) so vim's own `n`/`N` search-repeat still works in normal editors. `zed/keymap.json`
 - Zed settings (copy-on-install): vim smartcase find and relative-number toggle, signature help after edits and on typing, autoscroll on clicks, current-line highlight, `unnecessary_code_fade`, and the agent-review toolbar. `zed/settings.json`
+- `dotfiles diff` and `dotfiles sync` now track `zed/settings.json`, so repo changes to the copy-on-install Zed settings surface to users instead of being silently missed. `scripts/dotfiles`, `scripts/tests/test-dotfiles-cli.sh`
 
 ### Fixed
 

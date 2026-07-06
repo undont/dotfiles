@@ -274,6 +274,7 @@ _copy_pairs() {
     COPY_PAIRS=(
         "btop/btop.conf|$HOME/.config/btop/btop.conf"
         "karabiner/karabiner.json|$HOME/.config/karabiner/karabiner.json"
+        "zed/settings.json|$HOME/.config/zed/settings.json"
     )
     if is_macos; then
         COPY_PAIRS+=("lazydocker/config.yml|$HOME/Library/Application Support/lazydocker/config.yml")
