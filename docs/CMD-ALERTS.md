@@ -128,14 +128,14 @@ Exit alerts only fire once a command has finished. The process list (prefix + Sh
 
 Running rows come from a per-pane registry the `preexec` hook writes while a tracked command is in flight, and the `precmd` hook removes on completion. Finished rows come from a separate history the `precmd` hook appends on **every** tracked completion, regardless of whether you switched away: that is what lets a command you watched finish in place still leave a ✓/✗/⊘ entry (the switch-away-gated alerts file only drives the status bar). History keeps the most recent 20 entries within the last hour. The same exclude list governs both halves, so they agree on what counts as a process.
 
-| Key                                                  | Action                                                                                                   |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| <kbd>j</kbd>/<kbd>k</kbd>, <kbd>g</kbd>/<kbd>G</kbd> | move / jump to top or bottom                                                                             |
-| <kbd>Space</kbd>/<kbd>Enter</kbd>                    | switch to the selected process's window                                                                  |
-| <kbd>r</kbd>                                         | rerun a finished command: stage it on its origin window's prompt and jump there, no Enter, ready to edit |
-| <kbd>R</kbd>                                         | stage the command and run it straight away                                                               |
+| Key                                                  | Action                                                                                                                       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| <kbd>j</kbd>/<kbd>k</kbd>, <kbd>g</kbd>/<kbd>G</kbd> | move / jump to top or bottom                                                                                                 |
+| <kbd>Space</kbd>/<kbd>Enter</kbd>                    | switch to the selected process's window                                                                                      |
+| <kbd>r</kbd>                                         | rerun a finished command: stage it on its origin window's prompt and jump there, no Enter, ready to edit                     |
+| <kbd>R</kbd>                                         | stage the command and run it straight away                                                                                   |
 | <kbd>x</kbd>                                         | interrupt a running process (sends Ctrl-C, silently: no alert or finished row for it) or dismiss a finished one from history |
-| <kbd>/</kbd>                                         | search; <kbd>Esc</kbd> returns to navigation                                                             |
+| <kbd>/</kbd>                                         | search; <kbd>Esc</kbd> returns to navigation                                                                                 |
 
 Rerun reads the full command (stored as typed, so `$VAR` references stay references and are re-expanded by the shell on rerun) from the finished history by key, so the raw text never crosses the fzf/shell boundary. `R` types into whatever the target pane's foreground is, so it is safest at an idle prompt; `r` is the safe default when in doubt.
 

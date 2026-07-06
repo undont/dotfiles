@@ -418,4 +418,3 @@ Previous misspelling | [s
 
 ## undo @undo
 Undo tree | <leader>u
-
