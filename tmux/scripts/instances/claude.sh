@@ -4,7 +4,8 @@
 #   {1}=display(shown)  {2}=jump/preview target session:window.pane
 # state comes from the agent-state registry (AGENT_STATE_DIR), written by the
 # claude code hooks (scripts/hooks/agent-state.sh); "stuck" is derived here
-# from event age plus the pane title losing claude's braille spinner
+# from event age plus the pane title losing claude's braille spinner, and a
+# stale needs-input flips back to working when the spinner returns
 
 set -euo pipefail
 
@@ -61,7 +62,7 @@ now=$(date +%s)
 # a second byte in A0-A3 is exactly the braille block) rather than a codepoint
 # range: a C/POSIX locale collapses [\u2800-\u28ff] to a byte range that also matches \u2733,
 # which would silently hide every stuck instance. called only for stale working
-# panes, so the fork is rare
+# and needs-input panes, so the fork is rare
 _title_has_spinner() {
     local hex
     hex=$(printf '%s' "$1" | od -An -tx1 -N2 2>/dev/null | tr -d ' \n')
@@ -100,6 +101,12 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
             # pane title no longer shows the spinner
             if [[ "$state" == "working" ]] && (( age > STUCK_SECS )) && ! _title_has_spinner "$title"; then
                 state="stuck"
+            fi
+            # the reverse: no hook fires when a permission prompt is
+            # approved, so needs-input goes stale while the agent runs. a
+            # spinner in the title means it's actively working again
+            if [[ "$state" == "needs-input" ]] && _title_has_spinner "$title"; then
+                state="working"
             fi
             # age reads as "how long it's been waiting on you" for idle/input,
             # or how long it's been wedged for stuck/error. for a live working

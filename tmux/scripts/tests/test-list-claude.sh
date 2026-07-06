@@ -127,6 +127,14 @@ else
     fail "Should corroborate stuck via pane title spinner"
 fi
 
+# no hook fires when a permission prompt is approved, so a stale needs-input
+# must flip back to working once the title spinner returns
+if [[ "$script_content" == *'"needs-input"'*'_title_has_spinner'* ]]; then
+    pass "Flips stale needs-input to working when the spinner returns"
+else
+    fail "Should flip stale needs-input to working via the title spinner"
+fi
+
 # the spinner check must be locale-independent (byte-based, not a codepoint
 # range that a C locale would mis-match)
 if [[ "$script_content" == *'od -An -tx1'* ]]; then

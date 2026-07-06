@@ -92,6 +92,11 @@ assert_equals "PreToolUse (ExitPlanMode) maps to needs-input" "needs-input" "$(f
 run_hook '{"hook_event_name":"PostToolUse","tool_name":"AskUserQuestion","session_id":"s1","cwd":"/tmp/proj"}'
 assert_equals "PostToolUse (question answered) maps to working" "working" "$(field 2)"
 
+# wired for all tools: an approved tool's completion is the first hook event
+# after a permission prompt, so it must clear needs-input
+run_hook '{"hook_event_name":"PostToolUse","tool_name":"Bash","session_id":"s1","cwd":"/tmp/proj"}'
+assert_equals "PostToolUse (any tool) maps to working" "working" "$(field 2)"
+
 run_hook '{"hook_event_name":"PermissionRequest","tool_name":"Bash","session_id":"s1","cwd":"/tmp/proj"}'
 assert_equals "PermissionRequest maps to needs-input" "needs-input" "$(field 2)"
 

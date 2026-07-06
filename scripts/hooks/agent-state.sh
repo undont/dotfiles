@@ -41,8 +41,9 @@ case "$event" in
             *) state="working" ;;
         esac
         ;;
-    # only wired for AskUserQuestion|ExitPlanMode: fires after the user
-    # answers, so the agent is back to work
+    # wired for all tools: no hook fires when a permission prompt is
+    # approved, so the approved tool's completion is the first signal
+    # that the agent is back to work
     PostToolUse) state="working" ;;
     PermissionRequest) state="needs-input" ;;
     Notification)

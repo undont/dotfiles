@@ -291,6 +291,8 @@ Only Claude Code produces state today; the format carries an agent field so othe
 
 "Stuck" is never stored: the switcher derives it at render time when the state says working, the last event is older than `AGENT_STUCK_SECS` (default 120), and the pane title no longer starts with Claude's braille spinner character. A long tool run keeps its spinner, so it stays "working" no matter how old the last event is.
 
+The switcher also derives the reverse: no hook event fires at the moment a permission prompt is approved, so a stored needs-input can go stale while the agent is already running again. If the pane title shows the spinner, needs-input is rendered as working. The stored state corrects itself at the next hook event (the approved tool's `PostToolUse`, or the next `PreToolUse`).
+
 Stale files are cleaned up on three paths: `SessionEnd` removes the file, the switcher drops files for panes without a live claude process, and the tmux session-closed/renamed hooks sweep files for dead panes.
 
 **Setup** (in the same `settings.json` as the alert hooks; both can share events):
@@ -333,7 +335,6 @@ Stale files are cleaned up on three paths: `SessionEnd` removes the file, the sw
     ],
     "PostToolUse": [
       {
-        "matcher": "AskUserQuestion|ExitPlanMode",
         "hooks": [
           {
             "type": "command",

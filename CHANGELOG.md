@@ -15,6 +15,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - Popup transparency and window-title underlines broken by new tmux master defaults: upstream commit `8c55a388` gave popups and menus an opaque theme-grey background and `f59921ce` made the current window title default to underscore. `popup-style`, `popup-border-style`, `menu-style`, `menu-border-style`, and `window-status-current-style` are now pinned to `default` so they inherit the pane background and theme as before. `tmux/tmux.conf.template`
+- Claude switcher showed a stale "needs input" for an agent that was already working again: no Claude Code hook fires at the moment a permission prompt is approved, so the needs-input state written by `PermissionRequest` lingered until the next tool call's `PreToolUse` (long thinks made it very visible). Two-part fix: the state hook is now wired for `PostToolUse` on all tools (the approved tool's completion is the first available signal), and the switcher derives the remainder at render time, flipping a stored needs-input back to working when the pane title shows Claude's braille spinner (the reverse of the existing "stuck" derivation). `scripts/hooks/agent-state.sh`, `tmux/scripts/instances/claude.sh`, `docs/AGENT-HOOKS.md`, `tmux/scripts/tests/test-agent-state-hook.sh`, `tmux/scripts/tests/test-list-claude.sh`
 
 ## [0.2.128] - 2026-07-06
 
