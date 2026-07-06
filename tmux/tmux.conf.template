@@ -423,6 +423,7 @@ bind P display-popup -w 95% -h 95% -E "\
       --preview '~/.tmux/scripts/utils/preview-pane.sh {3}' \
       --preview-window='right,55%,<60(bottom,40%)' \
       --bind 'every(0.5):refresh-preview' \
+      --bind 'every(2):reload-sync(~/.tmux/scripts/alerts/proclist.sh)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
@@ -578,10 +579,17 @@ bind-key b run-shell "poke clear"
 # window tabs: inactive=grey, active=purple highlight, bell/alert=pink
 setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@codex_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@copilot_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
 setw -g window-status-current-format '#[fg={{TMUX_STATUS_ACTIVE_FG}},bg={{TMUX_STATUS_ACTIVE_BG}},bold] #I:#W '
+setw -g window-status-current-style default  # upstream default is now underscore
 
 # pane borders: inactive=dark grey, active=purple
 set -g pane-border-style 'fg={{TMUX_PANE_BORDER_INACTIVE}}'
 set -g pane-active-border-style 'fg={{TMUX_PANE_BORDER_ACTIVE}}'
+
+# popups and menus: inherit the pane background; upstream defaults are now opaque theme grey
+set -g popup-style default
+set -g popup-border-style default
+set -g menu-style default
+set -g menu-border-style default
 
 # command prompt / message bar: purple background with light text
 set -g message-style 'bg={{TMUX_MESSAGE_BG}} fg={{TMUX_MESSAGE_FG}} bold'

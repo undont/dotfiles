@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.129] - 2026-07-06
+
+### Added
+
+- macOS default-app handlers: `scripts/install/set-default-apps.sh` sets Zed as the default handler for code file types (`md`, `ts`, `tsx`, `json`, `yaml`, `yml`, `toml`, `css`, `js`) via `duti`, wired in as install step 9 (macOS only) and re-run on `dotfiles update`. Zed's LaunchServices record is refreshed first so the binding wins over competing apps (this is why `toml` had been silently staying on another app), and extensions with no stable UTI (`go`, `cs`, `lua`, `env`, `jsx`) are skipped instead of failing with `-50`; Zed already opens `go`/`jsx` via its own bundle. `duti` added to the Brewfile. `scripts/install/set-default-apps.sh`, `install.sh`, `Brewfile`, `docs/INSTALLATION-GUIDE.md`
+
+### Fixed
+
+- Popup transparency and window-title underlines broken by new tmux master defaults: upstream commit `8c55a388` gave popups and menus an opaque theme-grey background and `f59921ce` made the current window title default to underscore. `popup-style`, `popup-border-style`, `menu-style`, `menu-border-style`, and `window-status-current-style` are now pinned to `default` so they inherit the pane background and theme as before. `tmux/tmux.conf.template`
+- Claude switcher showed a stale "needs input" for an agent that was already working again: no Claude Code hook fires at the moment a permission prompt is approved, so the needs-input state written by `PermissionRequest` lingered until the next tool call's `PreToolUse` (long thinks made it very visible). Two-part fix: the state hook is now wired for `PostToolUse` on all tools (the approved tool's completion is the first available signal), and the switcher derives the remainder at render time, flipping a stored needs-input back to working when the pane title shows Claude's braille spinner (the reverse of the existing "stuck" derivation). `scripts/hooks/agent-state.sh`, `tmux/scripts/instances/claude.sh`, `docs/AGENT-HOOKS.md`, `tmux/scripts/tests/test-agent-state-hook.sh`, `tmux/scripts/tests/test-list-claude.sh`
+- Process list popup (prefix + P) never refreshed on its own, unlike the Claude/Codex/opencode/copilot instance switchers, which all reload every 2s: a process that finished or a new alert while the popup was open stayed invisible until a manual reopen. Added the same `every(2):reload-sync` binding used by those switchers. `tmux/tmux.conf.template`
+
 ## [0.2.128] - 2026-07-06
 
 ### Added

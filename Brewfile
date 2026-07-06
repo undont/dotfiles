@@ -38,6 +38,7 @@ brew "carapace"               # Multi-shell completion provider (bridges zsh com
 brew "neovim"            # >= 0.11 required for nvim-treesitter
 brew "tree-sitter-cli"   # Required by nvim-treesitter for parser compilation
 cask "zed"               # editor
+brew "duti"              # macOS-only; sets Zed as default handler for code files
 
 # AI Coding Assistants
 brew "opencode"

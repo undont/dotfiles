@@ -220,6 +220,7 @@ Homebrew is set to require explicit trust for non-official taps (`HOMEBREW_REQUI
 - **Karabiner Elements:** Caps Lock to Escape, Right Option to Control (for Ghostty + JetBrains keybind compatibility), UK keyboard layout fixes
 - **Raycast:** Spotlight replacement
 - **music-presence:** Discord Rich Presence for Apple Music
+- **Default apps:** `scripts/install/set-default-apps.sh` makes Zed the default handler for code file types (`.ts`, `.json`, `.md`, `.toml`, and so on) via `duti`; runs whenever Zed is installed (core preset and up)
 
 ### Linux-only
 
