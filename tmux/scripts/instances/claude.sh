@@ -102,12 +102,15 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
             state="$s_state"
             age=$(( now - s_epoch ))
             (( age < 0 )) && age=0
-            age_str=$(_fmt_elapsed "$age")
             # stuck: nominally working, no hook event for a while, and the
             # pane title no longer shows the spinner
             if [[ "$state" == "working" ]] && (( age > STUCK_SECS )) && ! _title_has_spinner "$title"; then
                 state="stuck"
             fi
+            # age reads as "how long it's been waiting on you" for idle/input,
+            # or how long it's been wedged for stuck/error. for a live working
+            # turn it just tracks the last tool call and jitters, so it's hidden
+            [[ "$state" != "working" ]] && age_str=$(_fmt_elapsed "$age")
         fi
     fi
 
@@ -154,7 +157,7 @@ l_input=$(get_agent_state_display needs-input)
 l_idle=$(get_agent_state_display idle)
 l_error=$(get_agent_state_display error)
 l_stuck=$(get_agent_state_display stuck)
-printf '  %s working  %s input  %s idle  %s error  %s stuck\n' \
+printf '  %s working %s input %s idle %s error %s stuck\n' \
     "$(_ansi "${l_working##*|}" "${l_working%%|*}")" \
     "$(_ansi "${l_input##*|}" "${l_input%%|*}")" \
     "$(_ansi "${l_idle##*|}" "${l_idle%%|*}")" \

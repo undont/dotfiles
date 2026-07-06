@@ -259,7 +259,7 @@ Create `~/.copilot/hooks/hooks.json`:
 
 ## Per-Pane Agent State (Claude Code)
 
-Beyond the binary "needs attention" alert, Claude Code hooks can also maintain a live state per tmux pane. The prefix+c instance switcher renders it as a coloured icon plus the age of the last hook event:
+Beyond the binary "needs attention" alert, Claude Code hooks can also maintain a live state per tmux pane. The prefix+c instance switcher renders it as a coloured icon, plus, for the states where it's waiting on you (idle, needs-input, error, stuck), how long it's been in that state (a working turn shows no age, since that clock just tracks the last tool call):
 
 | State       | Icon | Meaning                                              |
 | ----------- | ---- | ---------------------------------------------------- |
