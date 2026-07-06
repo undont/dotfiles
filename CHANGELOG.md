@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.128] - 2026-07-06
+
+### Added
+
+- Per-pane agent-state layer for the Claude instance switcher: Claude Code hooks (`scripts/hooks/agent-state.sh` + `wrappers/claude-state.sh`) write one state file per tmux pane under `~/.config/tmux-alerts/agent-state/`, and prefix+c renders each instance's state (● working, ◐ needs input, ○ idle, ✗ error) plus, for the states where you're waiting on it (idle/needs-input/error/stuck), how long it's been in that state. "Stuck" is derived at render time: working state older than `AGENT_STUCK_SECS` (default 120s) with no braille spinner left in the pane title. Stale files are swept by SessionEnd, the switcher itself, and the session-closed/renamed cleanup hook. `tmux/scripts/instances/claude.sh`, `tmux/scripts/_lib/alerts.sh`, `tmux/scripts/alerts/cleanup.sh`, `tmux/tmux.conf.template`, `tmux/scripts/tests/test-agent-state-hook.sh`, `docs/AGENT-HOOKS.md`
+- Claude switcher layout reworked to the proclist pattern: tab-delimited rows with the jump target hidden (`--with-nth=1`), a 60% preview that drops to a bottom split below 60 columns, and a state legend in the header, so rows have room for state and age. `tmux/tmux.conf.template`, `tmux/scripts/instances/claude.sh`
+- Zed: in the project-search results view (`space s g` / `cmd-shift-f`), `n`/`shift-n` step to the next/previous match. Scoped to the results view (`ProjectSearchView > Editor`) so vim's own `n`/`N` search-repeat still works in normal editors. `zed/keymap.json`
+- Zed settings (copy-on-install): vim smartcase find and relative-number toggle, signature help after edits and on typing, autoscroll on clicks, current-line highlight, `unnecessary_code_fade`, and the agent-review toolbar. `zed/settings.json`
+- `dotfiles diff` and `dotfiles sync` now track `zed/settings.json`, so repo changes to the copy-on-install Zed settings surface to users instead of being silently missed. `scripts/dotfiles`, `scripts/tests/test-dotfiles-cli.sh`
+
+### Fixed
+
+- Claude instance detection: the claude launcher now execs a versioned binary (kernel name e.g. `2.1.201`), so `pgrep -x claude` stopped matching and both the prefix+c listing and its `x` kill binding were silently empty/broken. New `match_process_pids`/`match_child_pid` helpers in `tmux/scripts/_lib/process.sh` also match the argv[0] basename. `tmux/scripts/instances/claude.sh`, `tmux/scripts/instances/kill.sh`
+
+### Changed
+
+- `_ansi` and `_fmt_elapsed` moved from `proclist.sh` into `tmux/scripts/_lib/alerts.sh` so the instance switchers can share them. `tmux/scripts/alerts/proclist.sh`
+
+### Removed
+
+- Redundant per-row alert icon (⚡) in the Claude instance switcher: the state dot already shows idle/needs-input in this Claude-only view, so the alert lookup was dropped. `tmux/scripts/instances/claude.sh`, `tmux/scripts/tests/test-list-claude.sh`
+
 ## [0.2.127] - 2026-07-05
 
 ### Added

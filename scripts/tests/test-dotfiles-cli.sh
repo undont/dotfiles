@@ -216,6 +216,27 @@ else
     fail "diff exited non-zero unexpectedly"
 fi
 
+section "cmd_diff — copy-on-install coverage (sandboxed)"
+
+# a divergent copy-on-install file must surface in `diff` output. this asserts
+# the pair is actually tracked; the sandbox repo only carries zed/settings.json,
+# so the other pairs are skipped (their repo paths are absent) and the assertion
+# isolates the zed entry
+setup_cli_sandbox
+
+mkdir -p "$TEST_DOTFILES_DIR/zed" "$HOME/.config/zed"
+printf '{ "a": 1 }\n' > "$TEST_DOTFILES_DIR/zed/settings.json"
+printf '{ "a": 2 }\n' > "$HOME/.config/zed/settings.json"
+
+diff_out=$(dotfiles_run diff)
+if [[ "$diff_out" == *"zed/settings.json"* ]]; then
+    pass "diff tracks zed/settings.json (copy-on-install)"
+else
+    fail "diff should surface a divergent zed/settings.json"
+fi
+
+cleanup_sandbox
+
 section "cmd_aliases — real source"
 
 # run against the real DOTFILES_DIR (no sandbox); a smoke check that the

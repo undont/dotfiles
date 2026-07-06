@@ -175,5 +175,16 @@
       // marker-file detection, so ~/.config/zed/tasks.json lists one entry per project
       // type instead and this opens a picker over them
     }
+  },
+  {
+    // project-search results (space s g): n/N step through matches, vim-style.
+    // scoped to "ProjectSearchView > Editor" so it overrides vim's own n/N only
+    // in the results view; in normal editors n/N still repeat the last search.
+    // a Pane-level bind gets shadowed by vim's n/N when the results are focused.
+    "context": "ProjectSearchView > Editor && vim_mode == normal",
+    "bindings": {
+      "n": "search::SelectNextMatch",
+      "shift-n": "search::SelectPreviousMatch"
+    }
   }
 ]

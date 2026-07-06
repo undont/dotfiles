@@ -40,21 +40,23 @@ target_info=$(tmux display-message -t "$TARGET" -p '#{pane_pid}|#{session_name}|
 IFS='|' read -r PANE_PID SESSION WINDOW_IDX WINDOW_NAME WINDOW_ID <<< "$target_info"
 [[ -n "$WINDOW_NAME" ]] || WINDOW_NAME="$TARGET"
 
-# find the child process matching process name
+# find the child process matching process name. match_child_pid checks the
+# kernel name via pgrep then falls back to the argv[0] basename, which catches
+# launchers that exec versioned binaries (claude)
 MATCH_FLAG="-x"
 [[ "$PROCESS" == "opencode" ]] && MATCH_FLAG="-f"
 
 CHILD_PID=""
 
 # check direct children first
-CHILD_PID=$(pgrep -P "$PANE_PID" "$MATCH_FLAG" "$PROCESS" 2>/dev/null | head -1) || true
+CHILD_PID=$(match_child_pid "$PANE_PID" "$PROCESS" "$MATCH_FLAG") || true
 
 # if not a direct child, walk process tree (some shells spawn subprocesses)
 if [[ -z "$CHILD_PID" ]]; then
     for pid in $(pgrep -P "$PANE_PID" 2>/dev/null); do
-        CHILD_PID=$(pgrep -P "$pid" "$MATCH_FLAG" "$PROCESS" 2>/dev/null | head -1) && break
+        CHILD_PID=$(match_child_pid "$pid" "$PROCESS" "$MATCH_FLAG") && break
         for pid2 in $(pgrep -P "$pid" 2>/dev/null); do
-            CHILD_PID=$(pgrep -P "$pid2" "$MATCH_FLAG" "$PROCESS" 2>/dev/null | head -1) && break 2
+            CHILD_PID=$(match_child_pid "$pid2" "$PROCESS" "$MATCH_FLAG") && break 2
         done
     done
 fi

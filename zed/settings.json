@@ -7,8 +7,20 @@
 // custom settings, run `zed: open default settings` from the
 // command palette (cmd-shift-p / ctrl-shift-p)
 {
+  "vim": {
+    "use_smartcase_find": true,
+    "toggle_relative_line_numbers": true
+  },
+  "toolbar": {
+    "agent_review": true
+  },
+  "show_signature_help_after_edits": true,
+  "auto_signature_help": true,
+  "autoscroll_on_clicks": true,
+  "current_line_highlight": "line",
+  "unnecessary_code_fade": 0.6,
   "git_panel": {
-    "tree_view": false,
+    "tree_view": false
   },
   "collaboration_panel": {
     "button": false

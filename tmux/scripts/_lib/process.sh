@@ -4,6 +4,46 @@
 #
 # pattern: SIGTERM, wait (2s), SIGKILL (matches instances/kill.sh)
 
+# list pids whose process name matches exactly, checking both the kernel name
+# (pgrep -x) and the argv[0] basename. launchers that exec a versioned binary
+# are invisible to pgrep -x (claude's shim execs e.g. "2.1.201" so the kernel
+# name is the version string) but keep their invoked name in argv[0]
+# usage: match_process_pids <name>
+match_process_pids() {
+    local name="$1"
+    {
+        pgrep -x "$name" 2>/dev/null || true
+        ps -axo pid=,comm= 2>/dev/null | awk -v n="$name" '
+            {
+                pid = $1
+                sub(/^[[:space:]]*[0-9]+[[:space:]]+/, "")
+                sub(/.*\//, "")
+                if ($0 == n) print pid
+            }'
+    } | sort -un
+}
+
+# first direct child of a pid matching name, by pgrep flag then argv[0] basename
+# usage: match_child_pid <parent_pid> <name> [pgrep_flag]
+match_child_pid() {
+    local parent="$1" name="$2" flag="${3:--x}"
+    local pid cmd
+    pid=$(pgrep -P "$parent" "$flag" "$name" 2>/dev/null | head -1)
+    if [[ -n "$pid" ]]; then
+        echo "$pid"
+        return 0
+    fi
+    for pid in $(pgrep -P "$parent" 2>/dev/null); do
+        cmd=$(ps -o comm= -p "$pid" 2>/dev/null) || continue
+        cmd="${cmd##*/}"
+        if [[ "$cmd" == "$name" ]]; then
+            echo "$pid"
+            return 0
+        fi
+    done
+    return 1
+}
+
 # get all descendant PIDs of a given PID (recursive, depth-first)
 # outputs deepest descendants first for clean teardown order
 get_descendant_pids() {

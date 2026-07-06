@@ -31,12 +31,14 @@ Each agent has a dedicated icon and colour in the status bar:
 scripts/hooks/
 ├── agent-alert.sh           # Core: set alert for any agent
 ├── agent-alert-clear.sh     # Core: clear alert for current window
+├── agent-state.sh           # Core: record per-pane agent state (see below)
 ├── cmd-alert.sh             # Core: set exit code alert for a command
 ├── cmd-alert-hook.zsh       # zsh preexec/precmd hooks (sourced by dotfiles.zsh)
 ├── nvim-buffer-sync.sh      # Sync edited files to paired nvim
 └── wrappers/
     ├── claude-alert.sh      # Calls agent-alert.sh claude
     ├── claude-alert-clear.sh
+    ├── claude-state.sh      # Calls agent-state.sh claude
     ├── codex-alert.sh       # Calls agent-alert.sh codex
     ├── codex-alert-clear.sh
     ├── opencode-alert.sh    # Calls agent-alert.sh opencode
@@ -254,6 +256,153 @@ Create `~/.copilot/hooks/hooks.json`:
 - **agentStop**: Agent finished its turn and is waiting for your next message
 - **preToolUse**: Agent is about to run a tool (covers permission-request style prompts)
 - **userPromptSubmitted**: You sent a message, so clear the alert
+
+## Per-Pane Agent State (Claude Code)
+
+Beyond the binary "needs attention" alert, Claude Code hooks can also maintain a live state per tmux pane. The prefix+c instance switcher renders it as a coloured icon, plus, for the states where it's waiting on you (idle, needs-input, error, stuck), how long it's been in that state (a working turn shows no age, since that clock just tracks the last tool call):
+
+| State       | Icon | Meaning                                                    |
+| ----------- | ---- | ---------------------------------------------------------- |
+| working     | ●    | Processing a prompt or running tools                       |
+| needs-input | ◐    | Waiting on a permission prompt, question, or plan approval |
+| idle        | ○    | Finished its turn, waiting for your next message           |
+| error       | ✗    | Turn died on an API error (rate limit, overload)           |
+| stuck       | ⚠    | Nominally working but no hook event for a while            |
+
+State lives in `~/.config/tmux-alerts/agent-state/`, one file per pane named by pane id (e.g. `%12`), one tab-delimited line:
+
+```
+agent  state  epoch  event  session_id  cwd
+```
+
+Only Claude Code produces state today; the format carries an agent field so other agents can plug in later via their own thin wrapper.
+
+**Event mapping** (in `scripts/hooks/agent-state.sh`):
+
+| Hook event                                                   | State                  |
+| ------------------------------------------------------------ | ---------------------- |
+| `SessionStart`, `Stop`, `Notification` (`idle_prompt`)       | idle                   |
+| `UserPromptSubmit`, `PreToolUse` (most tools), `PostToolUse` | working                |
+| `PreToolUse` (`AskUserQuestion`, `ExitPlanMode`)             | needs-input            |
+| `PermissionRequest`, `Notification` (`permission_prompt`)    | needs-input            |
+| `StopFailure`                                                | error                  |
+| `SessionEnd`                                                 | removes the state file |
+| `SubagentStop`, anything else                                | no change              |
+
+"Stuck" is never stored: the switcher derives it at render time when the state says working, the last event is older than `AGENT_STUCK_SECS` (default 120), and the pane title no longer starts with Claude's braille spinner character. A long tool run keeps its spinner, so it stays "working" no matter how old the last event is.
+
+Stale files are cleaned up on three paths: `SessionEnd` removes the file, the switcher drops files for panes without a live claude process, and the tmux session-closed/renamed hooks sweep files for dead panes.
+
+**Setup** (in the same `settings.json` as the alert hooks; both can share events):
+
+```json
+{
+  "hooks": {
+    "SessionStart": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "UserPromptSubmit": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PreToolUse": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PostToolUse": [
+      {
+        "matcher": "AskUserQuestion|ExitPlanMode",
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Notification": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "PermissionRequest": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "Stop": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "StopFailure": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-state.sh",
+            "timeout": 5
+          }
+        ]
+      }
+    ]
+  }
+}
+```
+
+Hook settings changes are picked up by new Claude Code sessions; instances already running keep their old hooks until restarted.
 
 ## How Alerts Are Stored
 

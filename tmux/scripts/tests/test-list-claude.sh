@@ -65,6 +65,12 @@ else
     fail "Should source alerts.sh library"
 fi
 
+if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/process.sh"'* ]]; then
+    pass "Sources process.sh library"
+else
+    fail "Should source process.sh library (match_process_pids)"
+fi
+
 if [[ "$script_content" == *'tmux list-panes -a'* ]]; then
     pass "Uses tmux list-panes to find instances"
 else
@@ -80,17 +86,59 @@ else
     fail "Should build target in correct format"
 fi
 
-# check for alert indicator integration
-if [[ "$script_content" == *'ALERTS_FILE'* ]]; then
-    pass "Integrates with Claude alerts system"
+# rows are tab-delimited: display column shown, target hidden ({2} in fzf)
+if [[ "$script_content" == *'${row}${TAB}${target}'* ]]; then
+    pass "Emits tab-delimited display/target rows"
 else
-    fail "Should integrate with Claude alerts"
+    fail "Should emit tab-delimited display/target rows"
 fi
 
-if [[ "$script_content" == *'get_agent_display'* ]]; then
-    pass "Uses agent-specific indicator for alerts"
+# the alert icon was dropped once agent-state's idle/needs-input dot covered
+# the same signal in this claude-only view; no per-row alert lookup remains
+if [[ "$script_content" != *'ALERTS_FILE'* ]]; then
+    pass "Does not duplicate alerts with the state indicator"
 else
-    fail "Should use agent-specific indicator"
+    fail "Should not integrate with the alerts file (state indicator covers it)"
+fi
+
+section "Agent State Rendering"
+
+if [[ "$script_content" == *'AGENT_STATE_DIR'* ]]; then
+    pass "Reads the agent-state registry"
+else
+    fail "Should read the agent-state registry (AGENT_STATE_DIR)"
+fi
+
+if [[ "$script_content" == *'get_agent_state_display'* ]]; then
+    pass "Renders states via get_agent_state_display"
+else
+    fail "Should render states via get_agent_state_display"
+fi
+
+if [[ "$script_content" == *'AGENT_STUCK_SECS'* ]]; then
+    pass "Stuck threshold is env-overridable (AGENT_STUCK_SECS)"
+else
+    fail "Should expose AGENT_STUCK_SECS override"
+fi
+
+if [[ "$script_content" == *'_title_has_spinner'* ]] && [[ "$script_content" == *'pane_title'* ]]; then
+    pass "Corroborates stuck via pane title spinner"
+else
+    fail "Should corroborate stuck via pane title spinner"
+fi
+
+# the spinner check must be locale-independent (byte-based, not a codepoint
+# range that a C locale would mis-match)
+if [[ "$script_content" == *'od -An -tx1'* ]]; then
+    pass "Spinner check tests raw utf-8 bytes (locale-independent)"
+else
+    fail "Spinner check should be byte-based, not a locale-sensitive range"
+fi
+
+if [[ "$script_content" == *'_fmt_elapsed'* ]]; then
+    pass "Humanises state age via _fmt_elapsed"
+else
+    fail "Should humanise state age via _fmt_elapsed"
 fi
 
 section "Ghost Decoration"
@@ -133,11 +181,12 @@ fi
 
 section "Command Detection"
 
-# script should batch-detect Claude processes via pgrep and process tree
-if [[ "$script_content" == *'pgrep -x claude'* ]]; then
-    pass "Uses pgrep to find Claude processes"
+# script should batch-detect Claude processes (kernel name + argv[0] basename;
+# plain pgrep -x misses claude's versioned binary whose kernel name is "2.1.x")
+if [[ "$script_content" == *'match_process_pids claude'* ]]; then
+    pass "Uses match_process_pids to find Claude processes"
 else
-    fail "Should use pgrep to find Claude processes"
+    fail "Should use match_process_pids to find Claude processes"
 fi
 
 # script should filter out suspended processes
@@ -207,11 +256,11 @@ else
     if output=$("$LIST_CLAUDE_SCRIPT" 2>/dev/null); then
         pass "Runs successfully in fzf mode"
 
-        # check output format
-        if echo "$output" | grep -qE '^[a-zA-Z0-9_-]+:[0-9]+\.[0-9]+ '; then
-            pass "FZF output format is correct (target first)"
+        # check output format: rows end with a hidden tab-separated jump target
+        if echo "$output" | grep -qE $'\t''[a-zA-Z0-9_.-]+:[0-9]+\.[0-9]+$'; then
+            pass "FZF output format is correct (tab-delimited, target last)"
         elif [[ -z "$output" ]] || echo "$output" | grep -q "▐▛███▜▌"; then
-            pass "FZF output is empty or has ghost only (no Claude instances)"
+            pass "FZF output is empty or has header only (no Claude instances)"
         else
             fail "Unexpected FZF output format"
         fi

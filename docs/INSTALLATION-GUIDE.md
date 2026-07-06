@@ -519,16 +519,16 @@ The health check confirms the installation completed successfully. It catches is
 
 **Checks performed**:
 
-| Check     | Preset  | What it verifies                                                                 |
-| --------- | ------- | -------------------------------------------------------------------------------- |
-| Symlinks  | minimal | `.zprofile`, `.prettierrc`, `.editorconfig`, `.tmux`, `.tmux.conf`, dotfiles CLI |
-| Files     | minimal | `.p10k.zsh` and generated `tmux.conf` exist                                      |
-| Symlinks  | core    | `nvim` config, `lazygit` config, `dash-repo-sync`, `zed/keymap.json`, `zed/tasks.json` |
+| Check     | Preset  | What it verifies                                                                                         |
+| --------- | ------- | -------------------------------------------------------------------------------------------------------- |
+| Symlinks  | minimal | `.zprofile`, `.prettierrc`, `.editorconfig`, `.tmux`, `.tmux.conf`, dotfiles CLI                         |
+| Files     | minimal | `.p10k.zsh` and generated `tmux.conf` exist                                                              |
+| Symlinks  | core    | `nvim` config, `lazygit` config, `dash-repo-sync`, `zed/keymap.json`, `zed/tasks.json`                   |
 | Files     | core    | generated `ghostty/config`, `ghostty/local`, `gh-dash/config.yml`, `zed/settings.json` (copy-on-install) |
-| Symlinks  | full    | `hammerspoon/init.lua`; `karabiner.json` (file check)                            |
-| TPM       | minimal | `~/.tmux/plugins/tpm` exists                                                     |
-| lazy.nvim | core    | `~/.local/share/nvim/lazy` exists (after first nvim launch)                      |
-| Secrets   | minimal | `~/.config/zsh/secrets.zsh` exists                                               |
+| Symlinks  | full    | `hammerspoon/init.lua`; `karabiner.json` (file check)                                                    |
+| TPM       | minimal | `~/.tmux/plugins/tpm` exists                                                                             |
+| lazy.nvim | core    | `~/.local/share/nvim/lazy` exists (after first nvim launch)                                              |
+| Secrets   | minimal | `~/.config/zsh/secrets.zsh` exists                                                                       |
 
 **What you'll see**:
 

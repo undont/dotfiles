@@ -128,14 +128,14 @@ Exit alerts only fire once a command has finished. The process list (prefix + Sh
 
 Running rows come from a per-pane registry the `preexec` hook writes while a tracked command is in flight, and the `precmd` hook removes on completion. Finished rows come from a separate history the `precmd` hook appends on **every** tracked completion, regardless of whether you switched away: that is what lets a command you watched finish in place still leave a ✓/✗/⊘ entry (the switch-away-gated alerts file only drives the status bar). History keeps the most recent 20 entries within the last hour. The same exclude list governs both halves, so they agree on what counts as a process.
 
-| Key                                                  | Action                                                                                                   |
-| ---------------------------------------------------- | -------------------------------------------------------------------------------------------------------- |
-| <kbd>j</kbd>/<kbd>k</kbd>, <kbd>g</kbd>/<kbd>G</kbd> | move / jump to top or bottom                                                                             |
-| <kbd>Space</kbd>/<kbd>Enter</kbd>                    | switch to the selected process's window                                                                  |
-| <kbd>r</kbd>                                         | rerun a finished command: stage it on its origin window's prompt and jump there, no Enter, ready to edit |
-| <kbd>R</kbd>                                         | stage the command and run it straight away                                                               |
+| Key                                                  | Action                                                                                                                       |
+| ---------------------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------- |
+| <kbd>j</kbd>/<kbd>k</kbd>, <kbd>g</kbd>/<kbd>G</kbd> | move / jump to top or bottom                                                                                                 |
+| <kbd>Space</kbd>/<kbd>Enter</kbd>                    | switch to the selected process's window                                                                                      |
+| <kbd>r</kbd>                                         | rerun a finished command: stage it on its origin window's prompt and jump there, no Enter, ready to edit                     |
+| <kbd>R</kbd>                                         | stage the command and run it straight away                                                                                   |
 | <kbd>x</kbd>                                         | interrupt a running process (sends Ctrl-C, silently: no alert or finished row for it) or dismiss a finished one from history |
-| <kbd>/</kbd>                                         | search; <kbd>Esc</kbd> returns to navigation                                                             |
+| <kbd>/</kbd>                                         | search; <kbd>Esc</kbd> returns to navigation                                                                                 |
 
 Rerun reads the full command (stored as typed, so `$VAR` references stay references and are re-expanded by the shell on rerun) from the finished history by key, so the raw text never crosses the fzf/shell boundary. `R` types into whatever the target pane's foreground is, so it is safest at an idle prompt; `r` is the safe default when in doubt.
 
@@ -157,6 +157,7 @@ alerts-clear    # Alias for rm -rf ~/.config/tmux-alerts
 - Running registry: `~/.config/tmux-alerts/running` (one file per pane, named by pane number; fields `pane_id<tab>start_epoch<tab>shell_pid<tab>label`)
 - Finished history: `~/.config/tmux-alerts/finished` (one line per completion; fields `finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label<tab>cmd`, where `cmd` is the full command as typed for rerun and is absent on rows written before rerun shipped; reader keeps last 20 within the hour)
 - Kill-suppress markers: `~/.config/tmux-alerts/suppress` (one file per pane, touched by proclist's `x` binding right before it interrupts a tracked command; precmd deletes it on that completion and skips the finished row + alert; orphans older than 10s are pruned by the reader)
+- Agent-state registry: `~/.config/tmux-alerts/agent-state` (one file per pane, named by pane id; fields `agent<tab>state<tab>epoch<tab>event<tab>session_id<tab>cwd`, written by Claude Code hooks via `scripts/hooks/agent-state.sh` and read by the prefix+c instance switcher; see [AGENT-HOOKS.md](AGENT-HOOKS.md))
 - Hook script: `scripts/hooks/cmd-alert.sh`
 - Process list: `tmux/scripts/alerts/proclist.sh` (reader), `tmux/scripts/alerts/proclist-action.sh` (the `x` binding), and `tmux/scripts/alerts/proclist-rerun.sh` (the `r`/`R` bindings)
 - Bell + status bar rendering: `tmux/scripts/alerts/show.sh`
