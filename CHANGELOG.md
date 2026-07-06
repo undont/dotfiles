@@ -6,13 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.128] - 2026-07-05
+## [0.2.128] - 2026-07-06
 
 ### Added
 
 - Per-pane agent-state layer for the Claude instance switcher: Claude Code hooks (`scripts/hooks/agent-state.sh` + `wrappers/claude-state.sh`) write one state file per tmux pane under `~/.config/tmux-alerts/agent-state/`, and prefix+c renders each instance's state (● working, ◐ needs input, ○ idle, ✗ error) plus, for the states where you're waiting on it (idle/needs-input/error/stuck), how long it's been in that state. "Stuck" is derived at render time: working state older than `AGENT_STUCK_SECS` (default 120s) with no braille spinner left in the pane title. Stale files are swept by SessionEnd, the switcher itself, and the session-closed/renamed cleanup hook. `tmux/scripts/instances/claude.sh`, `tmux/scripts/_lib/alerts.sh`, `tmux/scripts/alerts/cleanup.sh`, `tmux/tmux.conf.template`, `tmux/scripts/tests/test-agent-state-hook.sh`, `docs/AGENT-HOOKS.md`
 - Claude switcher layout reworked to the proclist pattern: tab-delimited rows with the jump target hidden (`--with-nth=1`), a 60% preview that drops to a bottom split below 60 columns, and a state legend in the header, so rows have room for state and age. `tmux/tmux.conf.template`, `tmux/scripts/instances/claude.sh`
-- Zed: `n` and `shift-n` now select the previous/next search match, unbinding the default `cmd-g`/`cmd-shift-g`. `zed/keymap.json`
+- Zed: in the project-search results view (`space s g` / `cmd-shift-f`), `n`/`shift-n` step to the next/previous match. Scoped to the results view (`ProjectSearchView > Editor`) so vim's own `n`/`N` search-repeat still works in normal editors. `zed/keymap.json`
+- Zed settings (copy-on-install): vim smartcase find and relative-number toggle, signature help after edits and on typing, autoscroll on clicks, current-line highlight, `unnecessary_code_fade`, and the agent-review toolbar. `zed/settings.json`
 
 ### Fixed
 
