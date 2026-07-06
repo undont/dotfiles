@@ -109,7 +109,7 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
     fi
 
     sdisp=$(get_agent_state_display "$state")
-    row="$(_ansi "${sdisp##*|}" "${sdisp%%|*}")  ${session}:${window_name}"
+    row="$(_ansi "${sdisp##*|}" "${sdisp%%|*}")  ${session}:${window_idx}.${pane_idx} ${window_name}"
     [[ -n "$age_str" ]] && row="${row}  ${age_str}"
 
     claude_panes+=("${row}${TAB}${target}")
