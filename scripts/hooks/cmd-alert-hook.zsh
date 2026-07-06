@@ -70,34 +70,39 @@ _cmd_alert_preexec() {
     local first
     first="${${words[1]:-cmd}:t}"
 
-    # $2 is the alias-expanded command, recursively through nested aliases
-    # (zsh resolves the whole chain before preexec runs); matching its first
-    # word too catches plain aliases like gfp -> git fetch --prune (covered
-    # by the `git` entry)
-    local exp="${2:-$cmd}"
+    # $3 is what actually executes: alias-expanded through the whole nested
+    # chain (config -> v -> cl && nvim), including anything after a nested
+    # alias's own compound body. $2 (history-expansion) truncates at the end
+    # of a nested alias that itself contains a `;` (real-world case: our own
+    # `cl` alias), silently dropping everything chained after it -- so it
+    # must not be used here. fall back to $2/$1 for direct (non-preexec)
+    # calls in tests, where $3 is never supplied
+    local exp="${3:-${2:-$cmd}}"
     local -a ewords
     ewords=("${(z)exp}")
-    local efirst
-    efirst="${${ewords[1]:-cmd}:t}"
 
-    # launcher convention: aliases that expand to clear-then-run (`cl && X`,
-    # `clear && X`) are interactive sessions, not background tasks. checked
-    # against the fully-expanded command rather than the typed alias's own
-    # definition, so a chain like config -> v -> "cl && nvim" is still
-    # recognised even though `config` itself never mentions cl/clear
-    if [[ "$exp" == *"&&"* ]]; then
-        case "$efirst" in
-            cl|clear|c)
-                _cmd_alert_start=-1
-                _cmd_alert_label=""
-                return
-                ;;
+    # the command that actually determines whether this is an interactive
+    # launcher is the LAST command in the `;`/`&&`/`||` chain, not the first:
+    # a clear-then-run alias (`cl && nvim`, or config -> v -> "cl && nvim")
+    # puts its real payload after every setup step. walk the split words and
+    # remember the position right after the last chain operator; with no
+    # operator at all this stays at the first word, matching a plain command
+    local -i last_op_at=1
+    local -i i=1
+    local w
+    for w in "${ewords[@]}"; do
+        case "$w" in
+            ';'|'&&'|'||') last_op_at=$(( i + 1 )) ;;
         esac
-    fi
+        i=$(( i + 1 ))
+    done
+    local efirst
+    efirst="${${ewords[$last_op_at]:-cmd}:t}"
 
-    # skip excluded commands. single-word entries match the typed or expanded
-    # first word; multi-word entries match either as a command prefix
-    # (e.g. "docker compose" excludes "docker compose up")
+    # skip excluded commands. single-word entries match the typed word, or
+    # the last-segment word of the expanded chain; multi-word entries match
+    # either as a command prefix (e.g. "docker compose" excludes "docker
+    # compose up")
     local _exclude
     for _exclude in "${_CMD_ALERT_EXCLUDE[@]}"; do
         if [[ "$_exclude" == *" "* ]]; then

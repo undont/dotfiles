@@ -359,18 +359,38 @@ if command -v zsh &>/dev/null; then
     assert_equals "Path-prefixed command strips ./ from basename" "run-tests.sh --verbose" "$label"
 
     # nested launcher alias (regression: config -> v -> "cl && nvim" used to
-    # slip through because the old guard only read the typed alias's own
-    # definition (aliases[config] = "v ~/.config", no "&&"), missing that v
-    # itself is a clear-then-run launcher. $2 is what zsh actually passes to
-    # preexec: the fully alias-expanded command, resolved through the whole
-    # chain
+    # slip through the old first-word guard, both the aliases[$first]
+    # version and a later $2-based version. our real `cl` alias is itself
+    # compound (contains a `;`), and zsh's $2 (history-expansion) truncates
+    # right after a nested alias's own `;`-separated body, silently dropping
+    # everything chained after it -- so "config" resolved via $2 loses the
+    # "&& nvim ~/.config" tail entirely. these are the verbatim $2/$3 values
+    # captured from a real interactive zsh (via `preexec` instrumented live)
+    # for typing "config": $2 truncated, $3 (what actually executes) intact
+    real_2='printf '"'"'\033[2J\033[3J\033[H'"'"'; [[ -n $TMUX ]] && tmux clear-history || true '
+    real_3='printf '"'"'\033[2J\033[3J\033[H'"'"'
+[[ -n $TMUX ]] && tmux clear-history || true && nvim ~/.config'
     start=$(zsh -c '
         source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
-        _cmd_alert_preexec "config" "clear && nvim ~/.config"
+        _cmd_alert_preexec "config" "$1" "$2"
         echo "$_cmd_alert_start:[$_cmd_alert_label]"
-    ' 2>/dev/null)
-    assert_equals "Nested clear-then-run alias (config -> v -> cl && nvim) is excluded" \
+    ' _ "$real_2" "$real_3" 2>/dev/null)
+    assert_equals "Nested clear-then-run alias via real compound cl (config -> v -> cl && nvim) is excluded" \
         "-1:[]" "$start"
+
+    # same chain but only $2 available (no $3) demonstrates why $2 alone is
+    # unsafe: the truncated tail leaves "true" as the last segment, which
+    # isn't in the exclude list, so this must NOT be excluded
+    start=$(zsh -c '
+        source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+        _cmd_alert_preexec "config" "$1"
+        echo "$_cmd_alert_start:[$_cmd_alert_label]"
+    ' _ "$real_2" 2>/dev/null)
+    if [[ "$start" != "-1:[]" ]]; then
+        pass "Truncated \$2 alone (no \$3) would wrongly track config -- confirms \$3 is required"
+    else
+        fail "Expected the truncated-\$2-only case to still track (sanity check on the regression), got: $start"
+    fi
 else
     skip "zsh not available — skipping label truncation tests"
 fi
