@@ -11,7 +11,7 @@ function M.setup()
   -- d/c/x never clobber it. "0 (the yank register) is never touched by deletes,
   -- so <leader>v pastes the last yank no matter what was deleted since
   vim.keymap.set({ 'n', 'x' }, '<leader>v', '"0p', { desc = 'Paste last yank' })
-  vim.keymap.set({ 'n', 'x' }, '<leader>V', '"0P', { desc = 'Paste last yank (before)' })
+  vim.keymap.set({ 'n', 'x' }, '<leader>V', '"0P', { desc = 'Paste last yank (above)' })
 
   -- smart i/a on empty lines: reindent via cc (which respects indentexpr)
   -- rather than dropping the cursor at column 0. uses the black hole register
