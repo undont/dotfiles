@@ -34,7 +34,15 @@ DIR=$(tmux display-message -p '#{pane_current_path}')
 # create new window and capture its exact target (avoids name collision
 # when multiple windows share the same name, e.g. several "nvim" windows)
 TARGET=$(tmux new-window -P -F '#{session_name}:#{window_index}' -t "$SESSION" -n "$PROCESS" -c "$DIR")
-tmux set-window-option -t "$TARGET" automatic-rename off
+
+# claude windows track the session title via the OSC title branch of
+# automatic-rename-format; others stay static. new-window -n disables
+# automatic-rename for the window, so claude must re-enable it explicitly
+if [[ "$PROCESS" == "claude" ]]; then
+    tmux set-window-option -t "$TARGET" automatic-rename on
+else
+    tmux set-window-option -t "$TARGET" automatic-rename off
+fi
 tmux send-keys -t "$TARGET" "$PROCESS" Enter
 
 # switch client to the new window

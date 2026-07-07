@@ -6,6 +6,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.130] - 2026-07-08
+
+### Added
+
+- `jiru`, `lazycron` added to the interactive-command exclude list so cmd-alert doesn't fire completion alerts for their TUI sessions. `docs/CMD-ALERTS.md`, `scripts/hooks/cmd-alert-hook.zsh`
+
+### Changed
+
+- New tmux instance windows for `claude` keep `automatic-rename` on (other processes still get it turned off), so the window name tracks the session title via `automatic-rename-format`'s OSC-title branch instead of staying pinned to the launch command. `tmux/scripts/instances/new.sh`
+
 ## [0.2.129] - 2026-07-06
 
 ### Added

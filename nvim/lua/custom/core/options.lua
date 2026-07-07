@@ -75,6 +75,10 @@ function M.setup()
   -- auto-reload files changed outside nvim
   vim.o.autoread = true
 
+  -- use the system clipboard by default so yanks/pastes work across
+  -- separate nvim instances, including panes inside tmux.
+  vim.o.clipboard = 'unnamedplus'
+
   -- spellcheck
   vim.o.spell = true
   vim.opt.spelllang = { 'en_gb' }
