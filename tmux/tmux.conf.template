@@ -51,6 +51,10 @@ set -s extended-keys-format csi-u    # emit kitty u-form (matches Ghostty + zsh 
 # also stops its startup escape sequences leaking through tmux
 set -g allow-passthrough on
 
+# let inner apps set the terminal clipboard via OSC52. this is what allows
+# nvim yanks to reach the OS clipboard across separate tmux panes/windows.
+set -g set-clipboard on
+
 # forward terminal focus events into panes (nvim :checktime autoreload,
 # Claude Code focus tracking, TUIs that pause when unfocused)
 set -g focus-events on
@@ -119,9 +123,18 @@ setw -g monitor-activity off
 setw -g monitor-bell on
 set -g visual-bell off                # don't show message, just highlight
 
-# window naming: show directory name if shell, otherwise show command
+# window naming: directory name for shells, kebab-cased session title for
+# claude code panes (OSC title, /rename-aware), otherwise the command.
+# claude's process name is its version string (e.g. 2.1.202), hence the
+# version-pattern match alongside claude*. title processing: strip the leading
+# state glyph, map the startup "Claude Code" title to plain "claude",
+# lowercase via 26 chained s/// (tmux formats have no case modifier), collapse
+# spaces to hyphens, cap at 24 chars trimmed back to a hyphen boundary. the
+# glyph strip uses + not * (an anchored empty match drops a char, regsub.c
+# bug) and the boundary trim sits in a nested expansion because all s/// run
+# before =|24| within one #{} regardless of written order
 setw -g automatic-rename on
-setw -g automatic-rename-format '#{?#{==:#{pane_current_command},zsh},#{b:pane_current_path},#{pane_current_command}}'
+setw -g automatic-rename-format '#{?#{==:#{pane_current_command},zsh},#{b:pane_current_path},#{?#{||:#{m:claude*,#{pane_current_command}},#{m:[0-9]*.[0-9]*.[0-9]*,#{pane_current_command}}},#{?#{==:#{s/^[^a-zA-Z0-9]+//:pane_title},Claude Code},claude,#{s/-[^-]*…$/…/:#{s/^[^a-zA-Z0-9]+//;s/A/a/;s/B/b/;s/C/c/;s/D/d/;s/E/e/;s/F/f/;s/G/g/;s/H/h/;s/I/i/;s/J/j/;s/K/k/;s/L/l/;s/M/m/;s/N/n/;s/O/o/;s/P/p/;s/Q/q/;s/R/r/;s/S/s/;s/T/t/;s/U/u/;s/V/v/;s/W/w/;s/X/x/;s/Y/y/;s/Z/z/;s/ +/-/;=|24|…:pane_title}}},#{pane_current_command}}}'
 
 # performance: eliminate delay after pressing Escape (important for vim)
 set -s escape-time 0
