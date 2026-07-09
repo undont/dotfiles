@@ -15,6 +15,13 @@ return {
       -- the binary server auto-downloads from GitHub releases and has no Node
       -- dependency. see lsp/binary.lua in copilot.lua
       server = { type = 'binary' },
+      -- force full-document didChange instead of incremental. nvim's incremental
+      -- sync (vim/lsp/sync.lua) asserts on a stale line snapshot, so a copilot
+      -- changetracking desync crashes the next on_lines: while typing, or when
+      -- setqflist re-renders a tracked buffer (:Cfilter, live-diagnostics qf).
+      -- full sync never runs compute_diff, so the assert is unreachable. see
+      -- neovim/neovim#33224 and the incremental-sync assert family
+      server_opts_overrides = { flags = { allow_incremental_sync = false } },
       suggestion = {
         enabled = true,
         auto_trigger = true,
