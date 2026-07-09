@@ -17,7 +17,7 @@ DESCRIPTION:
     Creates or attaches to a tmux development session with a 3-window layout:
       • Window 1 (zsh): Terminal
       • Window 2 (nvim): Neovim editor
-      • Window 3 (code): Claude Code
+      • Window 3 (claude): Claude Code (tab auto-named from its title)
 
     The session name is derived from the directory basename.
     Use the launcher picker (prefix + p) to select a directory.
@@ -90,9 +90,10 @@ tmux new-session -d -s "$session" -n "zsh" -c "$dir"
 tmux new-window -t "$session" -n "nvim" -c "$dir"
 tmux send-keys -t "$session:nvim" 'nvim' Enter
 
-# Window 3: code
-tmux new-window -t "$session" -n "code" -c "$dir"
-tmux send-keys -t "$session:code" 'claude' Enter
+# Window 3: claude (unnamed so automatic-rename-format kebab-cases claude's
+# OSC title; passing -n would pin the rename flag off and freeze the tab)
+code_win=$(tmux new-window -t "$session" -P -F '#{window_id}' -c "$dir")
+tmux send-keys -t "$code_win" 'claude' Enter
 
 # Select first window
 tmux select-window -t "$session:1"

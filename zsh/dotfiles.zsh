@@ -410,6 +410,17 @@ precmd_functions+=(_dotfiles_precmd)
 _dotfiles_preexec() {
   # extract first word safely using parameter expansion
   local cmd="${1%% *}"
+
+  # resolve job-control resumes (fg, fg %2, %2) to the job's real command via
+  # $jobtexts, otherwise the title becomes "fg" and tmux automatic-rename
+  # picks it up as the window name for title-named panes (claude)
+  local job=""
+  case "$cmd" in
+    fg) local -a words; words=(${(z)1}); job="${words[2]:-%+}" ;;
+    %*) job="$cmd" ;;
+  esac
+  [[ "$job" == (%*|<->) ]] && cmd="${${jobtexts[$job]:-$cmd}%% *}"
+
   print -Pn "\e]0;${cmd}\a"
 
   # refresh git branch cache after git commands that may change the branch
