@@ -35,3 +35,11 @@ export PATH="$HOME/.bun/bin:$PATH"
 # User-local binaries (~/.local/bin) — common install target for pipx,
 # `cargo install`, Antigravity CLI, etc.
 export PATH="$HOME/.local/bin:$PATH"
+
+# over ssh, terminal emulators don't forward COLORTERM, so remote TUIs (claude
+# code, etc.) see only TERM=*-256color and downsample 24-bit brand colours to
+# the 256 palette. we always drive from a truecolor terminal (ghostty+tmux), so
+# assert it when it's missing inside an ssh session.
+if [[ -z "${COLORTERM:-}" && -n "${SSH_CONNECTION:-}" ]]; then
+  export COLORTERM=truecolor
+fi
