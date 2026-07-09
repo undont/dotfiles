@@ -31,13 +31,15 @@ return {
     lazy = false, -- load immediately to ensure leader preview works reliably
     config = function()
       local wk = require 'which-key'
+      local claude_icon = vim.fn.nr2char(0xf06c4) -- nf-md-asterisk, matches the ```claude fence icon
 
-      -- custom highlight for Claude icon (distinct orange, not DiagnosticWarn yellow)
-      vim.api.nvim_set_hl(0, 'WhichKeyIconClaude', { fg = '#ff9e64' })
+      -- shared Claude icon colour (distinct orange, not DiagnosticWarn yellow);
+      -- also used by the ```claude fence glyph in mini.lua
+      vim.api.nvim_set_hl(0, 'ClaudeIcon', { fg = '#ff9e64' })
       vim.api.nvim_create_autocmd('ColorScheme', {
-        group = vim.api.nvim_create_augroup('which-key-claude-hl', { clear = true }),
+        group = vim.api.nvim_create_augroup('claude-icon-hl', { clear = true }),
         callback = function()
-          vim.api.nvim_set_hl(0, 'WhichKeyIconClaude', { fg = '#ff9e64' })
+          vim.api.nvim_set_hl(0, 'ClaudeIcon', { fg = '#ff9e64' })
         end,
       })
 
@@ -79,7 +81,7 @@ return {
           { 'gr', group = 'LSP [R]efactor', icon = { icon = '󰅩', color = 'green' }, hidden = true },
 
           -- ── filetype-gated groups (hidden by default, shown for specific filetypes via autocmd) ──
-          { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = true },
+          { '<leader>c', group = '[C]laude', icon = { icon = claude_icon, hl = 'ClaudeIcon' }, hidden = true },
           { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = true },
           { '<leader>n', group = '.[N]ET', icon = { cat = 'filetype', name = 'cs' }, hidden = true },
           { '<leader>N', group = '[N]otifications', icon = { icon = '󰈸 ', color = 'yellow' } },
@@ -172,7 +174,7 @@ return {
           { '<leader>bl', hidden = not is_code },
 
           -- markdown-only groups
-          { '<leader>c', group = '[C]laude', icon = { icon = '', hl = 'WhichKeyIconClaude' }, hidden = not is_markdown },
+          { '<leader>c', group = '[C]laude', icon = { icon = claude_icon, hl = 'ClaudeIcon' }, hidden = not is_markdown },
           { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = not is_markdown },
 
           -- .NET-only group
