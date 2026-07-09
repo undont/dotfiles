@@ -173,6 +173,21 @@ fpath=("$DOTFILES_ROOT/zsh/functions" $fpath)
 # Docker CLI completions (docker, docker-compose commands)
 fpath=("$HOME/.docker/completions" $fpath)
 
+# systemd tools (loginctl, hostnamectl, timedatectl, networkctl, busctl, ...):
+# carapace ships no completer for most of the systemd family, so expose the
+# OS-provided zsh completions instead. Linux-only: the dir is absent on macOS
+# (no systemd), so the guard makes this a no-op there. Appended, not prepended,
+# so it only fills gaps and never shadows brew's own site-functions; carapace
+# still wins for the systemd tools it does own (systemctl, journalctl, ...) as
+# it re-registers those via compdef after compinit below.
+[[ -d /usr/share/zsh/vendor-completions ]] && fpath=($fpath /usr/share/zsh/vendor-completions)
+
+# Homebrew zsh-completions (brew install zsh-completions): extra completion
+# definitions for tools that ship none of their own. installs to its own
+# share/zsh-completions dir, separate from brew's site-functions, so add it
+# explicitly. appended so it only fills gaps, and it must precede compinit below
+[[ -d "$HOMEBREW_PREFIX/share/zsh-completions" ]] && fpath=($fpath "$HOMEBREW_PREFIX/share/zsh-completions")
+
 # cached compinit: only regenerate completion dump once per day (~50-100ms savings)
 # the (#q...) glob qualifier requires EXTENDED_GLOB; anonymous function scopes it
 # so it doesn't leak globally (local_options only works inside functions)
