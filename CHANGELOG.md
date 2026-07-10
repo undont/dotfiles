@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Changed
+
+- `set-default-apps.sh` asks about each file type only once. macOS 15+ shows a modal consent dialog on every programmatic handler change, so the step now skips a type when Zed already handles it and records a decline in `.state/declined-default-apps` when the user keeps the existing app, instead of re-prompting on every `dotfiles update`. `scripts/install/set-default-apps.sh`
+
+### Added
+
+- `.log` files route to Zed. they're governed by the system `com.apple.log` UTI that Console claims, so the UTI is bound directly since the bare extension loses to it. `scripts/install/set-default-apps.sh`
+
 ## [0.2.132] - 2026-07-10
 
 ### Added

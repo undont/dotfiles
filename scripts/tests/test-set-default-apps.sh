@@ -36,6 +36,18 @@ else
     skip "duti-missing test (macOS only)"
 fi
 
+# the script runs under whatever bash the shebang resolves to; on a fresh
+# macOS that is system bash 3.2 (no associative arrays), so guard the parse
+if [[ -x /bin/bash ]]; then
+    if /bin/bash -n "$SET_APPS_SCRIPT" 2>/dev/null; then
+        pass "Parses under system bash 3.2"
+    else
+        fail "Should parse under system bash 3.2 (no bash 4+ syntax)"
+    fi
+else
+    skip "bash 3.2 parse test (/bin/bash absent)"
+fi
+
 # note: the binding path mutates LaunchServices, skip in the suite
 skip "handler-binding path modifies LaunchServices defaults"
 
