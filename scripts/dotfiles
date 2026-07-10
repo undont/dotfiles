@@ -563,24 +563,31 @@ cmd_edit() {
 
 cmd_export() {
     local push=0
+    local -a selectors=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -h|--help)  _help_export; return 0 ;;
             -p|--push)  push=1 ;;
             --)         shift; break ;;
             -*)         unknown_flag export "$1"; return $? ;;
-            *)          unknown_flag export "$1"; return $? ;;
+            *)          selectors+=("$1") ;;
         esac
         shift
     done
+    selectors+=("$@")
 
     local dir
     dir=$(_local_dir_required) || return $?
     _local_pairs
+    if [[ ${#selectors[@]} -gt 0 ]]; then
+        _local_select "${selectors[@]}" || return 1
+    fi
 
     local pair repo sys
-    for pair in "${LOCAL_PAIRS[@]}"; do
+    local -a added=()
+    for pair in ${LOCAL_PAIRS[@]+"${LOCAL_PAIRS[@]}"}; do
         repo="${pair%%|*}" sys="${pair#*|}"
+        added+=("$repo")
         [[ -f "$sys" ]] || continue
         mkdir -p "$(dirname "$dir/$repo")"
         if [[ ! -f "$dir/$repo" ]] || ! diff -q "$sys" "$dir/$repo" &>/dev/null; then
@@ -593,6 +600,7 @@ cmd_export() {
     if [[ ${#LOCAL_DIR_PAIRS[@]} -gt 0 ]]; then
         for pair in "${LOCAL_DIR_PAIRS[@]}"; do
             repo="${pair%%|*}" sys="${pair#*|}"
+            added+=("$repo")
             [[ -d "$sys" ]] || continue
             rm -rf "${dir:?}/${repo:?}"
             mkdir -p "$dir/$repo"
@@ -602,7 +610,13 @@ cmd_export() {
         done
     fi
 
-    git -C "$dir" add -A
+    # scope the stage to the exported entries when targeted, so a partial
+    # export never sweeps in unrelated drift sitting in the repo
+    if [[ ${#selectors[@]} -gt 0 ]]; then
+        git -C "$dir" add -A -- ${added[@]+"${added[@]}"}
+    else
+        git -C "$dir" add -A
+    fi
     local changed
     changed=$(git -C "$dir" status --porcelain | wc -l | tr -d ' ')
     if [[ "$changed" -gt 0 ]]; then
@@ -705,32 +719,36 @@ _import_one() {
 
 # prune a system file inside a directory pair that has no repo counterpart:
 # export mirrors the dir wholesale, so a missing repo file means it was
-# removed upstream. mutates the outer removed / orphaned counters; only
-# deletes under force, matching import's non-destructive default
+# removed upstream, or created locally on this machine. the two are
+# indistinguishable, so deletion is gated behind an explicit --prune (never
+# --force) to protect machine-local launchers
 _prune_one() {
     local sys_file="$1" label="$2"
-    if [[ $force -eq 1 ]]; then
+    if [[ $prune -eq 1 ]]; then
         rm -f "$sys_file"
         success "Removed $sys_file"
         removed=$((removed + 1))
     else
-        printf "  ${YELLOW}orphan${NC}   %s  ${GREY}(not in repo; --force to delete)${NC}\n" "$label"
+        printf "  ${YELLOW}orphan${NC}   %s  ${GREY}(not in repo; --prune to delete)${NC}\n" "$label"
         orphaned=$((orphaned + 1))
     fi
 }
 
 cmd_import() {
-    local force=0
+    local force=0 prune=0
+    local -a selectors=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
             -h|--help)  _help_import; return 0 ;;
             -f|--force) force=1 ;;
+            -p|--prune) prune=1 ;;
             --)         shift; break ;;
             -*)         unknown_flag import "$1"; return $? ;;
-            *)          unknown_flag import "$1"; return $? ;;
+            *)          selectors+=("$1") ;;
         esac
         shift
     done
+    selectors+=("$@")
 
     local dir
     dir=$(_local_dir_required) || return $?
@@ -741,14 +759,13 @@ cmd_import() {
     fi
 
     _local_pairs
-
-    local cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
-    local theme_before=""
-    [[ -f "$cfg/dotfiles/current-theme" ]] && theme_before=$(<"$cfg/dotfiles/current-theme")
+    if [[ ${#selectors[@]} -gt 0 ]]; then
+        _local_select "${selectors[@]}" || return 1
+    fi
 
     local synced=0 skipped=0 differs=0 symlinks=0 removed=0 orphaned=0
     local pair repo sys rel f
-    for pair in "${LOCAL_PAIRS[@]}"; do
+    for pair in ${LOCAL_PAIRS[@]+"${LOCAL_PAIRS[@]}"}; do
         repo="${pair%%|*}" sys="${pair#*|}"
         _import_one "$dir/$repo" "$sys" "$repo"
     done
@@ -788,19 +805,13 @@ cmd_import() {
         info "Use 'dotfiles local diff' to inspect changes"
     fi
     if [[ $orphaned -gt 0 ]]; then
-        info "$orphaned file(s) not in repo; run 'dotfiles import --force' to delete"
+        info "$orphaned file(s) not in repo; run 'dotfiles import --prune' to delete"
     fi
     if [[ $symlinks -gt 0 ]]; then
         info "$symlinks destination(s) are symlinks and were left untouched"
     fi
     if [[ $synced -eq 0 && $removed -eq 0 && $differs -eq 0 && $orphaned -eq 0 && $symlinks -eq 0 ]]; then
         success "Local layer already in sync"
-    fi
-
-    local theme_after=""
-    [[ -f "$cfg/dotfiles/current-theme" ]] && theme_after=$(<"$cfg/dotfiles/current-theme")
-    if [[ -n "$theme_after" && "$theme_after" != "$theme_before" ]]; then
-        info "Theme pointer changed, apply it with: dotfiles theme switch $theme_after"
     fi
 }
 
@@ -894,6 +905,7 @@ cmd_local() {
         clone)  cmd_local_clone  "$@" ;;
         status) cmd_local_status "$@" ;;
         diff)   cmd_local_diff   "$@" ;;
+        edit)   cmd_local_edit   "$@" ;;
         *)
             error "Unknown local subcommand: $sub"
             printf "  Run: ${CYAN}dotfiles help local${NC}\n" >&2
@@ -939,6 +951,7 @@ cmd_local_init() {
     fi
     _local_seed_gitignore "$dir"
     if [[ -n "$url" ]]; then
+        url=$(_local_expand_url "$url")
         git -C "$dir" remote add origin "$url" 2>/dev/null \
             || git -C "$dir" remote set-url origin "$url"
     fi
@@ -977,6 +990,7 @@ cmd_local_clone() {
         printf "  Run: ${CYAN}dotfiles help local${NC}\n" >&2
         return 2
     fi
+    url=$(_local_expand_url "$url")
 
     local dir
     dir="${dir_flag:-$HOME/.dotfiles-local}"
@@ -1151,6 +1165,23 @@ cmd_local_diff() {
     if [[ $found -eq 0 ]]; then
         success "Local layer matches the repo"
     fi
+}
+
+cmd_local_edit() {
+    while [[ $# -gt 0 ]]; do
+        case "$1" in
+            -h|--help) _help_local; return 0 ;;
+            --)        shift; break ;;
+            -*)        unknown_flag local "$1"; return $? ;;
+            *)         unknown_flag local "$1"; return $? ;;
+        esac
+        shift
+    done
+
+    local dir
+    dir=$(_local_dir_required) || return $?
+    cd "$dir"
+    ${EDITOR:-vim} .
 }
 
 cmd_notes() {
@@ -1689,16 +1720,24 @@ Copies your user-owned local files (local.conf overrides, ~/.zshrc, personal
 launchers, copy-on-install configs) into the configured private repo and
 commits. Secrets are never exported.
 
+Pass one or more selectors to export only those entries; a partial export
+scopes the commit to just what it captured. A selector matches a manifest
+entry by its repo-relative path, path suffix, basename, or system path, or a
+single file inside the launchers dir (e.g. launchers/acme).
+
 USAGE
-  dotfiles export [OPTIONS]
+  dotfiles export [OPTIONS] [SELECTOR...]
 
 OPTIONS
   -p, --push     Push to origin after committing
   -h, --help     Show this help
 
 EXAMPLES
-  dotfiles export            # Capture and commit locally
-  dotfiles export --push     # Capture, commit, and push
+  dotfiles export                     # Capture everything and commit locally
+  dotfiles export --push              # Capture all, commit, and push
+  dotfiles export zshrc               # Capture just ~/.zshrc
+  dotfiles export tmux/local.conf     # Capture one override by path suffix
+  dotfiles export launchers/acme      # Capture a single launcher
 EOF
 }
 
@@ -1722,20 +1761,29 @@ _help_import() {
 dotfiles import: import the local layer from the private repo
 
 Pulls the configured private repo (when a remote is set) and applies its
-files to this machine. Existing files that differ are left alone, and
-launcher files the repo no longer tracks are reported as orphans, unless
---force is given; symlinked destinations are never touched.
+files to this machine. Existing files that differ are left alone unless
+--force is given; launcher files the repo no longer tracks are reported as
+orphans and only deleted under --prune, so machine-local launchers survive a
+--force. Symlinked destinations are never touched.
+
+Pass one or more selectors to import only those entries. A selector matches a
+manifest entry by its repo-relative path, path suffix, basename, or system
+path, or a single file inside the launchers dir (e.g. launchers/acme).
 
 USAGE
-  dotfiles import [OPTIONS]
+  dotfiles import [OPTIONS] [SELECTOR...]
 
 OPTIONS
-  -f, --force    Overwrite differing system files and delete orphaned launchers
+  -f, --force    Overwrite differing system files (never deletes orphans)
+  -p, --prune    Delete launchers not tracked in the repo
   -h, --help     Show this help
 
 EXAMPLES
-  dotfiles import            # Apply, skipping files that differ
-  dotfiles import --force    # Apply, overwriting differing and pruning orphans
+  dotfiles import                    # Apply everything, skipping files that differ
+  dotfiles import --force            # Overwrite differing files, keep orphans
+  dotfiles import --force --prune    # Overwrite and prune orphaned launchers
+  dotfiles import zshrc --force      # Pull just ~/.zshrc, overwriting it
+  dotfiles import launchers/acme     # Pull a single launcher
 EOF
 }
 
@@ -1773,16 +1821,19 @@ SUBCOMMANDS
   init [url]           Create a repo (default: ~/.dotfiles-local), register it
   clone <url>          Clone an existing private repo, register and apply it
   diff                 Show system vs repo differences
+  edit                 Open the local-layer repo in $EDITOR
+
+URLs accept GitHub "owner/repo" shorthand, expanded to https://github.com/.
 
 OPTIONS
   --dir <path>   Use a custom repo location (init, clone)
   -h, --help     Show this help
 
 EXAMPLES
-  dotfiles local init git@github.com:you/dotfiles-local.git
+  dotfiles local init you/dotfiles-local
   dotfiles export --push       # capture this machine, push
 
-  dotfiles local clone git@github.com:you/dotfiles-local.git
+  dotfiles local clone you/dotfiles-local
                                # on another machine: registers + applies
   dotfiles import              # pick up later changes on demand
 EOF

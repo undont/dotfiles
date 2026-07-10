@@ -118,6 +118,25 @@ else
     fail "init with url should set origin (got: $remote)"
 fi
 
+out=$(dotfiles_run local init "me/dotfiles-local") && rc=0 || rc=$?
+remote=$(git -C "$TEST_HOME/.dotfiles-local" remote get-url origin 2>/dev/null || echo none)
+if [[ "$remote" == "https://github.com/me/dotfiles-local.git" ]]; then
+    pass "init expands owner/repo shorthand to a github https url"
+else
+    fail "shorthand should expand to https://github.com/me/dotfiles-local.git (got: $remote)"
+fi
+
+# an existing local path that happens to look like owner/repo is not expanded
+mkdir -p "$TEST_DIR/me/dotfiles-local"
+git -C "$TEST_DIR/me/dotfiles-local" init -q
+(cd "$TEST_DIR" && dotfiles_run local init "me/dotfiles-local" > /dev/null) || true
+remote=$(git -C "$TEST_HOME/.dotfiles-local" remote get-url origin 2>/dev/null || echo none)
+if [[ "$remote" == "me/dotfiles-local" ]]; then
+    pass "existing local path shaped like owner/repo passes through unexpanded"
+else
+    fail "existing path must not be rewritten (got: $remote)"
+fi
+
 cleanup_sandbox
 
 # ─── 3. local clone ───────────────────────────────────────────────────
@@ -180,10 +199,17 @@ dotfiles_run local init > /dev/null
 
 out=$(dotfiles_run export) && rc=0 || rc=$?
 repo="$TEST_HOME/.dotfiles-local"
-if [[ $rc -eq 0 && -f "$repo/zshrc" && -f "$repo/config/tmux/local.conf" && -f "$repo/config/dotfiles/current-theme" ]]; then
+if [[ $rc -eq 0 && -f "$repo/zshrc" && -f "$repo/config/tmux/local.conf" ]]; then
     pass "export copies files to expected repo paths"
 else
-    fail "export should copy zshrc/tmux/current-theme (rc=$rc)"
+    fail "export should copy zshrc/tmux (rc=$rc)"
+fi
+
+# theme is a per-machine choice: export must never capture current-theme
+if [[ ! -e "$repo/config/dotfiles/current-theme" ]]; then
+    pass "export leaves current-theme machine-local"
+else
+    fail "export must not sync current-theme"
 fi
 
 subject=$(git -C "$repo" log -1 --format=%s 2>/dev/null || echo none)
@@ -291,22 +317,96 @@ else
     fail "default import should report but keep the orphan (rc=$rc)"
 fi
 
+# --force overwrites differing files but must never delete orphaned launchers:
+# a machine-local launcher looks identical to one removed upstream
 out=$(dotfiles_run import --force) && rc=0 || rc=$?
+if [[ $rc -eq 0 && -f "$TEST_HOME/.config/dotfiles/launchers/gone" ]]; then
+    pass "import --force keeps orphaned launchers (machine-local safe)"
+else
+    fail "import --force must not prune orphans (rc=$rc)"
+fi
+
+out=$(dotfiles_run import --prune) && rc=0 || rc=$?
 if [[ $rc -eq 0 && ! -e "$TEST_HOME/.config/dotfiles/launchers/gone" \
     && -f "$TEST_HOME/.config/dotfiles/launchers/keep" ]]; then
-    pass "import --force prunes upstream-removed launchers, keeps tracked ones"
+    pass "import --prune prunes upstream-removed launchers, keeps tracked ones"
 else
-    fail "import --force should delete gone but keep keep (rc=$rc)"
+    fail "import --prune should delete gone but keep keep (rc=$rc)"
 fi
 
 # a system symlink with no repo counterpart survives prune (export never
 # captures symlinks, so they are not orphans)
 ln -s "$TEST_HOME/.config/dotfiles/launchers/keep" "$TEST_HOME/.config/dotfiles/launchers/linked"
-dotfiles_run import --force > /dev/null
+dotfiles_run import --prune > /dev/null
 if [[ -L "$TEST_HOME/.config/dotfiles/launchers/linked" ]]; then
-    pass "import --force leaves symlinked launchers untouched"
+    pass "import --prune leaves symlinked launchers untouched"
 else
     fail "symlinked launcher must survive prune"
+fi
+
+cleanup_sandbox
+
+# ─── 5c. targeted import / export selectors ───────────────────────────
+
+section "targeted export/import selectors"
+
+setup_cli_sandbox
+seed_preset core
+seed_gitconfig
+seed_local_files
+mkdir -p "$TEST_HOME/.config/dotfiles/launchers"
+printf '#!/usr/bin/env bash\necho acme\n' > "$TEST_HOME/.config/dotfiles/launchers/acme"
+printf '#!/usr/bin/env bash\necho beta\n' > "$TEST_HOME/.config/dotfiles/launchers/beta"
+dotfiles_run local init > /dev/null
+
+# targeted export captures only the selected file
+out=$(dotfiles_run export zshrc) && rc=0 || rc=$?
+repo="$TEST_HOME/.dotfiles-local"
+if [[ $rc -eq 0 && -f "$repo/zshrc" && ! -e "$repo/config/tmux/local.conf" ]]; then
+    pass "export <selector> captures only the matched entry"
+else
+    fail "targeted export should capture zshrc but not tmux (rc=$rc)"
+fi
+
+# targeted export of a single launcher does not pull in the others
+out=$(dotfiles_run export launchers/acme) && rc=0 || rc=$?
+if [[ $rc -eq 0 && -f "$repo/config/dotfiles/launchers/acme" \
+    && ! -e "$repo/config/dotfiles/launchers/beta" ]]; then
+    pass "export launchers/<name> captures a single launcher"
+else
+    fail "targeted launcher export should capture only acme (rc=$rc)"
+fi
+
+# unknown selector errors without touching the repo
+out=$(dotfiles_run export nope 2>&1) && rc=0 || rc=$?
+if [[ $rc -ne 0 && "$out" == *"No local-layer entry matches"* ]]; then
+    pass "unknown selector errors"
+else
+    fail "unknown selector should error (rc=$rc)"
+fi
+
+# now capture everything, then diverge system files and import selectively
+dotfiles_run export > /dev/null
+printf 'export SANDBOX=2\n' > "$TEST_HOME/.zshrc"
+printf 'set -g status on\n' > "$TEST_HOME/.config/tmux/local.conf"
+
+# targeted import --force applies only the selected file, leaves the other differing
+out=$(dotfiles_run import zshrc --force) && rc=0 || rc=$?
+if [[ $rc -eq 0 ]] && grep -q "SANDBOX=1" "$TEST_HOME/.zshrc" \
+    && grep -q "status on" "$TEST_HOME/.config/tmux/local.conf"; then
+    pass "import <selector> --force applies only the matched entry"
+else
+    fail "targeted import should overwrite zshrc but not tmux (rc=$rc)"
+fi
+
+# targeted single-launcher import never prunes the others even with --prune
+rm "$repo/config/dotfiles/launchers/beta"
+git -C "$repo" commit -qam "drop beta" 2>/dev/null || true
+out=$(dotfiles_run import launchers/acme --prune) && rc=0 || rc=$?
+if [[ $rc -eq 0 && -f "$TEST_HOME/.config/dotfiles/launchers/beta" ]]; then
+    pass "targeted launcher import does not prune siblings"
+else
+    fail "single-launcher import must not prune beta (rc=$rc)"
 fi
 
 cleanup_sandbox
