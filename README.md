@@ -177,7 +177,7 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the architecture.
 
 ### Syncing the local layer between machines
 
-The base repo stays generic, but the local layer (the override files above, plus `~/.zshrc`, personal launchers, and the copy-on-install configs) can be synced across your own machines via a private git repo. The public repo never references it; the link is a machine-local pointer (`~/.config/dotfiles/local-repo`, or the `DOTFILES_LOCAL_DIR` env var). Secrets are never synced.
+The base repo stays generic, but the local layer (the override files above, plus `~/.zshrc`, personal launchers, and the copy-on-install configs) can be synced across your own machines via a private git repo. The public repo never references it; the link is a machine-local pointer (`~/.config/dotfiles/local-repo`, or the `DOTFILES_LOCAL_DIR` env var). Secrets are never synced, and neither is the current theme: it stays a per-machine choice.
 
 ```bash
 # one machine (urls accept GitHub owner/repo shorthand)
@@ -188,10 +188,14 @@ dotfiles export --push        # capture, commit, push
 dotfiles local clone you/dotfiles-local
 
 # picking up later changes on demand (updates also import automatically)
-dotfiles import               # skips files that differ; --force overwrites and prunes launchers removed upstream
+dotfiles import               # skips files that differ; --force overwrites, --prune deletes launchers removed upstream
+
+# sync a single entry instead of the whole layer
+dotfiles import zshrc --force # pull just ~/.zshrc; selectors match by path, suffix, basename, or a launcher name
+dotfiles export tmux/local.conf
 ```
 
-On a fresh machine, clone the private repo to `~/.dotfiles-local` before running the installer and it is adopted and imported automatically. `dotfiles local status` shows sync state; `dotfiles local diff` shows exactly what differs.
+On a fresh machine, clone the private repo to `~/.dotfiles-local` before running the installer and it is adopted and imported automatically. `dotfiles local status` shows sync state; `dotfiles local diff` shows exactly what differs; `dotfiles local edit` opens the local-layer repo in `$EDITOR`.
 
 ---
 

@@ -79,17 +79,28 @@ Config is copied on first install, then becomes fully user-owned. Repo changes d
 
 ### Local layer sync (optional)
 
-The user-owned local layer (patterns 2 and 3 above, plus `~/.zshrc`, personal
-launchers, and the current-theme pointer) can be synced across a user's own
-machines via a private git repo (`dotfiles local` / `export` / `import`).
+The user-owned local layer (patterns 2 and 3 above, plus `~/.zshrc` and
+personal launchers) can be synced across a user's own machines via a private
+git repo (`dotfiles local` / `export` / `import`).
 The public repo never references it; the link is a machine-local pointer at
 `~/.config/dotfiles/local-repo` (env override: `DOTFILES_LOCAL_DIR`). Logic
 lives in `scripts/_lib/local-layer.sh`. **When adding a new local-override or
 copy-on-install file to the installer, add it to `_local_pairs()` there too**;
 the drift-guard test in `scripts/tests/test-dotfiles-local.sh` fails if an
 `install_local`/`copy_config` destination is missing from the manifest.
-Secrets (`~/.config/zsh/secrets.zsh`) and `.state/` are hard-excluded and must
-stay that way.
+Secrets (`~/.config/zsh/secrets.zsh`), `.state/`, and the `current-theme`
+pointer are hard-excluded and must stay that way: theme is a per-machine
+choice, so it is never synced. Launcher pruning on `import` is gated behind
+`--prune` (not `--force`), so a launcher created on one machine survives an
+overwrite import on another.
+
+**For agents:** a private local-layer repo may exist on this machine (default
+`~/.dotfiles-local`, or wherever `~/.config/dotfiles/local-repo` /
+`DOTFILES_LOCAL_DIR` points). It holds the user's own copies of the local-override
+and copy-on-install files and is **not** part of this public repo, so it won't show
+up in `git status` here. Don't assume it exists or edit it as part of a change to
+this repo; if you need to inspect or open it, `dotfiles local status` reports whether
+one is configured and `dotfiles local edit` opens it in `$EDITOR`.
 
 ## Change Guidelines
 

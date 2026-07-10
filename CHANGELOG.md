@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.132] - 2026-07-10
+
+### Added
+
+- `dotfiles local edit` opens the private local-layer repo in `$EDITOR`, mirroring `dotfiles edit` for the base repo; resolves the configured repo via `_local_dir_required`, so it errors cleanly with an init/clone hint when none is set. `scripts/dotfiles`, `zsh/functions/_dotfiles`
+- `dotfiles export` and `dotfiles import` accept positional selectors to sync a single entry instead of the whole layer (e.g. `dotfiles import zshrc --force`, `dotfiles export launchers/acme`). A selector matches a manifest entry by repo-relative path, path suffix, basename, or system path, or a single file inside the launchers dir; a targeted export scopes its commit to just what it captured, and a single-file launcher selection flows through the ordinary file path so it never triggers the wholesale dir mirror or prune. Unknown selectors error. `scripts/_lib/local-layer.sh` (`_local_select`), `scripts/dotfiles`, `scripts/tests/test-dotfiles-local.sh`
+
+### Changed
+
+- Theme is no longer part of the local-layer sync: `current-theme` is dropped from the manifest and hard-excluded (seeded into the private repo's `.gitignore`), so each machine keeps its own theme instead of a synced pointer showing up as a perpetual `differs` that only `--force` could clear. `scripts/_lib/local-layer.sh`, `scripts/dotfiles`
+- Launcher pruning on `import` is decoupled from `--force`: `--force` now overwrites differing files but never deletes orphaned launchers, and a new `--prune` flag gates deletion. A launcher created on one machine (an orphan relative to the shared repo) survives a `--force` import on another. `scripts/dotfiles`, `zsh/functions/_dotfiles`, `scripts/tests/test-dotfiles-local.sh`
+
 ## [0.2.131] - 2026-07-10
 
 ### Added

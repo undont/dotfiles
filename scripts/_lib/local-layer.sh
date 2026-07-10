@@ -19,7 +19,8 @@ _DOTFILES_LOCAL_LAYER_SH_LOADED=1
 
 # build LOCAL_PAIRS (files) and LOCAL_DIR_PAIRS (directories) as
 # "repo-relative|system-absolute" strings, preset-gated like the installer.
-# secrets.zsh, .state/ and the preset file are deliberately absent
+# secrets.zsh, .state/, the preset file and current-theme are deliberately
+# absent: theme is a per-machine choice, not synced
 _local_pairs() {
     # should_install reads $PRESET (installer export); resolve from the saved
     # preset when invoked via the CLI, where it is unset
@@ -28,7 +29,6 @@ _local_pairs() {
     LOCAL_PAIRS=(
         "zshrc|$HOME/.zshrc"
         "config/tmux/local.conf|$cfg/tmux/local.conf"
-        "config/dotfiles/current-theme|$cfg/dotfiles/current-theme"
     )
     LOCAL_DIR_PAIRS=()
     if should_install "core"; then
@@ -54,6 +54,47 @@ _local_pairs() {
             "config/karabiner/karabiner.json|$cfg/karabiner/karabiner.json"
         )
     fi
+}
+
+# narrow LOCAL_PAIRS / LOCAL_DIR_PAIRS in place to entries matching the given
+# selectors. a selector matches a file pair, or a whole dir pair, by the exact
+# or suffix repo-relative path, the basename, or the system path; a single file
+# inside a dir pair (dir + "/" + subpath) is promoted into LOCAL_PAIRS so it
+# flows through the ordinary file path, no wholesale mirror and no prune.
+# returns 1 if any selector matches nothing. requires _local_pairs first
+_local_select() {
+    local -a fpairs=() dpairs=()
+    local pair repo sys base sel rest matched
+    for sel in "$@"; do
+        sel="${sel#./}"; sel="${sel%/}"
+        matched=0
+        for pair in "${LOCAL_PAIRS[@]}"; do
+            repo="${pair%%|*}" sys="${pair#*|}" base="${repo##*/}"
+            if [[ "$sel" == "$repo" || "$repo" == */"$sel" || "$sel" == "$base" \
+                || "$sel" == "$sys" || "$sys" == */"$sel" ]]; then
+                fpairs+=("$pair"); matched=1
+            fi
+        done
+        for pair in "${LOCAL_DIR_PAIRS[@]}"; do
+            repo="${pair%%|*}" sys="${pair#*|}" base="${repo##*/}"
+            if [[ "$sel" == "$repo" || "$repo" == */"$sel" || "$sel" == "$base" \
+                || "$sel" == "$sys" || "$sys" == */"$sel" ]]; then
+                dpairs+=("$pair"); matched=1
+            elif [[ "$sel" == "$repo/"* ]]; then
+                rest="${sel#"$repo"/}"; fpairs+=("$repo/$rest|$sys/$rest"); matched=1
+            elif [[ "$sel" == "$base/"* ]]; then
+                rest="${sel#"$base"/}"; fpairs+=("$repo/$rest|$sys/$rest"); matched=1
+            elif [[ "$sel" == "$sys/"* ]]; then
+                rest="${sel#"$sys"/}"; fpairs+=("$repo/$rest|$sys/$rest"); matched=1
+            fi
+        done
+        if [[ $matched -eq 0 ]]; then
+            error "No local-layer entry matches: $sel"
+            return 1
+        fi
+    done
+    LOCAL_PAIRS=( ${fpairs[@]+"${fpairs[@]}"} )
+    LOCAL_DIR_PAIRS=( ${dpairs[@]+"${dpairs[@]}"} )
 }
 
 # expand github "owner/repo" shorthand to a full https clone url; schemes,
@@ -94,7 +135,7 @@ _local_dir_required() {
 _local_seed_gitignore() {
     local dir="$1"
     [[ -f "$dir/.gitignore" ]] && return 0
-    printf '%s\n' ".DS_Store" "secrets.zsh" ".state/" "statusline-theme.sh" > "$dir/.gitignore"
+    printf '%s\n' ".DS_Store" "secrets.zsh" ".state/" "statusline-theme.sh" "config/dotfiles/current-theme" > "$dir/.gitignore"
 }
 
 # write the pointer file

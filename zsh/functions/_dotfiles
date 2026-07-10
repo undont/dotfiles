@@ -77,6 +77,8 @@ elif (( CURRENT == 3 )); then
       import_opts=(
         '--force:Overwrite differing system files'
         '-f:Overwrite differing system files'
+        '--prune:Delete launchers not tracked in the repo'
+        '-p:Delete launchers not tracked in the repo'
       )
       _describe 'import option' import_opts
       ;;
@@ -87,6 +89,7 @@ elif (( CURRENT == 3 )); then
         'init:Create and register a local-layer repo'
         'clone:Clone an existing local-layer repo'
         'diff:Show system vs repo differences'
+        'edit:Open the local-layer repo in $EDITOR'
       )
       _describe 'local' local_opts
       ;;
