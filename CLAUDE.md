@@ -87,7 +87,10 @@ The public repo never references it; the link is a machine-local pointer at
 lives in `scripts/_lib/local-layer.sh`. **When adding a new local-override or
 copy-on-install file to the installer, add it to `_local_pairs()` there too**;
 the drift-guard test in `scripts/tests/test-dotfiles-local.sh` fails if an
-`install_local`/`copy_config` destination is missing from the manifest.
+`install_local`/`copy_config` destination is missing from the manifest. The
+manifest can also carry purely-personal files the installer never touches (e.g.
+`~/.ai/claude/CLAUDE.local.md`): the drift guard only checks installer ->
+manifest, not the reverse, so an entry with no installer counterpart is fine.
 Secrets (`~/.config/zsh/secrets.zsh`), `.state/`, and the `current-theme`
 pointer are hard-excluded and must stay that way: theme is a per-machine
 choice, so it is never synced. Launcher pruning on `import` is gated behind
