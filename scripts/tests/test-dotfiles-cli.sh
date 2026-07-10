@@ -46,7 +46,8 @@ if command -v shellcheck &>/dev/null; then
     for f in \
         "$DOTFILES_DIR/scripts/dotfiles" \
         "$DOTFILES_DIR/scripts/_lib/cli.sh" \
-        "$DOTFILES_DIR/scripts/_lib/common.sh"; do
+        "$DOTFILES_DIR/scripts/_lib/common.sh" \
+        "$DOTFILES_DIR/scripts/_lib/local-layer.sh"; do
         if [[ -f "$f" ]]; then
             if shellcheck -x -S warning -e SC1091 "$f" 2>/dev/null; then
                 pass "shellcheck: $(basename "$f")"
@@ -65,7 +66,7 @@ section "Main help"
 
 main_help=$("$DOTFILES_CLI" help 2>&1)
 
-for cmd in update status health set theme links diff sync aliases notes version edit cd; do
+for cmd in update status health set theme links diff sync export import local aliases notes version edit cd; do
     if [[ "$main_help" == *"$cmd"* ]]; then
         pass "main help mentions '$cmd'"
     else
@@ -107,7 +108,7 @@ fi
 
 section "Per-command help"
 
-for cmd in update status set theme links diff sync notes version aliases health edit cd; do
+for cmd in update status set theme links diff sync export import local notes version aliases health edit cd; do
     out=$("$DOTFILES_CLI" help "$cmd" 2>&1)
     if [[ "$out" == *"$cmd"* ]] && [[ "$out" == *"USAGE"* ]]; then
         pass "dotfiles help $cmd shows per-command help"
@@ -125,7 +126,7 @@ else
 fi
 
 # `dotfiles <cmd> help` should behave like `dotfiles <cmd> --help`
-for cmd in update status set links diff sync notes version aliases health edit cd theme; do
+for cmd in update status set links diff sync export import local notes version aliases health edit cd theme; do
     out=$("$DOTFILES_CLI" "$cmd" help 2>&1)
     if [[ "$out" == *"USAGE"* ]]; then
         pass "$cmd help shows usage"

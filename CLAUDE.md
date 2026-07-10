@@ -77,6 +77,20 @@ Config is copied on first install, then becomes fully user-owned. Repo changes d
 
 **Used for:** btop, lazydocker, karabiner, zshrc, zed's `settings.json`.
 
+### Local layer sync (optional)
+
+The user-owned local layer (patterns 2 and 3 above, plus `~/.zshrc`, personal
+launchers, and the current-theme pointer) can be synced across a user's own
+machines via a private git repo (`dotfiles local` / `export` / `import`).
+The public repo never references it; the link is a machine-local pointer at
+`~/.config/dotfiles/local-repo` (env override: `DOTFILES_LOCAL_DIR`). Logic
+lives in `scripts/_lib/local-layer.sh`. **When adding a new local-override or
+copy-on-install file to the installer, add it to `_local_pairs()` there too**;
+the drift-guard test in `scripts/tests/test-dotfiles-local.sh` fails if an
+`install_local`/`copy_config` destination is missing from the manifest.
+Secrets (`~/.config/zsh/secrets.zsh`) and `.state/` are hard-excluded and must
+stay that way.
+
 ## Change Guidelines
 
 - **Don't change aliases or keybindings without asking.** They reflect personal preference, not bugs. An alias that looks "wrong" (e.g. `gds="git diff --stat"` instead of `--staged`) is intentional.

@@ -14,6 +14,8 @@ return {
       local yaml_icon = vim.fn.nr2char(0xf013) -- nf-fa-cog
       local csharp_icon = vim.fn.nr2char(0xf031b) -- nf-md-language_csharp (matches `cs` extension)
       local shell_icon = vim.fn.nr2char(0xe691) -- nf-seti-shell (matches mini's `sh` filetype glyph)
+      local claude_icon = vim.fn.nr2char(0xf06c4) -- nf-md-asterisk (anthropic-style sunburst)
+      local me_icon = vim.fn.nr2char(0xf007) -- nf-fa-user
       require('mini.icons').setup {
         filetype = {
           yaml = { glyph = yaml_icon },
@@ -24,6 +26,13 @@ return {
           -- C# icon that mini.icons ships for the `cs` extension.
           cs = { glyph = csharp_icon, hl = 'MiniIconsGreen' },
           csharp = { glyph = csharp_icon, hl = 'MiniIconsGreen' },
+          -- transcript speaker fences (```claude / ```me) in vault notes.
+          -- render-markdown resolves the fence word through vim.filetype.match
+          -- before mini: 'claude' matches nothing so keys straight through, but
+          -- 'me' resolves to nroff (`.me` groff macros), so the `me` speaker
+          -- glyph is pinned on nroff instead
+          claude = { glyph = claude_icon, hl = 'ClaudeIcon' }, -- ClaudeIcon defined in plugins/ui.lua
+          nroff = { glyph = me_icon, hl = 'MiniIconsBlue' },
         },
         os = {
           git = { glyph = '' }, -- nf-oct-git_branch

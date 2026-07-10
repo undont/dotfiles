@@ -296,6 +296,12 @@ if [[ -f "$lazydocker_conf" ]]; then
     warn "Kept $lazydocker_conf (personal config — remove manually if desired)"
 fi
 
+# local-layer repo and its pointer are user data; never removed
+local_ptr="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local-repo"
+if [[ -f "$local_ptr" ]]; then
+    warn "Kept local layer repo $(head -1 "$local_ptr") and pointer $local_ptr (user data)"
+fi
+
 # step 4: remove Homebrew packages if requested
 if [[ $REMOVE_BREW -eq 1 ]]; then
     echo ""

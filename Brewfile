@@ -25,6 +25,7 @@ brew "zsh"
 brew "tmux"                   # >= 3.3 required for popup support
 brew "powerlevel10k"
 brew "zsh-autosuggestions"
+brew "zsh-completions"
 brew "fzf"                    # >= 0.40 for --tmux flag
 brew "direnv"
 brew "carapace"               # Multi-shell completion provider (bridges zsh completion)

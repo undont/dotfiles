@@ -21,6 +21,7 @@ A detailed explanation of what each step of the installation process does and wh
   - [Step 11: Run Health Check](#step-11-run-health-check)
   - [Step 12: Save Preset Configuration](#step-12-save-preset-configuration)
   - [Step 13: Configure Project Directories](#step-13-configure-project-directories)
+  - [Step 14: Import Local Layer (optional)](#step-14-import-local-layer-optional)
 - [Command-Line Options](#command-line-options)
 - [Post-Installation](#post-installation)
 - [What Gets Installed](#what-gets-installed)
@@ -617,6 +618,30 @@ The launcher picker (`` ` p ``) and `dotfiles set` command use these paths for d
 ```bash
 dotfiles set dev ~/src
 dotfiles set projects ~/playground
+```
+
+---
+
+### Step 14: Import Local Layer (optional)
+
+**What it does**:
+
+- Runs only when a private local-layer repo is configured; unconfigured machines skip this step silently
+- A repo is "configured" when the `DOTFILES_LOCAL_DIR` env var is set, the pointer file `~/.config/dotfiles/local-repo` exists, or a git repo is found at the default location `~/.dotfiles-local` (which is then registered automatically)
+- Runs `dotfiles import`: pulls the private repo (when it has a remote) and applies your personal local layer (override files, `~/.zshrc`, launchers) to this machine
+- Never overwrites existing files that differ, and never fails the install
+
+**Why this matters**:
+This is what makes a fresh machine come up fully personalised in one shot. Clone your private `dotfiles-local` repo to `~/.dotfiles-local` before running the installer and your local layer is applied automatically; no extra configuration needed. See `dotfiles help local` for the full sync workflow.
+
+**What you'll see** (only when configured):
+
+```
+Step 14: Importing local layer...
+
+✓ Created /Users/you/.config/tmux/local.conf
+✓ Created /Users/you/.config/nvim/local.lua
+✓ 2 file(s) imported
 ```
 
 ---

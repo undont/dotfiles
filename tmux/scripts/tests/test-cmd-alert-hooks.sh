@@ -182,6 +182,43 @@ else
     pass "clear_window_alerts clears finished rows for the selected window"
 fi
 
+# clear_session_finished drops every window's rows for the session at once
+# (a destroyed session takes all its windows down, including ones closed earlier)
+printf '%s\n' \
+    "1004${TAB}0${TAB}$TEST_SESSION${TAB}@9${TAB}win-a${TAB}cmd-a" \
+    "1005${TAB}1${TAB}$TEST_SESSION${TAB}@10${TAB}win-b${TAB}cmd-b" \
+    "1006${TAB}0${TAB}other-session${TAB}@11${TAB}win-c${TAB}cmd-c" \
+    > "$FINISHED_FILE"
+clear_session_finished "$TEST_SESSION" 2>/dev/null || true
+if grep -q "$TAB$TEST_SESSION$TAB" "$FINISHED_FILE"; then
+    fail "clear_session_finished should drop all rows for the session"
+else
+    pass "clear_session_finished drops all rows for the session"
+fi
+if grep -q "${TAB}other-session${TAB}" "$FINISHED_FILE"; then
+    pass "clear_session_finished preserves rows for other sessions"
+else
+    fail "clear_session_finished should preserve rows for other sessions"
+fi
+
+# empty session is a no-op
+printf '%s\n' "1007${TAB}0${TAB}$TEST_SESSION${TAB}@12${TAB}w${TAB}cmd" > "$FINISHED_FILE"
+clear_session_finished "" 2>/dev/null || true
+if grep -q "$TAB@12$TAB" "$FINISHED_FILE"; then
+    pass "clear_session_finished no-ops on empty session"
+else
+    fail "clear_session_finished should not touch the file without a session"
+fi
+
+# clear_session_alerts also clears the session's finished rows
+printf '%s\n' "1008${TAB}0${TAB}$TEST_SESSION${TAB}@13${TAB}win${TAB}cmd" > "$FINISHED_FILE"
+clear_session_alerts "$TEST_SESSION" 2>/dev/null || true
+if grep -q "$TAB@13$TAB" "$FINISHED_FILE"; then
+    fail "clear_session_alerts should clear finished rows for the session"
+else
+    pass "clear_session_alerts clears finished rows for the session"
+fi
+
 # ═══════════════════════════════════════════════════════════════
 # command rerun (proclist r/R bindings)
 # ═══════════════════════════════════════════════════════════════

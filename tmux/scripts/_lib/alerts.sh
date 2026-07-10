@@ -507,6 +507,30 @@ clear_window_finished() {
     fi
 }
 
+# drop finished-history rows for an entire session, mirroring clear_window_finished
+# but keyed on the session field (field 3) so destroying a session scrubs the
+# done rows for every window at once, including windows that closed earlier and
+# whose rows still linger under the file's own TTL. session names are unique
+# among live sessions; a row written before a rename keeps the old name and ages
+# out via the picker instead, matching how the alerts file handles renames
+# usage: clear_session_finished "session"
+clear_session_finished() {
+    local session="$1"
+    [[ -n "$session" && -f "$FINISHED_FILE" ]] || return 0
+
+    # fast path: skip the rewrite when this session has no finished rows. a stray
+    # field-3-shaped match in a label only costs a no-op rewrite, never a miss
+    grep -qF "$session" "$FINISHED_FILE" 2>/dev/null || return 0
+
+    local tmpf
+    tmpf=$(mktemp "${FINISHED_FILE}.XXXXXX") || return 0
+    if awk -F'\t' -v s="$session" '$3 != s' "$FINISHED_FILE" > "$tmpf" 2>/dev/null; then
+        mv "$tmpf" "$FINISHED_FILE" 2>/dev/null || rm -f "$tmpf"
+    else
+        rm -f "$tmpf"
+    fi
+}
+
 # drop a window's exit alert from the status bar: the @exit_alert* options that
 # drive the icon plus its exit line in the alerts file. agent alerts on the same
 # window are left intact. lets a dismissed proclist "done" row also clear the
@@ -748,6 +772,10 @@ update_session_name_in_alerts() {
 # usage: clear_session_alerts "session"
 clear_session_alerts() {
     local session="$1"
+
+    # finished-process rows for every window in this session clear with it,
+    # mirroring how clear_window_alerts drops a single window's rows on select
+    clear_session_finished "$session"
 
     # remove all entries for this session from alerts file with locking
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then

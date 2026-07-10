@@ -12,6 +12,9 @@ commands=(
   'set:Configure project directories (dev, projects)'
   'diff:Show changes in copy-on-install files vs repo'
   'sync:Sync copy-on-install files from repo to system'
+  'export:Export local layer to the private repo'
+  'import:Import local layer from the private repo'
+  'local:Manage the private local-layer repo'
   'notes:Browse the full changelog in a pager'
   'version:Show current dotfiles version, preset, and theme'
   'edit:Open dotfiles directory in $EDITOR'
@@ -60,6 +63,32 @@ elif (( CURRENT == 3 )); then
         'delete:Delete a generated theme'
       )
       _describe 'theme' theme_opts
+      ;;
+    export)
+      local -a export_opts
+      export_opts=(
+        '--push:Push to origin after committing'
+        '-p:Push to origin after committing'
+      )
+      _describe 'export option' export_opts
+      ;;
+    import)
+      local -a import_opts
+      import_opts=(
+        '--force:Overwrite differing system files'
+        '-f:Overwrite differing system files'
+      )
+      _describe 'import option' import_opts
+      ;;
+    local)
+      local -a local_opts
+      local_opts=(
+        'status:Show configured repo and sync state'
+        'init:Create and register a local-layer repo'
+        'clone:Clone an existing local-layer repo'
+        'diff:Show system vs repo differences'
+      )
+      _describe 'local' local_opts
       ;;
   esac
 elif (( CURRENT == 4 )); then

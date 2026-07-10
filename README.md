@@ -129,6 +129,9 @@ dotfiles status    # version, sync status, and local changes
 dotfiles health    # full health check (symlinks, plugins, env vars)
 dotfiles links     # show all managed symlinks and their status
 dotfiles theme     # list, switch, or generate themes
+dotfiles export    # export your local layer to a private repo
+dotfiles import    # import your local layer from a private repo
+dotfiles local     # manage the private local-layer repo
 dotfiles aliases   # browse all shell aliases and shortcuts
 dotfiles notes     # browse the changelog in a pager
 dotfiles version   # current version, release/update dates, preset, and theme
@@ -171,6 +174,24 @@ Themes are pure colour palettes; anything else you want to customise (fonts, cur
 | Zsh         | `~/.zshrc` (your personal config) |
 
 See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the architecture.
+
+### Syncing the local layer between machines
+
+The base repo stays generic, but the local layer (the override files above, plus `~/.zshrc`, personal launchers, and the copy-on-install configs) can be synced across your own machines via a private git repo. The public repo never references it; the link is a machine-local pointer (`~/.config/dotfiles/local-repo`, or the `DOTFILES_LOCAL_DIR` env var). Secrets are never synced.
+
+```bash
+# one machine
+dotfiles local init git@github.com:you/dotfiles-local.git
+dotfiles export --push        # capture, commit, push
+
+# another machine (clone registers the repo and applies it immediately)
+dotfiles local clone git@github.com:you/dotfiles-local.git
+
+# picking up later changes on demand (updates also import automatically)
+dotfiles import               # skips files that differ; --force overwrites and prunes launchers removed upstream
+```
+
+On a fresh machine, clone the private repo to `~/.dotfiles-local` before running the installer and it is adopted and imported automatically. `dotfiles local status` shows sync state; `dotfiles local diff` shows exactly what differs.
 
 ---
 

@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.131] - 2026-07-10
+
+### Added
+
+- Local-layer sync across personal machines via a private git repo: `dotfiles local init|clone|status|diff` plus top-level `dotfiles export [--push]` and `dotfiles import [--force]`; `local clone` applies the layer immediately after registering. The manifest covers the layered `local.*` overrides, copy-on-install configs, `~/.zshrc`, personal launchers, and the current-theme pointer; secrets, `.state/`, and the preset file are hard-excluded. The repo is referenced only by a machine-local pointer (`~/.config/dotfiles/local-repo`, env override `DOTFILES_LOCAL_DIR`); the public repo never knows about it. `scripts/dotfiles`, `scripts/_lib/local-layer.sh`, `scripts/_lib/cli.sh`
+- Installer step 14 imports the local layer when configured, and auto-adopts a repo already cloned to `~/.dotfiles-local`, so "clone dotfiles-local, then install" personalises a fresh machine with zero configuration. Health check gains an informational local-layer row; uninstall reports the repo and pointer as kept user data. `install.sh`, `scripts/install/health-check.sh`, `scripts/install/uninstall.sh`, `docs/INSTALLATION-GUIDE.md`
+- Tab completion and cheatsheet rows for the new commands. `zsh/functions/_dotfiles`, `zsh/dotfiles.zsh`
+- Behavioural test suite for the sync commands, including a manifest drift guard that fails when an `install_local`/`copy_config` destination in the installer is missing from the sync manifest. `scripts/tests/test-dotfiles-local.sh`, `scripts/tests/test-dotfiles-cli.sh`
+- SSH sessions assert `COLORTERM=truecolor` so remote TUIs render 24-bit colour instead of downsampling to the 256 palette; ssh doesn't forward `COLORTERM` and we always drive from a truecolor terminal. `zsh/zprofile`
+- zsh-completions installed via Homebrew, with it and the OS systemd vendor completions appended to `fpath` so they only fill gaps carapace and brew don't already cover. `Brewfile`, `zsh/dotfiles.zsh`
+- Shared `ClaudeIcon` highlight between which-key and the `claude` code-fence glyph, with the me-speaker glyph pinned on nroff so render-markdown resolves the fence word before mini. `nvim/lua/custom/plugins/mini.lua`, `nvim/lua/custom/plugins/ui.lua`
+
+### Fixed
+
+- Pinned copilot to full-document LSP sync to avoid a `:Cfilter` crash. `nvim/lua/custom/plugins/copilot.lua`
+- Claude launcher window keeps its auto-name through job-control resume and refocus: window 3 is left unnamed so `automatic-rename-format` kebab-cases claude's OSC title instead of freezing on a passed `-n`, and `fg`/`%n` resumes resolve to the job's real command in preexec so the title doesn't become "fg". `launchers/dev`, `zsh/dotfiles.zsh`
+- Finished cmd-alert rows clear at session scope on teardown: `clear_session_finished` scrubs every window's done rows when a session is destroyed, a transiently-blank window name is recovered from the stable window id, and the clear hook exits 0 so a backgrounded `run-shell` can't leak a non-zero to the status line. `tmux/scripts/_lib/alerts.sh`, `tmux/scripts/alerts/clear.sh`, `tmux/scripts/panes/kill.sh`, `tmux/scripts/windows/kill.sh`, `tmux/scripts/tests/test-cmd-alert-hooks.sh`
+
 ## [0.2.130] - 2026-07-08
 
 ### Added

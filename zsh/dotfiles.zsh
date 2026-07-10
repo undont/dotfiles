@@ -173,6 +173,21 @@ fpath=("$DOTFILES_ROOT/zsh/functions" $fpath)
 # Docker CLI completions (docker, docker-compose commands)
 fpath=("$HOME/.docker/completions" $fpath)
 
+# systemd tools (loginctl, hostnamectl, timedatectl, networkctl, busctl, ...):
+# carapace ships no completer for most of the systemd family, so expose the
+# OS-provided zsh completions instead. Linux-only: the dir is absent on macOS
+# (no systemd), so the guard makes this a no-op there. Appended, not prepended,
+# so it only fills gaps and never shadows brew's own site-functions; carapace
+# still wins for the systemd tools it does own (systemctl, journalctl, ...) as
+# it re-registers those via compdef after compinit below.
+[[ -d /usr/share/zsh/vendor-completions ]] && fpath=($fpath /usr/share/zsh/vendor-completions)
+
+# Homebrew zsh-completions (brew install zsh-completions): extra completion
+# definitions for tools that ship none of their own. installs to its own
+# share/zsh-completions dir, separate from brew's site-functions, so add it
+# explicitly. appended so it only fills gaps, and it must precede compinit below
+[[ -d "$HOMEBREW_PREFIX/share/zsh-completions" ]] && fpath=($fpath "$HOMEBREW_PREFIX/share/zsh-completions")
+
 # cached compinit: only regenerate completion dump once per day (~50-100ms savings)
 # the (#q...) glob qualifier requires EXTENDED_GLOB; anonymous function scopes it
 # so it doesn't leak globally (local_options only works inside functions)
@@ -395,6 +410,17 @@ precmd_functions+=(_dotfiles_precmd)
 _dotfiles_preexec() {
   # extract first word safely using parameter expansion
   local cmd="${1%% *}"
+
+  # resolve job-control resumes (fg, fg %2, %2) to the job's real command via
+  # $jobtexts, otherwise the title becomes "fg" and tmux automatic-rename
+  # picks it up as the window name for title-named panes (claude)
+  local job=""
+  case "$cmd" in
+    fg) local -a words; words=(${(z)1}); job="${words[2]:-%+}" ;;
+    %*) job="$cmd" ;;
+  esac
+  [[ "$job" == (%*|<->) ]] && cmd="${${jobtexts[$job]:-$cmd}%% *}"
+
   print -Pn "\e]0;${cmd}\a"
 
   # refresh git branch cache after git commands that may change the branch
@@ -1081,6 +1107,9 @@ zsh-profile-detailed() {
 # @cheat: set dev <d> | set DEV_ROOT
 # @cheat: diff    -d | copy-on-install diffs
 # @cheat: sync | sync copy-on-install
+# @cheat: export | local layer to private repo
+# @cheat: import | local layer from private repo
+# @cheat: local | manage local-layer repo
 # @cheat: notes   -n | browse changelog
 # @cheat: version -v | version, preset, theme
 # @cheat: edit    -e | open in $EDITOR

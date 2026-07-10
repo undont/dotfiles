@@ -149,5 +149,11 @@ else
 fi
 
 # clear alerts (window is already killed, so only file cleanup matters)
-# run synchronously to avoid race conditions with concurrent kills
-clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME" "$WINDOW_ID"
+# run synchronously to avoid race conditions with concurrent kills.
+# if this was the session's only window, killing it ended the session, so clear
+# the whole session (also drops finished rows for windows that closed earlier)
+if [[ "$WINDOW_COUNT" -eq 1 ]]; then
+    clear_session_alerts "$TARGET_SESSION"
+else
+    clear_window_alerts "$TARGET_SESSION" "$WINDOW_NAME" "$WINDOW_ID"
+fi
