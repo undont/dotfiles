@@ -939,6 +939,7 @@ cmd_local_init() {
     fi
     _local_seed_gitignore "$dir"
     if [[ -n "$url" ]]; then
+        url=$(_local_expand_url "$url")
         git -C "$dir" remote add origin "$url" 2>/dev/null \
             || git -C "$dir" remote set-url origin "$url"
     fi
@@ -977,6 +978,7 @@ cmd_local_clone() {
         printf "  Run: ${CYAN}dotfiles help local${NC}\n" >&2
         return 2
     fi
+    url=$(_local_expand_url "$url")
 
     local dir
     dir="${dir_flag:-$HOME/.dotfiles-local}"
@@ -1774,15 +1776,17 @@ SUBCOMMANDS
   clone <url>          Clone an existing private repo, register and apply it
   diff                 Show system vs repo differences
 
+URLs accept GitHub "owner/repo" shorthand, expanded to https://github.com/.
+
 OPTIONS
   --dir <path>   Use a custom repo location (init, clone)
   -h, --help     Show this help
 
 EXAMPLES
-  dotfiles local init git@github.com:you/dotfiles-local.git
+  dotfiles local init you/dotfiles-local
   dotfiles export --push       # capture this machine, push
 
-  dotfiles local clone git@github.com:you/dotfiles-local.git
+  dotfiles local clone you/dotfiles-local
                                # on another machine: registers + applies
   dotfiles import              # pick up later changes on demand
 EOF

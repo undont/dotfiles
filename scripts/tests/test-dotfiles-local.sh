@@ -118,6 +118,25 @@ else
     fail "init with url should set origin (got: $remote)"
 fi
 
+out=$(dotfiles_run local init "me/dotfiles-local") && rc=0 || rc=$?
+remote=$(git -C "$TEST_HOME/.dotfiles-local" remote get-url origin 2>/dev/null || echo none)
+if [[ "$remote" == "https://github.com/me/dotfiles-local.git" ]]; then
+    pass "init expands owner/repo shorthand to a github https url"
+else
+    fail "shorthand should expand to https://github.com/me/dotfiles-local.git (got: $remote)"
+fi
+
+# an existing local path that happens to look like owner/repo is not expanded
+mkdir -p "$TEST_DIR/me/dotfiles-local"
+git -C "$TEST_DIR/me/dotfiles-local" init -q
+(cd "$TEST_DIR" && dotfiles_run local init "me/dotfiles-local" > /dev/null) || true
+remote=$(git -C "$TEST_HOME/.dotfiles-local" remote get-url origin 2>/dev/null || echo none)
+if [[ "$remote" == "me/dotfiles-local" ]]; then
+    pass "existing local path shaped like owner/repo passes through unexpanded"
+else
+    fail "existing path must not be rewritten (got: $remote)"
+fi
+
 cleanup_sandbox
 
 # ─── 3. local clone ───────────────────────────────────────────────────

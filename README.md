@@ -180,12 +180,12 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the architecture.
 The base repo stays generic, but the local layer (the override files above, plus `~/.zshrc`, personal launchers, and the copy-on-install configs) can be synced across your own machines via a private git repo. The public repo never references it; the link is a machine-local pointer (`~/.config/dotfiles/local-repo`, or the `DOTFILES_LOCAL_DIR` env var). Secrets are never synced.
 
 ```bash
-# one machine
-dotfiles local init git@github.com:you/dotfiles-local.git
+# one machine (urls accept GitHub owner/repo shorthand)
+dotfiles local init you/dotfiles-local
 dotfiles export --push        # capture, commit, push
 
 # another machine (clone registers the repo and applies it immediately)
-dotfiles local clone git@github.com:you/dotfiles-local.git
+dotfiles local clone you/dotfiles-local
 
 # picking up later changes on demand (updates also import automatically)
 dotfiles import               # skips files that differ; --force overwrites and prunes launchers removed upstream

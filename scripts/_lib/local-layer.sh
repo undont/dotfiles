@@ -56,6 +56,17 @@ _local_pairs() {
     fi
 }
 
+# expand github "owner/repo" shorthand to a full https clone url; schemes,
+# user@ forms, and existing local paths pass through untouched
+_local_expand_url() {
+    local url="$1"
+    if [[ "$url" =~ ^[A-Za-z0-9][A-Za-z0-9-]*/[A-Za-z0-9._-]+$ && ! -e "$url" ]]; then
+        printf 'https://github.com/%s.git' "${url%.git}"
+    else
+        printf '%s' "$url"
+    fi
+}
+
 # validate and echo the configured local repo dir. errors to stderr:
 # unconfigured (2), missing dir or not a git repo (1)
 _local_dir_required() {
