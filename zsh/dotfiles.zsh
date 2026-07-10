@@ -751,6 +751,14 @@ alias du="du -sh"                                                              #
 alias myip="curl -s ifconfig.me"                                               # curl ifconfig.me
 alias v="cl && nvim"                                                           # clear + nvim
 
+# edit a root-owned file with your real nvim config. sudoedit copies the file
+# to a temp path, opens it as YOU (so plugins/config load normally, and nvim
+# never runs as root), then writes it back with elevated privileges. this also
+# sidesteps the reason plain `sudo nvim` fails: sudo's secure_path doesn't
+# include Homebrew's bin, so root can't find nvim at all
+# @cheat: svim <file> | sudo-edit a root-owned file (sudoedit + nvim)
+svim() { SUDO_EDITOR=nvim sudoedit "$@"; }
+
 # open: platform-aware (macOS: open, Linux: xdg-open)
 if [[ "$IS_MACOS" == "1" ]]; then
   alias o="open"                                                               # open file/dir
