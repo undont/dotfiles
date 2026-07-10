@@ -19,6 +19,7 @@ _DOTFILES_CLI_SH_LOADED=1
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 PRESET_FILE="$CONFIG_DIR/preset"
 STATE_DIR="$CONFIG_DIR/.state"
+LOCAL_REPO_FILE="$CONFIG_DIR/local-repo"
 
 # ── Preset / branch ────────────────────────────────────────────────────
 
@@ -28,6 +29,16 @@ get_preset() {
         cat "$PRESET_FILE"
     else
         echo "full"
+    fi
+}
+
+# path to the private local-layer repo. precedence: DOTFILES_LOCAL_DIR env,
+# then the pointer file, then empty (unconfigured); callers decide error vs info
+get_local_dir() {
+    if [[ -n "${DOTFILES_LOCAL_DIR:-}" ]]; then
+        printf '%s' "$DOTFILES_LOCAL_DIR"
+    elif [[ -f "$LOCAL_REPO_FILE" ]]; then
+        head -1 "$LOCAL_REPO_FILE"
     fi
 }
 

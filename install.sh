@@ -484,8 +484,32 @@ touch "$dirs_asked_file"
 
 record_step "project-dirs"
 
+# step 14: import local layer (only when a private local-layer repo is
+# configured; see `dotfiles help local`). runs after the preset save so the
+# manifest gating reads the fresh preset. unconfigured machines skip
+# silently, but a repo already cloned to the default location is adopted
+# so "clone dotfiles-local, then install" needs no extra configuration
+LOCAL_PTR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local-repo"
+DEFAULT_LOCAL_DIR="$HOME/.dotfiles-local"
+LOCAL_ADOPTED=0
+if [[ -z "${DOTFILES_LOCAL_DIR:-}" && ! -f "$LOCAL_PTR" ]] \
+    && git -C "$DEFAULT_LOCAL_DIR" rev-parse --git-dir &>/dev/null; then
+    mkdir -p "$(dirname "$LOCAL_PTR")"
+    printf '%s\n' "$DEFAULT_LOCAL_DIR" > "$LOCAL_PTR"
+    LOCAL_ADOPTED=1
+fi
+if [[ -n "${DOTFILES_LOCAL_DIR:-}" || -f "$LOCAL_PTR" ]]; then
+    echo ""
+    print_step 14 "Importing local layer..."
+    if [[ $LOCAL_ADOPTED -eq 1 ]]; then
+        info "Found local layer repo at $DEFAULT_LOCAL_DIR, registered it"
+    fi
+    "$DOTFILES_DIR/scripts/dotfiles" import \
+        || warn "Local layer import reported issues (non-fatal)"
+    record_step "local-import"
+fi
+
 # clean up rollback state on success
-cleanup_rollback_state
 
 # detect what's already configured to tailor next steps
 has_tmux_plugins=false
@@ -574,6 +598,10 @@ fi
 
 if [[ "$has_dev_root" == false ]] || [[ "$has_projects_root" == false ]]; then
     STEPS+=("Configure project directories: dotfiles set dev <path>")
+fi
+
+if [[ -z "${DOTFILES_LOCAL_DIR:-}" && ! -f "$LOCAL_PTR" ]]; then
+    STEPS+=("Optional: sync personal config across machines: dotfiles local init | clone <url>")
 fi
 
 # local overrides: only show files relevant to the preset

@@ -375,6 +375,25 @@ if should_install "full"; then
     check_local_override "$HOME/.hammerspoon/local.lua" "hammerspoon local.lua"
 fi
 
+# local layer sync (optional feature, informational; a broken pointer warns
+# but never fails the check)
+printf "Checking %-30s" "local layer sync..."
+local_layer_dir="${DOTFILES_LOCAL_DIR:-}"
+local_ptr="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local-repo"
+if [[ -z "$local_layer_dir" && -f "$local_ptr" ]]; then
+    local_layer_dir=$(head -1 "$local_ptr")
+fi
+if [[ -z "$local_layer_dir" ]]; then
+    printf '%sNOT CONFIGURED%s\n' "${CYAN}" "${NC}"
+    printf '  Optional: sync personal config with: dotfiles local init | clone <url>\n'
+elif git -C "$local_layer_dir" rev-parse --git-dir &>/dev/null; then
+    printf '%sOK%s (%s)\n' "${GREEN}" "${NC}" "$local_layer_dir"
+else
+    printf '%sWARN%s\n' "${YELLOW}" "${NC}"
+    echo "  Configured repo missing or not a git repository: $local_layer_dir"
+    echo "  Fix with: dotfiles local init (or remove $local_ptr)"
+fi
+
 echo ""
 echo "Tools & PATH:"
 echo "-------------"

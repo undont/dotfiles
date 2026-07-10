@@ -1107,6 +1107,9 @@ zsh-profile-detailed() {
 # @cheat: set dev <d> | set DEV_ROOT
 # @cheat: diff    -d | copy-on-install diffs
 # @cheat: sync | sync copy-on-install
+# @cheat: export | local layer to private repo
+# @cheat: import | local layer from private repo
+# @cheat: local | manage local-layer repo
 # @cheat: notes   -n | browse changelog
 # @cheat: version -v | version, preset, theme
 # @cheat: edit    -e | open in $EDITOR
