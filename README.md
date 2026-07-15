@@ -197,6 +197,10 @@ dotfiles export tmux/local.conf
 
 On a fresh machine, clone the private repo to `~/.dotfiles-local` before running the installer and it is adopted and imported automatically. `dotfiles local status` shows sync state; `dotfiles local diff` shows exactly what differs; `dotfiles local edit` opens the local-layer repo in `$EDITOR`.
 
+**Which copy do I edit?** Edit the **installed** file (e.g. `~/.config/nvim/local.lua`), not the copy under `~/.dotfiles-local`. The installed file is what the tool actually loads and it works standalone, whether or not a local-layer repo exists. The `~/.dotfiles-local` copy is a sync snapshot that nothing loads directly: `dotfiles export` copies installed to repo (and stages it in git), `dotfiles import` copies repo to installed. So the flow is edit the live file, `dotfiles export`, then commit in the local repo.
+
+`dotfiles local diff` reports drift between the two copies. Because `export` auto-commits, it also flags any uncommitted change in `~/.dotfiles-local` (scoped to the managed files): that state only arises when a repo file was edited by hand, and a later `export` would overwrite it, so the command surfaces it even when the two copies otherwise match. Avoid editing the `~/.dotfiles-local` copy directly: it has no effect until you `dotfiles import`, and a later `export` treats the installed file as the source of truth and overwrites any repo-only edit you never imported. If you do author on the repo side (to push a change out to another machine), run `dotfiles import` straight after so the live file gets it and the next `export` cannot clobber it.
+
 ---
 
 ## Brewfile

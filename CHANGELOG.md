@@ -8,6 +8,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Changed
 
+- `dotfiles local diff` now also flags uncommitted changes in the local-layer repo, scoped to the managed pairs. `export` auto-commits, so an uncommitted change means a repo file was edited by hand: the repo↔system comparison can report a clean match while such an edit sits unsaved (and a later `export`, treating the system file as the source of truth, would overwrite it), so it was previously invisible. The command now exits non-zero when there is drift or uncommitted state, and returns 0 only when fully clean. `scripts/dotfiles`, `scripts/tests/test-dotfiles-local.sh`
 - `set-default-apps.sh` asks about each file type only once. macOS 15+ shows a modal consent dialog on every programmatic handler change, so the step now skips a type when Zed already handles it and records a decline in `.state/declined-default-apps` when the user keeps the existing app, instead of re-prompting on every `dotfiles update`. `scripts/install/set-default-apps.sh`
 
 ### Added
