@@ -645,7 +645,7 @@ alias gp="git push"                                                            #
 alias gpl="git pull"                                                           # git pull
 alias gst="git stash"                                                          # git stash
 alias gfp="git fetch -pf"                                                      # git fetch --prune
-alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # prune local branches
+alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs -r git branch -D"  # prune local branches
 alias grmc="git rm --cached"                                                   # git rm --cached
 alias gca="git commit --amend"                                                 # git commit --amend
 
