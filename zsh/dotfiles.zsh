@@ -785,10 +785,127 @@ alias tconf="v ~/.config/tmux/local.conf"                                      #
 # @cheat: font-preview | font browser (fzf)
 autoload -Uz font-preview
 
-# clipboard, Linux only (macOS has pbcopy/pbpaste natively, no cheatsheet entry)
+# clipboard: `<cmd> | clip` copies, bare `clip` pastes, -p forces paste.
+# the backend is chosen from the live display server rather than binary presence
+# alone: a wayland session usually has xclip installed too (via XWayland), and
+# choosing it there writes to a clipboard nothing reads back. with no display
+# server at all (headless, ssh) it falls back to OSC 52, which tmux forwards to
+# the outer terminal via `set-clipboard on`. mirrors scripts/_lib/clipboard.sh;
+# keep the two in sync
+# @cheat: clip [-p] | copy stdin to clipboard, bare or -p pastes
+clip() {
+  emulate -L zsh
+  local paste=0
+
+  case "$1" in
+    -p|-o|--paste) paste=1 ;;
+    -h|--help)
+      printf 'usage: <cmd> | clip    copy stdin to the clipboard\n'
+      printf '       clip [-p]       paste the clipboard to stdout\n'
+      return 0
+      ;;
+    # nothing piped in: read the clipboard rather than copy over it. stdin is
+    # not a tty in a script, so bare `clip` copies there and blocks on empty
+    # stdin, exactly as bare `pbcopy` does; use -p where the direction must not
+    # depend on context
+    '') [[ -t 0 ]] && paste=1 ;;
+    *)
+      printf 'clip: unknown option: %s\n' "$1" >&2
+      return 2
+      ;;
+  esac
+
+  local backend
+  if [[ "$IS_MACOS" == "1" ]]; then
+    backend=pb
+  elif [[ -n "$WAYLAND_DISPLAY" ]] && (( $+commands[wl-copy] )); then
+    backend=wayland
+  elif [[ -n "$DISPLAY" ]] && (( $+commands[xclip] )); then
+    backend=xclip
+  elif [[ -n "$DISPLAY" ]] && (( $+commands[xsel] )); then
+    backend=xsel
+  elif (( $+commands[clip.exe] )); then
+    backend=wsl
+  elif (( $+commands[termux-clipboard-set] )); then
+    backend=termux
+  elif [[ -n "$WAYLAND_DISPLAY" || -n "$DISPLAY" ]]; then
+    # a display server is running but its tool is missing. this must not fall
+    # through to OSC 52: that silently pushes the payload out through the
+    # terminal, and any ssh hop or tmux in between, when the local clipboard
+    # sitting right there was what was asked for
+    backend=missing
+  else
+    backend=osc52
+  fi
+
+  if (( paste )); then
+    case "$backend" in
+      pb)      pbpaste ;;
+      wayland) wl-paste --no-newline ;;
+      xclip)   xclip -selection clipboard -o ;;
+      xsel)    xsel --clipboard --output ;;
+      wsl)     powershell.exe -NoProfile -Command Get-Clipboard | tr -d '\r' ;;
+      termux)  termux-clipboard-get ;;
+      missing) _clip_missing ;;
+      # OSC 52 reads are refused or prompt-gated by most terminals, so there is
+      # nothing to fall back to here
+      osc52)
+        printf 'clip: no clipboard to read from (no display server; OSC 52 is write-only)\n' >&2
+        return 1
+        ;;
+    esac
+  else
+    case "$backend" in
+      pb)      pbcopy ;;
+      wayland) wl-copy ;;
+      xclip)   xclip -selection clipboard ;;
+      xsel)    xsel --clipboard --input ;;
+      wsl)     clip.exe ;;
+      termux)  termux-clipboard-set ;;
+      missing) _clip_missing ;;
+      osc52)   _clip_osc52 ;;
+    esac
+  fi
+}
+
+# a display server is running but no tool for it is installed. name the one that
+# matches the session rather than listing all of them
+_clip_missing() {
+  emulate -L zsh
+  if [[ -n "$WAYLAND_DISPLAY" ]]; then
+    printf 'clip: no clipboard tool for this wayland session; install wl-clipboard\n' >&2
+  else
+    printf 'clip: no clipboard tool for this X11 session; install xclip or xsel\n' >&2
+  fi
+  return 1
+}
+
+# write stdin to the terminal clipboard via OSC 52. needs a writable tty, and
+# terminals cap the payload, so oversized input is refused rather than silently
+# truncated into a half-copy. writes to /dev/tty, never stdout, so redirecting
+# clip's output never lands the escape sequence in a file
+_clip_osc52() {
+  emulate -L zsh
+  local b64
+  b64=$(base64 | tr -d '\r\n') || return 1
+
+  if [[ ! -w /dev/tty ]]; then
+    printf 'clip: no tty available for OSC 52\n' >&2
+    return 1
+  fi
+  if (( ${#b64} > 74994 )); then
+    printf 'clip: input too large for OSC 52 (%d encoded bytes)\n' "${#b64}" >&2
+    return 1
+  fi
+
+  printf '\033]52;c;%s\a' "$b64" > /dev/tty
+}
+
+# compat shims, Linux only: macOS has the real binaries, and anything piping to
+# pbcopy keeps working. no cheatsheet entry (clip is the documented name)
 if [[ "$IS_MACOS" != "1" ]]; then
-  alias pbcopy="xclip -selection clipboard"
-  alias pbpaste="xclip -selection clipboard -o"
+  alias pbcopy="clip"
+  alias pbpaste="clip -p"
 fi
 
 # @section: DEVELOPMENT

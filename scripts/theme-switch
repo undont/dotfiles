@@ -22,6 +22,8 @@ DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 # shellcheck source=scripts/_lib/ghdash.sh
 source "$DOTFILES_ROOT/scripts/_lib/ghdash.sh"
+# shellcheck source=scripts/_lib/clipboard.sh
+source "$DOTFILES_ROOT/scripts/_lib/clipboard.sh"
 
 # Build sed -e arguments from an associative array of placeholder→value mappings.
 # Usage: _build_sed_args vars_assoc_array_name
@@ -187,17 +189,9 @@ apply_theme() {
         mkdir -p "$(dirname "$TMUX_OUTPUT")"
         local tmux_tmp="${TMUX_OUTPUT}.tmp.$$"
 
-        # Determine platform clipboard command
-        local clipboard_cmd="pbcopy"
-        if is_linux; then
-            if command_exists wl-copy; then
-                clipboard_cmd="wl-copy"
-            elif command_exists xclip; then
-                clipboard_cmd="xclip -selection clipboard"
-            elif command_exists xsel; then
-                clipboard_cmd="xsel --clipboard --input"
-            fi
-        fi
+        # Determine platform clipboard command (shared with tmux scripts)
+        local clipboard_cmd
+        clipboard_cmd="$(clipboard_copy_cmd)"
 
         # Build sed arguments from theme variables (adding new vars only requires a new entry)
         declare -A tmux_vars=(

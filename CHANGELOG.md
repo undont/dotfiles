@@ -6,6 +6,21 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `clip` copies and pastes on macOS and Linux alike: `<cmd> | clip` copies, bare `clip` pastes, `clip -p` forces a paste where the direction must not depend on context. The backend follows the live display server (`pbcopy`, `wl-copy`, `xclip`, `xsel`, `clip.exe`, `termux-clipboard-set`) rather than binary presence alone, since a Wayland session usually has xclip installed via XWayland and picking it there writes to a clipboard nothing reads back. With no display server (headless, or SSH without X11 forwarding) it falls back to OSC 52, which tmux forwards onward via `set-clipboard on`. On Linux `pbcopy`/`pbpaste` remain as shims, so existing muscle memory and scripts keep working. `zsh/dotfiles.zsh`, `scripts/_lib/clipboard.sh`
+
+### Changed
+
+- Clipboard backend detection lives in `scripts/_lib/clipboard.sh` and is shared by the tmux scripts and `theme-switch`. The two carried separate copies with conflicting precedence (`common.sh` preferred xclip, `theme-switch` preferred wl-copy), so on a Wayland box with xclip installed, tmux copy-mode `y` and `pick-url.sh` wrote to different clipboards. `scripts/_lib/clipboard.sh`, `tmux/scripts/_lib/common.sh`, `scripts/theme-switch`
+- Linux clipboard docs describe `clip` and cover Wayland, replacing the hand-written `xclip` alias snippet it supersedes. Adds a note that the clipboard is a shared, unencrypted resource and that `clip` makes no security claims. `docs/TROUBLESHOOTING.md`, `README.md`
+
+### Fixed
+
+- Clipboard detection no longer falls back to OSC 52 when a display server is running but its tool is missing. That case silently pushed the payload out through the terminal, and any SSH hop or tmux in between, when the local clipboard was what was asked for; it now fails naming the package to install. OSC 52 stays the fallback only when there is genuinely no display server. `zsh/dotfiles.zsh`, `scripts/_lib/clipboard.sh`
+- `theme-switch` no longer bakes `pbcopy` into the generated tmux config when it finds no Linux clipboard tool; the shared detection returns a discard instead, and tmux's own `set-clipboard on` handles the OSC 52 path. `scripts/theme-switch`
+- The clipboard precedence test exercises the real `scripts/_lib/clipboard.sh` instead of an inlined copy of its logic, which passed regardless of what the implementation did. `scripts/tests/test-linux-compat.sh`
+
 ## [0.2.133] - 2026-07-15
 
 ### Changed

@@ -118,6 +118,7 @@ Configured as a clean input layer rather than a productivity surface: keybind re
 - **fzf integration:** `Ctrl+R` for history search, `Ctrl+T` for file finding, and `Opt/Alt+A` for directory history
 - **Git aliases** for the things you do all day: `gs` (status), `gl` (log), `gfp` (fetch + prune), `gpr` (prune local branches gone from remote), `grmc` (untrack files), and many more
 - **Directory navigation:** `cdb`/`cdf` for browser-style back/forward, `mkcd` to make and enter, and `cl` for a full terminal reset
+- **Clipboard:** `<cmd> | clip` copies and bare `clip` pastes, on macOS and Linux alike. The backend follows the live display server (`pbcopy`, `wl-copy`, `xclip`, `xsel`), falling back to OSC 52 so it still works headless and over SSH
 - **Editing:** `Ctrl+G` opens the current command in `$EDITOR`, and `Spacebar` expands the alias under the cursor
 - **Tab completion** for the dotfiles CLI and the tmux helper commands; run `dot aliases` for the full list
 

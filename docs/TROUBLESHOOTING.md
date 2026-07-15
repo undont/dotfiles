@@ -189,7 +189,7 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
 | --------------- | ---------------------- | ------------------------------------------- |
 | Homebrew path   | `/opt/homebrew`        | `/home/linuxbrew/.linuxbrew`                |
 | Cask apps       | Hammerspoon, Karabiner | Not available (macOS-only casks)            |
-| Clipboard       | `pbcopy` / `pbpaste`   | `xclip` or `xsel`                           |
+| Clipboard       | `clip` (`pbcopy`)      | `clip` (`wl-copy`, `xclip`, or `xsel`)      |
 | Package manager | `brew`                 | `brew` (Linuxbrew) or native (`apt`, `yum`) |
 
 **Symptom**: Commands not found or apps not available on Linux.
@@ -221,25 +221,51 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
 
 3. **Clipboard commands**:
 
-   ```bash
-   # Install xclip for Linux
-   sudo apt install xclip  # Debian/Ubuntu
-   sudo yum install xclip  # RHEL/CentOS
+   `clip` works on both platforms and needs no aliases: `<cmd> | clip` copies,
+   bare `clip` pastes, and `clip -p` forces a paste when the direction must not
+   depend on context (scripts). On Linux, `pbcopy` and `pbpaste` remain as
+   shims so muscle memory and existing scripts keep working.
 
-   # Create aliases (add to ~/.config/zsh/secrets.zsh or ~/.zshrc)
-   alias pbcopy='xclip -selection clipboard'
-   alias pbpaste='xclip -selection clipboard -o'
+   Install the tool matching your session type. `clip` picks the backend from
+   the live display server, so installing the wrong one has no effect:
+
+   ```bash
+   # Wayland (default on Fedora, Ubuntu, GNOME, KDE)
+   sudo apt install wl-clipboard
+
+   # X11
+   sudo apt install xclip   # Debian/Ubuntu
+   sudo yum install xclip   # RHEL/CentOS
    ```
+
+   If a display server is running but its tool is missing, `clip` fails with
+   the package to install rather than falling back. The fallback below would
+   otherwise send the payload out through the terminal when the local clipboard
+   was what you asked for.
+
+   With no display server at all (headless, or over SSH without X11
+   forwarding), `clip` falls back to OSC 52 and needs nothing installed: it
+   writes an escape sequence that your terminal turns into a clipboard write.
+   Paste is unavailable there, as most terminals refuse OSC 52 reads.
+
+   **`clip` makes no security claims, and neither did `pbcopy`.** The system
+   clipboard is a shared, unencrypted resource that any process on the machine
+   can read, and clipboard managers (Raycast, Maccy) snapshot every copy to
+   their own history, so clearing the clipboard afterwards does not un-copy it.
+   Content reaches `clip` on stdin rather than as an argument, so it never
+   appears in `ps` output, but the command itself still lands in
+   `~/.zsh_history`. The OSC 52 fallback is the least private backend of the
+   set: base64 is encoding rather than encryption, and the payload travels as
+   terminal output, so tmux (which retains it in a buffer, readable via
+   `tmux show-buffer`) and every SSH hop in between handle it in the clear. For
+   secrets, prefer a password manager's own clipboard integration, which clears
+   on a timer and keeps the value out of your shell history.
 
 4. **tmux clipboard integration**:
-   Edit `~/.config/tmux/local.conf` and add:
-   ```bash
-   # macOS (default)
-   bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "pbcopy"
-
-   # Linux (change to)
-   bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "xclip -selection clipboard"
-   ```
+   Handled automatically. `dotfiles theme` resolves the clipboard command at
+   generation time and substitutes it into `{{CLIPBOARD_CMD}}`, using the same
+   detection as `clip` (see `scripts/_lib/clipboard.sh`). If you switch between
+   X11 and Wayland, re-run `dotfiles theme <name>` to re-resolve it.
 
 ### Apple Silicon vs Intel Mac
 
