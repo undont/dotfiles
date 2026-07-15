@@ -45,7 +45,7 @@ _cmd_alert_pane=""
 if (( ! ${+_CMD_ALERT_EXCLUDE} )); then
     _CMD_ALERT_EXCLUDE=(
         git gdn gh
-        claude opencode oc
+        claude opencode oc codex
         btop htop top
         docker lazydocker lazygit ssh
         less more man
