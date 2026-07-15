@@ -6,14 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.133] - 2026-07-15
+
 ### Changed
 
 - `dotfiles local diff` now also flags uncommitted changes in the local-layer repo, scoped to the managed pairs. `export` auto-commits, so an uncommitted change means a repo file was edited by hand: the repo↔system comparison can report a clean match while such an edit sits unsaved (and a later `export`, treating the system file as the source of truth, would overwrite it), so it was previously invisible. The command now exits non-zero when there is drift or uncommitted state, and returns 0 only when fully clean. `scripts/dotfiles`, `scripts/tests/test-dotfiles-local.sh`
 - `set-default-apps.sh` asks about each file type only once. macOS 15+ shows a modal consent dialog on every programmatic handler change, so the step now skips a type when Zed already handles it and records a decline in `.state/declined-default-apps` when the user keeps the existing app, instead of re-prompting on every `dotfiles update`. `scripts/install/set-default-apps.sh`
+- tmux Codex instance switcher rebound from prefix+`C` to prefix+`x`. `tmux/tmux.conf.template`, `tmux/tmux-help.template`
 
 ### Added
 
 - `.log` files route to Zed. they're governed by the system `com.apple.log` UTI that Console claims, so the UTI is bound directly since the bare extension loses to it. `scripts/install/set-default-apps.sh`
+
+### Fixed
+
+- `svim` resolves `nvim` via `command -v` for `SUDO_EDITOR` instead of passing the bare name. sudoedit resolves `SUDO_EDITOR` against `secure_path`, not the shell's `PATH`, so the bare name wasn't found and sudo silently fell back to its compiled default editor. `zsh/dotfiles.zsh`
+- `gpr` uses `xargs -r` so it no-ops instead of erroring when there are no gone branches to prune. `zsh/dotfiles.zsh`
 
 ## [0.2.132] - 2026-07-10
 
