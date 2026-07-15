@@ -101,7 +101,8 @@ return {
     config = function()
       -- :D alias is a cmdline abbrev defined at startup above, not command_alias,
       -- so it survives a cold start before this config runs
-      require('differ').setup {}
+      -- includes differ_opts for local overrides via local.lua in nvim config
+      require('differ').setup(vim.g.differ_opts or {})
 
       -- pin a permanent <Space>/]/[ to which-key on differ buffers. which-key's
       -- auto-trigger system has suspension windows (ModeChanged, BufNew) where the

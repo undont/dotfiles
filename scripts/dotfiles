@@ -1162,9 +1162,37 @@ cmd_local_diff() {
         done
     fi
 
-    if [[ $found -eq 0 ]]; then
-        success "Local layer matches the repo"
+    # git-level state in the local repo, scoped to the managed pairs. export
+    # auto-commits, so uncommitted changes here mean a repo file was edited by
+    # hand: the repo↔system comparison above can report a clean match while such
+    # an edit sits unsaved (and a later export, treating the system file as the
+    # source of truth, would overwrite it), so surface it or it stays invisible
+    local -a relpaths=()
+    for pair in "${LOCAL_PAIRS[@]}"; do relpaths+=("${pair%%|*}"); done
+    for pair in ${LOCAL_DIR_PAIRS[@]+"${LOCAL_DIR_PAIRS[@]}"}; do relpaths+=("${pair%%|*}"); done
+    local git_dirty=""
+    if git -C "$dir" rev-parse --git-dir &>/dev/null && [[ ${#relpaths[@]} -gt 0 ]]; then
+        git_dirty=$(git -C "$dir" status --porcelain -- "${relpaths[@]}" 2>/dev/null)
     fi
+    if [[ -n "$git_dirty" ]]; then
+        echo ""
+        printf "${YELLOW}uncommitted in the local repo${NC} (edited by hand, not via export; a later export may overwrite it):\n"
+        if git -C "$dir" rev-parse --verify -q HEAD >/dev/null 2>&1; then
+            git -C "$dir" -c color.ui=always diff HEAD -- "${relpaths[@]}" 2>/dev/null || true
+        else
+            printf "%s\n" "$git_dirty"
+        fi
+        printf "  ${GREY}save with: git -C %s commit -a   ·   discard with: git -C %s checkout -- .${NC}\n" "$dir" "$dir"
+    fi
+
+    if [[ $found -eq 0 && -z "$git_dirty" ]]; then
+        success "Local layer matches the repo"
+        return 0
+    fi
+    if [[ $found -eq 0 ]]; then
+        info "System and repo copies match; commit the changes above to save them"
+    fi
+    return 1
 }
 
 cmd_local_edit() {

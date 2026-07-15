@@ -645,7 +645,7 @@ alias gp="git push"                                                            #
 alias gpl="git pull"                                                           # git pull
 alias gst="git stash"                                                          # git stash
 alias gfp="git fetch -pf"                                                      # git fetch --prune
-alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs git branch -D"  # prune local branches
+alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs -r git branch -D"  # prune local branches
 alias grmc="git rm --cached"                                                   # git rm --cached
 alias gca="git commit --amend"                                                 # git commit --amend
 
@@ -750,6 +750,18 @@ alias df="df -h"                                                               #
 alias du="du -sh"                                                              # du -sh
 alias myip="curl -s ifconfig.me"                                               # curl ifconfig.me
 alias v="cl && nvim"                                                           # clear + nvim
+
+# edit a root-owned file with your real nvim config. sudoedit copies the file
+# to a temp path, opens it as YOU (so plugins/config load normally, and nvim
+# never runs as root), then writes it back with elevated privileges. this also
+# sidesteps the reason plain `sudo nvim` fails: sudo's secure_path doesn't
+# include Homebrew's bin, so root can't find nvim at all.
+# SUDO_EDITOR must be an ABSOLUTE path: sudoedit resolves a bare editor name
+# against secure_path (not your shell's PATH), so "nvim" isn't found there and
+# sudo silently falls back to its compiled default editor (nano). command -v
+# expands it to the real Homebrew path, portable across the macOS/Linux prefixes
+# @cheat: svim <file> | sudo-edit a root-owned file (sudoedit + nvim)
+svim() { SUDO_EDITOR="$(command -v nvim)" sudoedit "$@"; }
 
 # open: platform-aware (macOS: open, Linux: xdg-open)
 if [[ "$IS_MACOS" == "1" ]]; then

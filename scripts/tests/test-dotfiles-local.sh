@@ -585,6 +585,26 @@ fi
 
 cleanup_sandbox
 
+# a repo file edited by hand (not via export) leaves the local repo uncommitted;
+# export auto-commits, so this state is invisible to the repo↔system comparison
+# and must be surfaced separately
+setup_cli_sandbox
+seed_preset
+seed_gitconfig
+seed_local_files
+dotfiles_run local init > /dev/null
+dotfiles_run export > /dev/null
+
+printf '\nexport HAND_EDIT=1\n' >> "$TEST_HOME/.dotfiles-local/zshrc"
+out=$(dotfiles_run local diff) && rc=0 || rc=$?
+if [[ "$out" == *"uncommitted in the local repo"* && "$out" == *"HAND_EDIT"* ]]; then
+    pass "local diff flags hand-edited uncommitted repo files"
+else
+    fail "local diff should flag uncommitted repo edits"
+fi
+
+cleanup_sandbox
+
 # ─── 11. import sets aerc permissions ─────────────────────────────────
 
 section "import: aerc permissions"
