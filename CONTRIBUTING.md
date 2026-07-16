@@ -131,8 +131,8 @@ After a change, update the docs it affects — this is the last step, not done
 mid-change:
 
 - `README.md` for feature summaries, keybindings, and aliases.
-- `CLAUDE.md` for architecture, conventions, and the
-  [config ownership patterns](CLAUDE.md) (symlinked / layered / copy-on-install).
+- `AGENTS.md` for architecture, conventions, and the
+  [config ownership patterns](AGENTS.md) (symlinked / layered / copy-on-install).
 - `docs/` for the detailed guides (themes, installation, troubleshooting).
 
 `.claude/rules/docs.md` lists exactly what to check.
