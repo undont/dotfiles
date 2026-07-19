@@ -549,7 +549,10 @@ should_restore_command() {
     local base_cmd="${command%% *}"
 
     # check if command is in the restore list
-    for proc in $process_list; do
+    # tokenise via xargs so quoted entries like "~rails server" stay whole
+    local proc
+    while IFS= read -r proc; do
+        [[ -z "$proc" ]] && continue
         # handle tilde prefix for fuzzy matching
         if [[ "$proc" =~ ^~ ]]; then
             local match="${proc#\~}"
@@ -558,7 +561,7 @@ should_restore_command() {
             # exact match on base command
             [[ "$base_cmd" == "$proc" ]] && return 0
         fi
-    done
+    done < <(printf '%s\n' "$process_list" | xargs printf '%s\n' 2>/dev/null)
 
     return 1
 }
