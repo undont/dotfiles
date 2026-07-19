@@ -1033,6 +1033,112 @@ EOF
     cleanup_test_env
 }
 
+# regression: quoted fuzzy entries like "~rails server" must stay whole
+# when the process list is tokenised (naive word-splitting left literal
+# quotes on the tokens, so they never matched)
+test_quoted_fuzzy_process_matching() {
+    section "Quoted Fuzzy Process Matching Tests"
+
+    setup_test_env
+    setup_test_server
+
+    # quoted entry with an embedded space, exactly as documented in tmux.conf
+    $TEST_TMUX_CMD set-option -g @resurrect-processes '"~sleep 12"'
+
+    # note: empty fields are colon-prefixed as in real save files; a truly
+    # empty field would collapse under tab IFS and shift every later field
+    mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
+    cat > "$TEST_HOME/.tmux/resurrect/sessions/test-quoted.txt" << 'EOF'
+pane	test-quoted	0	1	:	0	bash	:/tmp	1	sleep	:sleep 1234
+window	test-quoted	0	:test	1	:	1234,80x24,0,0,0	off
+EOF
+
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-quoted" 2>/dev/null || true
+
+    if ! $TEST_TMUX_CMD has-session -t "test-quoted" 2>/dev/null; then
+        skip "Session restoration failed (may be environment-specific)"
+        cleanup_test_server
+        cleanup_test_env
+        return
+    fi
+
+    # poll for the restored command; the shell needs a moment to start it
+    local cmd="" attempt=0
+    while [[ $attempt -lt 20 ]]; do
+        cmd=$($TEST_TMUX_CMD display-message -p -t "test-quoted:0.0" "#{pane_current_command}" 2>/dev/null || echo "")
+        [[ "$cmd" == "sleep" ]] && break
+        sleep 0.25
+        attempt=$((attempt + 1))
+    done
+
+    if [[ "$cmd" == "sleep" ]]; then
+        pass "Quoted fuzzy entry restored command with arguments"
+    else
+        fail "Quoted fuzzy entry did not match (pane running: ${cmd:-nothing})"
+    fi
+
+    cleanup_test_server
+    cleanup_test_env
+}
+
+# regression: pane contents restore was a silent no-op because restore.sh
+# never extracted pane_contents.tar.gz and looked in the wrong directory
+test_pane_contents_restoration() {
+    section "Pane Contents Restoration Tests"
+
+    # check if tmux-resurrect plugin is installed
+    if [[ ! -f "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh" ]]; then
+        skip "Pane contents tests require tmux-resurrect plugin"
+        return
+    fi
+
+    setup_test_env
+    setup_test_server
+
+    $TEST_TMUX_CMD set-option -g @resurrect-capture-pane-contents on
+
+    # create a session with a distinctive marker in its scrollback
+    $TEST_TMUX_CMD new-session -d -s "test-contents" "echo RESURRECT_CONTENTS_MARKER; bash"
+    sleep 0.5
+
+    # save via the plugin (creates pane_contents.tar.gz), then split
+    $TEST_TMUX_CMD run-shell "$ORIGINAL_HOME/.tmux/plugins/tmux-resurrect/scripts/save.sh"
+    sleep 0.5
+    bash "$SCRIPTS_DIR/resurrect/split.sh"
+
+    $TEST_TMUX_CMD kill-session -t "test-contents"
+    bash "$SCRIPTS_DIR/resurrect/restore.sh" --no-switch --session "test-contents"
+    sleep 0.5
+
+    if ! $TEST_TMUX_CMD has-session -t "test-contents" 2>/dev/null; then
+        fail "Session restoration failed with contents restoration enabled"
+        cleanup_test_server
+        cleanup_test_env
+        return
+    fi
+
+    # restored pane should replay the saved scrollback
+    if $TEST_TMUX_CMD capture-pane -p -t "test-contents" 2>/dev/null | grep -q "RESURRECT_CONTENTS_MARKER"; then
+        pass "Saved pane contents restored into new pane"
+    else
+        fail "Saved pane contents missing after restore"
+    fi
+
+    # extracted archive contents should be cleaned up afterwards
+    local resurrect_dir
+    # shellcheck disable=SC1091
+    source "$LIB_DIR/paths.sh"
+    resurrect_dir=$(get_resurrect_dir)
+    if [[ ! -d "${resurrect_dir}/restore/pane_contents" ]]; then
+        pass "Extracted pane contents cleaned up after restore"
+    else
+        fail "Extracted pane contents left behind at ${resurrect_dir}/restore/pane_contents"
+    fi
+
+    cleanup_test_server
+    cleanup_test_env
+}
+
 # ══════════════════════════════════════════════════════════════
 # restore all sessions tests (regression test for arithmetic bug)
 # ══════════════════════════════════════════════════════════════
@@ -1246,6 +1352,8 @@ test_cleanup_trap
 test_non_consecutive_windows
 test_pane_readiness
 test_fuzzy_process_matching
+test_quoted_fuzzy_process_matching
+test_pane_contents_restoration
 test_window_name_restoration
 test_restore_all_sessions
 

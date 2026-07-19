@@ -325,38 +325,10 @@ list_project_dirs() {
 # Cross-Platform Helpers
 # ═════════════════════════════════════════════════════════════════
 
-# return the clipboard copy command string (for use in fzf --bind, etc.)
-# usage: cmd=$(clipboard_copy_cmd)
-clipboard_copy_cmd() {
-    if [[ "$(uname)" == "Darwin" ]]; then
-        printf 'pbcopy'
-    elif command -v xclip &>/dev/null; then
-        printf 'xclip -selection clipboard'
-    elif command -v xsel &>/dev/null; then
-        printf 'xsel --clipboard --input'
-    elif command -v wl-copy &>/dev/null; then
-        printf 'wl-copy'
-    else
-        printf 'cat >/dev/null'
-    fi
-}
-
-# copy stdin to system clipboard (works on macOS and Linux)
-clipboard_copy() {
-    if [[ "$(uname)" == "Darwin" ]]; then
-        pbcopy
-    elif command -v xclip &>/dev/null; then
-        xclip -selection clipboard
-    elif command -v xsel &>/dev/null; then
-        xsel --clipboard --input
-    elif command -v wl-copy &>/dev/null; then
-        wl-copy
-    else
-        # fallback: silently consume stdin
-        cat >/dev/null
-        return 1
-    fi
-}
+# clipboard_backend / clipboard_copy_cmd / clipboard_copy come from the shared
+# lib, so tmux scripts and theme-switch resolve the same backend
+# shellcheck source=scripts/_lib/clipboard.sh
+source "$DOTFILES_ROOT/scripts/_lib/clipboard.sh"
 
 # open a URL or file with the system handler (works on macOS and Linux)
 # on macOS, the tmux user option `@browser-app` overrides the default browser:

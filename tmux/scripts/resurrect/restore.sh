@@ -59,8 +59,24 @@ pane_contents_file() {
     local pane_index="$3"
     local pane_id="${session_name}:${window_number}.${pane_index}"
 
-    # pane contents are stored in resurrect/pane_contents/ directory
-    echo "${RESURRECT_DIR}/pane_contents/${pane_id}"
+    # save archives contents; files are extracted to restore/pane_contents/
+    # with the same pane-<id> naming the plugin uses
+    echo "${RESURRECT_DIR}/restore/pane_contents/pane-${pane_id}"
+}
+
+# extract the pane contents archive created by the plugin's save
+# archive entries are ./pane_contents/pane-<id>, so extracting into
+# restore/ yields restore/pane_contents/pane-<id>
+extract_pane_contents() {
+    local archive="${RESURRECT_DIR}/pane_contents.tar.gz"
+    [[ -f "$archive" ]] || return 1
+    mkdir -p "${RESURRECT_DIR}/restore"
+    gzip -d < "$archive" | tar xf - -C "${RESURRECT_DIR}/restore/" 2>/dev/null
+}
+
+# remove extracted pane contents (the archive itself belongs to save)
+cleanup_pane_contents() {
+    rm -rf "${RESURRECT_DIR}/restore/pane_contents" 2>/dev/null || true
 }
 
 # check if pane contents file exists for restoration
@@ -312,6 +328,11 @@ if tmux has-session -t "${SESSION_NAME}" 2>/dev/null; then
     fi
 fi
 
+# make saved pane contents available before panes are created
+if pane_contents_enabled; then
+    extract_pane_contents || true
+fi
+
 # ─────────────────────────────────────────────────────────────
 # session restoration (three-pass algorithm)
 # ─────────────────────────────────────────────────────────────
@@ -353,6 +374,7 @@ cleanup_on_error() {
         echo -e "${YELLOW}Error during restoration - cleaning up partial session${NC}" >&2
         tmux kill-session -t "${SESSION_NAME}" 2>/dev/null || true
     fi
+    cleanup_pane_contents
 }
 trap cleanup_on_error ERR
 
@@ -527,7 +549,10 @@ should_restore_command() {
     local base_cmd="${command%% *}"
 
     # check if command is in the restore list
-    for proc in $process_list; do
+    # tokenise via xargs so quoted entries like "~rails server" stay whole
+    local proc
+    while IFS= read -r proc; do
+        [[ -z "$proc" ]] && continue
         # handle tilde prefix for fuzzy matching
         if [[ "$proc" =~ ^~ ]]; then
             local match="${proc#\~}"
@@ -536,7 +561,7 @@ should_restore_command() {
             # exact match on base command
             [[ "$base_cmd" == "$proc" ]] && return 0
         fi
-    done
+    done < <(printf '%s\n' "$process_list" | xargs printf '%s\n' 2>/dev/null)
 
     return 1
 }
@@ -607,6 +632,9 @@ if restore_processes_enabled; then
         restore_pane_command "$SESSION_NAME" "$window_number" "$pane_index" "$pane_command" "$pane_full_command"
     done < "${SESSION_FILE}"
 fi
+
+# extracted contents are no longer needed once panes exist
+cleanup_pane_contents
 
 # disable cleanup trap on successful completion
 trap - ERR

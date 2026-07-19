@@ -17,7 +17,8 @@ source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 
 # temp file cleanup on exit
 _TEST_TMPFILES=()
-trap 'rm -f "${_TEST_TMPFILES[@]}"' EXIT
+_TEST_TMPDIRS=()
+trap 'rm -f "${_TEST_TMPFILES[@]}"; [[ ${#_TEST_TMPDIRS[@]} -gt 0 ]] && rm -rf "${_TEST_TMPDIRS[@]}"' EXIT
 
 # ===========================================================================
 # Tests
@@ -179,11 +180,19 @@ else
     fail "theme-switch should handle CLIPBOARD_CMD substitution"
 fi
 
-# verify theme-switch detects Linux clipboard tools
-if grep -q 'wl-copy' "$THEME_SWITCH" && grep -q 'xclip' "$THEME_SWITCH" && grep -q 'xsel' "$THEME_SWITCH"; then
-    pass "theme-switch detects Linux clipboard tools (wl-copy, xclip, xsel)"
+# verify theme-switch resolves the clipboard command via the shared lib rather
+# than carrying its own detection, so it cannot drift from the tmux scripts
+if grep -q '_lib/clipboard.sh' "$THEME_SWITCH" && grep -q 'clipboard_copy_cmd' "$THEME_SWITCH"; then
+    pass "theme-switch resolves clipboard via the shared lib"
 else
-    fail "theme-switch should detect wl-copy, xclip, and xsel on Linux"
+    fail "theme-switch should source _lib/clipboard.sh and call clipboard_copy_cmd"
+fi
+
+# the detection itself must live in one place only
+if ! grep -qE '^\s*(elif )?(command_exists|command -v) (wl-copy|xclip|xsel)' "$THEME_SWITCH"; then
+    pass "theme-switch has no duplicate clipboard detection"
+else
+    fail "theme-switch should not re-implement clipboard detection"
 fi
 
 section "Generate-Theme Ghostty Path Fallbacks"
@@ -231,40 +240,71 @@ fi
 
 section "Clipboard Detection (Functional)"
 
-# test clipboard detection by mocking command_exists and is_linux
-clipboard_test() {
-    local available_cmds="$1"
-    (
-        command_exists() {
-            echo "$available_cmds" | grep -qw "$1"
-        }
-        is_linux() { return 0; }
+# exercise the real shared lib rather than an inlined copy of its logic, so the
+# test cannot silently drift from the implementation it is meant to pin.
+# fakes a Linux PATH containing only the named tools.
+# usage: clipboard_test "<tools>" "<WAYLAND_DISPLAY>" "<DISPLAY>"
+_CLIP_FAKE_BIN="$(mktemp -d)"; _TEST_TMPDIRS+=("$_CLIP_FAKE_BIN")
+_clipboard_call() {
+    local fn="$1" available_cmds="$2" wayland="${3:-}" x11="${4:-}"
+    local bin="$_CLIP_FAKE_BIN"
 
-        local clipboard_cmd="pbcopy"
-        if is_linux; then
-            if command_exists wl-copy; then
-                clipboard_cmd="wl-copy"
-            elif command_exists xclip; then
-                clipboard_cmd="xclip -selection clipboard"
-            elif command_exists xsel; then
-                clipboard_cmd="xsel --clipboard --input"
-            fi
-        fi
-        echo "$clipboard_cmd"
+    rm -f "${bin:?}"/*
+    printf '#!/bin/sh\necho Linux\n' > "$bin/uname"
+    local c
+    for c in $available_cmds; do
+        printf '#!/bin/sh\nexit 0\n' > "$bin/$c"
+    done
+    chmod +x "$bin"/*
+
+    (
+        # PATH is set last: rm/chmod above still need the real one
+        export PATH="$bin" WAYLAND_DISPLAY="$wayland" DISPLAY="$x11"
+        unset _DOTFILES_CLIPBOARD_SH_LOADED
+        # shellcheck source=scripts/_lib/clipboard.sh
+        source "$DOTFILES_ROOT/scripts/_lib/clipboard.sh"
+        "$fn"
     )
 }
 
-result=$(clipboard_test "wl-copy xclip xsel")
-assert_equals "prefers wl-copy when all available" "wl-copy" "$result"
+clipboard_test() { _clipboard_call clipboard_copy_cmd "$@"; }
+clipboard_backend_test() { _clipboard_call clipboard_backend "$@"; }
 
-result=$(clipboard_test "xclip xsel")
-assert_equals "falls back to xclip when no wl-copy" "xclip -selection clipboard" "$result"
+# display server decides, not mere binary presence: a wayland session with xclip
+# installed (via XWayland) must still pick wl-copy
+result=$(clipboard_test "wl-copy xclip xsel" "wayland-0" "")
+assert_equals "prefers wl-copy on a wayland session" "wl-copy" "$result"
 
-result=$(clipboard_test "xsel")
-assert_equals "falls back to xsel when no wl-copy/xclip" "xsel --clipboard --input" "$result"
+result=$(clipboard_test "wl-copy xclip xsel" "wayland-0" ":0")
+assert_equals "prefers wl-copy when both display servers are set" "wl-copy" "$result"
 
-result=$(clipboard_test "")
-assert_equals "keeps pbcopy when no Linux tools found" "pbcopy" "$result"
+result=$(clipboard_test "wl-copy xclip xsel" "" ":0")
+assert_equals "prefers xclip on an X11 session" "xclip -selection clipboard" "$result"
+
+result=$(clipboard_test "xsel" "" ":0")
+assert_equals "falls back to xsel when no xclip" "xsel --clipboard --input" "$result"
+
+# wl-copy present but no wayland session (and no X11): it would fail if chosen
+result=$(clipboard_test "wl-copy xclip xsel" "" "")
+assert_equals "ignores display tools when headless" "cat >/dev/null" "$result"
+
+result=$(clipboard_test "" "" "")
+assert_equals "discards when no clipboard tool is found" "cat >/dev/null" "$result"
+
+# a running display server with no tool installed must NOT be treated as
+# headless: falling through to OSC 52 there would silently push the payload out
+# through the terminal (and any ssh hop) when a local clipboard was expected
+result=$(clipboard_backend_test "" "wayland-0" "")
+assert_equals "wayland session with no tool reports missing, not osc52" "missing" "$result"
+
+result=$(clipboard_backend_test "" "" ":0")
+assert_equals "X11 session with no tool reports missing, not osc52" "missing" "$result"
+
+result=$(clipboard_backend_test "" "" "")
+assert_equals "genuinely headless reports osc52" "osc52" "$result"
+
+result=$(clipboard_backend_test "wl-copy" "wayland-0" "")
+assert_equals "wayland session with wl-copy reports wayland" "wayland" "$result"
 
 section "find_ghostty_themes Fallback (Functional)"
 

@@ -645,7 +645,7 @@ set -g @resurrect-capture-pane-contents 'on'
 # restore specific programs (space-separated list)
 # default: vi vim nvim emacs man less more tail top htop irssi weechat mutt ssh
 # add more as needed:
-set -g @resurrect-processes 'ssh psql mysql sqlite3 claude codex opencode copilot "~rails server" "~npm start"'
+set -g @resurrect-processes 'ssh psql mysql sqlite3 claude codex opencode copilot btop "~gh dash" "~rails server" "~npm start"'
 
 # alternative: restore ALL running programs (use with caution)
 # set -g @resurrect-processes ':all:'

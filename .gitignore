@@ -44,6 +44,8 @@ nvim/colors/generated/
 .claude/*
 .claude/skills/
 !.claude/rules/
+.agents/*
+.agents/skills/
 .opencode
 
 # Local markdown files

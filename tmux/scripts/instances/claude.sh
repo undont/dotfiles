@@ -86,6 +86,14 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
     target="${session}:${window_idx}.${pane_idx}"
     window_name="${window_names["${session}:${window_idx}"]:-}"
 
+    # per-pane label from claude's own pane title, so split panes in one
+    # window don't all inherit the active pane's name via automatic-rename.
+    # squash tabs (title is untrusted), strip the leading state glyph, and
+    # fall back to the window name until claude sets a session title
+    label="${title//$TAB/ }"
+    label="${label#"${label%%[a-zA-Z0-9]*}"}"
+    case "$label" in "" | "Claude Code" | claude) label="$window_name" ;; esac
+
     # state + age from the registry (agent/state/epoch lead the line and are
     # always non-empty, so a plain tab read is safe)
     state="" age_str=""
@@ -116,7 +124,7 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
     fi
 
     sdisp=$(get_agent_state_display "$state")
-    row="$(_ansi "${sdisp##*|}" "${sdisp%%|*}")  ${session}:${window_idx}.${pane_idx} ${window_name}"
+    row="$(_ansi "${sdisp##*|}" "${sdisp%%|*}")  ${session}:${window_idx}.${pane_idx} ${label}"
     [[ -n "$age_str" ]] && row="${row}  ${age_str}"
 
     claude_panes+=("${row}${TAB}${target}")

@@ -71,7 +71,7 @@ Defaults:
 
 ```
 git gdn gh
-claude opencode oc
+claude opencode oc codex
 btop htop top
 docker lazydocker lazygit ssh
 less more man

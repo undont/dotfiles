@@ -22,6 +22,12 @@ DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
 source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 # shellcheck source=scripts/_lib/ghdash.sh
 source "$DOTFILES_ROOT/scripts/_lib/ghdash.sh"
+# shellcheck source=scripts/_lib/clipboard.sh
+source "$DOTFILES_ROOT/scripts/_lib/clipboard.sh"
+
+# how the user invoked us; set by parent (dotfiles theme switch) when
+# delegated, falls back to basename for direct invocation
+invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
 
 # Build sed -e arguments from an associative array of placeholder→value mappings.
 # Usage: _build_sed_args vars_assoc_array_name
@@ -121,6 +127,22 @@ list_themes() {
     printf "\n"
 }
 
+# Print usage
+usage() {
+    printf "\n${CYAN}Usage:${NC}\n"
+    printf "  %s <theme-name> [--no-reload] [--quiet]\n" "$invoked_as"
+    printf "  %s list\n" "$invoked_as"
+    printf "  %s current\n" "$invoked_as"
+    printf "  %s help\n" "$invoked_as"
+    printf "\n${CYAN}Options:${NC}\n"
+    printf "  --no-reload    Generate config files without reloading tmux/ghostty\n"
+    printf "  --quiet, -q    Suppress output\n"
+    printf "\n${CYAN}Examples:${NC}\n"
+    printf "  %s dracula\n" "$invoked_as"
+    printf "  %s tokyo-night --no-reload\n" "$invoked_as"
+    printf "\n"
+}
+
 # Get current theme
 get_current_theme() {
     if [[ -f "$CURRENT_THEME_FILE" ]]; then
@@ -187,17 +209,9 @@ apply_theme() {
         mkdir -p "$(dirname "$TMUX_OUTPUT")"
         local tmux_tmp="${TMUX_OUTPUT}.tmp.$$"
 
-        # Determine platform clipboard command
-        local clipboard_cmd="pbcopy"
-        if is_linux; then
-            if command_exists wl-copy; then
-                clipboard_cmd="wl-copy"
-            elif command_exists xclip; then
-                clipboard_cmd="xclip -selection clipboard"
-            elif command_exists xsel; then
-                clipboard_cmd="xsel --clipboard --input"
-            fi
-        fi
+        # Determine platform clipboard command (shared with tmux scripts)
+        local clipboard_cmd
+        clipboard_cmd="$(clipboard_copy_cmd)"
 
         # Build sed arguments from theme variables (adding new vars only requires a new entry)
         declare -A tmux_vars=(
@@ -467,10 +481,17 @@ main() {
             fi
             printf "\n${CYAN}Current theme:${NC} %s (%s)\n\n" "$THEME_NAME" "$current"
             ;;
+        help|--help|-h)
+            usage
+            ;;
         "")
             theme_error "No theme specified"
-            theme_info "Usage: dotfiles theme switch <theme-name> [--no-reload]"
-            theme_info "       dotfiles theme list | current"
+            usage
+            exit 1
+            ;;
+        -*)
+            theme_error "Unknown option: $command"
+            usage
             exit 1
             ;;
         *)

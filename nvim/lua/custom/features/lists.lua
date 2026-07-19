@@ -366,8 +366,9 @@ function M.setup()
       vim.notify('Yank register empty', vim.log.levels.WARN)
       return
     end
-    -- shellescape for the shell; escape %/# so vim's cmdline doesn't expand them
-    local arg = vim.fn.shellescape(pat):gsub('[%%#]', '\\%0')
+    -- shellescape for the shell; escape %/# so vim's cmdline doesn't expand
+    -- them, and | so :grep doesn't split the command at the bar
+    local arg = vim.fn.shellescape(pat):gsub('[%%#|]', '\\%0')
     vim.cmd('silent grep! -F ' .. arg)
     vim.cmd 'botright copen'
   end, { desc = 'Grep [/] yanked text → quickfix' })

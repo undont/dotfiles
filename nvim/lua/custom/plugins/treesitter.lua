@@ -52,7 +52,10 @@ return {
         return not ok or #vim.api.nvim_get_runtime_file('queries/' .. lang .. '/highlights.scm', false) == 0
       end, parsers)
       if #missing > 0 then
-        require('nvim-treesitter').install(missing):wait(120000)
+        -- force: the plugin counts a language as installed if its query dir
+        -- exists, so a stale query dir would make a plain install() a no-op
+        -- for exactly the parsers the probe above found broken
+        require('nvim-treesitter').install(missing, { force = true }):wait(120000)
       end
 
       -- enable treesitter highlighting and indentation for all supported filetypes
