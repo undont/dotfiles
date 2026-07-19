@@ -6,6 +6,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.134] - 2026-07-19
+
 ### Added
 
 - `clip` copies and pastes on macOS and Linux alike: `<cmd> | clip` copies, bare `clip` pastes, `clip -p` forces a paste where the direction must not depend on context. The backend follows the live display server (`pbcopy`, `wl-copy`, `xclip`, `xsel`, `clip.exe`, `termux-clipboard-set`) rather than binary presence alone, since a Wayland session usually has xclip installed via XWayland and picking it there writes to a clipboard nothing reads back. With no display server (headless, or SSH without X11 forwarding) it falls back to OSC 52, which tmux forwards onward via `set-clipboard on`. On Linux `pbcopy`/`pbpaste` remain as shims, so existing muscle memory and scripts keep working. `zsh/dotfiles.zsh`, `scripts/_lib/clipboard.sh`
