@@ -31,6 +31,9 @@ mouse-hide-while-typing = true
 # Bell: allow terminal bells through for tmux monitor-bell
 bell-features = title,attention
 
+# Splits
+unfocused-split-opacity = 0.5
+
 # Colors
 background = {{GHOSTTY_BACKGROUND}}
 foreground = {{GHOSTTY_FOREGROUND}}
