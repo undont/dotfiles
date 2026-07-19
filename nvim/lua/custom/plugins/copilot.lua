@@ -26,7 +26,8 @@ return {
         enabled = true,
         auto_trigger = true,
         keymap = {
-          accept = false, -- handled by Tab in blink.cmp config
+          accept = false, -- full accept handled by Tab in blink.cmp config
+          accept_word = '<M-Tab>',
           dismiss = '<C-e>',
         },
       },

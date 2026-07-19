@@ -175,6 +175,7 @@ Trigger completion | <C-Space>
 Hide completion | <C-e>
 Accept completion | <CR>
 Smart accept (Copilot or completion) | <Tab>
+Accept Copilot word | <M-Tab>
 Expand snippet | <Tab> (in snippet)
 Next snippet placeholder | <Tab>
 Previous snippet placeholder | <S-Tab>
