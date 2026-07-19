@@ -1480,7 +1480,8 @@ cmd_theme() {
                 printf "  Run: ${CYAN}dotfiles help theme${NC}\n" >&2
                 return 2
             fi
-            "$DOTFILES_DIR/scripts/theme-switch" "$@"
+            DOTFILES_INVOKED_AS="dotfiles theme switch" \
+                "$DOTFILES_DIR/scripts/theme-switch" "$@"
             ;;
         generate)
             DOTFILES_INVOKED_AS="dotfiles theme generate" \

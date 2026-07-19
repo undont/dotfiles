@@ -25,6 +25,10 @@ source "$DOTFILES_ROOT/scripts/_lib/ghdash.sh"
 # shellcheck source=scripts/_lib/clipboard.sh
 source "$DOTFILES_ROOT/scripts/_lib/clipboard.sh"
 
+# how the user invoked us; set by parent (dotfiles theme switch) when
+# delegated, falls back to basename for direct invocation
+invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
+
 # Build sed -e arguments from an associative array of placeholder→value mappings.
 # Usage: _build_sed_args vars_assoc_array_name
 # Populates the caller's `sed_args` array with -e flags.
@@ -120,6 +124,22 @@ list_themes() {
         fi
     fi
 
+    printf "\n"
+}
+
+# Print usage
+usage() {
+    printf "\n${CYAN}Usage:${NC}\n"
+    printf "  %s <theme-name> [--no-reload] [--quiet]\n" "$invoked_as"
+    printf "  %s list\n" "$invoked_as"
+    printf "  %s current\n" "$invoked_as"
+    printf "  %s help\n" "$invoked_as"
+    printf "\n${CYAN}Options:${NC}\n"
+    printf "  --no-reload    Generate config files without reloading tmux/ghostty\n"
+    printf "  --quiet, -q    Suppress output\n"
+    printf "\n${CYAN}Examples:${NC}\n"
+    printf "  %s dracula\n" "$invoked_as"
+    printf "  %s tokyo-night --no-reload\n" "$invoked_as"
     printf "\n"
 }
 
@@ -461,10 +481,17 @@ main() {
             fi
             printf "\n${CYAN}Current theme:${NC} %s (%s)\n\n" "$THEME_NAME" "$current"
             ;;
+        help|--help|-h)
+            usage
+            ;;
         "")
             theme_error "No theme specified"
-            theme_info "Usage: dotfiles theme switch <theme-name> [--no-reload]"
-            theme_info "       dotfiles theme list | current"
+            usage
+            exit 1
+            ;;
+        -*)
+            theme_error "Unknown option: $command"
+            usage
             exit 1
             ;;
         *)
