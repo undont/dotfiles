@@ -2,7 +2,8 @@
 -- purge_if_updated() runs before install(): it drops compiled parsers (and their
 -- orphaned query dirs) when the plugin rev changes to avoid ABI crashes, and
 -- removes nvim-treesitter copies of parsers bundled with nvim so nvim's own
--- always-compatible versions win
+-- always-compatible versions win, and clears stale binaries from the legacy
+-- plugin-dir parser location
 
 local M = {}
 
@@ -18,7 +19,12 @@ function M.purge_if_updated()
   local query_dir = vim.fn.stdpath 'data' .. '/site/queries'
   local marker_path = vim.fn.stdpath 'data' .. '/nvim-treesitter-rev'
   local plugin_dir = vim.fn.stdpath 'data' .. '/lazy/nvim-treesitter'
-  local current_rev = vim.fn.system('GIT_DIR= GIT_WORK_TREE= git -C ' .. plugin_dir .. ' rev-parse --short HEAD 2>/dev/null'):gsub('%s+', '')
+  -- argv form, no shell: shell diagnostics once leaked into the captured rev
+  -- and poisoned the marker file. --git-dir neutralises any inherited GIT_DIR
+  -- (an empty env override makes git fail outright). only trust a hex rev
+  local res = vim.system({ 'git', '-C', plugin_dir, '--git-dir', '.git', 'rev-parse', '--short', 'HEAD' }):wait()
+  local out = res.code == 0 and vim.trim(res.stdout or '') or ''
+  local current_rev = out:match '^%x+$' and out or ''
   if current_rev ~= '' then
     local stored_rev = ''
     local f = io.open(marker_path, 'r')
@@ -60,15 +66,28 @@ function M.purge_if_updated()
   end
 
   -- remove any nvim-treesitter-managed copies of parsers bundled with nvim
-  -- so that nvim's own (always-compatible) versions take precedence.
-  -- check both the site parser dir and the Lazy plugin parser dir
+  -- so that nvim's own (always-compatible) versions take precedence
   local nvim_bundled = { 'lua', 'luadoc', 'vim', 'vimdoc', 'query', 'markdown', 'markdown_inline' }
-  local bundled_dirs = { parser_dir, plugin_dir .. '/parser' }
-  for _, dir in ipairs(bundled_dirs) do
-    for _, lang in ipairs(nvim_bundled) do
-      local so = dir .. '/' .. lang .. '.so'
-      if vim.uv.fs_stat(so) then
-        os.remove(so)
+  for _, lang in ipairs(nvim_bundled) do
+    local so = parser_dir .. '/' .. lang .. '.so'
+    if vim.uv.fs_stat(so) then
+      os.remove(so)
+    end
+  end
+
+  -- the plugin dir is a legacy parser location (main installs to site). stale
+  -- binaries there shadow the install dir, satisfy the missing-parser probe,
+  -- and are invisible to the rev purge above, so drop every .so found
+  local legacy_dir = plugin_dir .. '/parser'
+  local scan = vim.uv.fs_scandir(legacy_dir)
+  if scan then
+    while true do
+      local name, typ = vim.uv.fs_scandir_next(scan)
+      if not name then
+        break
+      end
+      if typ == 'file' and name:match '%.so$' then
+        os.remove(legacy_dir .. '/' .. name)
       end
     end
   end
