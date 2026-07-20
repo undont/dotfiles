@@ -115,8 +115,8 @@ hl('Structure', { fg = colors.yellow })
 hl('Typedef', { fg = colors.yellow })
 hl('Special', { fg = colors.red })
 hl('SpecialChar', { fg = colors.red })
-hl('Tag', { fg = colors.orange })
-hl('Delimiter', { fg = colors.fg_primary })
+hl('Tag', { fg = colors.red }) -- special family upstream
+hl('Delimiter', { fg = colors.base0 }) -- subtle, just below normal text
 hl('SpecialComment', { fg = colors.comment, italic = true })
 hl('Debug', { fg = colors.red })
 hl('Underlined', { fg = colors.purple, underline = true })
@@ -149,11 +149,11 @@ hl('LspReferenceWrite', { bg = colors.selection })
 -- treesitter
 hl('@variable', { fg = colors.fg_variable })
 hl('@variable.builtin', { fg = colors.cyan })
-hl('@variable.parameter', { fg = colors.blue })
+hl('@variable.parameter', { fg = colors.blue, italic = true }) -- upstream parameter role
 hl('@variable.member', { fg = colors.blue })
 hl('@constant', { fg = colors.cyan })
 hl('@constant.builtin', { fg = colors.cyan })
-hl('@module', { fg = colors.blue })
+hl('@module', { fg = colors.yellow }) -- links to Type upstream
 hl('@string', { fg = colors.cyan })
 hl('@string.escape', { fg = colors.red })
 hl('@string.special', { fg = colors.red })
@@ -178,14 +178,14 @@ hl('@operator', { fg = colors.green })
 hl('@exception', { fg = colors.green })
 hl('@type', { fg = colors.yellow })
 hl('@type.builtin', { fg = colors.yellow })
-hl('@type.qualifier', { fg = colors.green })
+hl('@type.qualifier', { fg = colors.yellow }) -- type family upstream
 hl('@property', { fg = colors.blue })
 hl('@attribute', { fg = colors.orange })
-hl('@tag', { fg = colors.green })
-hl('@tag.attribute', { fg = colors.blue })
-hl('@tag.delimiter', { fg = colors.fg_secondary })
-hl('@punctuation.delimiter', { fg = colors.fg_primary })
-hl('@punctuation.bracket', { fg = colors.fg_primary })
+hl('@tag', { fg = colors.blue }) -- htmlTagName upstream
+hl('@tag.attribute', { fg = colors.base00 }) -- htmlArg upstream
+hl('@tag.delimiter', { fg = colors.base01 }) -- htmlTag upstream
+hl('@punctuation.delimiter', { fg = colors.base0 })
+hl('@punctuation.bracket', { fg = colors.base0 })
 hl('@punctuation.special', { fg = colors.red })
 hl('@comment', { link = 'Comment' })
 hl('@markup.strong', { bold = true })
