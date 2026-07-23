@@ -60,11 +60,12 @@ Created by `scripts/generate-theme` from Ghostty's ~460 built-in themes. The gen
 
 1. Parses a Ghostty theme file (key-value format with ANSI palette)
 2. Extracts a semantic colour palette (bg, fg, accents mapped from ANSI roles)
-3. Applies WCAG 2.1 contrast corrections: 4.5:1 minimum against the background surfaces, 3:1 against the cursor-line highlight (a transient emphasis surface where the large-text minimum applies; demanding 4.5:1 there would brighten deliberately muted themes away from the designer's palette). Accents that fail prefer the theme's own bright palette variant before falling back to synthetic lightening
-4. Chooses the best active accent (highest contrast from purple/cyan/green)
-5. Derives plugin status indicator colours (CPU, RAM, battery blends)
-6. Outputs a `.theme` file to `themes/generated/`
-7. Outputs a Neovim colourscheme to `nvim/colors/generated/`
+3. Rescues near-grey accents: an accent with chroma below 30 (RGB max minus min) reads as tinted grey and cannot differentiate syntax roles, so it swaps to the theme's own bright palette variant when that is meaningfully more chromatic (e.g. Kanagawa Dragon's normal-row pink and cyan). Dull-but-chromatic accents stay untouched so deliberately muted themes keep their designer palette
+4. Applies WCAG 2.1 contrast corrections: 4.5:1 minimum against the background surfaces, 3:1 against the cursor-line highlight (a transient emphasis surface where the large-text minimum applies; demanding 4.5:1 there would brighten deliberately muted themes away from the designer's palette). Accents that fail prefer the theme's own bright palette variant before falling back to synthetic lightening
+5. Chooses the best active accent (highest contrast from purple/cyan/green)
+6. Derives plugin status indicator colours (CPU, RAM, battery blends)
+7. Outputs a `.theme` file to `themes/generated/`
+8. Outputs a Neovim colourscheme to `nvim/colors/generated/`
 
 Themes with an inverted selection (a light `selection-background` paired with a dark `selection-foreground`, e.g. Bluloco Dark) get special handling in the Neovim output: `Visual` forces the selection foreground so selected text flips dark, matching Ghostty, and reference-style highlights (`LspReference*`, `TelescopeSelection`) use a derived dark band so syntax colours stay readable.
 
@@ -241,6 +242,9 @@ extract_colours()         -- Soften ANSI black on dark themes (darken bg 3%)
         |                    (red, green, yellow, purple, pink, cyan)
         |                    Derive bg_secondary, fg_secondary, selection
         v
+apply_saturation_preference()  -- Swap near-grey accents (chroma < 30) for the
+        |                         theme's own more-chromatic bright variant
+        v
 apply_wcag_corrections()  -- Ensure 4.5:1 contrast against bg surfaces
         |                    (3:1 against the cursor-line highlight)
         |                    Lighten/darken in HSL space preserving hue
@@ -320,7 +324,7 @@ luajit scripts/tests/test-generate-theme.lua
 
 **colour-utils tests** (35 tests): hex parsing, RGB/HSL round-trips, WCAG luminance, contrast ratios, ensure_contrast adjustment, lighten/darken/blend.
 
-**generate-theme tests** (28 tests): kebab_name conversion, display_name sanitisation, Ghostty theme parsing (valid, missing fields, comments), colour extraction, WCAG corrections, accent selection, theme file generation.
+**generate-theme tests** (46 tests): kebab_name conversion, display_name sanitisation, Ghostty theme parsing (valid, missing fields, comments), colour extraction, WCAG corrections, saturation preference (near-grey rescue, dull-theme fidelity), accent selection, theme file generation, inverted-selection handling.
 
 ### Theme Delete Tests
 

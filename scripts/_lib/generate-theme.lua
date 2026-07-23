@@ -23,11 +23,14 @@ local function assert_hex(val, field)
 end
 
 --- Format a WCAG adjustment entry for reporting
---- @param adj table adjustment entry {name, delta, surface} or {name, swapped}
+--- @param adj table adjustment entry {name, delta, surface}, {name, swapped} or {name, saturated}
 --- @return string human-readable description
 local function format_adjustment(adj)
     if adj.swapped then
         return string.format("%s swapped to bright palette variant", adj.name)
+    end
+    if adj.saturated then
+        return string.format("%s promoted to bright variant (near-grey normal row)", adj.name)
     end
     return string.format("%s lightened +%.0f%% (against %s)", adj.name, adj.delta, adj.surface)
 end
@@ -252,6 +255,58 @@ function M.apply_wcag_corrections(colours)
 end
 
 -- ══════════════════════════════════════════════════════════════
+-- Saturation Preference
+-- ══════════════════════════════════════════════════════════════
+
+-- An accent below this chroma (RGB max-min) reads as tinted grey and cannot
+-- differentiate syntax roles. Deliberately dull-but-chromatic accents sit
+-- well above it (Spacegray Eighties Dull's dimmest is ~41), so those themes
+-- keep their designer palette untouched.
+local NEAR_GREY_CHROMA = 30
+
+--- Chroma of a hex colour (RGB max-min, 0-255)
+--- Used instead of HSL saturation, which over-rates pale pastels and would
+--- wrongly rank e.g. Dracula's bright lavender above its identity purple
+---@param hex string
+---@return number chroma
+local function chroma(hex)
+    local r, g, b = colour.hex_to_rgb(hex)
+    return math.max(r, g, b) - math.min(r, g, b)
+end
+
+--- Swap near-grey accents for the theme's own bright-row variant
+--- Muted themes (e.g. Kanagawa Dragon) keep normal-row accents within a few
+--- percent of grey but carry their identity colours in the bright row; syntax
+--- highlighting built on the near-grey row reads as monochrome. Only accents
+--- below NEAR_GREY_CHROMA are eligible, and only when the bright variant is
+--- meaningfully more chromatic. Runs before WCAG correction so contrast
+--- enforcement stays in one place.
+---@param colours table semantic colour palette (mutated in place)
+---@return table adjustments list of {name, saturated} adjustments made
+function M.apply_saturation_preference(colours)
+    local adjustments = {}
+    local accents = { "red", "green", "yellow", "purple", "pink", "cyan" }
+    local accent_index = { red = 1, green = 2, yellow = 3, purple = 4, pink = 5, cyan = 6 }
+
+    for _, accent_name in ipairs(accents) do
+        local current = colours[accent_name]
+        local bright = colours.palette and colours.palette[accent_index[accent_name] + 8]
+        if
+            bright
+            and bright:match("^#%x%x%x%x%x%x$")
+            and bright ~= current
+            and chroma(current) < NEAR_GREY_CHROMA
+            and chroma(bright) >= chroma(current) * 1.4
+        then
+            colours[accent_name] = bright
+            table.insert(adjustments, { name = accent_name, saturated = true })
+        end
+    end
+
+    return adjustments
+end
+
+-- ══════════════════════════════════════════════════════════════
 -- Active Accent Selection
 -- ══════════════════════════════════════════════════════════════
 
@@ -446,35 +501,42 @@ function M.generate_nvim_colourscheme(name, colours)
     local comment = colour.blend(colours.fg_secondary, colours.bg_primary, 0.30)
     comment = colour.ensure_contrast(comment, colours.bg_primary, 4.0)
 
-    -- Semantic role mapping (strings=green, functions=cyan, types=yellow).
-    -- Keywords/control-flow use pink; number/constant literals keep purple so the
-    -- two read distinctly (they previously both sat on purple). Symbolic operators
-    -- drop to plain fg_primary to de-emphasise punctuation against function calls.
+    -- Punctuation gets a subtle tint toward the purple accent (mirroring the
+    -- hand-crafted schemes' muted-violet punctuation) instead of plain fg.
+    local punct = colour.ensure_contrast(colour.blend(colours.fg_primary, colours.purple, 0.35), colours.bg_primary, 4.5)
+
+    -- Semantic role mapping mirroring the hand-crafted schemes: strings=green,
+    -- functions=purple (the ANSI blue role), types/modules=cyan, literal data
+    -- and properties=yellow, keywords/control-flow=pink. Symbolic operators
+    -- share the keyword pink so they no longer flatten into plain fg; builtin
+    -- functions use cyan to read apart from user-defined ones. This gives
+    -- functions, types, and data three distinct hue families where they
+    -- previously crowded onto cyan/yellow.
     local c = {
-        constant = "colors.purple",
+        constant = "colors.yellow",
         string = "colors.green",
         character = "colors.green",
-        number = "colors.purple",
-        boolean = "colors.purple",
-        float = "colors.purple",
-        func = "colors.cyan",
+        number = "colors.yellow",
+        boolean = "colors.yellow",
+        float = "colors.yellow",
+        func = "colors.purple",
         statement = "colors.pink",
         conditional = "colors.pink",
         ["repeat"] = "colors.pink",
         label = "colors.pink",
-        operator = "colors.fg_primary",
+        operator = "colors.pink",
         keyword = "colors.pink",
         exception = "colors.pink",
         preproc = "colors.pink",
         include = "colors.pink",
         define = "colors.pink",
-        macro = "colors.purple",
+        macro = "colors.cyan",
         precondit = "colors.pink",
-        type = "colors.yellow",
+        type = "colors.cyan",
         storageclass = "colors.pink",
-        structure = "colors.yellow",
-        typedef = "colors.yellow",
-        special = "colors.pink",
+        structure = "colors.cyan",
+        typedef = "colors.cyan",
+        special = "colors.cyan",
         specialchar = "colors.pink",
         tag = "colors.pink",
     }
@@ -516,6 +578,7 @@ function M.generate_nvim_colourscheme(name, colours)
     add(string.format("  reference = '%s',", reference_bg))
     add(string.format("  comment = '%s',", comment))
     add(string.format("  ghost = '%s',", colour.blend(colours.fg_secondary, colours.bg_primary, 0.40)))
+    add(string.format("  punct = '%s',", punct))
     add(string.format("  line_highlight = '%s',", colours.line_highlight))
     add("}")
     add("")
@@ -609,7 +672,7 @@ function M.generate_nvim_colourscheme(name, colours)
         { "Special", "fg = " .. c.special },
         { "SpecialChar", "fg = " .. c.specialchar },
         { "Tag", "fg = " .. c.tag },
-        { "Delimiter", "fg = colors.fg_primary" },
+        { "Delimiter", "fg = colors.punct" },
         { "SpecialComment", "fg = colors.comment, italic = true" },
         { "Debug", "fg = colors.red" },
         { "Underlined", "fg = colors.cyan, underline = true" },
@@ -651,9 +714,9 @@ function M.generate_nvim_colourscheme(name, colours)
     -- Treesitter groups (use role mapping)
     local ts = {
         { "@variable", "fg = colors.fg_primary" }, -- plain text; swap to colors.fg_variable for a subtle tint
-        { "@variable.builtin", "fg = colors.purple" },
+        { "@variable.builtin", "fg = colors.red" },
         { "@variable.parameter", "fg = colors.fg_secondary" },
-        { "@variable.member", "fg = colors.cyan" },
+        { "@variable.member", "fg = colors.yellow" },
         { "@constant", "fg = " .. c.constant },
         { "@constant.builtin", "fg = " .. c.constant },
         { "@module", "fg = colors.cyan" },
@@ -664,7 +727,7 @@ function M.generate_nvim_colourscheme(name, colours)
         { "@number", "fg = " .. c.number },
         { "@boolean", "fg = " .. c.boolean },
         { "@function", "fg = " .. c.func },
-        { "@function.builtin", "fg = " .. c.func },
+        { "@function.builtin", "fg = colors.cyan" },
         { "@function.call", "fg = " .. c.func },
         { "@function.macro", "fg = " .. c.macro },
         { "@method", "fg = " .. c.func },
@@ -682,13 +745,13 @@ function M.generate_nvim_colourscheme(name, colours)
         { "@type", "fg = " .. c.type },
         { "@type.builtin", "fg = " .. c.type },
         { "@type.qualifier", "fg = " .. c.keyword },
-        { "@property", "fg = colors.cyan" },
-        { "@attribute", "fg = colors.purple" },
+        { "@property", "fg = colors.yellow" },
+        { "@attribute", "fg = colors.red" },
         { "@tag", "fg = " .. c.tag },
-        { "@tag.attribute", "fg = colors.cyan" },
-        { "@tag.delimiter", "fg = colors.fg_secondary" },
-        { "@punctuation.delimiter", "fg = colors.fg_primary" },
-        { "@punctuation.bracket", "fg = colors.fg_primary" },
+        { "@tag.attribute", "fg = colors.yellow" },
+        { "@tag.delimiter", "fg = colors.punct" },
+        { "@punctuation.delimiter", "fg = colors.punct" },
+        { "@punctuation.bracket", "fg = colors.punct" },
         { "@punctuation.special", "fg = " .. c.specialchar },
         { "@comment", nil }, -- link to Comment
         { "@markup.strong", "bold = true" },
@@ -709,13 +772,6 @@ function M.generate_nvim_colourscheme(name, colours)
             add(string.format("hl('%s', { %s })", t[1], t[2]))
         end
     end
-    add("")
-
-    -- LSP semantic tokens override treesitter where defaults aren't useful.
-    -- Fields would otherwise fall through to @variable.member (cyan) and look
-    -- identical to properties; render them as plain fg instead.
-    add("-- LSP semantic tokens")
-    add("hl('@lsp.type.field', { fg = colors.fg_primary })")
     add("")
 
     -- Plugin highlights (Telescope, Neo-tree, Which-key, Mini)
@@ -854,8 +910,11 @@ function M.generate(ghostty_path, themes_dir, nvim_dir, opts)
     -- Extract semantic colours
     local colours = M.extract_colours(ghostty)
 
-    -- Apply WCAG corrections
-    local adjustments = M.apply_wcag_corrections(colours)
+    -- Rescue near-grey accents, then apply WCAG corrections
+    local adjustments = M.apply_saturation_preference(colours)
+    for _, adj in ipairs(M.apply_wcag_corrections(colours)) do
+        table.insert(adjustments, adj)
+    end
 
     -- Choose active accent
     local active_accent = M.choose_active_accent(colours)

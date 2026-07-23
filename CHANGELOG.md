@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.135] - 2026-07-23
+
+### Changed
+
+- Nvim syntax roles are redistributed across the hand-written themes so keywords, types, identifiers and constants no longer collapse onto one or two accents. Each theme names its own role colours (mirroring the upstream palette it derives from) instead of repeating literal hexes, so `Type`/`Structure`/`Typedef` read distinctly from `Keyword`/`Conditional`/`Operator`, and `Constant`/`Identifier` no longer inherit the number colour. `nvim/colors/*.lua`
+
+### Fixed
+
+- Generated themes rescue near-grey accents: an accent with chroma below 30 (RGB max minus min) reads as tinted grey and cannot differentiate syntax roles, so it swaps to the theme's own bright palette variant when that is meaningfully more chromatic (e.g. Kanagawa Dragon's normal-row pink and cyan). Dull-but-chromatic accents stay untouched so deliberately muted themes keep their designer palette. `scripts/_lib/generate-theme.lua`, `nvim/colors/generated/`, `scripts/tests/test-generate-theme.lua`, `docs/THEME-SYSTEM.md`
+- Go `chan`/`map` capture as keywords. Upstream captures them as `@type.builtin` alongside builtin type names, so `chan string` rendered as a single colour; re-capturing them as keywords lets the keyword and its element type read distinctly. `nvim/after/queries/go/highlights.scm`
+- Snippet tabstops no longer paint a bright block over the argument just typed. `vim.snippet` highlights the active tabstop with `SnippetTabstop`, which defaults to `Visual`, so accepting an LSP call snippet (gopls) left the placeholder inverted; it is re-linked to the subtle `LspReferenceText` band every theme defines. The session is also stopped on return to normal mode, since the built-in only ends it on cursor moves in insert/select mode, leaving the tabstop extmark and its highlight alive indefinitely after Esc. `nvim/lua/custom/core/autocmds.lua`
+
 ## [0.2.134] - 2026-07-19
 
 ### Added

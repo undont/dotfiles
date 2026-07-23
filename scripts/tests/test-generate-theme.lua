@@ -451,6 +451,96 @@ else
 end
 
 -- ═══════════════════════════════════════════════
+section("apply_saturation_preference: near-grey accent rescue")
+
+-- Kanagawa Dragon-style palette: normal-row pink/cyan sit within a few
+-- percent of grey; the theme's identity colours live in the bright row
+local dragon_colours = {
+    bg_primary = "#181616",
+    bg_secondary = "#332e2e",
+    line_highlight = "#2b2727",
+    fg_primary = "#c5c9c5",
+    fg_secondary = "#a6a69c",
+    red = "#c4746e",
+    green = "#8a9a7b",
+    yellow = "#c4b28a",
+    purple = "#8ba4b0",
+    pink = "#a292a3",
+    cyan = "#8ea4a2",
+    palette = {
+        [9] = "#e46876",
+        [10] = "#87a987",
+        [11] = "#e6c384",
+        [12] = "#7fb4ca",
+        [13] = "#938aa9",
+        [14] = "#7aa89f",
+    },
+}
+
+local sat_adjustments = gen.apply_saturation_preference(dragon_colours)
+
+-- pink (chroma 17) and cyan (chroma 22) are near-grey: both swap to the
+-- bright row
+if dragon_colours.pink == "#938aa9" then
+    pass("near-grey pink promoted to bright variant")
+else
+    fail("near-grey pink promotion", "got " .. dragon_colours.pink)
+end
+
+if dragon_colours.cyan == "#7aa89f" then
+    pass("near-grey cyan promoted to bright variant")
+else
+    fail("near-grey cyan promotion", "got " .. dragon_colours.cyan)
+end
+
+-- purple (37), yellow (58) and red (86) carry visible chroma: the designer's
+-- muted colours stay
+if dragon_colours.purple == "#8ba4b0" and dragon_colours.yellow == "#c4b28a" and dragon_colours.red == "#c4746e" then
+    pass("chromatic accents left verbatim")
+else
+    fail("chromatic accents changed", dragon_colours.purple .. " " .. dragon_colours.yellow .. " " .. dragon_colours.red)
+end
+
+if #sat_adjustments == 2 then
+    pass("promotions recorded in adjustments")
+else
+    fail("adjustment count", "got " .. #sat_adjustments)
+end
+
+-- Dull-but-chromatic palette (Spacegray Eighties Dull-style): every accent
+-- sits above the near-grey threshold, so nothing is promoted even though
+-- the bright row is more saturated
+local dull_sat_colours = {
+    bg_primary = "#222222",
+    bg_secondary = "#15171c",
+    line_highlight = "#343434",
+    fg_primary = "#c9c6bc",
+    fg_secondary = "#94928b",
+    red = "#b24a56",
+    green = "#92b477",
+    yellow = "#c6735a",
+    purple = "#7c8fa5",
+    pink = "#a5789e",
+    cyan = "#80cdcb",
+    palette = {
+        [9] = "#ec5f67",
+        [10] = "#89e986",
+        [11] = "#fec254",
+        [12] = "#5486c0",
+        [13] = "#bf83c1",
+        [14] = "#58c2c1",
+    },
+}
+
+local dull_sat_adjustments = gen.apply_saturation_preference(dull_sat_colours)
+
+if #dull_sat_adjustments == 0 and dull_sat_colours.purple == "#7c8fa5" and dull_sat_colours.pink == "#a5789e" then
+    pass("dull-but-chromatic palette untouched")
+else
+    fail("dull palette promoted", #dull_sat_adjustments .. " adjustments")
+end
+
+-- ═══════════════════════════════════════════════
 section("generate_nvim_colourscheme: inverted selection")
 
 local function nvim_fixture(overrides)
