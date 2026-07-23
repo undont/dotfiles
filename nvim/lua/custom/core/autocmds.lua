@@ -145,6 +145,35 @@ function M.setup()
   })
   vim.api.nvim_set_hl(0, 'LazyDimmed', { link = 'Comment' })
 
+  -- vim.snippet paints the active tabstop with SnippetTabstop, which defaults
+  -- to Visual: a bright block over the argument just typed after accepting an
+  -- LSP call snippet (e.g. gopls). re-link to the subtle LspReference band
+  -- every theme defines. SnippetTabstopActive links here by default
+  local snippet_group = vim.api.nvim_create_augroup('snippet-tabstop', { clear = true })
+  vim.api.nvim_create_autocmd('ColorScheme', {
+    desc = 'Subtle snippet tabstop highlight',
+    group = snippet_group,
+    callback = function()
+      vim.api.nvim_set_hl(0, 'SnippetTabstop', { link = 'LspReferenceText' })
+    end,
+  })
+  vim.api.nvim_set_hl(0, 'SnippetTabstop', { link = 'LspReferenceText' })
+
+  -- the built-in session only ends on cursor moves in insert/select mode, so
+  -- Esc leaves the tabstop extmark (and its highlight) alive indefinitely.
+  -- end it on return to normal mode; `*:n` (not InsertLeave) so tabstop jumps
+  -- via select mode survive
+  vim.api.nvim_create_autocmd('ModeChanged', {
+    desc = 'Stop snippet session on return to normal mode',
+    group = snippet_group,
+    pattern = '*:n',
+    callback = function()
+      if vim.snippet.active() then
+        vim.snippet.stop()
+      end
+    end,
+  })
+
   -- dynamic diff highlights (differ, octo)
   local diff_highlights = require 'custom.core.diff-highlights'
   diff_highlights.setup()
