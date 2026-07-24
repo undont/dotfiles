@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.136] - 2026-07-24
+
+### Changed
+
+- oil.nvim takes machine-local overrides through `vim.g.oil_opts`, matching the `vim.g.differ_opts` pattern. The spec deep-merges the global over its own defaults rather than replacing them, so naming one key keeps the `-` close handler, hidden files and the `<BS>`/`gi`/`go` maps intact; list-like values such as `columns` merge by index, so give the whole list, and a keymap is disabled with `false`. Existing `local.lua` files are never overwritten, so the documented examples only appear in a freshly installed one. `nvim/lua/custom/plugins/navigation.lua`, `nvim/local.lua.template`
+
 ## [0.2.135] - 2026-07-23
 
 ### Changed
