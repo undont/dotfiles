@@ -63,17 +63,25 @@ return {
     keys = {
       { '-', '<cmd>Oil<CR>', desc = 'Oil: Open parent directory' },
     },
-    opts = {
-      default_file_explorer = true,
-      columns = { 'icon' },
-      view_options = { show_hidden = true },
-      keymaps = {
-        ['-'] = { mode = 'n', callback = oil_close },
-        ['<BS>'] = { 'actions.parent', mode = 'n' },
-        ['gi'] = { 'actions.select', mode = 'n' },
-        ['go'] = { 'actions.parent', mode = 'n' },
-      },
-    },
+    -- personal overrides go in local.lua as `vim.g.oil_opts` (gitignored, loaded
+    -- before plugin specs are imported, so the table is visible here). deep-merged
+    -- on top of the shared defaults rather than replacing them, so setting one key
+    -- (say a single keymap) keeps oil_close on `-` and the rest intact. list-like
+    -- values (`columns`) merge by index, so give the whole list when changing it;
+    -- a keymap is disabled with `['gi'] = false`
+    opts = function()
+      return vim.tbl_deep_extend('force', {
+        default_file_explorer = true,
+        columns = { 'icon' },
+        view_options = { show_hidden = true },
+        keymaps = {
+          ['-'] = { mode = 'n', callback = oil_close },
+          ['<BS>'] = { 'actions.parent', mode = 'n' },
+          ['gi'] = { 'actions.select', mode = 'n' },
+          ['go'] = { 'actions.parent', mode = 'n' },
+        },
+      }, vim.g.oil_opts or {})
+    end,
   },
 
   -- Harpoon2: quick file navigation
