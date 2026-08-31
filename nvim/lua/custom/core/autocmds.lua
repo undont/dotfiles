@@ -132,18 +132,21 @@ function M.setup()
     end,
   })
 
-  -- link LSP variable tokens to TreeSitter's @variable styling. leaving the
-  -- group empty does not let lower-priority TreeSitter captures show through;
-  -- the semantic token still wins, just with Normal-like styling.
+  -- gopls tags func-typed vars as `variable` + `signature`. that typemod group
+  -- outranks TreeSitter's @function.call at the call site (127 vs 100), and
+  -- @variable is Normal-coloured, so `one()` reads as plain text untouched
+  local function lsp_semantic_token_hls()
+    vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
+    local call = vim.api.nvim_get_hl(0, { name = '@function.call', link = false })
+    vim.api.nvim_set_hl(0, '@lsp.typemod.variable.signature', { fg = call.fg, italic = true })
+  end
   vim.api.nvim_create_autocmd('ColorScheme', {
-    desc = 'Use TreeSitter variable styling for LSP variable tokens',
+    desc = 'Restyle LSP semantic token groups for the new colourscheme',
     group = vim.api.nvim_create_augroup('lsp-semantic-token-overrides', { clear = true }),
-    callback = function()
-      vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
-    end,
+    callback = lsp_semantic_token_hls,
   })
   -- apply immediately for the current colourscheme
-  vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
+  lsp_semantic_token_hls()
 
   -- Lazy.nvim links `LazyDimmed` to `Conceal` for low-value commits
   -- (chore/deps bumps). Conceal is built for hiding chars, so on most dark
