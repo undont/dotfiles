@@ -82,8 +82,9 @@ return {
       -- extended ]/[ navigation; disable suffixes that conflict with other plugins
       require('mini.bracketed').setup {
         comment = { suffix = '' }, -- ]c/[c reserved for gitsigns (git changes)
+        diagnostic = { suffix = '' }, -- ]d/[d wrapped in custom.features.lists (code diagnostics only, neotest failures on ]t/[t)
         file = { suffix = 'f' }, -- differ overrides ]f/[f when open; features/dated-notes shadows it on dated notes
-        treesitter = { suffix = '' }, -- ]t/[t reserved for neotest (failed tests)
+        treesitter = { suffix = '' }, -- ]t/[t reserved for failed tests (custom.features.lists)
         quickfix = { suffix = '' }, -- ]q/[q wrapped in custom.features.lists (empty-list notify + cursor-relative idx)
         location = { suffix = '' }, -- ]l/[l wrapped in custom.features.lists (empty-list notify + cursor-relative idx)
       }

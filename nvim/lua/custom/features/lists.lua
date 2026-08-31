@@ -144,6 +144,46 @@ local function bracketed_loc(direction)
   end
 end
 
+-- ]d/[d and ]t/[t split the diagnostic list by namespace: code problems on
+-- ]d, neotest's failures on ]t. mini.bracketed's own ]d forwards only
+-- `severity` to vim.diagnostic, so it can't make the split; its `d` suffix is
+-- disabled in plugins/mini.lua. `namespace` filters by inclusion, so code
+-- diagnostics are every registered namespace bar neotest's
+local function code_namespaces()
+  local ids = {}
+  for id in pairs(vim.diagnostic.get_namespaces()) do
+    if id ~= neotest_ns then
+      ids[#ids + 1] = id
+    end
+  end
+  return ids
+end
+
+local function bracketed_diagnostic(count, wrap)
+  return function()
+    vim.diagnostic.jump {
+      count = count * vim.v.count1,
+      wrap = wrap,
+      namespace = code_namespaces(),
+      float = vim.diagnostic.config().float,
+    }
+  end
+end
+
+local function bracketed_failed_test(count)
+  return function()
+    if #vim.diagnostic.get(0, { namespace = neotest_ns }) == 0 then
+      vim.notify('No failing tests in this buffer', vim.log.levels.WARN)
+      return
+    end
+    vim.diagnostic.jump {
+      count = count * vim.v.count1,
+      namespace = neotest_ns,
+      float = vim.diagnostic.config().float,
+    }
+  end
+end
+
 -- diagnostics into native lists. explicit titles let `build.lua`'s
 -- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
 -- match these lists and prune resolved entries on DiagnosticChanged.
@@ -422,6 +462,13 @@ function M.setup()
   vim.keymap.set('n', '[q', bracketed_qf 'backward', { desc = 'Previous quickfix entry' })
   vim.keymap.set('n', ']l', bracketed_loc 'forward', { desc = 'Next location entry' })
   vim.keymap.set('n', '[l', bracketed_loc 'backward', { desc = 'Previous location entry' })
+
+  vim.keymap.set('n', ']d', bracketed_diagnostic(1, true), { desc = 'Next diagnostic' })
+  vim.keymap.set('n', '[d', bracketed_diagnostic(-1, true), { desc = 'Previous diagnostic' })
+  vim.keymap.set('n', ']D', bracketed_diagnostic(math.huge, false), { desc = 'Last diagnostic' })
+  vim.keymap.set('n', '[D', bracketed_diagnostic(-math.huge, false), { desc = 'First diagnostic' })
+  vim.keymap.set('n', ']t', bracketed_failed_test(1), { desc = 'Next failed test' })
+  vim.keymap.set('n', '[t', bracketed_failed_test(-1), { desc = 'Previous failed test' })
 
   -- shadow mini.bracketed (]b/[b ]f/[f ]d/[d ...) inside qf/loclist buffers;
   -- those target the underlying editing window but fire against the list

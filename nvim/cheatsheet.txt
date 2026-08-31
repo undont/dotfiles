@@ -345,7 +345,8 @@ Toggle output panel | <leader>tO
 Stop test | <leader>tS
 Toggle watch | <leader>tw
 Debug nearest test | <leader>td
-Next/prev failed test | ]t / [t
+Next/prev failed test | ]t / [t (jumps to the failing assertion)
+Next/prev failed test (summary) | ]t / [t or J / K
 .NET run test (buffer) | <leader>tr
 .NET debug test (buffer) | <leader>td
 .NET peek stacktrace (buffer) | <leader>tp
@@ -392,7 +393,8 @@ Yank file path | <leader>by
 
 ## bracketed @bracketed
 Next/prev buffer | ]b / [b
-Next/prev diagnostic | ]d / [d
+Next/prev diagnostic | ]d / [d (code only, not test failures)
+First/last diagnostic | ]D / [D
 Next/prev file | ]f / [f
 First/last file in dir | ]F / [F
 Next/prev dated note | ]f / [f (in DD-MM-YYYY dirs, by date)

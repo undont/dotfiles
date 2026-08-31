@@ -152,20 +152,6 @@ return {
     { '<leader>td', neotest_fn(function()
       require('neotest').run.run { strategy = 'dap' }
     end), desc = '[D]ebug nearest' },
-    {
-      '[t',
-      function()
-        require('neotest').jump.prev { status = 'failed' }
-      end,
-      desc = 'Test: Prev failed',
-    },
-    {
-      ']t',
-      function()
-        require('neotest').jump.next { status = 'failed' }
-      end,
-      desc = 'Test: Next failed',
-    },
   },
   config = function()
     raise_treesitter_match_limit()
@@ -228,6 +214,11 @@ return {
         mappings = {
           expand = { 'o', '<2-LeftMouse>' },
           output = 'p',
+          -- buffer-local, so they shadow the global ]t/[t (which walk this
+          -- namespace's diagnostics in a source buffer) with the summary's
+          -- own tree walk. J/K stay bound
+          next_failed = { 'J', ']t' },
+          prev_failed = { 'K', '[t' },
         },
       },
       output = {
@@ -264,8 +255,9 @@ return {
     -- sign already owns the gutter cell (priority 1000 against the diagnostic
     -- sign's 10). the statusline counts this namespace separately, as ✗N rather
     -- than EN, and the <leader>xx list filters it out; see features/statusline.lua
-    -- and features/lists.lua. neotest-golang sets severity per error, so
-    -- `diagnostic.severity` above wouldn't reach these
+    -- and features/lists.lua, where ]t/[t walk this namespace and ]d/[d skip
+    -- it. neotest-golang sets severity per error, so `diagnostic.severity`
+    -- above wouldn't reach these
     vim.diagnostic.config({ underline = false, signs = false }, vim.api.nvim_create_namespace 'neotest')
 
     -- close output preview on any keypress for a transient popup feel
