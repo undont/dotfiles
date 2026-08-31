@@ -66,6 +66,192 @@ local function raise_treesitter_match_limit()
   ts.match_limit_raised = true
 end
 
+--- the subtest query captures any string literal as a name, so `t.Run("", ...)`
+--- yields one position named `""`, while go runs the loop body once per table
+--- row and names those `TestX/#00`, `#01` and so on. the single node matches no
+--- event, and neotest fills a result-less position with the run root's status
+--- (client/runner.lua) and propagates it up, reddening the real parent too.
+--- count the rows the loop iterates and stand in one position per row, matching
+--- go's numbering; drop the node when the row count can't be read statically
+local function expand_empty_subtest_positions()
+  local ok, ts = pcall(require, 'neotest.lib.treesitter')
+  if not ok or ts.empty_subtests_expanded then
+    return
+  end
+  local Tree = require('neotest.types').Tree
+  local parse_positions = ts.parse_positions
+
+  local table_query = [[
+    (short_var_declaration
+      left: (expression_list (identifier) @name)
+      right: (expression_list (composite_literal body: (literal_value) @body)))
+  ]]
+  local run_query = [[
+    (call_expression
+      function: (selector_expression
+        operand: (identifier) @op (#match? @op "^(t|s|suite)$")
+        field: (field_identifier) @method (#eq? @method "Run"))
+      arguments: (argument_list . (interpreted_string_literal) @arg)) @call
+  ]]
+
+  local function captured(query, match, name)
+    for id, nodes in pairs(match) do
+      if query.captures[id] == name then
+        return type(nodes) == 'table' and nodes[#nodes] or nodes
+      end
+    end
+  end
+
+  local function enclosing(node, node_type)
+    while node do
+      if node:type() == node_type then
+        return node
+      end
+      node = node:parent()
+    end
+  end
+
+  --- rows of the table `name` is bound to, searched only inside `scope`, so two
+  --- test functions in one file can both call their table `tests`
+  local function rows_in_scope(scope, name, src)
+    local tq = vim.treesitter.query.parse('go', table_query)
+    for _, match in tq:iter_matches(scope, src, nil, nil, { all = true }) do
+      local ident, body = captured(tq, match, 'name'), captured(tq, match, 'body')
+      if ident and body and vim.treesitter.get_node_text(ident, src) == name then
+        local rows = {}
+        for i = 0, body:named_child_count() - 1 do
+          local element = body:named_child(i)
+          if element:type() == 'literal_element' then
+            rows[#rows + 1] = { element:range() }
+          end
+        end
+        return rows
+      end
+    end
+  end
+
+  --- row ranges of the table each `t.Run("")` iterates, keyed by call start line
+  local function rows_by_call_line(path)
+    local fh = io.open(path, 'r')
+    if not fh then
+      return {}
+    end
+    local src = fh:read '*a'
+    fh:close()
+    local parsed, root = pcall(function()
+      return vim.treesitter.get_string_parser(src, 'go'):parse()[1]:root()
+    end)
+    if not parsed or not root then
+      return {}
+    end
+
+    local by_line = {}
+    local cq = vim.treesitter.query.parse('go', run_query)
+    for _, match in cq:iter_matches(root, src, nil, nil, { all = true }) do
+      local arg, call = captured(cq, match, 'arg'), captured(cq, match, 'call')
+      if arg and call and vim.treesitter.get_node_text(arg, src) == '""' then
+        local loop = enclosing(call, 'for_statement')
+        local scope = enclosing(call, 'function_declaration')
+        local ranged
+        if loop then
+          for i = 0, loop:named_child_count() - 1 do
+            local clause = loop:named_child(i)
+            if clause:type() == 'range_clause' and clause:named_child_count() > 0 then
+              ranged = vim.treesitter.get_node_text(clause:named_child(clause:named_child_count() - 1), src)
+            end
+          end
+        end
+        if ranged and scope then
+          by_line[select(1, call:range())] = rows_in_scope(scope, ranged, src)
+        end
+      end
+    end
+    return by_line
+  end
+
+  local function rewrite(node, rows)
+    local kept = { node[1] }
+    for i = 2, #node do
+      local pos = node[i][1]
+      if pos.type == 'test' and pos.name == '""' then
+        local parent_id = pos.id:gsub('::""$', '')
+        for index, range in ipairs(rows[pos.range[1]] or {}) do
+          local name = ('#%02d'):format(index - 1)
+          kept[#kept + 1] = {
+            {
+              id = parent_id .. '::"' .. name .. '"',
+              name = name,
+              path = pos.path,
+              range = range,
+              type = 'test',
+            },
+          }
+        end
+      else
+        kept[#kept + 1] = rewrite(node[i], rows)
+      end
+    end
+    return kept
+  end
+
+  ts.parse_positions = function(path, query, opts)
+    local tree = parse_positions(path, query, opts)
+    if not path:match '%.go$' then
+      return tree
+    end
+    local ok_rows, rows = pcall(rows_by_call_line, path)
+    return Tree.from_list(rewrite(tree:to_list(), ok_rows and rows or {}), function(pos)
+      return pos.id
+    end)
+  end
+  ts.empty_subtests_expanded = true
+end
+
+--- neotest-golang intermittently returns no result for a position (a file or
+--- package whose events were still in flight when the stream was stopped), and
+--- neotest fills a result-less position with `failed`, then propagates that over
+--- the parent's real status. on a suite run that reddens a random passing
+--- package about one run in eight. give any missing position the aggregate of
+--- its descendants, and a missing leaf `skipped`, so the fill never fires
+local function backfill_missing_results()
+  local ok, rf = pcall(require, 'neotest-golang.results_finalize')
+  if not ok or rf.missing_results_backfilled then
+    return
+  end
+  local test_results = rf.test_results
+  rf.test_results = function(spec, result, tree)
+    local results = test_results(spec, result, tree)
+    local function fill(node)
+      local seen, status = false, 'passed'
+      for _, child in ipairs(node:children()) do
+        local child_status = fill(child)
+        if child_status then
+          seen = true
+          if child_status == 'failed' then
+            status = 'failed'
+          elseif child_status == 'skipped' and status == 'passed' then
+            status = 'skipped'
+          end
+        end
+      end
+      local pos_id = node:data().id
+      if results[pos_id] then
+        return results[pos_id].status
+      end
+      if seen then
+        results[pos_id] = { status = status }
+        return status
+      end
+      -- a leaf whose result was dropped: unknown, which is not the same as failed
+      results[pos_id] = { status = 'skipped' }
+      return 'skipped'
+    end
+    fill(tree)
+    return results
+  end
+  rf.missing_results_backfilled = true
+end
+
 --- neotest-golang keys its per-file discovery cache on whole-second mtime, so a
 --- second write inside the same second is served the stale tree, and nothing
 --- expires it afterwards. autosave writes on every normal-mode edit (see
@@ -155,6 +341,8 @@ return {
   },
   config = function()
     raise_treesitter_match_limit()
+    expand_empty_subtest_positions()
+    backfill_missing_results()
     fix_golang_discovery_cache()
 
     require('neotest').setup {
@@ -230,10 +418,17 @@ return {
       -- rebuilds while the current list is titled `Diagnostics: all`). the
       -- summary, signs and ]t/[t jump-to-failed cover the same ground
       quickfix = { enabled = false },
+      -- test output is a terminal buffer, so its grid is resized to whatever
+      -- window shows it and the scrollback is truncated, not reflowed, when
+      -- that window is much narrower than the pty it was written at
+      -- (vim.o.columns). at 0.7 a long assertion line lost its tail outright,
+      -- and no window option recovers it: the characters are gone from the
+      -- buffer. width stays min(content, max_width - 2), so this lifts the
+      -- ceiling rather than widening every float
       floating = {
         border = 'rounded',
         max_height = 0.7,
-        max_width = 0.7,
+        max_width = 0.95,
       },
       status = {
         virtual_text = false,
