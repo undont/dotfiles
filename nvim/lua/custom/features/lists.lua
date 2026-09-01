@@ -170,17 +170,24 @@ local function bracketed_diagnostic(count, wrap)
   end
 end
 
-local function bracketed_failed_test(count)
+-- an adapter reports a failure at the line the runner names, which for a
+-- table-driven test is the one assertion inside the loop, so every failing case
+-- stacks on that line and a diagnostic walk can't step between them. neotest's
+-- jump consumer walks the file's position tree instead, one failing case per
+-- press: no count, no wrap, and the failure text stays on its assertion line.
+-- the diagnostic probe keeps a cold ]t from loading neotest
+local function bracketed_failed_test(direction)
   return function()
     if #vim.diagnostic.get(0, { namespace = neotest_ns }) == 0 then
       vim.notify('No failing tests in this buffer', vim.log.levels.WARN)
       return
     end
-    vim.diagnostic.jump {
-      count = count * vim.v.count1,
-      namespace = neotest_ns,
-      float = vim.diagnostic.config().float,
-    }
+    local jump = require('neotest').jump
+    if direction > 0 then
+      jump.next { status = 'failed' }
+    else
+      jump.prev { status = 'failed' }
+    end
   end
 end
 

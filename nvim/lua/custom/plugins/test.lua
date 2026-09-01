@@ -294,6 +294,93 @@ local function fix_golang_discovery_cache()
   end
 end
 
+--- the summary's expanded set lives on each adapter's SummaryComponent and no
+--- public function clears it (`e` toggles the subtree under the cursor), so a
+--- whole-tree collapse needs the instances. wrap the module's constructor before
+--- the consumer requires it, which happens inside neotest.setup
+local summary_components = {}
+local function track_summary_components()
+  local module = 'neotest.consumers.summary.component'
+  local ok, build = pcall(require, module)
+  if not ok or type(build) ~= 'function' then
+    return
+  end
+  package.loaded[module] = function(client, adapter_id)
+    local component = build(client, adapter_id)
+    summary_components[#summary_components + 1] = component
+    return component
+  end
+end
+
+--- collapse or expand every node in the summary tree
+local function set_summary_expanded(expanded)
+  require('nio').run(function()
+    for _, component in ipairs(summary_components) do
+      component.expanded_positions = {}
+      if expanded then
+        local tree = component.client:get_position(nil, { adapter = component.adapter_id })
+        if tree then
+          for _, node in tree:iter_nodes() do
+            if #node:children() > 0 then
+              component.expanded_positions[node:data().id] = true
+            end
+          end
+        end
+      end
+    end
+    require('neotest').summary.render()
+  end)
+end
+
+--- rows of `position_type`, found the way upstream finds failures: by the
+--- highlight the name carries, which is the position's type whatever its run
+--- status, so a failing file row is still a file row
+local function summary_rows(position_type)
+  local group = require('neotest.config').highlights[position_type]
+  local ns = require('neotest.consumers.summary.canvas').namespace
+  local rows = {}
+  for _, mark in ipairs(vim.api.nvim_buf_get_extmarks(0, ns, 0, -1, { details = true })) do
+    if mark[4].hl_group == group and rows[#rows] ~= mark[2] + 1 then
+      rows[#rows + 1] = mark[2] + 1
+    end
+  end
+  return rows
+end
+
+--- step the cursor between those rows, wrapping past the ends and saying so, as
+--- differ's panel does on the same keys
+local function summary_row_jump(position_type, forward)
+  return function()
+    local rows = summary_rows(position_type)
+    if #rows == 0 then
+      return
+    end
+    local cur, target = vim.fn.line '.', nil
+    if forward then
+      for _, row in ipairs(rows) do
+        if row > cur then
+          target = row
+          break
+        end
+      end
+    else
+      for i = #rows, 1, -1 do
+        if rows[i] < cur then
+          target = rows[i]
+          break
+        end
+      end
+    end
+    local wrapped = target == nil
+    vim.api.nvim_win_set_cursor(0, { target or (forward and rows[1] or rows[#rows]), 0 })
+    if wrapped then
+      local edge = forward and 'first' or 'last'
+      local what = position_type == 'dir' and 'directory' or position_type
+      vim.notify(('neotest: wrapped to the %s %s'):format(edge, what), vim.log.levels.INFO)
+    end
+  end
+end
+
 return {
   'nvim-neotest/neotest',
   dependencies = {
@@ -344,6 +431,7 @@ return {
     expand_empty_subtest_positions()
     backfill_missing_results()
     fix_golang_discovery_cache()
+    track_summary_components()
 
     require('neotest').setup {
       adapters = {
@@ -400,11 +488,15 @@ return {
         animated = true,
         open = 'botright vsplit | vertical resize 50',
         mappings = {
-          expand = { 'o', '<2-LeftMouse>' },
+          expand = { 'o', '<CR>', '<2-LeftMouse>' },
           output = 'p',
-          -- buffer-local, so they shadow the global ]t/[t (which walk this
-          -- namespace's diagnostics in a source buffer) with the summary's
-          -- own tree walk. J/K stay bound
+          -- short output unbound, which frees O for expand-all below. an empty
+          -- list is the disable: a `false` reaches nvim_buf_set_keymap as an lhs
+          short = {},
+          help = { '?', 'g?' },
+          -- buffer-local, so they shadow the global ]t/[t (which walk a source
+          -- buffer's failed positions) with the summary's own tree walk. J/K
+          -- stay bound
           next_failed = { 'J', ']t' },
           prev_failed = { 'K', '[t' },
         },
@@ -454,6 +546,31 @@ return {
     -- it. neotest-golang sets severity per error, so `diagnostic.severity`
     -- above wouldn't reach these
     vim.diagnostic.config({ underline = false, signs = false }, vim.api.nvim_create_namespace 'neotest')
+
+    -- C/O collapse and expand the whole tree, as they do in differ's panel.
+    -- the canvas rebinds its own action keys on every render but never these,
+    -- so they survive
+    vim.api.nvim_create_autocmd('FileType', {
+      pattern = 'neotest-summary',
+      callback = function(args)
+        local function map(lhs, fn, desc)
+          vim.keymap.set('n', lhs, fn, { buffer = args.buf, nowait = true, desc = desc })
+        end
+        map('C', function()
+          set_summary_expanded(false)
+        end, 'Collapse all')
+        map('O', function()
+          set_summary_expanded(true)
+        end, 'Expand all')
+        -- ]f/[f and ]]/[[ step files and dirs, as they do in differ's panel.
+        -- both fall through to mini.bracketed otherwise, whose file jump is
+        -- inert here: the summary window is winfixbuf, so its edit can't land
+        map(']f', summary_row_jump('file', true), 'Next file')
+        map('[f', summary_row_jump('file', false), 'Previous file')
+        map(']]', summary_row_jump('dir', true), 'Next directory')
+        map('[[', summary_row_jump('dir', false), 'Previous directory')
+      end,
+    })
 
     -- close output preview on any keypress for a transient popup feel
     vim.api.nvim_create_autocmd('FileType', {

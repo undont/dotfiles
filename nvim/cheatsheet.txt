@@ -345,8 +345,11 @@ Toggle output panel | <leader>tO
 Stop test | <leader>tS
 Toggle watch | <leader>tw
 Debug nearest test | <leader>td
-Next/prev failed test | ]t / [t (jumps to the failing assertion)
+Next/prev failed test | ]t / [t (jumps to the failing case)
 Next/prev failed test (summary) | ]t / [t or J / K
+Collapse/expand all (summary) | C / O
+Next/prev file (summary) | ]f / [f
+Next/prev directory (summary) | ]] / [[
 .NET run test (buffer) | <leader>tr
 .NET debug test (buffer) | <leader>td
 .NET peek stacktrace (buffer) | <leader>tp
