@@ -132,11 +132,15 @@ function M.setup()
     end,
   })
 
-  -- gopls tags func-typed vars as `variable` + `signature`. that typemod group
-  -- outranks TreeSitter's @function.call at the call site (127 vs 100), and
-  -- @variable is Normal-coloured, so `one()` reads as plain text untouched
+  -- gopls has no `constant` token type: consts, nil and iota arrive as
+  -- `variable` + `readonly`, func-typed vars as `variable` + `signature`.
+  -- an empty group contributes no attributes, so clearing @lsp.type.variable
+  -- lets treesitter's @constant and @function.call paint at 100 rather than
+  -- lose to the semantic token at 125. treesitter only captures @constant at
+  -- the declaration, so the readonly typemod carries it to reference sites
   local function lsp_semantic_token_hls()
-    vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
+    vim.api.nvim_set_hl(0, '@lsp.type.variable', {})
+    vim.api.nvim_set_hl(0, '@lsp.typemod.variable.readonly', { link = '@constant' })
     local call = vim.api.nvim_get_hl(0, { name = '@function.call', link = false })
     vim.api.nvim_set_hl(0, '@lsp.typemod.variable.signature', { fg = call.fg, italic = true })
   end
