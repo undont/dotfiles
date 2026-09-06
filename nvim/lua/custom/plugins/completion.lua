@@ -56,7 +56,9 @@ return {
         -- cancel rather than hide: auto_insert previews the selected item into
         -- the buffer, and only cancel undoes that, so the typed text survives
         ['<C-e>'] = { 'cancel', 'fallback' },
-        ['<CR>'] = { 'select_and_accept', 'fallback' },
+        -- accept is a no-op without a selection, so with preselect off a bare
+        -- <CR> falls through to a newline until an item is picked
+        ['<CR>'] = { 'accept', 'fallback' },
         -- Shift+Enter (Ghostty sends ESC+CR = M-CR) inserts a literal newline
         -- without accepting the visible completion item
         ['<M-CR>'] = {
@@ -103,7 +105,9 @@ return {
         accept = { auto_brackets = { enabled = true } },
         documentation = { auto_show = true, auto_show_delay_ms = 200 },
         list = {
-          selection = { preselect = true, auto_insert = true },
+          -- nothing is selected when the menu opens; <Tab> still takes the top
+          -- item, and auto_insert only previews once a selection is made
+          selection = { preselect = false, auto_insert = true },
         },
         menu = {
           draw = {
