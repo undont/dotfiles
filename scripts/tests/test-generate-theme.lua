@@ -451,6 +451,77 @@ else
 end
 
 -- ═══════════════════════════════════════════════
+section("apply_wcag_corrections: bright-swap chroma ceiling")
+
+-- Kanagawa Dragon: every accent is muted except the bright red, which is over
+-- twice the chroma of the loudest other accent. Its normal-row red fails only
+-- the synthetic bg_secondary, so the swap must be declined and the designer's
+-- red lightened instead.
+local dragon_wcag_colours = {
+    bg_primary = "#181616",
+    bg_secondary = "#332e2e",
+    line_highlight = "#2b2727",
+    fg_primary = "#c5c9c5",
+    fg_secondary = "#a6a69c",
+    red = "#c4746e",
+    green = "#87a987",
+    yellow = "#c4b28a",
+    purple = "#8ba4b0",
+    pink = "#9b93af",
+    cyan = "#7aa89f",
+    palette = {
+        [9] = "#e46876",
+        [10] = "#87a987",
+        [11] = "#e6c384",
+        [12] = "#7fb4ca",
+        [13] = "#938aa9",
+        [14] = "#7aa89f",
+    },
+}
+
+local dragon_wcag_adjustments = gen.apply_wcag_corrections(dragon_wcag_colours)
+
+if dragon_wcag_colours.red ~= "#e46876" then
+    pass("off-band bright red declined")
+else
+    fail("off-band bright red adopted", "got " .. dragon_wcag_colours.red)
+end
+
+local dragon_red_swapped = false
+for _, adj in ipairs(dragon_wcag_adjustments) do
+    if adj.name == "red" and adj.swapped then
+        dragon_red_swapped = true
+    end
+end
+if not dragon_red_swapped then
+    pass("declined swap not recorded as an adjustment")
+else
+    fail("declined swap recorded as a swap")
+end
+
+-- The fallback still has to clear the surface that triggered the correction
+if colour_utils.contrast_ratio(dragon_wcag_colours.red, dragon_wcag_colours.bg_secondary) >= 4.5 then
+    pass("lightened red meets 4.5:1 on bg_secondary")
+else
+    fail("lightened red below 4.5:1", dragon_wcag_colours.red)
+end
+
+-- and land inside the band the rest of the palette occupies
+local function test_chroma(hex)
+    local r, g, b = colour_utils.hex_to_rgb(hex)
+    return math.max(r, g, b) - math.min(r, g, b)
+end
+local dragon_peer_peak = 0
+for _, name in ipairs({ "green", "yellow", "purple", "pink", "cyan" }) do
+    dragon_peer_peak = math.max(dragon_peer_peak, test_chroma(dragon_wcag_colours[name]))
+end
+if test_chroma(dragon_wcag_colours.red) <= dragon_peer_peak * 1.5 then
+    pass("corrected red stays inside the palette chroma band")
+else
+    fail("corrected red outside the chroma band", dragon_wcag_colours.red)
+end
+
+-- ═══════════════════════════════════════════════
 section("apply_saturation_preference: near-grey accent rescue")
 
 -- Kanagawa Dragon-style palette: normal-row pink/cyan sit within a few

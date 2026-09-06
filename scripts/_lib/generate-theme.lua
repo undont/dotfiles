@@ -170,6 +170,31 @@ function M.extract_colours(ghostty)
 end
 
 -- ══════════════════════════════════════════════════════════════
+-- Chroma
+-- ══════════════════════════════════════════════════════════════
+
+--- Chroma of a hex colour (RGB max-min, 0-255)
+--- Used instead of HSL saturation, which over-rates pale pastels and would
+--- wrongly rank e.g. Dracula's bright lavender above its identity purple
+---@param hex string
+---@return number chroma
+local function chroma(hex)
+    local r, g, b = colour.hex_to_rgb(hex)
+    return math.max(r, g, b) - math.min(r, g, b)
+end
+
+-- An accent below this chroma reads as tinted grey and cannot differentiate
+-- syntax roles. Deliberately dull-but-chromatic accents sit well above it
+-- (Spacegray Eighties Dull's dimmest is ~41), so those themes keep their
+-- designer palette untouched.
+local NEAR_GREY_CHROMA = 30
+
+-- Ceiling on a bright-row swap, as a multiple of the most chromatic other
+-- accent. Kanagawa Dragon's bright red lands far outside its palette's chroma
+-- band; Spacegray Eighties Dull's stays in family.
+local BRIGHT_SWAP_CHROMA_CEILING = 1.5
+
+-- ══════════════════════════════════════════════════════════════
 -- WCAG Auto-Correction
 -- ══════════════════════════════════════════════════════════════
 
@@ -183,6 +208,25 @@ function M.apply_wcag_corrections(colours)
 
     -- ANSI palette index for each accent role; bright variant = index + 8
     local accent_index = { red = 1, green = 2, yellow = 3, purple = 4, pink = 5, cyan = 6 }
+
+    -- Chroma of every accent on entry, so the band a swap is judged against
+    -- doesn't shift as earlier accents in the loop are corrected
+    local entry_chroma = {}
+    for _, name in ipairs(accents) do
+        entry_chroma[name] = chroma(colours[name])
+    end
+
+    -- Highest chroma among the other five accents, floored at NEAR_GREY_CHROMA
+    -- so a near-monochrome palette doesn't reject every swap
+    local function peer_chroma(accent_name)
+        local peak = NEAR_GREY_CHROMA
+        for _, name in ipairs(accents) do
+            if name ~= accent_name then
+                peak = math.max(peak, entry_chroma[name])
+            end
+        end
+        return peak
+    end
 
     -- Surfaces that accents must be readable on (ordered hardest-first).
     -- line_highlight only needs WCAG's 3:1 large-text/UI minimum: CursorLine
@@ -208,6 +252,25 @@ function M.apply_wcag_corrections(colours)
         return worst
     end
 
+    -- Where lightening alone would land an accent, with no adjustment
+    -- bookkeeping: the fallback a declined bright swap drops through to
+    local function lightened(hex)
+        for _, surface in ipairs(accent_surfaces) do
+            hex = colour.ensure_contrast(hex, surface.colour, surface.min)
+        end
+        return hex
+    end
+
+    -- Whether a bright variant is the better palette fit: inside the peer
+    -- band, or at least no louder than the fallback, which holds saturation
+    -- while raising lightness and so can out-chroma the variant it replaces
+    local function bright_fits(accent_name, bright)
+        if chroma(bright) <= peer_chroma(accent_name) * BRIGHT_SWAP_CHROMA_CEILING then
+            return true
+        end
+        return chroma(bright) <= chroma(lightened(colours[accent_name]))
+    end
+
     for _, accent_name in ipairs(accents) do
         -- Prefer the theme's own bright variant over synthetic lightening:
         -- themes that keep dim normal-row colours (e.g. Bluloco Dark's
@@ -215,12 +278,15 @@ function M.apply_wcag_corrections(colours)
         -- bright row. Lightening the dim row invents pastels the designer
         -- never chose, so swap to the bright variant first when it reads
         -- better, then let ensure_contrast top up any remaining shortfall.
+        -- A bright variant far more chromatic than every other accent sits
+        -- outside the palette's band, and falls through to lightening instead.
         if worst_margin(colours[accent_name]) < 1 then
             local bright = colours.palette and colours.palette[accent_index[accent_name] + 8]
             if
                 bright
                 and bright:match("^#%x%x%x%x%x%x$")
                 and worst_margin(bright) > worst_margin(colours[accent_name])
+                and bright_fits(accent_name, bright)
             then
                 colours[accent_name] = bright
                 table.insert(adjustments, { name = accent_name, swapped = true })
@@ -257,22 +323,6 @@ end
 -- ══════════════════════════════════════════════════════════════
 -- Saturation Preference
 -- ══════════════════════════════════════════════════════════════
-
--- An accent below this chroma (RGB max-min) reads as tinted grey and cannot
--- differentiate syntax roles. Deliberately dull-but-chromatic accents sit
--- well above it (Spacegray Eighties Dull's dimmest is ~41), so those themes
--- keep their designer palette untouched.
-local NEAR_GREY_CHROMA = 30
-
---- Chroma of a hex colour (RGB max-min, 0-255)
---- Used instead of HSL saturation, which over-rates pale pastels and would
---- wrongly rank e.g. Dracula's bright lavender above its identity purple
----@param hex string
----@return number chroma
-local function chroma(hex)
-    local r, g, b = colour.hex_to_rgb(hex)
-    return math.max(r, g, b) - math.min(r, g, b)
-end
 
 --- Swap near-grey accents for the theme's own bright-row variant
 --- Muted themes (e.g. Kanagawa Dragon) keep normal-row accents within a few
