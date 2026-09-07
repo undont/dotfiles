@@ -429,6 +429,7 @@ Suggest corrections (Telescope) | <leader>Ss
 Add word to dictionary | <leader>Sa
 Remove word from dictionary (asks first) | <leader>Sr
 Edit personal dictionary | <leader>Sd
+Edit repo dictionary | <leader>SD
 Mark word as misspelled | zW (remapped from zw to prevent accidental marking)
 Full suggestion list | <leader>S?
 Next misspelling | ]s

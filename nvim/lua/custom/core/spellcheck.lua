@@ -155,6 +155,9 @@ function M.setup()
   vim.keymap.set('n', '<leader>Sd', function()
     vim.cmd('edit ' .. vim.fn.stdpath 'data' .. '/spell/en.utf-8.add')
   end, { desc = '[D]ictionary (personal)' })
+  vim.keymap.set('n', '<leader>SD', function()
+    vim.cmd('edit ' .. vim.fn.stdpath 'config' .. '/spell/en.utf-8.add')
+  end, { desc = '[D]ictionary (repo)' })
 end
 
 return M
