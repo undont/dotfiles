@@ -522,6 +522,8 @@ return {
         max_height = 0.7,
         max_width = 0.95,
       },
+      -- ]t/[t read the failed signs to find each failing position, so signs
+      -- off leaves them walking diagnostics alone (see features/lists.lua)
       status = {
         virtual_text = false,
         signs = true,
@@ -542,7 +544,7 @@ return {
     -- sign already owns the gutter cell (priority 1000 against the diagnostic
     -- sign's 10). the statusline counts this namespace separately, as ✗N rather
     -- than EN, and the <leader>xx list filters it out; see features/statusline.lua
-    -- and features/lists.lua, where ]t/[t walk this namespace and ]d/[d skip
+    -- and features/lists.lua, where ]t/[t land on this namespace and ]d/[d skip
     -- it. neotest-golang sets severity per error, so `diagnostic.severity`
     -- above wouldn't reach these
     vim.diagnostic.config({ underline = false, signs = false }, vim.api.nvim_create_namespace 'neotest')

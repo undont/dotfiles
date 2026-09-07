@@ -170,24 +170,108 @@ local function bracketed_diagnostic(count, wrap)
   end
 end
 
--- an adapter reports a failure at the line the runner names, which for a
--- table-driven test is the one assertion inside the loop, so every failing case
--- stacks on that line and a diagnostic walk can't step between them. neotest's
--- jump consumer walks the file's position tree instead, one failing case per
--- press: no count, no wrap, and the failure text stays on its assertion line.
--- the diagnostic probe keeps a cold ]t from loading neotest
+-- neotest signs the range start of every failing position, so a container test
+-- and each failing case both carry one. a sign whose node range holds another
+-- failing sign is dropped, leaving one target per failing case, and each target
+-- lands on the first neotest diagnostic inside its own node: a helper-driven
+-- test reports on the call line rather than the declaration the sign sits on,
+-- while a t.Run case literal never contains the shared assertion line, so
+-- per-case stepping stays on the case. with signs off this walks diagnostics
+local NEOTEST_SIGN_GROUP = 'neotest-status'
+
+local function failed_sign_lines(buf)
+  local placed = vim.fn.sign_getplaced(buf, { group = NEOTEST_SIGN_GROUP })[1]
+  local lines = {}
+  for _, sign in ipairs(placed and placed.signs or {}) do
+    if sign.name == 'neotest_failed' then
+      lines[#lines + 1] = sign.lnum - 1
+    end
+  end
+  table.sort(lines)
+  return lines
+end
+
+-- start column and last line of the outermost node beginning on `lnum`: the
+-- function for a test declaration, the struct literal for a table case
+local function node_span(buf, lnum)
+  local line = vim.api.nvim_buf_get_lines(buf, lnum, lnum + 1, false)[1] or ''
+  local col = (line:find '%S' or 1) - 1
+  local ok, node = pcall(vim.treesitter.get_node, { bufnr = buf, pos = { lnum, col } })
+  if not ok or not node then
+    return col, lnum
+  end
+  while true do
+    local parent = node:parent()
+    if not parent or parent:start() ~= lnum then
+      break
+    end
+    node = parent
+  end
+  local _, _, end_row = node:range()
+  return col, end_row
+end
+
+local function failed_targets(buf)
+  local lines = failed_sign_lines(buf)
+  local diags = vim.diagnostic.get(buf, { namespace = neotest_ns })
+  local targets = {}
+  for _, lnum in ipairs(lines) do
+    local col, last = node_span(buf, lnum)
+    local container = false
+    for _, other in ipairs(lines) do
+      container = container or (other > lnum and other <= last)
+    end
+    if not container then
+      local failure
+      for _, d in ipairs(diags) do
+        if d.lnum >= lnum and d.lnum <= last and (not failure or d.lnum < failure.lnum) then
+          failure = d
+        end
+      end
+      targets[#targets + 1] = { lnum = failure and failure.lnum or lnum, col = failure and failure.col or col }
+    end
+  end
+  table.sort(targets, function(a, b)
+    return a.lnum < b.lnum
+  end)
+  return targets
+end
+
 local function bracketed_failed_test(direction)
   return function()
-    if #vim.diagnostic.get(0, { namespace = neotest_ns }) == 0 then
-      vim.notify('No failing tests in this buffer', vim.log.levels.WARN)
+    local buf = vim.api.nvim_get_current_buf()
+    local targets = failed_targets(buf)
+    if #targets == 0 then
+      if #vim.diagnostic.get(buf, { namespace = neotest_ns }) == 0 then
+        vim.notify('No failing tests in this buffer', vim.log.levels.WARN)
+        return
+      end
+      vim.diagnostic.jump { count = direction * vim.v.count1, namespace = neotest_ns }
       return
     end
-    local jump = require('neotest').jump
+    local cur = vim.api.nvim_win_get_cursor(0)[1] - 1
+    local idx
     if direction > 0 then
-      jump.next { status = 'failed' }
+      for i, target in ipairs(targets) do
+        if target.lnum > cur then
+          idx = i
+          break
+        end
+      end
+      idx = (idx or 1) - 1 + vim.v.count1 - 1
     else
-      jump.prev { status = 'failed' }
+      for i = #targets, 1, -1 do
+        if targets[i].lnum < cur then
+          idx = i
+          break
+        end
+      end
+      idx = (idx or #targets) - 1 - (vim.v.count1 - 1)
     end
+    local target = targets[idx % #targets + 1]
+    vim.cmd "normal! m'"
+    vim.api.nvim_win_set_cursor(0, { target.lnum + 1, target.col })
+    vim.cmd 'normal! zv'
   end
 end
 
