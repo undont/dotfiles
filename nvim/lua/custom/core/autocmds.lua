@@ -279,6 +279,16 @@ function M.setup()
     sort_json_keys(ctx.bufnr)
   end
 
+  -- start each session with an empty jumplist. shada restores the jumplist at
+  -- startup (`:h startup` step 16) with no notion of cwd, so <C-o> in a fresh
+  -- instance walks back into whatever repo was open last. only the current
+  -- window's jumplist is stored, so clearing that one window covers the restore
+  vim.api.nvim_create_autocmd('VimEnter', {
+    desc = 'Drop the shada-restored jumplist',
+    group = vim.api.nvim_create_augroup('jumplist-scope', { clear = true }),
+    command = 'clearjumps',
+  })
+
   -- graceful process cleanup on exit
   -- explicitly stops LSP servers and terminal jobs so they don't orphan
   -- (dotnet Roslyn, OmniSharp, EasyDotnet build servers, etc.)
