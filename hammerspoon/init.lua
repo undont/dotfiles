@@ -8,6 +8,7 @@ local centredApps = {
     "Ghostty",
     "Arc",
     "Dia",
+    "Zen",
     "Discord",
     "Slack",
     "Obsidian",
