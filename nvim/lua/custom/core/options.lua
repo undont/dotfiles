@@ -150,17 +150,12 @@ function M.setup()
   -- reclaim the command line row (ui2 msg window handles messages)
   vim.o.cmdheight = 0
 
-  -- experimental UI2: replaces builtin message + cmdline presentation.
-  -- messages appear in a floating window that auto-dismisses; cmdline
-  -- appears on-demand. use g< or ENTER after a command to see full messages
-  require('vim._core.ui2').enable {
-    msg = {
-      targets = 'msg',
-      msg = {
-        timeout = 4000,
-      },
-    },
-  }
+  -- experimental ui2: replaces the builtin message + cmdline presentation.
+  -- messages land in a floating window that auto-dismisses after the
+  -- 'messagesopt' timeout; g< opens the full pager.
+  -- `targets` is the key on both 0.12 and 0.13: the singular `target` is
+  -- silently ignored on 0.13, leaving messages in the cmdline
+  require('vim._core.ui2').enable { msg = { targets = 'msg' } }
 end
 
 return M
