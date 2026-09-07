@@ -70,18 +70,18 @@ return {
             return true
           end,
         },
+        -- the menu wins while it is open: select_and_accept takes the
+        -- highlighted item, or the top one when nothing is selected. copilot
+        -- ghost text and snippet jumps only get <Tab> once the menu is gone
         ['<Tab>'] = {
           function(cmp)
+            if cmp.is_visible() then
+              return cmp.select_and_accept()
+            end
             local ok, suggestion = pcall(require, 'copilot.suggestion')
             if ok and suggestion.is_visible() then
-              cmp.hide()
               suggestion.accept()
               return true
-            end
-            if cmp.snippet_active() then
-              return cmp.accept()
-            else
-              return cmp.select_and_accept()
             end
           end,
           'snippet_forward',
