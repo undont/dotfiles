@@ -25,8 +25,8 @@ function M.setup()
   vim.keymap.set('n', 'a', smart_insert 'a', { expr = true, desc = 'Append (smart indent on empty line)' })
 
   -- line navigation: m/M for beginning/end of line, gm for marks
-  vim.keymap.set({ 'n', 'v', 'o' }, 'm', '^', { desc = 'First non-blank character' })
-  vim.keymap.set({ 'n', 'v', 'o' }, 'M', '$', { desc = 'End of line' })
+  vim.keymap.set({ 'n', 'x', 'o' }, 'm', '^', { desc = 'First non-blank character' })
+  vim.keymap.set({ 'n', 'x', 'o' }, 'M', '$', { desc = 'End of line' })
   vim.keymap.set('n', 'gm', 'm', { desc = 'Set mark' })
 
   -- insert space at cursor without leaving normal mode

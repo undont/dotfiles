@@ -144,6 +144,137 @@ local function bracketed_loc(direction)
   end
 end
 
+-- ]d/[d and ]t/[t split the diagnostic list by namespace: code problems on
+-- ]d, neotest's failures on ]t. mini.bracketed's own ]d forwards only
+-- `severity` to vim.diagnostic, so it can't make the split; its `d` suffix is
+-- disabled in plugins/mini.lua. `namespace` filters by inclusion, so code
+-- diagnostics are every registered namespace bar neotest's
+local function code_namespaces()
+  local ids = {}
+  for id in pairs(vim.diagnostic.get_namespaces()) do
+    if id ~= neotest_ns then
+      ids[#ids + 1] = id
+    end
+  end
+  return ids
+end
+
+local function bracketed_diagnostic(count, wrap)
+  return function()
+    vim.diagnostic.jump {
+      count = count * vim.v.count1,
+      wrap = wrap,
+      namespace = code_namespaces(),
+      float = vim.diagnostic.config().float,
+    }
+  end
+end
+
+-- neotest signs the range start of every failing position, so a container test
+-- and each failing case both carry one. a sign whose node range holds another
+-- failing sign is dropped, leaving one target per failing case, and each target
+-- lands on the first neotest diagnostic inside its own node: a helper-driven
+-- test reports on the call line rather than the declaration the sign sits on,
+-- while a t.Run case literal never contains the shared assertion line, so
+-- per-case stepping stays on the case. with signs off this walks diagnostics
+local NEOTEST_SIGN_GROUP = 'neotest-status'
+
+local function failed_sign_lines(buf)
+  local placed = vim.fn.sign_getplaced(buf, { group = NEOTEST_SIGN_GROUP })[1]
+  local lines = {}
+  for _, sign in ipairs(placed and placed.signs or {}) do
+    if sign.name == 'neotest_failed' then
+      lines[#lines + 1] = sign.lnum - 1
+    end
+  end
+  table.sort(lines)
+  return lines
+end
+
+-- start column and last line of the outermost node beginning on `lnum`: the
+-- function for a test declaration, the struct literal for a table case
+local function node_span(buf, lnum)
+  local line = vim.api.nvim_buf_get_lines(buf, lnum, lnum + 1, false)[1] or ''
+  local col = (line:find '%S' or 1) - 1
+  local ok, node = pcall(vim.treesitter.get_node, { bufnr = buf, pos = { lnum, col } })
+  if not ok or not node then
+    return col, lnum
+  end
+  while true do
+    local parent = node:parent()
+    if not parent or parent:start() ~= lnum then
+      break
+    end
+    node = parent
+  end
+  local _, _, end_row = node:range()
+  return col, end_row
+end
+
+local function failed_targets(buf)
+  local lines = failed_sign_lines(buf)
+  local diags = vim.diagnostic.get(buf, { namespace = neotest_ns })
+  local targets = {}
+  for _, lnum in ipairs(lines) do
+    local col, last = node_span(buf, lnum)
+    local container = false
+    for _, other in ipairs(lines) do
+      container = container or (other > lnum and other <= last)
+    end
+    if not container then
+      local failure
+      for _, d in ipairs(diags) do
+        if d.lnum >= lnum and d.lnum <= last and (not failure or d.lnum < failure.lnum) then
+          failure = d
+        end
+      end
+      targets[#targets + 1] = { lnum = failure and failure.lnum or lnum, col = failure and failure.col or col }
+    end
+  end
+  table.sort(targets, function(a, b)
+    return a.lnum < b.lnum
+  end)
+  return targets
+end
+
+local function bracketed_failed_test(direction)
+  return function()
+    local buf = vim.api.nvim_get_current_buf()
+    local targets = failed_targets(buf)
+    if #targets == 0 then
+      if #vim.diagnostic.get(buf, { namespace = neotest_ns }) == 0 then
+        vim.notify('No failing tests in this buffer', vim.log.levels.WARN)
+        return
+      end
+      vim.diagnostic.jump { count = direction * vim.v.count1, namespace = neotest_ns }
+      return
+    end
+    local cur = vim.api.nvim_win_get_cursor(0)[1] - 1
+    local idx
+    if direction > 0 then
+      for i, target in ipairs(targets) do
+        if target.lnum > cur then
+          idx = i
+          break
+        end
+      end
+      idx = (idx or 1) - 1 + vim.v.count1 - 1
+    else
+      for i = #targets, 1, -1 do
+        if targets[i].lnum < cur then
+          idx = i
+          break
+        end
+      end
+      idx = (idx or #targets) - 1 - (vim.v.count1 - 1)
+    end
+    local target = targets[idx % #targets + 1]
+    vim.cmd "normal! m'"
+    vim.api.nvim_win_set_cursor(0, { target.lnum + 1, target.col })
+    vim.cmd 'normal! zv'
+  end
+end
+
 -- diagnostics into native lists. explicit titles let `build.lua`'s
 -- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
 -- match these lists and prune resolved entries on DiagnosticChanged.
@@ -422,6 +553,13 @@ function M.setup()
   vim.keymap.set('n', '[q', bracketed_qf 'backward', { desc = 'Previous quickfix entry' })
   vim.keymap.set('n', ']l', bracketed_loc 'forward', { desc = 'Next location entry' })
   vim.keymap.set('n', '[l', bracketed_loc 'backward', { desc = 'Previous location entry' })
+
+  vim.keymap.set('n', ']d', bracketed_diagnostic(1, true), { desc = 'Next diagnostic' })
+  vim.keymap.set('n', '[d', bracketed_diagnostic(-1, true), { desc = 'Previous diagnostic' })
+  vim.keymap.set('n', ']D', bracketed_diagnostic(math.huge, false), { desc = 'Last diagnostic' })
+  vim.keymap.set('n', '[D', bracketed_diagnostic(-math.huge, false), { desc = 'First diagnostic' })
+  vim.keymap.set('n', ']t', bracketed_failed_test(1), { desc = 'Next failed test' })
+  vim.keymap.set('n', '[t', bracketed_failed_test(-1), { desc = 'Previous failed test' })
 
   -- shadow mini.bracketed (]b/[b ]f/[f ]d/[d ...) inside qf/loclist buffers;
   -- those target the underlying editing window but fire against the list

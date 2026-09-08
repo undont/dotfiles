@@ -176,7 +176,7 @@ Equalise windows | <leader>w=
 ## completion @completion
 Trigger completion | <C-Space>
 Dismiss completion, restore typed text | <C-e>
-Accept completion | <CR>
+Accept selected completion | <CR> (after selecting)
 Smart accept (Copilot or completion) | <Tab>
 Accept Copilot word | <M-Tab>
 Expand snippet | <Tab> (in snippet)
@@ -345,7 +345,11 @@ Toggle output panel | <leader>tO
 Stop test | <leader>tS
 Toggle watch | <leader>tw
 Debug nearest test | <leader>td
-Next/prev failed test | ]t / [t
+Next/prev failed test | ]t / [t (jumps to the failure line, or the failing case)
+Next/prev failed test (summary) | ]t / [t or J / K
+Collapse/expand all (summary) | C / O
+Next/prev file (summary) | ]f / [f
+Next/prev directory (summary) | ]] / [[
 .NET run test (buffer) | <leader>tr
 .NET debug test (buffer) | <leader>td
 .NET peek stacktrace (buffer) | <leader>tp
@@ -392,7 +396,8 @@ Yank file path | <leader>by
 
 ## bracketed @bracketed
 Next/prev buffer | ]b / [b
-Next/prev diagnostic | ]d / [d
+Next/prev diagnostic | ]d / [d (code only, not test failures)
+First/last diagnostic | ]D / [D
 Next/prev file | ]f / [f
 First/last file in dir | ]F / [F
 Next/prev dated note | ]f / [f (in DD-MM-YYYY dirs, by date)
@@ -424,6 +429,7 @@ Suggest corrections (Telescope) | <leader>Ss
 Add word to dictionary | <leader>Sa
 Remove word from dictionary (asks first) | <leader>Sr
 Edit personal dictionary | <leader>Sd
+Edit repo dictionary | <leader>SD
 Mark word as misspelled | zW (remapped from zw to prevent accidental marking)
 Full suggestion list | <leader>S?
 Next misspelling | ]s

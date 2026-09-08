@@ -84,11 +84,14 @@ return {
     config = function(_, opts)
       require('copilot').setup(opts)
 
-      -- hide ghost text when blink menu opens, restore when it closes
+      -- hide ghost text when blink menu opens, restore when it closes.
+      -- the flag alone only gates the next render, so an extmark drawn before
+      -- the menu opened stays on screen and keeps suggestion.is_visible() true
       vim.api.nvim_create_autocmd('User', {
         pattern = 'BlinkCmpMenuOpen',
         callback = function()
           vim.b.copilot_suggestion_hidden = true
+          require('copilot.suggestion').clear_preview()
         end,
       })
       vim.api.nvim_create_autocmd('User', {

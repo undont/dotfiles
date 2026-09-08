@@ -56,7 +56,9 @@ return {
         -- cancel rather than hide: auto_insert previews the selected item into
         -- the buffer, and only cancel undoes that, so the typed text survives
         ['<C-e>'] = { 'cancel', 'fallback' },
-        ['<CR>'] = { 'select_and_accept', 'fallback' },
+        -- accept is a no-op without a selection, so with preselect off a bare
+        -- <CR> falls through to a newline until an item is picked
+        ['<CR>'] = { 'accept', 'fallback' },
         -- Shift+Enter (Ghostty sends ESC+CR = M-CR) inserts a literal newline
         -- without accepting the visible completion item
         ['<M-CR>'] = {
@@ -68,18 +70,18 @@ return {
             return true
           end,
         },
+        -- the menu wins while it is open: select_and_accept takes the
+        -- highlighted item, or the top one when nothing is selected. copilot
+        -- ghost text and snippet jumps only get <Tab> once the menu is gone
         ['<Tab>'] = {
           function(cmp)
+            if cmp.is_visible() then
+              return cmp.select_and_accept()
+            end
             local ok, suggestion = pcall(require, 'copilot.suggestion')
             if ok and suggestion.is_visible() then
-              cmp.hide()
               suggestion.accept()
               return true
-            end
-            if cmp.snippet_active() then
-              return cmp.accept()
-            else
-              return cmp.select_and_accept()
             end
           end,
           'snippet_forward',
@@ -103,7 +105,9 @@ return {
         accept = { auto_brackets = { enabled = true } },
         documentation = { auto_show = true, auto_show_delay_ms = 200 },
         list = {
-          selection = { preselect = true, auto_insert = true },
+          -- nothing is selected when the menu opens; <Tab> still takes the top
+          -- item, and auto_insert only previews once a selection is made
+          selection = { preselect = false, auto_insert = true },
         },
         menu = {
           draw = {

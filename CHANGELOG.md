@@ -4,6 +4,43 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.141] - 2026-09-07
+
+### Added
+
+- The neotest summary gets `C` and `O` to collapse and expand the whole tree, `]f`/`[f` and `]]`/`[[` to step files and directories, and `<CR>` alongside `o`, matching differ's panel. The expanded set lives on each adapter's `SummaryComponent` with no public function to clear it, so the module's constructor is wrapped before `neotest.setup` requires it. `nvim/lua/custom/plugins/test.lua`, `nvim/cheatsheet.txt`
+- `]t`/`[t` and `J`/`K` walk failed positions inside the summary window. They are buffer-local, so they shadow the global `]t`/`[t`, which walk a source buffer's own failures. `nvim/lua/custom/plugins/test.lua`, `nvim/cheatsheet.txt`
+- Func-typed Go variables take an italic function colour through `@lsp.typemod.variable.signature`, so a variable holding a function reads as one at its use sites. `nvim/lua/custom/core/autocmds.lua`
+- `<leader>SD` edits the repo dictionary, alongside `<leader>Sd` for the personal one. `nvim/lua/custom/core/spellcheck.lua`, `nvim/cheatsheet.txt`
+- Zen joins the centred apps in Hammerspoon. `hammerspoon/init.lua`
+
+### Changed
+
+- `]d`/`[d` and `]t`/`[t` split the diagnostic list by namespace: code problems on the first, neotest failures on the second. mini.bracketed's `]d` forwards only `severity` to `vim.diagnostic` so it cannot make the split, and its `d` suffix is disabled; `namespace` filters by inclusion, so code diagnostics are every registered namespace bar neotest's. `nvim/lua/custom/features/lists.lua`, `nvim/lua/custom/plugins/mini.lua`, `nvim/cheatsheet.txt`
+- `]t`/`[t` land on the failure line inside each failing case rather than on every neotest sign. A sign whose node range contains another failing sign is dropped, leaving one target per case, and each target moves to the first neotest diagnostic inside its own node, so a helper-driven test reports on the call line rather than the declaration the sign sits on. `nvim/lua/custom/features/lists.lua`, `nvim/lua/custom/plugins/test.lua`
+- Generated colourschemes derive their selection band from `line_highlight` instead of taking Ghostty's `selection-background`, which is tuned for terminal text: an inverted selection needed a foreground on `Visual` that flattened every syntax colour to one tone, and a saturated accent selection left accents at roughly 1:1 on the block. The step is pushed as far clear of the cursor line as it can go and backed off until every accent clears 3:1. `scripts/_lib/generate-theme.lua`, `scripts/tests/test-generate-theme.lua`, `docs/THEME-SYSTEM.md`
+- A bright-row swap more than 1.5x the chroma of the loudest other accent is declined, since on a muted palette it lands outside the band the rest of the palette occupies and reads as an alert rather than a syntax role. Those accents fall through to lightening instead, unless lightening comes out more chromatic still, which it can, holding HSL saturation while raising lightness. `scripts/_lib/generate-theme.lua`, `scripts/tests/test-generate-theme.lua`, `docs/THEME-SYSTEM.md`
+- The completion menu opens with nothing selected, so `<CR>` stays a newline until an item is picked. `<Tab>` takes the highlighted item while the menu is open, or the top one when nothing is selected, and only reaches Copilot ghost text and snippet jumps once the menu is gone. `nvim/lua/custom/plugins/completion.lua`, `nvim/cheatsheet.txt`
+- The test output float goes to `max_width` 0.95. It is a terminal buffer, so its scrollback is truncated rather than reflowed when the window is much narrower than the pty it was written at, and a long assertion line lost its tail outright with no window option able to recover it. Width stays `min(content, max_width - 2)`, so this lifts the ceiling rather than widening every float. `nvim/lua/custom/plugins/test.lua`
+- Each session starts with an empty jumplist. shada restores it with no notion of cwd, so `<C-o>` in a fresh instance walked back into whatever repo was open last; only the current window's jumplist is stored, so clearing that one window covers the restore. `nvim/lua/custom/core/autocmds.lua`
+- Multiple cursors come from nvim 0.13's native multicursor rather than a plugin. `<C-l>` clears them when the buffer has any, and only then falls through to the window-nav wincmd. `nvim/lua/custom/core/windows.lua`
+
+### Fixed
+
+- Table-driven Go subtests reach the summary as one position per row. The subtest query captures any string literal as a name, so `t.Run("", ...)` yielded a single position that matched no event, and neotest fills a result-less position with the run root's status and propagates it up, reddening the real parent too. Rows are counted from the table the loop ranges over and stood in under Go's `#00`/`#01` naming. `nvim/lua/custom/plugins/test.lua`
+- A passing package no longer reddens at random, about one suite run in eight. neotest-golang intermittently returns no result for a file or package whose events were still in flight when the stream was stopped, and neotest treats a result-less position as failed; a missing position now takes the aggregate of its descendants, and a missing leaf `skipped`. `nvim/lua/custom/plugins/test.lua`
+- Go constants, `nil` and `iota` keep their own colour. gopls has no `constant` token type, so they arrive as `variable` plus a `readonly` typemod and lost to the semantic token at priority 125. Clearing `@lsp.type.variable` lets treesitter's `@constant` paint at 100, and the typemod carries the colour to the reference sites treesitter captures only at the declaration. `nvim/lua/custom/core/autocmds.lua`
+- `m`, `M` and dial's `g<C-a>`/`g<C-x>` stop being swallowed at snippet placeholders. They were bound in `v`, which covers select mode, where a live snippet session puts the cursor. `nvim/lua/custom/core/keymaps.lua`, `nvim/lua/custom/plugins/dial.lua`
+- `<Tab>` accepts a completion while a snippet session is live. With preselect off there is no selected item, so the snippet branch's `cmp.accept()` returned falsy and blink fell through to `snippet_forward`. Copilot's ghost text is cleared rather than only flagged on `BlinkCmpMenuOpen`, since the flag gates the next render and leaves an already-drawn extmark on screen keeping `is_visible()` true. `nvim/lua/custom/plugins/completion.lua`, `nvim/lua/custom/plugins/copilot.lua`
+- Markdown code blocks keep their background when cursorline is off. `anti_conceal.ignore.code_background` follows `vim.o.cursorline`, which is what paints over the background on the cursor row. `nvim/lua/custom/plugins/markdown-ui.lua`
+- ui2 loads on nvim 0.13, which hard-errors on the `msg.timeout` key after moving the value into `'messagesopt'`. 4000 was the default on both versions anyway. `nvim/lua/custom/core/options.lua`
+- The yank highlight goes through `vim.hl.hl_op` where it exists, `vim.hl.on_yank` otherwise. `nvim/lua/custom/core/autocmds.lua`
+
+### Removed
+
+- vim-visual-multi, replaced by nvim 0.13's native multicursor. `nvim/lua/custom/plugins/multi-cursor.lua`
+
+
 ## [0.2.140] - 2026-08-27
 
 ### Added

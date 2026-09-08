@@ -16,7 +16,11 @@ function M.setup()
     desc = 'Highlight on yank',
     group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
     callback = function()
-      vim.hl.on_yank()
+      if vim.hl.hl_op then
+        vim.hl.hl_op(nil)
+      else
+        vim.hl.on_yank()
+      end
     end,
   })
 
@@ -132,18 +136,25 @@ function M.setup()
     end,
   })
 
-  -- link LSP variable tokens to TreeSitter's @variable styling. leaving the
-  -- group empty does not let lower-priority TreeSitter captures show through;
-  -- the semantic token still wins, just with Normal-like styling.
+  -- gopls has no `constant` token type: consts, nil and iota arrive as
+  -- `variable` + `readonly`, func-typed vars as `variable` + `signature`.
+  -- an empty group contributes no attributes, so clearing @lsp.type.variable
+  -- lets treesitter's @constant and @function.call paint at 100 rather than
+  -- lose to the semantic token at 125. treesitter only captures @constant at
+  -- the declaration, so the readonly typemod carries it to reference sites
+  local function lsp_semantic_token_hls()
+    vim.api.nvim_set_hl(0, '@lsp.type.variable', {})
+    vim.api.nvim_set_hl(0, '@lsp.typemod.variable.readonly', { link = '@constant' })
+    local call = vim.api.nvim_get_hl(0, { name = '@function.call', link = false })
+    vim.api.nvim_set_hl(0, '@lsp.typemod.variable.signature', { fg = call.fg, italic = true })
+  end
   vim.api.nvim_create_autocmd('ColorScheme', {
-    desc = 'Use TreeSitter variable styling for LSP variable tokens',
+    desc = 'Restyle LSP semantic token groups for the new colourscheme',
     group = vim.api.nvim_create_augroup('lsp-semantic-token-overrides', { clear = true }),
-    callback = function()
-      vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
-    end,
+    callback = lsp_semantic_token_hls,
   })
   -- apply immediately for the current colourscheme
-  vim.api.nvim_set_hl(0, '@lsp.type.variable', { link = '@variable' })
+  lsp_semantic_token_hls()
 
   -- Lazy.nvim links `LazyDimmed` to `Conceal` for low-value commits
   -- (chore/deps bumps). Conceal is built for hiding chars, so on most dark
@@ -267,6 +278,16 @@ function M.setup()
   vim.lsp.commands['json.sort'] = function(_, ctx)
     sort_json_keys(ctx.bufnr)
   end
+
+  -- start each session with an empty jumplist. shada restores the jumplist at
+  -- startup (`:h startup` step 16) with no notion of cwd, so <C-o> in a fresh
+  -- instance walks back into whatever repo was open last. only the current
+  -- window's jumplist is stored, so clearing that one window covers the restore
+  vim.api.nvim_create_autocmd('VimEnter', {
+    desc = 'Drop the shada-restored jumplist',
+    group = vim.api.nvim_create_augroup('jumplist-scope', { clear = true }),
+    command = 'clearjumps',
+  })
 
   -- graceful process cleanup on exit
   -- explicitly stops LSP servers and terminal jobs so they don't orphan

@@ -46,7 +46,7 @@ return {
       },
       {
         '<C-a>',
-        mode = 'v',
+        mode = 'x',
         function()
           if not vim.bo.modifiable then
             return
@@ -57,7 +57,7 @@ return {
       },
       {
         '<C-x>',
-        mode = 'v',
+        mode = 'x',
         function()
           if not vim.bo.modifiable then
             return
@@ -68,7 +68,7 @@ return {
       },
       {
         'g<C-a>',
-        mode = 'v',
+        mode = 'x',
         function()
           if not vim.bo.modifiable then
             return
@@ -79,7 +79,7 @@ return {
       },
       {
         'g<C-x>',
-        mode = 'v',
+        mode = 'x',
         function()
           if not vim.bo.modifiable then
             return

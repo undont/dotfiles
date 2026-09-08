@@ -170,6 +170,31 @@ function M.extract_colours(ghostty)
 end
 
 -- ══════════════════════════════════════════════════════════════
+-- Chroma
+-- ══════════════════════════════════════════════════════════════
+
+--- Chroma of a hex colour (RGB max-min, 0-255)
+--- Used instead of HSL saturation, which over-rates pale pastels and would
+--- wrongly rank e.g. Dracula's bright lavender above its identity purple
+---@param hex string
+---@return number chroma
+local function chroma(hex)
+    local r, g, b = colour.hex_to_rgb(hex)
+    return math.max(r, g, b) - math.min(r, g, b)
+end
+
+-- An accent below this chroma reads as tinted grey and cannot differentiate
+-- syntax roles. Deliberately dull-but-chromatic accents sit well above it
+-- (Spacegray Eighties Dull's dimmest is ~41), so those themes keep their
+-- designer palette untouched.
+local NEAR_GREY_CHROMA = 30
+
+-- Ceiling on a bright-row swap, as a multiple of the most chromatic other
+-- accent. Kanagawa Dragon's bright red lands far outside its palette's chroma
+-- band; Spacegray Eighties Dull's stays in family.
+local BRIGHT_SWAP_CHROMA_CEILING = 1.5
+
+-- ══════════════════════════════════════════════════════════════
 -- WCAG Auto-Correction
 -- ══════════════════════════════════════════════════════════════
 
@@ -183,6 +208,25 @@ function M.apply_wcag_corrections(colours)
 
     -- ANSI palette index for each accent role; bright variant = index + 8
     local accent_index = { red = 1, green = 2, yellow = 3, purple = 4, pink = 5, cyan = 6 }
+
+    -- Chroma of every accent on entry, so the band a swap is judged against
+    -- doesn't shift as earlier accents in the loop are corrected
+    local entry_chroma = {}
+    for _, name in ipairs(accents) do
+        entry_chroma[name] = chroma(colours[name])
+    end
+
+    -- Highest chroma among the other five accents, floored at NEAR_GREY_CHROMA
+    -- so a near-monochrome palette doesn't reject every swap
+    local function peer_chroma(accent_name)
+        local peak = NEAR_GREY_CHROMA
+        for _, name in ipairs(accents) do
+            if name ~= accent_name then
+                peak = math.max(peak, entry_chroma[name])
+            end
+        end
+        return peak
+    end
 
     -- Surfaces that accents must be readable on (ordered hardest-first).
     -- line_highlight only needs WCAG's 3:1 large-text/UI minimum: CursorLine
@@ -208,6 +252,25 @@ function M.apply_wcag_corrections(colours)
         return worst
     end
 
+    -- Where lightening alone would land an accent, with no adjustment
+    -- bookkeeping: the fallback a declined bright swap drops through to
+    local function lightened(hex)
+        for _, surface in ipairs(accent_surfaces) do
+            hex = colour.ensure_contrast(hex, surface.colour, surface.min)
+        end
+        return hex
+    end
+
+    -- Whether a bright variant is the better palette fit: inside the peer
+    -- band, or at least no louder than the fallback, which holds saturation
+    -- while raising lightness and so can out-chroma the variant it replaces
+    local function bright_fits(accent_name, bright)
+        if chroma(bright) <= peer_chroma(accent_name) * BRIGHT_SWAP_CHROMA_CEILING then
+            return true
+        end
+        return chroma(bright) <= chroma(lightened(colours[accent_name]))
+    end
+
     for _, accent_name in ipairs(accents) do
         -- Prefer the theme's own bright variant over synthetic lightening:
         -- themes that keep dim normal-row colours (e.g. Bluloco Dark's
@@ -215,12 +278,15 @@ function M.apply_wcag_corrections(colours)
         -- bright row. Lightening the dim row invents pastels the designer
         -- never chose, so swap to the bright variant first when it reads
         -- better, then let ensure_contrast top up any remaining shortfall.
+        -- A bright variant far more chromatic than every other accent sits
+        -- outside the palette's band, and falls through to lightening instead.
         if worst_margin(colours[accent_name]) < 1 then
             local bright = colours.palette and colours.palette[accent_index[accent_name] + 8]
             if
                 bright
                 and bright:match("^#%x%x%x%x%x%x$")
                 and worst_margin(bright) > worst_margin(colours[accent_name])
+                and bright_fits(accent_name, bright)
             then
                 colours[accent_name] = bright
                 table.insert(adjustments, { name = accent_name, swapped = true })
@@ -257,22 +323,6 @@ end
 -- ══════════════════════════════════════════════════════════════
 -- Saturation Preference
 -- ══════════════════════════════════════════════════════════════
-
--- An accent below this chroma (RGB max-min) reads as tinted grey and cannot
--- differentiate syntax roles. Deliberately dull-but-chromatic accents sit
--- well above it (Spacegray Eighties Dull's dimmest is ~41), so those themes
--- keep their designer palette untouched.
-local NEAR_GREY_CHROMA = 30
-
---- Chroma of a hex colour (RGB max-min, 0-255)
---- Used instead of HSL saturation, which over-rates pale pastels and would
---- wrongly rank e.g. Dracula's bright lavender above its identity purple
----@param hex string
----@return number chroma
-local function chroma(hex)
-    local r, g, b = colour.hex_to_rgb(hex)
-    return math.max(r, g, b) - math.min(r, g, b)
-end
 
 --- Swap near-grey accents for the theme's own bright-row variant
 --- Muted themes (e.g. Kanagawa Dragon) keep normal-row accents within a few
@@ -472,6 +522,20 @@ end
 -- Neovim Colourscheme Generation
 -- ══════════════════════════════════════════════════════════════
 
+-- Selection band. Steps are HSL lightness points off line_highlight: the band is
+-- pushed toward BAND_STEP_MAX and backed off until every accent clears
+-- BAND_CONTRAST_FLOOR against it, so selected text stays readable. The hue is
+-- fixed rather than taken from the background, matching the cool selections
+-- 12 of the 14 hand-crafted schemes in nvim/colors/ use; at this saturation it
+-- reads as a cool grey and barely moves relative luminance, so the step search
+-- lands where it would on a background-hued band.
+local BAND_STEP_MIN = 6
+local BAND_STEP_MAX = 16
+local BAND_CONTRAST_FLOOR = 3.0
+local BAND_HUE = 220
+local BAND_SATURATION = 0.16
+local BAND_ACCENTS = { "fg_primary", "fg_variable", "purple", "pink", "cyan", "green", "yellow", "red" }
+
 --- Generate nvim/colors/*.lua file content
 ---@param name string colourscheme name (kebab-case)
 ---@param colours table semantic colour palette
@@ -479,19 +543,37 @@ end
 function M.generate_nvim_colourscheme(name, colours)
     local neotree_cursor = colour.lighten(colours.bg_secondary, 12)
 
-    -- Inverted selections: some Ghostty themes (e.g. Bluloco Dark) pair a
-    -- light selection background with a dark selection foreground. In nvim,
-    -- syntax colours would sit on that light bg at ~1:1 contrast and vanish,
-    -- so mirror Ghostty's behaviour by forcing the selection fg on Visual.
-    -- Reference-style highlights (LspReference*, TelescopeSelection) must
-    -- preserve per-token syntax colours, so they get a derived dark band
-    -- instead of the inverted selection colour.
-    local selection_inverted = colour.contrast_ratio(colours.fg_primary, colours.selection) < 2.5
-    local visual_fg = colours.selection_fg
-    if colour.contrast_ratio(visual_fg, colours.selection) < 4.5 then
-        visual_fg = colours.bg_primary
+    -- Selection band. Ghostty's selection-background is tuned for terminal text,
+    -- not for a syntax-highlighted buffer, and taking it verbatim fails two ways:
+    -- an inverted selection (light bg, dark fg, e.g. Bluloco Dark) needs a fg on
+    -- Visual, which overrides every syntax colour and flattens the selection to
+    -- one tone, while a saturated accent selection (e.g. Aura's violet) leaves
+    -- accents at ~1:1 on the block. Derive the band off line_highlight instead so
+    -- Visual stays background-only, and lift it as far clear of the cursor line as
+    -- the palette allows: one fixed step reads as a second cursor line on themes
+    -- with bright accents and washes the syntax out on themes with dim ones.
+    -- Reference-style highlights (LspReference*, TelescopeSelection) share it.
+    local function band_at(step)
+        local _, _, line_l = colour.hex_to_hsl(colours.line_highlight)
+        local l = colour.luminance(colours.bg_primary) < 0.5 and math.min(1, line_l + step / 100)
+            or math.max(0, line_l - step / 100)
+        return colour.hsl_to_hex(BAND_HUE, BAND_SATURATION, l)
     end
-    local reference_bg = selection_inverted and colour.lighten(colours.bg_primary, 12) or colours.selection
+    local function band_worst_accent(band)
+        local worst = math.huge
+        for _, key in ipairs(BAND_ACCENTS) do
+            worst = math.min(worst, colour.contrast_ratio(colours[key], band))
+        end
+        return worst
+    end
+    local selection_bg = band_at(BAND_STEP_MIN)
+    for step = BAND_STEP_MAX, BAND_STEP_MIN + 1, -1 do
+        local candidate = band_at(step)
+        if band_worst_accent(candidate) >= BAND_CONTRAST_FLOOR then
+            selection_bg = candidate
+            break
+        end
+    end
 
     -- Comments sit dimmer than fg_secondary (which @variable.parameter, LineNr and
     -- the UI chrome use) so doc comments don't read as loud as parameter names —
@@ -574,9 +656,8 @@ function M.generate_nvim_colourscheme(name, colours)
     add(string.format("  yellow = '%s',", colours.yellow))
     add(string.format("  red = '%s',", colours.red))
     add("")
-    add(string.format("  selection = '%s',", colours.selection))
-    add(string.format("  selection_fg = '%s',", visual_fg))
-    add(string.format("  reference = '%s',", reference_bg))
+    add(string.format("  selection = '%s',", selection_bg))
+    add(string.format("  reference = '%s',", selection_bg))
     add(string.format("  comment = '%s',", comment))
     add(string.format("  ghost = '%s',", colour.blend(colours.fg_secondary, colours.bg_primary, 0.40)))
     add(string.format("  punct = '%s',", punct))
@@ -601,14 +682,8 @@ function M.generate_nvim_colourscheme(name, colours)
         { "CursorLineNr", "fg = colors.purple, bold = true" },
         { "LineNr", "fg = colors.comment" },
         { "SignColumn", "bg = colors.bg_primary" },
-        {
-            "Visual",
-            selection_inverted and "fg = colors.selection_fg, bg = colors.selection" or "bg = colors.selection",
-        },
-        {
-            "VisualNOS",
-            selection_inverted and "fg = colors.selection_fg, bg = colors.selection" or "bg = colors.selection",
-        },
+        { "Visual", "bg = colors.selection" },
+        { "VisualNOS", "bg = colors.selection" },
         { "Search", "fg = colors.bg_primary, bg = colors.yellow" },
         { "IncSearch", "fg = colors.bg_primary, bg = colors.pink" },
         { "MatchParen", "fg = colors.green, bold = true" },

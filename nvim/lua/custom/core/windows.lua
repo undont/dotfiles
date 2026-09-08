@@ -11,6 +11,19 @@ local zoom_state = {}
 
 local in_scoped_view = require('custom.core.review-context').is_scoped_view
 
+-- native multicursor (nvim 0.13) tracks cursors as extmarks here, and clears
+-- them from the default <C-l> map. <C-l> is window nav instead, so it clears
+-- cursors when the buffer has any and only then falls through to the wincmd
+local mc_ns = vim.api.nvim_create_namespace 'nvim.multicursor'
+
+local function clear_multicursors()
+  if #vim.api.nvim_buf_get_extmarks(0, mc_ns, 0, -1, { limit = 1 }) == 0 then
+    return false
+  end
+  vim.api.nvim_buf_clear_namespace(0, mc_ns, 0, -1)
+  return true
+end
+
 -- height resize only when a window sits above or below. with cmdheight=0 a
 -- height resize on a window with no vertical neighbour (e.g. a left/right side
 -- panel layout) has nowhere to put the freed rows, so nvim grows the command
@@ -65,7 +78,11 @@ end
 function M.setup()
   -- navigation
   vim.keymap.set('n', '<C-h>', '<C-w><C-h>', { desc = 'Move focus to the left window' })
-  vim.keymap.set('n', '<C-l>', '<C-w><C-l>', { desc = 'Move focus to the right window' })
+  vim.keymap.set('n', '<C-l>', function()
+    if not clear_multicursors() then
+      vim.cmd.wincmd 'l'
+    end
+  end, { desc = 'Clear multicursors, else move focus to the right window' })
   vim.keymap.set('n', '<C-j>', '<C-w><C-j>', { desc = 'Move focus to the lower window' })
   vim.keymap.set('n', '<C-k>', '<C-w><C-k>', { desc = 'Move focus to the upper window' })
 

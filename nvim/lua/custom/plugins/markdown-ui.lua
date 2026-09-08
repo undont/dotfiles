@@ -16,21 +16,21 @@ return {
     keys = {
       { '<leader>mr', '<cmd>RenderMarkdown buf_toggle<CR>', desc = 'Toggle markdown render', ft = 'markdown' },
     },
-    opts = {
-      anti_conceal = {
-        ignore = {
-          code_background = false,
+    opts = function()
+      return {
+        -- cursorline paints over the code background, so strip it on the
+        -- cursor row while cursorline is on
+        anti_conceal = { ignore = { code_background = not vim.o.cursorline } },
+        heading = {
+          sign = false,
+          icons = {},
+          backgrounds = {},
+          width = 'block',
         },
-      },
-      heading = {
-        sign = false,
-        icons = {},
-        backgrounds = {},
-        width = 'block',
-      },
-      bullet = { enabled = false },
-      sign = { enabled = false },
-    },
+        bullet = { enabled = false },
+        sign = { enabled = false },
+      }
+    end,
   },
 
   -- interactive editing: list continuation, auto-renumbering, link following, table formatting

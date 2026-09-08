@@ -451,6 +451,77 @@ else
 end
 
 -- ═══════════════════════════════════════════════
+section("apply_wcag_corrections: bright-swap chroma ceiling")
+
+-- Kanagawa Dragon: every accent is muted except the bright red, which is over
+-- twice the chroma of the loudest other accent. Its normal-row red fails only
+-- the synthetic bg_secondary, so the swap must be declined and the designer's
+-- red lightened instead.
+local dragon_wcag_colours = {
+    bg_primary = "#181616",
+    bg_secondary = "#332e2e",
+    line_highlight = "#2b2727",
+    fg_primary = "#c5c9c5",
+    fg_secondary = "#a6a69c",
+    red = "#c4746e",
+    green = "#87a987",
+    yellow = "#c4b28a",
+    purple = "#8ba4b0",
+    pink = "#9b93af",
+    cyan = "#7aa89f",
+    palette = {
+        [9] = "#e46876",
+        [10] = "#87a987",
+        [11] = "#e6c384",
+        [12] = "#7fb4ca",
+        [13] = "#938aa9",
+        [14] = "#7aa89f",
+    },
+}
+
+local dragon_wcag_adjustments = gen.apply_wcag_corrections(dragon_wcag_colours)
+
+if dragon_wcag_colours.red ~= "#e46876" then
+    pass("off-band bright red declined")
+else
+    fail("off-band bright red adopted", "got " .. dragon_wcag_colours.red)
+end
+
+local dragon_red_swapped = false
+for _, adj in ipairs(dragon_wcag_adjustments) do
+    if adj.name == "red" and adj.swapped then
+        dragon_red_swapped = true
+    end
+end
+if not dragon_red_swapped then
+    pass("declined swap not recorded as an adjustment")
+else
+    fail("declined swap recorded as a swap")
+end
+
+-- The fallback still has to clear the surface that triggered the correction
+if colour_utils.contrast_ratio(dragon_wcag_colours.red, dragon_wcag_colours.bg_secondary) >= 4.5 then
+    pass("lightened red meets 4.5:1 on bg_secondary")
+else
+    fail("lightened red below 4.5:1", dragon_wcag_colours.red)
+end
+
+-- and land inside the band the rest of the palette occupies
+local function test_chroma(hex)
+    local r, g, b = colour_utils.hex_to_rgb(hex)
+    return math.max(r, g, b) - math.min(r, g, b)
+end
+local dragon_peer_peak = 0
+for _, name in ipairs({ "green", "yellow", "purple", "pink", "cyan" }) do
+    dragon_peer_peak = math.max(dragon_peer_peak, test_chroma(dragon_wcag_colours[name]))
+end
+if test_chroma(dragon_wcag_colours.red) <= dragon_peer_peak * 1.5 then
+    pass("corrected red stays inside the palette chroma band")
+else
+    fail("corrected red outside the chroma band", dragon_wcag_colours.red)
+end
+
+-- ═══════════════════════════════════════════════
 section("apply_saturation_preference: near-grey accent rescue")
 
 -- Kanagawa Dragon-style palette: normal-row pink/cyan sit within a few
@@ -544,7 +615,7 @@ else
 end
 
 -- ═══════════════════════════════════════════════
-section("generate_nvim_colourscheme: inverted selection")
+section("generate_nvim_colourscheme: selection band")
 
 local function nvim_fixture(overrides)
     local base = {
@@ -569,25 +640,35 @@ local function nvim_fixture(overrides)
     return base
 end
 
+-- Ghostty's selection-background never reaches the nvim colourscheme: the band
+-- is derived from line_highlight so syntax colours survive inside a selection.
+
 -- Inverted: light selection bg with dark selection fg (Bluloco Dark)
 local inverted =
     gen.generate_nvim_colourscheme("test-inverted", nvim_fixture({ selection = "#b9c0ca", selection_fg = "#272b33" }))
 
-if inverted:find("hl('Visual', { fg = colors.selection_fg, bg = colors.selection })", 1, true) then
-    pass("Visual gets selection_fg when selection is inverted")
+if inverted:find("hl('Visual', { bg = colors.selection })", 1, true) then
+    pass("Visual stays bg-only on inverted selection")
 else
-    fail("Visual missing selection_fg on inverted selection")
+    fail("Visual should stay bg-only on inverted selection")
 end
 
-if inverted:find("selection_fg = '#272b33'", 1, true) then
-    pass("selection_fg passes through when readable")
+if inverted:find("selection_fg", 1, true) then
+    fail("selection_fg should not reach the nvim colourscheme")
 else
-    fail("selection_fg not passed through")
+    pass("no selection_fg in generated colourscheme")
+end
+
+local sel = inverted:match("selection = '(#%x%x%x%x%x%x)'")
+if sel and sel ~= "#b9c0ca" and colour_utils.luminance(sel) < 0.2 then
+    pass("selection bg derived dark instead of inverted selection")
+else
+    fail("selection bg", tostring(sel))
 end
 
 local ref = inverted:match("reference = '(#%x%x%x%x%x%x)'")
-if ref and ref ~= "#b9c0ca" and colour_utils.luminance(ref) < 0.2 then
-    pass("reference bg derived dark instead of inverted selection")
+if ref == sel then
+    pass("reference shares the derived band")
 else
     fail("reference bg", tostring(ref))
 end
@@ -598,16 +679,95 @@ else
     fail("LspReference should use reference bg")
 end
 
--- Inverted with unreadable selection_fg: falls back to bg_primary
-local fallback =
-    gen.generate_nvim_colourscheme("test-fallback", nvim_fixture({ selection = "#b9c0ca", selection_fg = "#ffffff" }))
-if fallback:find("selection_fg = '#282c34'", 1, true) then
-    pass("unreadable selection_fg falls back to bg_primary")
+-- Loud accent selection (Aura's violet): also replaced by the derived band, so
+-- accents keep real contrast instead of sitting at ~1:1 on the block.
+local loud = gen.generate_nvim_colourscheme(
+    "test-loud",
+    nvim_fixture({ bg_primary = "#15141b", line_highlight = "#252330", selection = "#a277ff", purple = "#a277ff" })
+)
+local loud_sel = loud:match("selection = '(#%x%x%x%x%x%x)'")
+if loud_sel and loud_sel ~= "#a277ff" then
+    pass("loud accent selection replaced by derived band")
 else
-    fail("selection_fg fallback")
+    fail("loud selection band", tostring(loud_sel))
+end
+if loud_sel and colour_utils.contrast_ratio("#a277ff", loud_sel) >= 3.0 then
+    pass("accent stays readable on the derived band")
+else
+    fail("accent contrast on band", tostring(loud_sel))
 end
 
--- Normal dark selection: Visual stays bg-only, reference equals selection
+-- The band clears the cursor line by a visible step, so a selection does not
+-- read as a second cursor line.
+local step = gen.generate_nvim_colourscheme("test-step", nvim_fixture())
+local step_sel = step:match("selection = '(#%x%x%x%x%x%x)'")
+local _, _, band_l = colour_utils.hex_to_hsl(step_sel)
+local _, _, line_l = colour_utils.hex_to_hsl("#343943")
+if math.abs(band_l - line_l) > 0.06 then
+    pass("selection band clears the cursor line")
+else
+    fail("band too close to cursor line", string.format("%.3f vs %.3f", band_l, line_l))
+end
+
+-- The step adapts to the palette: bright accents buy a bigger lift than dim ones.
+local bright = gen.generate_nvim_colourscheme(
+    "test-bright",
+    nvim_fixture({ bg_primary = "#181616", line_highlight = "#2b2727", fg_primary = "#c5c9c5" })
+)
+local dim = gen.generate_nvim_colourscheme(
+    "test-dim",
+    nvim_fixture({ bg_primary = "#181616", line_highlight = "#2b2727", purple = "#4a4a4a" })
+)
+local _, _, bright_l = colour_utils.hex_to_hsl(bright:match("selection = '(#%x%x%x%x%x%x)'"))
+local _, _, dim_l = colour_utils.hex_to_hsl(dim:match("selection = '(#%x%x%x%x%x%x)'"))
+if bright_l > dim_l then
+    pass("bright palette earns a bigger lift than a dim one")
+else
+    fail("adaptive step", string.format("bright %.3f vs dim %.3f", bright_l, dim_l))
+end
+
+-- Whatever step is chosen, every accent clears the contrast floor against it.
+local floor_scheme = gen.generate_nvim_colourscheme("test-floor", nvim_fixture())
+local floor_sel = floor_scheme:match("selection = '(#%x%x%x%x%x%x)'")
+local worst, worst_key = math.huge, nil
+for _, key in ipairs({ "fg_primary", "purple", "pink", "cyan", "green", "yellow", "red" }) do
+    local ratio = colour_utils.contrast_ratio(nvim_fixture()[key], floor_sel)
+    if ratio < worst then
+        worst, worst_key = ratio, key
+    end
+end
+if worst >= 3.0 then
+    pass("every accent clears the contrast floor on the band")
+else
+    fail("accent below floor on band", string.format("%s at %.2f", worst_key, worst))
+end
+
+-- The band takes a fixed cool hue rather than the background's, matching the
+-- hand-crafted schemes.
+local warm = gen.generate_nvim_colourscheme(
+    "test-warm",
+    nvim_fixture({ bg_primary = "#181616", line_highlight = "#2b2727" })
+)
+local warm_hue = colour_utils.hex_to_hsl(warm:match("selection = '(#%x%x%x%x%x%x)'"))
+if warm_hue > 190 and warm_hue < 250 then
+    pass("band takes the cool hue on a warm background")
+else
+    fail("band hue", string.format("%.0f", warm_hue))
+end
+
+-- Light background: band is darkened rather than lightened
+local light = gen.generate_nvim_colourscheme(
+    "test-light",
+    nvim_fixture({ bg_primary = "#fafafa", fg_primary = "#383a42", line_highlight = "#f0f0f0" })
+)
+local light_sel = light:match("selection = '(#%x%x%x%x%x%x)'")
+if light_sel and colour_utils.luminance(light_sel) < colour_utils.luminance("#f0f0f0") then
+    pass("light background darkens the band")
+else
+    fail("light band", tostring(light_sel))
+end
+
+-- Visual is background-only regardless of the source selection
 local normal = gen.generate_nvim_colourscheme("test-normal", nvim_fixture())
 if normal:find("hl('Visual', { bg = colors.selection })", 1, true) then
     pass("Visual stays bg-only for normal selection")
@@ -615,10 +775,10 @@ else
     fail("Visual should stay bg-only for normal selection")
 end
 
-if normal:find("reference = '#41444d'", 1, true) then
-    pass("reference equals selection for normal selection")
+if normal:find("selection = '#41444d'", 1, true) then
+    fail("ghostty selection should not reach the colourscheme")
 else
-    fail("reference should equal selection for normal selection")
+    pass("ghostty selection does not reach the colourscheme")
 end
 
 -- ═══════════════════════════════════════════════
