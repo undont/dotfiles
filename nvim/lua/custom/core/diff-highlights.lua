@@ -1,6 +1,6 @@
 -- dynamic diff highlights
 -- computes tinted backgrounds from the active Normal bg so diff colours
--- stay consistent across differ and octo for every theme
+-- stay consistent across differ and native diff for every theme
 
 local M = {}
 
@@ -32,17 +32,11 @@ function M.apply()
   local del_bg = tint(red_fg, 0.18)
   local text_bg = tint(yellow_fg, 0.30)
 
-  -- core vim diff groups (used by octo)
+  -- core vim diff groups
   vim.api.nvim_set_hl(0, 'DiffAdd', { bg = add_bg })
   vim.api.nvim_set_hl(0, 'DiffChange', { bg = change_bg })
   vim.api.nvim_set_hl(0, 'DiffDelete', { bg = del_bg })
   vim.api.nvim_set_hl(0, 'DiffText', { bg = text_bg, bold = true })
-
-  -- Octo review inline word-change highlights (per-pane DiffText override).
-  -- Octo links these from its left/right namespaces; we colour them from the
-  -- theme palette so they match the rest of our diff tinting
-  vim.api.nvim_set_hl(0, 'OctoReviewDiffDeleteText', { bg = tint(red_fg, 0.35), bold = true })
-  vim.api.nvim_set_hl(0, 'OctoReviewDiffAddText', { bg = tint(green_fg, 0.35), bold = true })
 
   -- GitSigns line highlights
   vim.api.nvim_set_hl(0, 'GitSignsAddLn', { bg = add_bg })
@@ -53,43 +47,6 @@ function M.apply()
   vim.api.nvim_set_hl(0, 'GitSignsAddNr', { fg = green_fg, bg = add_bg })
   vim.api.nvim_set_hl(0, 'GitSignsChangeNr', { fg = yellow_fg, bg = change_bg })
   vim.api.nvim_set_hl(0, 'GitSignsDeleteNr', { fg = red_fg, bg = del_bg })
-
-  -- Octo: pin insertion/deletion counts to theme green/red for the review
-  -- file panel + PR diffstats, regardless of how the theme defines
-  -- diffAdded/diffRemoved
-  vim.api.nvim_set_hl(0, 'OctoDiffstatAdditions', { fg = green_fg })
-  vim.api.nvim_set_hl(0, 'OctoDiffstatDeletions', { fg = red_fg })
-  vim.api.nvim_set_hl(0, 'OctoPullAdditions', { fg = green_fg })
-  vim.api.nvim_set_hl(0, 'OctoPullDeletions', { fg = red_fg })
-
-  -- status markers (A/D/M/?/R/C/U/T/X/B/!) to semantic git-status colours for
-  -- the octo file panel. mirrors the diffstat-bar palette (green add, red
-  -- delete) so the letter agrees with the bar:
-  --   added/untracked = green, modified = yellow, renamed/copied/typechange =
-  --   blue, deleted/broken = red, unmerged (conflict) = orange, unknown/ignored
-  --   = grey.
-  -- note: octo renders type-changes via `…StatusTypeChanged` (with a 'd') even
-  -- though its default links the 'd'-less name, so we key off the former
-  local blue_fg = get_fg('Function', 0x89b4fa)
-  local orange_fg = get_fg('Number', 0xfab387)
-  local grey_fg = get_fg('Comment', 0x6c7086)
-
-  local status_colours = {
-    Added = green_fg,
-    Untracked = green_fg,
-    Modified = yellow_fg,
-    Renamed = blue_fg,
-    Copied = blue_fg,
-    TypeChanged = blue_fg,
-    Unmerged = orange_fg,
-    Unknown = grey_fg,
-    Deleted = red_fg,
-    Broken = red_fg,
-    Ignored = grey_fg,
-  }
-  for suffix, fg in pairs(status_colours) do
-    vim.api.nvim_set_hl(0, 'OctoStatus' .. suffix, { fg = fg })
-  end
 end
 
 function M.setup()

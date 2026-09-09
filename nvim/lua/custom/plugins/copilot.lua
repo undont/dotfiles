@@ -57,7 +57,6 @@ return {
         ['copilot-chat'] = false,
         snacks_input = false,
         snacks_notif = false,
-        octo = false,
         hgcommit = false,
         svn = false,
         cvs = false,

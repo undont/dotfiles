@@ -5,7 +5,7 @@
 local M = {}
 
 --- prevent LSP servers from attaching to non-file:// buffers (differ://,
---- octo://, fugitive://, etc.). without this, servers like gopls log JSON-RPC
+--- fugitive://, etc.). without this, servers like gopls log JSON-RPC
 --- parse errors when nvim sends didOpen with a non-file URI
 function M.patch_lsp_start()
   local orig_start = vim.lsp.start

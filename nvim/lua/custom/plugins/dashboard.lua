@@ -107,7 +107,7 @@ return {
             { icon = '', key = 'n', desc = 'New File',     action = ':ene | startinsert' },
             { icon = '󰺯', key = 'g', desc = 'Find Text',    action = ":lua Snacks.dashboard.pick('live_grep')" },
             { icon = '', key = 'r', desc = 'Recent Files', action = ":lua Snacks.dashboard.pick('oldfiles')" },
-            { icon = '', key = 'p', desc = 'PRs',          action = ":Octo pr list" },
+            { icon = '', key = 'p', desc = 'PRs',          action = ":Differ pr list" },
             { icon = '', key = 'c', desc = 'Config',       action = ":lua Snacks.dashboard.pick('files', {cwd = vim.fn.stdpath('config')})" },
             { icon = '󰒲 ', key = 'L', desc = 'Lazy',        action = ':Lazy' },
             { icon = '󰩈', key = 'q', desc = 'Quit',         action = ':qa' },

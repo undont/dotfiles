@@ -198,7 +198,7 @@ function M.setup()
     end,
   })
 
-  -- dynamic diff highlights (differ, octo)
+  -- dynamic diff highlights (differ)
   local diff_highlights = require 'custom.core.diff-highlights'
   diff_highlights.setup()
 
@@ -230,28 +230,14 @@ function M.setup()
   })
   apply_markdown_code_highlights()
 
-  -- disable swap file for Octo buffers (not needed and causes warnings)
-  vim.api.nvim_create_autocmd('FileType', {
-    pattern = 'octo',
-    callback = function()
-      vim.bo.swapfile = false
-    end,
-  })
-
-  -- fire `User RealDotnetFile` only for cs/razor outside a review context.
-  -- lets heavy dotnet plugins (roslyn.nvim) lazy-load on this event instead
-  -- of `ft = 'cs'`, so cold-start `<leader>do` from a dashboard doesn't pay
-  -- their config cost just to render diff buffers. buftype alone isn't
-  -- checked in isolation, so also gate on any loaded octo buffer.
-  local review_context = require 'custom.core.review-context'
-
+  -- fire `User RealDotnetFile` only for real cs/razor files. lets heavy dotnet
+  -- plugins (roslyn.nvim) lazy-load on this event instead of `ft = 'cs'`, so
+  -- cold-start `<leader>do` from a dashboard doesn't pay their config cost just
+  -- to render diff buffers
   vim.api.nvim_create_autocmd('FileType', {
     pattern = { 'cs', 'razor' },
     callback = function(args)
       if vim.bo[args.buf].buftype ~= '' then
-        return
-      end
-      if review_context.is_active() then
         return
       end
       vim.api.nvim_exec_autocmds('User', { pattern = 'RealDotnetFile' })

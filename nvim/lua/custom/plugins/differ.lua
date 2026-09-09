@@ -2,8 +2,7 @@
 -- all through one renderer with the same UX. owns every <leader>d* launcher,
 -- including dT (diff by ticket, reusing features/ticket.lua's commit discovery;
 -- differ's own revspec grammar covers both shapes it needs, so no plugin-side
--- change was required), and the <leader>p* pr launchers (replacing octo, which
--- stays installed as a fallback, reachable via :Octo). thread/comment actions
+-- change was required), and the <leader>p* pr launchers. thread/comment actions
 -- are in-diff gestures bound by differ itself in the pr diff: ga comment,
 -- gp reply, gr resolve, gx delete, gc collapse, ]t/[t thread nav.
 

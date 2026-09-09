@@ -400,7 +400,7 @@ return {
       -- defer mason setups: their `setup{}` calls do tool-install verification
       -- and per-server enable iteration that can take many seconds on cold
       -- start. running them in vim.schedule lets the triggering buffer
-      -- (BufReadPre, including differ/octo diff buffers) finish opening
+      -- (BufReadPre, including differ diff buffers) finish opening
       -- first. servers register/attach a few ms later, invisible in practice
       vim.schedule(function()
         -- per-machine opt-out for lightweight boxes (e.g. a Raspberry Pi) that
