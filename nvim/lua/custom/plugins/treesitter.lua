@@ -34,6 +34,7 @@ return {
         'typescript',
         'xml',
         'yaml',
+        'ruby',
         'zig',
         'awk',
         'toml',
