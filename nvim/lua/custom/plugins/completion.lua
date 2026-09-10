@@ -1,5 +1,11 @@
 -- completion configuration (blink.cmp)
 
+-- the rest of the line is only closers and separators, as in `f(g(x|)),`
+local function at_closing_tail()
+  local col = vim.api.nvim_win_get_cursor(0)[2]
+  return vim.api.nvim_get_current_line():sub(col + 1):match '^[%)%]}"\'`,;%s]+$' ~= nil
+end
+
 return {
   {
     'saghen/blink.cmp',
@@ -72,7 +78,8 @@ return {
         },
         -- the menu wins while it is open: select_and_accept takes the
         -- highlighted item, or the top one when nothing is selected. copilot
-        -- ghost text and snippet jumps only get <Tab> once the menu is gone
+        -- ghost text and snippet jumps only get <Tab> once the menu is gone.
+        -- after those, a closing tail jumps to end of line
         ['<Tab>'] = {
           function(cmp)
             if cmp.is_visible() then
@@ -85,6 +92,12 @@ return {
             end
           end,
           'snippet_forward',
+          function()
+            if at_closing_tail() then
+              -- blink maps with replace_keycodes = false
+              return vim.keycode '<End>'
+            end
+          end,
           'fallback',
         },
         ['<S-Tab>'] = { 'snippet_backward', 'fallback' },

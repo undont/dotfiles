@@ -178,6 +178,7 @@ Trigger completion | <C-Space>
 Dismiss completion, restore typed text | <C-e>
 Accept selected completion | <CR> (after selecting)
 Smart accept (Copilot or completion) | <Tab>
+Jump past trailing closers to end of line | <Tab> (before `)` `]` `}` etc)
 Accept Copilot word | <M-Tab>
 Expand snippet | <Tab> (in snippet)
 Next snippet placeholder | <Tab>
