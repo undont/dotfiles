@@ -157,6 +157,7 @@ brew "chafa"                         # Terminal image renderer (used by music.nv
 brew "charmbracelet/tap/freeze"      # Render code/terminal output to an image
 brew "undont/tap/jiru"               # Jira TUI app
 brew "neur0map/tap/gpk"              # Unified package manager TUI
+brew "hyperfine"                     # Benchmarking CLI
 brew "snitch" unless OS.linux? && Hardware::CPU.arm? # No Linux ARM bottle
 
 # =============================================================================

@@ -46,7 +46,7 @@
 # ---------------------------------------------------------------------------
 # Repo Paths
 # map org/repo names (or wildcards) to local clone paths.
-# required for commands that use {{.RepoPath}} (lazygit, Octo, etc.)
+# required for commands that use {{.RepoPath}} (lazygit, differ, etc.)
 # ---------------------------------------------------------------------------
 # repoPaths:
 #     your-org/*: ~/code/*

@@ -29,20 +29,6 @@ local function resolve_solution_target()
   end
 end
 
--- Roslyn during an Octo review context.
--- strategy: do NOTHING to the LSP client. nvim's `lsp_enable_callback`
--- skips buffers with `buftype` other than '' or 'help', and octo review
--- buffers have buftype=nofile, so roslyn never auto-attaches to them anyway.
--- we previously called `vim.lsp.enable('roslyn', false)` to "block new
--- attaches", but that ALSO stops every running roslyn client (per the
--- vim.lsp.enable contract: "stops related LSP clients and servers"),
--- which paid a multi-second cold-restart on every review entry/exit cycle.
---
--- vim.g.roslyn_suppressed remains as a flag so the notify wrap in ui.lua
--- and fidget's progress.ignore can still drop residual chatter while in
--- review (e.g. messages emitted by an unrelated client startup)
-vim.g.roslyn_suppressed = false
-
 --- source roslyn.nvim's plugin file after our config is applied. we block
 --- it in init (vim.g.loaded_roslyn_plugin) to prevent vim.lsp.enable
 --- firing before lock_target + ignore_target are set
@@ -54,39 +40,11 @@ local function source_deferred_plugin()
   end
 end
 
-vim.api.nvim_create_autocmd('FileType', {
-  pattern = 'octo',
-  callback = function()
-    vim.g.roslyn_suppressed = true
-  end,
-})
-
--- clear the flag once the review context is fully torn down (no octo
--- buffers remain)
-local function maybe_clear_roslyn_flag()
-  if not vim.g.roslyn_suppressed then
-    return
-  end
-  if require('custom.core.review-context').is_active() then
-    return
-  end
-  vim.g.roslyn_suppressed = false
-end
-
-vim.api.nvim_create_autocmd('BufEnter', {
-  pattern = '*.cs',
-  callback = function()
-    if vim.g.roslyn_suppressed then
-      vim.defer_fn(maybe_clear_roslyn_flag, 500)
-    end
-  end,
-})
-
 return {
   -- Roslyn LSP via roslyn.nvim (diagnostics, go-to-def, hover, completions)
   -- loads on `User RealDotnetFile` (fired by core/autocmds.lua only for
-  -- buftype='' cs/razor buffers). differ and octo diff/review buffers are
-  -- buftype=nofile, so they don't trigger this and roslyn.nvim's ~1.8s
+  -- buftype='' cs/razor buffers). differ diff buffers are buftype=nofile with
+  -- their own filetype, so they don't trigger this and roslyn.nvim's ~1.8s
   -- config cost stays off the cold-`<leader>do` critical path
   {
     'seblyng/roslyn.nvim',

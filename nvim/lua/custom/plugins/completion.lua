@@ -1,5 +1,15 @@
 -- completion configuration (blink.cmp)
 
+-- friendly-snippets prefixes hidden per filetype: a local json can only shadow
+-- an upstream prefix, so dropping one outright happens here
+local blocked_snippets = { go = { ['in'] = true, ['make'] = true } }
+
+-- the rest of the line is only closers and separators, as in `f(g(x|)),`
+local function at_closing_tail()
+  local col = vim.api.nvim_win_get_cursor(0)[2]
+  return vim.api.nvim_get_current_line():sub(col + 1):match '^[%)%]}"\'`,;%s]+$' ~= nil
+end
+
 return {
   {
     'saghen/blink.cmp',
@@ -72,7 +82,8 @@ return {
         },
         -- the menu wins while it is open: select_and_accept takes the
         -- highlighted item, or the top one when nothing is selected. copilot
-        -- ghost text and snippet jumps only get <Tab> once the menu is gone
+        -- ghost text and snippet jumps only get <Tab> once the menu is gone.
+        -- after those, a closing tail jumps to end of line
         ['<Tab>'] = {
           function(cmp)
             if cmp.is_visible() then
@@ -85,6 +96,12 @@ return {
             end
           end,
           'snippet_forward',
+          function()
+            if at_closing_tail() then
+              -- blink maps with replace_keycodes = false
+              return vim.keycode '<End>'
+            end
+          end,
           'fallback',
         },
         ['<S-Tab>'] = { 'snippet_backward', 'fallback' },
@@ -145,9 +162,10 @@ return {
             -- first item for a prefix lets a local json file override one upstream
             -- snippet without taking over the whole filetype
             transform_items = function(_, items)
+              local blocked = blocked_snippets[vim.bo.filetype] or {}
               local seen, out = {}, {}
               for _, item in ipairs(items) do
-                if not seen[item.label] then
+                if not seen[item.label] and not blocked[item.label] then
                   seen[item.label] = true
                   out[#out + 1] = item
                 end

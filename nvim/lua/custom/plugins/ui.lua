@@ -69,7 +69,7 @@ return {
           { '<leader>o', group = '[O]bsidian', icon = { icon = '󱞁 ', color = 'purple' } },
           { '<leader>w', group = '[W]indow', icon = { icon = '', color = 'red' } },
 
-          -- ── always-visible (non-code contexts like Octo, differ) ──
+          -- ── always-visible (non-code contexts like differ) ──
           { '<leader>p', group = '[P]R Review', icon = { cat = 'filetype', name = 'git' } },
 
           -- ── always-visible (qf/loclist commands work in any buffer) ──
@@ -209,21 +209,10 @@ return {
         -- filetype, which fidget would otherwise pop up. drop it unconditionally;
         -- the manual `<leader>lm` / `<leader>lS` scan uses a separate
         -- `sonar-scan` client name (see plugins/sonarlint.lua) so its progress
-        -- still shows. errors flow via vim.notify, not progress.
-        -- Roslyn progress stays gated on `vim.g.roslyn_suppressed` (review only)
+        -- still shows. errors flow via vim.notify, not progress
         ignore = {
           function(msg)
-            if not (msg.lsp_client and msg.lsp_client.name) then
-              return false
-            end
-            local name = msg.lsp_client.name
-            if name == 'sonarlint.nvim' then
-              return true
-            end
-            if name == 'roslyn' then
-              return vim.g.roslyn_suppressed
-            end
-            return false
+            return msg.lsp_client ~= nil and msg.lsp_client.name == 'sonarlint.nvim'
           end,
         },
         display = {

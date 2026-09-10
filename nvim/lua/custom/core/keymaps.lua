@@ -3,6 +3,11 @@
 
 local M = {}
 
+local function git_root()
+  local buf = vim.api.nvim_buf_get_name(0)
+  return vim.fs.root(buf ~= '' and buf or vim.fn.getcwd(), '.git')
+end
+
 function M.setup()
   -- clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
@@ -58,7 +63,13 @@ function M.setup()
   vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'File [E]xplorer' })
 
   -- git UI
-  vim.keymap.set('n', '<leader>g', '<cmd>LazyGit<CR>', { desc = 'Lazy[G]it' })
+  vim.keymap.set('n', '<leader>g', function()
+    if not git_root() and not (vim.env.GIT_DIR and vim.env.GIT_WORK_TREE) then
+      vim.notify('not in a git repository', vim.log.levels.WARN)
+      return
+    end
+    vim.cmd 'LazyGit'
+  end, { desc = 'Lazy[G]it' })
 
   -- undo tree
   vim.keymap.set('n', '<leader>u', function()

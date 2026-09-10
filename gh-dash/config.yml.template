@@ -84,8 +84,8 @@ keybindings:
     universal: {}
     prs:
         - key: C
-          name: code review (Octo)
-          command: tmux new-window -c {{.RepoPath}} 'nvim -c ":silent Octo pr edit {{.PrNumber}}"'
+          name: code review (differ)
+          command: tmux new-window -c {{.RepoPath}} 'nvim -c ":silent Differ pr review {{.PrNumber}}"'
         - key: D
           name: diff (diffnav)
           command: cd {{.RepoPath}} && gh pr diff {{.PrNumber}} | diffnav

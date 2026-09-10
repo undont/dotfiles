@@ -43,26 +43,6 @@ function M.install()
       end
     end
 
-    -- suppress-gated filters: drop sonarlint/roslyn chatter while in
-    -- diff/review contexts. flags are owned by sonarlint.lua / dotnet.lua
-    if vim.g.sonarlint_suppressed then
-      if msg:match '[Ss]onarlint' or msg:match '[Ss]onar[Qq]ube' then
-        return
-      end
-      if title_str and title_str:lower():match 'sonar' then
-        return
-      end
-    end
-
-    if vim.g.roslyn_suppressed then
-      if msg:match '[Rr]oslyn' then
-        return
-      end
-      if title_str and title_str:lower():match 'roslyn' then
-        return
-      end
-    end
-
     return base_notify(msg, level, nopts)
   end
 end
