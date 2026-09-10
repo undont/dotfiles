@@ -6,15 +6,6 @@
 #   @preset: core    - included in core and full
 #   @preset: full    - included in full only
 
-# Taps
-tap "Adembc/homebrew-tap"
-tap "charmbracelet/tap"
-tap "libsql/sqld"
-tap "morantron/tmux-fingers"
-tap "neur0map/tap"
-tap "oven-sh/bun"
-tap "undont/tap"
-
 # =============================================================================
 # @preset: minimal
 # Shell & Terminal Essentials (zsh + tmux)
@@ -33,6 +24,15 @@ brew "carapace"               # Multi-shell completion provider (bridges zsh com
 # @preset: core
 # Editors & Development Tools
 # =============================================================================
+
+# Taps
+tap "Adembc/homebrew-tap"
+tap "charmbracelet/tap"
+tap "libsql/sqld"
+tap "morantron/tmux-fingers"
+tap "neur0map/tap"
+tap "oven-sh/bun"
+tap "undont/tap"
 
 # Editors
 brew "neovim"            # >= 0.11 required for nvim-treesitter
@@ -97,7 +97,6 @@ brew "uv"            # Python package + tool manager (replaces pipx; `uv tool in
 
 # Java
 brew "openjdk"
-cask "zulu@17"
 
 # Android (commandline tools — SDK manager, emulator, adb)
 cask "android-commandlinetools"
@@ -130,6 +129,7 @@ brew "Adembc/homebrew-tap/lazyssh"  # SSH host manager TUI
 
 # Misc Dev Tools
 brew "cmake"
+brew "ninja"
 brew "staticcheck"   # Go linter
 brew "golangci-lint" # Go meta-linter
 brew "swift-format"  # macOS-only
