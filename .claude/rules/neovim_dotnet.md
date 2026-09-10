@@ -119,11 +119,7 @@ carry `code == 'IDE0079'` and the bypass is real. Eliminated explanations:
 `bufload()` _does_ run filetype detection (so the `filetype == 'cs'` gate
 passes for scan buffers); the pull path resolves `vim.diagnostic.set`
 dynamically (`$VIMRUNTIME/lua/vim/lsp/diagnostic.lua`); roslyn.nvim holds no
-cached reference to it. One unconfirmed suspect: `RealDotnetFile` (which
-loads the roslyn plugin and installs this patch) is suppressed inside review
-contexts (`in_review_context()` in `core/autocmds.lua`), so a
-review-then-scan session delays patch install — though an unloaded plugin
-should also mean no roslyn client to report anything. If IDE0079 ever shows
+cached reference to it. If IDE0079 ever shows
 up **in-editor** (gutter / `<leader>xx` list, not just a scan), the wrapper
 failed there too — inspect the live diagnostic:
 
@@ -230,35 +226,16 @@ no `csharp|...` settings. Result: wrong solution target (or a multi-solution
 picker) and an unconfigured client. The deferred `dofile` is what forces
 `vim.lsp.enable` to run _after_ our config.
 
-## Roslyn During Octo Review
+## Roslyn On Diff Buffers
 
-**Roslyn is NOT suppressed during review.** Earlier iterations called
-`vim.lsp.enable('roslyn', false)` on review entry to block new attaches, but
-that API also stops every running roslyn client (see `lsp.lua` source:
-`"stops related LSP clients and servers"`), forcing a multi-second cold-restart
-on every review entry/exit cycle. Each restart triggered the
-`RoslynInitialized` autocmd which `force_refresh`es semantic tokens on every
-loaded `.cs` buffer — that's what produced the post-`<leader>de` editor freeze.
+**Roslyn is never suppressed for diff or review buffers.** `vim.lsp.enable('roslyn', false)`
+would block new attaches, but it also stops every running roslyn client (`lsp.lua`:
+`"stops related LSP clients and servers"`), forcing a multi-second cold restart and a
+`RoslynInitialized` token refresh on every loaded `.cs` buffer.
 
-Why we don't need to block attaches: Neovim's built-in `lsp_enable_callback`
-skips buffers whose `buftype` isn't `''` or `'help'`. Octo review buffers use
-`buftype=nofile`, and differ's diff/panel/history buffers are `buftype=nofile`
-too. So roslyn doesn't auto-attach to them anyway.
-
-What we do keep:
-
-- **`vim.g.roslyn_suppressed` flag** — set on `FileType octo`, cleared by
-  `maybe_clear_roslyn_flag` (deferred 500ms on `BufEnter *.cs`) once no `octo`
-  buffers remain.
-- **Notify filtering** lives in the wrap inside `ui.lua`'s fidget config (NOT
-  here). Fidget's `override_vim_notify = true` overwrites `vim.notify` at
-  setup time, blowing away wraps installed at module load — so the single
-  source of truth has to live after fidget setup. The wrap consults
-  `vim.g.roslyn_suppressed` and drops messages matching `[Rr]oslyn` (body) or
-  `roslyn` (title, case-insensitive) while the flag is set.
-- **Initial `source_deferred_plugin()`** in `config()` — still needed to
-  unblock roslyn.nvim's plugin file (gated by `vim.g.loaded_roslyn_plugin`)
-  after our `lock_target` / `ignore_target` config is applied.
+No block is needed: nvim's built-in `lsp_enable_callback` skips buffers whose
+`buftype` isn't `''` or `'help'`, and differ's diff/panel/history buffers are
+`buftype=nofile`, so roslyn never auto-attaches to them.
 
 ## Which-Key on Differ Buffers
 
@@ -266,9 +243,8 @@ Which-key's trigger system has brief suspension windows (`ModeChanged`, `BufNew`
 where the `<Space>` trigger keymap is absent. On differ buffers, a permanent
 buffer-local `<Space>`/`]`/`[` keymap calls `require('which-key').show(key)`
 directly, bypassing the fragile trigger system. This is set via a `BufWinEnter`
-autocmd keyed on the `differ://` buffer name in `plugins/differ.lua`. Octo has
-no equivalent pin.
+autocmd keyed on the `differ://` buffer name in `plugins/differ.lua`.
 
 The `wk.add` BufEnter callback in `ui.lua` also skips `buftype ~= ''` buffers
-(differ, octo, telescope, neo-tree) and caches visibility state to avoid
+(differ, telescope, neo-tree) and caches visibility state to avoid
 unnecessary `Buf.clear()` calls that remove all triggers globally.

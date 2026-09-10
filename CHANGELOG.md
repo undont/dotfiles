@@ -4,6 +4,29 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.142] - 2026-09-10
+
+### Added
+
+- `<Tab>` jumps to end of line when the rest of it is only closers and separators, as in `f(g(x|)),`. It comes after the completion menu, Copilot and snippet jumps, so it only acts when none of those take the key. `nvim/lua/custom/plugins/completion.lua`, `nvim/cheatsheet.txt`
+- Ruby joins the treesitter parser list. `nvim/lua/custom/plugins/treesitter.lua`
+- `hyperfine` in the Brewfile. `Brewfile`
+- Cursor animation options for neovide, applied only when `vim.g.neovide` is set. `nvim/lua/custom/core/options.lua`
+
+### Changed
+
+- Go's `in` and `make` snippets no longer show in completion. A local json can only shadow a friendly-snippets prefix, not drop it, so they are filtered in `transform_items`. `nvim/lua/custom/plugins/completion.lua`
+- The dashboard's Find Text moves from `g` to `G`, and its PRs entry opens `:Differ pr list`. `nvim/lua/custom/plugins/dashboard.lua`
+- gh-dash's `C` opens the PR in differ's review rather than octo. `gh-dash/config.yml.template`, `gh-dash/local.yml.template`
+
+### Fixed
+
+- `<leader>g` warns outside a git repo instead of launching lazygit. A `GIT_DIR`/`GIT_WORK_TREE` pair still counts as a repo. `nvim/lua/custom/core/keymaps.lua`
+
+### Removed
+
+- octo.nvim, which differ.nvim had already replaced for PR review; `:Octo`, `:OctoCacheClear`, and the octo-only zoom, highlight and sonarlint/roslyn suppression code go with it. `:Lazy clean` removes the installed copy. `nvim/lua/custom/plugins/pr-review.lua`, `nvim/lua/custom/features/octo-review-cache.lua`, `nvim/lua/custom/core/review-context.lua`, `nvim/lua/custom/core/windows.lua`, `nvim/lua/custom/core/diff-highlights.lua`, `nvim/lua/custom/plugins/sonarlint.lua`, `nvim/lua/custom/plugins/dotnet.lua`, `nvim/lua/custom/features/notify-filter.lua`, `nvim/lua/custom/plugins/ui.lua`
+
 ## [0.2.141] - 2026-09-07
 
 ### Added
