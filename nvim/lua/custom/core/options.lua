@@ -156,6 +156,13 @@ function M.setup()
   -- `targets` is the key on both 0.12 and 0.13: the singular `target` is
   -- silently ignored on 0.13, leaving messages in the cmdline
   require('vim._core.ui2').enable { msg = { targets = 'msg' } }
+
+  -- neovide options
+  if vim.g.neovide then
+    vim.g.neovide_cursor_animation_length = 0.050
+    vim.g.neovide_cursor_trail_size = 0.5
+    vim.g.neovide_cursor_smooth_blink = true
+  end
 end
 
 return M
