@@ -18,6 +18,7 @@ return {
       'rafamadriz/friendly-snippets',
       { 'saghen/blink.compat', opts = {} },
       'giuxtaposition/blink-cmp-copilot',
+      { 'mikavilpas/blink-ripgrep.nvim', version = '*' },
       {
         'L3MON4D3/LuaSnip',
         version = 'v2.*',
@@ -142,7 +143,7 @@ return {
         },
       },
       sources = {
-        default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'copilot' },
+        default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'ripgrep', 'copilot' },
         providers = {
           -- require() paths and plugin module annotations, types served by lazydev
           lazydev = {
@@ -176,6 +177,20 @@ return {
           -- short keywords are where buffer words are noisiest: a 3-char query
           -- fuzzy-matches unrelated identifiers and gets preselected
           buffer = { score_offset = -5, min_keyword_length = 4 },
+          -- words from the rest of the project, ranked under buffer words. no
+          -- search runs outside a git repo: the cwd fallback is off
+          ripgrep = {
+            name = 'Ripgrep',
+            module = 'blink-ripgrep',
+            score_offset = -8,
+            opts = {
+              prefix_min_len = 4,
+              backend = {
+                use = 'gitgrep-or-ripgrep',
+                ripgrep = { project_root_fallback = false },
+              },
+            },
+          },
         },
       },
       cmdline = {
