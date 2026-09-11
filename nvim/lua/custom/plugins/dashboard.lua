@@ -82,6 +82,13 @@ local function set_dashboard_highlights()
   end
 end
 
+-- every picker window (list, input, preview, box) and its border links back to
+-- these two, so the picker body follows Normal the way telescope's does
+local function set_picker_highlights()
+  vim.api.nvim_set_hl(0, 'SnacksPicker', { link = 'Normal' })
+  vim.api.nvim_set_hl(0, 'SnacksPickerBorder', { link = 'TelescopeBorder' })
+end
+
 return {
   {
     'folke/snacks.nvim',
@@ -137,6 +144,12 @@ return {
         },
       },
       notifier = { enabled = false },
+      -- Snacks.picker.* still works while disabled; enabling it would also
+      -- replace vim.ui.select, which telescope-ui-select owns
+      picker = {
+        enabled = false,
+        layout = { layout = { backdrop = false } },
+      },
       quickfile = { enabled = false },
       statuscolumn = { enabled = false },
       styles = {
@@ -154,9 +167,13 @@ return {
 
       -- apply highlights now and re-apply on every theme change
       set_dashboard_highlights()
+      set_picker_highlights()
       vim.api.nvim_create_autocmd('ColorScheme', {
         group = vim.api.nvim_create_augroup('SnacksDashboardTheme', { clear = true }),
-        callback = set_dashboard_highlights,
+        callback = function()
+          set_dashboard_highlights()
+          set_picker_highlights()
+        end,
       })
 
       local statusline_group = vim.api.nvim_create_augroup('SnacksDashboardStatusline', { clear = true })
