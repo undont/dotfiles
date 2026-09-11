@@ -5,6 +5,15 @@
 -- ftplugin/markdown.lua sets conceallevel=2 + wrap; render-markdown lifts to
 -- conceallevel=3 while rendered and restores on insert/unrender
 
+-- false for `cursorlineopt=number`, which only highlights the line number
+local function cursorline_paints_row()
+  if not vim.o.cursorline then
+    return false
+  end
+  local opt = vim.o.cursorlineopt
+  return opt:find('both', 1, true) ~= nil or opt:find('line', 1, true) ~= nil
+end
+
 return {
   -- in-buffer rendering: heading backgrounds, bullet glyphs, code-block tint,
   -- table borders, checkboxes. render-only, un-renders in insert mode so
@@ -19,8 +28,8 @@ return {
     opts = function()
       return {
         -- cursorline paints over the code background, so strip it on the
-        -- cursor row while cursorline is on
-        anti_conceal = { ignore = { code_background = not vim.o.cursorline } },
+        -- cursor row while cursorline paints the row
+        anti_conceal = { ignore = { code_background = not cursorline_paints_row() } },
         heading = {
           sign = false,
           icons = {},
