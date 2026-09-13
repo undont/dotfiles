@@ -156,16 +156,15 @@ fi
 if should_install "core" && is_linux; then
     echo "Installing Linux alternatives for cask packages..."
 
-    # .NET SDK (cask "dotnet-sdk" on macOS)
+    # .NET SDK (cask "dotnet-sdk" on macOS; formula "dotnet" on Linux)
     if ! command_exists dotnet; then
         echo "Installing .NET SDK..."
-        brew install dotnet-sdk 2>/dev/null || warn ".NET SDK install failed — install manually from https://dotnet.microsoft.com"
+        brew install dotnet || warn ".NET SDK install failed — install manually from https://dotnet.microsoft.com"
     fi
 
-    # Google Cloud SDK (cask "gcloud-cli" on macOS)
+    # Google Cloud SDK (cask "gcloud-cli" on macOS; no Linux formula)
     if ! command_exists gcloud; then
-        echo "Installing Google Cloud SDK..."
-        brew install google-cloud-sdk 2>/dev/null || warn "gcloud install failed — install manually from https://cloud.google.com/sdk"
+        info "gcloud not installed. Install manually: https://cloud.google.com/sdk/docs/install"
     fi
 
     # Ghostty (cask on macOS, system package on Linux, not managed by brew)
@@ -254,22 +253,6 @@ if should_install "core"; then
         fi
     else
         echo "Claude Code already installed: $(claude --version 2>/dev/null || echo 'unknown version')"
-    fi
-fi
-
-# glazepkg (gpk): Go package manager tool
-if should_install "core"; then
-    if command_exists go; then
-        if ! command_exists gpk; then
-            echo "Installing gpk (glazepkg)..."
-            if ! go install github.com/neur0map/glazepkg/cmd/gpk@latest; then
-                warn "gpk install failed. You can retry manually: go install github.com/neur0map/glazepkg/cmd/gpk@latest"
-            fi
-        else
-            echo "gpk already installed"
-        fi
-    else
-        warn "Go not found — skipping gpk install"
     fi
 fi
 

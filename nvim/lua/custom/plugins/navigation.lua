@@ -1,4 +1,4 @@
--- file navigation: Harpoon2 for quick marks, Oil for filesystem-as-buffer
+-- file navigation: Harpoon2 for quick marks, Oil for filesystem-as-buffer (plus git status)
 
 -- close oil, restoring the dashboard if oil was opened from it. oil.close()
 -- restores `oil_original_buffer`, but the snacks dashboard is bufhidden=wipe,
@@ -51,6 +51,26 @@ vim.api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter' }, {
   end,
 })
 
+-- oil-git-status links these once at setup, and every colourscheme runs
+-- `hi clear`, so they are relinked on ColorScheme
+local oil_git_status_links = {
+  Added = 'GitSignsAdd',
+  Untracked = 'GitSignsAdd',
+  Modified = 'GitSignsChange',
+  Renamed = 'GitSignsChange',
+  Copied = 'GitSignsChange',
+  TypeChanged = 'GitSignsChange',
+  Deleted = 'GitSignsDelete',
+  Unmerged = 'DiagnosticError',
+}
+
+local function link_oil_git_status_hl()
+  for status, target in pairs(oil_git_status_links) do
+    vim.api.nvim_set_hl(0, 'OilGitStatusIndex' .. status, { link = target })
+    vim.api.nvim_set_hl(0, 'OilGitStatusWorkingTree' .. status, { link = target })
+  end
+end
+
 return {
   -- oil: filesystem-as-buffer
   {
@@ -71,6 +91,8 @@ return {
       return vim.tbl_deep_extend('force', {
         default_file_explorer = true,
         columns = { 'icon' },
+        -- oil-git-status draws index and working-tree status in one column each
+        win_options = { signcolumn = 'yes:2' },
         -- `sort` names the `notedate` column registered in config below; oil
         -- resolves sort columns lazily at render time, so registration order
         -- against this table doesn't matter
@@ -86,6 +108,20 @@ return {
     config = function(_, opts)
       require('oil').setup(opts)
       require('custom.features.dated-notes').setup_oil()
+    end,
+  },
+
+  -- git status letters in oil listings
+  {
+    'refractalize/oil-git-status.nvim',
+    dependencies = { 'stevearc/oil.nvim' },
+    config = function()
+      require('oil-git-status').setup { show_ignored = false }
+      link_oil_git_status_hl()
+      vim.api.nvim_create_autocmd('ColorScheme', {
+        group = vim.api.nvim_create_augroup('oil-git-status-hl', { clear = true }),
+        callback = link_oil_git_status_hl,
+      })
     end,
   },
 

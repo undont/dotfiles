@@ -110,8 +110,22 @@ return {
         end,
       })
 
-      -- split/join code constructs (gS to split, gJ to join)
-      require('mini.splitjoin').setup()
+      -- split/join code constructs (gS toggles)
+      local splitjoin = require 'mini.splitjoin'
+      splitjoin.setup()
+
+      -- go requires a trailing comma before a newline, and ruff and zig fmt keep
+      -- a list one item per line while it ends in one, so split adds it and join drops it
+      local trailing_comma = {
+        split = { hooks_post = { splitjoin.gen_hook.add_trailing_separator() } },
+        join = { hooks_post = { splitjoin.gen_hook.del_trailing_separator() } },
+      }
+      vim.api.nvim_create_autocmd('FileType', {
+        pattern = { 'go', 'python', 'zig' },
+        callback = function(ev)
+          vim.b[ev.buf].minisplitjoin_config = trailing_comma
+        end,
+      })
 
       -- bespoke statusline content + section overrides live in features/
       require('custom.features.statusline').setup()

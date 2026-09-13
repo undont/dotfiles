@@ -67,6 +67,7 @@ Paste last yank | <leader>v / <leader>V
 Undo / redo | u / <C-r>
 Repeat last action | .
 Insert space at cursor | <leader>i
+Split/join arguments, tables, lists (toggle) | gS
 
 ## multi-cursor @multi-cursor
 Select word / find next | <C-n>

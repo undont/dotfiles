@@ -121,6 +121,7 @@ return {
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
       'saghen/blink.cmp',
+      'b0o/SchemaStore.nvim',
     },
     config = function()
       -- LSP attach autocmd
@@ -142,8 +143,12 @@ return {
           map('grd', lsp_nav.dedup 'definition', '[D]efinition')
           map('gd', lsp_nav.dedup 'definition', '[D]efinition')
           map('grD', vim.lsp.buf.declaration, '[D]eclaration')
-          map('gO', require('telescope.builtin').lsp_document_symbols, 'Document symbols')
-          map('gW', require('telescope.builtin').lsp_dynamic_workspace_symbols, 'Workspace symbols')
+          map('gO', function()
+            Snacks.picker.lsp_symbols()
+          end, 'Document symbols')
+          map('gW', function()
+            Snacks.picker.lsp_workspace_symbols()
+          end, 'Workspace symbols')
           map('grt', lsp_nav.dedup 'type_definition', '[T]ype definition')
           map('<leader>lr', function()
             restart_lsp_clients(event.buf)
@@ -246,6 +251,23 @@ return {
         settings = {
           css = { lint = { unknownAtRules = 'ignore' } },
         },
+      })
+
+      -- the SchemaStore catalogue loads when the server starts. before_init
+      -- mutates `settings` in place: the client keeps that table by reference
+      vim.lsp.config('jsonls', {
+        settings = { json = { validate = { enable = true } } },
+        before_init = function(_, config)
+          config.settings.json.schemas = require('schemastore').json.schemas()
+        end,
+      })
+
+      -- `url = ''` avoids a TypeError in yamlls when its own store is disabled
+      vim.lsp.config('yamlls', {
+        settings = { yaml = { schemaStore = { enable = false, url = '' } } },
+        before_init = function(_, config)
+          config.settings.yaml.schemas = require('schemastore').yaml.schemas()
+        end,
       })
 
       vim.lsp.config('lua_ls', {
@@ -391,6 +413,7 @@ return {
         eslint = {},
         gopls = {},
         html = {},
+        jsonls = {},
         lua_ls = {},
         tailwindcss = {},
         ts_ls = {},
@@ -429,6 +452,7 @@ return {
             'eslint',
             'gopls',
             'html',
+            'jsonls',
             'lua_ls',
             'tailwindcss',
             'ts_ls',
