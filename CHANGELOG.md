@@ -4,6 +4,30 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.143] - 2026-09-13
+
+### Added
+
+- blink-ripgrep adds words from the rest of the project to completion, ranked below buffer words. It searches with git grep inside a repo and does nothing outside one. `nvim/lua/custom/plugins/completion.lua`
+- oil-git-status shows each entry's index and working-tree status in two sign columns, coloured from the gitsigns groups. `nvim/lua/custom/plugins/navigation.lua`
+- jsonls is installed and enabled, and jsonls and yamlls take their schemas from SchemaStore.nvim, so common config files validate and complete without a `$schema` line. `nvim/lua/custom/plugins/lsp.lua`
+- mini.splitjoin adds a trailing comma when splitting and drops it when joining in go, python and zig; `gS` is in the cheatsheet. `nvim/lua/custom/plugins/mini.lua`, `nvim/cheatsheet.txt`
+- `ninja` in the Brewfile. `Brewfile`
+
+### Changed
+
+- `gO` and `gW` open snacks' lsp symbol pickers instead of telescope's. `nvim/lua/custom/plugins/lsp.lua`, `nvim/lua/custom/plugins/dashboard.lua`
+- Homebrew taps install with the core preset rather than minimal, which uses none of them. `Brewfile`
+- On Linux, core installs .NET from the `dotnet` formula, and gcloud prints a manual-install link instead of trying a formula that doesn't exist. `scripts/install/install-packages.sh`
+
+### Fixed
+
+- Markdown code blocks keep their background on the cursor row when `cursorlineopt` only highlights the line number. `nvim/lua/custom/plugins/markdown-ui.lua`
+
+### Removed
+
+- `zulu@17` from the Brewfile, and the `go install` step for `gpk`, which the Brewfile's tap formula already covers. `Brewfile`, `scripts/install/install-packages.sh`
+
 ## [0.2.142] - 2026-09-10
 
 ### Added
