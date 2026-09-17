@@ -61,6 +61,20 @@ else
     fail "import should fail with init hint (rc=$rc)"
 fi
 
+out=$(dotfiles_run local export) && rc=0 || rc=$?
+if [[ $rc -ne 0 && "$out" == *"local init"* ]]; then
+    pass "local export passes through to export"
+else
+    fail "local export should behave like export (rc=$rc)"
+fi
+
+out=$(dotfiles_run local import) && rc=0 || rc=$?
+if [[ $rc -ne 0 && "$out" == *"local init"* ]]; then
+    pass "local import passes through to import"
+else
+    fail "local import should behave like import (rc=$rc)"
+fi
+
 out=$(dotfiles_run local status) && rc=0 || rc=$?
 if [[ $rc -eq 0 && "$out" == *"No local repo configured"* ]]; then
     pass "local status is informational when unconfigured"
