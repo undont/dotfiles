@@ -999,6 +999,9 @@ cmd_local() {
         status) cmd_local_status "$@" ;;
         diff) cmd_local_diff "$@" ;;
         edit) cmd_local_edit "$@" ;;
+        # aliases for the top-level commands, which read naturally under `local`
+        export) cmd_export "$@" ;;
+        import) cmd_import "$@" ;;
         *)
             error "Unknown local subcommand: $sub"
             printf "  Run: ${CYAN}dotfiles help local${NC}\n" >&2
@@ -2064,6 +2067,8 @@ SUBCOMMANDS
   clone <url>          Clone an existing private repo, register and apply it
   diff                 Show system vs repo differences
   edit                 Open the local-layer repo in $EDITOR
+  export [ARGS]        Same as dotfiles export (see dotfiles help export)
+  import [ARGS]        Same as dotfiles import (see dotfiles help import)
 
 URLs accept GitHub "owner/repo" shorthand, expanded to https://github.com/.
 

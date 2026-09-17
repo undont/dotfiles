@@ -56,6 +56,8 @@ the installer and it is adopted and imported automatically.
 
 Inspect state with `dotfiles local status`, see exactly what differs with
 `dotfiles local diff`, and open the repo in `$EDITOR` with `dotfiles local edit`.
+`dotfiles local export` and `dotfiles local import` are aliases for the
+top-level commands and take the same arguments.
 
 ## What is never synced
 
