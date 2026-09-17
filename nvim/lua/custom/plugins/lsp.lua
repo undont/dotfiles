@@ -283,9 +283,15 @@ return {
       -- the default `exit_timeout = false`: the old client only actually
       -- dies once some subsequent LSP request nudges traffic on the pipe.
       -- force-terminate after 5s so restarts are reliable. roslyn.nvim's own
-      -- `:Roslyn target` command documents the same quirk in commands.lua
+      -- `:Roslyn target` command documents the same quirk in commands.lua.
+      -- the roslyn wrapper hands off to one shared daemon that inherits the
+      -- launching nvim's cwd and outlives it. started from a git worktree
+      -- that is later removed, every project load fails in getcwd() for all
+      -- editors until the daemon is killed. $HOME never goes away, and the
+      -- server gets the solution by absolute path, so launch from there
       vim.lsp.config('roslyn', {
         exit_timeout = 5000,
+        cmd_cwd = vim.env.HOME,
       })
 
       -- kill every server outright on actual nvim exit, so closing the editor
