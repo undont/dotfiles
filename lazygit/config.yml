@@ -9,5 +9,8 @@ gui:
     # and avoids poor contrast from ANSI colours used as backgrounds
     selectedLineBgColor:
       - reverse
-    selectedRangeBgColor:
-      - reverse
+
+git:
+  diffRenderers:
+    - colorArg: always
+      command: delta --paging=never
