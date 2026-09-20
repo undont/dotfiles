@@ -65,6 +65,26 @@ for hook in after-select-window client-session-changed; do
     fi
 done
 
+section "Tmux hooks GC alerts on both rename paths"
+# automatic-rename never runs the rename-window command, so it fires
+# window-renamed only; an agent's window name changes that way throughout a turn
+for hook in after-rename-window window-renamed; do
+    if grep "^set-hook -g $hook " "$TMUX_CONF" | grep -q "cleanup.sh"; then
+        pass "$hook hook calls cleanup.sh"
+    else
+        fail "$hook hook missing cleanup.sh (renamed windows keep stale alerts)"
+    fi
+done
+
+section "clear.sh resolves its target from TMUX_PANE"
+# an untargeted display-message answers for the attached client's current
+# window, not the pane the agent hook runs in
+if grep -q 'TMUX_PANE' "$SCRIPTS_DIR/alerts/clear.sh"; then
+    pass "clear.sh consults TMUX_PANE"
+else
+    fail "clear.sh ignores TMUX_PANE (hook clears whichever window is on screen)"
+fi
+
 section "clear.sh doesn't spawn update-timestamp.sh"
 if grep -q "update-timestamp" "$SCRIPTS_DIR/alerts/clear.sh"; then
     fail "clear.sh spawns update-timestamp.sh (should be called independently by hooks)"

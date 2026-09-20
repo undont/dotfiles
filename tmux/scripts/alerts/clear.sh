@@ -9,16 +9,21 @@ WINDOW_ID="$3"
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# if format strings weren't expanded (display-popup doesn't expand them),
-# get the values directly from tmux. a blank window name is a separate case:
-# during a pane kill/refocus the automatic-rename-format can transiently
-# resolve to empty while the pane's command/title is unset, so recover the
-# name from the stable window id (the hook runs backgrounded, so by now it
-# has usually settled) rather than treating the blank as fatal
+# resolve the target when the caller passed nothing (the agent hooks) or when
+# format strings weren't expanded (display-popup doesn't expand them). prefer
+# TMUX_PANE: it names the pane the caller runs in, whereas an untargeted
+# display-message answers for the attached client's current window, which is a
+# different window whenever the agent is working in the background. a blank
+# window name is a separate case: during a pane kill/refocus the
+# automatic-rename-format can transiently resolve to empty while the pane's
+# command/title is unset, so recover the name from the stable window id (the
+# hook runs backgrounded, so by now it has usually settled) rather than
+# treating the blank as fatal
 if [[ "$SESSION" == '#{session_name}' ]] || [[ -z "$SESSION" ]]; then
-    SESSION=$(tmux display-message -p '#S')
-    WINDOW=$(tmux display-message -p '#W')
-    WINDOW_ID=$(tmux display-message -p '#D')
+    TARGET=()
+    [[ -n "${TMUX_PANE:-}" ]] && TARGET=(-t "$TMUX_PANE")
+    META=$(tmux display-message "${TARGET[@]}" -p $'#S\t#{window_id}\t#W' 2>/dev/null)
+    IFS=$'\t' read -r SESSION WINDOW_ID WINDOW <<<"$META"
 elif [[ -z "$WINDOW" && -n "$WINDOW_ID" ]]; then
     WINDOW=$(tmux display-message -t "$WINDOW_ID" -p '#W' 2>/dev/null)
 fi

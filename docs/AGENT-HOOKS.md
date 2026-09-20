@@ -80,7 +80,7 @@ Add the following to your `settings.json`:
         ]
       }
     ],
-    "PostToolUse": [
+    "PreToolUse": [
       {
         "matcher": "AskUserQuestion",
         "hooks": [
@@ -100,6 +100,17 @@ Add the following to your `settings.json`:
           }
         ]
       }
+    ],
+    "SessionEnd": [
+      {
+        "hooks": [
+          {
+            "type": "command",
+            "command": "~/dotfiles/scripts/hooks/wrappers/claude-alert-clear.sh",
+            "timeout": 5
+          }
+        ]
+      }
     ]
   }
 }
@@ -109,8 +120,9 @@ Add the following to your `settings.json`:
 
 - **Stop**: Agent finished its turn and is waiting for your next message
 - **PermissionRequest**: Agent needs approval to run a tool (e.g. file edit, bash command)
-- **PostToolUse** (`AskUserQuestion`): Agent asked you a question via the AskUserQuestion tool
+- **PreToolUse** (`AskUserQuestion`): Agent is about to ask you a question. `PostToolUse` is too late here: it fires once you have already answered, which raises an alert for input you just gave
 - **UserPromptSubmit**: You sent a message, so clear the alert
+- **SessionEnd**: The session ended without another prompt (exit, `/clear`), so clear the alert rather than leaving the last **Stop** alert behind
 
 #### Optional: Nvim Buffer Sync (Beta feature)
 
@@ -410,15 +422,17 @@ Hook settings changes are picked up by new Claude Code sessions; instances alrea
 Alerts are tracked in `~/.config/tmux-alerts/alerts` (the path is shared across all agents, not Claude-specific). Each line has the format:
 
 ```
-session:window:agent
+session:window:agent:window_id
 ```
 
 For example:
 
 ```
-work:claude:claude
-project:opencode:opencode
+work:claude:claude:@4
+project:opencode:opencode:@11
 ```
+
+`window_id` is the match key for dismissal and cleanup. The window name is volatile: `automatic-rename` derives it from the agent's pane title, so it changes throughout a turn and a row keyed on the name alone is unmatchable by the time the clear runs. The name stays in the row for display, is rewritten whenever the alert is re-set, and is refreshed by the stale-alert sweep. Rows written before ids were recorded have three fields and still match on the name.
 
 The tmux status bar script (`tmux/scripts/alerts/show.sh`) reads this file and renders icons for sessions other than the one you're currently viewing.
 
@@ -427,9 +441,12 @@ The tmux status bar script (`tmux/scripts/alerts/show.sh`) reads this file and r
 Alerts are cleared automatically when:
 
 - You send a message to the agent (via the clear hook)
+- The agent session ends without another prompt, such as exit or `/clear` (`SessionEnd` hook)
 - You switch to the tmux window containing the agent (`after-select-window` hook in tmux)
 - The terminal window gains OS focus (`pane-focus-in` hook, covers cmd+` between multiple Ghostty windows attached to the same tmux server)
 - The session or window is killed (stale alert cleanup)
+
+The stale-alert sweep also runs on both rename paths. `after-rename-window` covers the `rename-window` command (prefix+,); `automatic-rename` never runs that command and fires `window-renamed` instead, which is the path that matters for agents, since their window name tracks the pane title.
 
 You can also manually clear alerts by running:
 
@@ -481,6 +498,18 @@ The alert system also supports command exit code notifications via the `notify` 
 1. Verify the clear hook is registered for the right event
 2. Check the clear script can find the tmux session/window names
 3. Run `cat ~/.config/tmux-alerts/alerts` to see what's stuck
+4. Compare the `window_id` on the stuck row against `tmux list-windows -a -F '#{window_id} #{window_name}'`. A row for a live window that never clears means the clear hook is resolving a different window; a row for a dead window means the sweep is not running
+
+**Exercising the hooks without waiting for an agent:**
+
+Claude Code has no command that fires a hook on demand, but a hook is just a command reading the event JSON on stdin, so it can be replayed:
+
+```bash
+printf '%s' '{"hook_event_name":"Stop","session_id":"probe","cwd":"/tmp"}' \
+  | ~/dotfiles/scripts/hooks/wrappers/claude-state.sh
+```
+
+Point `AGENT_STATE_DIR` or `ALERTS_FILE` at a scratch path first to keep a probe out of the live state. To watch the real hooks fire instead, `claude --debug hooks` logs every match with its exit code and output, and `--debug-file <path>` writes the same to a file you can tail from another pane.
 
 **OpenCode plugin not loading:**
 

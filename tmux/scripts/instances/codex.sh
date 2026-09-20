@@ -34,13 +34,13 @@ while IFS= read -r cpid; do
     done
 done < <(pgrep -x codex 2>/dev/null)
 
-# pre-fetch window names: "session:window_index window_name"
-declare -A window_names
-while IFS= read -r wline; do
-    key="${wline%% *}"
-    name="${wline#* }"
+# pre-fetch window names and ids, keyed by "session:window_index". the id is
+# what the alerts file matches on; the name is for display
+declare -A window_names window_ids
+while IFS=$'\t' read -r key wid name; do
     window_names["$key"]="$name"
-done < <(tmux list-windows -a -F '#{session_name}:#{window_index} #{window_name}')
+    window_ids["$key"]="$wid"
+done < <(tmux list-windows -a -F $'#{session_name}:#{window_index}\t#{window_id}\t#{window_name}')
 
 # pre-load alerts file content (if it exists)
 alerts_content=""
@@ -68,8 +68,8 @@ while IFS= read -r line; do
 
     window_name="${window_names["${session}:${window_idx}"]:-}"
 
-    # check if this window has an alert for codex (names stored percent-encoded)
-    if [[ -n "$alerts_content" ]] && printf '%s' "$alerts_content" | grep -q "^${session}:$(alerts_encode_window "$window_name"):codex$" 2>/dev/null; then
+    # check if this window has an alert for codex
+    if alerts_has_agent "$alerts_content" codex "$session" "$window_name" "${window_ids["${session}:${window_idx}"]:-}"; then
         display=$(get_agent_display "codex")
         icon="${display%%|*}"
         codex_panes+=("${target} ${window_name} ${icon}")

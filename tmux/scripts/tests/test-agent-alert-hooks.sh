@@ -146,6 +146,73 @@ else
     pass "clear_window_alerts removed all entries (file gone)"
 fi
 
+section "Alert Library - Window Renames"
+
+# an agent's window name follows its pane title under automatic-rename, so it
+# drifts between the alert and the clear. the row is keyed on window_id to
+# survive that; these are the regressions for a name-keyed row
+RENAME_WIN="renamewin-$$"
+test_tmux new-window -t "$TEST_SESSION" -n "$RENAME_WIN" -c /tmp
+RENAME_WIN_ID=$(test_tmux list-windows -t "$TEST_SESSION" -F '#{window_name}|#{window_id}' | grep -F "${RENAME_WIN}|" | cut -d'|' -f2)
+RENAME_PANE_ID=$(test_tmux list-panes -t "$RENAME_WIN_ID" -F '#{pane_id}' | head -1)
+test_tmux set-window-option -t "$RENAME_WIN_ID" automatic-rename off 2>/dev/null || true
+
+: >"$ALERTS_FILE"
+TMUX_PANE="$RENAME_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
+if grep -qxF "${TEST_SESSION}:${RENAME_WIN}:claude:${RENAME_WIN_ID}" "$ALERTS_FILE" 2>/dev/null; then
+    pass "set_window_alert records the window id"
+else
+    fail "set_window_alert should record the window id (file: $(cat "$ALERTS_FILE"))"
+fi
+
+# re-setting after a rename rewrites the row rather than appending a second one
+test_tmux rename-window -t "$RENAME_WIN_ID" "${RENAME_WIN}-renamed"
+TMUX_PANE="$RENAME_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
+if [[ $(grep -c . "$ALERTS_FILE") -eq 1 ]] && grep -qxF "${TEST_SESSION}:${RENAME_WIN}-renamed:claude:${RENAME_WIN_ID}" "$ALERTS_FILE"; then
+    pass "re-setting after a rename refreshes the row in place"
+else
+    fail "re-set should refresh the row, not append (file: $(cat "$ALERTS_FILE"))"
+fi
+
+# the clear runs with the current name, which no longer matches the stored one
+test_tmux rename-window -t "$RENAME_WIN_ID" "${RENAME_WIN}-again"
+clear_window_alerts "$TEST_SESSION" "${RENAME_WIN}-again" "$RENAME_WIN_ID" 2>/dev/null || true
+if [[ -s "$ALERTS_FILE" ]]; then
+    fail "clear_window_alerts should drop the row after a rename (file: $(cat "$ALERTS_FILE"))"
+else
+    pass "clear_window_alerts drops the row after a rename"
+fi
+
+# the GC refreshes a drifted name so the picker shows what the window is called now
+printf '%s:%s:claude:%s\n' "$TEST_SESSION" "stale-name" "$RENAME_WIN_ID" >"$ALERTS_FILE"
+cleanup_stale_alerts 2>/dev/null || true
+if grep -qxF "${TEST_SESSION}:${RENAME_WIN}-again:claude:${RENAME_WIN_ID}" "$ALERTS_FILE" 2>/dev/null; then
+    pass "cleanup_stale_alerts refreshes a drifted window name"
+else
+    fail "cleanup_stale_alerts should refresh the name (file: $(cat "$ALERTS_FILE"))"
+fi
+
+# rows written before the id was recorded still clear on the name alone
+printf '%s:testwin:claude\n' "$TEST_SESSION" >"$ALERTS_FILE"
+clear_window_alerts "$TEST_SESSION" "testwin" "" 2>/dev/null || true
+if [[ -s "$ALERTS_FILE" ]]; then
+    fail "clear_window_alerts should still clear a legacy 3-field row (file: $(cat "$ALERTS_FILE"))"
+else
+    pass "clear_window_alerts still clears a legacy 3-field row"
+fi
+
+# a row whose window is gone is reaped
+printf '%s:gone:claude:@9999\n' "$TEST_SESSION" >"$ALERTS_FILE"
+cleanup_stale_alerts 2>/dev/null || true
+if [[ -s "$ALERTS_FILE" ]]; then
+    fail "cleanup_stale_alerts should reap a row for a dead window"
+else
+    pass "cleanup_stale_alerts reaps a row for a dead window"
+fi
+
+test_tmux kill-window -t "$RENAME_WIN_ID" 2>/dev/null || true
+: >"$ALERTS_FILE"
+
 section "Alert Library - Agent Icons"
 
 # test agent icon lookup

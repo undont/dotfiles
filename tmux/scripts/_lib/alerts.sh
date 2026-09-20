@@ -47,9 +47,12 @@ if [[ -z "${AGENT_STATE_DIR:-}" ]]; then
     readonly AGENT_STATE_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/agent-state"
 fi
 
-# alert file format: session:window:agent
-# future enhancement: add timestamp field for age-based sorting and auto-expiry
-# proposed format: session:window:agent:timestamp
+# alert file format: session:window:agent:window_id
+# window_id is the dismiss and GC key: automatic-rename rewrites the window
+# name from the agent's pane title while the alert is live, so a name-keyed
+# row is unmatchable by the time the clear runs. the name stays in the row for
+# display and is refreshed whenever the alert is re-set. rows written before
+# the id was recorded have three fields and still match on name alone
 
 # percent-encode a window name for safe storage in the colon-delimited alerts
 # file. tmux allows colons in window names (e.g. via automatic-rename from a
@@ -314,6 +317,25 @@ build_alert_icons() {
     printf '%s' "$icons"
 }
 
+# test pre-read alerts content for an agent row on a given window. matches on
+# window_id where the row has one and on session:window otherwise, so a name
+# that drifted under automatic-rename between the alert and the lookup still
+# resolves. the window name is passed raw and encoded here
+# usage: alerts_has_agent "$content" "agent" "session" "window" ["window_id"]
+alerts_has_agent() {
+    local content="$1" agent="$2" session="$3" window="$4" window_id="${5:-}"
+
+    [[ -n "$content" ]] || return 1
+
+    awk -F: -v a="$agent" -v s="$session" -v w="$(alerts_encode_window "$window")" \
+        -v i="$window_id" '
+        $3 != a { next }
+        (i != "" && $4 == i) { found = 1; exit }
+        ($4 == "" && $1 == s && $2 == w) { found = 1; exit }
+        END { exit !found }
+    ' <<<"$content"
+}
+
 # set an exit code alert for the current window
 # usage: set_exit_alert "exit_code" "label" [ring_bell]
 # sets @exit_alert* window options and adds a 6-field entry to the alerts file
@@ -411,17 +433,16 @@ set_window_alert() {
         chmod 700 "$alerts_dir"
     fi
 
-    # get current tmux session and window names separately, so a colon in the
-    # window name can't be confused with the session:window join
-    local sess="" win=""
+    # one round-trip for session, window id and window name, tab-joined with the
+    # name last so a colon or an embedded tab in it can't shift the other fields
+    local sess="" win="" wid="" _meta=""
     if [[ -n "${TMUX_PANE:-}" ]]; then
-        sess=$(tmux display-message -t "$TMUX_PANE" -p '#S' 2>/dev/null)
-        win=$(tmux display-message -t "$TMUX_PANE" -p '#W' 2>/dev/null)
+        _meta=$(tmux display-message -t "$TMUX_PANE" -p $'#S\t#{window_id}\t#W' 2>/dev/null || true)
     fi
-    if [[ -z "$sess" && -n "${TMUX:-}" ]]; then
-        sess=$(tmux display-message -p '#S' 2>/dev/null)
-        win=$(tmux display-message -p '#W' 2>/dev/null)
+    if [[ -z "$_meta" && -n "${TMUX:-}" ]]; then
+        _meta=$(tmux display-message -p $'#S\t#{window_id}\t#W' 2>/dev/null || true)
     fi
+    [[ -n "$_meta" ]] && IFS=$'\t' read -r sess wid win <<<"$_meta"
 
     # set the @agent_alert window option. prefer the origin pane id, it's
     # unambiguous even when the window name contains a colon or spaces
@@ -431,15 +452,27 @@ set_window_alert() {
         tmux set-option -wt "${sess}:${win}" "@${agent}_alert" 1 2>/dev/null
     fi
 
-    # add window to alerts file with agent type if not already present
+    # add or refresh this window's row. the window id is the row identity, so a
+    # re-set after automatic-rename rewrites the drifted name in place instead
+    # of appending a second row for the same window
     # session: project convention (alnum, dot, underscore, hyphen)
     # window: any non-control chars (allows spaces and colons); colons are
     # percent-encoded so they don't collide with the field separator
     if [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
-        local enc_win
+        local enc_win entry
         enc_win=$(alerts_encode_window "$win")
-        local entry="${sess}:${enc_win}:${agent}"
-        grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >>"$ALERTS_FILE"
+        entry="${sess}:${enc_win}:${agent}${wid:+:$wid}"
+        if [[ -n "$wid" ]] && _acquire_alerts_lock; then
+            local tmp_file
+            tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
+            awk -F: -v a="$agent" -v w="$wid" '!($3 == a && $4 == w)' \
+                "$ALERTS_FILE" 2>/dev/null >>"$tmp_file"
+            echo "$entry" >>"$tmp_file"
+            mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
+            _release_alerts_lock
+        else
+            grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >>"$ALERTS_FILE"
+        fi
     fi
 
     # ring the terminal bell (only if requested and /dev/tty is available)
@@ -588,17 +621,18 @@ clear_window_alerts() {
     # finished-process rows clear on the same select that dismisses alerts
     clear_window_finished "$window_id"
 
-    # remove from alerts file (any agent) with file locking. agent lines match
-    # on session:window (names are stored percent-encoded, so encode the lookup);
-    # exit lines additionally match on window_id (field 4) because their stored
-    # name drifts under automatic-rename and an exact-name match would miss them
+    # remove from alerts file (any agent) with file locking. window_id (field 4
+    # on both agent and exit rows) is the primary key because the stored name
+    # drifts under automatic-rename and an exact-name match would miss; the
+    # session:window match stays for rows written before ids were recorded
+    # (names are stored percent-encoded, so encode the lookup)
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
         local tmp_file enc_window
         tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
         enc_window=$(alerts_encode_window "$window")
         if awk -F: -v s="$session" -v w="$enc_window" -v wid="$window_id" '
             ($1 == s && $2 == w) { next }
-            (wid != "" && $3 == "exit" && $4 == wid) { next }
+            (wid != "" && $4 == wid) { next }
             { print }
         ' "$ALERTS_FILE" >"$tmp_file" 2>/dev/null; then
             mv "$tmp_file" "$ALERTS_FILE" 2>/dev/null || rm -f "$tmp_file" 2>/dev/null
@@ -630,7 +664,9 @@ clear_window_alerts() {
 # clean up stale alerts (for windows/sessions that no longer exist)
 # usage: cleanup_stale_alerts
 cleanup_stale_alerts() {
-    [[ ! -f "$ALERTS_FILE" ]] && return 0
+    # the rename hooks call this on every automatic rename, so keep the
+    # no-alerts case to a single stat
+    [[ -s "$ALERTS_FILE" ]] || return 0
 
     _acquire_alerts_lock || return 1
 
@@ -638,10 +674,20 @@ cleanup_stale_alerts() {
     tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
     local cleaned=0
 
-    # read each alert and verify its target window still exists
-    # lines may be 3-field (session:window:agent) or 6-field
-    # (session:window:exit:window_id:code:label), so read the leading fields and
-    # validate per type: agent alerts by window name, exit alerts by window_id
+    # prefetch every live window once. this runs on every automatic rename, so
+    # a has-session plus list-windows round-trip per row would be a fork storm
+    local live
+    live=$(tmux list-windows -a -F $'#{session_name}\t#{window_id}\t#{window_name}' 2>/dev/null) || live=""
+    if [[ -z "$live" ]]; then
+        rm -f "$tmp_file"
+        _release_alerts_lock
+        return 0
+    fi
+
+    # read each alert and verify its target window still exists. rows carry the
+    # window id in field 4 (agent rows: session:window:agent:window_id, exit
+    # rows: session:window:exit:window_id:code:label) and are validated on it;
+    # rows written before ids were recorded fall back to the window name
     while IFS= read -r line; do
         IFS=':' read -r session window field3 field4 _rest <<<"$line"
 
@@ -651,32 +697,41 @@ cleanup_stale_alerts() {
             continue
         fi
 
-        # check if session exists
-        if ! tmux has-session -t "$session" 2>/dev/null; then
+        local live_name=""
+        if [[ -n "$field4" ]]; then
+            live_name=$(awk -F'\t' -v s="$session" -v i="$field4" \
+                '$1 == s && $2 == i { print $3; exit }' <<<"$live")
+            if [[ -z "$live_name" ]]; then
+                cleaned=1
+                continue
+            fi
+        elif [[ "$field3" == "exit" ]]; then
+            # an exit row with no id predates the id key and can't be validated
             cleaned=1
             continue
-        fi
-
-        if [[ "$field3" == "exit" ]]; then
-            # exit alerts are keyed on window_id (field 4). the stored name
-            # drifts under automatic-rename, so validating by name would GC live
-            # alerts; the id is stable. this also purges old nameless-id lines
-            if [[ -z "$field4" ]] || ! tmux list-windows -t "$session" -F '#{window_id}' 2>/dev/null | grep -qxF "$field4"; then
-                cleaned=1
-                continue
-            fi
         else
-            # agent alerts: check the window name exists in the session. the
-            # stored name is percent-encoded; decode before comparing
+            # legacy agent row: the percent-encoded name is the only key
             local decoded_window
             decoded_window=$(alerts_decode_window "$window")
-            if ! tmux list-windows -t "$session" -F '#{window_name}' 2>/dev/null | grep -qxF "$decoded_window"; then
+            if ! awk -F'\t' -v s="$session" -v n="$decoded_window" \
+                '$1 == s && $3 == n { found = 1; exit } END { exit !found }' <<<"$live"; then
                 cleaned=1
                 continue
             fi
         fi
 
-        # target exists, keep the alert, preserve original line intact
+        # refresh a drifted agent-row name so the picker and status bar show
+        # what the window is called now, not what it was called when it alerted
+        if [[ "$field3" != "exit" && -n "$live_name" ]]; then
+            local enc_live
+            enc_live=$(alerts_encode_window "$live_name")
+            if [[ "$enc_live" != "$window" ]]; then
+                line="${session}:${enc_live}:${field3}:${field4}"
+                cleaned=1
+            fi
+        fi
+
+        # target exists, keep the alert
         echo "$line" >>"$tmp_file"
     done <"$ALERTS_FILE"
 
