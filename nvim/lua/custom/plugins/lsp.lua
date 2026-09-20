@@ -461,6 +461,7 @@ return {
             'lua_ls',
             'tailwindcss',
             'ts_ls',
+            'rust_analyzer',
             'yamlls',
             -- zls tracks zig's minor series and refuses to attach across one
             -- ("ZLS '0.16.0' does not support Zig '0.15.2'"). the registry only

@@ -26,6 +26,7 @@ return {
         'json5',
         'make',
         'objc',
+        'rust',
         'python',
         -- lua, luadoc, vim, vimdoc, query, markdown, markdown_inline are bundled
         -- with nvim 0.11+; let nvim manage them to avoid query/parser mismatches
