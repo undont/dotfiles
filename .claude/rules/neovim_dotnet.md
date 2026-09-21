@@ -22,6 +22,32 @@ The same one-roslyn-only principle is why SonarLint's C# analysis is
 deliberately disabled: it would spawn a bundled omnisharp doing a second
 MSBuild solution load alongside roslyn's. See `sonarlint.md`.
 
+## Daemon Mode
+
+roslyn.nvim's `cmd` carries `--daemon-mode`, so the process Neovim spawns is a
+relay: it hands off over a named pipe to one detached
+`Microsoft.CodeAnalysis.LanguageServer --daemon` shared by every client on the
+machine, and that server outlives the nvim that started it (keep-alive after the
+last client disconnects, tunable with `ROSLYN_LANGUAGE_SERVER_DAEMON_KEEPALIVE`
+or `--daemonKeepAlive`). Solutions are still opened per client; the runtime and
+metadata caches are shared.
+
+Two consequences for anything set on the spawned process:
+
+- The daemon inherits the launching client's cwd and environment, so `cmd_cwd`
+  and `cmd_env` only reach it when that client is the one that starts it. A
+  daemon already up keeps the cwd and env it was started with until it exits,
+  and `:lsp restart roslyn` reconnects to the same daemon rather than replacing
+  it. Changing either means killing the daemon (or waiting out the keep-alive).
+- `cmd_cwd = vim.env.HOME` in `lsp.lua` exists because of that inheritance: from
+  a cwd that is later deleted, such as a removed git worktree, project loads
+  fail in `getcwd()` for as long as the daemon lives. `$HOME` never goes away,
+  and the solution reaches the server as an absolute path.
+
+To take the daemon out of the picture entirely, override `cmd` without
+`--daemon-mode` and get one server per nvim again, at the cost of the shared
+cache and warm start.
+
 ## Diagnostic Filtering
 
 Roslyn diagnostics are post-processed in `patch_diagnostic_set()` in
@@ -90,17 +116,17 @@ large share of roslyn's thread count on many-core machines. The server targets
 `DOTNET_gcServer=0` forces workstation GC: fewer heaps, lower memory, at a modest
 throughput cost on background full-solution analysis.
 
-Mechanism: roslyn.nvim's `lsp/roslyn.lua` builds `cmd` as a function that passes
-`config.cmd_env` through as the spawn `env` (merged onto the parent env, not
-replacing it — that's why the server still finds `dotnet`/`PATH`), and seeds
-`cmd_env` with its own `Configuration`/`TMPDIR`. Our `vim.lsp.config` call
-deep-merges `DOTNET_gcServer` alongside those, scoped to the roslyn process only
-— easy-dotnet's builds/tests/BuildHost (separate processes) are unaffected. This
-is the global-footprint lever; the per-scan spike is bounded separately by
-batching (above). Fallback ladder if responsiveness regresses: revert to server
-GC + `DOTNET_GCHeapCount=N` to cap heaps, optionally stack
-`DOTNET_GCConserveMemory=1..9`. Changing `cmd_env` only takes effect on a roslyn
-restart (`:Roslyn restart` / kill the running server).
+Mechanism: roslyn.nvim's `lsp/roslyn.lua` seeds `cmd_env` with its own
+`Configuration`/`TMPDIR`, and our `vim.lsp.config` call deep-merges
+`DOTNET_gcServer` alongside those. Neovim hands the result to `vim.system()`,
+which merges onto the parent env rather than replacing it — that's why the
+server still finds `dotnet`/`PATH`. easy-dotnet's builds/tests/BuildHost
+(separate processes) are unaffected. This is the global-footprint lever; the
+per-scan spike is bounded separately by batching (above). Fallback ladder if
+responsiveness regresses: revert to server GC + `DOTNET_GCHeapCount=N` to cap
+heaps, optionally stack `DOTNET_GCConserveMemory=1..9`. Under daemon mode the
+setting reaches the shared server only when this nvim starts it, and changing it
+means killing the daemon — see Daemon Mode above.
 
 ### Scan snapshots have a second IDE0079 filter (lists.lua)
 
