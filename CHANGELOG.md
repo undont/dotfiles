@@ -4,6 +4,12 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.144] - 2026-09-17
+
+### Fixed
+
+- Roslyn keeps working after the folder nvim was opened in is deleted, such as a removed git worktree. roslyn.nvim runs the server in daemon mode, so one detached process shared by every client inherits the cwd of the nvim that started it; once that folder was gone, project loads failed in `getcwd()` and `:lsp restart roslyn` reconnected to the same process. Roslyn now starts from `$HOME`. `nvim/lua/custom/plugins/lsp.lua`
+
 ## [0.2.143] - 2026-09-13
 
 ### Added
