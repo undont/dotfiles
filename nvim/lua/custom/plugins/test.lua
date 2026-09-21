@@ -539,14 +539,15 @@ return {
 
     -- the diagnostic consumer publishes failures as real ERROR diagnostics, so
     -- a failing test drew an error squiggle and an error sign and read as a
-    -- file that doesn't compile. keep the message (virtual_lines still puts it
-    -- on the failing assertion) but drop both markers: neotest's own ✗ status
-    -- sign already owns the gutter cell (priority 1000 against the diagnostic
-    -- sign's 10). the statusline counts this namespace separately, as ✗N rather
-    -- than EN, and the <leader>xx list filters it out; see features/statusline.lua
-    -- and features/lists.lua, where ]t/[t land on this namespace and ]d/[d skip
-    -- it. neotest-golang sets severity per error, so `diagnostic.severity`
-    -- above wouldn't reach these
+    -- file that doesn't compile. drop both markers: neotest's own ✗ status sign
+    -- already owns the gutter cell (priority 1000 against the diagnostic sign's
+    -- 10), and plugins/diagnostics.lua keeps the message out of the inline
+    -- renderer, leaving the failure to neotest's output float. the namespace
+    -- stays populated for the statusline, which counts it separately as ✗N
+    -- rather than EN, and the <leader>xx list filters it out; see
+    -- features/statusline.lua and features/lists.lua, where ]t/[t land on this
+    -- namespace and ]d/[d skip it. neotest-golang sets severity per error, so
+    -- `diagnostic.severity` above wouldn't reach these
     vim.diagnostic.config({ underline = false, signs = false }, vim.api.nvim_create_namespace 'neotest')
 
     -- C/O collapse and expand the whole tree, as they do in differ's panel.

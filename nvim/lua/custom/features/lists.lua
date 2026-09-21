@@ -159,13 +159,15 @@ local function code_namespaces()
   return ids
 end
 
+-- no `float`: the landed-on diagnostic renders inline on the cursor line,
+-- related information included, so the float only occluded the code it
+-- described (see plugins/diagnostics.lua)
 local function bracketed_diagnostic(count, wrap)
   return function()
     vim.diagnostic.jump {
       count = count * vim.v.count1,
       wrap = wrap,
       namespace = code_namespaces(),
-      float = vim.diagnostic.config().float,
     }
   end
 end
