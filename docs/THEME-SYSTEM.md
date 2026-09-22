@@ -97,7 +97,11 @@ Italic marks text that is not literal code. Three groups carry it, in every them
 - `SpecialComment`: prose, not code; it also tracks `Comment`'s colour
 - `@markup.italic`: markdown emphasis, where italic is the literal meaning
 
-No other group is italic. Syntax roles are separated by colour alone, so italic
+One group outside that rule is italic: `@lsp.typemod.variable.signature`, set in
+`nvim/lua/custom/core/autocmds.lua`. gopls reports a func-typed variable as
+`variable` + `signature`, and the italic marks it callable at its use sites.
+
+No syntax group is italic. Syntax roles are separated by colour alone, so italic
 means the same thing in every theme and every language, and switching theme
 changes the palette rather than the shape of the text. `scripts/_lib/generate-theme.lua`
 emits only these three plus `CopilotSuggestion`, so generated themes conform

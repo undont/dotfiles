@@ -4,6 +4,21 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.145] - 2026-09-22
+
+### Added
+
+- tiny-inline-diagnostic draws diagnostic messages over the code instead of as virtual lines that push the buffer down. Errors show on every line they mark, other severities on the cursor line, and `]d`/`[d` no longer open a float; failing-test messages stay in neotest's output float. `nvim/lua/custom/plugins/diagnostics.lua`, `nvim/lua/custom/plugins/lsp.lua`, `nvim/lua/custom/plugins/test.lua`, `nvim/lua/custom/features/lists.lua`
+- lazygit renders diffs through delta. `lazygit/config.yml`
+- `rust_analyzer` in mason and the `rust` treesitter parser. `nvim/lua/custom/plugins/lsp.lua`, `nvim/lua/custom/plugins/treesitter.lua`
+
+### Fixed
+
+- Agent alerts clear once the agent's window has renamed itself mid-turn. Alerts are matched on window id, and the stale-alert sweep also runs on automatic renames. `docs/AGENT-HOOKS.md` now registers the `AskUserQuestion` alert on `PreToolUse` and clears on `SessionEnd`; update your `settings.json` to match. `tmux/scripts/_lib/alerts.sh`, `tmux/scripts/alerts/`, `tmux/tmux.conf.template`, `docs/AGENT-HOOKS.md`
+- `JAVA_HOME` points at the Homebrew openjdk keg, so java no longer falls back to an older system JDK. `zsh/dotfiles.zsh`
+- Noisy friendly-snippets prefixes in markdown (one-letter aliases, `todo*`, table and code shortcuts) are hidden from completion and the snippet picker. `nvim/lua/custom/features/snippets.lua`, `nvim/lua/custom/plugins/completion.lua`
+- `dotfiles local export` and `dotfiles local import` work as aliases for the top-level commands instead of erroring. `scripts/dotfiles`, `docs/LOCAL-LAYER.md`
+
 ## [0.2.144] - 2026-09-17
 
 ### Fixed

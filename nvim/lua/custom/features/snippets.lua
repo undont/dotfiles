@@ -5,6 +5,38 @@
 
 local M = {}
 
+-- friendly-snippets prefixes hidden per filetype, as anchored lua patterns: a
+-- local json can only shadow an upstream prefix, so dropping one outright
+-- happens here. the completion menu filters on this too
+local blocked = {
+  go = { '^in$', '^make$' },
+  markdown = {
+    -- one-letter aliases of bold, caution, italic, link, note, tip, url, warning
+    '^[bcilntuw]$',
+    '^bi$',
+    '^imp$',
+    -- todo* repeats task* bodies
+    '^todo%d?$',
+    '^task%d$',
+    '^%dx%dtable$',
+    '^code$',
+    '^sub$',
+    '^sup$',
+  },
+}
+
+---@param prefix string
+---@param ft string
+---@return boolean
+function M.is_blocked(prefix, ft)
+  for _, pattern in ipairs(blocked[ft] or {}) do
+    if prefix:match(pattern) then
+      return true
+    end
+  end
+  return false
+end
+
 --- blink's snippet registry, built from the live source opts so search paths
 --- and friendly_snippets match what the completion menu actually reads
 local function blink_registry()
@@ -28,7 +60,7 @@ local function add_blink(items, ft)
     for _, snip in ipairs(set) do
       local body = type(snip.body) == 'table' and table.concat(snip.body, '\n') or snip.body
       local key = snip.prefix .. '\0' .. body
-      if not seen[key] then
+      if not seen[key] and not M.is_blocked(snip.prefix, ft) then
         seen[key] = true
         items[#items + 1] = { prefix = snip.prefix, body = body, description = snip.description, source = 'json' }
       end

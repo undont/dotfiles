@@ -211,23 +211,12 @@ return {
             [vim.diagnostic.severity.HINT] = '󰌶 ',
           },
         } or {},
-        -- signs mark the affected lines; the message itself renders as virtual
-        -- lines under the cursor line only. end-of-line virtual text ran off
-        -- the right edge on long messages and only ever drew the *last*
-        -- diagnostic on a line, hiding the rest
+        -- signs mark the affected lines; the message itself is drawn by
+        -- tiny-inline-diagnostic (see plugins/diagnostics.lua), which overlays
+        -- it rather than inserting a virtual line that shifts the buffer down.
+        -- both built-in renderers stay off so nothing draws twice
         virtual_text = false,
-        virtual_lines = {
-          current_line = true,
-          -- the built-in formatter prefixes `code`, which is worth showing for
-          -- real rule ids (sonar's S1234, eslint rule names) but not for gopls,
-          -- which labels every analyzer finding with the placeholder "default"
-          format = function(d)
-            if d.code and d.code ~= 'default' then
-              return string.format('%s: %s', d.code, d.message)
-            end
-            return d.message
-          end,
-        },
+        virtual_lines = false,
       }
 
       -- hover, signature help, and markdown rendering are handled by noice.nvim (see ui.lua)
@@ -461,6 +450,7 @@ return {
             'lua_ls',
             'tailwindcss',
             'ts_ls',
+            'rust_analyzer',
             'yamlls',
             -- zls tracks zig's minor series and refuses to attach across one
             -- ("ZLS '0.16.0' does not support Zig '0.15.2'"). the registry only

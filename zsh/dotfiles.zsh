@@ -106,8 +106,14 @@ export PATH=$PATH:$GOPATH/bin
 # Rust/Cargo binaries (cargo install, rustup toolchains)
 export PATH="$PATH:$HOME/.cargo/bin"
 
-# Java (OpenJDK via Homebrew)
-export PATH="$HOMEBREW_PREFIX/opt/openjdk/bin:$PATH"
+# Java (OpenJDK via Homebrew). JAVA_HOME is set from the keg rather than
+# /usr/libexec/java_home: brew's JDKs aren't registered under
+# /Library/Java/JavaVirtualMachines, and java_home exits 0 with the system JRE
+# for any -v it can't satisfy, so a java-8-only machine pins java to 8 there
+if [[ -d "$HOMEBREW_PREFIX/opt/openjdk" ]]; then
+    export JAVA_HOME="$HOMEBREW_PREFIX/opt/openjdk"
+    export PATH="$JAVA_HOME/bin:$PATH"
+fi
 
 # Python uv tool install (isolated CLI tool install)
 export PATH="$PATH:$HOME/.local/bin"

@@ -1,9 +1,5 @@
 -- completion configuration (blink.cmp)
 
--- friendly-snippets prefixes hidden per filetype: a local json can only shadow
--- an upstream prefix, so dropping one outright happens here
-local blocked_snippets = { go = { ['in'] = true, ['make'] = true } }
-
 -- the rest of the line is only closers and separators, as in `f(g(x|)),`
 local function at_closing_tail()
   local col = vim.api.nvim_win_get_cursor(0)[2]
@@ -163,10 +159,11 @@ return {
             -- first item for a prefix lets a local json file override one upstream
             -- snippet without taking over the whole filetype
             transform_items = function(_, items)
-              local blocked = blocked_snippets[vim.bo.filetype] or {}
+              local snippets = require 'custom.features.snippets'
+              local ft = vim.bo.filetype
               local seen, out = {}, {}
               for _, item in ipairs(items) do
-                if not seen[item.label] and not blocked[item.label] then
+                if not seen[item.label] and not snippets.is_blocked(item.label, ft) then
                   seen[item.label] = true
                   out[#out + 1] = item
                 end

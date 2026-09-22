@@ -424,8 +424,8 @@ echo "  set_window_alert:"
 # set_window_alert uses TMUX_PANE to call display-message; point it at the
 # isolated server's pane so it can resolve the session:window context
 TMUX_PANE="$CURRENT_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
-if grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude$" "$ALERTS_FILE" 2>/dev/null; then
-    pass "    creates alert file entry"
+if grep -q "^${CURRENT_SESSION}:${CURRENT_WINDOW}:claude:${CURRENT_WINDOW_ID}$" "$ALERTS_FILE" 2>/dev/null; then
+    pass "    creates alert file entry with the window id"
 else
     fail "    should create alert file entry"
 fi
@@ -585,7 +585,7 @@ else
     COLON_PANE_ID=$(tmux list-panes -t "$COLON_WIN_ID" -F '#{pane_id}' 2>/dev/null | head -1) || COLON_PANE_ID=""
 
     TMUX_PANE="$COLON_PANE_ID" set_window_alert "claude" "false" 2>/dev/null || true
-    if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
+    if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude:${COLON_WIN_ID}" "$ALERTS_FILE" 2>/dev/null; then
         pass "    set_window_alert stores the encoded window name"
     else
         fail "    set_window_alert should store the encoded name (file: $(cat "$ALERTS_FILE"))"
@@ -599,7 +599,7 @@ else
 
     # cleanup_stale_alerts must keep it (decode matches the real tmux window name)
     cleanup_stale_alerts
-    if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude" "$ALERTS_FILE" 2>/dev/null; then
+    if grep -qxF "${CURRENT_SESSION}:${ENC_WIN}:claude:${COLON_WIN_ID}" "$ALERTS_FILE" 2>/dev/null; then
         pass "    cleanup_stale_alerts preserves the colon-named window"
     else
         fail "    cleanup_stale_alerts should preserve the colon-named window"

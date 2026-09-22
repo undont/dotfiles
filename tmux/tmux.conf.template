@@ -827,10 +827,14 @@ set-hook -g after-select-pane 'run-shell -b "tmux set-option -pt \"#{pane_id}\" 
 # Ghostty clients attached to the same tmux server, where after-select-window doesn't fire
 set-hook -g pane-focus-in 'run-shell -b "~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 
-# clean up stale alerts when window is renamed (catches native tmux renames)
+# clean up stale alerts when a window is renamed
 # note: our rename script (windows/rename.sh) handles the update directly;
-# this hook is a fallback for automatic renames or prefix+, usage
-set-hook -g after-rename-window 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh >/dev/null 2>&1"'
+# these hooks are the fallback. after-rename-window covers the rename-window
+# command (prefix+,); automatic-rename never runs that command, so it fires
+# window-renamed only, which is the one that matters here: an agent's window
+# name follows its pane title and changes throughout a turn
+set-hook -g after-rename-window 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh alerts >/dev/null 2>&1"'
+set-hook -g window-renamed 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh alerts >/dev/null 2>&1"'
 set-hook -g client-session-changed 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}; ~/.tmux/scripts/alerts/update-timestamp.sh #{window_id}; ~/.tmux/scripts/alerts/clear.sh \"#{session_name}\" \"#{window_name}\" \"#{window_id}\""'
 set-hook -g after-new-session 'run-shell -b "~/.tmux/scripts/utils/nav.sh record #{window_id}"'
 set-hook -g session-renamed 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh >/dev/null 2>&1"'
