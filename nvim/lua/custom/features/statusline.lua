@@ -9,6 +9,14 @@ local M = {}
 -- already registered, and an empty namespace when it isn't
 local neotest_ns = vim.api.nvim_create_namespace 'neotest'
 
+-- whether a real language server is attached to the current buffer. the
+-- definition capability is the discriminator: copilot, stylua and
+-- tailwindcss (which lists markdown among its filetypes) all attach without
+-- it. get_clients already skips clients that haven't finished initialize
+local function lsp_attached()
+  return #vim.lsp.get_clients { bufnr = 0, method = 'textDocument/definition' } > 0
+end
+
 -- modified/readonly flag suffix, shared by the active content closure and the
 -- inactive section_filename override.
 local function flags()
@@ -88,6 +96,7 @@ local function derive_statusline_hl()
     MiniStatuslineDiagInfo = fg 'DiagnosticInfo',
     MiniStatuslineDiagHint = fg 'DiagnosticHint',
     MiniStatuslineTestFail = fg 'NeotestFailed' or fg 'DiagnosticError',
+    MiniStatuslineLspOk = fg 'DiagnosticOk' or fg 'GitSignsAdd',
   }
   for name, colour in pairs(groups) do
     vim.api.nvim_set_hl(0, name, { fg = colour })
@@ -298,6 +307,8 @@ function M.setup()
       return ''
     end
     local label = ft_display[ft] or ft
+    -- lsp tick, redrawn by mini.statusline's own LspAttach/LspDetach tracking
+    local lsp = lsp_attached() and ' %#MiniStatuslineLspOk#✓%#MiniStatuslineFileinfo#' or ''
     -- colour the glyph via its icon highlight group, then reset to the
     -- neutral fileinfo group for the trailing space and the rest
     local icon = ''
@@ -308,12 +319,12 @@ function M.setup()
       end
     end
     if statusline.is_truncated(args.trunc_width) or vim.bo.buftype ~= '' then
-      return icon .. label
+      return icon .. label .. lsp
     end
     -- encoding and line-ending are shown only when they deviate from the
     -- utf-8/unix default, so normal files stay clean and the unusual
     -- cases (CRLF, non-utf-8) surface exactly when they matter
-    local parts = { label }
+    local parts = { label .. lsp }
     local encoding = vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding
     if encoding ~= '' and encoding ~= 'utf-8' then
       table.insert(parts, encoding)
