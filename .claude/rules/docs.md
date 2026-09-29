@@ -20,8 +20,10 @@ After completing any code change, check whether relevant documentation needs upd
   add a `# @cheat: <name> | <description>` directive.
 - New section -> add `# @section: <NAME>` before the relevant block.
 - New tmux/nvim keybindings -> update the in-product source, not `README.md`:
-  tmux bindings belong in `tmux/tmux-help.template`, nvim bindings in
-  `nvim/cheatsheet.txt`. `README.md` carries a short highlights table only, and
+  a tmux binding carries its description as `bind -N "<group>: …"` in
+  `tmux/tmux.conf.template` (the `prefix ?` cheatsheet reads the notes, and
+  `test-cheatsheet.sh` fails on a bind with a trailing comment instead), nvim
+  bindings go in `nvim/cheatsheet.txt`. `README.md` carries a short highlights table only, and
   regrowing it into full per-tool tables re-creates a copy that goes stale.
 - New install behaviour/presets -> update `CLAUDE.md` and `README.md`
 - New test files -> confirm they're discovered by `scripts/run-tests.sh` (auto-discovery)

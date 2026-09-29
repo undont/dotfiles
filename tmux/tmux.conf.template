@@ -9,7 +9,7 @@
 #
 # quick reference:
 #   Prefix: ` (backtick) or Ctrl+b (mobile-friendly)
-#   Help:   ` h (popup with keybindings)
+#   Help:   ` ? (key cheatsheet, built from bind -N notes)
 #   Save:   ` w (like vim :w)
 #   List:   prefix + S (or `tls` in shell)
 
@@ -105,7 +105,7 @@ bind -n MouseDown1StatusRight if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 95% -h 14 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"'
 
 # alert picker (prefix + A): keyboard shortcut for alerts
-bind A if-shell '[ #{client_width} -ge 80 ]' \
+bind -N "tools: alert picker" A if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 50 -h 10 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"' \
   'display-popup -w 95% -h 14 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/alerts/pick.sh"'
 
@@ -185,8 +185,8 @@ unbind z
 # ─────────────────────────────────────────
 # Window (tab) navigation
 # ─────────────────────────────────────────
-bind -n M-[ previous-window          # Opt+[
-bind -n M-] next-window              # Opt+]
+bind -N "tabs: previous window" -n M-[ previous-window
+bind -N "tabs: next window" -n M-] next-window
 
 # pass Ctrl+Enter / Ctrl+Shift+Enter through to the inner program
 # (extended-keys would otherwise consume them and leak the tail bytes)
@@ -194,40 +194,40 @@ bind -n C-Enter   send-keys C-Enter
 bind -n C-S-Enter send-keys C-S-Enter
 
 # previous/next window (prefix variants for mobile)
-bind , next-window                    # prefix + ,
-bind . previous-window                # prefix + .
+bind -N "tabs: next window" , next-window
+bind -N "tabs: previous window" . previous-window
 
 # jump to window by number (requires prefix)
-bind 1 select-window -t 1
+bind -N "tabs: go to window 1-5" 1 select-window -t 1
 bind 2 select-window -t 2
 bind 3 select-window -t 3
 bind 4 select-window -t 4
 bind 5 select-window -t 5
 
 # new window in current directory
-bind -n M-t new-window -c "#{pane_current_path}"    # Opt+t
+bind -N "tabs: new window" -n M-t new-window -c "#{pane_current_path}"
 
 # window operations (right-click menu alternatives)
-bind -n M-r if-shell '[ #{client_width} -ge 80 ]' \
+bind -N "tabs: rename window" -n M-r if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 50 -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"' \
   'display-popup -w 95% -h 7 -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/windows/rename.sh"'
-bind -n "M-{" swap-window -t -1 \; select-window -t -1                  # Opt+Shift+[ = swap left
-bind -n "M-}" swap-window -t +1 \; select-window -t +1                  # Opt+Shift+] = swap right
-bind -n M-x if-shell '[ #{client_width} -ge 80 ]' \
+bind -N "tabs: swap window left" -n "M-{" swap-window -t -1 \; select-window -t -1
+bind -N "tabs: swap window right" -n "M-}" swap-window -t +1 \; select-window -t +1
+bind -N "tabs: kill window" -n M-x if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -E -w 50 -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"' \
   'display-popup -E -w 95% -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"'
-bind -n M-q if-shell '[ #{client_width} -ge 80 ]' \
+bind -N "session: kill session" -n M-q if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -E -w 50 -h 10 "~/.tmux/scripts/sessions/kill.sh"' \
   'display-popup -E -w 95% -h 10 "~/.tmux/scripts/sessions/kill.sh"'
-bind -n M-u run-shell '~/.tmux/scripts/utils/undo-dispatch.sh'                  # Opt+u = undo last closed pane/window
-bind -n M-D run-shell '~/.tmux/scripts/windows/duplicate.sh'               # Opt+Shift+d = duplicate window
+bind -N "session: undo last closed pane or window" -n M-u run-shell '~/.tmux/scripts/utils/undo-dispatch.sh'
+bind -N "tabs: duplicate window" -n M-D run-shell '~/.tmux/scripts/windows/duplicate.sh'
 
 # ─────────────────────────────────────────
 # Claude instance switcher (prefix + c)
 # Navigation: j/k (↓/↑), g/G (top/bottom)
 # press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
-bind c display-popup -w 95% -h 95% -E "\
+bind -N "tools: claude instances" c display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/instances/claude.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
@@ -258,7 +258,7 @@ bind c display-popup -w 95% -h 95% -E "\
 # Navigation: j/k (↓/↑), g/G (top/bottom)
 # press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
-bind x display-popup -w 95% -h 95% -E "\
+bind -N "tools: codex instances" x display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/instances/codex.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
@@ -286,7 +286,7 @@ bind x display-popup -w 95% -h 95% -E "\
 # Navigation: j/k (↓/↑), g/G (top/bottom)
 # press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
-bind o display-popup -w 95% -h 95% -E "\
+bind -N "tools: opencode instances" o display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/instances/opencode.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
@@ -314,7 +314,7 @@ bind o display-popup -w 95% -h 95% -E "\
 # Navigation: j/k (↓/↑), g/G (top/bottom)
 # press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
-bind a display-popup -w 95% -h 95% -E "\
+bind -N "tools: copilot instances" a display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/instances/copilot.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
@@ -338,43 +338,43 @@ bind a display-popup -w 95% -h 95% -E "\
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 # ─────────────────────────────────────────
 # vim-style navigation (Opt+hjkl)
-bind -n M-h select-pane -L           # Opt+h = left
-bind -n M-j select-pane -D           # Opt+j = down
-bind -n M-k select-pane -U           # Opt+k = up
-bind -n M-l select-pane -R           # Opt+l = right
+bind -N "panes: select pane left" -n M-h select-pane -L
+bind -N "panes: select pane down" -n M-j select-pane -D
+bind -N "panes: select pane up" -n M-k select-pane -U
+bind -N "panes: select pane right" -n M-l select-pane -R
 
 # alternative navigation
-bind -n C-, select-pane -L           # Ctrl+, = left
-bind -n C-. select-pane -D           # Ctrl+. = down
+bind -N "panes: select pane left" -n C-, select-pane -L
+bind -N "panes: select pane down" -n C-. select-pane -D
 
 # split panes (new panes inherit current directory)
-bind -n M-\\ split-window -h -c "#{pane_current_path}"    # Opt+\ = split right
-bind -n "M-'" split-window -h -b -c "#{pane_current_path}"  # Opt+' = split left
-bind -n M-- split-window -v -c "#{pane_current_path}"     # Opt+- = split down
-bind -n M-= split-window -v -b -c "#{pane_current_path}"  # Opt+= = split up
+bind -N "panes: split right" -n M-\\ split-window -h -c "#{pane_current_path}"
+bind -N "panes: split left" -n "M-'" split-window -h -b -c "#{pane_current_path}"
+bind -N "panes: split down" -n M-- split-window -v -c "#{pane_current_path}"
+bind -N "panes: split up" -n M-= split-window -v -b -c "#{pane_current_path}"
 
 # pane operations
-bind -n M-s if-shell '[ #{client_width} -ge 80 ]' \
+bind -N "panes: kill pane" -n M-s if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -E -w 50 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"' \
   'display-popup -E -w 95% -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"'
-bind -n M-z resize-pane -Z           # Opt+z = toggle zoom (fullscreen)
-bind -n "M-)" select-layout -E       # Opt+Shift+0 = equalise pane sizes
-bind E break-pane                      # `+Shift+e = break pane to new window
-bind [ previous-layout                # `+[ = previous layout
-bind ] next-layout                    # `+] = next layout
-bind \\ rotate-window                  # `+\ = rotate through panes (ex C-o)
+bind -N "panes: zoom pane" -n M-z resize-pane -Z
+bind -N "panes: equalise pane sizes" -n "M-)" select-layout -E
+bind -N "panes: break pane to new window" E break-pane
+bind -N "panes: join marked pane" j join-pane -h
+bind -N "panes: previous layout" [ previous-layout
+bind -N "panes: next layout" ] next-layout
+bind -N "panes: rotate panes" \\ rotate-window
 
 # swap panes (requires prefix)
-bind H swap-pane -U
-bind J swap-pane -D
-bind K swap-pane -U
-bind L swap-pane -D
+bind -N "panes: swap pane up" H swap-pane -U
+bind -N "panes: swap pane up" K swap-pane -U
+bind -N "panes: swap pane down" L swap-pane -D
 
 # resize panes (Opt+Shift+hjkl)
-bind -n M-H resize-pane -L 5           # Opt+Shift+h = shrink left
-bind -n M-J resize-pane -D 5           # Opt+Shift+j = shrink down
-bind -n M-K resize-pane -U 5           # Opt+Shift+k = grow up
-bind -n M-L resize-pane -R 5           # Opt+Shift+l = grow right
+bind -N "panes: resize pane left" -n M-H resize-pane -L 5
+bind -N "panes: resize pane down" -n M-J resize-pane -D 5
+bind -N "panes: resize pane up" -n M-K resize-pane -U 5
+bind -N "panes: resize pane right" -n M-L resize-pane -R 5
 
 # ─────────────────────────────────────────
 # URL picker
@@ -382,7 +382,7 @@ bind -n M-L resize-pane -R 5           # Opt+Shift+l = grow right
 # prefix+u = find all URLs in scrollback and open selected one
 # macOS: override the browser via local.conf, e.g. set -g @browser-app 'Arc'
 unbind u
-bind u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
+bind -N "tools: open a url from scrollback" u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
 
 # ─────────────────────────────────────────
 # Nvim instance switcher (prefix + n)
@@ -390,7 +390,7 @@ bind u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-them
 # press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
 unbind n
-bind n display-popup -w 95% -h 95% -E "\
+bind -N "tools: nvim instances" n display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/instances/nvim.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
@@ -423,7 +423,7 @@ bind n display-popup -w 95% -h 95% -E "\
 # x: stop running / clear finished · r: stage a finished command on its window's
 # prompt (no Enter) · R: stage and run it straight away · / to search, Esc to nav
 # ─────────────────────────────────────────
-bind P display-popup -w 95% -h 95% -E "\
+bind -N "tools: process list" P display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/alerts/proclist.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
@@ -455,73 +455,77 @@ bind P display-popup -w 95% -h 95% -E "\
 # Scroll mode (copy-mode)
 # ─────────────────────────────────────────
 # enter scroll mode
-bind -n M-v copy-mode                    # Opt+v = enter scroll mode
-bind v copy-mode                         # prefix + v = enter scroll mode
+bind -N "scroll: scroll mode" -n M-v copy-mode
+bind -N "scroll: scroll mode" v copy-mode
 
 # use vi-style keys in copy mode
 setw -g mode-keys vi
 
 # navigation in copy mode (vim-style)
-bind -T copy-mode-vi j send-keys -X cursor-down
-bind -T copy-mode-vi k send-keys -X cursor-up
-bind -T copy-mode-vi h send-keys -X cursor-left
-bind -T copy-mode-vi l send-keys -X cursor-right
+bind -N "scroll: cursor down" -T copy-mode-vi j send-keys -X cursor-down
+bind -N "scroll: cursor up" -T copy-mode-vi k send-keys -X cursor-up
+bind -N "scroll: cursor left" -T copy-mode-vi h send-keys -X cursor-left
+bind -N "scroll: cursor right" -T copy-mode-vi l send-keys -X cursor-right
 
 # page navigation
-bind -T copy-mode-vi C-f send-keys -X page-down       # Ctrl+f = page down
-bind -T copy-mode-vi C-b send-keys -X page-up         # Ctrl+b = page up
+bind -N "scroll: page down" -T copy-mode-vi C-f send-keys -X page-down
+bind -N "scroll: page up" -T copy-mode-vi C-b send-keys -X page-up
 
 # half-page navigation
-bind -T copy-mode-vi C-d send-keys -X bottom-line     # Ctrl+d = cursor to bottom of visible page
-bind -T copy-mode-vi C-u send-keys -X top-line        # Ctrl+u = cursor to top of visible page
-bind -T copy-mode-vi d send-keys -X halfpage-down \; send-keys -X bottom-line   # d = half page down + cursor to bottom
-bind -T copy-mode-vi u send-keys -X halfpage-up \; send-keys -X top-line   # u = half page up + cursor to top
-bind -T copy-mode-vi D send-keys -X halfpage-down \; send-keys -X bottom-line   # D = alias for d
-bind -T copy-mode-vi U send-keys -X halfpage-up \; send-keys -X top-line   # U = alias for u
+bind -N "scroll: cursor to bottom of page" -T copy-mode-vi C-d send-keys -X bottom-line
+bind -N "scroll: cursor to top of page" -T copy-mode-vi C-u send-keys -X top-line
+bind -N "scroll: half page down" -T copy-mode-vi d send-keys -X halfpage-down \; send-keys -X bottom-line
+bind -N "scroll: half page up" -T copy-mode-vi u send-keys -X halfpage-up \; send-keys -X top-line
+bind -N "scroll: half page down" -T copy-mode-vi D send-keys -X halfpage-down \; send-keys -X bottom-line
+bind -N "scroll: half page up" -T copy-mode-vi U send-keys -X halfpage-up \; send-keys -X top-line
 
 # jump to top/bottom of history
-bind -T copy-mode-vi g send-keys -X history-top       # g = top of history
-bind -T copy-mode-vi G send-keys -X history-bottom    # G = bottom of history
+bind -N "scroll: top of history" -T copy-mode-vi g send-keys -X history-top
+bind -N "scroll: bottom of history" -T copy-mode-vi G send-keys -X history-bottom
 
 # search (find on page)
-bind -T copy-mode-vi / command-prompt -i -p "(search down)" "send -X search-forward-incremental \"%%%\""
-bind -T copy-mode-vi ? command-prompt -i -p "(search up)" "send -X search-backward-incremental \"%%%\""
-bind -T copy-mode-vi n send-keys -X search-again      # n = next match
-bind -T copy-mode-vi N send-keys -X search-reverse    # N = previous match
+bind -N "scroll: search down" -T copy-mode-vi / command-prompt -i -p "(search down)" "send -X search-forward-incremental \"%%%\""
+bind -N "scroll: search up" -T copy-mode-vi ? command-prompt -i -p "(search up)" "send -X search-backward-incremental \"%%%\""
+bind -N "scroll: next match" -T copy-mode-vi n send-keys -X search-again
+bind -N "scroll: previous match" -T copy-mode-vi N send-keys -X search-reverse
 
 # visual selection
-bind -T copy-mode-vi v send-keys -X begin-selection   # v = start char selection
-bind -T copy-mode-vi V send-keys -X select-line       # V = select entire line
+bind -N "scroll: start selection" -T copy-mode-vi v send-keys -X begin-selection
+bind -N "scroll: select line" -T copy-mode-vi V send-keys -X select-line
 
 # yank (copy to clipboard)
-bind -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"   # y = yank selection
-bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"  # Y = yank line
+bind -N "scroll: yank selection" -T copy-mode-vi y send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"
+bind -N "scroll: yank line" -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"
 # yank to top/bottom: use v (visual) → g/G → y instead
 # tmux doesn't support multi-key sequences like vim's ygg
 
 # exit scroll mode
-bind -T copy-mode-vi m send-keys -X back-to-indentation # m = first non-blank (like ^)
-bind -T copy-mode-vi M send-keys -X end-of-line        # M = end of line (like $)
+bind -N "scroll: first non-blank" -T copy-mode-vi m send-keys -X back-to-indentation
+bind -N "scroll: end of line" -T copy-mode-vi M send-keys -X end-of-line
 
-bind -T copy-mode-vi q send-keys -X cancel            # q = quit scroll mode
-bind -T copy-mode-vi Escape send-keys -X cancel       # Esc = quit scroll mode
+bind -N "scroll: exit scroll mode" -T copy-mode-vi q send-keys -X cancel
+bind -N "scroll: exit scroll mode" -T copy-mode-vi Escape send-keys -X cancel
 
 # r = clear selection, then re-sync the view with the pane's live content,
 # picking up anything the pane has printed since copy-mode was entered
-bind -T copy-mode-vi r send-keys -X clear-selection \; send-keys -X refresh-from-pane
+bind -N "scroll: clear selection and refresh" -T copy-mode-vi r send-keys -X clear-selection \; send-keys -X refresh-from-pane
 
 # ─────────────────────────────────────────
 # Help
 # ─────────────────────────────────────────
-# display keybinding reference popup (press Esc to close)
-bind h run-shell '~/.tmux/scripts/utils/show-help-popup.sh #{client_width} #{client_height}'
+# searchable list of every bind carrying a -N note, plus the tmux defaults
+# still in place. a note's "group: " prefix picks its heading (tabs, panes,
+# scroll, session, tools); a bind without -N drops out of the list
+bind -N "session: key cheatsheet" ? if-shell '[ #{client_width} -ge 80 ]' \
+  'display-popup -w 80 -h 80% -E "~/.tmux/scripts/utils/cheatsheet.sh"' \
+  'display-popup -w 95% -h 95% -E "~/.tmux/scripts/utils/cheatsheet.sh"'
 
 # ─────────────────────────────────────────
 # Theme picker (prefix + t)
 # Navigation: j/k (↓/↑), d/u (half-page), g/G (top/bottom), f (fav), r (random)
 # press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
-bind t if-shell '[ #{client_width} -ge 80 ]' \
+bind -N "tools: theme picker" t if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 70 -h 24 -E "~/.tmux/scripts/themes/picker.sh"' \
   'display-popup -w 95% -h 95% -E "~/.tmux/scripts/themes/picker.sh"'
 
@@ -531,7 +535,7 @@ bind t if-shell '[ #{client_width} -ge 80 ]' \
 # press / to start searching, Esc to return to navigation mode
 # press n to create a new launcher
 # ─────────────────────────────────────────
-bind p if-shell '[ #{client_width} -ge 80 ]' \
+bind -N "tools: launcher picker" p if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -w 60% -h 60% -E "~/.tmux/scripts/launchers/picker.sh"' \
   'display-popup -w 95% -h 95% -E "~/.tmux/scripts/launchers/picker.sh"'
 
@@ -541,7 +545,7 @@ bind p if-shell '[ #{client_width} -ge 80 ]' \
 # press / to start searching, Esc to return to navigation mode
 # press a to toggle between current session and all sessions
 # ─────────────────────────────────────────
-bind f display-popup -w 95% -h 95% -E "\
+bind -N "session: window switcher" f display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/windows/list.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
@@ -590,7 +594,7 @@ set -g status-right-length 150
 # ─────────────────────────────────────────
 # Poke Config
 # ─────────────────────────────────────────
-bind-key b run-shell "poke clear"
+bind-key -N "tools: clear poke notifications" b run-shell "poke clear"
 
 # window tabs: inactive=grey, active=purple highlight, bell/alert=pink
 setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@codex_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@copilot_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
@@ -722,6 +726,8 @@ set -g @fingers-main-action ':copy:'
 set -g @fingers-ctrl-action ':open:'
 set -g @fingers-shift-action ':paste:'
 set -g @fingers-show-copied-notification 1
+# Space and J are bound after the TPM run line so they carry -N notes
+set -g @fingers-enable-bindings 0
 
 # built-in patterns: enable all. 2.7.0 turned this option into an enum whose
 # validator rejects comma-separated subset lists (the documented form), so a
@@ -765,14 +771,14 @@ set -g @resurrect-hook-post-save-all '~/.tmux/scripts/resurrect/split.sh'
 #   prefix + Ctrl+r = restore all sessions
 
 # quick save (prefix + w, like vim :w)
-bind w run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh
+bind -N "session: save sessions" w run-shell ~/.tmux/plugins/tmux-resurrect/scripts/save.sh
 
 # custom bindings for per-session management:
 # session switcher with vim-style navigation (prefix + s)
 # Navigation: j/k (↓/↑), g/G (top/bottom), f/b (page), d/u (half-page)
 # press / to start searching, Esc to return to navigation mode
 # Ctrl+x kills session, Ctrl+u undoes the last kill
-bind s display-popup -w 95% -h 95% -E "\
+bind -N "session: session switcher" s display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
   ~/.tmux/scripts/sessions/list.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
@@ -800,9 +806,9 @@ bind s display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 # Navigation history (browser-style back/forward)
 # ─────────────────────────────────────────
-bind - run-shell '~/.tmux/scripts/utils/nav.sh back'       # ` - = navigate back
-bind = run-shell '~/.tmux/scripts/utils/nav.sh forward'    # ` = = navigate forward
-bind § choose-buffer -Z                                     # ` § = paste buffer list
+bind -N "session: navigate back" - run-shell '~/.tmux/scripts/utils/nav.sh back'
+bind -N "session: navigate forward" = run-shell '~/.tmux/scripts/utils/nav.sh forward'
+bind -N "tools: paste buffer list" § choose-buffer -Z
 
 # ─────────────────────────────────────────
 # Auto-cleanup on session close
@@ -845,17 +851,20 @@ set-hook -g session-renamed 'run-shell -b "~/.tmux/scripts/alerts/cleanup.sh >/d
 run '~/.tmux/plugins/tpm/tpm'
 
 # override tmux-yank bindings (must be after plugin load)
-bind -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"
-bind u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
+bind -N "scroll: yank line" -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"
+bind -N "tools: open a url from scrollback" u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
+
+bind -N "tools: copy a hint (fingers)" Space run -b "#{@fingers-cli} start #{pane_id}"
+bind -N "tools: jump to a hint (fingers)" J run -b "#{@fingers-cli} start #{pane_id} --mode jump"
 
 # override TPM's prefix+I to show a completion message after installing plugins
-bind I run-shell "~/.tmux/plugins/tpm/bin/install_plugins > /dev/null 2>&1" \; display-message "All plugins installed successfully!"    # prefix + I
+bind -N "tools: install plugins" I run-shell "~/.tmux/plugins/tpm/bin/install_plugins > /dev/null 2>&1" \; display-message "All plugins installed successfully!"
 
 # reload all local overrides (tmux + Ghostty + nvim)
-bind r run-shell "{{DOTFILES_ROOT}}/scripts/reload-locals.sh > /dev/null 2>&1"    # prefix + r
+bind -N "session: reload local overrides" r run-shell "{{DOTFILES_ROOT}}/scripts/reload-locals.sh > /dev/null 2>&1"
 
 # reload shell config: source ~/.zshrc in all zsh panes across all sessions
-bind R run-shell '~/.tmux/scripts/utils/reload-shells.sh'    # prefix + R
+bind -N "session: reload shells" R run-shell '~/.tmux/scripts/utils/reload-shells.sh'
 
 # transparent status bar when Ghostty background-opacity < 1
 if-shell 'cat ~/.config/ghostty/config ~/.config/ghostty/local 2>/dev/null | grep -E "^[[:space:]]*background-opacity" | tail -1 | grep -qE "=[[:space:]]*0\."' \
