@@ -91,8 +91,10 @@ return {
       return vim.tbl_deep_extend('force', {
         default_file_explorer = true,
         columns = { 'icon' },
-        -- oil-git-status draws index and working-tree status in one column each
-        win_options = { signcolumn = 'yes:2' },
+        -- oil-git-status draws index and working-tree status in one column each.
+        -- the empty `statuscolumn` opts out of statuscol's (see plugins/statuscol.lua),
+        -- whose single-cell sign segment would drop one of the two
+        win_options = { signcolumn = 'yes:2', statuscolumn = '' },
         -- `sort` names the `notedate` column registered in config below; oil
         -- resolves sort columns lazily at render time, so registration order
         -- against this table doesn't matter
