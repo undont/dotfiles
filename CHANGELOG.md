@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.146] - 2026-09-30
+
+### Added
+
+- statuscol.nvim draws the sign column with a fixed cell per kind: test, diagnostic and dap signs first, then git signs, then the line number, so a line carrying both a diagnostic and a git change shows both. oil keeps its own two-column git status. `nvim/lua/custom/plugins/statuscol.lua`, `nvim/lua/custom/plugins/navigation.lua`
+- The statusline shows a tick after the filetype when a language server is attached to the buffer. Clients without go-to-definition, such as copilot and stylua, don't count. `nvim/lua/custom/features/statusline.lua`
+- `prefix j` joins the marked pane into the current window. `tmux/tmux.conf.template`
+
+### Changed
+
+- The tmux help popup on `prefix h` is replaced by a searchable key cheatsheet on `prefix ?`. It is built from the `-N` notes on the live bindings, grouped by the note's prefix with tmux's own defaults last, so it no longer needs a hand-kept template. `tmux/scripts/utils/cheatsheet.sh`, `tmux/scripts/tests/test-cheatsheet.sh`, `tmux/tmux.conf.template`, `README.md`
+- The rust `modtest` snippet is overridden and expands to a `#[cfg(test)]` module with `use super::*` and one test. `nvim/snippets/rust.json`
+
 ## [0.2.145] - 2026-09-22
 
 ### Added
