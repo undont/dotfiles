@@ -77,7 +77,7 @@ Modular config based on kickstart.nvim with lazy.nvim, Treesitter, and Mason-man
 
 ### Tmux
 
-`` ` `` as the prefix, vim-style navigation between panes and windows, and a help popup (`` ` h ``) if you forget anything.
+`` ` `` as the prefix, vim-style navigation between panes and windows, and a searchable key cheatsheet (`` ` ? ``) if you forget anything.
 
 - **Session save and restore** with resurrect + continuum, extended to split the combined save into per-session backups, so one session can be restored without bringing back everything else
 - **fzf pickers everywhere**: sessions, windows, running nvim instances, AI agent instances, themes, and URLs from scrollback
@@ -162,7 +162,7 @@ The full preset adds macOS-only pieces (Hammerspoon window management, Karabiner
 | Action           | Keybinding                                 |
 | ---------------- | ------------------------------------------ |
 | Tmux prefix      | <kbd>`</kbd>                               |
-| Tmux help popup  | <kbd>`</kbd> <kbd>h</kbd>                  |
+| Tmux cheatsheet  | <kbd>`</kbd> <kbd>?</kbd>                  |
 | Session switcher | <kbd>`</kbd> <kbd>s</kbd>                  |
 | Launcher picker  | <kbd>`</kbd> <kbd>p</kbd>                  |
 | Process list     | <kbd>`</kbd> <kbd>Shift</kbd>+<kbd>P</kbd> |
@@ -175,7 +175,7 @@ The full preset adds macOS-only pieces (Hammerspoon window management, Karabiner
 
 The full sets are all available in-product, and stay current because they're generated from the config rather than transcribed:
 
-- **Tmux**: `` ` h `` opens the help popup
+- **Tmux**: `` ` ? `` opens the searchable cheatsheet
 - **Neovim**: <kbd>Space</kbd> <kbd>?</kbd> opens the searchable cheatsheet
 - **Zsh**: `dot aliases` browses every alias, function and binding
 
