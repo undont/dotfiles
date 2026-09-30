@@ -1,12 +1,11 @@
--- Neo-tree is an nvim plugin to browse the file system
--- https://github.com/nvim-neo-tree/neo-tree.nvim
+-- neo-tree: file tree sidebar
 
 return {
   'nvim-neo-tree/neo-tree.nvim',
   version = '*',
   dependencies = {
     'nvim-lua/plenary.nvim',
-    'nvim-tree/nvim-web-devicons', -- not strictly required, but recommended
+    'nvim-tree/nvim-web-devicons',
     'MunifTanjim/nui.nvim',
   },
   lazy = false,
@@ -18,7 +17,7 @@ return {
     window = {
       mappings = {
         ['o'] = 'open',
-        -- move order_by prefix from o to O so o opens immediately
+        -- the order_by prefix is on O, so o opens without the prefix timeout
         ['oc'] = 'none',
         ['od'] = 'none',
         ['og'] = 'none',
@@ -43,8 +42,7 @@ return {
       },
     },
     filesystem = {
-      -- let oil.nvim own directory buffers (`nvim <dir>`, the `config`/`launchers`
-      -- aliases). Neo-tree stays available on `|`; it just no longer hijacks netrw
+      -- oil.nvim owns directory buffers (`nvim <dir>`)
       hijack_netrw_behavior = 'disabled',
       filtered_items = {
         visible = true,

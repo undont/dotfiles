@@ -3,22 +3,20 @@
 
 return {
   '3rd/image.nvim',
-  build = false, -- skip the rock build; cli processor doesn't need it
+  build = false, -- the cli processor needs no rock
   ft = { 'markdown' },
   opts = {
     backend = 'kitty',
     processor = 'magick_cli',
-    -- hide images when the nvim pane's tmux window isn't active. tmux doesn't
-    -- understand kitty graphics, so without this an image bleeds across windows
-    -- and sessions until something redraws over it. needs tmux focus-events on
-    -- (already set) and visual-activity off (tmux default)
+    -- tmux passes kitty graphics through without tracking them, so an image
+    -- stays drawn over other windows and sessions. needs tmux focus-events on
+    -- and visual-activity off
     tmux_show_only_in_active_window = true,
     integrations = {
       markdown = {
         enabled = true,
         only_render_image_at_cursor = false,
-        -- skip remote images: shields.io badges and the like render poorly inline
-        -- and pull in remote svgs. local screenshots/diagrams still render
+        -- remote images are mostly svg badges, which render poorly inline
         download_remote_images = false,
         filetypes = { 'markdown' },
       },

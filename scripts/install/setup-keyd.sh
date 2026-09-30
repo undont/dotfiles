@@ -1,8 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# setup keyd (Linux keyboard remapping daemon), equivalent of Karabiner on macOS
-# installs keyd, deploys config, and enables the systemd service
+# installs keyd (linux keyboard remapping daemon), copies the config to
+# /etc/keyd and enables the systemd service
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
@@ -21,8 +21,7 @@ if [[ ! -f "$KEYD_CONF" ]]; then
     exit 1
 fi
 
-# resolve the keyd binary: Debian/Raspberry Pi OS ship it as keyd.rvaiya
-# (renamed to avoid a namespace clash), other distros use plain keyd.
+# debian and raspberry pi OS ship the binary as keyd.rvaiya
 keyd_bin() {
     if command_exists keyd; then
         echo keyd
@@ -31,13 +30,11 @@ keyd_bin() {
     fi
 }
 
-# install keyd if not present
 if [[ -z "$(keyd_bin)" ]]; then
     echo "Installing keyd..."
     install_system_package "keyd" "fatal"
 fi
 
-# deploy config
 echo "Deploying keyd config..."
 sudo mkdir -p /etc/keyd
 if sudo cp "$KEYD_CONF" /etc/keyd/default.conf; then
@@ -47,7 +44,6 @@ else
     exit 1
 fi
 
-# enable and start service
 echo "Enabling keyd service..."
 if sudo systemctl enable --now keyd 2>/dev/null; then
     success "keyd service enabled and started"
@@ -57,7 +53,7 @@ else
     warn "Could not start keyd service — you may need to reboot"
 fi
 
-# reload config in case service was already running
+# an already-running service needs a reload to read the new config
 KEYD_BIN="$(keyd_bin)"
 [[ -n "$KEYD_BIN" ]] && sudo "$KEYD_BIN" reload 2>/dev/null || true
 

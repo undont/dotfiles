@@ -17,20 +17,17 @@ source "$SCRIPT_DIR/../_lib/process.sh"
 # a working state older than this with no spinner in the title reads as stuck
 STUCK_SECS="${AGENT_STUCK_SECS:-120}"
 
-# check if tmux is available
 if ! command -v tmux &>/dev/null; then
     exit 1
 fi
 
-# check if any sessions exist
 if ! tmux list-sessions &>/dev/null; then
     exit 0
 fi
 
-# build set of PIDs that are ancestors of an active (non-suspended) claude process
-# walks up the process tree so wrapper scripts (e.g., ralph -> claude) are detected.
-# match_process_pids also sees the pane's own claude, which pgrep hides as
-# an ancestor of itself
+# set of PIDs that are ancestors of an active (non-suspended) claude process.
+# the walk up the process tree covers wrapper scripts. match_process_pids also
+# returns the pane's own claude, which pgrep excludes as an ancestor of itself
 declare -A active_claude_ppids
 while IFS= read -r cpid; do
     state=$(ps -o state= -p "$cpid" 2>/dev/null) || continue
@@ -80,7 +77,6 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
     [[ -n "$pane_id" ]] || continue
     pane_seen[$pane_id]=1
 
-    # check if this pane has an active claude child
     [[ -n "${active_claude_ppids[$pane_pid]:-}" ]] || continue
     pane_has_claude[$pane_id]=1
 
@@ -117,9 +113,9 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
             if [[ "$state" == "needs-input" ]] && _title_has_spinner "$title"; then
                 state="working"
             fi
-            # age reads as "how long it's been waiting on you" for idle/input,
-            # or how long it's been wedged for stuck/error. for a live working
-            # turn it just tracks the last tool call and jitters, so it's hidden
+            # age is the wait time for idle/input and the stall time for stuck/error.
+            # during a live working turn it tracks the last tool call and jitters, so
+            # it's hidden
             [[ "$state" != "working" ]] && age_str=$(_fmt_elapsed "$age")
         fi
     fi

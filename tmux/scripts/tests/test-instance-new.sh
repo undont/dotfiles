@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# regression tests for instances/new.sh window targeting
+# tests for instances/new.sh window targeting
 #
 # 'new-window -t <name>' treats <name> as a target-window: when a window in the
 # session carries the session's own name, tmux pins the new window to that
@@ -21,7 +21,7 @@ setup_test_server
 NEW_SCRIPT="$SCRIPTS_DIR/instances/new.sh"
 
 # ═══════════════════════════════════════════════════════════════
-# tmux target semantics the fix relies on
+# tmux target semantics new.sh relies on
 # ═══════════════════════════════════════════════════════════════
 
 section "Session-scoped new-window target"

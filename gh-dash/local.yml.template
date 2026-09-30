@@ -3,9 +3,9 @@
 # =============================================================================
 # your personal gh-dash settings; this file is yours, add anything you want.
 # it is deep-merged ON TOP of the generated config after every dotfiles theme,
-# so your values always win.
+# so your values always win
 #
-# this file survives dotfiles theme and dotfiles update.
+# this file survives dotfiles theme and dotfiles update
 # after making changes, run: dotfiles theme current   (re-applies current theme + merge)
 #
 # file structure:
@@ -45,7 +45,7 @@
 
 # ---------------------------------------------------------------------------
 # Repo Paths
-# map org/repo names (or wildcards) to local clone paths.
+# map org/repo names (or wildcards) to local clone paths
 # required for commands that use {{.RepoPath}} (lazygit, differ, etc.)
 # ---------------------------------------------------------------------------
 # repoPaths:
@@ -54,10 +54,10 @@
 
 # ---------------------------------------------------------------------------
 # Extra Keybindings
-# these are APPENDED to the base keybindings from config.yml.
-# use different keys to avoid conflicts with C, D, A, m (defined in base config).
+# these are APPENDED to the base keybindings from config.yml
+# use different keys to avoid conflicts with C, D, A, m (defined in base config)
 #
-# the commands below require repoPaths to be configured (they use RepoPath).
+# the commands below require repoPaths to be configured (they use RepoPath)
 # uncomment repoPaths above first, then uncomment the keybindings
 # ---------------------------------------------------------------------------
 # keybindings:
@@ -76,7 +76,7 @@
 
 # ---------------------------------------------------------------------------
 # Pager override
-# diffnav is set as the default in config.yml. override here if preferred
+# config.yml sets no diff pager (diffnav is on the D keybinding). set one here if preferred
 # ---------------------------------------------------------------------------
 # pager:
 #     diff: delta

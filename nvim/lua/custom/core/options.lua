@@ -1,104 +1,74 @@
 -- core nvim options
--- see :help vim.o and :help vim.g
 
 local M = {}
 
 function M.setup()
-  -- leader key (must be set before plugins load)
+  -- must be set before plugins load
   vim.g.mapleader = ' '
   vim.g.maplocalleader = ' '
 
-  -- Nerd Font availability
   vim.g.have_nerd_font = true
 
-  -- line numbers
   vim.o.number = true
   vim.o.relativenumber = true
 
-  -- mouse support
   vim.o.mouse = 'a'
 
-  -- don't show mode in command line (shown in statusline)
+  -- the statusline shows the mode
   vim.o.showmode = false
 
-  -- indentation
   vim.o.tabstop = 4
   vim.o.breakindent = true
 
-  -- project-local config: source a trusted .nvim.lua from the working
-  -- directory (prompts to trust on first load; see :help 'exrc')
+  -- sources a trusted .nvim.lua from the working directory
   vim.o.exrc = true
 
-  -- persistent undo
   vim.o.undofile = true
 
-  -- disable swap files (undo + autoread + git make them redundant)
   vim.o.swapfile = false
 
-  -- never write backups alongside the file. the default backupdir starts with
-  -- `.`, so a write in a local obsidian vault created a locked file
-  -- which got replicated to CouchDB, the mac and the phone as a real document,
-  -- then tombstoned a moment later. dropping `.` keeps the state dir as the only backup target.
+  -- the default backupdir starts with `.`, which writes the backup next to the
+  -- file; a synced obsidian vault replicates that as a document
   vim.o.backupdir = vim.fn.stdpath 'state' .. '/backup//'
 
-  -- search
   vim.o.ignorecase = true
   vim.o.smartcase = true
 
-  -- use ripgrep for :grep / :grepadd (quickfix-based workflow)
   if vim.fn.executable 'rg' == 1 then
     vim.o.grepprg = 'rg --vimgrep --smart-case'
     vim.o.grepformat = '%f:%l:%c:%m'
   end
 
-  -- UI
   vim.o.signcolumn = 'yes'
   vim.o.updatetime = 250
   vim.o.timeoutlen = 200
-  vim.o.ttimeoutlen = 10 -- fast key code sequences (responsive escape key)
-  vim.opt.shortmess:append 'I' -- suppress intro screen (flashes with cmdheight=0)
+  vim.o.ttimeoutlen = 10
+  vim.opt.shortmess:append 'I' -- the intro screen flashes with cmdheight=0
 
-  -- window splitting
   vim.o.splitright = true
   vim.o.splitbelow = true
 
-  -- whitespace characters
   vim.o.list = true
-  -- blank tab: indent-blankline draws leading indentation, so a glyph here only
-  -- shows up where ibl doesn't paint. two spaces, not omitted; omitting it with
-  -- `list` on falls back to `^I`
+  -- indent-blankline draws leading indentation, so tab is blank. omitting
+  -- the key with `list` on falls back to `^I`
   vim.opt.listchars = { tab = '  ', trail = '·', nbsp = '␣' }
 
-  -- live substitution preview
   vim.o.inccommand = 'split'
 
-  -- cursor line
   vim.o.cursorline = true
 
-  -- scroll offset
   vim.o.scrolloff = 10
 
-  -- confirm before closing unsaved buffers
   vim.o.confirm = true
 
-  -- auto-reload files changed outside nvim
   vim.o.autoread = true
 
-  -- use the system clipboard by default so yanks/pastes work across
-  -- separate nvim instances, including panes inside tmux.
   vim.o.clipboard = 'unnamedplus'
 
-  -- on a headless box (bare ssh, no display server, no tmux) nvim finds no
-  -- clipboard tool at all: xsel/xclip are only considered when $DISPLAY is set,
-  -- and nvim's own OSC 52 fallback is deliberately skipped whenever 'clipboard'
-  -- is non-empty (see provider/clipboard.vim). inside tmux the tmux provider
-  -- already covers this, so only standalone nvim needs a provider declared.
-  --
-  -- copy goes out over OSC 52, which reaches the real clipboard on whichever
-  -- machine the terminal is running on. paste reads a local cache file instead
-  -- of OSC 52: a clipboard *read* blocks for up to 10s waiting on a response
-  -- most terminals never send, and with `unnamedplus` that would stall every
-  -- `p`. the cache is what keeps yanks shared across instances here.
+  -- bare ssh with no display server and no tmux: nvim finds no clipboard tool,
+  -- and its OSC 52 fallback is skipped whenever 'clipboard' is non-empty (see
+  -- provider/clipboard.vim). copy goes out over OSC 52; paste reads a cache
+  -- file, since an OSC 52 read blocks on a response most terminals never send
   local has_clipboard = vim.env.DISPLAY or vim.env.WAYLAND_DISPLAY or vim.env.TMUX or vim.fn.has 'mac' == 1
   if not has_clipboard then
     local osc52 = require 'vim.ui.clipboard.osc52'
@@ -130,13 +100,12 @@ function M.setup()
     }
   end
 
-  -- spellcheck
   vim.o.spell = true
   vim.opt.spelllang = { 'en_gb' }
   vim.opt.spelloptions = { 'camel' }
   vim.opt.spellcapcheck = ''
 
-  -- spellfiles: user dictionary (zg adds here) + repo dictionary (shared terms)
+  -- zg adds to the user dictionary; the repo one holds shared terms
   local user_spell_dir = vim.fn.stdpath 'data' .. '/spell'
   vim.fn.mkdir(user_spell_dir, 'p')
   vim.opt.spellfile = {
@@ -144,20 +113,15 @@ function M.setup()
     vim.fn.stdpath 'config' .. '/spell/en.utf-8.add',
   }
 
-  -- cursor style (block in all modes, blinking in insert)
   vim.opt.guicursor = 'n-v-c:block,i-ci-ve:block-blinkwait700-blinkon400-blinkoff250'
 
-  -- reclaim the command line row (ui2 msg window handles messages)
+  -- the ui2 msg window shows messages
   vim.o.cmdheight = 0
 
-  -- experimental ui2: replaces the builtin message + cmdline presentation.
-  -- messages land in a floating window that auto-dismisses after the
-  -- 'messagesopt' timeout; g< opens the full pager.
   -- `targets` is the key on both 0.12 and 0.13: the singular `target` is
-  -- silently ignored on 0.13, leaving messages in the cmdline
+  -- ignored on 0.13, leaving messages in the cmdline
   require('vim._core.ui2').enable { msg = { targets = 'msg' } }
 
-  -- neovide options
   if vim.g.neovide then
     vim.g.neovide_cursor_animation_length = 0.050
     vim.g.neovide_cursor_trail_size = 0.5

@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# connect an nvim instance to a pane by setting NVIM_SOCKET
+# connect an nvim instance to a pane via NVIM_SOCKET
 # usage: connect-nvim.sh <fzf_selection_line>
-# called from fzf with "c" key binding
-# shows pane picker for current session, sends export command to selected pane
+# shows a pane picker for the current session, copies the export command to the
+# clipboard and switches to the selected pane
 
 set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 
 if [[ -z "${1:-}" ]]; then
@@ -25,7 +24,6 @@ if [[ -z "$SOCKET" || ! -S "$SOCKET" ]]; then
     exit 1
 fi
 
-# get current session
 CURRENT_SESSION=$(tmux display-message -p '#S')
 
 # list panes in current session, sorted by last-viewed, excluding nvim panes
@@ -40,7 +38,6 @@ if [[ -z "$pane_list" ]]; then
     exit 1
 fi
 
-# let user pick a pane
 TARGET_PANE=$(echo "$pane_list" | fzf --ansi --reverse --exact --disabled --cycle \
     --delimiter=$'\t' \
     --with-nth=2 \
@@ -60,17 +57,13 @@ if [[ -z "$TARGET_PANE" ]]; then
     exit 0 # user cancelled
 fi
 
-# build full target with session name
 FULL_TARGET="${CURRENT_SESSION}:${TARGET_PANE}"
 
 EXPORT_CMD="export NVIM_SOCKET='$SOCKET' && claude"
 
-# copy export command to clipboard
 echo -n "$EXPORT_CMD" | clipboard_copy
 
-# switch to the target pane
 tmux select-window -t "$FULL_TARGET"
 tmux select-pane -t "$FULL_TARGET"
 
-# show message in tmux status bar
 tmux display-message "Copied to clipboard - paste to connect"

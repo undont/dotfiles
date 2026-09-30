@@ -1,4 +1,4 @@
--- Dashboard: snacks.nvim startup screen
+-- snacks.nvim dashboard
 
 --- resolved foreground of a highlight group, following links
 ---@param group string
@@ -7,14 +7,10 @@ local function fg_of(group)
   return vim.api.nvim_get_hl(0, { name = group, link = false }).fg
 end
 
--- the dashboard reclaims the statusline row by zeroing laststatus, a global
--- option, so the toggle has to follow focus, not fire once on open. hiding on
--- open alone leaks both ways: snacks' own startup hide gives up the first time
--- another window is entered and never returns (`:Differ` opens a tabpage, so
--- closing it lands back on a dashboard with a statusline over it), while our
--- own hide followed the live dashboard buffer into every other window. the
--- focus watcher is created and torn down with the dashboard buffer, so ordinary
--- editing carries no per-buffer hook
+-- the dashboard hides the statusline by zeroing laststatus, a global option,
+-- so the toggle follows focus: a one-off hide on open would apply to every
+-- other window, and would not return when focus comes back (closing a
+-- `:Differ` tabpage). the focus watcher lives and dies with the dashboard buffer
 local saved_laststatus = vim.o.laststatus
 local focus_group = 'SnacksDashboardStatuslineFocus'
 
@@ -56,9 +52,6 @@ local function unwatch_focus()
   restore_statusline()
 end
 
---- set dashboard highlight groups by linking to standard vim groups.
---- called on load and on every ColorScheme change so highlights
---- stay in sync with dotfiles theme switching
 local function set_dashboard_highlights()
   local links = {
     SnacksDashboardHeader = 'Keyword',
@@ -74,16 +67,14 @@ local function set_dashboard_highlights()
     vim.api.nvim_set_hl(0, group, { link = target })
   end
 
-  -- colour only, never a link: Special is a syntax role, so a theme is free to
-  -- attach attributes to it (dracula italicises it) and a link would inherit them
+  -- colour only: a link would inherit Special's attributes (dracula italicises it)
   local special = fg_of 'Special' or fg_of 'Normal'
   for _, group in ipairs { 'SnacksDashboardDesc', 'SnacksDashboardFile', 'SnacksDashboardSpecial' } do
     vim.api.nvim_set_hl(0, group, { fg = special })
   end
 end
 
--- every picker window (list, input, preview, box) and its border links back to
--- these two, so the picker body follows Normal the way telescope's does
+-- every picker window and border links back to these two
 local function set_picker_highlights()
   vim.api.nvim_set_hl(0, 'SnacksPicker', { link = 'Normal' })
   vim.api.nvim_set_hl(0, 'SnacksPickerBorder', { link = 'TelescopeBorder' })
@@ -96,7 +87,6 @@ return {
     lazy = false,
     ---@type snacks.Config
     opts = {
-      -- only enable the dashboard module
       bigfile = { enabled = false },
       dashboard = {
         enabled = true,
@@ -165,7 +155,6 @@ return {
     config = function(_, opts)
       require('snacks').setup(opts)
 
-      -- apply highlights now and re-apply on every theme change
       set_dashboard_highlights()
       set_picker_highlights()
       vim.api.nvim_create_autocmd('ColorScheme', {

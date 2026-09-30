@@ -1,5 +1,4 @@
--- smart paste: auto-adjusts indentation when pasting, with a guard against
--- pasting into non-modifiable buffers (help, neotest output, etc)
+-- smart paste: reindents pasted text, and skips non-modifiable buffers
 
 return {
   {
@@ -7,8 +6,7 @@ return {
     event = 'VeryLazy',
     config = function()
       require('smart-paste').setup()
-      -- the plugin's keymaps look up these functions on the module table at call time,
-      -- so patching after setup intercepts all paste paths
+      -- the plugin's keymaps look these functions up on the module table at call time
       local paste = require 'smart-paste.paste'
       local orig_smart_paste = paste.smart_paste
       paste.smart_paste = function(entry, ...)

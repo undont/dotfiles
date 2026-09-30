@@ -1,21 +1,10 @@
--- silence-rule code actions. extracted from plugins/sonarlint.lua.
---
--- surface "silence this rule" quick fixes in the native code-action picker
--- (gra) for any sonar diagnostic under the cursor. two variants per rule:
---   * project-wide  -> sets `rules["<code>"] = "off"` in localRules.json
---   * in test files -> adds (or extends) an `overrides` entry whose `files`
---                       are the test globs for the buffer's language and
---                       silences the rule only there
--- both write `.sonarlint/localRules.json` (creating the dir/file if needed),
--- then apply the change to the running server immediately so the warning
--- disappears without a restart (see sonar-rules.silence_rule).
---
--- the actions are served by riding inside the sonar client's own codeAction
--- response: vim.lsp.buf.code_action builds each client's context.diagnostics
--- from that client's namespace, and nvim aggregates actions per responding
--- client, so a separate source would land in its own group at the bottom.
--- each action carries a Command (not a workspace edit); execution is handled
--- locally via vim.lsp.commands[SILENCE_COMMAND], registered by the spec
+-- "silence this rule" code actions in the native picker (gra) for sonar
+-- diagnostics under the cursor: project-wide (`rules["<code>"] = "off"`) or in
+-- test files (an `overrides` entry with the language's test globs). both go
+-- through sonar-rules.silence_rule.
+-- the actions are added to the sonar client's own codeAction response: nvim
+-- groups actions per responding client. each carries a Command, run locally
+-- via vim.lsp.commands[SILENCE_COMMAND], registered by the spec
 
 local common = require 'custom.features.sonar-common'
 
@@ -23,8 +12,8 @@ local M = {}
 
 M.SILENCE_COMMAND = 'sonarlint.silenceRule'
 
--- test-file globs per filetype. languages without a settled test-naming
--- convention are omitted; they simply don't get the "in test files" action.
+-- test-file globs per filetype. a filetype absent here gets no "in test
+-- files" action
 local TEST_GLOBS = {
   go = { '**/*_test.go' },
   python = { '**/test_*.py', '**/*_test.py' },
@@ -38,9 +27,9 @@ local TEST_GLOBS = {
   php = { '**/*Test.php' },
 }
 
---- resolve the project root for writing localRules.json. prefer the attached
---- sonar client's root (so the file lands where before_init will read it on
---- the next start), then the nearest `.sonarlint`/`.git` ancestor, then cwd.
+--- the attached sonar client's root first (where before_init reads
+--- localRules.json on the next start), then the nearest `.sonarlint`/`.git`
+--- ancestor, then cwd
 local function project_root_for_buf(bufnr)
   for _, client in ipairs(vim.lsp.get_clients { bufnr = bufnr, name = common.SONARLINT_CLIENT_NAME }) do
     local root = (client.config and (client.config._sonarlint_root or client.config.root_dir)) or client.root_dir
@@ -53,9 +42,8 @@ local function project_root_for_buf(bufnr)
   return vim.fs.root(dir, { '.sonarlint', '.git' }) or vim.fn.getcwd()
 end
 
---- build silence code actions for the sonar diagnostics overlapping a
---- codeAction request's range. returns LSP CodeAction objects whose Command is
---- handled locally by vim.lsp.commands[SILENCE_COMMAND].
+--- LSP CodeAction objects for the sonar diagnostics overlapping a codeAction
+--- request's range
 local function build_silence_actions(params)
   local uri = params.textDocument and params.textDocument.uri
   if not uri then
@@ -106,15 +94,14 @@ local function build_silence_actions(params)
 end
 
 -- command id sonar attaches to its "Show issue details for '<rule>'" code
--- action. used to float that action to the top of gra. (the OpenRuleDesc /
--- OpenStandaloneRuleDesc commands are internal executeCommand targets, not the
--- code-action command, verified against the running server.)
+-- action. the OpenRuleDesc / OpenStandaloneRuleDesc commands are
+-- executeCommand targets, not the code-action command
 local DETAILS_COMMANDS = {
   ['SonarLint.ShowIssueDetailsCodeAction'] = true,
 }
 
---- the command id carried by a code action, whether it's a bare Command or a
---- CodeAction with a nested `command`. returns nil when there's none.
+--- the command id of a bare Command or of a CodeAction with a nested
+--- `command`; nil when there's none
 local function action_command(action)
   local c = action and action.command
   if type(c) == 'table' then
@@ -123,9 +110,7 @@ local function action_command(action)
   return c -- bare Command string, or nil
 end
 
---- reorder a sonar codeAction result so the "Show issue details" action sits
---- first, preserving the relative order of everything else. returns the
---- (possibly new) list; a no-op when the action isn't present.
+--- moves the "Show issue details" action first, keeping the order of the rest
 local function details_first(result)
   if type(result) ~= 'table' or #result < 2 then
     return result
@@ -145,12 +130,8 @@ local function details_first(result)
   return vim.list_extend(head, tail)
 end
 
---- wrap a sonar client's request method once so its codeAction responses carry
---- the silence actions, placing them immediately after sonar's own actions in
---- the gra picker. nvim aggregates code actions per responding client (v0.12
---- `on_code_action_results` iterates `pairs(results)`), so riding inside the
---- sonar client's result is the only way to control where ours appear; a
---- separate code-action source would land in its own group at the bottom.
+--- wraps the client's request method once, so its codeAction responses carry
+--- the silence actions after sonar's own
 function M.wrap_sonar_codeaction(client)
   if not client or client._sonarlint_codeaction_wrapped then
     return
@@ -163,8 +144,6 @@ function M.wrap_sonar_codeaction(client)
         if not err then
           result = result or {}
           if type(result) == 'table' then
-            -- float sonar's own "Show issue details" action to the top, then
-            -- append our silence actions after sonar's remaining entries
             result = details_first(result)
             for _, action in ipairs(build_silence_actions(params)) do
               table.insert(result, action)

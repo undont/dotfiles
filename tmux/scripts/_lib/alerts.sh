@@ -2,11 +2,10 @@
 # agent alert utilities for tmux scripts
 # source this file after common.sh
 
-# guard against multiple sourcing
 [[ -n "${_TMUX_ALERTS_SH_LOADED:-}" ]] && return 0
 _TMUX_ALERTS_SH_LOADED=1
 
-# alerts file location (only set if not already defined, allowing tests to override)
+# tests override ALERTS_FILE
 if [[ -z "${ALERTS_FILE:-}" ]]; then
     readonly ALERTS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/alerts"
 fi
@@ -18,12 +17,12 @@ if [[ -z "${RUNNING_DIR:-}" ]]; then
     readonly RUNNING_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/running"
 fi
 
-# finished-process history: appended on every tracked completion (regardless of
-# whether you switched away, unlike the alerts file which only records
-# switched-away results for the status bar). feeds the proclist "done" rows.
+# finished-process history: appended when a tracked command completes, whichever
+# window is in view (the alerts file records only out-of-view results for the
+# status bar). feeds the proclist "done" rows.
 # kept in sync with _CMD_FINISHED_FILE in scripts/hooks/cmd-alert-hook.zsh
 # fields: finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label<tab>cmd
-# (cmd is the full command as typed, for proclist rerun; absent on pre-rerun rows)
+# (cmd is the full command as typed, for proclist rerun; a row may lack it)
 if [[ -z "${FINISHED_FILE:-}" ]]; then
     readonly FINISHED_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/finished"
 fi
@@ -51,15 +50,11 @@ fi
 # window_id is the dismiss and GC key: automatic-rename rewrites the window
 # name from the agent's pane title while the alert is live, so a name-keyed
 # row is unmatchable by the time the clear runs. the name stays in the row for
-# display and is refreshed whenever the alert is re-set. rows written before
-# the id was recorded have three fields and still match on name alone
+# display and is refreshed whenever the alert is re-set. three-field rows (no
+# id) match on name alone
 
-# percent-encode a window name for safe storage in the colon-delimited alerts
-# file. tmux allows colons in window names (e.g. via automatic-rename from a
-# process title), and a literal colon would be mistaken for the field
-# separator and corrupt parsing. encode '%' first so the transform is
-# reversible, then ':'. sessions use a restricted charset and never need
-# encoding; labels are always the trailing field so their colons are harmless
+# percent-encode a window name for the colon-delimited alerts file: tmux allows
+# colons in window names. '%' is encoded before ':' so the transform is reversible
 # usage: encoded=$(alerts_encode_window "$window_name")
 alerts_encode_window() {
     local s="$1"
@@ -99,7 +94,6 @@ _fmt_elapsed() {
 
 # get agent icon (compatible with bash 3.2, no associative arrays)
 # usage: get_agent_icon "agent_name"
-# returns: icon symbol
 get_agent_icon() {
     local agent="$1"
     case "$agent" in
@@ -113,7 +107,6 @@ get_agent_icon() {
 
 # get agent colour (compatible with bash 3.2, no associative arrays)
 # usage: get_agent_colour "agent_name"
-# returns: hex colour code
 get_agent_colour() {
     local agent="$1"
     case "$agent" in
@@ -345,7 +338,6 @@ set_exit_alert() {
     local label="$2"
     local ring_bell="${3:-true}"
 
-    # ensure alerts directory exists
     local alerts_dir
     alerts_dir="$(dirname "$ALERTS_FILE")"
     if [[ ! -d "$alerts_dir" ]]; then
@@ -353,7 +345,6 @@ set_exit_alert() {
         chmod 700 "$alerts_dir"
     fi
 
-    # get colour for this exit code
     local colour
     colour="$(get_exit_code_colour "$code")"
 
@@ -365,7 +356,6 @@ set_exit_alert() {
         target="$TMUX_PANE"
     fi
 
-    # set the @exit_alert and @exit_alert_colour window options on the origin window
     if [[ -n "$target" ]]; then
         tmux set-option -wt "$target" "@exit_alert" 1 2>/dev/null
         tmux set-option -wt "$target" "@exit_alert_colour" "$colour" 2>/dev/null
@@ -389,7 +379,7 @@ set_exit_alert() {
 
     # add window to alerts file (6-field format:
     # session:window:exit:window_id:code:label). window_id is the dismiss/GC key
-    # session: project convention (alnum, dot, underscore, hyphen)
+    # session: alnum, dot, underscore, hyphen
     # window: any non-control chars (allows spaces and colons); colons are
     # percent-encoded so they don't collide with the field separator
     if [[ -n "$wid" ]] && [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
@@ -399,11 +389,9 @@ set_exit_alert() {
         grep -qxF "$entry" "$ALERTS_FILE" 2>/dev/null || echo "$entry" >>"$ALERTS_FILE"
     fi
 
-    # ring the bell at the attached client terminal(s) rather than the origin
-    # pane. a pane bell trips monitor-bell and leaves a window_bell_flag that
-    # lingers as a status highlight until the window is viewed (and which the
-    # proclist dismiss can't clear); the @exit_alert option already marks the
-    # window, so this is just the audible cue, delivered wherever you're attached
+    # ring the bell at the attached client terminal(s), not the origin pane: a pane
+    # bell trips monitor-bell and leaves a window_bell_flag that the proclist dismiss
+    # can't clear. the @exit_alert option already marks the window
     if [[ "$ring_bell" == "true" ]]; then
         local _ctty
         while IFS= read -r _ctty; do
@@ -419,13 +407,11 @@ set_window_alert() {
     local agent="${1:-claude}"
     local ring_bell="${2:-true}"
 
-    # validate agent name against whitelist
     case "$agent" in
         claude | codex | opencode | copilot) ;;
         *) return 1 ;;
     esac
 
-    # ensure alerts directory exists
     local alerts_dir
     alerts_dir="$(dirname "$ALERTS_FILE")"
     if [[ ! -d "$alerts_dir" ]]; then
@@ -455,7 +441,7 @@ set_window_alert() {
     # add or refresh this window's row. the window id is the row identity, so a
     # re-set after automatic-rename rewrites the drifted name in place instead
     # of appending a second row for the same window
-    # session: project convention (alnum, dot, underscore, hyphen)
+    # session: alnum, dot, underscore, hyphen
     # window: any non-control chars (allows spaces and colons); colons are
     # percent-encoded so they don't collide with the field separator
     if [[ "$sess" =~ ^[a-zA-Z0-9._-]+$ ]] && [[ "$win" =~ ^[^[:cntrl:]]+$ ]]; then
@@ -475,7 +461,6 @@ set_window_alert() {
         fi
     fi
 
-    # ring the terminal bell (only if requested and /dev/tty is available)
     if [[ "$ring_bell" == "true" ]]; then
         {
             if [[ -w /dev/tty ]]; then
@@ -485,20 +470,13 @@ set_window_alert() {
     fi
 }
 
-# file locking: uses mkdir as an atomic lock primitive (POSIX guarantees mkdir
-# is atomic even on NFS). lock acquisition retries 10 times with 100ms backoff
-# (1 second total timeout). this prevents concurrent alert updates from
-# corrupting the alerts file when multiple tmux scripts fire simultaneously
+# file locking: mkdir is the atomic lock primitive. acquisition retries with a
+# short backoff, and a lock whose holder PID is dead is removed and retried
 #
-# stale lock recovery: if the lock holder PID is no longer alive, the lock is
-# removed and acquisition retried
-#
-# grep exit codes: 0 = lines matched (filtered), 1 = no matches (file cleared),
-# both are valid. exit code 2+ indicates an actual error
+# grep exit codes: 0 (lines matched) and 1 (no matches, file cleared) are both
+# valid; 2+ is an error
 
-# acquire the alerts file lock
-# usage: _acquire_alerts_lock
-# returns: 0 on success, 1 on failure
+# returns 1 when the lock can't be acquired
 _acquire_alerts_lock() {
     local lock_dir="${ALERTS_FILE}.lock"
     local pid_file="${lock_dir}/pid"
@@ -509,7 +487,6 @@ _acquire_alerts_lock() {
             return 0
         fi
 
-        # check for stale lock, if holder PID is no longer alive, remove it
         if [[ -f "$pid_file" ]]; then
             local holder_pid
             holder_pid=$(cat "$pid_file" 2>/dev/null) || true
@@ -525,18 +502,15 @@ _acquire_alerts_lock() {
     return 1
 }
 
-# release the alerts file lock
-# usage: _release_alerts_lock
 _release_alerts_lock() {
     local lock_dir="${ALERTS_FILE}.lock"
     rm -f "${lock_dir}/pid" 2>/dev/null
     rmdir "$lock_dir" 2>/dev/null || true
 }
 
-# drop finished-history rows for a window so "done" rows clear once viewed,
-# mirroring how clear_window_alerts dismisses agent/exit alerts on select.
-# keyed on window_id (field 4); tmux never reuses ids within a server lifetime,
-# so a rename can't strand the entry. no-op without an id (the only reliable key)
+# drop finished-history rows for a window so "done" rows clear once viewed.
+# keyed on window_id (field 4), which tmux never reuses within a server lifetime.
+# no-op without an id
 # usage: clear_window_finished "window_id"
 clear_window_finished() {
     local window_id="$1"
@@ -555,12 +529,9 @@ clear_window_finished() {
     fi
 }
 
-# drop finished-history rows for an entire session, mirroring clear_window_finished
-# but keyed on the session field (field 3) so destroying a session scrubs the
-# done rows for every window at once, including windows that closed earlier and
-# whose rows still linger under the file's own TTL. session names are unique
-# among live sessions; a row written before a rename keeps the old name and ages
-# out via the picker instead, matching how the alerts file handles renames
+# drop finished-history rows for a whole session (field 3), including rows for
+# windows that already closed. a row written before a session rename keeps the
+# old name and ages out via the picker
 # usage: clear_session_finished "session"
 clear_session_finished() {
     local session="$1"
@@ -579,18 +550,14 @@ clear_session_finished() {
     fi
 }
 
-# drop a window's exit alert from the status bar: the @exit_alert* options that
-# drive the icon plus its exit line in the alerts file. agent alerts on the same
-# window are left intact. lets a dismissed proclist "done" row also clear the
-# status-right indicator. keyed on window_id (alerts file field 4), which is
-# stable under automatic-rename; the stored window name is not, so name-matching
-# would miss the line whenever the window auto-renamed after completion
+# drop a window's exit alert: the @exit_alert* options plus its exit line in the
+# alerts file. agent alerts on the same window stay. keyed on window_id (alerts
+# file field 4), which is stable under automatic-rename
 # usage: clear_window_exit_alert "window_id"
 clear_window_exit_alert() {
     local window_id="$1"
     [[ -n "$window_id" ]] || return 0
 
-    # unset the window options that render the status-right exit icon
     local opt
     for opt in @exit_alert @exit_alert_code @exit_alert_label @exit_alert_colour; do
         tmux set-option -wt "$window_id" -u "$opt" 2>/dev/null || true
@@ -623,9 +590,8 @@ clear_window_alerts() {
 
     # remove from alerts file (any agent) with file locking. window_id (field 4
     # on both agent and exit rows) is the primary key because the stored name
-    # drifts under automatic-rename and an exact-name match would miss; the
-    # session:window match stays for rows written before ids were recorded
-    # (names are stored percent-encoded, so encode the lookup)
+    # drifts under automatic-rename; the session:window match covers rows without
+    # an id (names are stored percent-encoded, so encode the lookup)
     if [[ -f "$ALERTS_FILE" ]] && _acquire_alerts_lock; then
         local tmp_file enc_window
         tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
@@ -662,7 +628,6 @@ clear_window_alerts() {
 }
 
 # clean up stale alerts (for windows/sessions that no longer exist)
-# usage: cleanup_stale_alerts
 cleanup_stale_alerts() {
     # the rename hooks call this on every automatic rename, so keep the
     # no-alerts case to a single stat
@@ -674,8 +639,8 @@ cleanup_stale_alerts() {
     tmp_file=$(mktemp "${ALERTS_FILE}.tmp.XXXXXX")
     local cleaned=0
 
-    # prefetch every live window once. this runs on every automatic rename, so
-    # a has-session plus list-windows round-trip per row would be a fork storm
+    # prefetch every live window once: this runs on every automatic rename, where
+    # a has-session plus list-windows round-trip per row forks too often
     local live
     live=$(tmux list-windows -a -F $'#{session_name}\t#{window_id}\t#{window_name}' 2>/dev/null) || live=""
     if [[ -z "$live" ]]; then
@@ -687,7 +652,7 @@ cleanup_stale_alerts() {
     # read each alert and verify its target window still exists. rows carry the
     # window id in field 4 (agent rows: session:window:agent:window_id, exit
     # rows: session:window:exit:window_id:code:label) and are validated on it;
-    # rows written before ids were recorded fall back to the window name
+    # rows without an id fall back to the window name
     while IFS= read -r line; do
         IFS=':' read -r session window field3 field4 _rest <<<"$line"
 
@@ -706,11 +671,11 @@ cleanup_stale_alerts() {
                 continue
             fi
         elif [[ "$field3" == "exit" ]]; then
-            # an exit row with no id predates the id key and can't be validated
+            # an exit row with no id can't be validated
             cleaned=1
             continue
         else
-            # legacy agent row: the percent-encoded name is the only key
+            # agent row without an id: the percent-encoded name is the only key
             local decoded_window
             decoded_window=$(alerts_decode_window "$window")
             if ! awk -F'\t' -v s="$session" -v n="$decoded_window" \
@@ -731,7 +696,6 @@ cleanup_stale_alerts() {
             fi
         fi
 
-        # target exists, keep the alert
         echo "$line" >>"$tmp_file"
     done <"$ALERTS_FILE"
 
@@ -751,7 +715,6 @@ cleanup_stale_alerts() {
 # drop agent-state files whose pane no longer exists. per-pane files are
 # independent, so no locking is needed; catches orphans left by crashed agents
 # or a tmux server restart (SessionEnd handles the normal exit path)
-# usage: cleanup_stale_agent_state
 cleanup_stale_agent_state() {
     [[ -d "$AGENT_STATE_DIR" ]] || return 0
 
@@ -797,7 +760,6 @@ update_window_name_in_alerts() {
         fi
     fi
 
-    # clean up temp file if update failed
     if [[ $update_success -eq 0 ]]; then
         rm -f "$tmp_file"
     fi
@@ -830,7 +792,6 @@ update_session_name_in_alerts() {
         fi
     fi
 
-    # clean up temp file if update failed
     if [[ $update_success -eq 0 ]]; then
         rm -f "$tmp_file"
     fi

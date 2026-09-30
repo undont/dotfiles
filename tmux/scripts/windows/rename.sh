@@ -1,7 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# rename current tmux window via fzf prompt
+# rename a tmux window via fzf prompt
+# usage: rename.sh [session:index]   (default: current window)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -10,10 +11,8 @@ source "$SCRIPT_DIR/../_lib/alerts.sh"
 
 require_tmux
 
-# load current theme colours for fzf
 load_fzf_theme
 
-# accept optional target window (session:index) or default to current
 TARGET_WINDOW="${1:-}"
 if [[ -n "$TARGET_WINDOW" ]]; then
     CURRENT_NAME=$(tmux display-message -t "$TARGET_WINDOW" -p '#{window_name}')

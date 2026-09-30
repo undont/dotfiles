@@ -4,8 +4,6 @@
 # shows agent-specific indicators for sessions with alerts
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-# note: production scripts use ${BASH_SOURCE%/*} pattern.
-# test scripts use $(cd "$(dirname "${BASH_SOURCE[0]}")") && pwd)
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 # shellcheck source=tmux/scripts/_lib/alerts.sh
@@ -18,7 +16,6 @@ print_dotfiles_logo
 _all_alerts=""
 [[ -f "$ALERTS_FILE" ]] && _all_alerts=$(<"$ALERTS_FILE")
 
-# get sessions sorted by activity
 while read -r session; do
     icons=$(build_alert_icons "$_all_alerts" "^${session}:" "dedupe")
 

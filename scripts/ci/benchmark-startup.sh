@@ -2,9 +2,9 @@
 # benchmark zsh startup time in CI
 # usage: benchmark-startup.sh [threshold_ms]
 #
-# runs hyperfine against `zsh -i -c exit` using the dotfiles framework,
-# outputs results for benchmark-action, writes a summary to $GITHUB_STEP_SUMMARY,
-# and exits non-zero if the median exceeds the threshold
+# runs hyperfine against `zsh -i -c exit` using the dotfiles framework, writes
+# a summary to $GITHUB_STEP_SUMMARY, and exits non-zero if the median exceeds
+# the threshold
 
 set -euo pipefail
 

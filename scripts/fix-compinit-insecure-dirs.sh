@@ -1,13 +1,9 @@
 #!/usr/bin/env bash
 # clear zsh's "compinit: insecure directories" prompt by removing the group/other
-# write bit from whatever compaudit flags.
-#
-# homebrew installs its share dir group-writable (775). on macOS that dir is
-# group-owned by a shared group (admin/staff), so compinit's audit flags it and
-# prompts on the daily full-compinit path. on linux each user gets a private
-# single-member group, so the same bit is owner-only and compaudit stays clean:
-# this script is a no-op there. it only ever chmods paths the current user owns,
-# so anything root-owned is reported for a manual sudo fix rather than touched.
+# write bit from whatever compaudit flags. homebrew installs its share dir
+# group-writable; on macOS that dir's group is shared (admin/staff), so
+# compaudit flags it. only paths the current user owns are changed; the rest
+# are reported for a manual sudo fix
 #
 # usage:
 #   ./fix-compinit-insecure-dirs.sh [--dry-run]

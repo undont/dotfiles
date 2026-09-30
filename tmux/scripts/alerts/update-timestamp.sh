@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# update the @last-viewed timestamp for the current window
-# also clears any agent alert as a safety net
+# update the @last-viewed and @pane-viewed timestamps for a window
+# usage: update-timestamp.sh <window_id>
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
@@ -18,13 +18,10 @@ LOCK_DIR="$HOME/.claude/update-timestamp.lock"
 PARENT_DIR="$(dirname "$LOCK_DIR")"
 [[ ! -d "$PARENT_DIR" ]] && mkdir -p "$PARENT_DIR" && chmod 700 "$PARENT_DIR"
 
-# try to acquire lock (mkdir is atomic)
 if ! mkdir "$LOCK_DIR" 2>/dev/null; then
-    # lock held by another process, skip to avoid racing
     exit 0
 fi
 
-# ensure lock is released on exit
 trap 'rmdir "$LOCK_DIR" 2>/dev/null || true' EXIT INT TERM
 
 # update window-level timestamp (used by window sorting)

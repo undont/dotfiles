@@ -264,12 +264,12 @@ assert_equals "  get_session_undo_backup returns correct path" "$UNDO_DIR/sessio
 echo ""
 echo "  cleanup_undo_files:"
 
-# Ensure clean state before testing cleanup functions
+# clean state before testing cleanup functions
 rm -rf "$UNDO_DIR/pane" "$UNDO_DIR/pane-state.txt" "$UNDO_DIR/pane-content.txt"
 rm -rf "$UNDO_DIR/window" "$UNDO_DIR/window-state.txt" "$UNDO_DIR/window-contents"
 rm -rf "$UNDO_DIR/session" "$UNDO_DIR/session-state.txt" "$UNDO_DIR/session-backup"
 
-# Test pane cleanup
+# test pane cleanup
 touch "$UNDO_DIR/pane" "$UNDO_DIR/pane-state.txt" "$UNDO_DIR/pane-content.txt"
 cleanup_undo_files "pane"
 if [[ ! -f "$UNDO_DIR/pane" && ! -f "$UNDO_DIR/pane-state.txt" && ! -f "$UNDO_DIR/pane-content.txt" ]]; then
@@ -278,7 +278,7 @@ else
     fail "  cleanup_undo_files 'pane' should remove all pane files"
 fi
 
-# Test window cleanup
+# test window cleanup
 touch "$UNDO_DIR/window" "$UNDO_DIR/window-state.txt"
 mkdir -p "$UNDO_DIR/window-contents"
 touch "$UNDO_DIR/window-contents/test.txt"
@@ -290,7 +290,7 @@ else
 fi
 assert_dir_exists "  recreates window-contents directory after cleanup" "$UNDO_DIR/window-contents"
 
-# Test session cleanup
+# test session cleanup
 touch "$UNDO_DIR/session" "$UNDO_DIR/session-state.txt"
 mkdir -p "$UNDO_DIR/session-backup"
 touch "$UNDO_DIR/session-backup/test.txt"
@@ -301,7 +301,7 @@ else
     fail "  cleanup_undo_files 'session' should remove all session files"
 fi
 
-# Test invalid type
+# test invalid type
 if ! cleanup_undo_files "invalid" 2>/dev/null; then
     pass "  rejects invalid cleanup type"
 else
@@ -311,34 +311,34 @@ fi
 echo ""
 echo "  get_most_recent_undo_type:"
 
-# Clean slate
+# clean slate
 rm -f "$UNDO_DIR/pane" "$UNDO_DIR/window" "$UNDO_DIR/session"
 
 MOST_RECENT=$(get_most_recent_undo_type)
 assert_equals "  returns empty when no undo files" "" "$MOST_RECENT"
 
-# Use explicit timestamps to avoid timing issues (macOS has second-level granularity)
-# Format: [[CC]YY]MMDDhhmm[.ss]
+# explicit timestamps avoid timing issues (macOS has second-level granularity)
+# format: [[CC]YY]MMDDhhmm[.ss]
 touch -t 202501010001 "$UNDO_DIR/pane"
 MOST_RECENT=$(get_most_recent_undo_type)
 assert_equals "  returns 'pane' when only pane file exists" "pane" "$MOST_RECENT"
 
-# Create newer window file (1 minute later)
+# newer window file
 touch -t 202501010002 "$UNDO_DIR/window"
 MOST_RECENT=$(get_most_recent_undo_type)
 assert_equals "  returns 'window' when window is newest" "window" "$MOST_RECENT"
 
-# Create newest session file (1 minute later again)
+# newest session file
 touch -t 202501010003 "$UNDO_DIR/session"
 MOST_RECENT=$(get_most_recent_undo_type)
 assert_equals "  returns 'session' when session is newest" "session" "$MOST_RECENT"
 
-# Update pane to be newest
+# update pane to be newest
 touch -t 202501010004 "$UNDO_DIR/pane"
 MOST_RECENT=$(get_most_recent_undo_type)
 assert_equals "  returns 'pane' after updating pane file" "pane" "$MOST_RECENT"
 
-# Cleanup test files
+# clean up test files
 rm -f "$UNDO_DIR/pane" "$UNDO_DIR/window" "$UNDO_DIR/session"
 
 # ─────────────────────────────────────────
@@ -536,7 +536,7 @@ fi
 
 # ─────────────────────────────────────────
 # colon-in-window-name handling (percent-encoding round-trip)
-# regression: window names like "FOO:BAR" contain tmux's ':' which is
+# window names like "FOO:BAR" contain tmux's ':' which is
 # also the alerts-file field separator. they must be encoded on write and
 # decoded on read, otherwise clear.sh and friends reject or corrupt them
 # ─────────────────────────────────────────
@@ -691,8 +691,8 @@ else
     pass "  escaped dot pattern does not match dotted session name"
 fi
 
-# unescaped dot regression no longer applies because build_alert_icons now
-# does literal prefix matching instead of regex evaluation
+# build_alert_icons does literal prefix matching, not regex evaluation, so an
+# unescaped dot matches only itself
 _BAI_UNESCAPED_PAT="^v0.2.67:"
 _BAI_REGRESSION=$(build_alert_icons "$_BAI_DOT_CONTENT" "$_BAI_UNESCAPED_PAT")
 if [[ -n "$_BAI_REGRESSION" ]]; then

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# New Launcher Wizard
+# new launcher wizard
 # ══════════════════════════════════════════════════════════════
 # step-based wizard for creating/editing session launchers
 # supports ctrl+b to go back a step
@@ -107,9 +107,9 @@ load_existing_launcher() {
     else
         instance_mode="n"
     fi
-    # new format: separate `_<SESSION>_ROOT_DEFAULT="$HOME/path"` line, handles
-    # paths containing apostrophes (which break `"${VAR:-default}"` parsing)
-    # old format (kept for backward compat): `PROJECT_DIR="${VAR:-default}"`
+    # a separate `_<SESSION>_ROOT_DEFAULT="$HOME/path"` line handles paths
+    # containing apostrophes (which break `"${VAR:-default}"` parsing). the inline
+    # `PROJECT_DIR="${VAR:-default}"` form is read too
     project_dir=$(grep -m1 '^_[A-Z0-9_]*_ROOT_DEFAULT=' "$file" 2>/dev/null |
         sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
     if [[ -z "$project_dir" ]]; then
@@ -156,8 +156,8 @@ load_existing_launcher() {
             win_splits+=("no")
             win_split_cmds+=("")
         elif [[ "$line" =~ ^tmux\ split-window.*-t\ \"?\$SESSION:([^\"\ ]+)\"? ]]; then
-            # target may be the window name (our format) or include a pane index
-            # like `dev.1` (hand-written launchers); strip a trailing .N so the
+            # target may be the window name (generated launchers) or include a pane
+            # index like `dev.1` (hand-written launchers); strip a trailing .N so the
             # window still matches and the split flag is preserved
             local split_win="${BASH_REMATCH[1]}"
             [[ "$split_win" =~ \.[0-9]+$ ]] && split_win="${split_win%.*}"
@@ -860,13 +860,11 @@ PREAMBLE
 
     # generate SESSION and PROJECT_DIR (worktree-aware or simple)
     #
-    # path defaults are staged in `_<SESSION>_…_DEFAULT` variables rather than
-    # embedded inline as `${VAR:-/path}`, because single quotes inside a
-    # parameter-expansion default (e.g. `${VAR:-/foo's/bar}`) trip bash's
-    # quoter even within `"…"`. a regular `VAR="…"` assignment handles
-    # apostrophes natively; the `${VAR:-$_DEFAULT}` then references it safely.
-    # the `${PATH/#\~/$HOME}` lines expand a leading `~` in case an env-var
-    # override (e.g. `FOO_ROOT="~/x"`) ships a literal tilde
+    # path defaults are staged in `_<SESSION>_…_DEFAULT` variables, not embedded
+    # inline as `${VAR:-/path}`: a single quote inside a parameter-expansion
+    # default breaks bash's quoting even within `"…"`, while a plain `VAR="…"`
+    # assignment takes apostrophes. the `${PATH/#\~/$HOME}` lines expand a leading
+    # `~` from an env-var override (e.g. `FOO_ROOT="~/x"`)
     if [[ "$worktree_aware" == "y" ]]; then
         worktree_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
         cat <<WTBLOCK
@@ -969,7 +967,6 @@ FOOTER
 
 chmod +x "$target_path"
 
-# show success
 clear
 printf "\n\n"
 if [[ -n "$edit_source" ]]; then

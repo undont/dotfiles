@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# FZF Theme Reload Helper
+# fzf theme reload helper
 # ══════════════════════════════════════════════════════════════
 # reloads FZF theme colours by sourcing fzf-theme.sh and updating
 # tmux environment variables so all panes/windows get the new colours
@@ -10,7 +10,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 
-# source fzf-theme.sh to load current theme colours
 if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
     # shellcheck disable=SC1091
     source "$DOTFILES_ROOT/scripts/fzf-theme.sh"
@@ -18,7 +17,6 @@ else
     exit 1
 fi
 
-# update tmux environment if tmux is running
 if command -v tmux >/dev/null 2>&1 && tmux info &>/dev/null; then
     # export FZF variables to tmux global environment
     # this makes them available to all new panes/windows

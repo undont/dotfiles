@@ -8,8 +8,7 @@ local function is_build_variant(path)
   return vim.fs.basename(path):match '%.[%l][%w]*%.slnx?$' ~= nil
 end
 
---- find and set the target solution before roslyn.nvim loads, so that
---- lock_target can skip the multi-target picker entirely
+--- sets the target solution before roslyn.nvim loads, so lock_target skips the multi-target picker
 local function resolve_solution_target()
   if vim.g.roslyn_nvim_selected_solution then
     return
@@ -29,9 +28,8 @@ local function resolve_solution_target()
   end
 end
 
---- source roslyn.nvim's plugin file after our config is applied. we block
---- it in init (vim.g.loaded_roslyn_plugin) to prevent vim.lsp.enable
---- firing before lock_target + ignore_target are set
+--- roslyn.nvim's plugin file is blocked in init (vim.g.loaded_roslyn_plugin)
+--- and sourced here, after lock_target and ignore_target are set
 local function source_deferred_plugin()
   vim.g.loaded_roslyn_plugin = nil
   local plugin_file = vim.api.nvim_get_runtime_file('plugin/roslyn.lua', false)[1]
@@ -41,11 +39,8 @@ local function source_deferred_plugin()
 end
 
 return {
-  -- Roslyn LSP via roslyn.nvim (diagnostics, go-to-def, hover, completions)
-  -- loads on `User RealDotnetFile` (fired by core/autocmds.lua only for
-  -- buftype='' cs/razor buffers). differ diff buffers are buftype=nofile with
-  -- their own filetype, so they don't trigger this and roslyn.nvim's ~1.8s
-  -- config cost stays off the cold-`<leader>do` critical path
+  -- roslyn.nvim loads on `User RealDotnetFile`, which core/autocmds.lua fires
+  -- only for buftype='' cs/razor buffers, so differ diff buffers don't load it
   {
     'seblyng/roslyn.nvim',
     event = 'User RealDotnetFile',
@@ -58,12 +53,10 @@ return {
       end,
       broad_search = true,
       lock_target = true,
-      -- let the server watch files instead of nvim. on `auto`, roslyn registers
-      -- ~500 didChangeWatchedFiles watchers for a solution, and on macOS each is
-      -- an FSEvents handle that costs ~1.2ms to tear down: `Client:stop` cancels
-      -- them all before it can exit, so every `:q` in a .NET repo paid ~560ms.
-      -- `roslyn` advertises dynamicRegistration=false, so nvim registers none and
-      -- the server keeps its own watch (unlike `off`, which watches nothing)
+      -- the server watches files, not nvim. on `auto` roslyn registers a
+      -- didChangeWatchedFiles watcher per project dir, each an FSEvents handle
+      -- on macOS that `Client:stop` cancels before exit, which delays `:q`.
+      -- `roslyn` advertises dynamicRegistration=false; `off` watches nothing
       filewatching = 'roslyn',
     },
     init = function()
@@ -75,18 +68,12 @@ return {
       require('custom.features.roslyn-semantic-tokens').setup()
 
       vim.lsp.config('roslyn', {
-        -- Roslyn's runtimeconfig.json pins System.GC.Server=true, which gives
-        -- the .NET runtime ~one GC heap per core: a heavy idle footprint on
-        -- many-core machines (and a big chunk of roslyn's thread count). the
-        -- language server targets net10.0, and on .NET 9+ environment variables
-        -- override runtimeconfig settings, so DOTNET_gcServer=0 forces
-        -- workstation GC: far fewer heaps and lower memory, at a modest
-        -- throughput cost on background full-solution analysis (kept off the hot
-        -- path by the batched scans in features/diag-scan.lua). cmd_env merges
-        -- onto the parent env alongside roslyn.nvim's Configuration/TMPDIR, so
-        -- easy-dotnet's builds/tests/BuildHost are unaffected. under
-        -- `--daemon-mode` the shared server inherits this only from the nvim
-        -- that starts it
+        -- roslyn's runtimeconfig.json sets System.GC.Server=true, one GC
+        -- heap per core. on .NET 9+ environment variables override
+        -- runtimeconfig, so DOTNET_gcServer=0 selects workstation GC. cmd_env
+        -- merges onto the parent env, so easy-dotnet's processes are
+        -- unaffected. under `--daemon-mode` the shared server inherits this
+        -- only from the nvim that starts it
         cmd_env = {
           DOTNET_gcServer = '0',
         },
@@ -111,7 +98,7 @@ return {
     end,
   },
 
-  -- easy-dotnet.nvim for build, run, debug, test (LSP handled by roslyn.nvim)
+  -- easy-dotnet.nvim: build, run, debug, test
   {
     'GustavEikaas/easy-dotnet.nvim',
     dependencies = {
@@ -121,9 +108,8 @@ return {
     },
     ft = { 'cs', 'fsharp', 'vb' },
     config = function()
-      -- sync roslyn.nvim's solution target into easy-dotnet's cache so the
-      -- test runner and build commands use the same solution. force-overwrite
-      -- if the cached solution is a build variant (e.g. .ci.slnx)
+      -- copy roslyn.nvim's solution target into easy-dotnet's cache,
+      -- overwriting a cached build variant (e.g. .ci.slnx)
       local roslyn_sln = vim.g.roslyn_nvim_selected_solution
       if roslyn_sln then
         local current_solution = require 'easy-dotnet.current_solution'
@@ -145,12 +131,12 @@ return {
           auto_start_testrunner = false,
           viewmode = 'float',
           mappings = {
-            -- buffer keymaps (active in .cs files with tests)
+            -- buffer keymaps in .cs files with tests
             run_test_from_buffer = { lhs = '<leader>tr', desc = '[R]un test' },
-            -- run_all_tests_from_buffer overridden below (upstream runs whole project)
+            -- run_all_tests_from_buffer is overridden below (upstream runs the whole project)
             debug_test_from_buffer = { lhs = '<leader>td', desc = '[D]ebug test' },
             peek_stack_trace_from_buffer = { lhs = '<leader>tp', desc = '[P]eek stacktrace' },
-            -- explorer window keymaps (single keys, non-editable buffer)
+            -- explorer window keymaps
             run = { lhs = 'r', desc = 'run test' },
             run_all = { lhs = 'R', desc = 'run all tests' },
             debug_test = { lhs = 'd', desc = 'debug test' },
@@ -181,7 +167,6 @@ return {
         require('easy-dotnet.test-runner').open()
       end, { desc = 'Test [E]xplorer (.NET)' })
 
-      -- float nav-blocking + run-current-file tests live in features/
       require('custom.features.dotnet-test').setup()
     end,
   },

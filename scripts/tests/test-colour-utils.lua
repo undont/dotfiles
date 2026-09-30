@@ -1,7 +1,6 @@
 #!/usr/bin/env lua
--- Unit tests for scripts/_lib/colour-utils.lua
+-- unit tests for scripts/_lib/colour-utils.lua
 
--- Setup LUA_PATH to find the module
 local script_dir = arg[0]:match("(.*/)")
 package.path = script_dir .. "../_lib/?.lua;" .. package.path
 
@@ -68,7 +67,7 @@ else
     fail("parses white")
 end
 
--- Invalid input
+-- invalid input
 local ok, err = pcall(colour.hex_to_rgb, "#gggggg")
 if not ok then
     pass("rejects invalid hex")
@@ -107,7 +106,7 @@ end
 -- ═══════════════════════════════════════════════
 section("RGB <-> HSL round-trip")
 
--- Round-trip: hex -> rgb -> hsl -> rgb -> hex
+-- round-trip: hex -> rgb -> hsl -> rgb -> hex
 local function round_trip(hex)
     local r1, g1, b1 = colour.hex_to_rgb(hex)
     local h, s, l = colour.rgb_to_hsl(r1, g1, b1)
@@ -135,7 +134,7 @@ for _, hex in ipairs(test_colours) do
     end
 end
 
--- Grey (s=0 path)
+-- grey (s=0 path)
 local h, s, l = colour.rgb_to_hsl(128, 128, 128)
 if s == 0 then
     pass("grey has zero saturation")
@@ -146,7 +145,7 @@ end
 -- ═══════════════════════════════════════════════
 section("luminance (WCAG 2.1)")
 
--- Known reference values
+-- known reference values
 if approx(colour.luminance("#ffffff"), 1.0) then
     pass("white luminance = 1.0")
 else
@@ -159,7 +158,7 @@ else
     fail("black luminance", tostring(colour.luminance("#000000")))
 end
 
--- Mid-grey ~0.2159
+-- mid-grey
 local grey_lum = colour.luminance("#808080")
 if approx(grey_lum, 0.2159, 0.01) then
     pass("mid-grey luminance ~0.216")
@@ -184,7 +183,7 @@ else
     fail("same colour contrast", tostring(ratio))
 end
 
--- Order independence
+-- order independence
 local r1 = colour.contrast_ratio("#ff5555", "#282a36")
 local r2 = colour.contrast_ratio("#282a36", "#ff5555")
 if approx(r1, r2) then
@@ -196,7 +195,7 @@ end
 -- ═══════════════════════════════════════════════
 section("ensure_contrast")
 
--- Already meets ratio — should return unchanged
+-- already meets the ratio: returned unchanged
 local adjusted, delta = colour.ensure_contrast("#ffffff", "#000000", 4.5)
 if delta == 0 and adjusted == "#ffffff" then
     pass("already-meeting returns unchanged")
@@ -204,7 +203,7 @@ else
     fail("already-meeting", string.format("delta=%.1f", delta))
 end
 
--- Low contrast — should adjust
+-- low contrast: adjusted
 adjusted, delta = colour.ensure_contrast("#555555", "#282a36", 4.5)
 local new_ratio = colour.contrast_ratio(adjusted, "#282a36")
 if new_ratio >= 4.5 then
@@ -239,7 +238,7 @@ else
     fail("darken decreases lightness")
 end
 
--- Clamping
+-- clamping
 local max_light = colour.lighten("#ffffff", 50)
 if max_light == "#ffffff" then
     pass("lighten clamps at white")

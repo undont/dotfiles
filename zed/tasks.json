@@ -1,9 +1,8 @@
-// Global tasks — space q (keymap.json) opens a picker over this list.
+// global tasks: space q (keymap.json) opens a picker over this list
 //
-// Unlike nvim's <leader>q (nvim/lua/custom/features/build.lua), which auto-detects
-// project type from marker files and runs the one matching command, Zed's task
-// system has no such detection — this is a static menu, so pick the entry that
-// matches the project you're in.
+// nvim's <leader>q (nvim/lua/custom/features/build.lua) detects the project
+// type from marker files; Zed's task system has no such detection, so this is
+// a static menu with one entry per project type
 [
   {
     "label": "go vet",

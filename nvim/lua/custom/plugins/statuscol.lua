@@ -22,7 +22,7 @@ return {
         -- the rest are ui2's cmdline and message windows, which exist before this loads
         ft_ignore = { 'oil', 'cmd', 'msg', 'pager', 'dialog', 'differpanel' },
         segments = {
-          -- highest priority wins the cell: neotest 1000 > dotnet 100 > diagnostics 10
+          -- highest priority wins the cell: neotest, then dotnet, then diagnostics
           { sign = { name = { '.*' }, namespace = { '.*' }, colwidth = 2 }, click = 'v:lua.ScSa' },
           { sign = { namespace = { 'gitsigns' }, colwidth = 1 }, click = 'v:lua.ScSa' },
           { text = { ' ', lnum, ' ' }, click = 'v:lua.ScLa' },

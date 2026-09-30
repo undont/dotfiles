@@ -1,9 +1,7 @@
--- spell autocorrect utilities and keymaps.
--- single-word, line, and buffer-wide autocorrect via vim's spellsuggest
+-- spell autocorrect (word, line, buffer) via vim's spellsuggest
 
 local M = {}
 
---- shift spelling "mark bad word" from zw to zW to prevent accidents
 local function setup_mark_swap()
   vim.keymap.set('n', 'zW', 'zw', { desc = 'Mark word as misspelled', silent = true })
   vim.keymap.set('n', 'zw', '<Nop>', { silent = true })
@@ -51,8 +49,7 @@ function M.apply_first_suggestion()
   return true
 end
 
---- walk the range applying the first suggestion to each misspelling. assumes the
---- caller has already cleared wrapscan, so `]s` can't wrap past the range
+--- the caller clears wrapscan, so `]s` cannot wrap past the range
 ---@param start_line integer
 ---@param end_line integer
 ---@return integer fixed
@@ -72,7 +69,7 @@ local function correct_in_range(start_line, end_line)
       break
     end
 
-    -- guard against cursor not advancing (no more misspellings in range)
+    -- the cursor does not advance when the range has no more misspellings
     if row == prev_row and col == prev_col then
       break
     end
@@ -103,9 +100,7 @@ function M.autocorrect_range(start_line, end_line)
   local view = vim.fn.winsaveview()
   local wrapscan = vim.o.wrapscan
 
-  -- wrapscan is global, so the walk runs under pcall: a throw mid-range (an
-  -- out-of-range cursor set, say) would otherwise leave the whole session
-  -- without search wrapping and skip the view restore
+  -- wrapscan is global, so pcall guarantees it and the view are restored
   vim.o.wrapscan = false
   local ok, result = pcall(correct_in_range, start_line, end_line)
   vim.fn.winrestview(view)

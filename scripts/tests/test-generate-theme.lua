@@ -1,5 +1,5 @@
 #!/usr/bin/env lua
--- Unit tests for scripts/_lib/generate-theme.lua
+-- unit tests for scripts/_lib/generate-theme.lua
 
 local script_dir = arg[0]:match("(.*/)")
 package.path = script_dir .. "../_lib/?.lua;" .. package.path
@@ -32,7 +32,6 @@ local function section(name)
     )
 end
 
--- Helper: write a temp file and return its path
 local function write_temp(content)
     local path = os.tmpname()
     local f = io.open(path, "w")
@@ -64,7 +63,7 @@ end
 -- ═══════════════════════════════════════════════
 section("display_name")
 
--- Should sanitise shell metacharacters
+-- shell metacharacters are stripped
 local safe = gen.display_name("Normal Theme")
 if safe == "Normal Theme" then
     pass("display_name preserves normal names")
@@ -89,7 +88,7 @@ end
 -- ═══════════════════════════════════════════════
 section("parse_ghostty_theme")
 
--- Minimal valid theme
+-- minimal valid theme
 local minimal_theme = [[
 background = #282a36
 foreground = #f8f8f2
@@ -131,7 +130,7 @@ else
     fail("extract palette")
 end
 
--- Missing background
+-- missing background
 path = write_temp("foreground = #f8f8f2\npalette = 0=#000000\n")
 theme, err = gen.parse_ghostty_theme(path)
 os.remove(path)
@@ -141,7 +140,7 @@ else
     fail("should reject missing background")
 end
 
--- Missing palette entry
+-- missing palette entry
 path = write_temp("background = #000000\nforeground = #ffffff\npalette = 0=#000000\n")
 theme, err = gen.parse_ghostty_theme(path)
 os.remove(path)
@@ -151,7 +150,7 @@ else
     fail("should reject incomplete palette")
 end
 
--- Comments and blank lines
+-- comments and blank lines
 local commented_theme = [[
 # This is a comment
 background = #282a36
@@ -176,7 +175,7 @@ else
     fail("comments/blanks", err)
 end
 
--- Non-existent file
+-- non-existent file
 theme, err = gen.parse_ghostty_theme("/tmp/nonexistent-theme-xyz-12345")
 if not theme and err:find("Cannot open") then
     pass("reports error for missing file")
@@ -187,7 +186,6 @@ end
 -- ═══════════════════════════════════════════════
 section("extract_colours")
 
--- Build a parsed theme fixture
 local fixture = {
     background = "#282a36",
     foreground = "#f8f8f2",
@@ -238,7 +236,7 @@ end
 -- ═══════════════════════════════════════════════
 section("apply_wcag_corrections")
 
--- Use colours with known low contrast against dark bg
+-- colours with low contrast against a dark bg
 local test_colours = {
     bg_primary = "#282a36",
     bg_secondary = "#44475a",
@@ -254,7 +252,7 @@ local test_colours = {
 }
 
 local adjustments = gen.apply_wcag_corrections(test_colours)
--- fg_secondary was low contrast, should have been adjusted
+-- fg_secondary is low contrast, so it is adjusted
 local colour_utils = require("colour-utils")
 local fg_sec_ratio = colour_utils.contrast_ratio(test_colours.fg_secondary, test_colours.bg_primary)
 if fg_sec_ratio >= 5.0 then
@@ -340,7 +338,7 @@ end
 -- ═══════════════════════════════════════════════
 section("apply_wcag_corrections: bright variant preference")
 
--- Bluloco Dark-style palette: dim normal row, identity colours in bright row
+-- Bluloco Dark-style palette: dim normal row, brighter accent colours in the bright row
 local bluloco_colours = {
     bg_primary = "#282c34",
     bg_secondary = "#41444d",
@@ -365,8 +363,7 @@ local bluloco_colours = {
 
 local bright_adjustments = gen.apply_wcag_corrections(bluloco_colours)
 
--- yellow's bright variant passes all surfaces outright, so it should be
--- adopted verbatim rather than lightening the dim orange
+-- yellow's bright variant passes every surface, so it is adopted verbatim
 if bluloco_colours.yellow == "#f9c859" then
     pass("yellow swapped to bright variant verbatim")
 else
@@ -385,7 +382,7 @@ else
     fail("purple swap not recorded")
 end
 
--- All accents must still meet 4.5:1 against the hardest surface
+-- every accent meets the body-text minimum against bg_secondary
 local all_pass = true
 for _, name in ipairs({ "red", "green", "yellow", "purple", "pink", "cyan" }) do
     if colour_utils.contrast_ratio(bluloco_colours[name], bluloco_colours.bg_secondary) < 4.5 then
@@ -400,10 +397,8 @@ end
 -- ═══════════════════════════════════════════════
 section("apply_wcag_corrections: dull theme fidelity")
 
--- Spacegray Eighties Dull-style palette: muted dim row that passes the
--- real backgrounds but not 4.5:1 against line_highlight. The relaxed
--- 3:1 line_highlight minimum must leave those colours untouched so the
--- nvim scheme matches Ghostty's rendering of the theme.
+-- Spacegray Eighties Dull-style palette: a muted dim row that passes the
+-- backgrounds and the lower line_highlight minimum, so it stays untouched
 local dull_colours = {
     bg_primary = "#222222",
     bg_secondary = "#15171c",
@@ -428,8 +423,7 @@ local dull_colours = {
 
 gen.apply_wcag_corrections(dull_colours)
 
--- yellow passes bg (4.55:1) and line_highlight at the 3:1 bar (3.56:1):
--- it must stay the designer's dull orange, not swap to the bright gold
+-- yellow passes bg and the line_highlight minimum, so the dull orange stays
 if dull_colours.yellow == "#c6735a" then
     pass("passing dull yellow left verbatim")
 else
@@ -442,8 +436,7 @@ else
     fail("dull purple changed", "got " .. dull_colours.purple)
 end
 
--- red genuinely fails on bg_primary (3.04:1), so it should adopt the
--- bright variant verbatim with no synthetic lightening on top
+-- red fails on bg_primary, so it takes the bright variant verbatim
 if dull_colours.red == "#ec5f67" then
     pass("failing dull red swapped to bright variant verbatim")
 else
@@ -453,10 +446,9 @@ end
 -- ═══════════════════════════════════════════════
 section("apply_wcag_corrections: bright-swap chroma ceiling")
 
--- Kanagawa Dragon: every accent is muted except the bright red, which is over
--- twice the chroma of the loudest other accent. Its normal-row red fails only
--- the synthetic bg_secondary, so the swap must be declined and the designer's
--- red lightened instead.
+-- Kanagawa Dragon: the bright red is far more chromatic than every other
+-- accent, and the normal-row red fails only bg_secondary. the swap is declined
+-- and the normal-row red lightened
 local dragon_wcag_colours = {
     bg_primary = "#181616",
     bg_secondary = "#332e2e",
@@ -499,14 +491,14 @@ else
     fail("declined swap recorded as a swap")
 end
 
--- The fallback still has to clear the surface that triggered the correction
+-- the fallback clears the surface that triggered the correction
 if colour_utils.contrast_ratio(dragon_wcag_colours.red, dragon_wcag_colours.bg_secondary) >= 4.5 then
     pass("lightened red meets 4.5:1 on bg_secondary")
 else
     fail("lightened red below 4.5:1", dragon_wcag_colours.red)
 end
 
--- and land inside the band the rest of the palette occupies
+-- and lands inside the chroma band of the other accents
 local function test_chroma(hex)
     local r, g, b = colour_utils.hex_to_rgb(hex)
     return math.max(r, g, b) - math.min(r, g, b)
@@ -524,8 +516,8 @@ end
 -- ═══════════════════════════════════════════════
 section("apply_saturation_preference: near-grey accent rescue")
 
--- Kanagawa Dragon-style palette: normal-row pink/cyan sit within a few
--- percent of grey; the theme's identity colours live in the bright row
+-- Kanagawa Dragon-style palette: normal-row pink and cyan are near-grey, the
+-- bright row carries the chromatic variants
 local dragon_colours = {
     bg_primary = "#181616",
     bg_secondary = "#332e2e",
@@ -550,8 +542,7 @@ local dragon_colours = {
 
 local sat_adjustments = gen.apply_saturation_preference(dragon_colours)
 
--- pink (chroma 17) and cyan (chroma 22) are near-grey: both swap to the
--- bright row
+-- pink and cyan are below NEAR_GREY_CHROMA: both swap to the bright row
 if dragon_colours.pink == "#938aa9" then
     pass("near-grey pink promoted to bright variant")
 else
@@ -564,8 +555,7 @@ else
     fail("near-grey cyan promotion", "got " .. dragon_colours.cyan)
 end
 
--- purple (37), yellow (58) and red (86) carry visible chroma: the designer's
--- muted colours stay
+-- purple, yellow and red are above NEAR_GREY_CHROMA: they stay
 if dragon_colours.purple == "#8ba4b0" and dragon_colours.yellow == "#c4b28a" and dragon_colours.red == "#c4746e" then
     pass("chromatic accents left verbatim")
 else
@@ -581,9 +571,8 @@ else
     fail("adjustment count", "got " .. #sat_adjustments)
 end
 
--- Dull-but-chromatic palette (Spacegray Eighties Dull-style): every accent
--- sits above the near-grey threshold, so nothing is promoted even though
--- the bright row is more saturated
+-- dull-but-chromatic palette (Spacegray Eighties Dull-style): every accent
+-- is above the near-grey threshold, so nothing is promoted
 local dull_sat_colours = {
     bg_primary = "#222222",
     bg_secondary = "#15171c",
@@ -640,10 +629,10 @@ local function nvim_fixture(overrides)
     return base
 end
 
--- Ghostty's selection-background never reaches the nvim colourscheme: the band
--- is derived from line_highlight so syntax colours survive inside a selection.
+-- ghostty's selection-background is not used by the nvim colourscheme: the
+-- band is derived from line_highlight
 
--- Inverted: light selection bg with dark selection fg (Bluloco Dark)
+-- inverted: light selection bg with dark selection fg (Bluloco Dark)
 local inverted =
     gen.generate_nvim_colourscheme("test-inverted", nvim_fixture({ selection = "#b9c0ca", selection_fg = "#272b33" }))
 
@@ -679,8 +668,7 @@ else
     fail("LspReference should use reference bg")
 end
 
--- Loud accent selection (Aura's violet): also replaced by the derived band, so
--- accents keep real contrast instead of sitting at ~1:1 on the block.
+-- saturated accent selection (Aura's violet): also replaced by the derived band
 local loud = gen.generate_nvim_colourscheme(
     "test-loud",
     nvim_fixture({ bg_primary = "#15141b", line_highlight = "#252330", selection = "#a277ff", purple = "#a277ff" })
@@ -697,8 +685,7 @@ else
     fail("accent contrast on band", tostring(loud_sel))
 end
 
--- The band clears the cursor line by a visible step, so a selection does not
--- read as a second cursor line.
+-- the band sits more than BAND_STEP_MIN lightness points off the cursor line
 local step = gen.generate_nvim_colourscheme("test-step", nvim_fixture())
 local step_sel = step:match("selection = '(#%x%x%x%x%x%x)'")
 local _, _, band_l = colour_utils.hex_to_hsl(step_sel)
@@ -709,7 +696,7 @@ else
     fail("band too close to cursor line", string.format("%.3f vs %.3f", band_l, line_l))
 end
 
--- The step adapts to the palette: bright accents buy a bigger lift than dim ones.
+-- bright accents allow a larger step than dim ones
 local bright = gen.generate_nvim_colourscheme(
     "test-bright",
     nvim_fixture({ bg_primary = "#181616", line_highlight = "#2b2727", fg_primary = "#c5c9c5" })
@@ -726,7 +713,7 @@ else
     fail("adaptive step", string.format("bright %.3f vs dim %.3f", bright_l, dim_l))
 end
 
--- Whatever step is chosen, every accent clears the contrast floor against it.
+-- every accent clears the contrast floor against the chosen band
 local floor_scheme = gen.generate_nvim_colourscheme("test-floor", nvim_fixture())
 local floor_sel = floor_scheme:match("selection = '(#%x%x%x%x%x%x)'")
 local worst, worst_key = math.huge, nil
@@ -742,8 +729,7 @@ else
     fail("accent below floor on band", string.format("%s at %.2f", worst_key, worst))
 end
 
--- The band takes a fixed cool hue rather than the background's, matching the
--- hand-crafted schemes.
+-- the band hue is fixed, not taken from the background
 local warm = gen.generate_nvim_colourscheme(
     "test-warm",
     nvim_fixture({ bg_primary = "#181616", line_highlight = "#2b2727" })
@@ -755,7 +741,7 @@ else
     fail("band hue", string.format("%.0f", warm_hue))
 end
 
--- Light background: band is darkened rather than lightened
+-- light background: the band is darkened
 local light = gen.generate_nvim_colourscheme(
     "test-light",
     nvim_fixture({ bg_primary = "#fafafa", fg_primary = "#383a42", line_highlight = "#f0f0f0" })
@@ -784,8 +770,8 @@ end
 -- ═══════════════════════════════════════════════
 section("Module can be required without CLI side effects")
 
--- The module guards CLI execution with pcall(debug.getlocal, 4, 1)
--- If we got this far without errors, the guard works
+-- the module guards CLI execution with pcall(debug.getlocal, 4, 1); reaching
+-- this line means requiring it did not run the CLI
 pass("module loads without executing CLI entry point")
 
 -- ═══════════════════════════════════════════════

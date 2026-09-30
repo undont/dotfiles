@@ -1,21 +1,14 @@
--- date-ordered listing and navigation for note directories whose filenames carry
--- a DD-MM-YYYY stamp.
---
--- the ordering key is the filename, not the directory: oil's sort columns are
--- handed one entry at a time with no bufnr and no parent path (see
--- oil/view.lua render_buffer -> get_sort_function), so a per-directory sort spec
--- isn't expressible. keying off the name gets the same effect emergently, a
--- directory of dated names orders newest-first, one with none ties on the
--- undated sentinel and falls through to oil's existing name sort untouched.
---
--- the stamp can sit anywhere in the basename: some notes are prefixed with an
--- emoji, others are bare
+-- date-ordered listing and navigation for note directories whose filenames
+-- carry a DD-MM-YYYY stamp anywhere in the basename.
+-- the ordering key is the filename: oil's sort columns get one entry at a time
+-- with no bufnr or parent path (oil/view.lua render_buffer ->
+-- get_sort_function), so a per-directory sort isn't expressible. a directory
+-- with no dated names ties on the undated sentinel and keeps oil's name sort
 
 local M = {}
 
--- undated siblings are a directory's index and topic notes; under `desc` this
--- floats them above the dated stream instead of burying them beneath a hundred
--- dated files
+-- undated siblings are a directory's index and topic notes; under `desc` they
+-- sort above the dated ones
 local UNDATED = math.huge
 
 ---@param name string
@@ -35,9 +28,8 @@ end
 -- `type` first keeps directories pinned above files regardless of the date key
 M.oil_sort = { { 'type', 'asc' }, { 'notedate', 'desc' }, { 'name', 'asc' } }
 
--- register the sort key oil.view_options.sort refers to. sort-only, same shape
--- as oil's own `name` column: never listed in `columns`, so render/parse are
--- unreachable and error rather than pretend
+-- the sort key oil.view_options.sort refers to. sort-only, like oil's `name`
+-- column: never listed in `columns`, so render/parse are unreachable and error
 function M.setup_oil()
   local columns = require 'oil.columns'
   local FIELD_NAME = require('oil.constants').FIELD_NAME
@@ -83,11 +75,10 @@ local function dated_siblings(path)
   return dir, files
 end
 
--- mini.bracketed's own ]f/[f walks the directory lexicographically
--- (H.get_file_data sorts basenames with `x:lower() < y:lower()` and offers no
--- comparator hook), which for DD-MM-YYYY names orders by day-of-month. walk the
--- dates instead: ]f is a newer note, [f an older one. undated siblings are
--- skipped, they aren't part of the timeline
+-- mini.bracketed's ]f/[f walks the directory lexicographically
+-- (H.get_file_data sorts basenames and has no comparator hook), which orders
+-- DD-MM-YYYY names by day-of-month. here ]f is a newer note, [f an older one;
+-- undated siblings are skipped
 ---@param direction 'forward'|'backward'|'first'|'last'
 local function jump(direction)
   local bufname = vim.api.nvim_buf_get_name(0)

@@ -2,14 +2,11 @@
 # undo file path definitions for tmux scripts
 # source this file after common.sh
 
-# guard against multiple sourcing
 [[ -n "${_TMUX_PATHS_SH_LOADED:-}" ]] && return 0
 _TMUX_PATHS_SH_LOADED=1
 
-# undo path constants (XDG-compliant)
-# stores kill/undo state in XDG cache directory
+# kill/undo state lives in the XDG cache directory
 
-# get the undo base directory (XDG-compliant)
 get_undo_base_dir() {
     local xdg_undo_dir="${XDG_CACHE_HOME:-$HOME/.cache}/tmux/undo"
     mkdir -p "$xdg_undo_dir" 2>/dev/null || true
@@ -103,16 +100,13 @@ get_most_recent_undo_type() {
 }
 
 # ═════════════════════════════════════════════════════════════════
-# Resurrect Path Discovery
+# resurrect path discovery
 # ═════════════════════════════════════════════════════════════════
 # the functions below discover where tmux-resurrect stores session data.
 # they check both XDG-compliant and legacy locations
 
-# get the resurrect data directory
-# returns the directory where tmux-resurrect stores its data
-#
+# directory where tmux-resurrect stores its data
 # usage: RESURRECT_DIR=$(get_resurrect_dir)
-# output: path to resurrect directory
 get_resurrect_dir() {
     # check for existing 'last' symlink (best indicator)
     if [[ -L "${HOME}/.tmux/resurrect/last" || -f "${HOME}/.tmux/resurrect/last" ]]; then
@@ -130,11 +124,8 @@ get_resurrect_dir() {
     fi
 }
 
-# get the resurrect sessions directory
-# returns the directory where session state files are stored
-#
+# directory where session state files are stored
 # usage: SESSIONS_DIR=$(get_resurrect_sessions_dir)
-# output: path to resurrect sessions directory
 get_resurrect_sessions_dir() {
     local resurrect_dir
     resurrect_dir=$(get_resurrect_dir)

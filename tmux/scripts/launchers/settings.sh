@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Launcher Settings (inline root directory configuration)
+# launcher settings (inline root directory configuration)
 # ══════════════════════════════════════════════════════════════
 # configures DEV_ROOT and PROJECTS_ROOT from within the launcher
 # picker. updates ~/.zshrc using the shared helper.
@@ -17,7 +17,6 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 # shellcheck source=scripts/_lib/common.sh
 source "$DOTFILES_ROOT/scripts/_lib/common.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
@@ -58,7 +57,6 @@ selection=$(printf '%s' "$content" | fzf \
     --bind 'esc:abort' \
     2>/dev/null) || exit 130
 
-# extract selected variable name
 var_name=$(printf '%s' "$selection" | awk '{print $1}')
 
 case "$var_name" in

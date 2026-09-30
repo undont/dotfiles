@@ -1,10 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# kill current pane with undo capability
-# saves pane state before killing for later restoration
+# kill a pane with undo capability; saves pane state first
+# usage: kill.sh [session:window.pane] [--force]   (default: current pane)
+#   --force: skip the confirmation dialog
 
-# parse arguments
 PANE_TARGET=""
 FORCE_KILL=false
 
@@ -48,7 +48,6 @@ IS_LAST_PANE="no"
 IS_LAST_WINDOW="no"
 [[ "$WINDOW_COUNT" -eq 1 ]] && IS_LAST_WINDOW="yes"
 
-# show confirmation unless --force flag is set
 if ! $FORCE_KILL; then
     # build context-aware message
     if [[ "$IS_LAST_PANE" == "yes" && "$IS_LAST_WINDOW" == "yes" ]]; then
@@ -72,29 +71,23 @@ UNDO_FILE=$(get_pane_undo_file)
 UNDO_STATE=$(get_pane_undo_state)
 UNDO_CONTENT=$(get_pane_undo_content)
 
-# clear previous undo data
 cleanup_undo_files "pane"
 
-# save current state for undo
 echo "$PANE_TARGET" >"$UNDO_FILE"
 chmod 600 "$UNDO_FILE"
 
-# save pane metadata
 {
     echo "dir=$PANE_DIR"
     echo "layout=$WINDOW_LAYOUT"
 } >"$UNDO_STATE"
 chmod 600 "$UNDO_STATE"
 
-# capture pane contents
 tmux capture-pane -t "$PANE_TARGET" -p -S -32768 >"$UNDO_CONTENT" 2>/dev/null || true
 chmod 600 "$UNDO_CONTENT"
 
-# gracefully terminate running processes before killing the pane
 terminate_pane_processes "$PANE_TARGET"
 
-# determine if we need to check for session switching
-# we need the ACTUAL current client session (where the user is), not the target session
+# the client's actual session (where the user is), not the target session
 ACTUAL_CLIENT_SESSION=$(tmux display-message -p '#{client_session}' 2>/dev/null || echo "")
 
 # if last pane in last window and we're in that session, handle session switching

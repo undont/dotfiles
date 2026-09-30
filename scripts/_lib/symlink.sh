@@ -1,47 +1,33 @@
 #!/usr/bin/env bash
 # shellcheck disable=SC1091
-# Symlink / config-install helpers shared by the installer.
-# source this file: source "${BASH_SOURCE%/*}/symlink.sh"
-#
-# Requires (source these FIRST):
-#   common.sh   - colour vars (RED/GREEN/YELLOW/CYAN/NC) + success/info/warn
-#   rollback.sh - record_symlink (a no-op when rollback state is not initialised;
-#                 run under install.sh it appends to the shared .install-state
-#                 log for rollback)
-#
-# Callers read the FAILED counter after a batch of create_link calls to decide
-# overall success (see create-symlinks.sh). It is guard-initialised so sourcing
-# this file never clobbers a caller that already tracks its own FAILED.
+# symlink and config-install helpers for the installer
+# source after common.sh (colour vars, success/info/warn) and rollback.sh
+# (record_symlink)
 
-# guard against multiple sourcing
 [[ -n "${_DOTFILES_SYMLINK_SH_LOADED:-}" ]] && return 0
 _DOTFILES_SYMLINK_SH_LOADED=1
 
-# shared failure flag for a batch of link operations (don't clobber caller's)
+# set to 1 by a failed create_link; callers read it after a batch of links
 FAILED="${FAILED:-0}"
 
-# create a symlink, backing up any existing non-symlink destination inline.
-# records the link for rollback and flips FAILED on error.
+# backs up an existing non-symlink destination, records the link for
+# rollback and sets FAILED on error
 create_link() {
     local source="$1"
     local dest="$2"
 
-    # validate source exists before creating symlink
     if [[ ! -e "$source" && ! -L "$source" ]]; then
         printf "${RED}FAILED:${NC} Source not found: %s\n" "$source"
         FAILED=1
         return 1
     fi
 
-    # ensure parent directory exists
     mkdir -p "$(dirname "$dest")"
 
-    # remove existing symlink if present
     if [[ -L "$dest" ]]; then
         rm "$dest"
     fi
 
-    # if destination exists and is not a symlink, back it up inline
     if [[ -e "$dest" ]]; then
         local backup_base="$HOME/.dotfiles-backup"
         local backup_dir
@@ -59,10 +45,8 @@ create_link() {
         printf "${YELLOW}Backed up:${NC} %s -> %s\n" "$dest" "$backup_path"
     fi
 
-    # create symlink
     if ln -sf "$source" "$dest"; then
         printf "${GREEN}Created:${NC} %s -> %s\n" "$dest" "$source"
-        # record for rollback (no-op if state not initialised)
         record_symlink "$dest" "$source"
         return 0
     else
@@ -72,13 +56,11 @@ create_link() {
     fi
 }
 
-# copy config file from repo to destination (copy-on-install pattern).
-# if destination already exists, keeps it untouched (user-owned)
+# copy-on-install: an existing destination is left untouched
 copy_config() {
     local source="$1"
     local dest="$2"
 
-    # ensure parent directory exists
     mkdir -p "$(dirname "$dest")"
 
     if [[ ! -e "$dest" ]]; then
@@ -90,7 +72,7 @@ copy_config() {
     fi
 }
 
-# install a local override file from template (never overwrite user customisations)
+# local override from a template: an existing destination is left untouched
 install_local() {
     local template="$1"
     local dest="$2"

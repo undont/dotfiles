@@ -1,9 +1,6 @@
--- vim.notify spam filter. extracted from plugins/ui.lua's fidget config.
--- install() must run AFTER fidget.setup(): fidget's `override_vim_notify = true`
--- replaces vim.notify at setup time, so a wrap installed earlier would be blown
--- away. captures the post-fidget vim.notify and drops dotnet/roslyn/sonar
--- startup chatter (some always, some gated on the review-suppression flags
--- owned by sonarlint.lua / dotnet.lua)
+-- vim.notify spam filter. install() must run after fidget.setup(): fidget's
+-- `override_vim_notify = true` replaces vim.notify at setup time. drops
+-- dotnet/roslyn/sonar startup messages
 
 local M = {}
 
@@ -18,14 +15,9 @@ function M.install()
       return
     end
 
-    -- transient roslyn pre-init noise: nvim core auto-pulls
-    -- textDocument/diagnostic the moment roslyn attaches to a buffer,
-    -- but roslyn can't resolve a file's language until its project has
-    -- loaded, so each early pull errors -30099 ("Failed to get
-    -- language"). scans hidden-loading many cs files during a cold
-    -- solution load burst one per file. harmless: diagnostics arrive
-    -- once init completes (the scans' own explicit pulls are
-    -- init-gated in features/diag-scan.lua). still recorded in lsp.log
+    -- nvim core pulls textDocument/diagnostic as soon as roslyn attaches, and
+    -- roslyn answers -30099 ("Failed to get language") until the file's
+    -- project has loaded. still recorded in lsp.log
     if msg:match '^roslyn: %-30099: Failed to get language' then
       return
     end
@@ -33,7 +25,7 @@ function M.install()
     local title = nopts and nopts.title
     local title_str = type(title) == 'string' and title or nil
 
-    -- always-silenced dotnet/roslyn startup spam (regardless of suppress)
+    -- dotnet/roslyn startup messages
     if not title or title == 'Progress' or (title_str and (title_str:match 'roslyn' or title_str:match 'easy%-dotnet')) then
       local dotnet_spam = { '^Initializing', '^Loading ', ' loaded$', '^Client initialized' }
       for _, pat in ipairs(dotnet_spam) do

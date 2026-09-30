@@ -1,7 +1,6 @@
--- git-related plugins
+-- lazygit, fugitive and rhubarb
 
 return {
-  -- LazyGit integration
   {
     'kdheepak/lazygit.nvim',
     lazy = true,
@@ -16,26 +15,20 @@ return {
       'nvim-lua/plenary.nvim',
     },
     -- lazygit runs in an in-process terminal float, so quitting it fires no
-    -- FocusGained/shell event for gitsigns to hook. without a nudge, the
-    -- statusline branch (gitsigns_head) and diff counts (gitsigns_status_dict)
-    -- stay stale after a commit/stage/checkout done inside lazygit. the plugin
-    -- calls vim.g.lazygit_on_exit_callback after the terminal exits (and after
-    -- its own :checktime), so re-run gitsigns there to re-diff every buffer.
-    -- set in init (startup) so the global exists before the float can close
+    -- event gitsigns hooks, and the statusline branch and diff counts go
+    -- stale. the plugin calls vim.g.lazygit_on_exit_callback after the
+    -- terminal exits. set in init so the global exists before the float closes
     init = function()
       vim.g.lazygit_on_exit_callback = function()
         local ok, gitsigns = pcall(require, 'gitsigns')
         if ok then
-          gitsigns.refresh() -- async; fires GitSignsUpdate which redraws the statusline
+          gitsigns.refresh() -- fires GitSignsUpdate, which redraws the statusline
         end
       end
     end,
   },
 
-  -- Fugitive: in-buffer git (`:Git`, `:Git blame`, `:Gdiffsplit`, stage hunks, etc.)
-  -- complements LazyGit (TUI workflow) with buffer-native operations.
-  -- `<leader>g` (lower) stays the LazyGit leaf-shortcut; `<leader>G*` (capital)
-  -- is the fugitive group, mirroring `<leader>H*` for gitsigns hunks
+  -- fugitive: `<leader>G*` is its group; `<leader>g` is lazygit
   {
     'tpope/vim-fugitive',
     cmd = {
@@ -62,13 +55,12 @@ return {
       { '<leader>Gd', '<cmd>Gdiffsplit<CR>', desc = '[D]iff against index' },
       { '<leader>Gl', '<cmd>0Gclog<CR>', desc = 'File [L]og → qf' },
       { '<leader>Gw', '<cmd>Gwrite<CR>', desc = '[W]rite (stage buffer)' },
-      -- GBrowse: normal opens current line, visual opens selected range.
-      -- visual mapping uses `:` (not `<cmd>`) so vim prepends `'<,'>` for the range
+      -- the visual mapping uses `:`, not `<cmd>`, so vim prepends `'<,'>`
       { '<leader>Go', '<cmd>GBrowse<CR>', desc = '[O]pen on GitHub' },
       { '<leader>Go', ':GBrowse<CR>', mode = 'v', desc = '[O]pen on GitHub (range)' },
     },
     dependencies = {
-      -- Rhubarb: `:GBrowse` handler for GitHub URLs (open file/line/commit on github.com)
+      -- rhubarb: the `:GBrowse` handler for GitHub URLs
       'tpope/vim-rhubarb',
     },
   },

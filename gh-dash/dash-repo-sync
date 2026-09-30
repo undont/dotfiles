@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# Discover local GitHub repos and sync repoPaths into gh-dash config.
-# Scans DEV_ROOT and PROJECTS_ROOT for git repos with GitHub remotes.
+# discover local GitHub repos and sync repoPaths into gh-dash config.
+# scans DEV_ROOT and PROJECTS_ROOT for git repos with GitHub remotes
 #
-# Usage: dash-repo-sync [--dry-run]
+# usage: dash-repo-sync [--dry-run]
 
 set -euo pipefail
 
-# Resolve script location (follow symlinks) to find shared libraries
+# installed as a symlink, so follow it back to the repo for the shared libraries
 _source="${BASH_SOURCE[0]}"
 while [[ -L "$_source" ]]; do _source=$(readlink "$_source"); done
 _script_dir="$(cd "$(dirname "$_source")" && pwd)"
@@ -27,7 +27,6 @@ fi
 dry_run=false
 [[ "${1:-}" == "--dry-run" ]] && dry_run=true
 
-# Collect roots to scan
 roots=()
 [[ -n "${DEV_ROOT:-}" && -d "${DEV_ROOT:-}" ]] && roots+=("$DEV_ROOT")
 [[ -n "${PROJECTS_ROOT:-}" && -d "${PROJECTS_ROOT:-}" ]] && roots+=("$PROJECTS_ROOT")
@@ -40,7 +39,7 @@ if ((${#roots[@]} == 0)); then
     exit 1
 fi
 
-# ─── Discover repos (first root wins on duplicates) ──────────────────────────
+# ─── discover repos (first root wins on duplicates) ──────────────────────────
 seen=""
 count=0
 yq_expr='.'
@@ -52,7 +51,6 @@ for root in "${roots[@]}"; do
         owner_repo=$(echo "$remote" | sed -E 's|.*github\.com[:/]||; s|\.git$||')
         [[ "$owner_repo" == */* ]] || continue
 
-        # Deduplicate
         case "$seen" in
             *"|$owner_repo|"*) continue ;;
         esac
@@ -66,34 +64,31 @@ for root in "${roots[@]}"; do
     done
 done
 
-# ─── Detect stale entries ────────────────────────────────────────────────────
-# Entries not in the discovered set whose local path no longer exists on disk.
-# Wildcard entries (org/*: ~/code/*) are always preserved — they're manual.
+# ─── detect stale entries ────────────────────────────────────────────────────
+# stale: not in the discovered set and the local path is missing on disk.
+# wildcard entries (org/*: ~/code/*) are manual and always kept
 stale_del=""
 stale_count=0
 stale_names=""
 while IFS=$'\t' read -r key value; do
     [[ -z "$key" ]] && continue
-    # Skip if just discovered
     case "$seen" in *"|$key|"*) continue ;; esac
-    # Skip wildcard/glob entries (manual)
     [[ "$value" == *'*'* ]] && continue
-    # Keep if path still exists on disk (valid manual entry)
+    # a path still on disk is a valid manual entry
     expanded="${value/#\~/$HOME}"
     [[ -d "$expanded" ]] && continue
-    # Stale — queue for removal
     stale_del="${stale_del} | del(.repoPaths.\"${key}\")"
     stale_count=$((stale_count + 1))
     stale_names="${stale_names}  - ${key} (${value})\n"
 done < <(yq -r '.repoPaths // {} | to_entries[] | [.key, .value] | @tsv' "$GHDASH_LOCAL" 2>/dev/null)
 
-# ─── Nothing to do? ─────────────────────────────────────────────────────────
+# ─── nothing to do ──────────────────────────────────────────────────────────
 if ((count == 0 && stale_count == 0)); then
     echo "No changes (0 discovered, 0 stale)"
     exit 0
 fi
 
-# ─── Dry-run report ─────────────────────────────────────────────────────────
+# ─── dry-run report ─────────────────────────────────────────────────────────
 if [[ "$dry_run" == "true" ]]; then
     echo "Would sync repo paths: $count discovered, $stale_count to remove"
     if ((stale_count > 0)); then
@@ -106,8 +101,7 @@ if [[ "$dry_run" == "true" ]]; then
     exit 0
 fi
 
-# ─── Apply changes ──────────────────────────────────────────────────────────
-# Remove stale entries first
+# ─── apply changes ──────────────────────────────────────────────────────────
 if ((stale_count > 0)); then
     stale_del="${stale_del# | }"
     if ! yq eval -i "$stale_del" "$GHDASH_LOCAL" 2>/dev/null; then
@@ -116,7 +110,6 @@ if ((stale_count > 0)); then
     fi
 fi
 
-# Add/update discovered repos
 if ((count > 0)); then
     if ! yq eval -i "$yq_expr" "$GHDASH_LOCAL" 2>/dev/null; then
         echo "yq update failed" >&2
@@ -126,5 +119,5 @@ fi
 
 echo "Synced repo paths: $count discovered, $stale_count removed"
 
-# Merge local overrides into the active config so gh-dash picks them up immediately
+# merge into the active config so gh-dash reads the new paths without a theme run
 ghdash_merge_local

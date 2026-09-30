@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # end-to-end tests for nvim buffer sync flow
-# tests: list-nvim.sh, connect-nvim.sh, nvim-buffer-sync.sh
+# tests: instances/nvim.sh, connect-nvim.sh, nvim-buffer-sync.sh
 # usage: ./test-nvim-sync.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -79,7 +79,7 @@ else
 fi
 
 # =============================================================================
-# unit tests: list-nvim.sh structure
+# unit tests: instances/nvim.sh structure
 # =============================================================================
 
 section "list-nvim.sh Structure"
@@ -269,7 +269,7 @@ fi
 unset NVIM_SOCKET
 
 # =============================================================================
-# integration tests: list-nvim.sh (with tmux)
+# integration tests: instances/nvim.sh (with tmux)
 # =============================================================================
 
 section "list-nvim.sh Integration"

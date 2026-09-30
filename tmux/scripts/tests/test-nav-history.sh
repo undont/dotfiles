@@ -239,8 +239,7 @@ section "History trim"
 
 reset_nav
 
-# create more windows than MAX_HISTORY (100)
-# we'll write directly to the history file to test trimming
+# more windows than MAX_HISTORY, written directly to the history file
 mkdir -p "$NAV_CACHE"
 for i in $(seq 1 105); do
     printf '@%d\n' "$i" >>"$HISTORY_FILE"
@@ -257,7 +256,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════
-# Summary
+# summary
 # ═══════════════════════════════════════════════════
 
 echo ""

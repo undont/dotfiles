@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# unit tests for list-claude.sh
+# unit tests for instances/claude.sh
 # tests the Claude Code instance listing and formatting logic
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -93,8 +93,8 @@ else
     fail "Should emit tab-delimited display/target rows"
 fi
 
-# the alert icon was dropped once agent-state's idle/needs-input dot covered
-# the same signal in this claude-only view; no per-row alert lookup remains
+# agent-state's idle/needs-input dot carries the alert signal in this
+# claude-only view, so there is no per-row alert lookup
 if [[ "$script_content" != *'ALERTS_FILE'* ]]; then
     pass "Does not duplicate alerts with the state indicator"
 else
@@ -190,7 +190,7 @@ fi
 section "Command Detection"
 
 # script should batch-detect Claude processes (pgrep plus an executable-basename
-# pass, which covers the pane's own claude that pgrep hides as its ancestor)
+# pass, which covers the pane's own claude that pgrep excludes as its ancestor)
 if [[ "$script_content" == *'match_process_pids claude'* ]]; then
     pass "Uses match_process_pids to find Claude processes"
 else
@@ -234,7 +234,7 @@ else
     fail "Should match pane PIDs against ancestor set (not just direct children)"
 fi
 
-# should handle wrapper scripts (e.g. ralph → claude)
+# should handle wrapper scripts that spawn claude
 # the ancestor walk means any wrapper that eventually spawns claude will be detected
 if [[ "$script_content" == *'wrapper'* ]] || [[ "$script_content" == *'Walks up'* ]] || [[ "$script_content" == *'ancestor'* ]]; then
     pass "Documents wrapper script support via ancestor walking"

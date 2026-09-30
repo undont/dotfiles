@@ -1,14 +1,11 @@
--- Mini.nvim modules: icons, surround, pairs, hipatterns, bracketed,
--- splitjoin, statusline.
--- loads eagerly so mini.icons custom glyphs are available for the
--- dashboard. all modules are lightweight (keymaps/tables)
+-- mini.nvim modules: icons, surround, pairs, hipatterns, bracketed,
+-- splitjoin, statusline. loaded eagerly: the dashboard uses the mini.icons glyphs
 
 return {
   {
     'echasnovski/mini.nvim',
     lazy = false,
     config = function()
-      -- icons provider (used by mini.statusline for filetype icons)
       local template_icon = vim.fn.nr2char(0xf05c0) -- nf-md-file_code_outline
       local gopher_icon = vim.fn.nr2char(0xe627) -- nf-seti-go (gopher)
       local yaml_icon = vim.fn.nr2char(0xf013) -- nf-fa-cog
@@ -21,16 +18,12 @@ return {
           yaml = { glyph = yaml_icon },
           template = { glyph = template_icon },
           go = { glyph = gopher_icon },
-          -- render-markdown looks up code-block languages as filetypes; without
-          -- this `csharp` falls back to the generic file glyph instead of the
-          -- C# icon that mini.icons ships for the `cs` extension.
+          -- render-markdown looks up code-block languages as filetypes
           cs = { glyph = csharp_icon, hl = 'MiniIconsGreen' },
           csharp = { glyph = csharp_icon, hl = 'MiniIconsGreen' },
           -- transcript speaker fences (```claude / ```me) in vault notes.
-          -- render-markdown resolves the fence word through vim.filetype.match
-          -- before mini: 'claude' matches nothing so keys straight through, but
-          -- 'me' resolves to nroff (`.me` groff macros), so the `me` speaker
-          -- glyph is pinned on nroff instead
+          -- render-markdown resolves the fence word through vim.filetype.match,
+          -- where 'me' is nroff, so the `me` glyph is set on nroff
           claude = { glyph = claude_icon, hl = 'ClaudeIcon' }, -- ClaudeIcon defined in plugins/ui.lua
           nroff = { glyph = me_icon, hl = 'MiniIconsBlue' },
         },
@@ -42,21 +35,16 @@ return {
           go = { glyph = gopher_icon },
           yml = { glyph = yaml_icon },
           yaml = { glyph = yaml_icon },
-          -- mini.icons has no built-in `extension` entry for sh/bash/zsh; it
-          -- resolves them through vim.filetype.match(), which returns nil for
-          -- these function-detected extensions during the dashboard's first
-          -- paint at startup. mini then caches the generic glyph for the
-          -- session. pin explicit extension glyphs so resolution never depends
-          -- on filetype-match timing (hl mirrors mini's own routing: sh/bash
-          -- grey, zsh green)
+          -- mini.icons resolves sh/bash/zsh through vim.filetype.match(), which
+          -- returns nil for them during the dashboard's first paint, and caches
+          -- the generic glyph for the session. hl matches mini's own for these
           sh = { glyph = shell_icon, hl = 'MiniIconsGrey' },
           bash = { glyph = shell_icon, hl = 'MiniIconsGrey' },
           zsh = { glyph = shell_icon, hl = 'MiniIconsGreen' },
         },
       }
 
-      -- add/delete/replace surroundings (brackets, quotes, etc.)
-      -- uses 'gs' prefix to avoid delay on native 's' (substitute char)
+      -- 'gs' prefix: an 's' prefix delays the native 's'
       require('mini.surround').setup {
         mappings = {
           add = 'gsa',
@@ -69,24 +57,22 @@ return {
         },
       }
 
-      -- auto-close brackets, quotes, etc. (replaces nvim-autopairs)
       require('mini.pairs').setup()
 
-      -- highlight hex colour codes inline
       require('mini.hipatterns').setup {
         highlighters = {
           hex_color = require('mini.hipatterns').gen_highlighter.hex_color(),
         },
       }
 
-      -- extended ]/[ navigation; disable suffixes that conflict with other plugins
+      -- an empty suffix disables the pair
       require('mini.bracketed').setup {
-        comment = { suffix = '' }, -- ]c/[c reserved for gitsigns (git changes)
-        diagnostic = { suffix = '' }, -- ]d/[d wrapped in custom.features.lists (code diagnostics only, neotest failures on ]t/[t)
+        comment = { suffix = '' }, -- ]c/[c is gitsigns
+        diagnostic = { suffix = '' }, -- ]d/[d is custom.features.lists
         file = { suffix = 'f' }, -- differ overrides ]f/[f when open; features/dated-notes shadows it on dated notes
-        treesitter = { suffix = '' }, -- ]t/[t reserved for failed tests (custom.features.lists)
-        quickfix = { suffix = '' }, -- ]q/[q wrapped in custom.features.lists (empty-list notify + cursor-relative idx)
-        location = { suffix = '' }, -- ]l/[l wrapped in custom.features.lists (empty-list notify + cursor-relative idx)
+        treesitter = { suffix = '' }, -- ]t/[t is failed tests (custom.features.lists)
+        quickfix = { suffix = '' }, -- ]q/[q is custom.features.lists
+        location = { suffix = '' }, -- ]l/[l is custom.features.lists
       }
 
       -- ]f/[f walk DD-MM-YYYY note directories by date rather than lexically
@@ -110,7 +96,6 @@ return {
         end,
       })
 
-      -- split/join code constructs (gS toggles)
       local splitjoin = require 'mini.splitjoin'
       splitjoin.setup()
 
@@ -127,7 +112,6 @@ return {
         end,
       })
 
-      -- bespoke statusline content + section overrides live in features/
       require('custom.features.statusline').setup()
     end,
   },

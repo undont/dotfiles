@@ -1,27 +1,26 @@
-# LazyDocker configuration
+# lazydocker configuration
 # copy-on-install: this file is yours after the first install, so repo
 # changes never overwrite it. see CHANGELOG.md for updates worth applying
 
 gui:
   returnImmediately: true
   theme:
-    # Use reverse video for selections — works with any terminal colour scheme
-    # and avoids poor contrast from ANSI colours used as backgrounds
+    # reverse video for selections: works with any terminal colour scheme and
+    # avoids poor contrast from ANSI colours used as backgrounds
     selectedLineBgColor:
       - reverse
     selectedRangeBgColor:
       - reverse
 
-# Pretty-print docker's RFC3339Nano timestamps via format-logs.awk (sibling file).
-# format-logs.awk lives in a platform-specific dir (macOS: Library/Application
-# Support/lazydocker, Linux: .config/lazydocker), so the path is resolved at
-# runtime via `uname` rather than hardcoded to one platform.
+# docker's RFC3339Nano timestamps are reformatted by format-logs.awk, which
+# sits in a platform-specific dir (macOS: Library/Application
+# Support/lazydocker, Linux: .config/lazydocker), hence the `uname` lookup
 #
-# Coverage:
-#   - allLogs (project "Logs" tab): shell-based → native pipe.
-#   - viewServiceLogs / viewAllLogs (popped-out viewers): argv-only → sh -c wrap.
-#   - Single-container Logs tab uses the Docker API directly and can't be
-#     reformatted, so logs.timestamps is left off below.
+# coverage:
+#   - allLogs (project "Logs" tab): shell-based → native pipe
+#   - viewServiceLogs / viewAllLogs (popped-out viewers): argv-only → sh -c wrap
+#   - the single-container Logs tab uses the Docker API directly and can't be
+#     reformatted, so logs.timestamps is off below
 commandTemplates:
   viewServiceLogs: 'sh -c ''{{ .DockerCompose }} logs --follow --timestamps --no-log-prefix {{ .Service.Name }} | awk -f "$( [ $(uname) = Darwin ] && printf %s "$HOME/Library/Application Support/lazydocker" || printf %s "$HOME/.config/lazydocker" )/format-logs.awk"'''
   allLogs: '{{ .DockerCompose }} logs --tail=300 --follow --timestamps --no-log-prefix | awk -f "$( [ $(uname) = Darwin ] && printf %s "$HOME/Library/Application Support/lazydocker" || printf %s "$HOME/.config/lazydocker" )/format-logs.awk"'

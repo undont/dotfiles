@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# verify the two tools the install bootstrap needs: git and brew
-# everything else is installed by `brew bundle` during install.sh
+# verifies git and brew, the two tools the install bootstrap needs
 
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat <<'EOF'

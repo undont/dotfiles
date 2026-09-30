@@ -2,10 +2,8 @@
 set -euo pipefail
 
 # @description: Dev session - Shell + Neovim
-# Dev session launcher - creates a 2-window layout for development
-# Invoked via the launcher picker (prefix + p) with a directory argument.
+# invoked from the launcher picker (prefix + p) with a directory argument
 
-# Help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat <<'EOF'
 dev - tmux development session launcher
@@ -35,7 +33,7 @@ EOF
     exit 0
 fi
 
-# Resolve script location (follow symlinks) to find shared libraries
+# follow symlinks to the repo copy, for the shared libraries
 _source="${BASH_SOURCE[0]}"
 while [[ -L "$_source" ]]; do _source=$(readlink "$_source"); done
 _script_dir="$(cd "$(dirname "$_source")" && pwd)"
@@ -51,10 +49,8 @@ if [[ -z "$dir" ]]; then
     exit 1
 fi
 
-# Expand ~ to $HOME
 dir="${dir/#\~/$HOME}"
 
-# If directory doesn't exist, offer to create it
 if [[ ! -d "$dir" ]]; then
     if ! show_visual_confirm "Create directory?" "$dir"; then
         exit 1
@@ -62,15 +58,14 @@ if [[ ! -d "$dir" ]]; then
     mkdir -p "$dir"
 fi
 
-# Resolve to absolute path
 dir=$(cd "$dir" && pwd)
 
-# Use SESSION_NAME if provided (e.g. from collision handler), otherwise derive from directory basename
-# Dots are replaced because tmux uses '.' as a separator in target syntax (session:window.pane)
+# SESSION_NAME (e.g. from the collision handler) wins over the directory
+# basename. dots are replaced: tmux uses '.' in target syntax (session:window.pane)
 session="${SESSION_NAME:-$(basename "$dir" | tr -c '[:alnum:]_\-\n' '-' | sed 's/-*$//')}"
 
-# Check if session already exists (= forces exact match; bare names would
-# prefix-match e.g. "foo-15" against an existing "foo-1533")
+# = forces an exact match; a bare name would prefix-match, e.g. "foo-15"
+# against an existing "foo-1533"
 if tmux has-session -t "=$session" 2>/dev/null; then
     if [[ -n "${TMUX:-}" ]]; then
         tmux switch-client -t "=$session"
@@ -80,18 +75,16 @@ if tmux has-session -t "=$session" 2>/dev/null; then
     exit 0
 fi
 
-# Window 1: zsh
+# window 1: zsh
 tmux new-session -d -s "$session" -n "zsh" -c "$dir"
 
-# Window 2: nvim
+# window 2: nvim
 tmux new-window -t "$session:" -n "nvim" -c "$dir"
 tmux send-keys -t "$session:nvim" 'nvim' Enter
 
-# Select neovim window
 tmux select-window -t "$session:nvim"
 tmux select-pane -t "$session:nvim.1"
 
-# Attach to session
 if [[ -n "${TMUX:-}" ]]; then
     tmux switch-client -t "=$session"
 else

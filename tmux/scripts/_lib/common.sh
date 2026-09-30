@@ -2,19 +2,15 @@
 # common utilities for tmux scripts
 # source this file: source "${BASH_SOURCE%/*}/_lib/common.sh"
 
-# guard against multiple sourcing
 [[ -n "${_TMUX_COMMON_SH_LOADED:-}" ]] && return 0
 _TMUX_COMMON_SH_LOADED=1
 
-# strict mode; scripts should set this themselves for clarity
-# set -euo pipefail
+# scripts set strict mode themselves
 
-# determine dotfiles root from this library file's location
-# use readlink -f to resolve symlinks (or realpath if available)
+# dotfiles root, from this file's physical location (symlinks resolved)
 _LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
 DOTFILES_ROOT="$(cd "$_LIB_DIR/../../.." && pwd)"
 
-# source colour definitions
 # shellcheck source=scripts/_lib/colours.sh
 source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
 
@@ -34,17 +30,13 @@ hex_dim() {
         "$((16#${hex:5:2} * pct / 100))"
 }
 
-# print the dotfiles ASCII art logo with theme-aware gradient
-# uses TMUX_ACCENT_CYAN to TMUX_ACCENT_PURPLE from the active theme
-# defaults to sage to forest gradient when no theme is loaded
-# call load_fzf_theme before this to ensure theme colours are available
-# usage: print_dotfiles_logo
+# print the dotfiles ASCII art logo with a TMUX_ACCENT_CYAN to TMUX_ACCENT_PURPLE
+# gradient. call load_fzf_theme first so the theme colours are set
 # shellcheck disable=SC1003
 print_dotfiles_logo() {
     local from="${TMUX_ACCENT_CYAN:-#8baf9e}"
     local to="${TMUX_ACCENT_PURPLE:-#38604a}"
 
-    # convert hex to RGB components
     local r1=$((16#${from:1:2})) g1=$((16#${from:3:2})) b1=$((16#${from:5:2}))
     local r2=$((16#${to:1:2})) g2=$((16#${to:3:2})) b2=$((16#${to:5:2}))
 
@@ -87,8 +79,7 @@ tmux() {
 }
 export -f tmux
 
-# load FZF theme colours from current theme
-# call this before using fzf to ensure it uses the active theme
+# call before fzf so it uses the active theme
 load_fzf_theme() {
     if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
         # shellcheck disable=SC1091
@@ -96,22 +87,18 @@ load_fzf_theme() {
     fi
 }
 
-# print error message to stderr
 error() {
     printf "${RED}Error:${NC} %s\n" "$1" >&2
 }
 
-# print warning message to stderr
 warn() {
     printf "${YELLOW}Warning:${NC} %s\n" "$1" >&2
 }
 
-# print info message
 info() {
     printf "${CYAN}%s${NC}\n" "$1"
 }
 
-# print success message
 success() {
     printf "${GREEN}%s${NC}\n" "$1"
 }
@@ -127,7 +114,6 @@ show_error() {
     fi
 }
 
-# check if fzf is available
 require_fzf() {
     if ! command -v fzf &>/dev/null; then
         error "fzf is not installed (required for this picker)"
@@ -135,15 +121,13 @@ require_fzf() {
     fi
 }
 
-# check if tmux is running
 require_tmux() {
     if ! command -v tmux &>/dev/null; then
         error "tmux is not installed"
         exit 1
     fi
 
-    # skip the TMUX variable check if we're in test mode
-    # tests can set TMUX_TEST_MODE=1 to bypass the "inside tmux" requirement
+    # TMUX_TEST_MODE=1 bypasses the inside-tmux requirement
     if [[ -z "${TMUX:-}" && "${TMUX_TEST_MODE:-0}" != "1" ]]; then
         error "Not running inside tmux"
         exit 1
@@ -174,28 +158,12 @@ sanitise_session_name() {
 }
 
 # ═════════════════════════════════════════════════════════════════
-# Session Validation
+# session validation
 # ═════════════════════════════════════════════════════════════════
 
-# validate a tmux session name
-# session names must be alphanumeric with underscores and hyphens allowed
-# dots are NOT allowed because tmux uses '.' as a separator in target syntax
-#
-# usage:
-#   if ! validate_session_name "$name"; then
-#       exit 1
-#   fi
-#
-# note: this function outputs error messages via error() on failure
-#       callers should NOT add additional error messages
-#
-# arguments:
-#   $1 - session name to validate
-#
-# returns:
-#   0 - valid session name
-#   1 - invalid session name (empty or contains invalid characters)
-#
+# session names are alphanumeric plus underscore and hyphen. dots are rejected
+# because tmux uses '.' as a separator in target syntax.
+# failures are reported via error(), so callers add no message of their own
 validate_session_name() {
     local name="$1"
 
@@ -204,7 +172,6 @@ validate_session_name() {
         return 1
     fi
 
-    # session names should be alphanumeric with _ - allowed (no dots; tmux uses '.' as pane separator)
     if [[ ! "$name" =~ ^[a-zA-Z0-9_-]+$ ]]; then
         error "Invalid session name: '$name'. Use only letters, numbers, underscores, hyphens."
         return 1
@@ -230,7 +197,6 @@ validate_pane_id() {
     return 0
 }
 
-# validate window index format
 validate_window_index() {
     local index="$1"
 
@@ -262,46 +228,34 @@ focus_session() {
     fi
 }
 
-# get the number of windows in a session
 get_window_count() {
     local session="$1"
     tmux list-windows -t "$session" 2>/dev/null | wc -l | tr -d ' '
 }
 
-# check if this is the last session
 is_last_session() {
     local count
     count=$(tmux list-sessions 2>/dev/null | wc -l | tr -d ' ')
     [[ "$count" -eq 1 ]]
 }
 
-# check if this is the last window in session
 is_last_window() {
     local count
     count=$(get_window_count "$(tmux display-message -p '#{session_name}')")
     [[ "$count" -eq 1 ]]
 }
 
-# check if this is the last pane in window
 is_last_pane() {
     local count
     count=$(get_pane_count)
     [[ "$count" -eq 1 ]]
 }
 
-# check if a pane is running a specific command by inspecting child processes
-# many CLI tools (Claude Code, OpenCode) run as child processes of the pane
-# shell, so pane_current_command shows the runtime (e.g. Node.js version)
-# rather than the tool name. this checks the process tree directly.
-# excludes suspended (Ctrl+Z) processes; only matches active foreground ones
-#
-# usage:
-#   is_pane_running <pane_pid> <command_name> [-f]
-#     -f  match against full command line (default: exact process name)
-#
-# examples:
-#   is_pane_running "$pane_pid" "claude"            # exact match
-#   is_pane_running "$pane_pid" "opencode" -f       # command line match
+# check whether a pane runs a command by inspecting its child processes: CLI
+# tools run as children of the pane shell, so pane_current_command shows the
+# runtime instead. suspended (Ctrl+Z) processes don't match
+# usage: is_pane_running <pane_pid> <command_name> [-f]
+#   -f  match against the full command line (default: exact process name)
 is_pane_running() {
     local pane_pid="$1"
     local command_name="$2"
@@ -336,7 +290,7 @@ list_project_dirs() {
 }
 
 # ═════════════════════════════════════════════════════════════════
-# Cross-Platform Helpers
+# cross-platform helpers
 # ═════════════════════════════════════════════════════════════════
 
 # clipboard_backend / clipboard_copy_cmd / clipboard_copy come from the shared

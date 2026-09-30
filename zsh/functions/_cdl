@@ -1,12 +1,11 @@
-# Directory history picker (fzf-powered)
-# Called directly from the command line to pick and cd to a previous directory.
-# The ZLE widget (Opt+A) uses its own inline version for reliability.
+# directory history picker for the command line (fzf, or a numbered list
+# without it). the Opt+A widget in zsh/dotfiles.zsh has its own inline copy
 if (( ${#_dir_back_stack} == 0 )); then
   echo "No directory history" >&2
   return 1
 fi
 
-# Reverse stack (most recent first) and deduplicate consecutive entries
+# most recent first, consecutive duplicates dropped
 local -a reversed=()
 local prev=""
 local i
@@ -29,7 +28,7 @@ if command -v fzf &>/dev/null; then
     --preview='ls -CF {}' \
   ) || return 0
 else
-  # Fallback: numbered list
+  # no fzf: numbered list
   local n=1
   for entry in "${reversed[@]}"; do
     printf "  %2d  %s\n" "$n" "$entry"

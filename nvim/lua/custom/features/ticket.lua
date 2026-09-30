@@ -1,20 +1,12 @@
--- git file/commit discovery shared by the scan, diff and picker keymaps.
---
--- ticket-scoped commit discovery behind <leader>dT (differ), <leader>xT
--- (all-LSP diagnostics scan) and <leader>lT (sonar scan): merge-base with
--- main, ticket default pulled from the branch name, commit subjects grepped
--- with --fixed-strings in base..HEAD.
---
--- modified-file discovery behind <leader>xm (all-LSP diagnostics scan),
--- <leader>lm (sonar scan) and <leader>sm (telescope picker), so all three
--- always operate on the same file set.
---
--- branch discovery behind <leader>xb (all-LSP) and <leader>lb (sonar) scans:
--- every file changed vs merge-base(main), mirroring <leader>dt's differ
+-- git file/commit discovery shared by the scan, diff and picker keymaps, so
+-- each group operates on one file set:
+--   ticket commits  <leader>dT (differ), <leader>xT, <leader>lT
+--   modified files  <leader>xm, <leader>lm, <leader>sm
+--   branch files    <leader>xb, <leader>lb (the set <leader>dt diffs)
 
 local M = {}
 
---- run `git <args>` and return stdout lines, or nil on failure
+--- stdout lines, or nil on failure
 local function git_lines(args)
   local result = vim.system(vim.list_extend({ 'git' }, args), { text = true }):wait()
   if result.code ~= 0 then
@@ -65,12 +57,10 @@ function M.prompt_commits(cb)
 end
 
 --- union of absolute paths touched by the matched commits. per-commit
---- diff-tree (not a range diff) so interleaved non-matching commits don't
---- drag their files in. mirrors <leader>dT's working-tree rule: when the
---- newest matched commit is HEAD the ticket is the branch tip, so
---- uncommitted work is part of it, union in modified/untracked files.
---- otherwise dirty files likely belong to other work; stick to exactly the
---- matched commits. returns nil (with a notify) outside a git repo
+--- diff-tree, not a range diff, so interleaved non-matching commits add
+--- nothing. when the newest matched commit is HEAD, modified/untracked files
+--- are included too (<leader>dT's working-tree rule). returns nil (with a
+--- notify) outside a git repo
 --- @param ctx TicketCommits
 --- @return string[]?
 function M.commit_files(ctx)
@@ -96,9 +86,8 @@ function M.commit_files(ctx)
   end
 
   if ctx.commits[1] == ctx.head then
-    -- reuse modified_files so the union resolves paths from the repo root
-    -- (cwd-relative ls-files + :p breaks when nvim's cwd isn't the root)
-    -- and catches staged-but-uncommitted work via its `diff HEAD` form
+    -- modified_files resolves paths from the repo root and includes
+    -- staged-but-uncommitted work
     for _, abs in ipairs(M.modified_files() or {}) do
       add(abs)
     end
@@ -139,13 +128,11 @@ function M.modified_files()
   return paths
 end
 
---- union of files changed on this branch vs merge-base(main): committed
---- branch work plus uncommitted/untracked changes. the single-rev
---- `diff <base>` form (no second rev) diffs the merge-base against the
---- working tree, so it already includes dirty files, the same semantics as
---- <leader>dt's `:Differ base`. deletions are filtered out (ACMR;
---- renames keep the new path) since a scan can't use a missing file. returns
---- nil (with a notify) outside a git repo or when no merge-base with main
+--- files changed on this branch vs merge-base(main). the single-rev
+--- `diff <base>` form diffs the merge-base against the working tree, so dirty
+--- files are included, as in <leader>dt's `:Differ base`. deletions are
+--- filtered out (ACMR; renames keep the new path). returns nil (with a notify)
+--- outside a git repo or when there is no merge-base with main
 --- @return string[]?
 function M.branch_files()
   local toplevel = (git_lines { 'rev-parse', '--show-toplevel' } or {})[1]

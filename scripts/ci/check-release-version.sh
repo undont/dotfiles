@@ -4,8 +4,8 @@
 # the auto-tag job reads the topmost dated `## [X.Y.Z]` heading from
 # CHANGELOG.md and tags it. if commits land past the latest release tag
 # without a new dated heading (e.g. entries left under `[Unreleased]`), the
-# tag already exists, auto-tag silently skips, and `dotfiles update` never
-# surfaces the change. this check turns that silent miss into a loud failure
+# tag already exists, auto-tag skips, and `dotfiles update` never surfaces the
+# change. this check fails instead
 #
 # bypass: include `[skip release]` in a commit message in the range for
 # changes that intentionally ship no release (docs/tooling tweaks)
@@ -26,7 +26,7 @@ tag="v${version}"
 
 # tag doesn't exist yet, this push/PR introduces the bump; auto-tag handles it
 if ! git rev-parse -q --verify "refs/tags/${tag}" >/dev/null 2>&1; then
-    echo "CHANGELOG tops out at ${version}; ${tag} not tagged yet — this is a release bump. OK"
+    echo "CHANGELOG tops out at ${version}; ${tag} not tagged yet; this is a release bump. OK"
     exit 0
 fi
 
@@ -39,7 +39,7 @@ fi
 
 # explicit opt-out for intentional non-release commits
 if git log --format='%B' "${tag}..HEAD" | grep -qiF '[skip release]'; then
-    echo "::notice::${count} commit(s) since ${tag} with no version bump, but [skip release] is present — allowed"
+    echo "::notice::${count} commit(s) since ${tag} with no version bump, but [skip release] is present; allowed"
     exit 0
 fi
 

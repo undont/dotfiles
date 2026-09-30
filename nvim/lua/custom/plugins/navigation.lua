@@ -1,10 +1,7 @@
--- file navigation: Harpoon2 for quick marks, Oil for filesystem-as-buffer (plus git status)
+-- file navigation: harpoon2 marks, oil with git status
 
--- close oil, restoring the dashboard if oil was opened from it. oil.close()
--- restores `oil_original_buffer`, but the snacks dashboard is bufhidden=wipe,
--- so launching oil over it wipes it; oil then falls back to a blank `enew`
--- buffer. detect that empty landing buffer and re-render the dashboard,
--- matching snacks' own "empty buffer on startup" behaviour
+-- close oil, restoring the dashboard if oil was opened from it. the snacks
+-- dashboard is bufhidden=wipe, so oil.close() lands on a blank `enew` buffer
 local function oil_close()
   require('oil').close()
   local buf = vim.api.nvim_get_current_buf()
@@ -13,26 +10,18 @@ local function oil_close()
     and vim.api.nvim_buf_line_count(buf) == 1
     and vim.api.nvim_buf_get_lines(buf, 0, 1, false)[1] == ''
   if empty and Snacks and Snacks.dashboard then
-    -- open() merges partial opts with the configured dashboard defaults, so the
-    -- "missing sections/formats" check on snacks.dashboard.Opts is a false positive
+    -- open() merges partial opts with the configured dashboard defaults
     ---@diagnostic disable-next-line: missing-fields
     Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
   end
 end
 
--- re-assert oil's conceal window options whenever an oil buffer becomes visible.
--- oil hides its per-line entry IDs (the `/006 ` prefix) with a buffer-local
--- `oilId` syntax match plus the window-local `conceallevel`/`concealcursor` it
--- sets when rendering. because conceal is window-scoped, showing an existing oil
--- buffer in a window that never ran oil's set_win_options (a split, a reused
--- window) leaves conceallevel at 0 and the IDs leak.
---
--- oil's own set_win_options reads `nvim_get_current_win()` from inside an
--- `nvim_buf_call`, which switches the buffer context but NOT the window, so on a
--- fresh open it can apply conceallevel to the wrong window and the IDs leak from
--- the very first render. a synchronous reassert on entry hits the same race. so
--- defer one tick (past oil's render and any competing FileType handlers) and set
--- the option on the resolved oil window explicitly rather than "current window"
+-- oil hides its per-line entry IDs (the `/006 ` prefix) with window-local
+-- `conceallevel`/`concealcursor`, so an oil buffer shown in a window that
+-- never ran oil's set_win_options shows the IDs. oil's set_win_options reads
+-- `nvim_get_current_win()` inside an `nvim_buf_call`, which does not switch
+-- the window, so it can set the wrong one on a fresh open. the options are
+-- set on the resolved oil window one tick after it becomes visible
 vim.api.nvim_create_autocmd({ 'BufWinEnter', 'WinEnter' }, {
   pattern = 'oil://*',
   callback = function()
@@ -72,21 +61,15 @@ local function link_oil_git_status_hl()
 end
 
 return {
-  -- oil: filesystem-as-buffer
   {
     'stevearc/oil.nvim',
     dependencies = { 'nvim-tree/nvim-web-devicons' },
-    -- load at startup so oil's directory-hijack autocmd is registered before a
-    -- directory buffer (e.g. `nvim ~/.config`) is processed. lazy-loading on the
-    -- `-` key would miss command-line directory arguments
+    -- oil's directory-hijack autocmd must exist before `nvim <dir>` is processed
     lazy = false,
     keys = {
       { '-', '<cmd>Oil<CR>', desc = 'Oil: Open parent directory' },
     },
-    -- opts as a function so vim.g.oil_opts (set in local.lua, which loads before
-    -- plugin specs) deep-merges over these defaults, same local-override pattern
-    -- as differ.lua. keymaps merge per key, so a local override can add or
-    -- replace one binding without restating the rest
+    -- vim.g.oil_opts (set in local.lua) deep-merges over these defaults
     opts = function()
       return vim.tbl_deep_extend('force', {
         default_file_explorer = true,
@@ -95,9 +78,7 @@ return {
         -- the empty `statuscolumn` opts out of statuscol's (see plugins/statuscol.lua),
         -- whose single-cell sign segment would drop one of the two
         win_options = { signcolumn = 'yes:2', statuscolumn = '' },
-        -- `sort` names the `notedate` column registered in config below; oil
-        -- resolves sort columns lazily at render time, so registration order
-        -- against this table doesn't matter
+        -- `sort` names the `notedate` column registered in config below
         view_options = { show_hidden = true, sort = require('custom.features.dated-notes').oil_sort },
         keymaps = {
           ['-'] = { mode = 'n', callback = oil_close },
@@ -113,7 +94,6 @@ return {
     end,
   },
 
-  -- git status letters in oil listings
   {
     'refractalize/oil-git-status.nvim',
     dependencies = { 'stevearc/oil.nvim' },
@@ -127,7 +107,6 @@ return {
     end,
   },
 
-  -- Harpoon2: quick file navigation
   {
     'ThePrimeagen/harpoon',
     branch = 'harpoon2',
@@ -147,7 +126,6 @@ return {
         end,
       }
 
-      -- keymaps
       vim.keymap.set('n', '<leader>ha', function()
         harpoon:list():add()
       end, { desc = '[H]arpoon: [a]dd file' })
@@ -156,7 +134,6 @@ return {
         harpoon.ui:toggle_quick_menu(harpoon:list())
       end, { desc = '[H]arpoon: [l]ist files' })
 
-      -- quick access to files 1-4 (easier than <leader>h1-4)
       local function select_harpoon_file(index)
         local list = harpoon:list()
         local item = list:get(index)
@@ -183,17 +160,14 @@ return {
         select_harpoon_file(4)
       end, { desc = 'Harpoon: file 4' })
 
-      -- remove current file from harpoon list
       vim.keymap.set('n', '<leader>hd', function()
         harpoon:list():remove()
       end, { desc = '[H]arpoon: [d]elete current file' })
 
-      -- clear all harpoon marks (capital X = harder to accidentally press)
       vim.keymap.set('n', '<leader>hX', function()
         harpoon:list():clear()
       end, { desc = '[H]arpoon: clear all (X marks the spot)' })
 
-      -- Telescope integration for harpoon
       local has_telescope, _ = pcall(require, 'telescope')
       if has_telescope then
         vim.keymap.set('n', '<leader>hs', function()

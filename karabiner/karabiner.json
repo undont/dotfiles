@@ -14,7 +14,7 @@
             ]
           },
           {
-            "description": "Right Option to Control (Ghostty and IDEs only)",
+            "description": "Right Option to Control (Ghostty, JetBrains IDEs and Raycast only)",
             "manipulators": [
               {
                 "conditions": [

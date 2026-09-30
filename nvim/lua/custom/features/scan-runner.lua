@@ -1,23 +1,14 @@
--- shared diagnostic-scan state machine. wraps the common pattern of:
---   open a set of buffers, debounce on DiagnosticChanged, snapshot
---   diagnostics into a titled quickfix, finalise.
--- used by the sonarlint project-scan (features/sonar-scan.lua) and the
--- git-scoped scans (features/diag-scan.lua).
---
--- single global singleton: only one scan can be active at a time. callers
--- check `is_active()` and reject (or merge) if a scan is already running;
--- this is the desired mutual exclusion since both flows write to the same
--- quickfix list
+-- shared diagnostic-scan state machine: watch a set of buffers, debounce on
+-- DiagnosticChanged, snapshot diagnostics into a titled quickfix.
+-- used by features/sonar-scan.lua and features/diag-scan.lua. one scan at a
+-- time: both callers write to the same quickfix list
 
 local M = {}
 
 -- vim.diagnostic.severity values (1=ERROR, 2=WARN, 3=INFO, 4=HINT) → qf type letters
 local SEVERITY_TYPE = { 'E', 'W', 'I', 'N' }
 
--- map raw `d.source` strings (what each LSP reports) to short labels used
--- as the `[label]` prefix in qf text. unmapped sources fall through to the
--- raw value, so new LSPs degrade gracefully; add an entry here if a fresh
--- one shows up with a noisy label
+-- `d.source` strings to the `[label]` prefix in qf text
 local SOURCE_LABEL = {
   sonarlint = 'sonar',
   sonarqube = 'sonar',
@@ -45,11 +36,9 @@ local SOURCE_LABEL = {
   ['clang-tidy'] = 'c',
 }
 
---- short label for a diagnostic's source. explicit SOURCE_LABEL mapping wins;
---- otherwise we fall back to the buffer's filetype so subanalyzer sources
---- (e.g. gopls modernize: stringscut, minmax, stringsseq) collapse under the
---- language label rather than leaking their internal analyzer names. the raw
---- source is the last resort
+--- SOURCE_LABEL wins, then the buffer's filetype (subanalyzer sources such as
+--- gopls modernize's stringscut collapse under the language), then the raw
+--- source
 function M.source_label(d)
   local src = d.source
   if not src or src == '' then
@@ -68,11 +57,8 @@ function M.source_label(d)
   return src
 end
 
---- render a diagnostic's text with a `[label] ` prefix when the source is
---- known, so qf entries surface which LSP each warning came from
---- (sonar, ts, roslyn, …). build.lua's auto-clear keys its live-diagnostic
---- lookups by this same function so prune matches stay consistent with
---- what's displayed
+--- diagnostic text with a `[label] ` prefix. build.lua's auto-clear keys its
+--- live-diagnostic lookups by this function
 function M.qf_text(d)
   local label = M.source_label(d)
   if label then
@@ -81,8 +67,7 @@ function M.qf_text(d)
   return d.message or ''
 end
 
---- convert a vim.Diagnostic into a qf item. used in place of
---- vim.diagnostic.toqflist so we can inject the source prefix into `text`
+--- used in place of vim.diagnostic.toqflist for the source prefix in `text`
 function M.diag_to_item(d)
   return {
     bufnr = d.bufnr,
@@ -95,13 +80,9 @@ function M.diag_to_item(d)
   }
 end
 
--- library / dependency code we never want in a diagnostics list. these are
--- read-only files surfaced when an LSP attaches after a go-to-definition jump
--- (e.g. gopls emitting modernization notes on the Go stdlib under the Homebrew
--- Cellar). two signals: the file lives outside the project root (cwd), which
--- catches stdlib and global module caches; or it sits under an in-tree vendored
--- dependency directory, which a cwd check alone would miss. shared by the live
--- <leader>xx list (lists.lua) and the git-scoped scans (diag-scan.lua)
+-- library / dependency code kept out of diagnostics lists: a file outside the
+-- project root (cwd), or under an in-tree dependency directory. shared by
+-- lists.lua and diag-scan.lua
 local LIBRARY_SEGMENTS = {
   '/node_modules/',
   '/vendor/',
@@ -131,11 +112,8 @@ function M.in_library(d)
   return path:sub(1, #root + 1) ~= root .. '/'
 end
 
--- generated code (sqlc, protoc-gen-go, mockgen, stringer, …) carries the Go
--- canonical sentinel on an early line: `// Code generated … DO NOT EDIT.`.
--- it's regenerated wholesale and never hand-edited, so diagnostics on it are
--- noise; drop it from the live list and the git-scoped scans alike. cache per
--- bufnr keyed by changedtick so the lines are read once per edit
+-- generated Go code carries `// Code generated … DO NOT EDIT.` on an early
+-- line. cached per bufnr, keyed by changedtick
 local generated_cache = {}
 
 function M.is_generated(d)
@@ -179,7 +157,7 @@ end
 --- @field qf_label string                                        shown in finalise notify ("X: clean" / "X: N issue(s)")
 --- @field augroup_name string                                    unique per caller (e.g. "SonarlintScan")
 --- @field on_finalise? fun(items: table[])                       post-collection hook (e.g. unload created buffers)
---- @field on_complete? fun(items: table[])                        when set, replaces the qf-write/notify/copen/progress-finish tail and hands the collected items back instead (caller owns the final list — used to merge batched scans into one quickfix)
+--- @field on_complete? fun(items: table[])                        when set, replaces the qf-write/notify/copen/progress-finish tail and hands the collected items back instead (caller owns the final list; used to merge batched scans into one quickfix)
 --- @field on_report? fun(reported: integer, total: integer)      fired the first time each watched buffer reports a DiagnosticChanged
 --- @field settled_debounce_ms? integer                           shorter debounce once every watched buffer has reported at least once
 --- @field settle_check? fun(): boolean                           extra gate on the settled fast path, re-evaluated at every debounce reset (e.g. "no slow analyzer attached")
@@ -187,7 +165,7 @@ end
 --- @field hard_timeout_message? string                           shown on hard-timeout fire (default: no notify)
 
 --- @param opts ScanOpts
---- @return boolean started — false if another scan is already active
+--- @return boolean started false if another scan is already active
 function M.start(opts)
   if state then
     return false
@@ -202,9 +180,8 @@ function M.start(opts)
     watched[bufnr] = true
   end
 
-  -- convert bufnr -> filename so qf entries survive any buffer-unload the
-  -- caller does in on_finalise. items keyed only by bufnr would crash
-  -- setqflist ("E92: Buffer N not found") once the underlying buffer is gone
+  -- items carry filename instead of bufnr, so they survive a buffer unload in
+  -- on_finalise (setqflist raises E92 for a missing bufnr)
   local function collect()
     local items = {}
     local seen_bufnr = {}
@@ -244,10 +221,8 @@ function M.start(opts)
       pcall(opts.on_finalise, items)
     end
 
-    -- batched mode: the caller drives buffer teardown and the final quickfix
-    -- across multiple sequential runs, so skip the qf-write/notify/copen tail
-    -- and hand this batch's items back. clear state first so the caller can
-    -- start the next batch's scan from inside the callback
+    -- the caller owns the final quickfix. state is cleared first so the
+    -- callback can start the next batch
     if opts.on_complete then
       state = nil
       pcall(opts.on_complete, items)
@@ -272,11 +247,8 @@ function M.start(opts)
     end
   end
 
-  -- adaptive debounce: the full debounce_ms covers slow analyzers that
-  -- haven't published anything yet, but once *every* watched buffer has
-  -- reported at least one DiagnosticChanged, the remaining quiet time is
-  -- usually dead air; drop to settled_debounce_ms (when set) so small,
-  -- fast changesets finalise quickly
+  -- settled_debounce_ms applies once every watched buffer has reported at
+  -- least once and settle_check passes
   local function reset_debounce()
     clear_timer(state.debounce)
     local ms = opts.debounce_ms

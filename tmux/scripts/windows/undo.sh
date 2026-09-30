@@ -8,12 +8,10 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/paths.sh"
 source "$SCRIPT_DIR/../_lib/ui.sh"
 
-# get undo file paths
 UNDO_FILE=$(get_window_undo_file)
 UNDO_STATE=$(get_window_undo_state)
 UNDO_CONTENTS_DIR=$(get_window_undo_contents_dir)
 
-# check if there's something to undo
 if [[ ! -f "$UNDO_FILE" ]]; then
     show_centered_message "No window to restore" \
         "" \
@@ -35,35 +33,29 @@ WINDOW_TARGET=$(cat "$UNDO_FILE")
 SESSION_NAME="${WINDOW_TARGET%%:*}"
 WINDOW_INDEX="${WINDOW_TARGET#*:}"
 
-# check if session still exists
 if ! tmux has-session -t "$SESSION_NAME" 2>/dev/null; then
     # session gone, clean up and exit
     cleanup_undo_files "window"
     exit 0
 fi
 
-# check if window index is already taken
 if tmux list-windows -t "$SESSION_NAME" -F '#{window_index}' | grep -q "^${WINDOW_INDEX}$"; then
     # window index exists, find next available
     WINDOW_INDEX=$(tmux list-windows -t "$SESSION_NAME" -F '#{window_index}' | sort -n | tail -1)
     WINDOW_INDEX=$((WINDOW_INDEX + 1))
 fi
 
-# tab delimiter
 d=$'\t'
 
-# read window info
 WINDOW_LINE=$(grep "^window${d}" "$UNDO_STATE" | head -1)
 WINDOW_NAME=$(echo "$WINDOW_LINE" | cut -d"$d" -f4 | sed 's/^://')
 WINDOW_LAYOUT=$(echo "$WINDOW_LINE" | cut -d"$d" -f7)
 AUTO_RENAME=$(echo "$WINDOW_LINE" | cut -d"$d" -f8)
 
-# get first pane's directory
 FIRST_DIR=$(grep "^pane${d}" "$UNDO_STATE" | head -1 | cut -d"$d" -f8 | sed 's/^://' | sed 's/\\ / /g')
 FIRST_DIR="${FIRST_DIR/#\~/$HOME}"
 [[ -d "$FIRST_DIR" ]] || FIRST_DIR="$HOME"
 
-# create the window
 tmux new-window -t "${SESSION_NAME}:${WINDOW_INDEX}" -n "$WINDOW_NAME" -c "$FIRST_DIR"
 
 # restore automatic-rename setting and window name
@@ -75,19 +67,15 @@ if [[ -n "$AUTO_RENAME" ]]; then
     fi
 fi
 
-# create additional panes if needed
 grep "^pane${d}" "$UNDO_STATE" | tail -n +2 | while IFS="$d" read -r _ _ _ _ _ _pane_index _pane_title pane_dir _pane_active _pane_cmd _; do
-    # get directory
     dir="${pane_dir#:}"
     dir="${dir/#\~/$HOME}"
     dir=$(echo -e "$dir" | sed 's/\\ / /g')
     [[ -d "$dir" ]] || dir="$HOME"
 
-    # split to create new pane
     tmux split-window -t "${SESSION_NAME}:${WINDOW_INDEX}" -c "$dir"
 done
 
-# apply layout
 if [[ -n "$WINDOW_LAYOUT" ]]; then
     tmux select-layout -t "${SESSION_NAME}:${WINDOW_INDEX}" "$WINDOW_LAYOUT" 2>/dev/null || true
 fi
@@ -95,20 +83,17 @@ fi
 # get list of old pane indices in order
 mapfile -t OLD_PANE_INDICES < <(grep "^pane${d}" "$UNDO_STATE" | cut -d"$d" -f6)
 
-# get pane-base-index (usually 0 or 1)
 PANE_BASE=$(tmux show -gv pane-base-index 2>/dev/null || echo 0)
 
 # wait for shell to be ready before sending commands
 sleep 0.1
 
-# restore pane contents to each pane
 for i in "${!OLD_PANE_INDICES[@]}"; do
     OLD_PANE_INDEX="${OLD_PANE_INDICES[$i]}"
     NEW_PANE_IDX=$((PANE_BASE + i))
     CONTENT_FILE="${UNDO_CONTENTS_DIR}/pane-${OLD_PANE_INDEX}.txt"
 
     if [[ -f "$CONTENT_FILE" && -s "$CONTENT_FILE" ]]; then
-        # display saved content in the pane
         tmux send-keys -t "${SESSION_NAME}:${WINDOW_INDEX}.${NEW_PANE_IDX}" "cat '${CONTENT_FILE}'" Enter
     fi
 done

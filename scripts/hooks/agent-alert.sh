@@ -2,13 +2,12 @@
 # agent alert hook: set tmux alert when an agent needs attention
 # usage: agent-alert.sh [agent_name]
 # called from agent hook wrappers when the agent needs attention
-# (e.g. Claude Code Stop / PostToolUse, codex agentStop)
+# (e.g. Claude Code Stop / PermissionRequest / PreToolUse, codex agentStop)
 
 [[ -z "$TMUX" ]] && exit 0
 
 AGENT="${1:-claude}"
 
-# source the alerts library
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 ALERTS_LIB="$DOTFILES_DIR/tmux/scripts/_lib/alerts.sh"

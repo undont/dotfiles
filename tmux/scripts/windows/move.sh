@@ -6,7 +6,6 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 
 if [[ -z "$1" ]]; then
@@ -29,7 +28,6 @@ WINDOW_INDEX="${SOURCE_WINDOW##*:}"
 SOURCE_SESSION="${SOURCE_SESSION%% *}"
 WINDOW_INDEX="${WINDOW_INDEX%% *}"
 
-# get the window name for display purposes
 WINDOW_NAME=$(tmux display-message -p -t "${SOURCE_SESSION}:${WINDOW_INDEX}" '#{window_name}' 2>/dev/null)
 
 if [[ -z "$WINDOW_NAME" ]]; then
@@ -37,7 +35,6 @@ if [[ -z "$WINDOW_NAME" ]]; then
     exit 1
 fi
 
-# get list of sessions excluding the source session
 TARGET_SESSION=$(tmux list-sessions -F '#{session_name}' |
     grep -v "^${SOURCE_SESSION}$" |
     fzf --height=100% --layout=reverse --exact --cycle --disabled \
@@ -57,16 +54,15 @@ if [[ -z "$TARGET_SESSION" ]]; then
     exit 0 # user cancelled
 fi
 
-# move the window to the target session
 tmux move-window -s "${SOURCE_SESSION}:${WINDOW_INDEX}" -t "${TARGET_SESSION}:"
 
 # renumber remaining windows in the source session to fill the gap left behind
 tmux move-window -r -s "$SOURCE_SESSION" 2>/dev/null
 
-# update alert tracking: replace source session name with target in the alerts file.
-# tmux window options (@*_alert) travel with the window automatically; only the
-# flat file needs updating. handles both 3-field and 5-field alert formats.
-# window names are stored percent-encoded, so encode before matching
+# update alert tracking: replace the source session name with the target in the
+# alerts file. tmux window options (@*_alert) travel with the window; only the
+# flat file needs updating. the session:window: prefix match covers agent and
+# exit rows. window names are stored percent-encoded, so encode before matching
 ENC_WINDOW_NAME=$(alerts_encode_window "$WINDOW_NAME")
 if [[ -f "$ALERTS_FILE" ]] && grep -qF "${SOURCE_SESSION}:${ENC_WINDOW_NAME}:" "$ALERTS_FILE" 2>/dev/null; then
     if _acquire_alerts_lock; then

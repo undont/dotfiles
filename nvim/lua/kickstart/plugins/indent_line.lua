@@ -1,7 +1,6 @@
 return {
-  { -- Add indentation guides even on blank lines
+  {
     'lukas-reineke/indent-blankline.nvim',
-    -- See `:help ibl`
     main = 'ibl',
     opts = {
       indent = { tab_char = '▎' },
@@ -9,8 +8,7 @@ return {
     config = function(_, opts)
       local hooks = require 'ibl.hooks'
 
-      -- Brighten scope guides so they're visually distinct from regular guides.
-      -- Runs before ibl reads highlight groups (on setup and every ColorScheme change).
+      -- scope guides are a brightened Whitespace fg
       hooks.register(hooks.type.HIGHLIGHT_SETUP, function()
         local hl = vim.api.nvim_get_hl(0, { name = 'Whitespace' })
         if hl.fg then

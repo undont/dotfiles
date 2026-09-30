@@ -1,4 +1,4 @@
--- Grug-far: project-wide search and replace
+-- grug-far: project-wide search and replace
 
 return {
   {

@@ -604,7 +604,7 @@ EOF
 }
 
 # ══════════════════════════════════════════════════════════════
-# field validation tests (Improvement #1)
+# field validation tests
 # ══════════════════════════════════════════════════════════════
 
 test_field_validation() {
@@ -689,7 +689,7 @@ EOF
 }
 
 # ══════════════════════════════════════════════════════════════
-# cleanup trap tests (Improvement #3)
+# cleanup trap tests
 # ══════════════════════════════════════════════════════════════
 
 test_cleanup_trap() {
@@ -734,7 +734,7 @@ EOF
 }
 
 # ══════════════════════════════════════════════════════════════
-# non-consecutive window number tests (Improvement #4)
+# non-consecutive window number tests
 # ══════════════════════════════════════════════════════════════
 
 test_non_consecutive_windows() {
@@ -840,7 +840,7 @@ test_non_consecutive_windows() {
 }
 
 # ══════════════════════════════════════════════════════════════
-# pane readiness tests (Improvement #2)
+# pane readiness tests
 # ══════════════════════════════════════════════════════════════
 
 test_pane_readiness() {
@@ -930,7 +930,7 @@ test_pane_readiness() {
 }
 
 # ══════════════════════════════════════════════════════════════
-# fuzzy process matching tests (Improvement #6)
+# fuzzy process matching tests
 # ══════════════════════════════════════════════════════════════
 
 test_fuzzy_process_matching() {
@@ -998,9 +998,8 @@ EOF
     cleanup_test_env
 }
 
-# regression: quoted fuzzy entries like "~rails server" must stay whole
-# when the process list is tokenised (naive word-splitting left literal
-# quotes on the tokens, so they never matched)
+# quoted fuzzy entries like "~rails server" must stay whole when the process
+# list is tokenised (plain word-splitting leaves literal quotes on the tokens)
 test_quoted_fuzzy_process_matching() {
     section "Quoted Fuzzy Process Matching Tests"
 
@@ -1046,8 +1045,7 @@ EOF
     cleanup_test_env
 }
 
-# regression: pane contents restore was a silent no-op because restore.sh
-# never extracted pane_contents.tar.gz and looked in the wrong directory
+# restore.sh extracts pane_contents.tar.gz and replays the saved scrollback
 test_pane_contents_restoration() {
     section "Pane Contents Restoration Tests"
 
@@ -1105,7 +1103,7 @@ test_pane_contents_restoration() {
 }
 
 # ══════════════════════════════════════════════════════════════
-# restore all sessions tests (regression test for arithmetic bug)
+# restore all sessions tests
 # ══════════════════════════════════════════════════════════════
 
 test_window_name_restoration() {
@@ -1156,8 +1154,8 @@ test_window_name_restoration() {
     cleanup_test_env
 
     # test 2: window names not overwritten by automatic-rename during restore
-    # this tests the race condition fix where automatic-rename is disabled
-    # in Pass 1 before names are applied in Pass 2
+    # automatic-rename is disabled in pass 1 so the names applied in pass 2
+    # stick
     setup_test_env
     setup_test_server
 
@@ -1212,7 +1210,7 @@ test_restore_all_sessions() {
     setup_test_server
 
     # test 1: restore all with some sessions already running (tests skipping logic)
-    # this is a regression test for the ((skipped++)) bug that caused early exit
+    # restore-all must not exit early when it skips a running session
     mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
 
     # create multiple session backups
@@ -1310,7 +1308,6 @@ test_process_list_configuration
 test_mixed_restoration
 test_graceful_degradation
 
-# new improvement tests
 test_field_validation
 test_cleanup_trap
 test_non_consecutive_windows

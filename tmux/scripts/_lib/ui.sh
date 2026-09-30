@@ -2,7 +2,6 @@
 # terminal UI utilities for tmux scripts
 # source this file after common.sh
 
-# guard against multiple sourcing
 [[ -n "${_TMUX_UI_SH_LOADED:-}" ]] && return 0
 _TMUX_UI_SH_LOADED=1
 
@@ -44,19 +43,17 @@ tmux_confirm_last_item() {
         command="kill-${item_type} -t \"${target}\""
     fi
 
-    # use tmux's built-in confirm-before
     tmux confirm-before -p "$message (y/n) " "$command"
     return $?
 }
 
-# display a centered message box
+# display a centred message box
 # usage: show_centered_message "Title" "Message line 1" "Message line 2" ...
 show_centered_message() {
     local title="$1"
     shift
     local lines=("$@")
 
-    # calculate dimensions
     local max_width=0
     for line in "$title" "${lines[@]}"; do
         local len=${#line}
@@ -82,7 +79,6 @@ show_centered_message() {
 
     clear
 
-    # vertical padding
     for ((i = 0; i < v_pad; i++)); do
         printf '\n'
     done
@@ -94,12 +90,10 @@ show_centered_message() {
     [[ -z "$title_col" ]] && title_col=$'\033[38;5;141m'
     [[ -z "$sep_col" ]] && sep_col=$'\033[38;5;60m'
 
-    # title
     printf '%s%s%s\033[0m\n' "$pad" "$title_col" "$title"
     printf '%s%s%s\033[0m\n' "$pad" "$sep_col" "$(printf '%.0s─' $(seq 1 ${#title}))"
     printf '\n'
 
-    # message lines
     for line in "${lines[@]}"; do
         printf '%s%s\n' "$pad" "$line"
     done
@@ -117,7 +111,7 @@ confirm_action() {
     [[ "$response" =~ ^[Yy]$ ]]
 }
 
-# display a centered confirmation dialog
+# display a centred confirmation dialog
 # usage: show_centered_confirm "Title" "Message" && do_something
 show_centered_confirm() {
     local title="$1"
@@ -137,7 +131,6 @@ show_visual_confirm() {
     local title="$1"
     local message="$2"
 
-    # load current theme colours for fzf
     load_fzf_theme
 
     local choice

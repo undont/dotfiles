@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# set default shell to zsh
+# sets the default shell to zsh
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
@@ -21,18 +21,15 @@ fi
 
 echo "Changing default shell to zsh ($ZSH_PATH)..."
 
-# ensure zsh is in /etc/shells (required by chsh on most systems).
-# don't suppress sudo's stderr: the password prompt must be visible or this
-# silently blocks waiting for input.
+# chsh requires zsh to be listed in /etc/shells. sudo's password prompt goes
+# to stderr, so stderr stays unredirected
 if [[ -f /etc/shells ]] && ! grep -qx "$ZSH_PATH" /etc/shells 2>/dev/null; then
     echo "Adding $ZSH_PATH to /etc/shells (may require sudo password)..."
     echo "$ZSH_PATH" | sudo tee -a /etc/shells >/dev/null ||
         warn "Could not add zsh to /etc/shells"
 fi
 
-# chsh prompts for your login password via PAM (written to stderr). Never
-# redirect stderr here: doing so hides the prompt and makes the step look
-# frozen while it waits for input.
+# chsh prompts for the login password on stderr, so stderr stays unredirected
 info "chsh may prompt for your login password..."
 if chsh -s "$ZSH_PATH"; then
     success "Default shell changed to zsh"

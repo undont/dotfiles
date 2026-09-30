@@ -1,31 +1,25 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# functional tests for scripts/_lib/rollback.sh
-# tests rollback operations with real filesystem operations in a temp directory
+# tests scripts/_lib/rollback.sh against a temp HOME
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# source shared test helpers
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# create isolated test environment
 TEST_DIR=$(mktemp -d)
 TEST_HOME="$TEST_DIR/home"
 TEST_BACKUP="$TEST_DIR/backup"
 mkdir -p "$TEST_HOME" "$TEST_BACKUP"
 
-# override HOME and DOTFILES_DIR for isolation
 ORIGINAL_HOME="$HOME"
 export HOME="$TEST_HOME"
 export DOTFILES_DIR="$TEST_DIR/dotfiles"
 mkdir -p "$DOTFILES_DIR"
 
-# trap to ensure cleanup
 trap 'HOME="$ORIGINAL_HOME"; rm -rf "$TEST_DIR"' EXIT INT TERM
 
-# source the libraries under test
 # shellcheck source=scripts/_lib/common.sh
 source "$DOTFILES_DIR/../../dotfiles/scripts/_lib/common.sh" 2>/dev/null ||
     source "$(cd "$SCRIPT_DIR/.." && pwd)/_lib/common.sh"
@@ -46,7 +40,7 @@ else
     fail "Should create state directory"
 fi
 
-# check permissions (macOS and Linux have different stat syntax)
+# stat syntax differs between macOS and linux
 if [[ "$(uname)" == "Darwin" ]]; then
     dir_perms=$(stat -f %Lp "$ROLLBACK_STATE_DIR" 2>/dev/null) || dir_perms="unknown"
 else
@@ -104,7 +98,6 @@ record_symlink "$TEST_HOME/.tmux.conf" "$DOTFILES_DIR/tmux/tmux.conf"
 symlink_count=$(wc -l <"$SYMLINKS_CREATED_FILE" | tr -d ' ')
 assert_equals "Records two symlinks" "2" "$symlink_count"
 
-# verify pipe-delimited format
 first_line=$(head -1 "$SYMLINKS_CREATED_FILE")
 if [[ "$first_line" == *"|"* ]]; then
     pass "Symlink records use pipe delimiter"
@@ -129,7 +122,6 @@ assert_equals "Records and retrieves backup location" "$TEST_BACKUP" "$backup_lo
 
 section "perform_rollback - Symlink Removal"
 
-# create actual symlinks that rollback should remove
 mkdir -p "$DOTFILES_DIR/zsh" "$DOTFILES_DIR/tmux"
 echo "zshrc content" >"$DOTFILES_DIR/zsh/zshrc"
 echo "tmux content" >"$DOTFILES_DIR/tmux/tmux.conf"
@@ -143,17 +135,14 @@ else
     fail "Test symlink .zshrc should exist"
 fi
 
-# re-initialise state with the symlinks
 init_rollback_state
 record_symlink "$TEST_HOME/.zshrc" "$DOTFILES_DIR/zsh/zshrc"
 record_symlink "$TEST_HOME/.tmux.conf" "$DOTFILES_DIR/tmux/tmux.conf"
 
-# create a backup to restore from
 mkdir -p "$TEST_BACKUP/.config"
 echo "original zshrc" >"$TEST_BACKUP/.zshrc"
 record_backup_location "$TEST_BACKUP"
 
-# run rollback
 perform_rollback 2>/dev/null
 
 if [[ ! -L "$TEST_HOME/.zshrc" ]]; then
@@ -168,7 +157,6 @@ else
     fail "Rollback should remove .tmux.conf symlink"
 fi
 
-# check backup was restored
 if [[ -f "$TEST_HOME/.zshrc" ]] && [[ "$(cat "$TEST_HOME/.zshrc")" == "original zshrc" ]]; then
     pass "Rollback restores .zshrc from backup"
 else
@@ -181,7 +169,6 @@ fi
 
 section "cleanup_rollback_state"
 
-# re-init and then clean up
 init_rollback_state
 record_step "test"
 
@@ -200,24 +187,25 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# idempotency tests
+# calls without a state directory
 # ═══════════════════════════════════════════════════════════════
 
-section "Idempotency"
+section "Calls without a state directory"
 
-# record_step with no state directory should be a no-op
+# unconditional passes: `|| true` hides a failing call, so these show only
+# that the script reaches each line
 cleanup_rollback_state 2>/dev/null || true
 record_step "should_noop" 2>/dev/null || true
-pass "record_step is no-op without state directory"
+pass "record_step called without state directory"
 
 record_symlink "/fake/path" "/fake/target" 2>/dev/null || true
-pass "record_symlink is no-op without state directory"
+pass "record_symlink called without state directory"
 
 record_backup_location "/fake/backup" 2>/dev/null || true
-pass "record_backup_location is no-op without state directory"
+pass "record_backup_location called without state directory"
 
 # ═══════════════════════════════════════════════════════════════
-# path traversal protection tests
+# restore_from_backup tests
 # ═══════════════════════════════════════════════════════════════
 
 section "restore_from_backup"
@@ -256,10 +244,9 @@ else
     fail "restore_from_backup left a symlink at the destination"
 fi
 
-# the traversal guard is defensive rather than reachable: relative_path comes
-# from find output with the backup_dir prefix stripped, which never yields a
-# ../ or /./ component. assert it is still present so a refactor cannot drop
-# it silently, but do not claim this exercises it
+# relative_path comes from find output with the backup_dir prefix stripped,
+# which never yields a ../ or /./ component, so the traversal guard can't be
+# exercised. this only checks the guard is still in the source
 rollback_content=$(cat "$(cd "$SCRIPT_DIR/.." && pwd)/_lib/rollback.sh")
 if [[ "$rollback_content" == *'../*'* && "$rollback_content" == *'/../'* ]]; then
     pass "traversal guard still present in restore_from_backup (source check)"

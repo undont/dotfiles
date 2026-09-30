@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # kill a tmux session with confirmation dialog and undo capability
-# Usage: kill.sh <session_name> [--no-confirm]
+# usage: kill.sh <session_name> [--no-confirm]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -22,10 +22,8 @@ save_undo_state() {
     undo_file=$(get_session_undo_file)
     undo_backup=$(get_session_undo_backup)
 
-    # clear previous undo data
     cleanup_undo_files "session"
 
-    # save session name for undo
     (
         umask 077
         echo "$session" >"$undo_file"
@@ -78,10 +76,8 @@ SESSION_NAME="${1:-$(get_current_session)}"
 NO_CONFIRM="${2:-}"
 [[ -z "$SESSION_NAME" ]] && exit 1
 
-# get the current session (the one the client is attached to)
 CURRENT_SESSION=$(get_current_session)
 
-# prevent killing the last session
 if is_last_session; then
     tmux display-message "Cannot kill session: This is the only session. Create another session first."
     exit 1
@@ -93,7 +89,6 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
 
     if [[ -n "$OTHER_SESSION" ]]; then
         if [[ "$NO_CONFIRM" != "--no-confirm" ]]; then
-            # show visual confirmation
             TITLE="Kill Session"
             MESSAGE="Kill session '${SESSION_NAME}' and switch to '${OTHER_SESSION}'?"
 
@@ -105,10 +100,8 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
         # user confirmed, save a fresh backup before killing
         save_undo_state "$SESSION_NAME"
 
-        # gracefully terminate running processes before killing the session
         terminate_session_processes "$SESSION_NAME"
 
-        # switch and kill
         tmux switch-client -t "$OTHER_SESSION" \; kill-session -t "$SESSION_NAME"
 
         # clear alerts synchronously; backgrounding risks SIGHUP killing the
@@ -122,22 +115,19 @@ if [[ "$SESSION_NAME" == "$CURRENT_SESSION" ]]; then
 else
     # killing a different session (not current)
     if [[ "$NO_CONFIRM" != "--no-confirm" ]]; then
-        # show visual confirmation for killing inactive session
         TITLE="Kill Session"
         MESSAGE="Kill inactive session '${SESSION_NAME}'?"
 
         if ! show_visual_confirm "$TITLE" "$MESSAGE"; then
-            exit 0 # Exit cleanly on cancellation
+            exit 0 # exit cleanly on cancellation
         fi
     fi
 
-    # User confirmed - save a fresh backup before killing
+    # user confirmed, save a fresh backup before killing
     save_undo_state "$SESSION_NAME"
 
-    # Gracefully terminate running processes before killing the session
     terminate_session_processes "$SESSION_NAME"
 
-    # kill the session
     tmux kill-session -t "$SESSION_NAME" 2>/dev/null || true
 
     # clear alerts synchronously; backgrounding risks SIGHUP killing the

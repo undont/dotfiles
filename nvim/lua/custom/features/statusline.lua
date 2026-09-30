@@ -1,30 +1,25 @@
--- bespoke mini.statusline content + section overrides. extracted from
--- plugins/mini.lua; setup() requires the mini.statusline singleton itself so
--- lua_ls keeps the library's section_* signatures, then overrides them.
+-- mini.statusline content + section overrides. setup() requires the
+-- mini.statusline singleton itself so lua_ls keeps the library's section_*
+-- signatures
 
 local M = {}
 
--- neotest's diagnostic consumer namespace, resolved by name so it doesn't
--- pull neotest in. nvim_create_namespace returns the existing id when one is
--- already registered, and an empty namespace when it isn't
+-- neotest's diagnostic namespace, resolved by name so neotest isn't loaded
 local neotest_ns = vim.api.nvim_create_namespace 'neotest'
 
--- whether a real language server is attached to the current buffer. the
--- definition capability is the discriminator: copilot, stylua and
--- tailwindcss (which lists markdown among its filetypes) all attach without
--- it. get_clients already skips clients that haven't finished initialize
+-- a language server with the definition capability is attached to the current
+-- buffer. copilot, stylua and tailwindcss attach without it
 local function lsp_attached()
   return #vim.lsp.get_clients { bufnr = 0, method = 'textDocument/definition' } > 0
 end
 
 -- modified/readonly flag suffix, shared by the active content closure and the
--- inactive section_filename override.
+-- inactive section_filename override
 local function flags()
   return (vim.bo.modified and ' [+]' or '') .. (vim.bo.readonly and ' [RO]' or '')
 end
 
--- wrap a section's text in its highlight group as a padded run.
--- empty sections collapse to nothing so they leave no stray gap
+-- an empty section returns nothing, so it leaves no gap
 local function block(text, group)
   if text == '' then
     return ''
@@ -32,19 +27,15 @@ local function block(text, group)
   return string.format('%%#%s# %s ', group, text)
 end
 
--- display width of a statusline-formatted string: strip highlight
--- escapes (%#Name#) and structural items (%<, %=, %*) so only the
--- visible glyphs are counted. used to budget the filename section
+-- display width of a statusline-formatted string, excluding highlight
+-- escapes (%#Name#) and structural items (%<, %=, %*)
 local function sl_width(s)
   s = s:gsub('%%#[^#]*#', ''):gsub('%%[<=*]', ''):gsub('%%%%', '%%')
   return vim.fn.strdisplaywidth(s)
 end
 
--- path to the current file relative to its git/project root, so long
--- worktree directory names don't dominate the statusline. falls back to
--- a ~-relative path outside a repo. the resolved root is cached per
--- buffer (false = looked up, none found) so redraws don't walk the
--- filesystem on every event
+-- path relative to the git root, ~-relative outside a repo. the root is
+-- cached per buffer (false = looked up, none found)
 local function project_relative_path()
   local full = vim.fn.expand '%:p'
   if full == '' then
@@ -65,13 +56,9 @@ local function project_relative_path()
   return full
 end
 
--- colour the informational middle sections from groups the active theme
--- already defines, so all 14 hand-crafted themes and the generated ones
--- stay consistent. the git branch keeps a solid coloured background
--- block; diff counts and diagnostics are foreground only, so they sit on
--- the neutral middle and follow terminal transparency automatically
--- (StatusLine.bg == Devinfo.bg in every theme). filename and fileinfo
--- keep their neutral defaults
+-- section colours derived from groups the active theme defines. the git
+-- branch gets a solid background block; diff counts and diagnostics are
+-- foreground only (StatusLine.bg == Devinfo.bg in every theme)
 local function derive_statusline_hl()
   local function get(name)
     return vim.api.nvim_get_hl(0, { name = name, link = false })
@@ -80,13 +67,12 @@ local function derive_statusline_hl()
     return get(name).fg
   end
 
-  -- branch block: theme accent background, dark text. the mode block's fg
-  -- is bg_primary in every theme and survives transparency stripping
+  -- the mode block's fg is bg_primary in every theme and survives
+  -- transparency stripping
   local accent = fg 'Type' or fg 'Function'
   local dark = get('MiniStatuslineModeNormal').fg
   vim.api.nvim_set_hl(0, 'MiniStatuslineBranch', { fg = dark, bg = accent, bold = true })
 
-  -- diff / diagnostics: foreground only (no bg), blend with the middle
   local groups = {
     MiniStatuslineDiffAdd = fg 'GitSignsAdd' or fg 'DiffAdd',
     MiniStatuslineDiffChange = fg 'GitSignsChange' or fg 'DiffChange',
@@ -109,9 +95,8 @@ function M.setup()
   statusline.setup {
     use_icons = vim.g.have_nerd_font,
     content = {
-      -- mirrors the default active content plus a macro recording
-      -- indicator. cmdheight=0 and ui2 swallow the native
-      -- "recording @a" message, so surface the register here
+      -- mini's default active content plus a macro recording indicator:
+      -- cmdheight=0 and ui2 hide the native "recording @a" message
       active = function()
         local mode, mode_hl = statusline.section_mode { trunc_width = 120 }
         local macro = vim.fn.reg_recording()
@@ -122,8 +107,6 @@ function M.setup()
         local location = statusline.section_location { trunc_width = 75 }
         local search = statusline.section_searchcount { trunc_width = 75 }
 
-        -- diff and diagnostics share the neutral middle section; only the
-        -- counts themselves are colour-coded
         local changes = table.concat(
           vim.tbl_filter(function(s)
             return s ~= ''
@@ -149,12 +132,10 @@ function M.setup()
           block(loc, mode_hl),
         }
 
-        -- adaptive filename: relative to the project root, shown in full
-        -- while it fits. only when the rest of the line leaves no room do
-        -- parent dirs collapse to initials (the filename is kept intact),
-        -- which avoids mini's mid-word left-cut on deep paths. the budget
-        -- is the window width (laststatus=2) minus every other section,
-        -- this block's padding, and the modified/readonly flags
+        -- the project-relative path is shown in full while it fits; past the
+        -- budget, parent dirs collapse to initials. the budget is the window
+        -- width (laststatus=2) minus every other section, this block's padding
+        -- and the flags
         local filename
         if vim.bo.buftype == 'terminal' then
           filename = '%t'
@@ -169,25 +150,19 @@ function M.setup()
           filename = path .. fl
         end
 
-        -- pin the neutral filename group right before %= so the expanding
-        -- gap always fills neutral. without it, an empty filename section
-        -- (qf, [No Name], terminal) leaves the previous block's highlight
-        -- (the orange mode colour) active at %=, flooding the whole bar
+        -- the filename group is set again before %= so the gap fills neutral
+        -- when the filename section is empty (qf, [No Name], terminal)
         return left .. '%<' .. block(filename, 'MiniStatuslineFilename') .. '%#MiniStatuslineFilename#%=' .. right
       end,
     },
   }
 
-  -- re-derive the section colours on every theme change so all themes
-  -- (including generated ones) stay consistent
   vim.api.nvim_create_autocmd('ColorScheme', {
     group = vim.api.nvim_create_augroup('mini-statusline-colours', { clear = true }),
     callback = derive_statusline_hl,
   })
   derive_statusline_hl()
 
-  -- redraw statusline on record start/stop so the indicator updates
-  -- immediately rather than on the next unrelated event
   vim.api.nvim_create_autocmd({ 'RecordingEnter', 'RecordingLeave' }, {
     group = vim.api.nvim_create_augroup('mini-statusline-macro', { clear = true }),
     callback = function()
@@ -204,9 +179,7 @@ function M.setup()
     return loc
   end
 
-  -- project-relative filename (git root when inside a repo, else
-  -- ~-relative). used for inactive windows; the active line builds its
-  -- own adaptively-shortened path. see project_relative_path above
+  -- inactive windows only; the active line builds its own path
   ---@diagnostic disable-next-line: duplicate-set-field, unused-local
   statusline.section_filename = function(args)
     if vim.bo.buftype == 'terminal' then
@@ -215,8 +188,7 @@ function M.setup()
     return project_relative_path() .. flags()
   end
 
-  -- compact diff (+N green, ~N yellow, -N red), text coloured inline so the
-  -- counts read by meaning regardless of statusline style
+  -- compact diff (+N, ~N, -N), each count coloured inline
   ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_diff = function(args)
     if statusline.is_truncated(args.trunc_width) then
@@ -255,9 +227,8 @@ function M.setup()
       return ''
     end
     local counts = vim.diagnostic.count(0)
-    -- neotest publishes failed tests into its own namespace as real ERROR
-    -- diagnostics. subtract them from E/W/I/H and give them a ✗ of their own,
-    -- so a red test never reads as a file that doesn't compile
+    -- neotest publishes failed tests into its own namespace as ERROR
+    -- diagnostics. they are subtracted from E/W/I/H and counted under ✗
     local tests = vim.diagnostic.count(0, { namespace = neotest_ns })
     local parts = {}
     for _, spec in ipairs(diag_specs) do
@@ -279,28 +250,16 @@ function M.setup()
     return table.concat(parts, ' ') .. '%#MiniStatuslineDevinfo#'
   end
 
-  -- deliberately disabled: the LSP-client section is stubbed to empty so it
-  -- never renders (diagnostics already convey LSP state)
-  ---@diagnostic disable-next-line: duplicate-set-field
-  statusline.section_lsp = function()
-    return ''
-  end
-
-  -- friendlier display names for filetypes whose short code reads poorly
-  -- in the statusline. the icon is still looked up by the real filetype
+  -- display names; the icon is looked up by the real filetype
   local ft_display = { cs = 'csharp' }
 
-  -- file info with the filetype icon tinted by its mini.icons highlight
-  -- group (e.g. C# green), matching how the buffer and render-markdown
-  -- colour language glyphs. only the glyph is coloured; the filetype,
-  -- encoding and size stay neutral. mirrors mini's default format
+  -- mini's default format with the filetype glyph tinted by its mini.icons
+  -- highlight group; the text stays neutral
   ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_fileinfo = function(args)
-    -- differ diff buffers carry a private `differdiff` &filetype (so foreign
-    -- `FileType <lang>` consumers, e.g. lsp, don't attach to a throwaway differ://
-    -- buffer); the real source filetype is stashed in b:differ_filetype. surface
-    -- that so the language and its icon still show while diffing. read the var, not
-    -- a require('differ...'), which would force the lazy cmd-loaded plugin to load
+    -- differ diff buffers have the private `differdiff` filetype and keep the
+    -- source filetype in b:differ_filetype. the var is read directly: a
+    -- require('differ...') would load the lazy plugin
     local differ_ft = vim.b.differ_filetype
     local ft = (type(differ_ft) == 'string' and differ_ft ~= '') and differ_ft or vim.bo.filetype
     if ft == '' then
@@ -309,8 +268,6 @@ function M.setup()
     local label = ft_display[ft] or ft
     -- lsp tick, redrawn by mini.statusline's own LspAttach/LspDetach tracking
     local lsp = lsp_attached() and ' %#MiniStatuslineLspOk#✓%#MiniStatuslineFileinfo#' or ''
-    -- colour the glyph via its icon highlight group, then reset to the
-    -- neutral fileinfo group for the trailing space and the rest
     local icon = ''
     if vim.g.have_nerd_font and _G.MiniIcons ~= nil then
       local glyph, hl = MiniIcons.get('filetype', ft)
@@ -321,9 +278,7 @@ function M.setup()
     if statusline.is_truncated(args.trunc_width) or vim.bo.buftype ~= '' then
       return icon .. label .. lsp
     end
-    -- encoding and line-ending are shown only when they deviate from the
-    -- utf-8/unix default, so normal files stay clean and the unusual
-    -- cases (CRLF, non-utf-8) surface exactly when they matter
+    -- encoding and line-ending are shown only when they differ from utf-8/unix
     local parts = { label .. lsp }
     local encoding = vim.bo.fileencoding ~= '' and vim.bo.fileencoding or vim.o.encoding
     if encoding ~= '' and encoding ~= 'utf-8' then
@@ -354,7 +309,6 @@ function M.setup()
     if head == '' then
       return ''
     end
-    -- extract ticket ID pattern (e.g. ACME-123, JIRA-456)
     local ticket = head:match '[A-Z]+-[0-9]+'
     local branch = ticket or head
     local icon = vim.g.have_nerd_font and (MiniIcons.get('os', 'git') .. ' ') or 'Git: '

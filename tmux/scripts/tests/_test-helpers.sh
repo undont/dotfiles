@@ -95,7 +95,7 @@ setup_test_server() {
 
     # enable test mode to bypass require_tmux's "inside tmux" check
     export TMUX_TEST_MODE=1
-    export TMUX="" # clear TMUX variable so scripts don't think they're inside tmux
+    export TMUX="" # scripts run as if outside tmux
 }
 
 # cleanup test server

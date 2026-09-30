@@ -7,8 +7,8 @@ set -euo pipefail
 # trusts them by default but warns once per tap, and a future release will make
 # untrusted taps an error. the dotfiles now export HOMEBREW_REQUIRE_TAP_TRUST=1
 # to opt into that stricter behaviour early. before enforcement kicks in we
-# record every tap the user already has in Homebrew's trust store
-# ($HOMEBREW_PREFIX/var/homebrew/trust.json) so nothing they rely on breaks
+# record every tap the user already has in Homebrew's trust store so nothing
+# they rely on breaks
 #
 # idempotent: `brew trust --tap` reports "Already trusted" for known taps and
 # "always trusted" for official ones, and re-running adds nothing new

@@ -3,9 +3,8 @@
 
 local M = {}
 
--- neotest's diagnostic namespace, resolved by name so this doesn't pull
--- neotest in. failed tests are diagnostics but not code problems, and mixing
--- them into the diagnostics lists made a red suite look like a broken build
+-- neotest's diagnostic namespace, resolved by name so neotest isn't loaded.
+-- failed tests are kept out of the diagnostics lists
 local neotest_ns = vim.api.nvim_create_namespace 'neotest'
 
 local function toggle_quickfix()
@@ -31,22 +30,11 @@ local function toggle_loclist()
   end
 end
 
--- override mini.bracketed's ]q/[q and ]l/[l with empty-list notifications.
--- mini.bracketed silently no-ops when the list is empty, which is confusing.
--- :cnext/:cprev echo "(N of M): ..." which ui2 surfaces as a notification.
--- silence via the :silent! modifier while keeping mini.bracketed's wrap-around.
---
--- mini.bracketed advances from the qf list's "current entry" idx, which only
--- updates via :cc/:cnext/<CR>-in-qf. if the user lands on an entry's location
--- via any other path (LSP jump, search, picker, manual nav), the idx goes
--- stale and ]q/[q skip away from where the cursor actually is. sync the idx
--- to the entry matching the cursor's current file:line first; or, if we're
--- inside the qf window, to the cursor row itself.
---
--- when multiple entries share the cursor's bufnr+lnum (e.g. several
--- diagnostics on one line), keep the existing idx if it already points at
--- one of them. snapping to the first match every press would oscillate
--- between the first and second entry forever
+-- mini.bracketed advances from the list's current-entry idx, which only
+-- :cc/:cnext/<CR>-in-qf update. idx is set to the entry at the cursor's
+-- file:line (or the cursor row inside the qf window) before stepping. when
+-- several entries share that line and idx already points at one, idx is kept
+-- so repeated presses step through them
 local function sync_list_idx_to_cursor(list, set_idx)
   if vim.bo.buftype == 'quickfix' then
     set_idx(vim.api.nvim_win_get_cursor(0)[1])
@@ -68,9 +56,7 @@ local function sync_list_idx_to_cursor(list, set_idx)
   end
 end
 
--- noice's LSP/docs popups can temporarily take focus, which makes list
--- navigation run against the popup buffer instead of the underlying editing
--- window. resolve back to the last real window first
+-- a focused noice popup resolves to the last non-noice window
 local function resolve_list_nav_win()
   local current = vim.api.nvim_get_current_win()
   local cur_buf = vim.api.nvim_win_get_buf(current)
@@ -112,6 +98,8 @@ local function with_list_nav_win(fn)
   fn()
 end
 
+-- mini.bracketed no-ops without a message on an empty list. :silent! because
+-- :cnext's "(N of M)" echo becomes a ui2 notification
 local function bracketed_qf(direction)
   return function()
     with_list_nav_win(function()
@@ -159,9 +147,8 @@ local function code_namespaces()
   return ids
 end
 
--- no `float`: the landed-on diagnostic renders inline on the cursor line,
--- related information included, so the float only occluded the code it
--- described (see plugins/diagnostics.lua)
+-- no `float`: the diagnostic on the cursor line renders inline, related
+-- information included (plugins/diagnostics.lua)
 local function bracketed_diagnostic(count, wrap)
   return function()
     vim.diagnostic.jump {
@@ -277,13 +264,10 @@ local function bracketed_failed_test(direction)
   end
 end
 
--- diagnostics into native lists. explicit titles let `build.lua`'s
--- `setup_auto_clear` predicate (`^(%w+):` against `AUTO_CLEAR_KINDS`)
--- match these lists and prune resolved entries on DiagnosticChanged.
--- we bypass `vim.diagnostic.setqflist` so we can route through
--- `scan_runner.diag_to_item`, which prefixes text with `[source]` (the
--- originating LSP). the same prefix is used by the auto-clear's
--- (lnum, text) match so pruning stays accurate
+-- diagnostics into native lists. the titles are what build.lua's auto-clear
+-- matches (`^(%w+):` against AUTO_CLEAR_KINDS). items come from
+-- scan_runner.diag_to_item, not vim.diagnostic.setqflist: its `[source]` text
+-- prefix is what the auto-clear's (lnum, text) match compares
 local function diags_to_items(diagnostics)
   local scan_runner = require 'custom.features.scan-runner'
   local scan_ignored = require('custom.features.diag-scan').scan_ignored
@@ -293,12 +277,8 @@ local function diags_to_items(diagnostics)
   -- rows. collapse on (file, lnum, col, text) so a diagnostic surfaces once
   local seen = {}
   for _, d in ipairs(diagnostics) do
-    -- drop scan-ignored phantoms from buffers not shown in any window:
-    -- hidden buffers only ever got the reduced-pass pull, and with no
-    -- window they never get the full pass that self-corrects in-editor;
-    -- they'd sit in the live list indefinitely. displayed buffers keep
-    -- theirs (the full pass has run; entries are real). the predicate is
-    -- shared with diag-scan's batch snapshot
+    -- scan-ignored codes are dropped for buffers shown in no window: those
+    -- only get roslyn's reduced pass (see SCAN_IGNORED_CODES in diag-scan.lua)
     if d.bufnr and d.lnum and d.namespace ~= neotest_ns and not scan_runner.in_library(d) and not scan_runner.is_generated(d) then
       local hidden_phantom = scan_ignored(d) and #vim.fn.win_findbuf(d.bufnr) == 0
       if not hidden_phantom then
@@ -325,12 +305,9 @@ end
 
 local DIAG_QF_TITLE = 'Diagnostics: all'
 
--- live sync for the <leader>xx list: while the *current* qf list's title is
--- DIAG_QF_TITLE, a debounced DiagnosticChanged rebuild keeps it current in
--- both directions: fixed entries drop out (auto-clear already did that) and
--- new diagnostics flow in, so re-pressing <leader>xx after each round of
--- fixes is no longer needed. any list push with a different title (:Cfilter,
--- a build, a scan) pauses the sync; <leader>x[ back to the live list resumes
+-- while the current qf list's title is DIAG_QF_TITLE, a debounced
+-- DiagnosticChanged rebuild adds and removes entries. a list push with another
+-- title (:Cfilter, a build, a scan) pauses it; <leader>x[ back to it resumes
 local function rebuild_live_qf()
   local qf = vim.fn.getqflist { title = 0, idx = 0, items = 0 }
   if qf.title ~= DIAG_QF_TITLE then
@@ -343,9 +320,8 @@ local function rebuild_live_qf()
       return
     end
     vim.fn.setqflist({}, 'r', { title = DIAG_QF_TITLE, items = {} })
-    -- this live list owns its own close + notify: build.lua's auto-clear no
-    -- longer prunes the DIAG_QF_TITLE list (its `Diagnostics` kind was retired
-    -- in favour of `Buffer`/`Branch`/`Project`), so nothing else empties it
+    -- build.lua's auto-clear skips the DIAG_QF_TITLE list, so the close and
+    -- notify happen here
     for _, win in ipairs(vim.fn.getwininfo()) do
       if win.quickfix == 1 and win.loclist == 0 then
         vim.api.nvim_win_close(win.winid, true)
@@ -356,12 +332,8 @@ local function rebuild_live_qf()
     return
   end
 
-  -- preserve the current entry across the rebuild (same idea as build.lua's
-  -- prune-idx logic): if the entry the user is pointed at survives, it stays
-  -- current; if it was the one just resolved, snap to the nearest surviving
-  -- predecessor so the next ]q advances forward rather than jumping to
-  -- entry 1 (setqflist's default after replace). items are sorted by
-  -- (bufnr, lnum, col) on both sides, so "predecessor" is positional
+  -- same current-entry handling as build.lua's prune_diag_list. items are
+  -- sorted by (bufnr, lnum, col) on both sides, so the predecessor is positional
   local new_idx
   local cur = qf.idx and qf.idx > 0 and qf.items[qf.idx] or nil
   if cur then
@@ -396,14 +368,11 @@ local function schedule_live_rebuild()
   live_timer:start(300, 0, vim.schedule_wrap(rebuild_live_qf))
 end
 
--- :Cfilter / :Lfilter replacements that keep the source list's "Kind:" prefix
--- in the filtered list's title. stock cfilter.vim retitles the new list
--- ":Cfilter /pat/", which drops the prefix build.lua's auto-clear keys on, so a
--- filtered diagnostics list stops pruning as issues are fixed. we reproduce
--- cfilter's matching (optional /"' delimiters, empty pat = last search, ! to
--- invert, case-sensitive against text + filename) and only change the title:
--- keep the original and append the filter when it carries a kind, else fall
--- back to cfilter's own title so grep/other lists read naturally
+-- :Cfilter / :Lfilter with cfilter.vim's matching (optional /"' delimiters,
+-- empty pat = last search, ! to invert, case-sensitive against text +
+-- filename). a source title carrying a "Kind:" prefix is kept with the filter
+-- appended, so build.lua's auto-clear still matches it; other lists get
+-- cfilter's own title
 local function filter_list(is_qf, searchpat, bang)
   local pat = searchpat
   local first, last = searchpat:sub(1, 1), searchpat:sub(-1)
@@ -446,9 +415,7 @@ local function filter_list(is_qf, searchpat, bang)
 end
 
 function M.setup()
-  -- :Cfilter /pat/ keeps matching qf entries, :Cfilter! /pat/ drops them; same
-  -- for :Lfilter on loclists. these shadow the stock cfilter.vim commands to
-  -- preserve the kind prefix in the filtered title (see filter_list)
+  -- shadow the stock cfilter.vim commands (see filter_list)
   vim.api.nvim_create_user_command('Cfilter', function(o)
     filter_list(true, o.args, o.bang and '!' or '')
   end, { nargs = '+', bang = true, desc = 'Filter quickfix (keeps kind for auto-clear)' })
@@ -456,7 +423,6 @@ function M.setup()
     filter_list(false, o.args, o.bang and '!' or '')
   end, { nargs = '+', bang = true, desc = 'Filter location list (keeps kind for auto-clear)' })
 
-  -- dashboard escape is handled globally in autocmds.lua (FileType qf autocmd)
   vim.keymap.set('n', '<leader>xq', toggle_quickfix, { desc = '[Q]uickfix list toggle' })
   vim.keymap.set('n', '<leader>xl', toggle_loclist, { desc = '[L]ocation list toggle' })
 
@@ -465,12 +431,8 @@ function M.setup()
     callback = schedule_live_rebuild,
   })
 
-  -- <leader>xx toggles a *live* list: if the qf window is already showing
-  -- the live diagnostics list, close it; otherwise (re)build and open. while
-  -- the list is current, the DiagnosticChanged sync above keeps it fresh,
-  -- including diagnostics republished after `checktime` reloads buffers an
-  -- external writer (Claude Code, another nvim instance, a script) changed,
-  -- which previously needed a second press
+  -- toggles the live list. `checktime` reloads buffers an external writer
+  -- changed; their republished diagnostics arrive through the sync above
   vim.keymap.set('n', '<leader>xx', function()
     local qf = vim.fn.getqflist { title = 0 }
     if qf.title == DIAG_QF_TITLE then
@@ -520,24 +482,18 @@ function M.setup()
     vim.cmd 'botright copen'
   end, { desc = 'Grep [/] yanked text → quickfix' })
 
-  -- :grep shells grepprg out through :!, so nvim echoes the command line (tmpfile
-  -- path and all), every raw match, then the jump message, and ends on a
-  -- hit-enter prompt. with cmdheight=0 that balloons the cmdline area open and
-  -- collapses it again. rewrite the typed command to its silent form; the
-  -- QuickFixCmdPost hook below puts the list on screen instead.
-  --
-  -- guarded on the cmdline being nothing but the command, so an explicit
-  -- `:silent grep`, a range, or a `:Ggrep` is left alone
+  -- :grep runs grepprg through :!, which echoes the command line, every raw
+  -- match and the jump message, then a hit-enter prompt. the abbreviation
+  -- rewrites the typed command to its silent form, only when the cmdline is
+  -- nothing but the command: `:silent grep`, a range or `:Ggrep` are untouched
   for _, cmd in ipairs { 'grep', 'grepadd', 'lgrep', 'lgrepadd' } do
     local abbrev = "cnoreabbrev <expr> %s (getcmdtype() == ':' && getcmdline() ==# '%s') ? 'silent %s' : '%s'"
     vim.cmd(abbrev:format(cmd, cmd, cmd, cmd))
   end
 
-  -- :grep fills a list without showing it. cwindow opens the window only when
-  -- there are entries and closes a stale one when there aren't, so it doubles as
-  -- the "open it if it isn't already" the abbreviation above needs. silencing
-  -- swallows the zero-match case whole (grepprg-based :grep emits no E480), so
-  -- that gets its own notify
+  -- cwindow opens the window when there are entries and closes a stale one
+  -- when there aren't. a silenced grepprg :grep emits no E480 on zero matches,
+  -- hence the notify
   vim.api.nvim_create_autocmd('QuickFixCmdPost', {
     group = vim.api.nvim_create_augroup('GrepShowList', { clear = true }),
     pattern = { 'grep', 'grepadd', 'lgrep', 'lgrepadd' },
@@ -563,12 +519,9 @@ function M.setup()
   vim.keymap.set('n', ']t', bracketed_failed_test(1), { desc = 'Next failed test' })
   vim.keymap.set('n', '[t', bracketed_failed_test(-1), { desc = 'Previous failed test' })
 
-  -- shadow mini.bracketed (]b/[b ]f/[f ]d/[d ...) inside qf/loclist buffers;
-  -- those target the underlying editing window but fire against the list
-  -- buffer when it's focused, which is confusing. ]q/[q and ]l/[l stay live.
-  -- qf/loclist buffers are buflisted=1 by default while their window is open,
-  -- so they surface in telescope's buffers picker and mini.bracketed's ]b/[b
-  -- (both filter on buflisted); unlist them so neither can stumble onto them
+  -- mini.bracketed's other targets (]b/[b ]f/[f ]d/[d ...) are no-ops inside
+  -- qf/loclist buffers; ]q/[q and ]l/[l stay. the buffers are unlisted so
+  -- telescope's buffers picker and ]b/[b skip them
   vim.api.nvim_create_autocmd('FileType', {
     group = vim.api.nvim_create_augroup('QfDisableBracketed', { clear = true }),
     pattern = 'qf',
@@ -578,8 +531,7 @@ function M.setup()
         vim.keymap.set('n', ']' .. s, '<Nop>', { buffer = ev.buf, silent = true })
         vim.keymap.set('n', '[' .. s, '<Nop>', { buffer = ev.buf, silent = true })
       end
-      -- qf buffers are nomodifiable, so bare `o` (open line) only errors; reuse
-      -- it to jump to the entry under the cursor, same as <CR>
+      -- qf buffers are nomodifiable, so `o` opens the entry under the cursor
       vim.keymap.set('n', 'o', '<CR>', { buffer = ev.buf, silent = true, remap = true, desc = 'Open entry under cursor' })
     end,
   })
@@ -614,7 +566,7 @@ function M.setup()
     vim.cmd 'lclose'
   end, { desc = '[C]lear both quickfix and location lists' })
 
-  -- <leader>xm / xt / xT (git-scoped diagnostics scans) live in
+  -- <leader>xm / xb / xT / xS (scoped diagnostics scans) live in
   -- features/diag-scan.lua, wired separately from core/keymaps.lua
 end
 

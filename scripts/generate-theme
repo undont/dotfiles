@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
-# Generate a dotfiles theme from a Ghostty built-in theme
-# Usage: generate-theme <ghostty-theme-name> [--quiet]
+# generate a dotfiles theme from a ghostty built-in theme
+# usage: generate-theme <ghostty-theme-name> [--quiet|-q]
+#        generate-theme list | bright-list | help
 
 set -euo pipefail
 
@@ -8,16 +9,15 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || re
 # shellcheck source=scripts/_lib/common.sh
 source "$SCRIPT_DIR/_lib/common.sh"
 
-# How the user invoked us — set by parent (dotfiles theme generate) when delegated;
-# falls back to basename for direct invocation.
+# command name shown in help: set by `dotfiles theme generate` when delegated,
+# the script basename otherwise
 invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
 
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
 THEMES_GENERATED="$DOTFILES_DIR/themes/generated"
 NVIM_GENERATED="$DOTFILES_DIR/nvim/colors/generated"
 
-# Ghostty theme locations (platform-dependent)
-# Search multiple paths since Ghostty can be installed via different methods on Linux
+# ghostty's theme dir; its location on linux depends on the install method
 find_ghostty_themes() {
     if is_macos; then
         echo "/Applications/Ghostty.app/Contents/Resources/ghostty/themes"
@@ -34,12 +34,12 @@ find_ghostty_themes() {
             return
         fi
     done
-    # Fallback to default even if missing (will be caught later)
+    # main checks that the directory exists
     echo "/usr/share/ghostty/themes"
 }
 GHOSTTY_THEMES="$(find_ghostty_themes)"
 
-# Find lua interpreter (prefer luajit for speed, fall back to lua)
+# luajit when available, lua otherwise
 find_lua() {
     if command -v luajit >/dev/null 2>&1; then
         echo "luajit"
@@ -51,41 +51,33 @@ find_lua() {
     fi
 }
 
-# Convert filenames to kebab-case using a single awk process
-# Accepts filenames on stdin (one per line), outputs kebab-case names
+# filenames on stdin (one per line) to kebab-case names
 _to_kebab() {
     awk '{
         name = $0
-        # lowercase
         name = tolower(name)
-        # replace non-alphanumeric runs with hyphen
         gsub(/[^a-z0-9]+/, "-", name)
-        # trim leading/trailing hyphens
         sub(/^-/, "", name)
         sub(/-$/, "", name)
         print name
     }'
 }
 
-# Resolve a theme name to a Ghostty theme file path
+# theme name (exact filename or kebab-case) to a ghostty theme file path
 resolve_ghostty_theme() {
     local name="$1"
 
-    # Direct match (exact filename)
     if [[ -f "$GHOSTTY_THEMES/$name" ]]; then
         echo "$GHOSTTY_THEMES/$name"
         return 0
     fi
 
-    # Build kebab->filepath mapping in a single awk pass
     local match
     match=$(printf '%s\n' "$GHOSTTY_THEMES"/* | awk -v target="$name" '
     {
         filepath = $0
-        # Extract filename from path
         n = split(filepath, parts, "/")
         filename = parts[n]
-        # Convert to kebab-case
         kebab = tolower(filename)
         gsub(/[^a-z0-9]+/, "-", kebab)
         sub(/^-/, "", kebab)
@@ -104,8 +96,8 @@ resolve_ghostty_theme() {
     return 1
 }
 
-# List bright/garish Ghostty themes (kebab-case names)
-# Detects light backgrounds (luminance > 0.3) and saturated backgrounds (sat > 0.7)
+# kebab-case names of ghostty themes with a light background, or a saturated
+# one that is not near-black
 list_bright_themes() {
     if [[ ! -d "$GHOSTTY_THEMES" ]]; then
         return 0
@@ -146,7 +138,7 @@ list_bright_themes() {
     ' 2>/dev/null
 }
 
-# List ALL Ghostty themes (kebab-case names), raw output
+# every ghostty theme as a kebab-case name, one per line
 _list_all_raw() {
     printf '%s\n' "$GHOSTTY_THEMES"/* |
         awk -F'/' '{ print $NF }' |
@@ -154,7 +146,7 @@ _list_all_raw() {
         sort
 }
 
-# List Ghostty themes (pretty when terminal, raw when piped)
+# tagged list on a terminal, raw names when piped
 list_themes() {
     if [[ ! -d "$GHOSTTY_THEMES" ]]; then
         error "Ghostty themes directory not found: $GHOSTTY_THEMES"
@@ -173,7 +165,6 @@ list_themes() {
         done < <(_list_all_raw)
         local count=${#themes[@]}
 
-        # Pre-compute bright theme set
         declare -A bright_set
         while IFS= read -r b; do [[ -n "$b" ]] && bright_set["$b"]=1; done \
             < <(list_bright_themes)
@@ -203,7 +194,6 @@ list_themes() {
     fi
 }
 
-# Main
 main() {
     local quiet=false
     local theme_name=""
@@ -232,6 +222,7 @@ Generate dotfiles theme files from a Ghostty built-in theme.
 
 COMMANDS:
     list                List all Ghostty themes
+    bright-list         List Ghostty themes with a light or saturated background
     help                Show this help
 
 OPTIONS:
@@ -251,20 +242,17 @@ EOF
         esac
     done
 
-    # Validate Ghostty themes directory exists
     if [[ ! -d "$GHOSTTY_THEMES" ]]; then
         error "Ghostty themes directory not found: $GHOSTTY_THEMES"
         info "Is Ghostty installed?"
         exit 1
     fi
 
-    # Ensure output directories exist
     mkdir -p "$THEMES_GENERATED" "$NVIM_GENERATED"
 
     local LUA
     LUA=$(find_lua)
 
-    # Normal generation: resolve Ghostty theme and generate
     if [[ -z "$theme_name" ]]; then
         error "No theme name specified"
         info "Usage: $invoked_as <ghostty-theme-name>"
@@ -281,7 +269,6 @@ EOF
     local quiet_flag=""
     [[ "$quiet" == "true" ]] && quiet_flag="--quiet"
 
-    # Run the Lua generator
     export LUA_PATH="$SCRIPT_DIR/_lib/?.lua;;"
     local generated_name
     if ! generated_name=$("$LUA" "$SCRIPT_DIR/_lib/generate-theme.lua" "$ghostty_path" "$THEMES_GENERATED" "$NVIM_GENERATED" $quiet_flag); then
@@ -289,7 +276,6 @@ EOF
         exit 1
     fi
 
-    # Run contrast check on the generated theme
     if [[ "$quiet" != "true" ]] && [[ -f "$THEMES_GENERATED/$generated_name.theme" ]]; then
         "$SCRIPT_DIR/theme-contrast-check" "$THEMES_GENERATED/$generated_name.theme" || true
     fi

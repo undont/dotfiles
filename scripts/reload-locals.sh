@@ -2,9 +2,7 @@
 # shellcheck disable=SC1091
 set -euo pipefail
 
-# reload all local override files across tmux, Ghostty, and nvim
-# safe to run at any time; tmux and nvim are reloaded non-destructively
-#
+# reload the local override files of tmux, ghostty and nvim
 # usage: reload-locals.sh
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"

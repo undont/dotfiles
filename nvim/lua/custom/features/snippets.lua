@@ -117,7 +117,6 @@ local function expand(item)
   end
 end
 
---- open the picker for the current buffer's filetype
 function M.pick()
   local ft = vim.bo.filetype
   local items = M.collect(ft)

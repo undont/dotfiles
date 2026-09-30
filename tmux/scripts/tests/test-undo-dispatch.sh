@@ -31,7 +31,7 @@ TEST_SESSION="test-dispatch-$$"
 test_tmux new-session -d -s "$TEST_SESSION" -c /tmp
 
 # ═══════════════════════════════════════════════════════════════
-# get_most_recent_undo_type Tests
+# get_most_recent_undo_type tests
 # ═══════════════════════════════════════════════════════════════
 
 section "Undo Type Detection - No State"
@@ -148,7 +148,7 @@ dispatch_output=$("$DISPATCH_SCRIPT" 2>&1) || true
 pass "Dispatch with no state exits gracefully"
 
 # ═══════════════════════════════════════════════════════════════
-# Summary
+# summary
 # ═══════════════════════════════════════════════════════════════
 
 echo ""

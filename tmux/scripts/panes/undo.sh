@@ -7,12 +7,10 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/paths.sh"
 
-# get undo file paths
 UNDO_FILE=$(get_pane_undo_file)
 UNDO_STATE=$(get_pane_undo_state)
 UNDO_CONTENT=$(get_pane_undo_content)
 
-# check if there's something to undo
 [[ ! -f "$UNDO_FILE" ]] && exit 0
 [[ ! -f "$UNDO_STATE" ]] && {
     rm -f "$UNDO_FILE"
@@ -25,7 +23,6 @@ SESSION="${PANE_TARGET%%:*}"
 WINDOW_PANE="${PANE_TARGET#*:}"
 WINDOW="${WINDOW_PANE%%.*}"
 
-# read saved state
 DIR=""
 LAYOUT=""
 
@@ -36,21 +33,18 @@ while IFS='=' read -r key value; do
     esac
 done <"$UNDO_STATE"
 
-# check if session still exists
 if ! tmux has-session -t "$SESSION" 2>/dev/null; then
     cleanup_undo_files "pane"
     exit 0
 fi
 
-# ensure directory exists
+# fall back to HOME when the directory is gone
 [[ -d "$DIR" ]] || DIR="$HOME"
 
-# check if window still exists
 if tmux list-windows -t "$SESSION" -F '#{window_index}' | grep -q "^${WINDOW}$"; then
     # window exists, split to create new pane
     tmux split-window -t "${SESSION}:${WINDOW}" -c "$DIR"
 
-    # try to restore the layout
     if [[ -n "$LAYOUT" ]]; then
         tmux select-layout -t "${SESSION}:${WINDOW}" "$LAYOUT" 2>/dev/null || true
     fi
@@ -62,7 +56,6 @@ fi
 # small delay for shell readiness
 sleep 0.1
 
-# display saved content in the new pane
 if [[ -f "$UNDO_CONTENT" && -s "$UNDO_CONTENT" ]]; then
     # get the newly created pane (it should be the active one now)
     NEW_PANE=$(tmux display-message -t "${SESSION}:${WINDOW}" -p '#{pane_index}')

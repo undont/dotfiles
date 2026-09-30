@@ -1,9 +1,9 @@
-# Reformat docker compose --timestamps output for lazydocker.
-# Input:  2026-05-14T16:16:11.814096093Z some message
-# Output: 05-14 16:16:11.814 some message
+# reformats docker compose --timestamps output for lazydocker
+# input:  2026-05-14T16:16:11.814096093Z some message
+# output: 05-14 16:16:11.814 some message
 #
-# Lines that don't start with an RFC3339 timestamp pass through unchanged.
-# fflush() per line so --follow streams stay live in the lazydocker panel.
+# lines that don't start with an RFC3339 timestamp pass through unchanged.
+# fflush() per line keeps --follow streams live in the lazydocker panel
 
 {
     if (length($1) >= 20 && substr($1, 5, 1) == "-" && substr($1, 11, 1) == "T") {

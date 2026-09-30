@@ -1,8 +1,9 @@
 #!/usr/bin/env bash
-# Remove generated theme files
-# Usage: theme-delete <theme-name>   Remove a specific generated theme
-#        theme-delete all            Remove all generated themes
-#        theme-delete list           List generated themes
+# remove generated theme files
+# usage: theme-delete <theme-name>      remove one generated theme
+#        theme-delete all [--yes|-y]    remove all generated themes
+#        theme-delete list              list generated themes
+#        theme-delete help
 
 set -euo pipefail
 
@@ -10,8 +11,8 @@ SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || re
 # shellcheck source=scripts/_lib/common.sh
 source "$SCRIPT_DIR/_lib/common.sh"
 
-# How the user invoked us — set by parent (dotfiles theme delete) when delegated;
-# falls back to basename for direct invocation.
+# command name shown in help: set by `dotfiles theme delete` when delegated,
+# the script basename otherwise
 invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
 
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -19,7 +20,6 @@ THEMES_GENERATED="$DOTFILES_DIR/themes/generated"
 NVIM_GENERATED="$DOTFILES_DIR/nvim/colors/generated"
 DEFAULT_THEME="dracula"
 
-# Get current active theme
 get_current_theme() {
     local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
     if [[ -f "$config_dir/current-theme" ]]; then
@@ -27,7 +27,7 @@ get_current_theme() {
     fi
 }
 
-# Switch to fallback theme if the deleted theme was active
+# switch to a fallback theme when the deleted theme was active
 fallback_if_current() {
     local deleted_name="$1"
     local current_theme
@@ -37,7 +37,7 @@ fallback_if_current() {
         return 0
     fi
 
-    # Pick first available generated theme that isn't the deleted one
+    # first remaining generated theme, else the default hand-crafted one
     local fallback=""
     for f in "$THEMES_GENERATED"/*.theme; do
         if [[ -f "$f" ]]; then
@@ -50,20 +50,17 @@ fallback_if_current() {
         fi
     done
 
-    # Fall back to default hand-crafted theme
     [[ -z "$fallback" ]] && fallback="$DEFAULT_THEME"
 
     info "Current theme was '$deleted_name', switching to '$fallback'"
     "$SCRIPT_DIR/theme-switch" "$fallback"
 }
 
-# Remove a single generated theme
 remove_theme() {
     local name="$1"
 
-    # Refuse to delete hand-crafted themes
     if [[ -f "$DOTFILES_DIR/themes/$name.theme" ]]; then
-        error "'$name' is a custom theme — cannot delete"
+        error "'$name' is a custom theme, cannot delete"
         return 1
     fi
 
@@ -91,7 +88,6 @@ remove_theme() {
     fallback_if_current "$name"
 }
 
-# Remove all generated themes
 remove_all() {
     local force="${1:-false}"
     local theme_count=0
@@ -120,7 +116,7 @@ remove_all() {
         fi
     fi
 
-    # Remove theme files (preserve .gitkeep)
+    # the globs leave .gitkeep in place
     for f in "$THEMES_GENERATED"/*.theme; do
         [[ -f "$f" ]] && rm "$f"
     done
@@ -130,7 +126,6 @@ remove_all() {
 
     success "Removed all generated themes"
 
-    # If the current theme was a generated one, switch to default
     local current_theme
     current_theme=$(get_current_theme)
     if [[ -n "$current_theme" ]] && [[ ! -f "$DOTFILES_DIR/themes/$current_theme.theme" ]]; then
@@ -139,13 +134,11 @@ remove_all() {
     fi
 }
 
-# List generated themes
 list_generated() {
     local found=false
     local current_theme
     current_theme=$(get_current_theme)
 
-    # Pre-compute bright theme set
     declare -A bright_set
     while IFS= read -r b; do [[ -n "$b" ]] && bright_set["$b"]=1; done \
         < <("$DOTFILES_DIR/scripts/generate-theme" bright-list 2>/dev/null)
@@ -159,7 +152,6 @@ list_generated() {
             local theme_name
             theme_name=$(basename "$f" .theme)
 
-            # Source the theme to get THEME_NAME display name
             local display_name="$theme_name"
             local THEME_NAME=""
             # shellcheck disable=SC1090
@@ -183,12 +175,10 @@ list_generated() {
     printf "\n"
 }
 
-# Main
 main() {
     local force=false
     local command=""
 
-    # Parse flags
     for arg in "$@"; do
         case "$arg" in
             --yes | -y) force=true ;;
@@ -207,7 +197,7 @@ main() {
             cat <<EOF
 Usage: $invoked_as <theme-name>    Remove a specific generated theme
        $invoked_as all             Remove all generated themes
-       $invoked_as all --yes       Remove all (non-interactive)
+       $invoked_as all --yes       Remove all without confirmation (-y)
        $invoked_as list            List generated themes
        $invoked_as help            Show this help
 EOF

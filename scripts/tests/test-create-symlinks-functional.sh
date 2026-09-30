@@ -1,13 +1,12 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# functional tests for symlink creation patterns
-# tests actual symlink/copy/local-override logic in a sandboxed HOME
+# tests install_local and should_install in a sandboxed HOME. the symlink and
+# copy checks run plain ln and cp, not create_link or copy_config
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# source shared test helpers (colours, pass/fail/skip/section, assertions, sandbox)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ===========================================================================
@@ -17,21 +16,17 @@ source "$SCRIPT_DIR/_test-helpers.sh"
 setup_sandbox
 trap cleanup_sandbox EXIT
 
-# create minimal structure the symlink script expects
 mkdir -p "$TEST_HOME/.config"
 
-# source common.sh for should_install and colour variables
 source "$DOTFILES_DIR/scripts/_lib/common.sh"
-# symlink.sh provides the real create_link/copy_config/install_local
 source "$DOTFILES_DIR/scripts/_lib/symlink.sh"
 
 # ===========================================================================
 # tests
 # ===========================================================================
 
-section "Symlink creation patterns"
+section "ln, cp and install_local"
 
-# test 1: ln -sf creates a valid symlink
 test_source="$DOTFILES_DIR/zsh/dotfiles.zsh"
 test_dest="$TEST_HOME/.config/zsh/dotfiles.zsh"
 mkdir -p "$(dirname "$test_dest")"
@@ -48,7 +43,6 @@ else
     fail "symlink was not created"
 fi
 
-# test 2: symlink replaces existing file
 echo "existing content" >"$TEST_HOME/.test-existing"
 test_source2="$DOTFILES_DIR/zsh/zprofile"
 ln -sf "$test_source2" "$TEST_HOME/.test-existing"
@@ -58,7 +52,6 @@ else
     fail "symlink did not replace existing file"
 fi
 
-# test 3: copy creates a regular file (not symlink)
 test_copy_src="$DOTFILES_DIR/btop/btop.conf"
 test_copy_dest="$TEST_HOME/.config/btop/btop.conf"
 mkdir -p "$(dirname "$test_copy_dest")"
@@ -70,10 +63,9 @@ if [[ -f "$test_copy_src" ]]; then
         fail "copy created a symlink instead of a regular file"
     fi
 else
-    skip "btop.conf not found — skipping copy test"
+    skip "btop.conf not found, skipping copy test"
 fi
 
-# test 4: install_local, both branches, calling the real function
 test_template="$DOTFILES_DIR/ghostty/local.template"
 test_local_dest="$TEST_HOME/.config/ghostty/local"
 mkdir -p "$(dirname "$test_local_dest")"
@@ -100,7 +92,7 @@ else
     skip "ghostty local.template not found"
 fi
 
-section "Preset filtering — minimal"
+section "Preset filtering: minimal"
 PRESET="minimal"
 
 if should_install "minimal"; then
@@ -121,7 +113,7 @@ else
     pass "minimal preset correctly excludes full items"
 fi
 
-section "Preset filtering — core"
+section "Preset filtering: core"
 PRESET="core"
 
 if should_install "minimal"; then
@@ -142,7 +134,7 @@ else
     pass "core preset correctly excludes full items"
 fi
 
-section "Preset filtering — full"
+section "Preset filtering: full"
 PRESET="full"
 
 if should_install "minimal"; then

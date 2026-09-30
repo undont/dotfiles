@@ -10,10 +10,9 @@
 
 CLEAR_SCRIPT="${HOME}/.tmux/scripts/alerts/clear.sh"
 
-# validate script exists and is a regular file (not a symlink)
+# regular file only, not a symlink
 if [[ ! -f "$CLEAR_SCRIPT" ]] || [[ -L "$CLEAR_SCRIPT" ]]; then
     exit 0
 fi
 
-# call the tmux clear script (handles validation and timestamp update)
 bash "$CLEAR_SCRIPT"

@@ -1,23 +1,18 @@
--- Roslyn diagnostic post-processing. extracted from plugins/dotnet.lua.
--- wraps vim.diagnostic.set to drop known false positives, silence
--- simplification hints inside XML doc comments, blank out decompiled
--- metadata-source buffers, and dedupe diagnostics reported from multiple
--- .csproj contexts. see .claude/rules/neovim_dotnet.md
+-- Roslyn diagnostic post-processing: wraps vim.diagnostic.set to drop known
+-- false positives, silence simplification hints inside XML doc comments, blank
+-- out decompiled metadata-source buffers, and dedupe diagnostics reported from
+-- multiple .csproj contexts
 
 local M = {}
 
---- wrap vim.diagnostic.set to filter Roslyn false positives and deduplicate
---- diagnostics reported from multiple .csproj contexts (cross-namespace)
 function M.patch_diagnostic_set()
   local orig = vim.diagnostic.set
   local false_positives = { IDE0005 = true, IDE0079 = true, CA1825 = true }
   local buf_owners = {} ---@type table<integer, table<string, integer>>
 
-  --- suppress Roslyn style/suggestion diagnostics whose span lands inside
-  --- XML doc comments. Roslyn can report simplification-style IDE hints on
-  --- `<see cref="...">` targets, which is technically analyzable but noisy.
-  --- keep warnings/errors so malformed XML docs and compiler diagnostics still
-  --- surface normally
+  --- style/suggestion diagnostics inside XML doc comments (Roslyn reports
+  --- simplification hints on `<see cref="...">` targets). warnings and errors
+  --- are kept
   ---@param bufnr integer
   ---@param d vim.Diagnostic
   ---@return boolean
@@ -58,13 +53,11 @@ function M.patch_diagnostic_set()
       end
     end
 
-    -- filter false positives and deduplicate across namespaces
     local deduped = {}
     for _, d in ipairs(diagnostics) do
       if not false_positives[d.code] and not is_doc_comment_style_hint(bufnr, d) then
-        -- use lnum:col:code when code is present (ignores message variations
-        -- between push/pull channels or multi-project contexts).
-        -- fall back to message when code is absent
+        -- keyed by code, since the message varies between push/pull channels
+        -- and project contexts; by message when there is no code
         local key = d.code and (d.lnum .. ':' .. d.col .. ':' .. d.code) or (d.lnum .. ':' .. d.col .. ':' .. d.message)
         if not buf_owners[bufnr][key] then
           buf_owners[bufnr][key] = namespace

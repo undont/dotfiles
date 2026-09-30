@@ -1,9 +1,7 @@
-; astro injection override. the upstream query does `; inherits: html_tags`,
-; whose bare `<script>` rule injects javascript, then adds an unconditional
-; typescript rule on top, so a plain `<script>` is injected twice (ts + js).
-; the javascript parse errors on ts-only syntax and smears broken highlights
-; over the correct typescript ones. this file replaces the upstream query
-; (no `; extends`) and treats every astro `<script>` as typescript only
+; astro injections, applied with query.set in plugins/treesitter.lua. the
+; upstream query inherits html_tags, whose `<script>` rule injects javascript,
+; and adds a typescript rule, so a `<script>` is injected twice. here every
+; astro `<script>` is typescript only
 
 ; comments
 ((comment) @injection.content

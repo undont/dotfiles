@@ -5,14 +5,13 @@ source "$(dirname "${BASH_SOURCE[0]}")/brewfile.sh"
 # shellcheck source=/dev/null
 source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 
-# test suite for installation script libraries
-# usage: ./scripts/_lib/test-install-libs.sh [--verbose]
+# tests for the installation script libraries
+# usage: ./scripts/_lib/test-install-libs.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 # shellcheck disable=SC2034
-VERBOSE="${1:-}" # reserved for future verbose output
+VERBOSE="${1:-}" # unused
 
-# source shared test helpers (colours, pass/fail/skip/section, assertions)
 source "$SCRIPT_DIR/../tests/_test-helpers.sh"
 
 # ===========================================================================
@@ -21,7 +20,6 @@ source "$SCRIPT_DIR/../tests/_test-helpers.sh"
 
 section "Library Sourcing"
 
-# common.sh is already sourced at the top of this script, so we just verify it exists
 if [[ -f "$SCRIPT_DIR/common.sh" ]]; then
     pass "common.sh exists"
 else
@@ -31,7 +29,6 @@ fi
 
 section "Colour Definitions"
 
-# test that colour variables are defined (values may vary by terminal)
 if [[ -n "$RED" && "$RED" != "$GREEN" ]]; then
     pass "RED is defined and different from GREEN"
 else
@@ -64,7 +61,6 @@ fi
 
 section "Output Functions"
 
-# test that output functions exist and are callable
 for fn in error warn info success print_header print_section print_step; do
     if declare -F "$fn" >/dev/null 2>&1; then
         pass "$fn function exists"
@@ -75,25 +71,21 @@ done
 
 section "Utility Functions"
 
-# command_exists
 assert_success "command_exists returns true for bash" command_exists bash
 assert_failure "command_exists returns false for nonexistent" command_exists nonexistent_command_12345
 
-# is_macos (platform-dependent)
 if [[ "$(uname)" == "Darwin" ]]; then
     assert_success "is_macos returns true on macOS" is_macos
 else
     assert_failure "is_macos returns false on non-macOS" is_macos
 fi
 
-# is_linux (platform-dependent)
 if [[ "$(uname)" == "Linux" ]]; then
     assert_success "is_linux returns true on Linux" is_linux
 else
     assert_failure "is_linux returns false on non-Linux" is_linux
 fi
 
-# get_homebrew_prefix
 prefix=$(get_homebrew_prefix)
 if [[ "$(uname)" == "Darwin" ]]; then
     if [[ "$(uname -m)" == "arm64" ]]; then
@@ -107,14 +99,12 @@ fi
 
 section "Check Command Function"
 
-# test check_command with a known command
 if check_command "bash" "bash" "" >/dev/null 2>&1; then
     pass "check_command returns 0 for existing command"
 else
     fail "check_command should return 0 for bash"
 fi
 
-# test check_command with nonexistent command
 if ! check_command "nonexistent" "nonexistent_12345" "" >/dev/null 2>&1; then
     pass "check_command returns 1 for missing command"
 else
@@ -186,7 +176,6 @@ fi
 
 section "Brewfile Filtering"
 
-# create test Brewfile
 TEST_BREWFILE=$(mktemp)
 trap 'rm -f "$TEST_BREWFILE"' EXIT
 cat >"$TEST_BREWFILE" <<'EOF'
@@ -201,7 +190,6 @@ cask "ghostty"
 cask "hammerspoon"
 EOF
 
-# test minimal filtering
 minimal_output=$(filter_brewfile "minimal" "$TEST_BREWFILE")
 if [[ "$minimal_output" == *'brew "zsh"'* ]]; then
     pass "minimal preset includes zsh"
@@ -214,7 +202,6 @@ else
     fail "minimal preset should exclude neovim"
 fi
 
-# test core filtering
 core_output=$(filter_brewfile "core" "$TEST_BREWFILE")
 if [[ "$core_output" == *'brew "neovim"'* ]]; then
     pass "core preset includes neovim"
@@ -227,17 +214,14 @@ else
     fail "core preset should exclude hammerspoon"
 fi
 
-# test full filtering
 full_output=$(filter_brewfile "full" "$TEST_BREWFILE")
 if [[ "$(uname)" == "Darwin" ]]; then
-    # on macOS, cask lines should be included
     if [[ "$full_output" == *'cask "hammerspoon"'* ]]; then
         pass "full preset includes hammerspoon"
     else
         fail "full preset should include hammerspoon"
     fi
 else
-    # on Linux, cask lines are filtered out (macOS-only packages)
     if [[ "$full_output" != *'cask "hammerspoon"'* ]]; then
         pass "full preset excludes hammerspoon cask on Linux"
     else
@@ -245,11 +229,9 @@ else
     fi
 fi
 
-# TEST_BREWFILE cleanup is handled by trap
+section "should_install Logic (test-local copy)"
 
-section "should_install Helper"
-
-# define the helper for testing
+# a two-argument copy; the common.sh function reads $PRESET
 should_install() {
     local required_preset="$1"
     local current_preset="$2"
@@ -260,7 +242,6 @@ should_install() {
     esac
 }
 
-# test minimal preset
 if should_install "minimal" "minimal"; then
     pass "minimal: should_install 'minimal' returns true"
 else
@@ -272,7 +253,6 @@ else
     fail "minimal: should_install 'core' should return false"
 fi
 
-# test core preset
 if should_install "core" "core"; then
     pass "core: should_install 'core' returns true"
 else
@@ -284,7 +264,6 @@ else
     fail "core: should_install 'full' should return false"
 fi
 
-# test full preset
 if should_install "full" "full"; then
     pass "full: should_install 'full' returns true"
 else
@@ -334,9 +313,9 @@ else
     fail "install.sh not found"
 fi
 
-section "is_step_skipped Helper"
+section "is_step_skipped Logic (test-local copy)"
 
-# define is_step_skipped for isolated testing
+# a copy of the function in install.sh
 is_step_skipped() {
     local step_name="$1"
     [[ ",$SKIP_STEPS," == *",$step_name,"* ]]
@@ -378,7 +357,6 @@ else
     fail "multi-item should not skip keyd"
 fi
 
-# partial name must not match
 SKIP_STEPS="homebrew"
 if ! is_step_skipped "home"; then
     pass "partial name 'home' does not match 'homebrew'"
@@ -394,7 +372,6 @@ FRAMEWORK_FILE="$DOTFILES_DIR/zsh/dotfiles.zsh"
 COMPLETION_FILE="$DOTFILES_DIR/zsh/functions/_dotfiles"
 if [[ -f "$FRAMEWORK_FILE" ]]; then
     framework_content=$(cat "$FRAMEWORK_FILE")
-    # completion may be inline or in autoload file
     comp_content="$framework_content"
     if [[ -f "$COMPLETION_FILE" ]]; then
         comp_content+=$(cat "$COMPLETION_FILE")
@@ -433,12 +410,10 @@ check_reads_preset "$SCRIPT_DIR/../install/install-packages.sh" "install-package
 check_reads_preset "$SCRIPT_DIR/../install/create-symlinks.sh" "create-symlinks.sh"
 check_reads_preset "$SCRIPT_DIR/../install/backup-existing.sh" "backup-existing.sh"
 check_reads_preset "$SCRIPT_DIR/../install/health-check.sh" "health-check.sh"
-# check-prerequisites.sh is intentionally preset-agnostic: it only verifies
-# the two tools the install bootstrap needs (git, brew). preset-aware checks
-# happen later in install-packages.sh / health-check.sh
+# check-prerequisites.sh reads no preset: it verifies only git and brew
 
 # ===========================================================================
-# Zshrc Quick Wins Tests
+# Zsh Framework Tests
 # ===========================================================================
 
 section "Zsh Framework Shell Profiler"
@@ -447,14 +422,12 @@ FRAMEWORK_FILE="$DOTFILES_DIR/zsh/dotfiles.zsh"
 if [[ -f "$FRAMEWORK_FILE" ]]; then
     framework_content=$(cat "$FRAMEWORK_FILE")
 
-    # check for zprof module loading
     if [[ "$framework_content" == *'zmodload zsh/zprof'* ]]; then
         pass "dotfiles.zsh has zprof module loading"
     else
         fail "dotfiles.zsh missing zprof module loading"
     fi
 
-    # check for ZPROF conditional (single quotes are intentional, matching literal string)
     # shellcheck disable=SC2016
     if [[ "$framework_content" == *'[[ -n "$ZPROF" ]]'* ]]; then
         pass "dotfiles.zsh has ZPROF conditional"
@@ -462,14 +435,12 @@ if [[ -f "$FRAMEWORK_FILE" ]]; then
         fail "dotfiles.zsh missing ZPROF conditional"
     fi
 
-    # check for zsh-profile function
     if [[ "$framework_content" == *'zsh-profile()'* ]]; then
         pass "dotfiles.zsh has zsh-profile function"
     else
         fail "dotfiles.zsh missing zsh-profile function"
     fi
 
-    # check for zsh-profile-detailed function
     if [[ "$framework_content" == *'zsh-profile-detailed()'* ]]; then
         pass "dotfiles.zsh has zsh-profile-detailed function"
     else
@@ -482,7 +453,6 @@ fi
 section "Zsh Framework Dotfiles CLI Completion"
 
 if [[ -f "$FRAMEWORK_FILE" ]]; then
-    # check for _dotfiles autoload (moved from inline to zsh/functions/_dotfiles)
     completion_file="$DOTFILES_ROOT/zsh/functions/_dotfiles"
     if [[ "$framework_content" == *'autoload -Uz _dotfiles'* ]]; then
         pass "dotfiles.zsh autoloads _dotfiles completion"
@@ -492,14 +462,12 @@ if [[ -f "$FRAMEWORK_FILE" ]]; then
         fail "dotfiles.zsh missing _dotfiles completion (autoload or inline)"
     fi
 
-    # check for compdef registration
     if [[ "$framework_content" == *'compdef _dotfiles dotfiles'* ]]; then
         pass "dotfiles.zsh registers dotfiles completion"
     else
         fail "dotfiles.zsh missing dotfiles completion registration"
     fi
 
-    # check completion includes expected commands (in autoload file or inline)
     completion_content=""
     if [[ -f "$completion_file" ]]; then
         completion_content=$(<"$completion_file")

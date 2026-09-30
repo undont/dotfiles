@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Tmux Theme List Provider
+# tmux theme list provider
 # ══════════════════════════════════════════════════════════════
 # lists themes (with current/favourite markers) for the picker
 # called by picker.sh to feed fzf; also handles --reload/--pos/--toggle-fav
@@ -13,13 +13,11 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 THEMES_DIR="$DOTFILES_ROOT/themes"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 CURRENT_THEME_FILE="$CONFIG_DIR/current-theme"
 
-# get current theme
 get_current_theme() {
     if [[ -f "$CURRENT_THEME_FILE" ]]; then
         cat "$CURRENT_THEME_FILE"
@@ -128,7 +126,6 @@ list_themes_for_fzf() {
 
 }
 
-# toggle a theme's favourite status
 toggle_favourite() {
     local theme_id="$1"
     local fav_dir
@@ -136,11 +133,9 @@ toggle_favourite() {
     mkdir -p "$fav_dir"
 
     if [[ -f "$THEME_FAVOURITES" ]] && grep -qxF "$theme_id" "$THEME_FAVOURITES" 2>/dev/null; then
-        # remove from favourites
         grep -vxF "$theme_id" "$THEME_FAVOURITES" >"$THEME_FAVOURITES.tmp" || true
         mv "$THEME_FAVOURITES.tmp" "$THEME_FAVOURITES"
     else
-        # add to favourites
         printf '%s\n' "$theme_id" >>"$THEME_FAVOURITES"
     fi
 }
@@ -163,8 +158,8 @@ random_theme() {
     fi
 }
 
-# get 1-based position of current theme in the fzf item list
-# generates the list internally (skipping 5 header lines) and finds the ● marker
+# 1-based position of the current theme in the fzf item list: generates the
+# list (header lines skipped) and finds the ● marker
 get_current_position() {
     local output
     output=$(list_themes_for_fzf)
@@ -188,7 +183,6 @@ reload_with_position() {
     printf '%s\n' "$output"
 }
 
-# main
 main() {
     case "${1:-}" in
         --pos)

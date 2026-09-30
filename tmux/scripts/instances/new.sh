@@ -18,7 +18,6 @@ fi
 
 PROCESS="$1"
 
-# validate process name
 case "$PROCESS" in
     claude | codex | opencode | copilot | nvim) ;;
     *)
@@ -50,5 +49,4 @@ else
 fi
 tmux send-keys -t "$TARGET" "$PROCESS" Enter
 
-# switch client to the new window
 tmux switch-client -t "$TARGET"

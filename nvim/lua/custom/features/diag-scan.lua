@@ -1,29 +1,16 @@
 -- git-scoped diagnostics → quickfix scanner. hidden-loads a changeset in
 -- bounded batches so LSPs attach, snapshots the resulting diagnostics, and
--- merges them into a titled quickfix without switching the current buffer.
--- sibling of sonarlint's project scan and build.lua. extracted from lists.lua
+-- merges them into a titled quickfix without switching the current buffer
 
 local M = {}
 
 local scan_runner = require 'custom.features.scan-runner'
 
--- hidden-load all git-modified (unstaged) and untracked files so LSPs attach,
--- then debounce on DiagnosticChanged and dump the resulting diagnostics into
--- the quickfix list, without switching the current buffer. falls through
--- after a hard timeout if nothing publishes.
---
--- the 5s debounce / 5min timeout is generous enough for sonarlint's java
--- analyzers (which auto-attach via the plugin's `ft` lazy-load when the
--- scan sets the hidden buffer's filetype; bufload alone doesn't reliably
--- fire detection, see scan_files).
---
--- Roslyn (and other LSPs that only push diagnostics for visible documents)
--- need an explicit pull via `textDocument/diagnostic`. pulling before
--- Roslyn's workspace finishes initialising returns -30099, so we wrap its
--- `workspace/projectInitializationComplete` handler (an LSP protocol
--- contract) and pull from inside the wrap. coupling is to the method name,
--- not to roslyn.nvim's `User RoslynInitialized` autocmd (private API)
-
+-- roslyn only pushes diagnostics for visible documents, so scanned buffers
+-- need a `textDocument/diagnostic` pull. a pull before its workspace
+-- initialises returns -30099, so its `workspace/projectInitializationComplete`
+-- handler is wrapped and the pull runs from inside the wrap. the coupling is to
+-- the LSP method name, not roslyn.nvim's `User RoslynInitialized` autocmd
 local ROSLYN_FTS = { cs = true, razor = true, cshtml = true }
 
 local function pull_diagnostics(bufnr)
@@ -37,12 +24,8 @@ local function pull_diagnostics(bufnr)
   pcall(vim.lsp.diagnostic._refresh, bufnr)
 end
 
--- idempotently install a wrap around roslyn's
--- `workspace/projectInitializationComplete` handler. installed eagerly via a
--- global LspAttach autocmd in setup() so the wrap is always in place before
--- the notification fires; this lets us trust `__git_modified_init_done` for
--- warm-start scans (where init already happened in a prior xm or earlier in
--- the session)
+-- idempotent. installed at LspAttach (see setup) so it precedes the
+-- notification, which keeps `__git_modified_init_done` valid for later scans
 local function wrap_roslyn(client)
   if client.__git_modified_wrapped then
     return
@@ -64,8 +47,6 @@ local function wrap_roslyn(client)
   client.__git_modified_init_cbs = {}
 end
 
--- run `on_ready` once Roslyn's workspace is initialised. fires immediately
--- on warm starts where the wrap has already observed init; queues otherwise
 local function on_roslyn_ready(client, on_ready)
   wrap_roslyn(client)
   if client.__git_modified_init_done then
@@ -75,13 +56,10 @@ local function on_roslyn_ready(client, on_ready)
   end
 end
 
--- pull diagnostics, gating C#-family files behind Roslyn's project-init
--- notification. non-C# buffers pull immediately. if Roslyn hasn't attached
--- yet, the LspAttach handler picks it up.
---
--- the validity guard matters: the LspAttach handler defers this by 500ms,
--- and the scan can finalise (deleting its created buffers) in that window,
--- e.g. via the 500ms settled debounce. vim.bo on a deleted buffer throws
+-- C#-family buffers pull after roslyn's project-init notification; when roslyn
+-- hasn't attached, the LspAttach handler in scan_files does the pull. the
+-- validity guard covers that handler's deferred call, which can run after the
+-- scan deleted its buffers (vim.bo on a deleted buffer throws)
 local function pull_gated(bufnr)
   if not vim.api.nvim_buf_is_valid(bufnr) then
     return
@@ -98,27 +76,16 @@ local function pull_gated(bufnr)
   pull_diagnostics(bufnr)
 end
 
--- diagnostic codes excluded from scan snapshots (not from in-editor
--- diagnostics). Roslyn's pull for hidden-loaded buffers reports false
--- positives for rules that need a full compilation/analyzer pass, while
--- the scan-time pull analyses with a reduced one; a long-standing roslyn
--- defect (dotnet/roslyn#47288, #75887):
---   IDE0079 ("Remove unnecessary suppression"): judging a suppression
---     needs the suppressed analyzer (e.g. Sonar's S-rules) to run.
---   IDE0005 ("Using directive is unnecessary"): needs full reference
---     resolution to know what each using actually binds.
--- opening the file for real runs the full pass and these vanish, so
--- in-editor they self-correct; in a scan snapshot they'd sit in the
--- quickfix as phantom entries until each file is visited. the live
--- <leader>xx list applies the same filter to buffers hidden from every
--- window (diags_to_items in lists.lua), where that self-correction can
--- never happen
+-- codes dropped from scan snapshots, not from in-editor diagnostics. roslyn's
+-- pull for a hidden-loaded buffer runs a reduced pass and reports these falsely
+-- (dotnet/roslyn#47288, #75887): IDE0079 needs the suppressed analyzer to run,
+-- IDE0005 needs full reference resolution. opening the file runs the full pass
+-- and clears them. lists.lua's diags_to_items applies the same filter to
+-- buffers shown in no window
 local SCAN_IGNORED_CODES = { IDE0079 = true, IDE0005 = true }
 
--- `code` can land as a string, a number, or only inside the raw LSP
--- diagnostic (`user_data.lsp.code`) depending on the producing path;
--- normalise before the lookup. exposed so the live <leader>xx list
--- (lists.lua) can apply the same filter to hidden-buffer phantoms
+-- `code` arrives as a string, a number, or only inside the raw LSP diagnostic
+-- (`user_data.lsp.code`) depending on the producer. shared with lists.lua
 function M.scan_ignored(d)
   local code = d.code
   if code == nil and d.user_data and d.user_data.lsp then
@@ -127,27 +94,18 @@ function M.scan_ignored(d)
   return code ~= nil and SCAN_IGNORED_CODES[tostring(code)] == true
 end
 
--- drop scan-ignored phantoms and library/dependency code (node_modules,
--- vendored deps, stdlib jumped into) so a scan of a changeset that touches a
--- vendored file doesn't dump its diagnostics into the qf. mirrors the live
--- <leader>xx list's filtering (diags_to_items in lists.lua)
+-- the same filtering as lists.lua's diags_to_items: scan-ignored codes,
+-- library/dependency code and generated code are dropped
 local function scan_diagnostics(bufnr)
   return vim.tbl_filter(function(d)
     return not M.scan_ignored(d) and not scan_runner.in_library(d) and not scan_runner.is_generated(d)
   end, vim.diagnostic.get(bufnr))
 end
 
--- peak roslyn memory during a scan scales with how many .cs files are open
--- at once: its analyzer scope is `openFiles`, and on Sonar-enabled branches
--- every compilation hosts the full SonarAnalyzer.CSharp ruleset. hidden-loading
--- a whole 100-file diff in one go pushed roslyn to ~4GB, so we process files in
--- bounded chunks: load a chunk, snapshot its diagnostics, tear that chunk's
--- created buffers down (the buffer delete sends `didClose`, dropping them from
--- roslyn's open-doc analyzer set) before the next chunk loads. peak open-file
--- count, and therefore analyzer memory, stays bounded regardless of diff size.
--- the solution itself stays loaded across chunks, so only the per-file analyzer
--- cost is re-paid, not a full workspace reload. raise this to trade peak memory
--- for fewer chunks (less wall-clock); lower it if scans still balloon
+-- files hidden-loaded at once. roslyn's analyzer scope is `openFiles`, so its
+-- peak memory follows the open .cs count; each chunk's created buffers are
+-- deleted (sending `didClose`) before the next chunk loads. the solution stays
+-- loaded across chunks. a larger value trades peak memory for fewer chunks
 local SCAN_BATCH_SIZE = 12
 
 -- a multi-batch scan leaves scan_runner momentarily inactive between chunks, so
@@ -155,14 +113,12 @@ local SCAN_BATCH_SIZE = 12
 -- whole-operation lock
 local scanning = false
 
---- true while any scan is running, including the gaps between batches
 local function scan_in_progress()
   return scanning or require('custom.features.scan-runner').is_active()
 end
 
---- hidden-load one chunk of (already filtered-readable) absolute paths so LSPs
---- attach. returns the loaded bufnrs, the subset we created (to tear down after
---- snapshotting), and a target lookup for the per-batch pull autocmd
+--- `created` is the subset of bufnrs this call created, deleted after the
+--- snapshot; `target` is the lookup for the per-batch pull autocmd
 --- @param paths string[]
 --- @return integer[] bufnrs, integer[] created, table<integer, boolean> target
 local function load_batch(paths)
@@ -173,12 +129,9 @@ local function load_batch(paths)
     local existed = vim.fn.bufnr(abs) ~= -1
     local bufnr = vim.fn.bufadd(abs)
     pcall(vim.fn.bufload, bufnr)
-    -- bufload doesn't reliably run filetype detection for hidden buffers
-    -- (scanned buffers were observed with ft = ""). without a filetype,
-    -- sonarlint's FileType attach never fires (so scans silently miss
-    -- sonar findings), pull_gated misses the ROSLYN_FTS init gate, and
-    -- the qf [source] filetype fallback label is lost. detect and set it
-    -- explicitly, mirroring the sonar project scan in sonarlint.lua
+    -- bufload doesn't reliably run filetype detection for hidden buffers.
+    -- sonarlint's FileType attach, pull_gated's ROSLYN_FTS gate and the qf
+    -- [source] fallback label all need the filetype (same as sonar-scan.lua)
     if vim.bo[bufnr].filetype == '' then
       local ft = vim.filetype.match { buf = bufnr, filename = abs }
       if ft then
@@ -194,10 +147,9 @@ local function load_batch(paths)
   return bufnrs, created, target
 end
 
---- shared scan driver behind <leader>xm and <leader>xT: hidden-load the given
---- absolute paths in bounded batches so LSPs attach, pull/await diagnostics,
---- snapshot each batch via scan_runner and merge the lot into a titled
---- quickfix. batching bounds peak roslyn memory (see SCAN_BATCH_SIZE)
+--- driver behind <leader>xm / xb / xT / xS: loads the paths in batches (see
+--- SCAN_BATCH_SIZE), snapshots each batch via scan_runner and merges the items
+--- into one titled quickfix
 --- @param paths string[] absolute paths
 --- @param opts { qf_title: string, qf_label: string, augroup_name: string, empty_message: string }
 local function scan_files(paths, opts)
@@ -206,11 +158,9 @@ local function scan_files(paths, opts)
     return
   end
 
-  -- skip paths that don't exist on disk: the sources include deleted files
-  -- (`git ls-files -m` lists deleted-but-unstaged entries; ticket commits
-  -- may touch since-deleted files), and creating buffers for missing files
-  -- triggers easy-dotnet's BootstrapFile to walk a missing directory and
-  -- crash with -32000
+  -- sources can name files that are gone from disk (ticket commits may touch
+  -- since-deleted files), and a buffer for a missing file makes easy-dotnet's
+  -- BootstrapFile fail with -32000
   local readable = {}
   for _, abs in ipairs(paths) do
     if vim.fn.filereadable(abs) == 1 then
@@ -222,7 +172,6 @@ local function scan_files(paths, opts)
     return
   end
 
-  -- partition into chunks of SCAN_BATCH_SIZE, processed strictly sequentially
   local batches = {}
   for i = 1, #readable, SCAN_BATCH_SIZE do
     local chunk = {}
@@ -232,9 +181,7 @@ local function scan_files(paths, opts)
     table.insert(batches, chunk)
   end
 
-  -- fidget progress (same shape as the sonarlint scan): counts up across the
-  -- whole run, not reset per batch, so a slow scan is visibly working rather
-  -- than a black box. falls back to a plain notify
+  -- counts across the whole run, not per batch. falls back to a plain notify
   local fidget_ok, fidget = pcall(require, 'fidget.progress')
   local progress = fidget_ok
       and fidget.handle.create {
@@ -277,16 +224,14 @@ local function scan_files(paths, opts)
 
     local bufnrs, created, target = load_batch(chunk)
 
-    -- already-attached clients (roslyn stays attached across batches; a buffer
-    -- the user had visited earlier; sonarlint from a prior batch)
+    -- clients already attached (roslyn stays attached across batches)
     for _, bufnr in ipairs(bufnrs) do
       pull_gated(bufnr)
     end
 
-    -- late-attaching clients for this batch: sonarlint via filetype lazy-load,
-    -- roslyn via file-association autostart on the first batch. Roslyn pulls go
-    -- through the init-gate; other clients get a small defer so dynamic
-    -- capability registration can settle
+    -- clients attaching during this batch: sonarlint via filetype lazy-load,
+    -- roslyn via autostart on the first batch. other clients get a defer so
+    -- dynamic capability registration settles
     local pull_group = vim.api.nvim_create_augroup(opts.augroup_name .. 'Pull', { clear = true })
     vim.api.nvim_create_autocmd('LspAttach', {
       group = pull_group,
@@ -312,15 +257,10 @@ local function scan_files(paths, opts)
       bufnrs = bufnrs,
       get_diagnostics = scan_diagnostics,
       debounce_ms = 5000,
-      -- once every watched buffer has reported, the long debounce is dead
-      -- air; finalise after a short settle instead
+      -- used once every watched buffer has reported
       settled_debounce_ms = 500,
-      -- ...unless a sonarlint client is attached to a scanned buffer: a
-      -- buffer's *first* report comes from its fastest LSP, while sonarlint's
-      -- java analyzers publish seconds later; the 5s debounce exists for
-      -- exactly that gap, so keep it. a cold sonarlint JVM isn't attached by
-      -- settle time, but its results arrive long after the old 5s window too,
-      -- so the fast path loses nothing there
+      -- ...unless sonarlint is attached to a scanned buffer: its java analyzers
+      -- publish later than the buffer's first report, which debounce_ms covers
       settle_check = function()
         for _, client in ipairs(vim.lsp.get_clients { name = 'sonarlint.nvim' }) do
           for _, b in ipairs(bufnrs) do
@@ -338,8 +278,6 @@ local function scan_files(paths, opts)
       on_report = progress and function(reported)
         progress:report { message = (scanned + reported) .. '/' .. #readable .. ' file(s) reported' }
       end or nil,
-      -- batched tail: accumulate this chunk's items, tear its created buffers
-      -- down (releasing them from roslyn's open-doc set), then start the next
       on_complete = function(items)
         pcall(vim.api.nvim_del_augroup_by_id, pull_group)
         for _, item in ipairs(items) do
@@ -356,18 +294,16 @@ local function scan_files(paths, opts)
             progress:report { message = scanned .. '/' .. #readable .. ' file(s) scanned' }
           end)
         end
-        -- defer so the buffer-delete didClose round-trips and roslyn drops the
-        -- chunk before the next chunk's didOpen lands; otherwise the open sets
-        -- briefly overlap and peak memory creeps back up
+        -- deferred so roslyn processes this chunk's didClose before the next
+        -- chunk's didOpen
         vim.schedule(function()
           run_batch(idx + 1)
         end)
       end,
     }
 
-    -- sequential batching always starts from a clean scan_runner, so this
-    -- should never fire; if it ever does, don't wedge the lock or leak the
-    -- chunk's buffers; clean up and finish with what we have
+    -- the runner is idle between batches, so this is a safeguard: release the
+    -- chunk's buffers and finish with the items so far
     if not started then
       pcall(vim.api.nvim_del_augroup_by_id, pull_group)
       for _, b in ipairs(created) do
@@ -402,10 +338,8 @@ local function open_git_modified()
   })
 end
 
--- branch-total scan: the diagnostic-scan analogue of <leader>dt. same
--- merge-base discovery (shared via features/ticket.lua) but instead of opening a
--- diff it scans every file changed on the branch vs main and dumps their
--- diagnostics into the quickfix
+-- every file changed on the branch vs main, the same merge-base discovery as
+-- <leader>dt (features/ticket.lua)
 local function open_branch_scan()
   local paths = require('custom.features.ticket').branch_files()
   if not paths then
@@ -423,11 +357,8 @@ local function open_branch_scan()
   })
 end
 
--- whole-project scan: the all-LSP analogue of sonar's <leader>lS. hidden-loads
--- every tracked-or-untracked file so every LSP attaches, in the same bounded
--- batches as the git-scoped scans. unlike those, the file set is unbounded, so
--- a confirm guards runs above PROJECT_SCAN_CAP (roslyn et al. are heavy and the
--- repo-wide finding set is noisy)
+-- every tracked-or-untracked file. the set is unbounded, so a confirm guards
+-- runs above PROJECT_SCAN_CAP
 local PROJECT_SCAN_CAP = 500
 
 local function project_files()
@@ -476,10 +407,8 @@ local function open_project_scan()
   end
 end
 
--- ticket-scoped scan: same commit discovery as <leader>dT and <leader>lT
--- (shared via features/ticket.lua) but instead of opening a diff it scans
--- the union of files touched by exactly the matched commits and dumps their
--- diagnostics into the quickfix
+-- the union of files touched by the matched commits, the same commit
+-- discovery as <leader>dT and <leader>lT (features/ticket.lua)
 local function open_ticket_scan()
   if scan_in_progress() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
@@ -514,10 +443,8 @@ function M.setup()
   vim.api.nvim_create_user_command('TicketScan', open_ticket_scan, { desc = 'Scan files from ticket-matching commits and dump diagnostics to quickfix' })
   vim.api.nvim_create_user_command('ProjectScan', open_project_scan, { desc = 'Scan every project file and dump diagnostics to quickfix' })
 
-  -- wrap every roslyn client at attach so `workspace/projectInitializationComplete`
-  -- is observed even on warm-start scans (the notification only fires once per
-  -- client lifetime; by the time the user runs <leader>xm later, the wrap
-  -- needs to already exist for `__git_modified_init_done` to be trustworthy)
+  -- `workspace/projectInitializationComplete` fires once per client lifetime,
+  -- so every roslyn client is wrapped at attach, before any scan runs
   vim.api.nvim_create_autocmd('LspAttach', {
     group = vim.api.nvim_create_augroup('GitModifiedRoslynWrap', { clear = true }),
     callback = function(args)

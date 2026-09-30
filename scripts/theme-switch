@@ -2,18 +2,13 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Theme Switcher for Tmux, Ghostty & gh-dash
+# Theme Switcher for tmux, ghostty, gh-dash & yazi
 # ══════════════════════════════════════════════════════════════
-# Usage:
-#   theme-switch <theme-name>
+# usage:
+#   theme-switch <theme-name> [--no-reload] [--quiet|-q]
 #   theme-switch list
 #   theme-switch current
-#
-# Examples:
-#   theme-switch dracula
-#   theme-switch catppuccin-mocha
-#   theme-switch tokyo-night
-#   theme-switch nord
+#   theme-switch help
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}")")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -25,13 +20,12 @@ source "$DOTFILES_ROOT/scripts/_lib/ghdash.sh"
 # shellcheck source=scripts/_lib/clipboard.sh
 source "$DOTFILES_ROOT/scripts/_lib/clipboard.sh"
 
-# how the user invoked us; set by parent (dotfiles theme switch) when
-# delegated, falls back to basename for direct invocation
+# command name shown in help: set by `dotfiles theme switch` when delegated,
+# the script basename otherwise
 invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
 
-# Build sed -e arguments from an associative array of placeholder→value mappings.
-# Usage: _build_sed_args vars_assoc_array_name
-# Populates the caller's `sed_args` array with -e flags.
+# fills the caller's `sed_args` with -e flags from an associative array of
+# placeholder → value mappings. usage: _build_sed_args <array name>
 _build_sed_args() {
     local -n _vars=$1
     sed_args=()
@@ -40,17 +34,15 @@ _build_sed_args() {
     done
 }
 
-# Directories
 THEMES_DIR="$DOTFILES_ROOT/themes"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 CURRENT_THEME_FILE="$CONFIG_DIR/current-theme"
 
-# Templates and output files
 TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/tmux.conf.template"
 TMUX_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 GHOSTTY_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 
-# Ghostty config location (XDG only - macOS symlinks to this)
+# ghostty reads the XDG location on every platform
 GHOSTTY_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config"
 GH_DASH_TEMPLATE="$DOTFILES_ROOT/gh-dash/config.yml.template"
 GH_DASH_OUTPUT="$GHDASH_BASE"
@@ -66,7 +58,7 @@ theme_success() { printf "${GREEN}✓${NC} %s\n" "$1"; }
 theme_info() { printf "${CYAN}•${NC} %s\n" "$1"; }
 theme_warn() { printf "${YELLOW}!${NC} %s\n" "$1"; }
 
-# List installed themes (hand-crafted + generated on disk)
+# hand-crafted themes, then the generated ones on disk
 list_themes() {
     local current_theme=""
     if [[ -f "$CURRENT_THEME_FILE" ]]; then
@@ -91,7 +83,6 @@ list_themes() {
         fi
     done
 
-    # Show generated themes
     local has_generated=false
     for theme_file in "$THEMES_DIR/generated/"*.theme; do
         if [[ -f "$theme_file" ]]; then
@@ -114,7 +105,6 @@ list_themes() {
         fi
     done
 
-    # Hint about Ghostty themes
     if [[ -x "$SCRIPT_DIR/generate-theme" ]]; then
         local available_count
         available_count=$("$SCRIPT_DIR/generate-theme" list 2>/dev/null | wc -l | tr -d ' ' || true)
@@ -127,7 +117,6 @@ list_themes() {
     printf "\n"
 }
 
-# Print usage
 usage() {
     printf "\n${CYAN}Usage:${NC}\n"
     printf "  %s <theme-name> [--no-reload] [--quiet]\n" "$invoked_as"
@@ -143,29 +132,28 @@ usage() {
     printf "\n"
 }
 
-# Get current theme
 get_current_theme() {
     if [[ -f "$CURRENT_THEME_FILE" ]]; then
         cat "$CURRENT_THEME_FILE"
     else
-        echo "dracula" # Default
+        echo "dracula"
     fi
 }
 
-# Apply theme by replacing template variables
+# render every template for a theme, then reload the tools
 apply_theme() {
     local theme_name="$1"
     local no_reload="${2:-false}"
     local quiet="${3:-false}"
     local theme_file="$THEMES_DIR/$theme_name.theme"
 
-    # Tier 1: Hand-crafted theme
+    # tier 1: hand-crafted theme
     if [[ -f "$theme_file" ]]; then
-        : # Use hand-crafted theme
-    # Tier 2: Previously generated theme
+        :
+    # tier 2: previously generated theme
     elif [[ -f "$THEMES_DIR/generated/$theme_name.theme" ]]; then
         theme_file="$THEMES_DIR/generated/$theme_name.theme"
-    # Tier 3: Auto-generate from Ghostty
+    # tier 3: generate from a ghostty theme
     else
         if [[ "$quiet" != "true" ]]; then
             theme_info "Theme '$theme_name' not found locally, checking Ghostty themes..."
@@ -181,16 +169,14 @@ apply_theme() {
         fi
     fi
 
-    # Source theme variables
     # shellcheck disable=SC1090
     source "$theme_file"
 
-    # Apply theme defaults (derives status bar, pane borders, FZF from base colours)
+    # derives status bar, pane border and fzf colours from the base colours
     # shellcheck disable=SC1091
     source "$THEMES_DIR/theme-defaults.sh"
     apply_theme_defaults
 
-    # Validate required theme variables are defined
     local required_vars=(
         THEME_NAME TMUX_BG_PRIMARY TMUX_FG_PRIMARY TMUX_STATUS_BG TMUX_STATUS_FG
         GHOSTTY_BACKGROUND GHOSTTY_FOREGROUND
@@ -204,17 +190,15 @@ apply_theme() {
 
     [[ "$quiet" != "true" ]] && theme_info "Applying theme: $THEME_NAME"
 
-    # Process tmux template using sed (much faster than bash string replacement)
     if [[ -f "$TMUX_TEMPLATE" ]]; then
-        # Ensure XDG config directory exists
         mkdir -p "$(dirname "$TMUX_OUTPUT")"
         local tmux_tmp="${TMUX_OUTPUT}.tmp.$$"
 
-        # Determine platform clipboard command (shared with tmux scripts)
+        # platform clipboard command, shared with the tmux scripts
         local clipboard_cmd
         clipboard_cmd="$(clipboard_copy_cmd)"
 
-        # Build sed arguments from theme variables (adding new vars only requires a new entry)
+        # one entry per template placeholder
         declare -A tmux_vars=(
             [THEME_NAME]="$THEME_NAME"
             [TMUX_BG_PRIMARY]="$TMUX_BG_PRIMARY"
@@ -263,15 +247,13 @@ apply_theme() {
         [[ "$quiet" != "true" ]] && theme_warn "Tmux template not found, skipping"
     fi
 
-    # Process ghostty template using sed
     if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
-        # Ensure ghostty config directory exists
         mkdir -p "$(dirname "$GHOSTTY_OUTPUT")"
         local ghostty_tmp platform_tmp
         ghostty_tmp=$(mktemp)
         platform_tmp=$(mktemp)
 
-        # Platform-specific settings (keybindings use {{PLATFORM_MOD}} in template)
+        # platform-specific settings (keybindings use {{PLATFORM_MOD}} in the template)
         local mod="alt"
         if is_macos; then
             mod="opt"
@@ -312,7 +294,7 @@ PLATFORM
         )
         local -a sed_args
         _build_sed_args ghostty_vars
-        # Platform config uses sed's r/d commands (can't go through _build_sed_args)
+        # platform config uses sed's r/d commands, which _build_sed_args can't express
         sed_args+=(-e "/{{PLATFORM_CONFIG}}/{
                 r $platform_tmp
                 d
@@ -325,7 +307,7 @@ PLATFORM
         mv "$ghostty_tmp" "$GHOSTTY_OUTPUT"
         [[ "$quiet" != "true" ]] && theme_success "Generated ghostty configuration"
 
-        # Ensure local override file exists (Ghostty errors on missing config-file includes)
+        # ghostty errors on a missing config-file include
         local ghostty_local="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/local"
         if [[ ! -f "$ghostty_local" ]]; then
             touch "$ghostty_local"
@@ -334,7 +316,6 @@ PLATFORM
         [[ "$quiet" != "true" ]] && theme_warn "Ghostty template not found, skipping"
     fi
 
-    # Process gh-dash template using sed
     if [[ -f "$GH_DASH_TEMPLATE" ]]; then
         mkdir -p "$(dirname "$GH_DASH_OUTPUT")"
         local ghdash_tmp="${GH_DASH_OUTPUT}.tmp.$$"
@@ -354,7 +335,7 @@ PLATFORM
         }
         mv "$ghdash_tmp" "$GH_DASH_OUTPUT"
 
-        # Merge user local overrides on top (survives theme-switch)
+        # merge user local overrides on top
         if [[ "$quiet" == "true" ]]; then
             ghdash_merge_local --quiet
         else
@@ -364,14 +345,12 @@ PLATFORM
         [[ "$quiet" != "true" ]] && theme_success "Generated gh-dash configuration"
     fi
 
-    # Process yazi theme template using sed
     if [[ -f "$YAZI_TEMPLATE" ]]; then
         local yazi_dir
         yazi_dir="$(dirname "$YAZI_OUTPUT")"
-        # Only write when the yazi config dir is a real directory (per-file
-        # symlinks). If it's still a legacy whole-dir symlink into the repo, skip
-        # rather than write the generated theme back into version control; the
-        # 0.2.109 migration converts it on the next `dotfiles update`.
+        # only write when the yazi config dir is a real directory (per-file
+        # symlinks). a whole-dir symlink into the repo would put the generated
+        # theme in version control; the 0.2.109 migration converts it
         if [[ -d "$yazi_dir" && ! -L "$yazi_dir" ]]; then
             local yazi_tmp="${YAZI_OUTPUT}.tmp.$$"
             sed -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
@@ -397,24 +376,21 @@ PLATFORM
         fi
     fi
 
-    # Save current theme preference
     mkdir -p "$CONFIG_DIR"
     echo "$theme_name" >"$CURRENT_THEME_FILE"
 
-    # Append to theme history for MRU sorting in picker
+    # theme history, for MRU sorting in the picker
     local theme_history="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-history"
     mkdir -p "$(dirname "$theme_history")"
     printf '%s\n' "$theme_name" >>"$theme_history"
-    # Trim history to last 100 entries
     if [[ $(wc -l <"$theme_history") -gt 100 ]]; then
         tail -100 "$theme_history" >"$theme_history.tmp" && mv "$theme_history.tmp" "$theme_history"
     fi
 
-    # Reload tmux if running (unless --no-reload was specified)
     if [[ "$no_reload" != "true" ]]; then
         # shellcheck disable=SC2033
         if command -v tmux >/dev/null 2>&1 && tmux info &>/dev/null; then
-            # Try XDG location first, fallback to ~/.tmux.conf
+            # XDG location first, then ~/.tmux.conf
             if tmux source-file "$TMUX_OUTPUT" 2>/dev/null; then
                 [[ "$quiet" != "true" ]] && theme_success "Reloaded tmux configuration"
             elif [[ -f "$HOME/.tmux.conf" ]] && tmux source-file "$HOME/.tmux.conf" 2>/dev/null; then
@@ -423,17 +399,16 @@ PLATFORM
                 [[ "$quiet" != "true" ]] && theme_warn "Failed to reload tmux"
             fi
         else
-            # Not in tmux - inform user that files are ready
+            # tmux missing or no server running
             [[ "$quiet" != "true" ]] && theme_success "Theme files generated (start tmux to see changes)"
         fi
 
-        # Reload Ghostty config (script handles detection internally)
+        # the script detects whether ghostty is running
         if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh" ]]; then
             "$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh"
             [[ "$quiet" != "true" ]] && theme_success "Reloaded ghostty configuration"
         fi
 
-        # Reload FZF theme colours
         if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh" ]]; then
             "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh"
             [[ "$quiet" != "true" ]] && theme_success "Reloaded FZF theme colours"
@@ -459,7 +434,6 @@ main() {
     local no_reload=false
     local quiet=false
 
-    # Check for flags
     for arg in "$@"; do
         case "$arg" in
             --no-reload) no_reload=true ;;
@@ -467,7 +441,6 @@ main() {
         esac
     done
 
-    # Collect non-flag arguments
     args=()
     for arg in "$@"; do
         case "$arg" in

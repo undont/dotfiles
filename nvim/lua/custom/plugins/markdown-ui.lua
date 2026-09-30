@@ -1,9 +1,9 @@
 -- markdown editing stack:
---   * mkdnflow.nvim         interactive editing (list continuation, table editing, link follow)
---   * render-markdown.nvim  anti-conceal in-buffer rendering (headings, bullets, code blocks, tables)
---   * markdown-preview.nvim browser preview window
--- ftplugin/markdown.lua sets conceallevel=2 + wrap; render-markdown lifts to
--- conceallevel=3 while rendered and restores on insert/unrender
+--   * mkdnflow.nvim         list continuation, table editing, link follow
+--   * render-markdown.nvim  in-buffer rendering
+--   * markdown-preview.nvim browser preview
+-- the FileType autocmd below sets conceallevel=2 and wrap; render-markdown
+-- lifts conceallevel to 3 while rendered
 
 -- false for `cursorlineopt=number`, which only highlights the line number
 local function cursorline_paints_row()
@@ -15,9 +15,6 @@ local function cursorline_paints_row()
 end
 
 return {
-  -- in-buffer rendering: heading backgrounds, bullet glyphs, code-block tint,
-  -- table borders, checkboxes. render-only, un-renders in insert mode so
-  -- mkdnflow can edit raw text underneath
   {
     'MeanderingProgrammer/render-markdown.nvim',
     ft = { 'markdown' },
@@ -27,8 +24,7 @@ return {
     },
     opts = function()
       return {
-        -- cursorline paints over the code background, so strip it on the
-        -- cursor row while cursorline paints the row
+        -- cursorline paints over the code background on the cursor row
         anti_conceal = { ignore = { code_background = not cursorline_paints_row() } },
         heading = {
           sign = false,
@@ -42,7 +38,6 @@ return {
     end,
   },
 
-  -- interactive editing: list continuation, auto-renumbering, link following, table formatting
   {
     'jakewvincent/mkdnflow.nvim',
     ft = { 'markdown' },
@@ -66,43 +61,36 @@ return {
           format_on_move = true,
         },
         mappings = {
-          -- disable mappings that conflict with C-i jumplist / blink.cmp Tab
+          -- these defaults conflict with the C-i jumplist and blink.cmp's Tab
           MkdnNextLink = false,
           MkdnPrevLink = false,
           MkdnTableNextCell = false,
           MkdnTablePrevCell = false,
-          MkdnToggleToDo = { 'n', '<leader>mt' }, -- moved from <C-Space> (blink conflict)
-          -- list / navigation (defaults are fine)
-          MkdnEnter = false, -- disabled: was mangling numbered lists on <CR>
-          MkdnNewListItem = false, -- disabled: was mangling links on <CR> in insert mode
+          MkdnToggleToDo = { 'n', '<leader>mt' }, -- the default <C-Space> is blink's
+          MkdnEnter = false, -- mangles numbered lists on <CR>
+          MkdnNewListItem = false, -- mangles links on <CR> in insert mode
           MkdnGoBack = { 'n', '<BS>' },
           MkdnGoForward = { 'n', '<Del>' },
           MkdnNextHeading = { 'n', ']]' },
           MkdnPrevHeading = { 'n', '[[' },
-          -- defaults ][ and [] clutter which-key behind [/] and shadow
-          -- vim's native section-end motions. use ]]/[[ instead
+          -- the defaults ][ and [] shadow vim's section-end motions
           MkdnNextHeadingSame = false,
           MkdnPrevHeadingSame = false,
-          -- section fold/unfold: override global zc/zr in markdown buffers only
-          -- (markdown's natural fold unit is the section, not nested vim folds)
+          -- zc/zr fold by section in markdown buffers
           MkdnFoldSection = { 'n', 'zc' },
           MkdnUnfoldSection = { 'n', 'zr' },
-          MkdnUpdateNumbering = { 'n', '<leader>mn' }, -- renumber ordered list
-          -- disable +/- heading bumpers: `-` shadows Oil's global parent-dir
-          -- keymap in markdown buffers
+          MkdnUpdateNumbering = { 'n', '<leader>mn' },
+          -- `-` would shadow oil's parent-dir keymap
           MkdnIncreaseHeading = false,
           MkdnDecreaseHeading = false,
-          -- create link from clipboard: moved from <leader>p (conflicts with PR Review)
+          -- the defaults below sit in other groups (<leader>p, i, d, a)
           MkdnCreateLinkFromClipboard = { { 'n', 'v' }, '<leader>ml' },
-          -- table insert: moved from <leader>i* (orphaned, no group)
           MkdnTableNewRowBelow = { 'n', '<leader>mir' },
           MkdnTableNewRowAbove = { 'n', '<leader>miR' },
           MkdnTableNewColAfter = { 'n', '<leader>mic' },
           MkdnTableNewColBefore = { 'n', '<leader>miC' },
-          -- table delete: moved from <leader>d* (conflicts with Diff)
           MkdnTableDeleteRow = { 'n', '<leader>mdr' },
           MkdnTableDeleteCol = { 'n', '<leader>mdc' },
-          -- table alignment: moved from <leader>a* (conflicts with codecompanion)
           MkdnTableAlignCenter = { 'n', '<leader>mAc' },
           MkdnTableAlignLeft = { 'n', '<leader>mAl' },
           MkdnTableAlignRight = { 'n', '<leader>mAr' },
@@ -110,7 +98,6 @@ return {
         },
       }
 
-      -- markdown display: wrap text, conceal syntax, softwrap navigation
       vim.api.nvim_create_autocmd('FileType', {
         pattern = 'markdown',
         callback = function(ev)
@@ -123,17 +110,14 @@ return {
           wo.conceallevel = 2
           wo.list = false -- listchars conflict with linebreak
 
-          -- j/k move by visual line in markdown buffers
           local map = vim.keymap.set
           local bopts = { buffer = ev.buf, silent = true }
           map('n', 'j', 'gj', bopts)
           map('n', 'k', 'gk', bopts)
 
-          -- renumber ordered lists automatically after deleting lines
           vim.api.nvim_create_autocmd('TextChanged', {
             buffer = ev.buf,
             callback = function()
-              -- only renumber if cursor is on/near a numbered list
               local line = vim.api.nvim_get_current_line()
               if line:match '^%s*%d+[%.%)%)]%s' then
                 pcall(function()
@@ -150,7 +134,6 @@ return {
     end,
   },
 
-  -- browser preview with live sync scrolling, KaTeX, Mermaid, PlantUML
   {
     'iamcco/markdown-preview.nvim',
     cmd = { 'MarkdownPreviewToggle', 'MarkdownPreview', 'MarkdownPreviewStop' },

@@ -24,13 +24,10 @@ ensure_dir() {
     [[ -d "$NAV_DIR" ]] || mkdir -p "$NAV_DIR"
 }
 
-# get current window ID, uses tmux display-message when a client is attached,
-# falls back to querying the active window across all sessions (works detached).
-# the unscoped display-message query is only trustworthy when $TMUX confirms
-# we're actually inside an attached client -- run without one (e.g. detached,
-# or invoked from a plain shell), tmux still answers it but silently picks an
-# arbitrary session when more than one exists on the server, rather than
-# erroring, so it must not be used to detect "am I attached".
+# current window ID: display-message when $TMUX confirms an attached client,
+# else the active window across all sessions. without a client tmux still
+# answers the unscoped display-message query, picking an arbitrary session when
+# the server has more than one, so it can't be used to detect attachment
 get_current_window() {
     if [[ -n "${TMUX:-}" ]]; then
         tmux display-message -p '#{window_id}' 2>/dev/null && return
@@ -39,7 +36,6 @@ get_current_window() {
     tmux list-windows -a -F '#{window_active} #{window_id}' 2>/dev/null | awk '/^1 /{print $2; exit}'
 }
 
-# get session ID for a given target window/pane
 get_session_id() {
     tmux display-message -t "$1" -p '#{session_id}' 2>/dev/null
 }
@@ -56,7 +52,6 @@ history_count() {
     [[ -f "$HISTORY_FILE" ]] && wc -l <"$HISTORY_FILE" | tr -d ' ' || echo 0
 }
 
-# check if a window ID still exists
 window_exists() {
     local result
     result=$(tmux display-message -t "$1" -p '#{window_id}' 2>/dev/null) || return 1
@@ -135,7 +130,6 @@ record() {
     fi
 }
 
-# navigate backward in history
 back() {
     ensure_dir
     local count pos current
@@ -154,7 +148,6 @@ back() {
         fi
     fi
 
-    # calculate target
     local new_pos=$((pos + 1))
     local target_line=$((count - new_pos))
 
@@ -196,7 +189,6 @@ back() {
     fi
 }
 
-# navigate forward in history
 forward() {
     local pos
     pos=$(get_position)

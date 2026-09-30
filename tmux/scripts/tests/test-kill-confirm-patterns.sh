@@ -76,7 +76,7 @@ for script in windows/kill.sh panes/kill.sh; do
 done
 
 section "Alert cleanup must be synchronous (not backgrounded)"
-# regression: backgrounded alert cleanup gets SIGHUP-killed when
+# backgrounded alert cleanup gets SIGHUP-killed when
 # the display-popup exits, leaving stale alerts in the file
 for script in windows/kill.sh panes/kill.sh sessions/kill.sh; do
     if grep -qE 'clear_(session|window)_alerts.*&\s*$' "$SCRIPTS_DIR/$script"; then
@@ -110,7 +110,7 @@ else
 fi
 
 section "Instance pickers must not use fzf become() in pipelines"
-# regression: fzf become() is unreliable when fzf is piped to another
+# fzf become() is unreliable when fzf is piped to another
 # process (cut | xargs); use execute-silent()+abort instead
 TMUX_TEMPLATE="$REPO_ROOT/tmux/tmux.conf.template"
 if [[ -f "$TMUX_TEMPLATE" ]]; then

@@ -3,11 +3,11 @@
 # =============================================================================
 # your personal Ghostty settings; this file is yours, add anything you want.
 # it is loaded AFTER the base config via `config-file`, so your values layer
-# on top of the defaults.
+# on top of the defaults
 #
-# this file survives dotfiles theme and dotfiles update.
-# after making changes, reload Ghostty's config with Cmd+Shift+, (or fully quit
-# and reopen). note: a tmux reload (prefix + r) does NOT reload Ghostty.
+# this file survives dotfiles theme and dotfiles update
+# after making changes, reload Ghostty's config with Cmd+Shift+, or with the
+# tmux reload (prefix + r), which reloads tmux, Ghostty and nvim overrides
 #
 # file structure:
 #   ~/.config/ghostty/config   - generated config (managed by dotfiles theme)
@@ -19,13 +19,13 @@
 # the base config's font would stay primary unless you reset it first
 #
 
-# Font
+# font
 # Ghostty appends repeated font-family values into a fallback chain, with the
 # FIRST entry as the primary font. the base config already sets one, so the
 # leading `font-family = ""` clears the inherited value and makes the line below
 # your primary font. to change the font: edit the family on the second line and
 # keep the empty reset above it. (same applies if you set font-family-bold etc.,
-# but bold/italic auto-derive from font-family, so usually you only need this.)
+# but bold/italic auto-derive from font-family, so usually you only need this)
 font-family = ""
 font-family = JetBrainsMono Nerd Font Mono
 

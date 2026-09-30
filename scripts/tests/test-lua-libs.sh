@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# bash wrapper to run lua unit tests via the test runner
-# discovered by run-tests.sh as scripts/tests/test-lua-libs.sh
+# runs the lua unit tests; run-tests.sh discovers only test-*.sh files
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# find lua interpreter
 find_lua() {
     if command -v luajit >/dev/null 2>&1; then
         echo "luajit"
@@ -26,14 +24,12 @@ LUA=$(find_lua) || {
 
 section "Lua Library Tests (via $LUA)"
 
-# run colour-utils tests
 if "$LUA" "$SCRIPT_DIR/test-colour-utils.lua"; then
     pass "colour-utils.lua tests passed"
 else
     fail "colour-utils.lua tests failed"
 fi
 
-# run generate-theme tests
 if "$LUA" "$SCRIPT_DIR/test-generate-theme.lua"; then
     pass "generate-theme.lua tests passed"
 else

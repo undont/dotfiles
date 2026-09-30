@@ -1,7 +1,5 @@
 -- shared constants and diagnostic helpers for the sonarlint feature modules
--- (sonar-scan, sonar-rules, sonar-actions, sonar-rule-popup). extracted from
--- plugins/sonarlint.lua so the four concern modules and the spec all read the
--- client name, filetype list and sonar-diagnostic accessors from one place
+-- (sonar-scan, sonar-rules, sonar-actions, sonar-rule-popup) and the spec
 
 local M = {}
 

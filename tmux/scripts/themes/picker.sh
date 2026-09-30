@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Theme Picker Wrapper
+# theme picker wrapper
 # ══════════════════════════════════════════════════════════════
 # interactive theme selector using fzf with vim-style navigation.
 # called from tmux keybinding: prefix + t
@@ -13,7 +13,6 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 

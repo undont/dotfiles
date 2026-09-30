@@ -4,7 +4,6 @@
 local M = {}
 
 local function refresh_nvim()
-  -- close stateful plugins cleanly before wiping buffers
   pcall(function()
     vim.cmd 'Neotree close'
   end)
@@ -12,12 +11,10 @@ local function refresh_nvim()
     vim.cmd 'Differ close'
   end)
 
-  -- close all splits so the window fills the terminal before wiping buffers
   vim.cmd 'only'
 
-  -- suppress shutdown noise from force-stopped LSP clients. async exit
-  -- callbacks (vim.schedule inside on_exit) arrive well after the defer
-  -- below, so the wrapper must outlive the refresh sequence
+  -- drops shutdown messages from force-stopped LSP clients. their exit
+  -- callbacks arrive after the dashboard defer below
   local real_notify = vim.notify
   local suppressing = true
   vim.notify = function(msg, level, opts)
@@ -42,9 +39,8 @@ local function refresh_nvim()
 
   vim.cmd 'source $MYVIMRC'
 
-  -- open the dashboard in the current window (not as a float) for a clean start
   vim.defer_fn(function()
-    -- restart Copilot; its lazy InsertEnter event won't re-fire after re-source
+    -- copilot's lazy InsertEnter event does not fire again after a re-source
     pcall(function()
       require('copilot.command').enable()
     end)
@@ -54,9 +50,8 @@ local function refresh_nvim()
     Snacks.dashboard.open { win = vim.api.nvim_get_current_win() }
   end, 200)
 
-  -- restore vim.notify after async LSP exit callbacks have had time to fire.
-  -- without this, repeated <leader>lR would chain wrappers (each capturing
-  -- the previous wrapper as real_notify)
+  -- restored once the exit callbacks have fired; left in place, a second
+  -- <leader>lR would capture this wrapper as real_notify
   vim.defer_fn(function()
     vim.notify = real_notify
   end, 3000)
@@ -84,10 +79,7 @@ local function refresh_treesitter()
   vim.notify('Refreshed tree-sitter', vim.log.levels.INFO)
 end
 
--- toggle the dashboard in the current window without touching LSP/buffers.
--- on a non-dashboard buffer it stashes the current buffer and renders the
--- dashboard; pressing the key again on the dashboard restores that buffer
--- (falling back to the alternate buffer if the stash is gone)
+-- the buffer the dashboard toggle replaced, restored on the next toggle
 local dashboard_prev_buf = nil
 
 local function toggle_dashboard()
