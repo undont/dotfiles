@@ -41,7 +41,6 @@ return {
     cmd = 'Differ',
     keys = {
       { '<leader>do', '<cmd>Differ<CR>', desc = '[D]iff [O]pen (vs index)' },
-      { '<leader>dc', '<cmd>Differ close<CR>', desc = '[D]iff [C]lose' },
       { '<leader>dt', '<cmd>Differ base<CR>', desc = '[D]iff branch [T]otal (vs base)' },
       {
         '<leader>dT',
@@ -64,13 +63,9 @@ return {
         end,
         desc = '[D]iff branch by [T]icket',
       },
-      { '<leader>de', '<cmd>Differ gofile<CR>', desc = '[D]iff [E]dit file' },
-      { '<leader>dd', '<cmd>Differ panel<CR>', desc = '[D]iff panel toggle' },
       { '<leader>dh', '<cmd>Differ log<CR>', desc = '[D]iff file [H]istory' },
       { '<leader>dp', '<cmd>Differ log origin/HEAD...HEAD<CR>', desc = '[D]iff [P]R review' },
-      { '<leader>dl', '<cmd>Differ layout<CR>', desc = '[D]iff change [L]ayout' },
-      -- pr review (sidecar). distinct from <leader>dp above, which is a local
-      -- pr-range history diff with no github round trip
+      -- pr review through the sidecar; <leader>dp above is a local history diff
       { '<leader>pl', '<cmd>Differ pr list<CR>', desc = '[L]ist PRs' },
       {
         '<leader>po',

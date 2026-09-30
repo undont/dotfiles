@@ -241,15 +241,11 @@ Case-aware substitute | :S/{from}/{to}/g
 Subvert (multi-form sub) | :Subvert/facilit{y,ies}/building{,s}/g
 
 ## diff @differ
-Diff open (working tree) | <leader>do
-Diff close | <leader>dc
+Diff open (vs index) | <leader>do (or :D)
 Diff branch total (vs base) | <leader>dt
 Diff branch by ticket | <leader>dT
 Diff file history | <leader>dh
 Diff PR-range review | <leader>dp
-Diff edit file | <leader>de
-Diff hide/show panel | <leader>dd
-Diff change layout | <leader>dl
 Next/prev hunk | ]c / [c
 Next/prev file | ]f / [f
 More/less context | d= / d-
