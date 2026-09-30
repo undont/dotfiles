@@ -356,6 +356,7 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
             # re-run precmd hooks so P10k regenerates the prompt string with the
             # new directory, then reset-prompt to display it
             local f
+_git_branch_stale=0
             for f in $precmd_functions; do "$f" 2>/dev/null; done
             zle reset-prompt
         else
@@ -371,6 +372,10 @@ fi
 # multi-shell completion provider. bridges zsh's existing completion system,
 # so builtin zsh completions continue to work. cached via _cached_eval so we
 # don't fork `carapace _carapace` on every shell start
+    if ((_git_branch_stale)); then
+        _update_git_branch
+        _git_branch_stale=0
+    fi
 export CARAPACE_BRIDGES='zsh'
 zstyle ':completion:*:git:*' group-order 'main commands' 'alias commands' 'external commands'
 zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
@@ -383,14 +388,9 @@ fi
 # =============================================================================
 # TERMINAL TITLE HOOKS
 # =============================================================================
-# dynamic terminal/tab titles that show context
-# _dotfiles_precmd: runs before each prompt (shows directory + git branch)
-# _dotfiles_preexec: runs before each command (shows running command)
-# uses *_functions arrays to stack with other hooks (p10k, plugins, etc.)
-#
-# performance: git branch is cached in _git_branch to avoid forking
-# git rev-parse on every prompt (~28ms). cache is refreshed on directory
-# change (chpwd) and after git commands (preexec)
+# terminal/tab titles. _dotfiles_precmd shows directory + git branch before
+# each prompt, _dotfiles_preexec shows the running command. the branch is cached
+# in _git_branch and refreshed on chpwd and at the prompt after a git command
 
 _git_branch=""
 
@@ -398,10 +398,9 @@ _update_git_branch() {
     _git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 }
 
-# refresh branch cache when changing directories
 chpwd_functions+=(_update_git_branch)
 
-# defer initial cache population to the first prompt (saves ~14ms at source time)
+# populate the cache at the first prompt, not at source time
 _update_git_branch_once() {
     _update_git_branch
     precmd_functions=(${precmd_functions:#_update_git_branch_once})
@@ -439,7 +438,7 @@ _dotfiles_preexec() {
 
     # refresh git branch cache after git commands that may change the branch
     case "$cmd" in
-        git | gh | tig) _update_git_branch ;;
+        git | gh | tig) _git_branch_stale=1 ;;
     esac
 }
 preexec_functions+=(_dotfiles_preexec)
@@ -863,7 +862,7 @@ clip() {
     local backend
     if [[ "$IS_MACOS" == "1" ]]; then
         backend=pb
-    elif [[ -n "$WAYLAND_DISPLAY" ]] && (($+commands[wl - copy])); then
+    elif [[ -n "$WAYLAND_DISPLAY" ]] && ((${+commands[wl-copy]})); then
         backend=wayland
     elif [[ -n "$DISPLAY" ]] && (($+commands[xclip])); then
         backend=xclip
@@ -871,7 +870,7 @@ clip() {
         backend=xsel
     elif (($+commands[clip.exe])); then
         backend=wsl
-    elif (($+commands[termux - clipboard - set])); then
+    elif ((${+commands[termux-clipboard-set]})); then
         backend=termux
     elif [[ -n "$WAYLAND_DISPLAY" || -n "$DISPLAY" ]]; then
         # a display server is running but its tool is missing. this must not fall
