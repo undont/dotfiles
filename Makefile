@@ -6,7 +6,7 @@
         lint lint-shell lint-zsh lint-lua theme-check \
         test-libs test-scripts test-integration \
         install install-minimal install-core install-full \
-        check clean
+        check clean clean-dry
 
 .DEFAULT_GOAL := help
 
@@ -69,7 +69,8 @@ lint-shell: ## Run ShellCheck on shell scripts
 	@printf '\033[1;36mRunning ShellCheck...\033[0m\n'
 	@shellcheck -x install.sh scripts/install/*.sh scripts/_lib/*.sh
 	@shellcheck -x tmux/scripts/*/*.sh tmux/scripts/_lib/*.sh
-	@shellcheck -x scripts/dotfiles scripts/run-tests.sh
+	@shellcheck -x scripts/dotfiles scripts/run-tests.sh scripts/hooks/*.sh
+	@shellcheck -x scripts/theme-switch scripts/theme-delete scripts/generate-theme scripts/theme-contrast-check
 	@shellcheck -x launchers/*
 	@printf '\033[0;32m✓ ShellCheck passed\033[0m\n'
 

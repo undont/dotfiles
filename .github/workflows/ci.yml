@@ -20,9 +20,9 @@ jobs:
       - name: Install ShellCheck
         run: sudo apt-get install -y shellcheck
 
-      - name: Run ShellCheck on installation scripts
+      - name: Run ShellCheck on installer, lib, hook and theme scripts
         run: |
-          # Exclude info-level warnings that are intentional:
+          # excluded checks:
           # SC1091: Can't follow external source files (expected in CI)
           # SC2001: Use ${//} instead of sed (sed needed for regex escaping)
           # SC2009: Consider using pgrep (ps|grep pattern is intentional for cross-platform)
@@ -36,8 +36,8 @@ jobs:
           shellcheck -x $EXCLUDES scripts/install/*.sh
           shellcheck -x $EXCLUDES scripts/_lib/*.sh
           shellcheck -x $EXCLUDES scripts/hooks/*.sh
-          # Theme tools (no .sh extension)
-          shellcheck -x $EXCLUDES scripts/theme-switch scripts/theme-delete scripts/generate-theme
+          # theme tools (no .sh extension)
+          shellcheck -x $EXCLUDES scripts/theme-switch scripts/theme-delete scripts/generate-theme scripts/theme-contrast-check
 
       - name: Run ShellCheck on tmux scripts
         run: |
@@ -81,7 +81,6 @@ jobs:
 
       - name: Run all tests with dynamic discovery
         run: |
-          # Dynamic test discovery - automatically finds and runs all test files
           ./scripts/run-tests.sh
 
   syntax-check:
@@ -126,12 +125,10 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
-      # Only benchmark when files sourced at zsh startup change. The job still
-      # runs (and succeeds) on every push so auto-tag's `needs` stays satisfied,
-      # but the expensive steps below are skipped — and the badge keeps its last
-      # real measurement instead of flapping on an unrelated CI runner's noise.
-      # A manual workflow_dispatch forces a re-measure regardless of changes,
-      # so a bad cold-run number can be re-rolled without touching any file.
+      # only benchmark when files sourced at zsh startup change. the job still
+      # runs on every push so auto-tag's `needs` stays satisfied, and the badge
+      # keeps its last measurement. a manual workflow_dispatch forces a
+      # re-measure regardless of changes
       - name: Detect zsh-affecting changes
         id: changes
         if: github.event_name != 'workflow_dispatch'
@@ -208,7 +205,7 @@ jobs:
 
       - name: Create tag from CHANGELOG version
         run: |
-          # Extract latest version from CHANGELOG.md (skip [Unreleased])
+          # topmost dated version in CHANGELOG.md (skips [Unreleased])
           VERSION=$(grep -E '^## \[[0-9]+\.[0-9]+\.[0-9]+\]' CHANGELOG.md | head -1 | sed -E 's/^## \[([0-9]+\.[0-9]+\.[0-9]+)\].*/\1/')
 
           if [[ -z "$VERSION" ]]; then
@@ -218,7 +215,6 @@ jobs:
 
           TAG="v${VERSION}"
 
-          # Check if tag already exists
           if git rev-parse "$TAG" >/dev/null 2>&1; then
             echo "Tag $TAG already exists, skipping"
             exit 0

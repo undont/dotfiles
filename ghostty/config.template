@@ -1,11 +1,11 @@
 # Ghostty configuration file
-# Theme: {{THEME_NAME}}
+# theme: {{THEME_NAME}}
 
-# Fonts
+# fonts
 font-family = JetBrainsMono Nerd Font Mono
 font-size = 18
 
-# Window
+# window
 window-padding-x = 0
 window-padding-y = 0
 window-width = 140
@@ -14,27 +14,26 @@ window-position-x = 226
 window-position-y = 115
 window-theme = ghostty
 background-opacity = 1
-unfocused-split-opacity = 1
 resize-overlay = never
 
-# Cursor
+# cursor
 cursor-style = block
 cursor-style-blink = true
 
-# Shell Integration
+# shell integration
 shell-integration = zsh
 shell-integration-features = no-cursor,title
 
-# Mouse
+# mouse
 mouse-hide-while-typing = true
 
-# Bell: allow terminal bells through for tmux monitor-bell
+# bell: allow terminal bells through for tmux monitor-bell
 bell-features = title,attention
 
-# Splits
+# splits
 unfocused-split-opacity = 0.5
 
-# Colors
+# colours
 background = {{GHOSTTY_BACKGROUND}}
 foreground = {{GHOSTTY_FOREGROUND}}
 cursor-color = {{GHOSTTY_CURSOR_COLOR}}
@@ -58,10 +57,10 @@ palette = 13={{GHOSTTY_PALETTE_13}}
 palette = 14={{GHOSTTY_PALETTE_14}}
 palette = 15={{GHOSTTY_PALETTE_15}}
 
-# Platform
+# platform
 {{PLATFORM_CONFIG}}
 
-# Keybindings
+# keybindings
 keybind = shift+enter=text:\x1b\r
 keybind = ctrl+enter=text:\x1b[13;5u
 keybind = ctrl+shift+enter=text:\x1b[13;6u
@@ -87,5 +86,5 @@ keybind = super+backspace=text:\x1b[127;5u
 keybind = shift+backspace=text:\x7f
 keybind = shift+space=text:\x20
 
-# User overrides (not managed by dotfiles; survives theme changes)
+# user overrides (not managed by dotfiles; survives theme changes)
 config-file = ~/.config/ghostty/local

@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# dotfiles — manage your dots
-# For per-command details: dotfiles help <command>  (or: dotfiles <command> --help)
+# dotfiles: manage your dots
+# per-command details: dotfiles help <command> (or dotfiles <command> --help)
 
 set -euo pipefail
 
 # ─── Bootstrap ─────────────────────────────────────────────────────────
 
-# Detect script location to find DOTFILES_DIR (resolve symlinks).
+# resolve symlinks to find the real script location
 SCRIPT_PATH="${BASH_SOURCE[0]}"
 while [[ -L "$SCRIPT_PATH" ]]; do
     SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
@@ -15,10 +15,9 @@ while [[ -L "$SCRIPT_PATH" ]]; do
 done
 SCRIPT_DIR="$(cd -P "$(dirname "$SCRIPT_PATH")" && pwd)"
 
-# DOTFILES_DIR is the parent of scripts/.
 DOTFILES_DIR="${DOTFILES_DIR:-$(dirname "$SCRIPT_DIR")}"
 
-# common.sh must be sourced before cli.sh (cli.sh checks for the load guard).
+# common.sh must be sourced before cli.sh, which checks its load guard
 # shellcheck disable=SC1091
 source "$DOTFILES_DIR/scripts/_lib/common.sh"
 # shellcheck disable=SC1091
@@ -28,7 +27,6 @@ source "$DOTFILES_DIR/scripts/_lib/local-layer.sh"
 
 # ─── Flag-parsing helpers (dispatcher-internal) ────────────────────────
 
-# Print "unknown flag" error and a hint to the per-command help.
 unknown_flag() {
     local cmd="$1" flag="$2"
     error "Unknown option for '$cmd': $flag"
@@ -36,7 +34,6 @@ unknown_flag() {
     return 2
 }
 
-# Print "missing argument" error and a hint to the per-command help.
 missing_arg() {
     local cmd="$1" flag="$2"
     error "'$flag' requires an argument"
@@ -46,8 +43,8 @@ missing_arg() {
 
 # ─── Internal helpers (single-use, kept inline for locality) ───────────
 
-# Compute which installer steps can be skipped based on changed files between
-# two refs. Returns a comma-separated list (homebrew,packages,symlinks,keyd).
+# installer steps that can be skipped given the files changed between two refs,
+# as a comma-separated list (symlinks,keyd)
 _compute_skip_steps() {
     local ref_from="$1" ref_to="$2"
     local changed_files
@@ -55,17 +52,15 @@ _compute_skip_steps() {
 
     local skippable=()
 
-    # Homebrew + packages always run so upstream upgrades flow in.
-    # install-packages.sh has its own `brew bundle check` fast path that skips
-    # the actual install when nothing in the Brewfile is missing or outdated.
+    # homebrew and packages always run so upstream upgrades flow in;
+    # install-packages.sh skips the install when `brew bundle check` passes
 
-    # No config/symlink-related files changed → skip symlinks
     local symlink_patterns='^scripts/install/create-symlinks\.sh|\.template$|^zsh/|^tmux/|^nvim/|^ghostty/|^hammerspoon/|^karabiner/|^launchers/|^lazygit/|^lazydocker/|^formatters/|^gh-dash/|^btop/|^themes/|^keyd/'
     if ! printf '%s\n' "$changed_files" | grep -qE "$symlink_patterns"; then
         skippable+=(symlinks)
     fi
 
-    # keyd/ not changed → skip keyd (Linux only; macOS uses Karabiner)
+    # linux only; macOS uses karabiner
     if is_linux && ! printf '%s\n' "$changed_files" | grep -q '^keyd/'; then
         skippable+=(keyd)
     fi
@@ -74,7 +69,7 @@ _compute_skip_steps() {
     printf '%s' "${skippable[*]}"
 }
 
-# Show changed files grouped by category for dry-run preview
+# changed files grouped by category, for update --preview
 _preview_changed_files() {
     local ref_from="$1" ref_to="$2"
     local changed_files
@@ -83,13 +78,13 @@ _preview_changed_files() {
     [[ -z "$changed_files" ]] && return 0
 
     local -A categories=(
-        [Brewfile / packages]="^Brewfile"
+        ["Brewfile/packages"]="^Brewfile"
         ["Zsh config"]="^zsh/"
         ["Tmux config"]="^tmux/"
         ["Neovim config"]="^nvim/"
         ["Ghostty config"]="^ghostty/"
         ["Theme definitions"]="^themes/"
-        [Installer / scripts]="^scripts/|^install\.sh"
+        ["Installer/scripts"]="^scripts/|^install\.sh"
         [Launchers]="^launchers/"
         [Hammerspoon]="^hammerspoon/"
         [Karabiner]="^karabiner/"
@@ -116,7 +111,6 @@ _preview_changed_files() {
         fi
     done
 
-    # Show any uncategorised files
     local other
     other=$(printf '%s\n' "$changed_files" | grep -vE "$(
         IFS='|'
@@ -128,12 +122,11 @@ _preview_changed_files() {
     fi
 }
 
-# Show which update steps would run vs be skipped
 _show_step_plan() {
     local skipped="$1"
-    # Only skippable steps are listed. Omitted steps always run:
-    #   4 (backup) — controlled by --skip-backup, not --skip-steps
-    #   9 (secrets), 11 (save preset), 12 (project dirs) — always run, non-skippable
+    # numbers follow install.sh. not listed: 4 (backup, which update skips) and
+    # 9 (default apps), 10 (secrets), 12 (save preset), 13 (project dirs),
+    # 14 (local import), which always run
     local -a all_steps=(
         "1:homebrew:Check Homebrew"
         "2:packages:Update packages"
@@ -142,7 +135,7 @@ _show_step_plan() {
         "6:plugins:Check plugin managers"
         "7:keyd:Update keyd config"
         "8:shell:Check default shell"
-        "10:health:Run health check"
+        "11:health:Run health check"
     )
 
     for step_info in "${all_steps[@]}"; do
@@ -152,18 +145,15 @@ _show_step_plan() {
         local label="${rest#*:}"
 
         if [[ ",$skipped," == *",$name,"* ]]; then
-            printf "    ${GREY}%2s. %s (unchanged — skip)${NC}\n" "$num" "$label"
+            printf "    ${GREY}%2s. %s (unchanged, skip)${NC}\n" "$num" "$label"
         else
             printf "    ${GREEN}%2s. %s${NC}\n" "$num" "$label"
         fi
     done
 }
 
-# Print and clear any post-update notices left by migrations. Migrations
-# append blocks to $STATE_DIR/update-notices.txt when they do something
-# the user should see after the rest of `dotfiles update` has scrolled
-# past (e.g. apps removed, files relocated). Cleared after printing so a
-# subsequent update doesn't replay stale notices.
+# print and clear the notices migrations append to
+# $STATE_DIR/update-notices.txt (e.g. apps removed, files relocated)
 _print_update_notices() {
     local notice_file="$STATE_DIR/update-notices.txt"
     [[ -s "$notice_file" ]] || return 0
@@ -174,7 +164,7 @@ _print_update_notices() {
     rm -f "$notice_file"
 }
 
-# Run pending migration scripts between two versions
+# run unapplied migrations in the (old, new] version range
 _run_pending_migrations() {
     local old_head="$1" new_head="$2"
     local migrations_dir="$DOTFILES_DIR/scripts/migrations"
@@ -185,13 +175,13 @@ _run_pending_migrations() {
     local old_version new_version
     old_version=$(_changelog_version_at_ref "$old_head") || {
         if git -C "$DOTFILES_DIR" rev-parse --verify "$old_head" &>/dev/null; then
-            warn "Could not extract version from CHANGELOG.md at $old_head — skipping migrations"
+            warn "Could not extract version from CHANGELOG.md at $old_head; skipping migrations"
         fi
         return 0
     }
     new_version=$(_changelog_version_at_ref "$new_head") || {
         if git -C "$DOTFILES_DIR" rev-parse --verify "$new_head" &>/dev/null; then
-            warn "Could not extract version from CHANGELOG.md at $new_head — skipping migrations"
+            warn "Could not extract version from CHANGELOG.md at $new_head; skipping migrations"
         fi
         return 0
     }
@@ -231,7 +221,6 @@ _run_pending_migrations() {
     done
 }
 
-# Show pending migrations for dry-run preview
 _show_pending_migrations() {
     local ref_from="$1" ref_to="$2"
     local migrations_dir="$DOTFILES_DIR/scripts/migrations"
@@ -274,7 +263,7 @@ _show_pending_migrations() {
     fi
 }
 
-# Build the copy-on-install pairs array (shared by diff and sync)
+# copy-on-install pairs, shared by diff and sync
 _copy_pairs() {
     COPY_PAIRS=(
         "btop/btop.conf|$HOME/.config/btop/btop.conf"
@@ -288,8 +277,8 @@ _copy_pairs() {
     fi
 }
 
-# Render a single managed-symlink row for cmd_links, mutating the outer
-# ok / broken / absent / file_exists counters.
+# render one managed-symlink row for cmd_links, mutating the outer
+# ok / broken / absent / file_exists counters
 _check_link() {
     local dest="$1"
     local label="${dest/#"$HOME"/\~}"
@@ -313,8 +302,8 @@ _check_link() {
 
 # ─── Commands (cmd_*) ─────────────────────────────────────────────────
 
-# Cheatsheet renderer. The static section/entry data is parsed from
-# zsh/dotfiles.zsh — see _aliases_parse for the source conventions.
+# cheatsheet renderer. section and entry data is parsed from zsh/dotfiles.zsh;
+# see _aliases_parse for the source conventions
 cmd_aliases() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
@@ -350,9 +339,9 @@ cmd_aliases() {
     printf '%0.s─' {1..80}
     printf '\n'
 
-    # Parser emits tab-separated records:
-    #   SECTION<tab><name>            — start a new section (flush pending pair first)
-    #   ENTRY<tab><name><tab><desc>   — emit a row in the current section
+    # the parser emits tab-separated records:
+    #   SECTION<tab><name>            start a new section (flush the pending pair first)
+    #   ENTRY<tab><name><tab><desc>   a row in the current section
     while IFS=$'\t' read -r kind a b; do
         case "$kind" in
             SECTION)
@@ -374,17 +363,15 @@ cmd_aliases() {
     printf "${GREEN}Tip:${NC} run ${YELLOW}dotfiles help${NC} for CLI usage, ${YELLOW}dotfiles health${NC} to verify your install.\n\n"
 }
 
-# Parse the shell source and emit SECTION/ENTRY records.
-# Conventions (in zsh/dotfiles.zsh):
+# emits SECTION/ENTRY records from the conventions in zsh/dotfiles.zsh:
 #   "# @section: <Name>"                       → SECTION (display name, uppercased)
 #   "alias <name>=\"...\"  # <description>"    → ENTRY (alias name + trailing description)
 #   "# @cheat: <name> | <description>"         → ENTRY (free-form name + description)
 #   "# @cheat: <description>" then "name() {"  → ENTRY (function name + directive description)
-# Aliases without a trailing description comment are skipped — the cheatsheet is curated.
+# aliases without a trailing description comment are skipped
 _aliases_parse() {
     local file="$1"
     awk '
-        # Section header: "# @section: <Name>"
         /^# @section: / {
             name = substr($0, 13)
             sub(/^[[:space:]]+/, "", name)
@@ -394,8 +381,7 @@ _aliases_parse() {
             next
         }
 
-        # Free-form cheat row: "# @cheat: <name> | <description>"
-        # Splits on the FIRST "|" only (descriptions may contain "|").
+        # splits on the first "|" only (descriptions may contain "|")
         /^# @cheat:.*\|/ {
             line = substr($0, 10)
             sub(/^[[:space:]]+/, "", line)
@@ -410,15 +396,13 @@ _aliases_parse() {
             next
         }
 
-        # Function-attached cheat directive: "# @cheat: <description>"
         /^# @cheat: / {
             pending_cheat = substr($0, 10)
             sub(/^[[:space:]]+/, "", pending_cheat)
             next
         }
 
-        # Function definition (with or without "function" keyword).
-        # Pairs with the preceding pending_cheat.
+        # function definition, with or without the "function" keyword
         /^(function )?[a-zA-Z_][a-zA-Z0-9_-]*\(\)[[:space:]]*\{/ {
             if (pending_cheat != "") {
                 fname = $0
@@ -430,9 +414,8 @@ _aliases_parse() {
             next
         }
 
-        # Alias definition with trailing description comment.
-        # Match a closing quote followed by whitespace then "# <desc>".
-        # Leading whitespace allowed (handles aliases inside if/else blocks).
+        # alias with a trailing description: a closing quote, whitespace, then
+        # "# <desc>". leading whitespace is allowed (aliases inside if/else blocks)
         /^[[:space:]]*alias [a-zA-Z_][a-zA-Z0-9_-]*=/ {
             name = $0
             sub(/^[[:space:]]*alias /, "", name)
@@ -453,13 +436,12 @@ _aliases_parse() {
             next
         }
 
-        # Any other non-comment, non-blank line clears pending_cheat so the
-        # directive only attaches to the immediately following function.
+        # a directive only attaches to the function on the next line
         /^[^#[:space:]]/ { pending_cheat = "" }
     ' "$file"
 }
 
-# Two-column emit: buffers one pair, flushes when paired.
+# two-column emit: buffers one entry, prints when paired
 _ALIASES_PENDING_NAME=""
 _ALIASES_PENDING_DESC=""
 
@@ -485,7 +467,7 @@ _aliases_flush_pending() {
     fi
 }
 
-# Render dynamic sections (project dirs + user aliases from ~/.zshrc).
+# dynamic sections: project dirs and user aliases from ~/.zshrc
 _aliases_render_zshrc() {
     local zshrc="$HOME/.zshrc"
     [[ -f "$zshrc" ]] || return 0
@@ -734,7 +716,7 @@ cmd_help() {
         _help_main
         return 0
     fi
-    # Resolve aliases / short flags to canonical names
+    # short flags to canonical names
     case "$topic" in
         -u) topic="update" ;;
         -s) topic="status" ;;
@@ -789,11 +771,9 @@ _import_one() {
     fi
 }
 
-# prune a system file inside a directory pair that has no repo counterpart:
-# export mirrors the dir wholesale, so a missing repo file means it was
-# removed upstream, or created locally on this machine. the two are
-# indistinguishable, so deletion is gated behind an explicit --prune (never
-# --force) to protect machine-local launchers
+# a system file inside a directory pair with no repo counterpart was either
+# removed upstream or created on this machine. the two are indistinguishable,
+# so deletion needs --prune (never --force)
 _prune_one() {
     local sys_file="$1" label="$2"
     if [[ $prune -eq 1 ]]; then
@@ -928,55 +908,54 @@ cmd_links() {
     print_header "Managed Symlinks"
     printf "${CYAN}Preset:${NC} %s\n\n" "$preset"
 
-    # Zsh (minimal)
+    # zsh (minimal)
     printf "${CYAN}Zsh${NC}\n"
     _check_link "$HOME/.zprofile"
 
-    # Tmux (minimal)
+    # tmux (minimal)
     printf "\n${CYAN}Tmux${NC}\n"
     _check_link "$HOME/.tmux"
     _check_link "$HOME/.tmux.conf"
 
-    # CLI (minimal)
+    # cli (minimal)
     printf "\n${CYAN}CLI${NC}\n"
     _check_link "$HOME/.local/bin/dotfiles"
 
-    # Formatters
+    # formatters
     printf "\n${CYAN}Formatters${NC}\n"
     _check_link "$HOME/.prettierrc"
     _check_link "$HOME/.editorconfig"
 
-    # Neovim (core)
+    # nvim (core)
     if should_install "core"; then
         printf "\n${CYAN}Neovim${NC}\n"
         _check_link "$HOME/.config/nvim"
     fi
 
-    # gh-dash (core) — config is generated, not symlinked
+    # gh-dash (core): config is generated, not symlinked
     if should_install "core"; then
         printf "\n${CYAN}gh-dash${NC}\n"
         _check_link "$HOME/.local/bin/dash-repo-sync"
     fi
 
-    # Launchers (core)
+    # launchers (core)
     if should_install "core"; then
         printf "\n${CYAN}Launchers${NC}\n"
         _check_link "$HOME/.local/launchers/dev"
     fi
 
-    # LazyGit (core)
+    # lazygit (core)
     if should_install "core"; then
         printf "\n${CYAN}LazyGit${NC}\n"
         _check_link "$HOME/.config/lazygit/config.yml"
     fi
 
-    # Hammerspoon (full)
+    # hammerspoon (full)
     if should_install "full"; then
         printf "\n${CYAN}Hammerspoon${NC}\n"
         _check_link "$HOME/.hammerspoon/init.lua"
     fi
 
-    # Summary
     local total=$((ok + broken + absent + file_exists))
     echo ""
     printf "${GREEN}%d OK${NC}  ${RED}%d broken${NC}  ${YELLOW}%d absent${NC}  ${YELLOW}%d file${NC}  (%d total)\n" \
@@ -1125,8 +1104,7 @@ cmd_local_clone() {
 
     success "Cloned local layer repo to $dir"
 
-    # cloning is a statement of intent to use it here; apply immediately
-    # (skips files that differ, so this never clobbers)
+    # apply immediately; import skips files that differ
     echo ""
     cmd_import
 }
@@ -1294,11 +1272,9 @@ cmd_local_diff() {
         done
     fi
 
-    # git-level state in the local repo, scoped to the managed pairs. export
-    # auto-commits, so uncommitted changes here mean a repo file was edited by
-    # hand: the repo↔system comparison above can report a clean match while such
-    # an edit sits unsaved (and a later export, treating the system file as the
-    # source of truth, would overwrite it), so surface it or it stays invisible
+    # git state of the managed pairs in the local repo. export auto-commits, so
+    # uncommitted changes are hand edits, which the comparison above cannot see
+    # and a later export would overwrite
     local -a relpaths=()
     for pair in "${LOCAL_PAIRS[@]}"; do relpaths+=("${pair%%|*}"); done
     for pair in ${LOCAL_DIR_PAIRS[@]+"${LOCAL_DIR_PAIRS[@]}"}; do relpaths+=("${pair%%|*}"); done
@@ -1388,19 +1364,18 @@ cmd_notes() {
     local current_version
     current_version=$(_changelog_local_version) || true
 
-    # Try to show the remote changelog so users can see unreceived changes
+    # prefer the remote changelog so unreceived changes show; local is the fallback
     local content=""
     git -C "$DOTFILES_DIR" fetch origin --quiet 2>/dev/null || true
     local remote_branch
     remote_branch=$(get_remote_branch)
     content=$(git -C "$DOTFILES_DIR" show "$remote_branch:CHANGELOG.md" 2>/dev/null) || content=""
 
-    # Fall back to local changelog if remote is unavailable
     if [[ -z "$content" ]]; then
         content=$(<"$changelog")
     fi
 
-    # Pre-process: mark the current version line with ★
+    # mark the current version line with ★
     if [[ -n "$current_version" ]]; then
         local escaped="${current_version//./\\.}"
         content=$(printf '%s\n' "$content" | sed "s/^## \[${escaped}\]/& ★ current/")
@@ -1454,7 +1429,7 @@ cmd_set() {
         return 2
     fi
 
-    # Expand ~ and resolve to absolute path
+    # expand ~ and resolve to an absolute path
     dir="${dir/#\~/$HOME}"
     if [[ -d "$dir" ]]; then
         dir=$(cd "$dir" && pwd)
@@ -1626,7 +1601,7 @@ cmd_sync() {
     fi
     if [[ $missing -gt 0 ]]; then
         echo ""
-        info "$missing file(s) differ — run 'dotfiles sync --force' to overwrite"
+        info "$missing file(s) differ; run 'dotfiles sync --force' to overwrite"
         info "Use 'dotfiles diff' to inspect changes"
     fi
     if [[ $synced -eq 0 ]] && [[ $missing -eq 0 ]]; then
@@ -1635,10 +1610,9 @@ cmd_sync() {
 }
 
 cmd_theme() {
-    # Top-level --help is handled here. Subcommands (list, current, switch,
-    # generate, delete) are delegated to scripts/theme-* — pass
-    # DOTFILES_INVOKED_AS so child scripts render the user-facing parent name
-    # in their help text.
+    # subcommands are delegated to scripts/theme-switch, generate-theme and
+    # theme-delete; DOTFILES_INVOKED_AS makes them render the parent command
+    # name in their help text
     if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
         _help_theme
         return 0
@@ -1649,9 +1623,8 @@ cmd_theme() {
 
     case "$theme_cmd" in
         help)
-            # `dotfiles theme help` (no further args) shows theme help.
-            # `theme <sub> help` is intentionally NOT intercepted here so it
-            # reaches the child script (theme-delete, theme-generate, etc.).
+            # `dotfiles theme help` alone shows theme help. `theme <sub> help`
+            # is not intercepted, so it reaches the child script
             if [[ $# -eq 0 ]]; then
                 _help_theme
                 return 0
@@ -1830,7 +1803,7 @@ cmd_update() {
 
     if ! "$DOTFILES_DIR/install.sh" "${install_args[@]}"; then
         _print_update_notices
-        error "Update failed — check output above"
+        error "Update failed, check output above"
         return 1
     fi
 
@@ -1894,11 +1867,11 @@ cmd_version() {
 
 _help_aliases() {
     cat <<'EOF'
-dotfiles aliases — show all shell aliases, functions, and shortcuts
+dotfiles aliases: show all shell aliases, functions, and shortcuts
 
 USAGE
   dotfiles aliases [OPTIONS]
-  dot a            (shorthand)
+  dotfiles alias | cheat | -a
 
 OPTIONS
   -h, --help     Show this help
@@ -1911,7 +1884,7 @@ EOF
 
 _help_cd() {
     cat <<'EOF'
-dotfiles cd — print the dotfiles installation path
+dotfiles cd: print the dotfiles installation path
 
 USAGE
   dotfiles cd [OPTIONS]
@@ -1926,7 +1899,7 @@ EOF
 
 _help_diff() {
     cat <<'EOF'
-dotfiles diff — show changes in copy-on-install files vs repo
+dotfiles diff: show changes in copy-on-install files vs repo
 
 USAGE
   dotfiles diff [OPTIONS]
@@ -1942,7 +1915,7 @@ EOF
 
 _help_edit() {
     cat <<'EOF'
-dotfiles edit — open the dotfiles directory in $EDITOR
+dotfiles edit: open the dotfiles directory in $EDITOR
 
 USAGE
   dotfiles edit [OPTIONS]
@@ -1988,7 +1961,7 @@ EOF
 
 _help_health() {
     cat <<'EOF'
-dotfiles health — run a full installation health check
+dotfiles health: run a full installation health check
 
 USAGE
   dotfiles health [OPTIONS]
@@ -2034,7 +2007,7 @@ EOF
 
 _help_links() {
     cat <<'EOF'
-dotfiles links — show all managed symlinks and their status
+dotfiles links: show all managed symlinks and their status
 
 USAGE
   dotfiles links [OPTIONS]
@@ -2056,7 +2029,7 @@ The local layer (local.* overrides, ~/.zshrc, personal launchers,
 copy-on-install configs) can be synced across your own machines via a
 private git repo. The repo is referenced only by a machine-local pointer
 (~/.config/dotfiles/local-repo, or the DOTFILES_LOCAL_DIR env var); the
-public dotfiles repo never knows about it. Secrets are never synced.
+public dotfiles repo never references it. Secrets are never synced.
 
 USAGE
   dotfiles local [SUBCOMMAND] [ARGS]
@@ -2088,7 +2061,7 @@ EOF
 
 _help_notes() {
     cat <<'EOF'
-dotfiles notes — browse the full changelog in a pager
+dotfiles notes: browse the full changelog in a pager
 
 USAGE
   dotfiles notes [OPTIONS]
@@ -2104,10 +2077,10 @@ EOF
 
 _help_set() {
     cat <<'EOF'
-dotfiles set — configure project directories in ~/.zshrc
+dotfiles set: configure project directories in ~/.zshrc
 
 USAGE
-  dotfiles set <dev|projects> <directory> [OPTIONS]
+  dotfiles set [OPTIONS] <dev|projects> <directory>
 
 OPTIONS
   -h, --help     Show this help
@@ -2120,7 +2093,7 @@ EOF
 
 _help_status() {
     cat <<'EOF'
-dotfiles status — show version, sync status, and local changes
+dotfiles status: show version, sync status, and local changes
 
 USAGE
   dotfiles status [OPTIONS]
@@ -2136,7 +2109,7 @@ EOF
 
 _help_sync() {
     cat <<'EOF'
-dotfiles sync — sync copy-on-install files from repo to system
+dotfiles sync: sync copy-on-install files from repo to system
 
 USAGE
   dotfiles sync [OPTIONS]
@@ -2153,7 +2126,7 @@ EOF
 
 _help_theme() {
     cat <<'EOF'
-dotfiles theme — manage colour themes
+dotfiles theme: manage colour themes
 
 USAGE
   dotfiles theme [SUBCOMMAND] [ARGS]
@@ -2180,7 +2153,7 @@ EOF
 
 _help_update() {
     cat <<'EOF'
-dotfiles update — pull latest changes and apply incrementally
+dotfiles update: pull latest changes and apply incrementally
 
 USAGE
   dotfiles update [OPTIONS]
@@ -2200,12 +2173,11 @@ EOF
 
 _help_version() {
     cat <<'EOF'
-dotfiles version — show the current version, release/update dates, preset, and theme
+dotfiles version: show the current version, release/update dates, preset, and theme
 
 USAGE
   dotfiles version [OPTIONS]
-  dotfiles -v
-  dotfiles --version
+  dotfiles -v | -V | --version
 
 OPTIONS
   -h, --help     Show this help
@@ -2218,7 +2190,7 @@ EOF
 _help_main() {
     print_logo
     cat <<'EOF'
-dotfiles — manage your dots
+dotfiles: manage your dots
 
 USAGE
   dotfiles <command> [options]    (shorthand: dot)
@@ -2236,9 +2208,9 @@ COMMANDS
   export          Export local layer to the private repo
   import          Import local layer from the private repo
   local           Manage the private local-layer repo
-  aliases   -a    Show shell aliases and shortcuts
+  aliases   -a    Show shell aliases and shortcuts (also: alias, cheat)
   notes     -n    Browse changelog in pager
-  version   -v    Show version, dates, preset, theme
+  version   -v    Show version, dates, preset, theme (also: -V, --version)
   edit      -e    Open dotfiles in $EDITOR
   cd              Print dotfiles path
 
@@ -2254,16 +2226,15 @@ main() {
     local cmd="${1:-help}"
     shift || true
 
-    # Top-level shorthands
+    # top-level shorthands
     case "$cmd" in
         --help | -h) cmd=help ;;
         --version | -V) cmd=version ;;
     esac
 
-    # Treat `dotfiles <cmd> help` as an alias for `dotfiles <cmd> --help`,
-    # mirroring the existing `dotfiles help <cmd>` path. Skipped for the
-    # `help` command itself (which already takes a topic) and for `theme`,
-    # whose subcommand dispatcher delegates `help` to child scripts.
+    # `dotfiles <cmd> help` is an alias for `dotfiles <cmd> --help`, except for
+    # `help` itself (which takes a topic) and `theme`, which delegates `help`
+    # to its child scripts
     if [[ "$cmd" != "help" && "$cmd" != "theme" && "$cmd" != "-t" && "${1:-}" == "help" ]]; then
         set -- "--help" "${@:2}"
     fi
