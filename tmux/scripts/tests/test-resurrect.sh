@@ -10,7 +10,6 @@ set -euo pipefail
 # - path discovery (legacy vs XDG locations)
 # - split operations (post-save hook)
 # - restore operations (per-session restore)
-# - delete operations (kill + remove backup)
 # - edge cases (missing dirs, invalid files)
 #
 # usage: ./test-resurrect.sh
@@ -307,40 +306,6 @@ EOF
     else
         fail "List operation shows unexpected content for empty directory"
     fi
-
-    cleanup_test_env
-    cleanup_test_server
-}
-
-test_delete_operation() {
-    section "Delete Operation Tests"
-
-    # a test server is required so delete.sh's tmux calls don't hit the live server
-    setup_test_server
-
-    # note: these tests focus on backup file deletion; session killing requires tmux server
-    setup_test_env
-
-    # create a session backup file
-    mkdir -p "$TEST_HOME/.tmux/resurrect/sessions"
-    touch "$TEST_HOME/.tmux/resurrect/sessions/test-session.txt"
-
-    # test 1: verify backup exists before delete
-    if [[ -f "$TEST_HOME/.tmux/resurrect/sessions/test-session.txt" ]]; then
-        pass "Backup file exists before delete"
-    else
-        fail "Backup file not created"
-    fi
-
-    # test 2: delete when session doesn't exist (only deletes backup)
-    # note: this will attempt to kill the session which will fail,
-    # but should still delete the backup
-    bash "$SCRIPTS_DIR/resurrect/delete.sh" test-session 2>/dev/null || true
-
-    # verify backup was deleted (or attempted)
-    # note: script may not delete if session validation fails
-    # this is expected behaviour
-    skip "Delete operation requires tmux server for full testing"
 
     cleanup_test_env
     cleanup_test_server
@@ -1338,7 +1303,6 @@ pass "Test environment ready"
 test_path_discovery
 test_split_operation
 test_restore_operation
-test_delete_operation
 test_edge_cases
 test_content_restoration
 test_command_restoration

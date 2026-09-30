@@ -702,11 +702,6 @@ trestore() {
     ~/.tmux/scripts/resurrect/restore.sh "$@"
 }
 
-# @cheat: delete session backup
-tkill() {
-    ~/.tmux/scripts/resurrect/delete.sh "$@"
-}
-
 # attach to tmux session, restoring from backup if needed
 tattach() {
     # try to attach to running session
@@ -777,7 +772,7 @@ _trestore_complete() {
 }
 
 _tmux_sessions_running() {
-    # complete with running tmux sessions (for tkill and tattach)
+    # complete with running tmux sessions (for tattach)
     local -a sessions
     sessions=(${(f)"$(tmux list-sessions -F '#{session_name}' 2>/dev/null)"})
     _describe 'running tmux sessions' sessions
@@ -785,7 +780,6 @@ _tmux_sessions_running() {
 
 # register completion functions
 compdef _trestore_complete trestore
-compdef _tmux_sessions_running tkill
 compdef _tmux_sessions_running tattach
 
 # @section: SYSTEM & NETWORK
