@@ -1,6 +1,6 @@
 # Setup Walkthrough
 
-A detailed explanation of what each step of the installation process does and why.
+What each step of the installation process does.
 
 ## Table of Contents
 
@@ -32,14 +32,9 @@ A detailed explanation of what each step of the installation process does and wh
 
 ## Overview
 
-The installation script (`install.sh`) orchestrates a complete development environment setup. It's designed to be:
+`install.sh` runs 14 steps in order. It backs up existing configuration before replacing it, rolls back on failure, and asks for confirmation of the selected preset before making changes. Presets and skip flags control which steps and packages run.
 
-- **Safe**: Backs up existing configuration before making changes
-- **Recoverable**: Supports automatic rollback on failure
-- **Flexible**: Offers presets and skip options for customised installations
-- **Transparent**: Provides detailed progress feedback with confirmation prompts
-
-The entire process typically takes 5-15 minutes depending on network speed and existing packages.
+A run typically takes 5-15 minutes depending on network speed and existing packages.
 
 ---
 
@@ -47,7 +42,7 @@ The entire process typically takes 5-15 minutes depending on network speed and e
 
 ```bash
 # Clone the repository
-git clone https://github.com/your-username/dotfiles.git ~/dotfiles
+git clone https://github.com/undont/dotfiles.git ~/dotfiles
 cd ~/dotfiles
 
 # Run full installation (default)
@@ -67,11 +62,11 @@ cd ~/dotfiles
 
 The installer supports three presets to customise what gets installed:
 
-| Preset      | Flag        | Components                                            | Use Case                                   |
-| ----------- | ----------- | ----------------------------------------------------- | ------------------------------------------ |
-| **Minimal** | `--minimal` | zsh, tmux                                             | Servers, remote machines, SSH environments |
-| **Core**    | `--core`    | + nvim, ghostty, AI/CLI tools, session launch scripts | Linux desktop, cross-platform development  |
-| **Full**    | `--full`    | + Hammerspoon, Karabiner (macOS) / keyd (Linux)       | Power user (default)                       |
+| Preset      | Flag        | Components                                                               | Use Case                                   |
+| ----------- | ----------- | ------------------------------------------------------------------------ | ------------------------------------------ |
+| **Minimal** | `--minimal` | zsh, tmux                                                                | Servers, remote machines, SSH environments |
+| **Core**    | `--core`    | + nvim, ghostty, AI/CLI tools, session launch scripts                    | Linux desktop, cross-platform development  |
+| **Full**    | `--full`    | + Hammerspoon, Karabiner, Raycast, music-presence (macOS) / keyd (Linux) | Primary workstation (default)              |
 
 ### Preset Details
 
@@ -94,7 +89,7 @@ The installer supports three presets to customise what gets installed:
 **Full** (`--full`, default):
 
 - Everything in Core, plus:
-- macOS: Hammerspoon (window automation), Karabiner Elements (keyboard customisation)
+- macOS: Hammerspoon (window automation), Karabiner Elements (keyboard customisation), Raycast, music-presence
 - Linux: keyd (keyboard remapping daemon, Karabiner equivalent)
 - Ideal for: Primary workstations (macOS or Linux)
 
@@ -137,9 +132,6 @@ Proceed with core installation? [y/N]
 - Disables Homebrew analytics for privacy
 - Verifies installation by checking `brew --version`
 
-**Why this matters**:
-Homebrew is the package manager used to install all other tools. Without it, you'd need to manually download and configure each tool individually.
-
 **Platform differences**:
 
 | Platform              | Homebrew Path                | Notes                     |
@@ -151,7 +143,7 @@ Homebrew is the package manager used to install all other tools. Without it, you
 **What you'll see**:
 
 ```
-[1/13] Installing/updating Homebrew...
+Step 1: Setting up Homebrew...
   ✓ Homebrew already installed
   ✓ Updated Homebrew
   ✓ Analytics disabled
@@ -173,9 +165,6 @@ Homebrew is the package manager used to install all other tools. Without it, you
   - **uv**: Python package + tool manager (`uv tool install`, `uvx`)
 - On Linux: fixes gcc/cc symlinks for native builds, installs Ghostty and fnm via system package manager or manual install
 
-**Why this matters**:
-The Brewfile is a declarative list of all tools needed for the development environment. Using `brew bundle` ensures consistent installations across machines and makes it easy to keep environments in sync.
-
 **Categories of packages installed**:
 
 | Category            | Examples                                                          |
@@ -193,7 +182,7 @@ The Brewfile is a declarative list of all tools needed for the development envir
 **What you'll see**:
 
 ```
-[2/13] Installing packages from Brewfile...
+Step 2: Installing packages from Brewfile...
   Installing neovim...
   Installing ripgrep...
   Installing tmux...
@@ -214,8 +203,7 @@ The Brewfile is a declarative list of all tools needed for the development envir
 - Provides installation hints if either is missing
 - Returns success only if both are present
 
-**Why this matters**:
-The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, language toolchains, etc.) is installed by `brew bundle` in Step 2, so gating on them here would just produce false-MISSING noise on a fresh machine. The full toolchain is audited later by Step 11 (`health-check.sh`).
+Every other tool (nvim, tmux, fzf, language toolchains, etc.) is installed by `brew bundle` in Step 2, so it is not checked here. The full toolchain is audited by Step 11 (`health-check.sh`).
 
 **Tools checked**:
 
@@ -227,7 +215,7 @@ The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, 
 **What you'll see**:
 
 ```
-[3/13] Checking prerequisites...
+Step 3: Checking prerequisites...
   ✓ git
   ✓ Homebrew
   ✓ Bootstrap prerequisites present: install can proceed.
@@ -245,9 +233,6 @@ The bootstrap check is deliberately minimal: every other tool (nvim, tmux, fzf, 
 - Copies any existing configuration files that will be replaced
 - Records the backup location for potential rollback
 
-**Why this matters**:
-If you have existing configurations (especially customised ones), this step ensures they're preserved. You can always restore your original setup if needed.
-
 **Files backed up (if they exist)**:
 
 | Component   | Preset  | Files/Directories                           |
@@ -256,14 +241,13 @@ If you have existing configurations (especially customised ones), this step ensu
 | Tmux        | minimal | `.tmux.conf`, `.tmux/`                      |
 | Neovim      | core    | `.config/nvim/`                             |
 | Ghostty     | core    | `.config/ghostty/`                          |
-| Yazi        | core    | `.config/yazi/`                             |
 | Hammerspoon | full    | `.hammerspoon/`                             |
 | Karabiner   | full    | `.config/karabiner/`                        |
 
 **What you'll see**:
 
 ```
-[4/13] Backing up existing configuration...
+Step 4: Backing up existing configuration...
   Created backup directory: ~/.dotfiles-backup/20260111-143022-12345/
   ✓ Backed up .zshrc
   ✓ Backed up .tmux.conf
@@ -287,22 +271,16 @@ If you have existing configurations (especially customised ones), this step ensu
 - Removes any old symlinks that point to incorrect locations
 - Creates parent directories as needed (e.g., `~/.config/`)
 - Creates symbolic links from the dotfiles repository to your home directory
+- Copies the copy-on-install configs and creates local override files from their templates, leaving any that already exist
+- Runs `dotfiles theme` generation for the current theme (dracula on a fresh install)
 - Records all created symlinks for rollback capability
-
-**Why this matters**:
-Symlinks are the core mechanism that makes dotfiles work. Instead of copying files, symlinks point to files in the repository. This means:
-
-- Changes you make are automatically tracked in git
-- `git pull` immediately updates your configuration
-- You can easily sync configurations across machines
 
 **Symlinks and files created**:
 
 ```
 Zsh (minimal):
-  ~/.zshrc                    Created from template (personal file, not a symlink)
+  ~/.zshrc                    Created from template if missing (personal file, not a symlink)
   ~/.zprofile              -> ~/dotfiles/zsh/zprofile
-  ~/.p10k.zsh              -> ~/dotfiles/zsh/p10k.zsh
 
 Tmux (minimal):
   ~/.tmux                  -> ~/dotfiles/tmux
@@ -312,33 +290,18 @@ Tmux (minimal):
 Dotfiles CLI (minimal):
   ~/.local/bin/dotfiles    -> ~/dotfiles/scripts/dotfiles
 
+Formatters (minimal):
+  ~/.prettierrc            -> ~/dotfiles/formatters/prettierrc.json
+  ~/.editorconfig          -> ~/dotfiles/formatters/editorconfig
+
 Neovim (core):
   ~/.config/nvim           -> ~/dotfiles/nvim
   ~/.config/nvim/local.lua    Created from template (local overrides)
+  ~/dotfiles/.luarc.json      Copied from .luarc.json.template on every run
 
 Ghostty (core):
-  ~/.config/ghostty/          Directory created (config generated by dotfiles theme)
+  ~/.config/ghostty/config    Generated by dotfiles theme
   ~/.config/ghostty/local     Created from template (local overrides)
-
-btop (core):
-  ~/.config/btop/btop.conf -> ~/dotfiles/btop/btop.conf
-
-Yazi (core):
-  ~/.config/yazi           -> ~/dotfiles/yazi
-
-LazyGit (core):
-  ~/.config/lazygit/config.yml  -> ~/dotfiles/lazygit/config.yml   (all platforms)
-  ~/.config/lazygit/local.yml      Created from template (local overrides)
-
-LazyDocker (core):
-  ~/Library/Application Support/lazydocker/config.yml  Copy from ~/dotfiles/lazydocker/config.yml (macOS)
-  ~/.config/lazydocker/config.yml                      Copy from ~/dotfiles/lazydocker/config.yml (Linux)
-
-Session Launchers (core):
-  ~/.local/launchers/dev  -> ~/dotfiles/launchers/dev
-
-Hammerspoon (full):
-  ~/.hammerspoon           -> ~/dotfiles/hammerspoon
 
 Zed (core):
   ~/.config/zed/keymap.json  -> ~/dotfiles/zed/keymap.json
@@ -346,15 +309,50 @@ Zed (core):
   ~/.config/zed/settings.json   Copy from ~/dotfiles/zed/settings.json (copy-on-install; mixes
                                 shareable prefs with per-machine font/theme, no include mechanism)
 
+gh-dash (core):
+  ~/.config/gh-dash/config.yml    Generated by dotfiles theme
+  ~/.config/gh-dash/local.yml     Created from template (local overrides)
+  ~/.local/bin/dash-repo-sync  -> ~/dotfiles/gh-dash/dash-repo-sync
+
+btop (core):
+  ~/.config/btop/btop.conf    Copy from ~/dotfiles/btop/btop.conf (copy-on-install)
+
+Yazi (core):
+  ~/.config/yazi/yazi.toml   -> ~/dotfiles/yazi/yazi.toml
+  ~/.config/yazi/keymap.toml -> ~/dotfiles/yazi/keymap.toml
+  ~/.config/yazi/theme.toml     Generated by dotfiles theme
+
+Session Launchers (core):
+  ~/.local/launchers/dev  -> ~/dotfiles/launchers/dev
+
+LazyGit (core):
+  ~/.config/lazygit/config.yml  -> ~/dotfiles/lazygit/config.yml   (all platforms)
+  ~/.config/lazygit/local.yml      Created from template (local overrides)
+
+LazyDocker (core):
+  macOS: ~/Library/Application Support/lazydocker/   Linux: ~/.config/lazydocker/
+  config.yml          Copy from ~/dotfiles/lazydocker/config.yml (copy-on-install)
+  format-logs.awk  -> ~/dotfiles/lazydocker/format-logs.awk
+
+ImageMagick (core, macOS only):
+  ~/.config/ImageMagick/type.xml -> ~/dotfiles/imagemagick/type.xml
+
+Statusline theme resolver (core):
+  ~/.config/dotfiles/statusline-theme.sh -> ~/dotfiles/scripts/_lib/statusline-theme.sh
+
+Hammerspoon (full):
+  ~/.hammerspoon/init.lua  -> ~/dotfiles/hammerspoon/init.lua
+  ~/.hammerspoon/local.lua    Created from template (local overrides)
+
 Karabiner (full):
-  ~/.config/karabiner/karabiner.json -> ~/dotfiles/karabiner/karabiner.json
+  ~/.config/karabiner/karabiner.json   Copy from ~/dotfiles/karabiner/karabiner.json (copy-on-install)
 ```
 
 **What you'll see**:
 
 ```
-[5/13] Creating symlinks...
-  ✓ Created personal ~/.zshrc (sources dotfiles framework)
+Step 5: Creating symlinks...
+  ✓ Created ~/.zshrc from template
   ✓ ~/.zprofile -> ~/dotfiles/zsh/zprofile
   ✓ ~/.tmux -> ~/dotfiles/tmux
   ✓ ~/.config/nvim -> ~/dotfiles/nvim
@@ -369,9 +367,6 @@ Karabiner (full):
 
 - **TPM (Tmux Plugin Manager)**: Clones the repository to `~/.tmux/plugins/tpm`
 - **lazy.nvim**: Auto-installed by Neovim configuration on first launch
-
-**Why this matters**:
-Plugin managers handle downloading, updating, and loading plugins for tmux and Neovim. Without them, you'd need to manually manage dozens of plugins.
 
 **TPM (Tmux)**:
 
@@ -389,7 +384,7 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 **What you'll see**:
 
 ```
-[6/13] Installing plugin managers...
+Step 6: Installing plugin managers...
   ✓ TPM installed to ~/.tmux/plugins/tpm
   ✓ lazy.nvim will auto-install on first Neovim launch
 ```
@@ -408,8 +403,7 @@ Plugin managers handle downloading, updating, and loading plugins for tmux and N
 - Enables and starts the keyd systemd service
 - Reloads the config if the service was already running
 
-**Why this matters**:
-keyd is a Linux keyboard remapping daemon, the equivalent of Karabiner Elements on macOS. It provides system-level key remapping that works across all applications, including:
+keyd is a Linux keyboard remapping daemon, the equivalent of Karabiner Elements on macOS. The deployed config remaps:
 
 - Caps Lock → Escape
 - Right Alt → Control
@@ -418,7 +412,7 @@ keyd is a Linux keyboard remapping daemon, the equivalent of Karabiner Elements 
 **What you'll see**:
 
 ```
-[7/13] Setting up keyd (keyboard remapping)...
+Step 7: Setting up keyd (keyboard remapping)...
   ✓ Deployed keyd config to /etc/keyd/default.conf
   ✓ keyd service enabled and started
   ✓ keyd setup complete
@@ -442,20 +436,17 @@ On macOS, or if the full preset isn't selected:
 - If not, adds zsh to `/etc/shells` (if missing) and runs `chsh` to set it
 - May require sudo for adding to `/etc/shells`
 
-**Why this matters**:
-The dotfiles expect zsh as the login shell. On some Linux distributions, bash is the default. This step ensures zsh is set as the default so the shell configuration loads automatically on login.
-
 **What you'll see**:
 
 ```
-[8/13] Setting default shell...
+Step 8: Setting default shell...
   Default shell is already zsh.
 ```
 
 Or, if the shell needs changing:
 
 ```
-[8/13] Setting default shell...
+Step 8: Setting default shell...
   Changing default shell to zsh (/usr/bin/zsh)...
   ✓ Default shell changed to zsh
 ```
@@ -473,13 +464,12 @@ Or, if the shell needs changing:
 - Refreshes Zed's LaunchServices registration first, so the binding actually wins over other apps that claim the same type
 - Skips extensions that have no stable system UTI: these resolve to an ephemeral `dyn.*` type that LaunchServices refuses to bind. Zed already opens some of them (such as `go` and `jsx`) via its own bundle, so nothing is lost
 
-**Why this matters**:
-Double-clicking a source file in Finder should open Zed, not a browser or an unrelated app. Setting handlers by extension alone is unreliable: a stale LaunchServices registration silently lets a competing app keep winning, so Zed is re-registered before the bindings are written. The step is idempotent, so `dotfiles update` re-runs it safely.
+The step is idempotent, so `dotfiles update` re-runs it safely.
 
 **What you'll see**:
 
 ```
-[9/13] Setting default apps...
+Step 9: Setting default apps...
   ✓ Zed set as default for 9 code file types (5 skipped, no stable type)
 ```
 
@@ -493,12 +483,7 @@ Double-clicking a source file in Finder should open Zed, not a browser or an unr
 - Copies from template (`zsh/secrets.zsh.template`) if available
 - Sets file permissions to 600 (read/write for owner only)
 
-**Why this matters**:
-The secrets file is where you store sensitive environment variables like API keys. It's:
-
-- Stored in XDG location (`~/.config/zsh/`)
-- Only readable by you (permissions 600)
-- Sourced by the zsh framework on shell startup
+The zsh framework sources the secrets file on shell startup.
 
 **Example secrets file content**:
 
@@ -520,10 +505,9 @@ export AWS_SECRET_ACCESS_KEY="..."
 **What you'll see**:
 
 ```
-[10/13] Setting up secrets file...
-  ✓ Created secrets file from template
-  ✓ Set permissions to 600
-  ! Edit ~/.config/zsh/secrets.zsh to add your API keys
+Step 10: Setting up secrets...
+  ! Created secrets file from template.
+  Edit ~/.config/zsh/secrets.zsh to add your API keys and tokens.
 ```
 
 ---
@@ -538,9 +522,6 @@ export AWS_SECRET_ACCESS_KEY="..."
 - Checks that plugin managers are installed
 - Validates secrets file exists with correct permissions
 - Tests that custom scripts are accessible in PATH
-
-**Why this matters**:
-The health check confirms the installation completed successfully. It catches issues like broken symlinks or missing directories before you encounter problems.
 
 **Checks performed**:
 
@@ -558,7 +539,7 @@ The health check confirms the installation completed successfully. It catches is
 **What you'll see**:
 
 ```
-[11/13] Running health check...
+Step 11: Running health check...
   ✓ All symlinks verified
   ✓ TPM installed
   ✓ Secrets file configured
@@ -572,15 +553,12 @@ The health check confirms the installation completed successfully. It catches is
 **What it does**:
 
 - Saves your selected preset to `~/.config/dotfiles/preset`
-- This allows `dotfiles update` to remember your preset choice
-
-**Why this matters**:
-When you run `dotfiles update` later, it reads the saved preset so it can run the correct installation steps without requiring you to specify the preset again.
+- `dotfiles update` reads the saved preset, so later updates run the right steps without the preset flag
 
 **What you'll see**:
 
 ```
-[12/13] Saving preset configuration...
+Step 12: Saving preset configuration...
   ✓ Preset 'core' saved to ~/.config/dotfiles/preset
 ```
 
@@ -596,13 +574,12 @@ When you run `dotfiles update` later, it reads the saved preset so it can run th
 - Creates the directories if they don't exist
 - Skips the prompt if either variable is already configured
 
-**Why this matters**:
-The launcher picker (`` ` p ``) and `dotfiles set` command use these paths for dynamic project discovery. Setting them during installation means the launcher can find your projects immediately.
+The launcher picker (`` ` p ``) and the `dotfiles set` command use these paths for project discovery.
 
 **What you'll see**:
 
 ```
-[13/13] Project directories (optional)...
+Step 13: Project directories (optional)...
   DEV_ROOT sets your main development directory for the launcher picker.
   Default: /Users/you/src
   Enter path (or press Enter for default, "skip" to skip):
@@ -631,8 +608,7 @@ dotfiles set projects ~/playground
 - Runs `dotfiles import`: pulls the private repo (when it has a remote) and applies your personal local layer (override files, `~/.zshrc`, launchers) to this machine
 - Never overwrites existing files that differ, and never fails the install
 
-**Why this matters**:
-This is what makes a fresh machine come up fully personalised in one shot. Clone your private `dotfiles-local` repo to `~/.dotfiles-local` before running the installer and your local layer is applied automatically; no extra configuration needed. See `dotfiles help local` for the full sync workflow.
+To have a fresh machine pick up your local layer during install, clone your private `dotfiles-local` repo to `~/.dotfiles-local` before running the installer. See [Local Layer Sync](./LOCAL-LAYER.md) for the full sync workflow.
 
 **What you'll see** (only when configured):
 
@@ -665,6 +641,7 @@ Step 14: Importing local layer...
 | `--skip-steps L` | Skip a comma-separated list of steps (`homebrew,packages,symlinks,keyd`), used by `dotfiles update` for incremental runs |
 | `--check-only`   | Only run prerequisite and health checks, make no changes                                                                 |
 | `--update`       | Update mode (skips logo, uses update terminology)                                                                        |
+| `--no-logo`      | Skip the logo without switching to update mode                                                                           |
 | `--yes`, `-y`    | Skip the preset confirmation prompt                                                                                      |
 | `-h`, `--help`   | Show help message                                                                                                        |
 
@@ -814,8 +791,6 @@ dotfiles set projects ~/playground
 ## Error Handling and Rollback
 
 ### Automatic Recovery
-
-The installation script includes robust error handling:
 
 1. **Error trapping**: Catches failures immediately
 2. **State recording**: Tracks which steps completed successfully

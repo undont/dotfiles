@@ -36,10 +36,10 @@ Quick reference for error messages and where to find solutions:
 | `command not found: fnm`              | fnm not installed                   | [fnm Not Working](#fnm--nodejs-not-working)         |
 | `command not found: node`             | Node.js not installed via fnm       | [fnm Not Working](#fnm--nodejs-not-working)         |
 | `already exists and is not a symlink` | Existing config files               | [Installation Failed](#installation-failed-mid-way) |
-| `Directory not found: ...`            | Launcher project path wrong         | Check PROJECT_DIR in the launcher script            |
+| `Project directory not found: ...`    | Launcher project path wrong         | Check PROJECT_DIR in the launcher script            |
 | `tmux: command not found`             | tmux not installed                  | Run `brew install tmux`                             |
 | `no matches found` (fzf)              | No results for search               | Expand search query                                 |
-| `ANDROID_HOME: unbound variable`      | ANDROID_HOME not set                | See [ANDROID_HOME Issues](#android_home-issues)     |
+| `adb: command not found`              | ANDROID_HOME not set                | See [ANDROID_HOME Issues](#android_home-issues)     |
 | `lazy.nvim: not found`                | Neovim plugin manager not installed | Launch `nvim`, lazy.nvim auto-installs              |
 | `LSP server not found`                | Mason LSP not installed             | Run `:Mason` in Neovim, install server              |
 
@@ -133,8 +133,8 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
 **Diagnosis**:
 
 ```bash
-# Check symlink targets
-ls -la ~/.zshrc ~/.tmux.conf ~/.config/nvim
+# Check symlink targets (~/.zshrc is a user-owned file, not a symlink)
+ls -la ~/.zprofile ~/.tmux.conf ~/.config/nvim
 
 # Run health check
 ./scripts/install/health-check.sh
@@ -158,7 +158,7 @@ ln -sf ~/dotfiles/zsh/zprofile ~/.zprofile
 **Solution**:
 
 ```bash
-chmod +x install.sh scripts/*.sh
+chmod +x install.sh scripts/**/*.sh launchers/*
 ```
 
 ### Backup Restoration
@@ -175,7 +175,7 @@ ls -la ~/.dotfiles-backup/
 cp ~/.dotfiles-backup/<backup-dir>/.zshrc ~/.zshrc
 
 # Restore everything
-cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
+cp -R ~/.dotfiles-backup/<backup-dir>/. ~/
 ```
 
 ---
@@ -209,15 +209,13 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
 
 2. **Cask applications**:
 
-   ```bash
-   # Skip macOS-only casks during install
-   # Edit Brewfile and comment out:
-   # - Hammerspoon (macOS-only)
-   # - Karabiner (macOS-only)
-   # - Ghostty (macOS-only for now)
+   The installer filters the Brewfile by platform, so macOS-only casks
+   (Hammerspoon, Karabiner, the macOS Ghostty cask) are skipped on Linux with no
+   Brewfile edits. On Linux, Ghostty is installed through the system package
+   manager and keyd replaces Karabiner. Re-run the installer with:
 
-   # Then run
-   brew bundle install --file=~/dotfiles/Brewfile
+   ```bash
+   ./install.sh --skip-backup
    ```
 
 3. **Clipboard commands**:
@@ -266,7 +264,7 @@ cp -r ~/.dotfiles-backup/<backup-dir>/* ~/
    Handled automatically. `dotfiles theme` resolves the clipboard command at
    generation time and substitutes it into `{{CLIPBOARD_CMD}}`, using the same
    detection as `clip` (see `scripts/_lib/clipboard.sh`). If you switch between
-   X11 and Wayland, re-run `dotfiles theme <name>` to re-resolve it.
+   X11 and Wayland, re-run `dotfiles theme switch <name>` to re-resolve it.
 
 ### Apple Silicon vs Intel Mac
 
@@ -457,11 +455,11 @@ echo $FNM_DIR
 - fnm is a fast Node.js version manager (replaces nvm)
 - `.nvmrc` and `.node-version` files trigger automatic version switching
 - Default version is used when no version file exists
-- fnm stores versions in `~/Library/Application Support/fnm/`
+- fnm stores versions in `~/Library/Application Support/fnm/` on macOS and `~/.local/share/fnm/` on Linux
 
 ### ANDROID_HOME Issues
 
-**Symptom**: Error about `ANDROID_HOME` being unbound or invalid PATH entry `/platform-tools`.
+**Symptom**: `adb`, `sdkmanager` or `emulator` not found, or `ANDROID_HOME` empty.
 
 **Diagnosis**:
 
@@ -469,40 +467,23 @@ echo $FNM_DIR
 # Check if ANDROID_HOME is set
 echo $ANDROID_HOME
 
-# Check PATH for invalid entries
+# Check PATH for the SDK tool directories
 echo $PATH | tr ':' '\n' | grep platform-tools
 ```
 
 **Solution**:
 
-1. **ANDROID_HOME not set but needed**:
+The framework sets `ANDROID_HOME` and adds the SDK tool directories to `PATH` only when the Homebrew `android-commandlinetools` cask directory exists (`$HOMEBREW_PREFIX/share/android-commandlinetools`). With an SDK installed anywhere else, set it yourself:
 
-   ```bash
-   # Add to ~/.config/zsh/secrets.zsh
-   export ANDROID_HOME="$HOME/Library/Android/sdk"  # macOS
-   export ANDROID_HOME="$HOME/Android/Sdk"          # Linux
+```bash
+# Add to ~/.zshrc
+export ANDROID_HOME="$HOME/Library/Android/sdk"  # macOS
+export ANDROID_HOME="$HOME/Android/Sdk"          # Linux
+export PATH="$PATH:$ANDROID_HOME/platform-tools"
 
-   # Reload shell
-   exec zsh
-   ```
-
-2. **ANDROID_HOME undefined but PATH entry added** (bug fixed in quick wins):
-
-   **Old .zshrc (buggy)**:
-
-   ```bash
-   # Line 168 - WRONG
-   export PATH=$PATH:$ANDROID_HOME/platform-tools
-   ```
-
-   **Fixed .zshrc**:
-
-   ```bash
-   # Line 168 - CORRECT
-   [[ -n "$ANDROID_HOME" ]] && export PATH=$PATH:$ANDROID_HOME/platform-tools
-   ```
-
-   If you're experiencing this, update your `.zshrc` to use the conditional version.
+# Reload shell
+exec zsh
+```
 
 **Notes**:
 
@@ -536,7 +517,7 @@ rm -f ~/.cache/p10k-instant-prompt-*.zsh
 
 ### fzf Keybindings Not Working
 
-**Symptom**: Ctrl+R, Ctrl+T, or Alt+C not triggering fzf.
+**Symptom**: Ctrl+R, Ctrl+T, or Alt+A not triggering fzf. Alt+C is unbound on purpose; Alt+A (directory history) replaces it.
 
 **Diagnosis**:
 
@@ -544,15 +525,23 @@ rm -f ~/.cache/p10k-instant-prompt-*.zsh
 # Check if fzf is installed
 which fzf
 
-# Check key bindings file
-ls -la /opt/homebrew/opt/fzf/shell/key-bindings.zsh
+# Check the cached shell integration (generated from `fzf --zsh`)
+ls -la "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/fzf.zsh"
+
+# Check the bindings are registered
+bindkey | grep -i fzf
 ```
 
 **Solution**:
 
 ```bash
-# Install fzf with keybindings
-$(brew --prefix)/opt/fzf/install
+# `fzf --zsh` needs fzf 0.48 or later
+fzf --version
+brew upgrade fzf
+
+# Regenerate the cached integration
+rm -f "${XDG_CACHE_HOME:-$HOME/.cache}/zsh/fzf.zsh"
+exec zsh
 ```
 
 ---
@@ -603,9 +592,6 @@ tmux list-keys | grep prefix
 ```bash
 # Reload tmux config
 tmux source-file ~/.config/tmux/tmux.conf
-
-# Or restart tmux server
-tmux kill-server && tmux
 ```
 
 ### Colours Not Displaying Correctly
@@ -624,13 +610,11 @@ printf "\x1b[38;2;255;100;0mTrue Colour Test\x1b[0m\n"
 
 **Solution**:
 
-```bash
-# Ensure terminal supports true colour
-# In Ghostty config:
-# term = xterm-256color
+The tmux config sets `default-terminal "tmux-256color"` and enables RGB for every outer terminal (`terminal-features "*:RGB"`), so no `TERM` override is needed. If the test line above prints in the wrong colour outside tmux, the terminal emulator lacks true colour support. If it is only wrong inside tmux, detach and reattach so the client picks up the terminal features:
 
-# Restart tmux with correct TERM
-TERM=xterm-256color tmux
+```bash
+tmux detach-client
+tmux attach
 ```
 
 ### Undo Not Working
@@ -861,7 +845,7 @@ cat startup.log
 ./scripts/install/health-check.sh
 
 # Check all symlinks
-ls -la ~/{.zshrc,.zprofile,.p10k.zsh,.tmux.conf} ~/.config/{nvim,ghostty}
+ls -la ~/{.zprofile,.tmux,.tmux.conf} ~/.config/nvim
 
 # Check XDG directories
 echo "Config: ${XDG_CONFIG_HOME:-~/.config}"

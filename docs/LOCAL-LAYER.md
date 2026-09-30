@@ -7,7 +7,7 @@ synced across your own machines through a private git repo.
 ## What the local layer is
 
 Tools that support an include mechanism load a `local.*` file on top of the
-symlinked base config:
+repo-owned base config:
 
 | Tool        | Override file                     |
 | ----------- | --------------------------------- |
@@ -22,8 +22,9 @@ symlinked base config:
 The layer also covers personal launchers and the copy-on-install configs (btop,
 lazydocker, karabiner, zed's `settings.json`).
 
-Each file is created from a `*.template` on first install and is yours from then
-on. Updates never overwrite them.
+The override files and `~/.zshrc` are created from a `*.template` on first
+install; the copy-on-install configs are copied from the repo file. Either way
+the file is yours from then on, and updates never overwrite it.
 
 ## Syncing between machines
 
@@ -61,8 +62,9 @@ top-level commands and take the same arguments.
 
 ## What is never synced
 
-Secrets (`~/.config/zsh/secrets.zsh`), the `.state/` directory, and the
-`current-theme` pointer are hard-excluded. Theme is a per-machine choice.
+Secrets (`~/.config/zsh/secrets.zsh`), the `.state/` directory, the saved
+preset, and the `current-theme` pointer are hard-excluded. Theme is a
+per-machine choice.
 
 ## Which copy do I edit?
 
@@ -73,11 +75,11 @@ The installed file is what the tool actually loads, and it works standalone
 whether or not a local-layer repo exists. The `~/.dotfiles-local` copy is a sync
 snapshot that nothing loads directly:
 
-- `dotfiles export` copies installed to repo, and stages it in git
+- `dotfiles export` copies installed to repo, and commits it there
 - `dotfiles import` copies repo to installed
 
-So the flow is: edit the live file, `dotfiles export`, then commit in the local
-repo.
+So the flow is: edit the live file, then `dotfiles export` (add `--push` to push
+the commit).
 
 `dotfiles local diff` reports drift between the two copies. Because `export`
 auto-commits, it also flags any uncommitted change in `~/.dotfiles-local`, scoped

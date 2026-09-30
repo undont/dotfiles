@@ -1,6 +1,14 @@
 ---
 paths:
   - "nvim/lua/custom/plugins/dotnet.lua"
+  - "nvim/lua/custom/plugins/lsp.lua"
+  - "nvim/lua/custom/plugins/differ.lua"
+  - "nvim/lua/custom/features/roslyn-diagnostics.lua"
+  - "nvim/lua/custom/features/roslyn-semantic-tokens.lua"
+  - "nvim/lua/custom/features/diag-scan.lua"
+  - "nvim/lua/custom/features/scan-runner.lua"
+  - "nvim/lua/custom/features/lsp-patches.lua"
+  - "nvim/lua/custom/plugins/sonarlint.lua"
 ---
 
 # C# / Roslyn LSP — Architecture & Debugging
@@ -8,7 +16,7 @@ paths:
 ## Why both roslyn.nvim and easy-dotnet
 
 roslyn.nvim drives the LSP; easy-dotnet drives build/run/test/debug with its own
-LSP disabled (`lsp.enabled = false`). easy-dotnet ships a bundled Roslyn LSP now,
+LSP disabled (`lsp.enabled = false`). easy-dotnet ships a bundled Roslyn LSP,
 but it is NOT a drop-in replacement for roslyn.nvim here: it has no
 `ignore_target` / `lock_target` / `choose_target` / `broad_search`, so it cannot
 exclude build-variant solutions (`*.ci.slnx`) or pin a target in multi-solution
@@ -20,7 +28,7 @@ cruft. Re-evaluate only if easy-dotnet gains target-exclusion/locking.
 
 The same one-roslyn-only principle is why SonarLint's C# analysis is
 deliberately disabled: it would spawn a bundled omnisharp doing a second
-MSBuild solution load alongside roslyn's. See `sonarlint.md`.
+MSBuild solution load alongside roslyn's. See "SonarLint C# Analysis" below.
 
 ## Daemon Mode
 
@@ -51,7 +59,8 @@ cache and warm start.
 ## Diagnostic Filtering
 
 Roslyn diagnostics are post-processed in `patch_diagnostic_set()` in
-`dotnet.lua` before they reach Neovim. This wrapper exists because raw Roslyn
+`features/roslyn-diagnostics.lua` (called from `dotnet.lua`) before they reach
+Neovim. This wrapper exists because raw Roslyn
 output is too noisy in a few repo-specific ways.
 
 Current filtering behavior:
@@ -73,18 +82,18 @@ Current filtering behavior:
   code is present, otherwise `lnum:col:message`, so message wording differences
   across push/pull channels do not create duplicates.
 
-### Scans batch buffer loads to bound roslyn memory (lists.lua)
+### Scans batch buffer loads to bound roslyn memory (features/diag-scan.lua)
 
 `scan_files` does NOT hidden-load the whole changeset at once. Roslyn's analyzer
-scope is `openFiles` (`dotnet.lua`), and on Sonar-adopted branches (DANA-1729:
-`SonarAnalyzer.CSharp` in `backend/Directory.Build.props`, applied to every
-`.csproj`) every compilation hosts the full Sonar ruleset. So analyzer memory
-scales with how many `.cs` files are open simultaneously — a 100-file diff
-loaded in one go drove `Microsoft.CodeAnalysis.LanguageServer` to ~4GB / ~112
+scope is `openFiles` (`dotnet.lua`), and in a repo that applies
+`SonarAnalyzer.CSharp` to every `.csproj` (e.g. via `Directory.Build.props`)
+every compilation hosts the full Sonar ruleset. So analyzer memory
+scales with how many `.cs` files are open simultaneously: a 100-file diff
+loaded in one go drives `Microsoft.CodeAnalysis.LanguageServer` to ~4GB / ~112
 threads. (A single `.cs` open never reproduces this: one open doc = analyzers on
-one file. `<leader>xm` is what opens 100 at once.)
+one file. A scan is what opens 100 at once.)
 
-Fix: `scan_files` partitions the readable paths into chunks of `SCAN_BATCH_SIZE`
+`scan_files` partitions the readable paths into chunks of `SCAN_BATCH_SIZE`
 (default 12) and runs them strictly sequentially — load chunk, snapshot its
 diagnostics via `scan_runner`, delete the chunk's _created_ buffers (the
 `nvim_buf_delete` sends `didClose`, dropping them from roslyn's open-doc set),
@@ -94,7 +103,7 @@ regardless of diff size; the solution stays loaded across chunks so only
 per-file analyzer cost is re-paid, not a workspace reload. Buffers the user
 already had open aren't created and aren't torn down.
 
-Mechanics: `scan_runner.start` gained an `on_complete(items)` exit mode that
+Mechanics: `scan_runner.start` has an `on_complete(items)` exit mode that
 suppresses its own qf-write/notify/copen tail and hands the batch's items back;
 `scan_files` accumulates across batches and writes one merged quickfix in
 `finish_all`. A whole-operation `scanning` lock (`scan_in_progress()`) guards
@@ -128,24 +137,24 @@ heaps, optionally stack `DOTNET_GCConserveMemory=1..9`. Under daemon mode the
 setting reaches the shared server only when this nvim starts it, and changing it
 means killing the daemon — see Daemon Mode above.
 
-### Scan snapshots have a second IDE0079 filter (lists.lua)
+### Scan snapshots have a second code filter (features/diag-scan.lua)
 
-The diagnostics scans (`<leader>xm` / `<leader>xT`, `custom/core/lists.lua`)
-snapshot `vim.diagnostic.get` for hidden-loaded buffers into the quickfix.
-IDE0079 ("Suppression is unnecessary") false positives were observed in those
-snapshots despite `patch_diagnostic_set` — they vanish when the file is opened
-for real, and because the scan deletes its hidden buffers at finalise, no LSP
-remains attached to publish a correction, so the phantom entries sit in the qf
-until each file is visited. `SCAN_IGNORED_CODES` in lists.lua drops them at
+The diagnostics scans (`<leader>xm` / `<leader>xb` / `<leader>xT` /
+`<leader>xS`, `custom/features/diag-scan.lua`) snapshot `vim.diagnostic.get`
+for hidden-loaded buffers into the quickfix. IDE0079 ("Suppression is
+unnecessary") and IDE0005 false positives reach those snapshots despite
+`patch_diagnostic_set`: they vanish when the file is opened for real, and
+because the scan deletes its hidden buffers at finalise, no LSP remains attached
+to publish a correction, so the phantom entries sit in the qf until each file is
+visited. `SCAN_IGNORED_CODES` in `diag-scan.lua` drops them at
 snapshot-collection time as a second line of defence.
 
-**Why they evade `patch_diagnostic_set` — partially resolved.** Field evidence
-(2026-06): the snapshot filter eliminated the phantoms, so the diagnostics do
-carry `code == 'IDE0079'` and the bypass is real. Eliminated explanations:
-`bufload()` _does_ run filetype detection (so the `filetype == 'cs'` gate
-passes for scan buffers); the pull path resolves `vim.diagnostic.set`
-dynamically (`$VIMRUNTIME/lua/vim/lsp/diagnostic.lua`); roslyn.nvim holds no
-cached reference to it. If IDE0079 ever shows
+**Why they evade `patch_diagnostic_set` is not known.** The snapshot filter
+removes the phantoms, so the diagnostics do carry the code and the bypass is
+real. These are not the cause: `bufload()` _does_ run filetype detection (so the
+`filetype == 'cs'` gate passes for scan buffers); the pull path resolves
+`vim.diagnostic.set` dynamically (`$VIMRUNTIME/lua/vim/lsp/diagnostic.lua`);
+roslyn.nvim holds no cached reference to it. If IDE0079 ever shows
 up **in-editor** (gutter / `<leader>xx` list, not just a scan), the wrapper
 failed there too — inspect the live diagnostic:
 
@@ -156,11 +165,12 @@ failed there too — inspect the live diagnostic:
 ## Semantic Token Flow
 
 Roslyn semantic tokens require careful orchestration on Neovim 0.12+. The setup
-lives in `setup_semantic_token_fix()` in `dotnet.lua` and handles three issues:
+lives in `setup()` in `features/roslyn-semantic-tokens.lua` (called from
+`dotnet.lua`) and handles three issues:
 
 ### 1. Range request filtering
 
-Neovim 0.12 added `textDocument/semanticTokens/range` (viewport-only tokens).
+Neovim 0.12 requests `textDocument/semanticTokens/range` (viewport-only tokens).
 Roslyn 5.8.0 declares `semanticTokensProvider.range` statically in its
 `initialize` response, so `STHighlighter:on_attach` caches `supports_range = true`
 before our config runs. During warmup the range responses arrive with
@@ -196,11 +206,11 @@ restores).
 
 The progress-`end` refresh is keyed to _project-wide_ timing, so it races any
 given buffer's analysis: if the last relevant `end` fires before the visible
-buffer's tokens are ready, colours sit stale until a manual `<leader>lt`. That
-race has always existed; its margin shrank noticeably under workstation GC
-(`DOTNET_gcServer=0`, above) because faster warmup makes the `end` events finish
-sooner relative to per-file analysis — surfacing as flaky semantic colours that
-"sometimes work". So there's a _second_, per-file refresh trigger:
+buffer's tokens are ready, colours sit stale until a manual `<leader>lt`. The
+margin of that race is narrow under workstation GC (`DOTNET_gcServer=0`, above),
+because fast warmup makes the `end` events finish sooner relative to per-file
+analysis, and it shows as semantic colours that only sometimes appear. So
+there's a _second_, per-file refresh trigger:
 `force_refresh` on a buffer's `DiagnosticChanged`, debounced 250ms
 (last-scheduled-wins via a per-buffer seq token) and gated to **visible** roslyn
 `.cs` buffers. A file's `DiagnosticChanged` is the reliable per-file signal —
@@ -232,13 +242,13 @@ Roslyn's plugin file is blocked during startup (`vim.g.loaded_roslyn_plugin = tr
 in `init`) to prevent `vim.lsp.enable` firing before `lock_target` and
 `ignore_target` are configured. The loading sequence on first `.cs` file:
 
-1. `resolve_solution_target()` — finds `.sln` via upward search
+1. `resolve_solution_target()` — finds `.sln` / `.slnx` via upward search
 2. `vim.lsp.config('roslyn', ...)` — applies settings
 3. `require('roslyn').setup(opts)` — stores roslyn.nvim config
 4. `source_deferred_plugin()` — clears the block, `dofile(plugin/roslyn.lua)`
    which calls `vim.lsp.enable('roslyn')`
 
-**Load-bearing on Neovim 0.12 — do not remove (verified 2026-06-01).** It looks
+**Load-bearing on Neovim 0.12 — do not remove.** It looks
 like the 0.12 lazy native-config model makes this redundant; it does not.
 lazy.nvim sources a plugin's `plugin/*.lua` _before_ running its `config`
 (`loader.lua` `_load`: `packadd` then `config`), so without the
@@ -259,18 +269,70 @@ would block new attaches, but it also stops every running roslyn client (`lsp.lu
 `"stops related LSP clients and servers"`), forcing a multi-second cold restart and a
 `RoslynInitialized` token refresh on every loaded `.cs` buffer.
 
-No block is needed: nvim's built-in `lsp_enable_callback` skips buffers whose
-`buftype` isn't `''` or `'help'`, and differ's diff/panel/history buffers are
-`buftype=nofile`, so roslyn never auto-attaches to them.
+No roslyn-specific block is needed. Two generic guards keep every server off
+those buffers: nvim's built-in `lsp_enable_callback` skips buffers whose
+`buftype` isn't `''` or `'help'` (differ's diff/panel/history buffers are
+`buftype=nofile`), and `patch_lsp_start()` in `features/lsp-patches.lua` (wired
+in `plugins/lsp.lua`) returns early from `vim.lsp.start` for any buffer named
+with a non-`file://` URI scheme, `differ://` included.
 
-## Which-Key on Differ Buffers
+## SonarLint C# Analysis
 
-Which-key's trigger system has brief suspension windows (`ModeChanged`, `BufNew`)
-where the `<Space>` trigger keymap is absent. On differ buffers, a permanent
-buffer-local `<Space>`/`]`/`[` keymap calls `require('which-key').show(key)`
-directly, bypassing the fragile trigger system. This is set via a `BufWinEnter`
-autocmd keyed on the `differ://` buffer name in `plugins/differ.lua`.
+User-facing SonarLint documentation lives in `docs/SONARLINT.md`. C# analysis
+is deliberately disabled: do not re-add a C# analyzer jar.
 
-The `wk.add` BufEnter callback in `ui.lua` also skips `buftype ~= ''` buffers
-(differ, telescope, neo-tree) and caches visibility state to avoid
-unnecessary `Buf.clear()` calls that remove all triggers globally.
+The analyzer list in `analyzer_jars()` (`plugins/sonarlint.lua`) ships no C#
+plugin. `.cs` files only get the text-and-secrets sensor locally; `csharpsquid`
+rules (cognitive complexity etc.) surface on SonarCloud only. Both candidate
+jars are dead ends:
+
+### `sonarcsharp.jar` is inert
+
+The server-side C# plugin is flagged `SonarLint-Supported: false` in its
+manifest, so the language server silently skips it. With it in the list,
+`.cs` files always scan clean while SonarCloud reports issues: a silent
+coverage gap that looks like coverage. The official VSCode extension never
+passes it to `-analyzers` either; it only hands it to the omnisharp bridge
+as the `csharpOssPath` init option.
+
+### `sonarlintomnisharp.jar` works but fights roslyn
+
+The real SonarLint C# path (`SonarLint-Supported: true`) spawns an omnisharp
+bundled in the sonarlint vsix (`extension/omnisharp/`), which performs a
+second MSBuild design-time load of the whole solution in parallel with
+roslyn.nvim's (CPU contention plus shared `obj/` state), destabilising the
+sequenced roslyn loading described under "Roslyn Deferred Loading". The
+roslyn.nvim + easy-dotnet stack is the system to protect; omnisharp does not
+run alongside it.
+
+Getting that path to load at all requires all of:
+
+- `init_options.omnisharpDirectory`, `csharpOssPath` (sonarcsharp.jar) and
+  `csharpEnterprisePath` (csharpenterprise.jar), mirroring the vsix's launch.
+- A raised load-wait: the server's `omnisharp.projectLoadTimeout` workspace
+  setting (read via `workspace/configuration`, maps to
+  `sonar.cs.internal.loadProjectsTimeout`) defaults to 60s and big solutions
+  miss it, after which the C# sensor logs "Timeout waiting for the solution
+  to be loaded" and yields nothing.
+- `init_options.showVerboseLogs = false`: sonarlint.nvim defaults it to true,
+  which makes the server pass `-v` to omnisharp, and the bundled 1.39.10
+  build then dies in a `NullReferenceException`
+  (`MSBuildHelpers.GetBuildEnvironmentInfo`, a logging-only path that
+  reflects into MSBuild internals that changed in MSBuild 18 / SDK 10). No
+  projects load and the sensor times out exactly as above, with the only
+  evidence at debug log level. The identical spawn without `-v` loads every
+  project.
+- omnisharp cannot read `.slnx` solutions (it predates the format), so on
+  slnx-only repos it falls back to recursive directory-mode project
+  discovery.
+
+### Local C# parity with SonarCloud
+
+Use the `SonarAnalyzer.CSharp` NuGet package hosted by the build and
+roslyn.nvim itself: same rule implementations, no second solution load, no
+sonarlint involvement. Caveats: it is a team-visible repo change (warnings
+appear in everyone's `dotnet build`, and `TreatWarningsAsErrors` projects
+break on existing findings), and parameterised rules such as S3776 ship
+disabled in the NuGet distribution and need a
+`dotnet_diagnostic.S3776.severity` line in `.editorconfig` (parameters stay
+at defaults; changing them needs a `SonarLint.xml` additional file).

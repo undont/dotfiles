@@ -25,9 +25,9 @@ Use consistent patterns for setting `SCRIPT_DIR` across all shell scripts:
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 ```
 
-These scripts need absolute paths because they export `DOTFILES_DIR`, resolve symlinks, or are invoked directly from arbitrary working directories.
+These scripts need absolute paths because they export `DOTFILES_DIR`, resolve symlinks, or are invoked directly from arbitrary working directories. Each one is a variant of the pattern: `install.sh` assigns the result straight to `DOTFILES_DIR` and has no `SCRIPT_DIR`; `scripts/dotfiles` is reached through the `~/.local/bin/dotfiles` symlink, so it follows the link and uses `cd -P`; `scripts/theme-switch` and `scripts/generate-theme` resolve the source with `readlink -f` (falling back to `realpath`) before the `cd`.
 
-**Module scripts** (tmux scripts, installer modules, launchers):
+**Module scripts** (tmux scripts, installer modules):
 
 ```bash
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -52,8 +52,9 @@ Full `cd` + `pwd` ensures absolute paths when tests are invoked from different d
 
 **Examples**:
 
-- `install.sh` - Uses `$(cd "$(dirname ...)" && pwd)` (entry point, exports DOTFILES_DIR)
+- `install.sh` - Uses `$(cd "$(dirname ...)" && pwd)` assigned to `DOTFILES_DIR` (entry point)
 - `tmux/scripts/sessions/list.sh` - Uses `${BASH_SOURCE%/*}` (module script)
+- `launchers/dev` - Resolves its own symlink from `${BASH_SOURCE[0]}` (linked into `~/.local/launchers`); the other launchers set no `SCRIPT_DIR`
 - `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname ...)" && pwd)` (test script)
 - Don't mix patterns within the same category of scripts
 

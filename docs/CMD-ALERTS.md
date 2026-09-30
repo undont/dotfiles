@@ -48,24 +48,26 @@ The window tab colour changes:
 
 - Green for pass
 - Red for fail
+- Grey for stopped
 
 ## Conditions for Alerting
 
 An alert fires only when **all** of the following are true:
 
 1. You are inside tmux
-2. You moved away before the command finished, to a different window **or** a different session
-3. The command is not in the exclude list
+2. The command ran for at least the elapsed threshold (`_CMD_ALERT_MIN_SECONDS`, default 1s)
+3. You moved away before the command finished, to a different window **or** a different session
+4. The command is not in the exclude list
 
 If you're still watching the command, no alert fires; it would just be noise. "Still watching" means an attached client is currently viewing the origin pane: the guard checks each client's active pane via `list-clients`, so switching to another session counts as moving away just like switching windows does.
 
 ## Excluded Commands
 
-Interactive commands (pagers, editors) never trigger alerts regardless of how long they run. Single-word entries match the first word of the command; multi-word entries match as a command prefix. Matching considers both what you typed and the alias-expanded command, so a short git alias (`gfp` -> `git fetch --prune`) is covered by the `git` entry without listing every alias.
+Interactive commands (pagers, editors) never trigger alerts regardless of how long they run. Single-word entries match the first word of the command; multi-word entries match as a command prefix. Matching considers both what you typed and the alias-expanded command, so a short git alias (`gfp` -> `git fetch -pf`) is covered by the `git` entry without listing every alias.
 
 ### Launcher convention
 
-Beyond the list, any alias defined as a clear-then-run (`cl && X`, `clear && X`) is treated as an interactive session and excluded automatically. The rule reads the alias definition from zsh's `aliases` map, so launchers you add later (agents, TUIs) are covered with nothing to keep in sync, as long as they follow the convention. This is why `claude`, `ralph`, `opencode`, `lg` (lazygit), and friends never show up as tracked processes.
+Beyond the list, any alias defined as a clear-then-run (`cl && X`, `clear && X`) is treated as an interactive session and excluded automatically. The rule reads the alias definition from zsh's `aliases` map, so launchers you add later (agents, TUIs) are covered with nothing to keep in sync, as long as they follow the convention. This is why `claude`, `opencode`, `lg` (lazygit), and similar launchers never show up as tracked processes.
 
 Defaults:
 
@@ -111,7 +113,7 @@ The label shown in the status bar is built from the command line:
 | `make test`                             | `make test`              |
 | `npm run build`                         | `npm run build`          |
 | `./scripts/run-tests.sh --verbose`      | `run-tests.sh --verbose` |
-| `docker compose -f prod.yml up --build` | `docker compose…`        |
+| `cargo test --workspace --release`      | `cargo test…`            |
 
 Rules: basename the first word, use as-is if ≤ 3 words, otherwise first 2 words + `…`.
 
@@ -153,8 +155,8 @@ alerts-clear    # Alias for rm -rf ~/.config/tmux-alerts
 ## Technical Details
 
 - `preexec` hook: records `$SECONDS` and current tmux window at command start
-- `precmd` hook: on completion, checks elapsed time and whether window changed
-- Alert file: `~/.config/tmux-alerts/alerts` (format: `session:window:exit:<code>:<label>`)
+- `precmd` hook: on completion, checks elapsed time and whether any attached client is still viewing the origin pane
+- Alert file: `~/.config/tmux-alerts/alerts` (format: `session:window:exit:<window_id>:<code>:<label>`)
 - Running registry: `~/.config/tmux-alerts/running` (one file per pane, named by pane number; fields `pane_id<tab>start_epoch<tab>shell_pid<tab>label`)
 - Finished history: `~/.config/tmux-alerts/finished` (one line per completion; fields `finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label<tab>cmd`, where `cmd` is the full command as typed for rerun and is absent on rows written before rerun shipped; reader keeps last 20 within the hour)
 - Kill-suppress markers: `~/.config/tmux-alerts/suppress` (one file per pane, touched by proclist's `x` binding right before it interrupts a tracked command; precmd deletes it on that completion and skips the finished row + alert; orphans older than 10s are pruned by the reader)

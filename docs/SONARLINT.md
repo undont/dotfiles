@@ -201,7 +201,7 @@ runs through a bundled omnisharp whose second solution load conflicts with
 the roslyn.nvim setup. `.cs` files only get the text-and-secrets sensor
 locally; `csharpsquid` rules (cognitive complexity and friends) surface on
 SonarCloud only. The full investigation and the conditions under which this
-could be revisited live in `.claude/rules/sonarlint.md`.
+could be revisited live in `.claude/rules/neovim_dotnet.md`.
 
 ## Troubleshooting
 

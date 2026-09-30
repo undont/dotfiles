@@ -10,17 +10,18 @@ Based on kickstart.nvim with modular organisation. Three-way split: `core/` =
 editor settings + fundamental behaviour with no plugin coupling; `features/` =
 self-contained bespoke features (each owns its keymaps via `setup()`);
 `plugins/` = thin lazy specs that `require('custom.features.X')`. Only
-`lua/kickstart/plugins/` (lint.lua, indent_line.lua) still tracks upstream
-kickstart; the diverged debug/neo-tree/gitsigns specs moved to
+`lua/kickstart/plugins/` (lint.lua, indent_line.lua) tracks upstream
+kickstart; the debug, neo-tree and gitsigns specs diverge from it and live in
 `custom/plugins/`.
 
 `core/keymaps.lua` is a slim entry point: it defines a few fundamental
-editing tweaks (`<Esc>` hl-clear, `<leader>v` paste-last-yank, smart `i`/`a`,
-`m`/`M`/`gm` line nav, terminal escape,
-`<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
+editing tweaks (`<Esc>` hl-clear, `<leader>v`/`<leader>V` paste-last-yank,
+smart `i`/`a`, `<leader>i` insert-space, `m`/`M`/`gm` line nav, `gx`, terminal
+escape, `<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
 and then calls `setup()` on the focused modules: core (folding, windows,
-macos-nav, refresh, spellcheck) and features (lists, build, binary-view).
-Each focused module owns its own keymaps — add new ones where they belong
+macos-nav, refresh, spellcheck) and features (lists, diag-scan, build,
+binary-view, go, snippets).
+Each focused module owns its own keymaps; add new ones where they belong
 rather than letting `keymaps.lua` regrow into a grab-bag.
 
 ## lua_ls Workspace Config (`.luarc.json`)
@@ -49,7 +50,7 @@ than a blanket disable, so the check still catches real omissions elsewhere.
 
 The file is **gitignored** and installed from `.luarc.json.template` during
 `dotfiles install` / `dotfiles update` by `scripts/install/create-symlinks.sh` (a plain
-copy — there is no longer a machine-specific path to substitute). To change the workspace
+copy with no machine-specific path to substitute). To change the workspace
 config, edit the template; the active file is refreshed on the next install run.
 
 ## Linting

@@ -2,18 +2,12 @@
 
 ## Overview
 
-The dotfiles theme system uses XDG Base Directory standard to prevent git conflicts when users change themes. Themes come in two flavours:
+Theme colours live in `.theme` files. Switching theme renders the repo's config templates into XDG locations (`~/.config/`), so the chosen theme never shows up as a change in the repository. Themes come in two flavours:
 
 - **Hand-crafted themes**: curated `.theme` files in `themes/` (14 built-in)
 - **Generated themes**: auto-generated from any Ghostty built-in theme via `dotfiles theme generate`
 
-Both types produce identical `.theme` files and work seamlessly with `dotfiles theme`.
-
-## Problem Solved
-
-**Before:** Theme colours were stored directly in `tmux/.tmux.conf`, which is tracked in the repository. When users changed themes, it created git conflicts and made updates difficult.
-
-**After:** Themes are generated from templates into XDG-compliant locations (`~/.config/`), keeping user preferences separate from the repository.
+Both types use the same `.theme` format and work with `dotfiles theme`.
 
 ## Architecture
 
@@ -25,6 +19,7 @@ Repository (tracked in git):
   tmux/tmux.conf.template          - Tmux config template with {{PLACEHOLDERS}}
   ghostty/config.template          - Ghostty config template with {{PLACEHOLDERS}}
   gh-dash/config.yml.template      - gh-dash config template with {{PLACEHOLDERS}}
+  yazi/theme.toml.template         - yazi theme template with {{PLACEHOLDERS}}
   scripts/_lib/colour-utils.lua    - Colour conversion, WCAG 2.1 contrast utilities
   scripts/_lib/generate-theme.lua  - Theme generation engine (Lua)
   scripts/generate-theme           - CLI wrapper for the Lua generator (bash)
@@ -40,12 +35,14 @@ User Configuration (outside repo, created by `dotfiles theme`):
   ~/.tmux.conf                     - Compatibility symlink -> ~/.config/tmux/tmux.conf
   ~/.config/ghostty/config         - Generated ghostty config (XDG, all platforms)
   ~/.config/gh-dash/config.yml     - Generated gh-dash config (XDG standard)
+  ~/.config/yazi/theme.toml        - Generated yazi theme
   ~/.config/dotfiles/current-theme - Current theme name
 
 Local Overrides (user-owned, survive theme changes):
   ~/.config/tmux/local.conf   - Personal tmux settings (sourced at end of config)
   ~/.config/ghostty/local     - Personal ghostty settings (included via config-file)
   ~/.config/nvim/local.lua    - Personal neovim settings
+  ~/.config/gh-dash/local.yml - Personal gh-dash settings (deep-merged into the generated config)
 ```
 
 ### Theme Types
@@ -67,9 +64,9 @@ Created by `scripts/generate-theme` from Ghostty's ~460 built-in themes. The gen
 7. Outputs a `.theme` file to `themes/generated/`
 8. Outputs a Neovim colourscheme to `nvim/colors/generated/`
 
-Ghostty's `selection-background` does not reach the Neovim output. It is tuned for terminal text, and taking it verbatim fails two ways in a syntax-highlighted buffer: an inverted selection (a light background paired with a dark `selection-foreground`, e.g. Bluloco Dark) needs a foreground on `Visual`, which overrides every syntax colour under the selection and flattens it to a single tone, while a saturated accent selection (e.g. Aura's violet) leaves the accents at roughly 1:1 against the block. The generator derives a selection band from `line_highlight` instead, lightened on dark themes and darkened on light ones. The size of that step adapts to the palette: it is pushed as far clear of the cursor line as it can go (up to 16 lightness points) and backed off until every accent clears 3:1 against the band, with a floor of 6. One fixed step will not do, since it reads as a second cursor line on themes with bright accents and washes the syntax out on themes with dim ones. The band's hue is fixed cool (220 at 0.16 saturation) rather than inherited from the background, matching the selections 12 of the 14 hand-crafted schemes use; at that saturation it reads as a cool grey and barely shifts relative luminance, so the step search lands where it would on a background-hued band. `Visual`, `VisualNOS` and the reference-style highlights (`LspReference*`, `TelescopeSelection`) all use that band and stay background-only, matching how the hand-crafted schemes in `nvim/colors/` pitch their selections.
+Ghostty's `selection-background` does not reach the Neovim output. It is tuned for terminal text, and taking it verbatim fails two ways in a syntax-highlighted buffer: an inverted selection (a light background paired with a dark `selection-foreground`, e.g. Bluloco Dark) needs a foreground on `Visual`, which overrides every syntax colour under the selection and flattens it to a single tone, while a saturated accent selection (e.g. Aura's violet) leaves the accents at roughly 1:1 against the block. The generator derives a selection band from `line_highlight` instead, lightened on dark themes and darkened on light ones. The size of that step adapts to the palette: it is pushed as far clear of the cursor line as it can go (up to 16 lightness points) and backed off until every accent clears 3:1 against the band, with a floor of 6. One fixed step will not do, since it reads as a second cursor line on themes with bright accents and washes the syntax out on themes with dim ones. The band's hue is fixed cool (220 at 0.16 saturation) rather than inherited from the background, matching the selections most of the hand-crafted schemes use; at that saturation it reads as a cool grey and barely shifts relative luminance, so the step search lands where it would on a background-hued band. `Visual`, `VisualNOS` and the reference-style highlights (`LspReference*`, `TelescopeSelection`) all use that band and stay background-only, matching how the hand-crafted schemes in `nvim/colors/` pitch their selections.
 
-Generated themes integrate transparently. `dotfiles theme` resolves themes with a tiered lookup: hand-crafted first, then generated.
+`dotfiles theme` resolves themes with a tiered lookup: hand-crafted first, then generated.
 
 ### Theme Switching Flow
 
@@ -78,7 +75,7 @@ Generated themes integrate transparently. `dotfiles theme` resolves themes with 
 3. Script processes templates, replacing `{{PLACEHOLDERS}}` with actual values
 4. Generated configs are written to XDG locations
 5. Current theme name is saved to `~/.config/dotfiles/current-theme`
-6. Running applications are reloaded (tmux, ghostty, fzf); gh-dash reads config at launch time
+6. Running applications are reloaded (tmux, ghostty, fzf); gh-dash and yazi read their config at launch time
 
 ### Neovim Theme Integration
 
@@ -166,16 +163,6 @@ The resolver parses the theme file by pattern (it never executes it) and reads
 `current-theme` live, so the statusline follows `dotfiles theme switch` on the
 next render with no regeneration step.
 
-## Benefits
-
-1. **No Git Conflicts**: User theme changes don't affect the repository
-2. **XDG Compliance**: Follows modern standards (`~/.config/`)
-3. **Clean Templates**: Repository templates remain readable and portable
-4. **Backwards Compatible**: Symlink at `~/.tmux.conf` for legacy tools
-5. **Multi-User Friendly**: Each user can have different themes
-6. **~460 Themes Available**: Any Ghostty built-in theme can be generated instantly
-7. **WCAG Accessible**: Generated themes auto-correct for 4.5:1 contrast ratio
-
 ## Theme Commands
 
 ```bash
@@ -253,7 +240,7 @@ TMUX_FG_PRIMARY="#cdd6f4"
 dotfiles theme generate zenburn && dotfiles theme switch zenburn
 ```
 
-The generator handles everything: parsing, colour extraction, WCAG corrections, and file output. Generated `.theme` files follow the same format as hand-crafted ones.
+Generated `.theme` files follow the same format as hand-crafted ones.
 
 ## Technical Details
 
@@ -375,19 +362,13 @@ Tests: script existence, shellcheck validation, help output, custom theme protec
 
 The generator applies WCAG 4.5:1 corrections automatically. If a specific colour still feels low-contrast, the source Ghostty theme may have inherently similar foreground/background values. Try a different Ghostty theme or create a hand-crafted theme.
 
-### Migration script fails
-
-1. Backup your current config: `cp ~/.tmux.conf ~/.tmux.conf.backup`
-2. Run migration script with verbose output
-3. Check file permissions on `~/.config/tmux/`
-
 ### Git shows tmux config as modified
 
 Tmux config is generated to `~/.config/tmux/tmux.conf` and should not affect the repository. If you see git changes, check that `~/.tmux.conf` is a symlink to the XDG location.
 
 ## See Also
 
-- `CLAUDE.md`: Full architecture documentation
+- `CLAUDE.md`: Config ownership patterns
 - `themes/`: Hand-crafted theme definitions
 - `themes/generated/`: Auto-generated themes (gitignored)
 - `scripts/generate-theme`: Theme generation CLI

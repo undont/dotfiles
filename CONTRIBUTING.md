@@ -4,16 +4,16 @@ Thanks for contributing. This repo ships configuration to real machines via
 `dotfiles update`, and releases are cut automatically from `CHANGELOG.md`. The
 convention that matters most: **every user-facing change needs its own dated
 changelog heading**, because that heading is what gets tagged and shown to users
-on update. CI enforces it — a push or PR that adds commits without one fails the
+on update. CI enforces it: a push or PR that adds commits without one fails the
 `release-guard` check, unless the change is explicitly marked `[skip release]`.
 
 ## Before you start
 
-Run the test and lint suites locally before pushing — CI runs the same checks:
+Run the test and lint suites locally before pushing; CI runs the same checks:
 
 ```bash
 make test    # all tests (auto-discovered)
-make lint    # shellcheck + luacheck + theme contrast
+make lint    # shellcheck + zsh syntax + luacheck + theme contrast
 ```
 
 `make` on its own lists every target.
@@ -23,7 +23,7 @@ make lint    # shellcheck + luacheck + theme contrast
 - Branch off `main` with a descriptive kebab-case name: `add-fzf-aliases`,
   `fix-tmux-help-popup`.
 - **No version numbers in branch names.** The version lives only in
-  `CHANGELOG.md` and the auto-generated tag — never in a branch, commit subject,
+  `CHANGELOG.md` and the auto-generated tag, never in a branch, commit subject,
   or PR title.
 
 ## Changelog and releases
@@ -32,12 +32,12 @@ Releases are not cut by hand. The `auto-tag` CI job runs on every push to `main`
 reads the **topmost dated `## [X.Y.Z]` heading** in `CHANGELOG.md` (it ignores
 `## [Unreleased]`), and pushes a matching `vX.Y.Z` tag if one doesn't already
 exist. `dotfiles update` then shows users everything newer than their installed
-version — again skipping anything still under `[Unreleased]`.
+version, again skipping anything still under `[Unreleased]`.
 
 So a user-facing change **must** add a new dated heading. Leaving the entry under
 `[Unreleased]` means no tag is created and users never see it.
 
-**Layout** — keep `## [Unreleased]` as an empty placeholder at the top and add
+**Layout**: keep `## [Unreleased]` as an empty placeholder at the top and add
 the new dated heading directly below it (don't rename `[Unreleased]`):
 
 ```markdown
@@ -69,7 +69,7 @@ the new dated heading directly below it (don't rename `[Unreleased]`):
 - Write entries the way the existing ones read: specific, naming the files and
   options touched, and explaining the _why_ where it isn't obvious. British
   English throughout.
-- The changelog edit goes in the **same commit** as the change it documents — a
+- The changelog edit goes in the **same commit** as the change it documents; a
   follow-up `docs:` commit misses the auto-tag window.
 
 ### Changes that shouldn't cut a release
@@ -78,7 +78,7 @@ Docs-only edits, CI tweaks, and other repo-internal housekeeping don't warrant a
 release. For those, skip the changelog bump and add `[skip release]` to a commit
 message. A CI guard (`scripts/ci/check-release-version.sh`) fails any push or PR
 that lands commits past the latest tag **without** either a new dated heading or
-a `[skip release]` marker — so the choice is always explicit.
+a `[skip release]` marker, so the choice is always explicit.
 
 ## Commits and pull requests
 
@@ -100,8 +100,8 @@ Commit subjects and PR titles use a lowercase prefix:
 ## Migrations
 
 When a change needs a one-off action on machines that already have the dotfiles
-installed — converting a symlink to a user-owned copy, removing a deprecated
-package, relocating a file — add a migration. It runs once during
+installed (converting a symlink to a user-owned copy, removing a deprecated
+package, relocating a file), add a migration. It runs once during
 `dotfiles update` for users crossing that version.
 
 - Create `scripts/migrations/<version>-<description>.sh` using the CHANGELOG
@@ -127,10 +127,12 @@ be annotated or they're silently dropped:
 
 ## Documentation
 
-After a change, update the docs it affects — this is the last step, not done
+After a change, update the docs it affects. This is the last step, not done
 mid-change:
 
-- `README.md` for feature summaries, keybindings, and aliases.
+- `README.md` for feature summaries and the short keybinding highlights table.
+- `zsh/dotfiles.zsh` for aliases (see above); `tmux/tmux.conf.template`
+  `bind -N` notes and `nvim/cheatsheet.txt` for tmux and nvim keybindings.
 - `AGENTS.md` for architecture, conventions, and the
   [config ownership patterns](AGENTS.md) (symlinked / layered / copy-on-install).
 - `docs/` for the detailed guides (themes, installation, troubleshooting).
@@ -145,5 +147,5 @@ mid-change:
 - Lua passes `luacheck` (config in `nvim/.luacheckrc`) and is formatted with
   `stylua`.
 - British English in code, comments, and docs (`colour`, `behaviour`, `centre`).
-- Don't change aliases or keybindings without asking — they reflect personal
+- Don't change aliases or keybindings without asking: they reflect personal
   preference, not bugs.

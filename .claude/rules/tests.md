@@ -34,7 +34,7 @@ Tests requiring tmux are automatically detected and skipped if tmux is not avail
 **`scripts/_lib/test-install-libs.sh`**: Installation library test suite
 
 - Tests for common.sh, brewfile.sh functionality
-- Includes test framework helpers (pass, fail, skip, section)
+- Sources the test framework helpers (pass, fail, skip, section) from `scripts/tests/_test-helpers.sh`
 
 **`tmux/scripts/_lib/test-tmux-libs.sh`**: Tmux library test suite
 
