@@ -73,25 +73,6 @@ return {
     config = function()
       -- vim.g.differ_opts is set in local.lua
       require('differ').setup(vim.g.differ_opts or {})
-
-      -- buffer-local <Space>/]/[ maps to which-key on differ:// buffers.
-      -- which-key suspends its trigger keymaps on ModeChanged and BufNew, and
-      -- each wk.add drops all triggers; opening a .cs diff fires those events.
-      -- a plain buffer-local map is outside the trigger system
-      vim.api.nvim_create_autocmd('BufWinEnter', {
-        group = vim.api.nvim_create_augroup('differ-whichkey', { clear = true }),
-        callback = function(ev)
-          if not vim.api.nvim_buf_get_name(ev.buf):match '^differ://' then
-            return
-          end
-          local wk = require 'which-key'
-          for _, key in ipairs { ' ', ']', '[' } do
-            vim.keymap.set('n', key, function()
-              wk.show(key)
-            end, { buffer = ev.buf })
-          end
-        end,
-      })
     end,
   },
 }
