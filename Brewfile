@@ -119,7 +119,6 @@ brew "sonar-scanner"
 brew "postgresql@17"
 brew "mongosh"
 brew "libsql/sqld/sqld"
-brew "undont/tap/seeql"     # SQL client TUI
 
 # Containers & Infrastructure
 brew "act"                          # GitHub Actions locally

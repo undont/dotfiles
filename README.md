@@ -148,7 +148,6 @@ My own tools installed by it (gh-bench as a `gh` extension, the rest from the Br
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | [supplyscan](https://github.com/undont/supplyscan) | Go CLI / MCP that scans JS-ecosystem projects for vulnerabilities and supply-chain attacks |
 | [jiru](https://github.com/undont/jiru)             | Bubble Tea TUI for managing Jira issues and Confluence pages                               |
-| [seeql](https://github.com/undont/seeql)           | SQL client TUI                                                                             |
 | [gh-bench](https://github.com/undont/gh-bench)     | `gh` CLI extension for benchmarking GitHub Actions and tracking failures                   |
 
 Homebrew is set to require explicit trust for non-official taps (`HOMEBREW_REQUIRE_TAP_TRUST=1`). The taps these tools come from are trusted during install; to add your own, approve it once with `brew trust --tap <user/repo>`.
