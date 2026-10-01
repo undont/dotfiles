@@ -88,6 +88,7 @@ setup_test_server() {
     # which would initialise plugins (TPM, resurrect, continuum) that
     # make tmux calls targeting the live server
     $TEST_TMUX_CMD new-session -d -s test-bootstrap 2>/dev/null || true
+    TEST_TMUX_SOCKET_PATH=$($TEST_TMUX_CMD display-message -p '#{socket_path}' 2>/dev/null || true)
 
     # export socket name for scripts to use
     # scripts will check this variable and add -L flag if set
@@ -104,8 +105,8 @@ cleanup_test_server() {
     if [[ -n "${TEST_TMUX_CMD:-}" ]]; then
         $TEST_TMUX_CMD kill-server 2>/dev/null || true
     fi
-    if [[ -n "${TEST_TMUX_SOCKET:-}" ]]; then
-        rm -f "/tmp/$TEST_TMUX_SOCKET" 2>/dev/null || true
+    if [[ -n "${TEST_TMUX_SOCKET_PATH:-}" ]]; then
+        rm -f "$TEST_TMUX_SOCKET_PATH" 2>/dev/null || true
     fi
 
     # disable test mode and unset test socket
