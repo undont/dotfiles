@@ -334,7 +334,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# set_exit_alert Function
+# set_exit_alert function
 # ═══════════════════════════════════════════════════════════════
 
 section "set_exit_alert Function"
@@ -395,15 +395,12 @@ if command -v zsh &>/dev/null; then
     ' 2>/dev/null)
     assert_equals "Path-prefixed command strips ./ from basename" "run-tests.sh --verbose" "$label"
 
-    # nested launcher alias (regression: config -> v -> "cl && nvim" used to
-    # slip through the old first-word guard, both the aliases[$first]
-    # version and a later $2-based version. our real `cl` alias is itself
-    # compound (contains a `;`), and zsh's $2 (history-expansion) truncates
-    # right after a nested alias's own `;`-separated body, silently dropping
-    # everything chained after it -- so "config" resolved via $2 loses the
-    # "&& nvim ~/.config" tail entirely. these are the verbatim $2/$3 values
-    # captured from a real interactive zsh (via `preexec` instrumented live)
-    # for typing "config": $2 truncated, $3 (what actually executes) intact
+    # nested launcher alias: config -> v -> "cl && nvim". when an alias in the
+    # chain is compound (contains a `;`), zsh's $2 (history-expansion) truncates
+    # right after that alias's own `;`-separated body and drops everything
+    # chained after it, so "config" resolved via $2 loses the "&& nvim ~/.config"
+    # tail. these are the $2/$3 values an interactive zsh passes to preexec for
+    # typing "config": $2 truncated, $3 (what executes) intact
     real_2='printf '"'"'\033[2J\033[3J\033[H'"'"'; [[ -n $TMUX ]] && tmux clear-history || true '
     real_3='printf '"'"'\033[2J\033[3J\033[H'"'"'
 [[ -n $TMUX ]] && tmux clear-history || true && nvim ~/.config'
@@ -477,11 +474,10 @@ fi
 
 # ═══════════════════════════════════════════════════════════════
 # view guard: alert fires when no client is viewing the origin pane
-# (regression: switching to another *session* used to wrongly suppress it,
-#  because display-message from a background pane returns the origin session's
-#  active pane. the guard now matches the origin pane against every client's
+# (display-message from a background pane returns the origin session's
+#  active pane, so the guard matches the origin pane against every client's
 #  active pane via list-clients. with no client attached the pane is unviewed,
-#  so the alert must fire — the buggy guard suppressed it here)
+#  so the alert must fire)
 # ═══════════════════════════════════════════════════════════════
 
 section "Exit Alert View Guard"

@@ -3,8 +3,8 @@
 #   capture-pane emits one line per pane row including trailing blanks, and fzf
 #   anchors previews to the top, so a full pane's most recent rows (statusline /
 #   prompt) get clipped. strip the trailing blank rows then tail to the preview
-#   window height ($FZF_PREVIEW_LINES) so the true bottom stays visible.
-# kept dependency-free on purpose: this runs on every preview refresh (~1s).
+#   window height ($FZF_PREVIEW_LINES) so the bottom stays visible.
+# no dependencies: this runs on every preview refresh
 # usage: preview-pane.sh <target-pane>
 set -euo pipefail
 

@@ -23,7 +23,7 @@
 # =============================================================================
 # PLATFORM DETECTION
 # =============================================================================
-# detect platform for conditional configuration (must be before Homebrew-installed tools)
+# must run before anything that needs HOMEBREW_PREFIX
 case "$(uname)" in
     Darwin)
         export IS_MACOS=1
@@ -42,22 +42,18 @@ case "$(uname)" in
         ;;
 esac
 
-# require explicit trust for non-official Homebrew taps. newly tapped third-party
-# repos must be approved with `brew trust --tap <user/repo>` before brew will load
-# their formulae or casks, instead of being trusted by default. existing taps were
-# trusted by the 0.2.104 migration; the Brewfile's taps are trusted during install
+# a newly tapped third-party repo needs `brew trust --tap <user/repo>` before
+# brew loads its formulae or casks. the Brewfile's taps are trusted during install
 export HOMEBREW_REQUIRE_TAP_TRUST=1
 
 # =============================================================================
 # HOMEBREW ENVIRONMENT (non-login shells)
 # =============================================================================
-# ~/.zprofile runs `brew shellenv` for LOGIN shells. macOS terminals start a
-# login shell, so that covers them; but most Linux terminal emulators
-# (LXTerminal on Raspberry Pi OS, gnome-terminal, ...) open a NON-login
-# interactive shell that skips ~/.zprofile, leaving brew — and everything it
-# installs (fzf, direnv, gh) — off PATH. Re-run shellenv here, guarded so login
-# shells that already ran it are a no-op, so non-login shells match.
-if ((!$+commands[brew])); then
+# ~/.zprofile runs `brew shellenv` for login shells only. most linux terminal
+# emulators open a non-login interactive shell that skips ~/.zprofile, leaving
+# brew and everything it installs off PATH, so shellenv runs here when brew is
+# not on PATH
+if ((! $+commands[brew])); then
     for _brew in /opt/homebrew/bin/brew /usr/local/bin/brew /home/linuxbrew/.linuxbrew/bin/brew; do
         if [[ -x "$_brew" ]]; then
             eval "$("$_brew" shellenv)"
@@ -70,21 +66,20 @@ fi
 # =============================================================================
 # FILE DESCRIPTOR LIMIT
 # =============================================================================
-# macOS default soft limit is 256, too low for nvim plugins that spawn many
-# git subprocesses (diffview, gitsigns). raise to 10240 to prevent EMFILE errors
+# the macOS default soft limit is too low for nvim plugins that spawn many git
+# subprocesses (diffview, gitsigns), which fail with EMFILE
 [[ "$IS_MACOS" == "1" ]] && ulimit -n 10240 2>/dev/null
 
 # =============================================================================
 # TERMINFO FALLBACK
 # =============================================================================
-# Ghostty sets TERM=xterm-ghostty, but remote machines (e.g. SSH targets)
-# may not have the terminfo entry installed, causing garbled terminal output.
-# fall back to xterm-256color when the terminfo is missing
+# ghostty sets TERM=xterm-ghostty; fall back to xterm-256color on machines
+# without that terminfo entry (e.g. ssh targets)
 if [[ "$TERM" == "xterm-ghostty" ]] && ! infocmp xterm-ghostty &>/dev/null; then
     export TERM=xterm-256color
 fi
 
-# load theme and config (installed via: brew install powerlevel10k)
+# powerlevel10k theme and its config
 if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
     source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
 fi
@@ -93,20 +88,18 @@ fi
 # =============================================================================
 # PATH CONFIGURATION
 # =============================================================================
-# note: additional PATH entries may exist in ~/.zprofile (added by installers).
-# ~/.zprofile already sets `typeset -U path PATH` so these appends auto-dedupe;
-# we re-assert it here so non-login shells (sourcing dotfiles.zsh standalone)
-# still benefit from deduplication
+# ~/.zprofile also sets `typeset -U path PATH`; repeated here so non-login
+# shells dedupe too
 typeset -U path PATH
 
-# Go workspace (GOPATH is where go install puts binaries)
+# go install puts binaries in GOPATH/bin
 export GOPATH=$HOME/go
 export PATH=$PATH:$GOPATH/bin
 
-# Rust/Cargo binaries (cargo install, rustup toolchains)
+# cargo install binaries, rustup toolchains
 export PATH="$PATH:$HOME/.cargo/bin"
 
-# Java (OpenJDK via Homebrew). JAVA_HOME is set from the keg rather than
+# java (openjdk via homebrew). JAVA_HOME is set from the keg rather than
 # /usr/libexec/java_home: brew's JDKs aren't registered under
 # /Library/Java/JavaVirtualMachines, and java_home exits 0 with the system JRE
 # for any -v it can't satisfy, so a java-8-only machine pins java to 8 there
@@ -115,32 +108,30 @@ if [[ -d "$HOMEBREW_PREFIX/opt/openjdk" ]]; then
     export PATH="$JAVA_HOME/bin:$PATH"
 fi
 
-# Python uv tool install (isolated CLI tool install)
+# uv tool install target
 export PATH="$PATH:$HOME/.local/bin"
 
-# launchers (tmux session launchers, VS Code launcher, etc.)
+# tmux session launchers
 export PATH="$PATH:$HOME/.local/launchers"
 
-# user scripts directory (custom shell scripts)
+# user scripts
 export PATH="$HOME/bin:$PATH"
 
-# nvim Mason LSP/tools (lua-language-server, gopls, basedpyright, etc.)
-# appended (not prepended) so Homebrew-installed versions take priority
+# nvim mason tools, appended so homebrew-installed versions take priority
 export PATH="$PATH:$HOME/.local/share/nvim/mason/bin"
 
 # .NET global tools (EasyDotnet, etc.)
 export PATH="$PATH:$HOME/.dotnet/tools"
 export DOTNET_ROLL_FORWARD='Major'
 
-# ARM embedded development (microcontroller/firmware work)
+# arm-none-eabi headers for embedded work
 export INCLUDE="$HOMEBREW_PREFIX/arm-none-eabi/include"
 # export LIB="$HOMEBREW_PREFIX/arm-none-eabi/lib"
 
 # =============================================================================
 # GOOGLE CLOUD SDK - LAZY LOADED
 # =============================================================================
-# lazy load gcloud CLI tools and shell completion (~260ms savings)
-# only loads when you actually use gcloud/gsutil/bq
+# gcloud, gsutil and bq load the SDK paths and completion on first use
 _load_gcloud() {
     unset -f gcloud gsutil bq
     local gcloud_dir="$HOMEBREW_PREFIX/share/google-cloud-sdk"
@@ -158,9 +149,7 @@ bq() { _load_gcloud && bq "$@"; }
 # =============================================================================
 # NODE.JS (FNM)
 # =============================================================================
-# fnm (Fast Node Manager): Rust-based, ~5ms init vs NVM's 300-500ms
-# usage: fnm install 22, fnm use 20, fnm default 22
-# reads .nvmrc and .node-version files automatically with --use-on-cd
+# fnm reads .nvmrc and .node-version files on cd (--use-on-cd)
 if command -v fnm &>/dev/null; then
     eval "$(fnm env --use-on-cd)"
 fi
@@ -168,35 +157,26 @@ fi
 # =============================================================================
 # DOCKER & COMPLETIONS
 # =============================================================================
-# dotfiles autoloaded functions and completions.
-# DOTFILES_ROOT must be set before this fpath entry, otherwise the path
-# resolves to "/zsh/functions" and _dotfiles fails to autoload ("function
-# definition file not found"). it only appeared to work inside tmux because the
-# export below was inherited from the parent shell's environment
+# dotfiles autoloaded functions and completions. DOTFILES_ROOT must be set
+# before this fpath entry, otherwise the path resolves to "/zsh/functions" and
+# _dotfiles fails to autoload
 export DOTFILES_ROOT="${DOTFILES_DIR:-$HOME/dotfiles}"
 fpath=("$DOTFILES_ROOT/zsh/functions" $fpath)
 
-# Docker CLI completions (docker, docker-compose commands)
+# docker CLI completions
 fpath=("$HOME/.docker/completions" $fpath)
 
-# systemd tools (loginctl, hostnamectl, timedatectl, networkctl, busctl, ...):
-# carapace ships no completer for most of the systemd family, so expose the
-# OS-provided zsh completions instead. Linux-only: the dir is absent on macOS
-# (no systemd), so the guard makes this a no-op there. Appended, not prepended,
-# so it only fills gaps and never shadows brew's own site-functions; carapace
-# still wins for the systemd tools it does own (systemctl, journalctl, ...) as
-# it re-registers those via compdef after compinit below.
+# OS-provided completions for the systemd tools carapace has no completer for
+# (loginctl, hostnamectl, timedatectl, ...). appended so it only fills gaps;
+# carapace re-registers the ones it owns via compdef after compinit
 [[ -d /usr/share/zsh/vendor-completions ]] && fpath=($fpath /usr/share/zsh/vendor-completions)
 
-# Homebrew zsh-completions (brew install zsh-completions): extra completion
-# definitions for tools that ship none of their own. installs to its own
-# share/zsh-completions dir, separate from brew's site-functions, so add it
-# explicitly. appended so it only fills gaps, and it must precede compinit below
+# brew's zsh-completions installs to its own share dir, separate from
+# site-functions. appended so it only fills gaps; must precede compinit
 [[ -d "$HOMEBREW_PREFIX/share/zsh-completions" ]] && fpath=($fpath "$HOMEBREW_PREFIX/share/zsh-completions")
 
-# cached compinit: only regenerate completion dump once per day (~50-100ms savings)
-# the (#q...) glob qualifier requires EXTENDED_GLOB; anonymous function scopes it
-# so it doesn't leak globally (local_options only works inside functions)
+# regenerate the completion dump at most once a day. the (#q...) glob qualifier
+# needs EXTENDED_GLOB, scoped to the anonymous function by local_options
 autoload -Uz compinit
 # shellcheck disable=SC1009,SC1036,SC1072,SC1073
 () {
@@ -208,17 +188,16 @@ autoload -Uz compinit
     fi
 }
 
-# gh CLI completions: gh generates a compdef line inside its completion file that
-# conflicts with zsh autoload. re-register after compinit so it resolves correctly.
-# see: https://github.com/cli/cli/issues/8462
+# gh's completion file carries a compdef line that conflicts with zsh autoload;
+# re-register after compinit (https://github.com/cli/cli/issues/8462)
 (($+commands[gh])) && compdef _gh gh 2>/dev/null
 
 # =============================================================================
 # CACHED EVAL HELPER
 # =============================================================================
-# cache the output of slow eval commands (direnv, fzf) to avoid forking on
-# every shell startup. cache is invalidated when the binary is newer than the
-# cached file (covers brew upgrade). usage: _cached_eval <name> <command...>
+# cache the output of slow eval commands (direnv, fzf) instead of forking on
+# every startup. the cache is stale when the binary is newer than it (brew
+# upgrade). usage: _cached_eval <name> <command...>
 _cached_eval() {
     local name="$1"
     shift
@@ -226,9 +205,8 @@ _cached_eval() {
     local cache_file="$cache_dir/$name.zsh"
     local bin_path="${commands[$name]}"
 
-    # tool not installed (or not on PATH): skip silently rather than running the
-    # hook and printing "command not found" on every prompt. minimal installs
-    # legitimately lack direnv/fzf.
+    # tool not installed: skip instead of printing "command not found" on every
+    # prompt. minimal installs lack direnv/fzf
     [[ -n "$bin_path" ]] || return 0
 
     if [[ -s "$cache_file" && "$cache_file" -nt "$bin_path" ]]; then
@@ -247,23 +225,20 @@ _cached_eval() {
 # =============================================================================
 # DIRENV
 # =============================================================================
-# automatically load/unload environment variables when entering directories
-# with .envrc files. great for per-project env vars
+# loads and unloads environment variables from .envrc files on cd
 _cached_eval direnv direnv hook zsh
 
 # =============================================================================
 # ZSH LINE EDITOR (ZLE) BASE KEYMAP
 # =============================================================================
-# set emacs mode BEFORE plugins and custom bindings so they layer on top
-# rather than being wiped. must precede fzf, zsh-autosuggestions, and any
-# custom ZLE widgets (e.g. _cdl-widget bound to Opt+A)
-bindkey -e # force emacs mode (Ctrl+A, Ctrl+E, etc.)
+# emacs mode must be set before fzf, zsh-autosuggestions and custom ZLE
+# widgets (e.g. _cdl-widget), whose bindings `bindkey -e` would wipe
+bindkey -e
 
-# prevent accidental vi-mode activation from Option+key combinations
-# Option+key sends ESC followed by another character. setting KEYTIMEOUT to 1
-# (10ms) means ESC alone won't trigger vi-mode, but ESC sequences from Option+key
-# will be processed correctly, and tools like fzf can still use ESC to exit
-export KEYTIMEOUT=1 # wait 10ms for more chars after ESC
+# Option+key sends ESC followed by another character. with a short KEYTIMEOUT a
+# lone ESC does not trigger vi-mode, Option+key sequences still arrive whole,
+# and fzf can use ESC to exit
+export KEYTIMEOUT=1 # in hundredths of a second
 
 # inside tmux, ignore EOF (Ctrl+D) at the prompt so an accidental press doesn't
 # close the shell, which would tear down the pane and, if last, the window.
@@ -278,24 +253,21 @@ WORDCHARS='*?[]~=&;!#$%^(){}<>'
 # =============================================================================
 # ZSH PLUGINS
 # =============================================================================
-# zsh-autosuggestions: suggests commands as you type based on history
-# accept suggestion: Right arrow or End key
+# zsh-autosuggestions: accept a suggestion with Right or End
 if [[ -f "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]]; then
     source "$HOMEBREW_PREFIX/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
 fi
 
-# fzf: fuzzy finder for files, history, and more
-# keybindings: Ctrl+R (history), Ctrl+T (files), Opt+C (cd to directory)
+# fzf keybindings: Ctrl+R (history), Ctrl+T (files)
 _cached_eval fzf fzf --zsh
 
-# apply theme colours to fzf (and auto-refresh on theme-switch)
-# DOTFILES_ROOT is exported earlier (see the fpath block); fzf-theme.sh relies
-# on it to skip its subshell-based path detection
+# theme colours for fzf. fzf-theme.sh relies on DOTFILES_ROOT (exported in the
+# fpath block) to skip its subshell-based path detection
 if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
     source "$DOTFILES_ROOT/scripts/fzf-theme.sh"
     _fzf_theme_cached="${CURRENT_THEME:-}"
 
-    # re-source fzf-theme.sh if the active theme has changed since last check
+    # re-source fzf-theme.sh when the active theme changes
     _fzf_theme_refresh() {
         local live
         live=$(<"${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme" 2>/dev/null) || return
@@ -305,7 +277,7 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
         fi
     }
 
-    # wrap fzf ZLE widgets so Ctrl+R/T pick up theme changes immediately
+    # wrap fzf ZLE widgets so Ctrl+R/T pick up theme changes
     for _w in fzf-file-widget fzf-history-widget; do
         if zle -l "$_w" &>/dev/null; then
             zle -A "$_w" "_orig-$_w"
@@ -315,14 +287,12 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
     done
     unset _w
 
-    # unbind Alt+C (fzf-cd-widget): terminals send the same escape sequence for
-    # Esc+c and Alt+C, causing accidental triggers when pressing Esc then "c".
-    # the Opt+A cdl-widget is the preferred directory picker
+    # unbind Alt+C (fzf-cd-widget): terminals send the same sequence for Esc then
+    # "c". Opt+A (_cdl-widget) is the directory picker
     bindkey -r '\ec'
 
-    # Opt+A: directory history picker (inline fzf selection + BUFFER cd)
-    # follows fzf's own Alt-C pattern: run fzf directly in the widget,
-    # then set BUFFER to the cd command and accept-line to execute it
+    # Opt+A: directory history picker. runs fzf in the widget, cds, then redraws
+    # the prompt
     _cdl-widget() {
         if ((${#_dir_back_stack} == 0)); then
             zle redisplay
@@ -353,8 +323,7 @@ if [[ -f "$DOTFILES_ROOT/scripts/fzf-theme.sh" ]]; then
         fi
         if [[ -d "$dir" ]]; then
             builtin cd -- "$dir"
-            # re-run precmd hooks so P10k regenerates the prompt string with the
-            # new directory, then reset-prompt to display it
+            # re-run precmd hooks so p10k regenerates the prompt for the new directory
             local f
             for f in $precmd_functions; do "$f" 2>/dev/null; done
             zle reset-prompt
@@ -368,9 +337,8 @@ fi
 # =============================================================================
 # CARAPACE COMPLETIONS
 # =============================================================================
-# multi-shell completion provider. bridges zsh's existing completion system,
-# so builtin zsh completions continue to work. cached via _cached_eval so we
-# don't fork `carapace _carapace` on every shell start
+# multi-shell completion provider that bridges zsh's existing completion
+# system, so builtin zsh completions keep working
 export CARAPACE_BRIDGES='zsh'
 zstyle ':completion:*:git:*' group-order 'main commands' 'alias commands' 'external commands'
 zstyle ':completion:*' format $'\e[2;37mCompleting %d\e[m'
@@ -383,25 +351,20 @@ fi
 # =============================================================================
 # TERMINAL TITLE HOOKS
 # =============================================================================
-# dynamic terminal/tab titles that show context
-# _dotfiles_precmd: runs before each prompt (shows directory + git branch)
-# _dotfiles_preexec: runs before each command (shows running command)
-# uses *_functions arrays to stack with other hooks (p10k, plugins, etc.)
-#
-# performance: git branch is cached in _git_branch to avoid forking
-# git rev-parse on every prompt (~28ms). cache is refreshed on directory
-# change (chpwd) and after git commands (preexec)
+# terminal/tab titles. _dotfiles_precmd shows directory + git branch before
+# each prompt, _dotfiles_preexec shows the running command. the branch is cached
+# in _git_branch and refreshed on chpwd and at the prompt after a git command
 
 _git_branch=""
+_git_branch_stale=0
 
 _update_git_branch() {
     _git_branch=$(git rev-parse --abbrev-ref HEAD 2>/dev/null)
 }
 
-# refresh branch cache when changing directories
 chpwd_functions+=(_update_git_branch)
 
-# defer initial cache population to the first prompt (saves ~14ms at source time)
+# populate the cache at the first prompt, not at source time
 _update_git_branch_once() {
     _update_git_branch
     precmd_functions=(${precmd_functions:#_update_git_branch_once})
@@ -409,6 +372,10 @@ _update_git_branch_once() {
 precmd_functions+=(_update_git_branch_once)
 
 _dotfiles_precmd() {
+    if ((_git_branch_stale)); then
+        _update_git_branch
+        _git_branch_stale=0
+    fi
     if [[ -n "$_git_branch" ]]; then
         print -Pn "\e]0;%1~ ($_git_branch)\a"
     else
@@ -418,7 +385,6 @@ _dotfiles_precmd() {
 precmd_functions+=(_dotfiles_precmd)
 
 _dotfiles_preexec() {
-    # extract first word safely using parameter expansion
     local cmd="${1%% *}"
 
     # resolve job-control resumes (fg, fg %2, %2) to the job's real command via
@@ -437,9 +403,8 @@ _dotfiles_preexec() {
 
     print -Pn "\e]0;${cmd}\a"
 
-    # refresh git branch cache after git commands that may change the branch
     case "$cmd" in
-        git | gh | tig) _update_git_branch ;;
+        git | gh | tig) _git_branch_stale=1 ;;
     esac
 }
 preexec_functions+=(_dotfiles_preexec)
@@ -447,15 +412,14 @@ preexec_functions+=(_dotfiles_preexec)
 # =============================================================================
 # SECRETS & CREDENTIALS
 # =============================================================================
-# API keys and tokens loaded from separate file (not version controlled)
-# see ~/dotfiles/zsh/secrets.zsh.template for structure
+# API keys and tokens, not version controlled. see zsh/secrets.zsh.template
 ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
     source "$ZSH_CONFIG_DIR/secrets.zsh"
 fi
 
-# Android SDK (installed via Homebrew cask: android-commandlinetools)
-# provides sdkmanager, avdmanager, adb, fastboot, emulator
+# android SDK (homebrew cask android-commandlinetools): sdkmanager, avdmanager,
+# adb, fastboot, emulator
 if [[ -d "$HOMEBREW_PREFIX/share/android-commandlinetools" ]]; then
     export ANDROID_HOME="$HOMEBREW_PREFIX/share/android-commandlinetools"
     export PATH="$PATH:$ANDROID_HOME/cmdline-tools/latest/bin:$ANDROID_HOME/platform-tools:$ANDROID_HOME/emulator"
@@ -464,34 +428,31 @@ fi
 # =============================================================================
 # .NET
 # =============================================================================
-# disable Microsoft telemetry for .NET CLI
 export DOTNET_CLI_TELEMETRY_OPTOUT='true'
-# prevent MSBuild from keeping worker nodes alive between builds
+# stop MSBuild keeping worker nodes alive between builds
 export MSBUILDDISABLENODEREUSE=1
 
 # =============================================================================
 # SONARCLOUD
 # =============================================================================
-# SonarScanner CLI for code quality analysis
+# sonar-scanner CLI host
 export SONAR_HOST_URL="https://sonarcloud.io"
 
 # =============================================================================
 # GIT
 # =============================================================================
 # skip the optional index.lock that read-only git commands (status, diff) take
-# just to write back a refreshed index. without this, frequent background status
-# polls collide with an in-flight commit and fail it with
-# "Unable to create '.../index.lock': File exists". the usual culprits are an
-# editor's git integration or several claude code sessions open on one worktree,
-# each refreshing status. real index writes (add, commit) still lock normally
+# to write back a refreshed index. background status polls (an editor's git
+# integration, several claude code sessions on one worktree) otherwise collide
+# with an in-flight commit and fail it. real index writes still lock normally
 export GIT_OPTIONAL_LOCKS=0
 
 # =============================================================================
 # LAZYGIT
 # =============================================================================
-# load base config (symlinked from dotfiles) + personal local overrides.
-# local.yml only needs the keys you want to override; lazygit merges both files.
-# LG_CONFIG_FILE overrides the default path, so we use ~/.config/lazygit/ on all platforms
+# base config (symlinked from dotfiles) plus local overrides; lazygit merges
+# both files. LG_CONFIG_FILE replaces the default path, so ~/.config/lazygit/ is
+# used on all platforms
 _lg_base="$HOME/.config/lazygit/config.yml"
 _lg_local="$HOME/.config/lazygit/local.yml"
 if [[ -f "$_lg_local" ]]; then
@@ -511,8 +472,8 @@ export OPENCODE_CLEAR_SCRIPT="$DOTFILES_ROOT/scripts/hooks/agent-alert-clear.sh"
 # =============================================================================
 # SSH WRAPPER
 # =============================================================================
-# Ghostty sets TERM=xterm-ghostty which most remote hosts don't recognise.
-# override TERM for SSH connections so the remote PTY gets xterm-256color
+# ghostty sets TERM=xterm-ghostty, which most remote hosts don't recognise; ssh
+# gets xterm-256color instead
 ssh() {
     if [[ "$TERM" == "xterm-ghostty" ]]; then
         TERM=xterm-256color command ssh "$@"
@@ -524,16 +485,15 @@ ssh() {
 # =============================================================================
 # ALIASES & FUNCTIONS
 # =============================================================================
-# The `dotfiles aliases` cheatsheet renders this section by parsing:
-#   # @section: <Name>                       — section header (uppercased for display)
-#   alias name="..."  # description           — alias entry (description required)
-#   # @cheat: <name> | <description>          — free-form entry (any line)
-#   # @cheat: <description>                   — function entry, paired with the
-#   followed by `name() { ... }`                 next function definition
-# aliases without trailing descriptions are silently skipped, which keeps the
-# cheatsheet curated. See cmd_aliases / _aliases_parse in scripts/dotfiles
+# the `dotfiles aliases` cheatsheet renders this section by parsing:
+#   # @section: <Name>                       section header (uppercased for display)
+#   alias name="..."  # description           alias entry (description required)
+#   # @cheat: <name> | <description>          free-form entry (any line)
+#   # @cheat: <description>                   function entry, paired with the
+#   followed by `name() { ... }`               next function definition
+# aliases without a trailing description are skipped. see cmd_aliases /
+# _aliases_parse in scripts/dotfiles
 
-# editor (used as default $EDITOR for git, etc.)
 export EDITOR="nvim"
 
 # render man pages in nvim instead of less; plain less inside :terminal so
@@ -566,7 +526,6 @@ _dir_track_chpwd() {
     if ((_dir_nav_active)); then return; fi
     _dir_back_stack+=("$OLDPWD")
     _dir_forward_stack=()
-    # cap stack size at 50 entries
     ((${#_dir_back_stack} > 50)) && _dir_back_stack=("${_dir_back_stack[@]: -50}")
 }
 chpwd_functions+=(_dir_track_chpwd)
@@ -599,22 +558,20 @@ cdf() {
     _dir_nav_active=0
 }
 
-# directory history picker (autoloaded; bound to Opt+A via _cdl-widget earlier in this file)
+# directory history picker for the command line; the Opt+A widget has its own inline copy
 autoload -Uz _cdl
 
 # @cheat: Opt+A | cd from history (fzf)
 
-# open buffer line in editor
 autoload -Uz edit-command-line
 zle -N edit-command-line
-bindkey '^g' edit-command-line # Ctrl+G to open current command line in $EDITOR (e.g. nvim)
+bindkey '^g' edit-command-line # Ctrl+G: edit the command line in $EDITOR
 
-# magic space binding to spacebar
-bindkey ' ' magic-space # Spacebar to expand aliases and re-evaluate the command line
+bindkey ' ' magic-space # Space: history expansion
 
 # @section: FILES
 
-# file listing (colour-aware: BSD ls uses -G, GNU ls uses --color=auto)
+# BSD ls uses -G, GNU ls uses --color=auto
 if [[ "$IS_MACOS" == "1" ]]; then
     alias ls="ls -G" # ls (colour-aware)
 else
@@ -624,15 +581,12 @@ alias ll="ls -alF" # ls -alF
 alias la="ls -A"   # ls -A
 alias l="ls -CF"   # ls -CF
 
-# safer file operations
 alias cp="cp -i" # cp -i (safe overwrite)
 alias mv="mv -i" # mv -i (safe overwrite)
 
-# suffix aliases
-alias -s md='glow -t' # View markdown files with syntax highlighting using glow (if installed)
+alias -s md='glow -t' # open .md files with glow
 
-# yazi: launch the file manager, then cd the shell to wherever you quit.
-# uses --cwd-file so a plain `q` lands you in the last-browsed directory
+# yazi: cd the shell to the last-browsed directory on quit (--cwd-file)
 # @cheat: yazi file manager (cd to last dir on quit)
 y() {
     local tmp cwd
@@ -666,7 +620,7 @@ alias gb="git branch -vv"                                                       
 alias gp="git push"                                                                                                                  # git push
 alias gpl="git pull"                                                                                                                 # git pull
 alias gst="git stash"                                                                                                                # git stash
-alias gfp="git fetch -pf"                                                                                                            # git fetch --prune
+alias gfp="git fetch -pf"                                                                                                            # git fetch --prune --force
 alias gpr="git branch -vv | grep ': gone]' | awk '{print \$1}' | xargs -r git branch -D"                                             # prune local branches
 alias grmc="git rm --cached"                                                                                                         # git rm --cached
 alias gca="git commit --amend"                                                                                                       # git commit --amend
@@ -703,24 +657,16 @@ trestore() {
     ~/.tmux/scripts/resurrect/restore.sh "$@"
 }
 
-# @cheat: delete session backup
-tkill() {
-    ~/.tmux/scripts/resurrect/delete.sh "$@"
-}
-
 # attach to tmux session, restoring from backup if needed
 tattach() {
-    # try to attach to running session
     if tmux a -t "$1" 2>/dev/null; then return 0; fi
 
-    # not running, try to restore from backup
     local backup="${HOME}/.tmux/resurrect/sessions/$1.txt"
     if [[ -f "$backup" ]]; then
         echo "Restoring '$1' from backup..."
         if ~/.tmux/scripts/resurrect/restore.sh --session "$1" && tmux a -t "$1"; then
             return 0
         fi
-        # restore failed, backup is stale
         echo "Backup stale, removing: $1"
         rm -f "$backup"
         return 1
@@ -778,15 +724,13 @@ _trestore_complete() {
 }
 
 _tmux_sessions_running() {
-    # complete with running tmux sessions (for tkill and tattach)
+    # complete with running tmux sessions (for tattach)
     local -a sessions
     sessions=(${(f)"$(tmux list-sessions -F '#{session_name}' 2>/dev/null)"})
     _describe 'running tmux sessions' sessions
 }
 
-# register completion functions
 compdef _trestore_complete trestore
-compdef _tmux_sessions_running tkill
 compdef _tmux_sessions_running tattach
 
 # @section: SYSTEM & NETWORK
@@ -796,19 +740,14 @@ alias du="du -sh"                # du -sh
 alias myip="curl -s ifconfig.me" # curl ifconfig.me
 alias v="cl && nvim"             # clear + nvim
 
-# edit a root-owned file with your real nvim config. sudoedit copies the file
-# to a temp path, opens it as YOU (so plugins/config load normally, and nvim
-# never runs as root), then writes it back with elevated privileges. this also
-# sidesteps the reason plain `sudo nvim` fails: sudo's secure_path doesn't
-# include Homebrew's bin, so root can't find nvim at all.
-# SUDO_EDITOR must be an ABSOLUTE path: sudoedit resolves a bare editor name
-# against secure_path (not your shell's PATH), so "nvim" isn't found there and
-# sudo silently falls back to its compiled default editor (nano). command -v
-# expands it to the real Homebrew path, portable across the macOS/Linux prefixes
+# edit a root-owned file with the user's nvim config: sudoedit copies it to a
+# temp path, opens it unprivileged, then writes it back elevated. SUDO_EDITOR
+# must be an absolute path: sudoedit resolves a bare name against sudo's
+# secure_path, which lacks homebrew's bin, and falls back to its compiled
+# default editor
 # @cheat: svim <file> | sudo-edit a root-owned file (sudoedit + nvim)
 svim() { SUDO_EDITOR="$(command -v nvim)" sudoedit "$@"; }
 
-# open: platform-aware (macOS: open, Linux: xdg-open)
 if [[ "$IS_MACOS" == "1" ]]; then
     alias o="open"        # open file/dir
     alias finder="open ." # open in Finder (macOS)
@@ -816,7 +755,6 @@ else
     alias o="xdg-open"
 fi
 
-# quick access to config files
 alias config="v ~/.config"                       # open nvim in ~/.config (dir)
 alias cache="v ~/.cache"                         # open nvim in ~/.cache (dir)
 alias zshrc="v ~/.zshrc"                         # open nvim in ~/.zshrc (file)
@@ -830,13 +768,12 @@ alias tconf="v ~/.config/tmux/local.conf"        # open tmux local config (file)
 # @cheat: font-preview | font browser (fzf)
 autoload -Uz font-preview
 
-# clipboard: `<cmd> | clip` copies, bare `clip` pastes, -p forces paste.
-# the backend is chosen from the live display server rather than binary presence
-# alone: a wayland session usually has xclip installed too (via XWayland), and
-# choosing it there writes to a clipboard nothing reads back. with no display
-# server at all (headless, ssh) it falls back to OSC 52, which tmux forwards to
-# the outer terminal via `set-clipboard on`. mirrors scripts/_lib/clipboard.sh;
-# keep the two in sync
+# clipboard: `<cmd> | clip` copies, bare `clip` pastes, -p forces paste. the
+# backend follows the live display server, not binary presence: a wayland
+# session usually has xclip too (via XWayland), and its clipboard is not the
+# one wayland apps read. with no display server (headless, ssh) it uses OSC 52,
+# which tmux forwards to the outer terminal via `set-clipboard on`. mirrors
+# scripts/_lib/clipboard.sh
 # @cheat: clip [-p] | copy stdin to clipboard, bare or -p pastes
 clip() {
     emulate -L zsh
@@ -849,10 +786,8 @@ clip() {
             printf '       clip [-p]       paste the clipboard to stdout\n'
             return 0
             ;;
-        # nothing piped in: read the clipboard rather than copy over it. stdin is
-        # not a tty in a script, so bare `clip` copies there and blocks on empty
-        # stdin, exactly as bare `pbcopy` does; use -p where the direction must not
-        # depend on context
+        # nothing piped in: paste. stdin is not a tty in a script, so bare `clip`
+        # copies there and blocks on empty stdin like bare `pbcopy`; -p forces paste
         '') [[ -t 0 ]] && paste=1 ;;
         *)
             printf 'clip: unknown option: %s\n' "$1" >&2
@@ -863,7 +798,7 @@ clip() {
     local backend
     if [[ "$IS_MACOS" == "1" ]]; then
         backend=pb
-    elif [[ -n "$WAYLAND_DISPLAY" ]] && (($+commands[wl - copy])); then
+    elif [[ -n "$WAYLAND_DISPLAY" ]] && ((${+commands[wl-copy]})); then
         backend=wayland
     elif [[ -n "$DISPLAY" ]] && (($+commands[xclip])); then
         backend=xclip
@@ -871,13 +806,12 @@ clip() {
         backend=xsel
     elif (($+commands[clip.exe])); then
         backend=wsl
-    elif (($+commands[termux - clipboard - set])); then
+    elif ((${+commands[termux-clipboard-set]})); then
         backend=termux
     elif [[ -n "$WAYLAND_DISPLAY" || -n "$DISPLAY" ]]; then
-        # a display server is running but its tool is missing. this must not fall
-        # through to OSC 52: that silently pushes the payload out through the
-        # terminal, and any ssh hop or tmux in between, when the local clipboard
-        # sitting right there was what was asked for
+        # a display server is running but its tool is missing. OSC 52 here would
+        # send the payload out through the terminal and any ssh hop instead of
+        # to the local clipboard
         backend=missing
     else
         backend=osc52
@@ -971,7 +905,6 @@ alias ld="cl && lazydocker"                                                     
 alias gols="ls ~/go/bin"                                                              # list Go binaries
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'" # clear nvim cache
 
-# sync all Lazy.nvim plugins (headless)
 # @cheat: nvim-sync | sync Lazy.nvim plugins
 nvim-sync() {
     printf "Syncing Neovim plugins...\n"
@@ -979,12 +912,10 @@ nvim-sync() {
     printf "\033[0;32m✔\033[0m Neovim plugins synced\n"
 }
 
-# render code or terminal output to an image, defaulting to a mono / nerd font.
-# freeze's built-in default points at an uninstalled family and silently falls
-# back to a proportional sans, so force a real monospace family. pass -F to pick
-# another installed mono font via fzf; the choice persists in $FREEZE_FONT for
-# the session (bare `freeze -F` just sets it). an explicit --font.family /
-# --font.file always wins.
+# render code or terminal output to an image in a monospace family: freeze's
+# built-in default family is not installed and falls back to a proportional
+# sans. -F picks another installed mono font via fzf and keeps it in
+# $FREEZE_FONT for the session. an explicit --font.family / --font.file wins
 # @cheat: freeze [-F] <file> | render code/output to an image (mono font)
 freeze() {
     emulate -L zsh
@@ -1023,12 +954,10 @@ freeze() {
     command freeze "${args[@]}"
 }
 
-# completion for the freeze wrapper: carapace's freeze spec completes flags and
-# their values (-l languages, -t themes, ...) but offers nothing for the file
-# positional and errors on our synthetic -F. delegate to carapace with -F hidden,
-# then add file completion for the positional (skipped after a non-file value
-# flag so languages/themes aren't mixed with filenames). wins over carapace's
-# catch-all because this compdef runs after it
+# completion for the freeze wrapper: carapace's spec completes flags and their
+# values but nothing for the file positional, and errors on -F. delegates to
+# carapace with -F hidden, then adds file completion unless the previous word
+# is a value flag. this compdef runs after carapace's catch-all, so it wins
 _freeze() {
     local -a _ws _fw
     local _cur _i _rm
@@ -1162,17 +1091,15 @@ alias demote="relegate"
 # =============================================================================
 # ZSH LINE EDITOR (ZLE) KEYBINDINGS
 # =============================================================================
-# note: bindkey -e (emacs mode) and KEYTIMEOUT are set earlier, before plugins,
-# so custom bindings from fzf and ZLE widgets aren't wiped
+# bindkey -e and KEYTIMEOUT are set earlier, before plugins
 
-# ensure common word deletion shortcuts work correctly
 bindkey '^[^?' backward-kill-word # Option+Backspace: delete word backwards
 bindkey '^W' backward-kill-word   # Ctrl+W: delete word backwards
 
 # Shift+Tab walks backwards through menu completions (complements Tab going forward)
 bindkey '^[[Z' reverse-menu-complete
 
-# bind Home/End in both forms: Ghostty sends CSI H/F directly; tmux with
+# bind Home/End in both forms: ghostty sends CSI H/F directly; tmux with
 # extended-keys re-encodes them as VT220-style \x1b[1~ and \x1b[4~
 bindkey '\e[H' beginning-of-line  # Home (Ghostty, CSI)
 bindkey '\e[F' end-of-line        # End (Ghostty, CSI)
@@ -1201,7 +1128,7 @@ bindkey -M menuselect '^k' up-line-or-history
 # @cheat: Cmd+Backspace | delete to line start
 bindkey '\e[127;5u' backward-kill-line # Cmd+Backspace (via Ghostty: super+backspace → Ctrl+Backspace)
 
-# Ghostty sends these sequences for modifier+enter combos; bind them to
+# ghostty sends these sequences for modifier+enter combos; bind them to
 # accept-line so they act as Enter in zsh instead of printing garbage
 bindkey '\e[13;5u' accept-line  # Ctrl+Enter (kitty protocol)
 bindkey '\e[13;6u' accept-line  # Ctrl+Shift+Enter (kitty protocol)
@@ -1230,21 +1157,18 @@ compdef _dotfiles dot
 # =============================================================================
 # COMMAND EXIT ALERTS (auto-alert for long-running commands)
 # =============================================================================
-# automatically sends a tmux alert when a command outlives
-# $_CMD_ALERT_MIN_SECONDS (default 1) and you've switched away from the window
+# sends a tmux alert when a command outlives $_CMD_ALERT_MIN_SECONDS and its
+# window is not being viewed
 [[ -f "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh" ]] && source "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh"
 
 # =============================================================================
 # ZOXIDE
 # =============================================================================
-# eager init so `z` is defined in every shell mode: interactive, `zsh -i -c`
-# (Claude Code's !-shell), and `zsh -c` (Bash tool).
-#
-# override __zoxide_doctor with a no-op. its heuristic checks whether
-# __zoxide_hook lives in chpwd_functions, but Claude Code's shell snapshots
-# capture function definitions without the chpwd_functions array, so the
-# check fails spuriously on every replay. env-based silencing via
-# _ZO_DOCTOR=0 doesn't survive snapshotting; overriding the function does
+# eager init so the zoxide `cd` is defined in every shell mode: interactive,
+# `zsh -i -c` and `zsh -c`. __zoxide_doctor is a no-op: it checks
+# chpwd_functions for __zoxide_hook, but claude code's shell snapshots capture
+# function definitions without that array, so the check fails on every replay,
+# and _ZO_DOCTOR=0 does not survive snapshotting
 if command -v zoxide >/dev/null 2>&1; then
     eval "$(zoxide init --cmd cd zsh)"
     __zoxide_doctor() { :; }
@@ -1255,7 +1179,6 @@ fi
 # =============================================================================
 # @section: PROFILING
 
-# quick benchmark: runs zsh 5 times and shows startup time
 # @cheat: benchmark startup (5x)
 zsh-profile() {
     echo "Running 5 iterations..."
@@ -1264,7 +1187,6 @@ zsh-profile() {
     done
 }
 
-# detailed profiling: shows what's taking time during startup
 # @cheat: detailed (ZPROF)
 zsh-profile-detailed() {
     ZPROF=1 zsh -i -c exit
@@ -1273,9 +1195,8 @@ zsh-profile-detailed() {
 # =============================================================================
 # DOTFILES CLI CHEATSHEET
 # =============================================================================
-# these rows describe `dotfiles` subcommands (not zsh aliases), declared as
-# free-form @cheat directives so `dotfiles aliases` can render them alongside
-# the shell shortcuts above
+# `dotfiles` subcommands, declared as free-form rows so `dotfiles aliases`
+# renders them with the shell shortcuts above
 # @section: DOTFILES CLI
 # @cheat: update  -u | smart update
 # @cheat: status  -s | version + sync + changes
@@ -1291,6 +1212,7 @@ zsh-profile-detailed() {
 # @cheat: notes   -n | browse changelog
 # @cheat: version -v | version, preset, theme
 # @cheat: edit    -e | open in $EDITOR
+# @cheat: cd | print dotfiles path
 # @cheat: aliases -a | show this reference
 # @cheat: dot | shorthand for dotfiles
 # @cheat: help | show help message
@@ -1298,5 +1220,4 @@ zsh-profile-detailed() {
 # =============================================================================
 # ZPROF OUTPUT (end of startup)
 # =============================================================================
-# print profiling results if ZPROF is set
 [[ -n "$ZPROF" ]] && zprof || true

@@ -1,15 +1,12 @@
--- easy-dotnet test-runner extras. extracted from plugins/dotnet.lua's
--- easy-dotnet config: trap window-nav keys in the test-explorer / peek floats,
--- and a <leader>tf that runs only the current file's tests (upstream's
--- run_all_tests_from_buffer is project-wide). setup() is called from
--- easy-dotnet's config after its own setup()
+-- easy-dotnet test-runner extras: window-nav keys are blocked in the
+-- test-explorer / peek floats, and <leader>tf runs only the current file's
+-- tests. setup() is called from easy-dotnet's config after its own setup()
 
 local M = {}
 
 function M.setup()
-  -- trap window-navigation keys in test explorer and peek stacktrace floats.
-  -- without this, <C-h/j/k/l> escapes to the main buffer and the float
-  -- becomes unreachable
+  -- <C-h/j/k/l> out of a test explorer or peek stacktrace float leaves it
+  -- unreachable
   local nav_block_group = vim.api.nvim_create_augroup('dotnet-float-nav-block', { clear = true })
   local nav_keys = { '<C-h>', '<C-j>', '<C-k>', '<C-l>' }
 
@@ -29,7 +26,7 @@ function M.setup()
   })
 
   -- peek stacktrace floats (winfixbuf scratch buffers created by easy-dotnet).
-  -- deferred via vim.schedule so winfixbuf is set by window.lua before we check
+  -- scheduled so window.lua has set winfixbuf before the check
   vim.api.nvim_create_autocmd('WinEnter', {
     group = nav_block_group,
     callback = function()
@@ -59,9 +56,8 @@ function M.setup()
     end,
   })
 
-  -- run only tests in the current file (not the whole project).
-  -- upstream run_all_tests_from_buffer runs by projectId which is too broad.
-  -- finds TestClass nodes matching the current file and runs each one
+  -- upstream run_all_tests_from_buffer runs by projectId; this runs each
+  -- TestClass node matching the current file
   vim.api.nvim_create_autocmd('FileType', {
     pattern = 'cs',
     callback = function(args)
@@ -69,8 +65,7 @@ function M.setup()
         local state = require 'easy-dotnet.test-runner.state'
         local client = require('easy-dotnet.rpc.rpc').global_rpc_client
         local filepath = vim.fs.normalize(vim.api.nvim_buf_get_name(args.buf))
-        -- collect test nodes belonging to this file. run at class level
-        -- to avoid running individual methods separately
+        -- run at class level, not per method
         local run_ids = {}
         local seen_ids = {}
         state.traverse_all(function(node)

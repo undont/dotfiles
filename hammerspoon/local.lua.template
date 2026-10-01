@@ -2,9 +2,9 @@
 -- HAMMERSPOON LOCAL OVERRIDES
 -- =============================================================================
 -- your personal Hammerspoon config; this file is yours, add anything you want.
--- it is loaded AFTER init.lua, so your definitions override the defaults.
+-- it is loaded AFTER init.lua, so your definitions override the defaults
 --
--- this file survives dotfiles update.
+-- this file survives dotfiles update
 --
 -- file structure:
 --   ~/.hammerspoon/init.lua    - shared config (symlink → dotfiles)

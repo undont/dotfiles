@@ -2,10 +2,10 @@
 # LAZYGIT LOCAL OVERRIDES
 # =============================================================================
 # your personal lazygit settings; this file is yours, add anything you want.
-# it is loaded AFTER the base config, so your values override the defaults.
+# it is loaded AFTER the base config, so your values override the defaults
 #
-# this file survives dotfiles update.
-# lazygit merges both files at launch via LG_CONFIG_FILE (set in dotfiles.zsh).
+# this file survives dotfiles update
+# lazygit merges both files at launch via LG_CONFIG_FILE (set in dotfiles.zsh)
 #
 # file structure:
 #   ~/.config/lazygit/config.yml  - base config (symlink → dotfiles)
@@ -25,9 +25,9 @@
 #   mouseEvents: true
 #
 # git:
-#   paging:
-#     colorArg: always
-#     pager: delta --dark --paging=never
+#   diffRenderers:
+#     - colorArg: always
+#       command: delta --dark --paging=never
 #
 # customCommands:
 #   - key: "<c-r>"

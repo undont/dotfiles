@@ -2,12 +2,12 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Duplicate Launcher
+# duplicate launcher
 # ══════════════════════════════════════════════════════════════
 # copies a launcher to USER_LAUNCHERS with a "-copy" suffix.
 # successive duplicates get "-copy-2", "-copy-3", etc.
 #
-# Usage: duplicate.sh <launcher_name>
+# usage: duplicate.sh <launcher_name>
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
@@ -51,7 +51,6 @@ fi
 
 mkdir -p "$USER_LAUNCHERS"
 
-# copy the file
 cp "$source_file" "$USER_LAUNCHERS/$copy_name"
 chmod +x "$USER_LAUNCHERS/$copy_name"
 

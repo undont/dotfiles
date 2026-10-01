@@ -1,21 +1,17 @@
 -- highlight go format verbs (`%s`, `%d`, `%t`) inside printf-family calls.
---
--- treesitter captures whole nodes, so no query can pick verbs out of a string
--- literal, and the printf grammar nvim-treesitter injects for that job is a c
--- grammar: go's `%t` and `%w` are c length modifiers rather than conversions,
--- so its format node runs on past them to the next conversion character and
--- swallows the text between. this walks the go tree instead and marks go's own
--- verb set directly
+-- a treesitter query captures whole nodes, not parts of a string literal, and
+-- the printf grammar nvim-treesitter injects is a c grammar: go's `%t` and `%w`
+-- are c length modifiers, so its format node runs on to the next conversion
+-- character. this module walks the go tree and marks go's verb set
 
 local M = {}
 
 local ns = vim.api.nvim_create_namespace 'go-format-verbs'
 
--- above semantic tokens (125) so a server's string token can't cover a verb
+-- above semantic tokens, so a server's string token can't cover a verb
 local PRIORITY = 126
 
--- verbs take the escape-sequence colour, so `%d` and the `\n` next to it read
--- as the same class of thing in every theme.
+-- verbs take the escape-sequence colour
 local HL_GROUP = '@string.special.format'
 
 local function link_default()
@@ -28,14 +24,10 @@ for ch in ('vTtbcdoOqxXUeEfFgGspw'):gmatch '.' do
 end
 
 -- split by where the format string sits: the first argument for most, the
--- second for the ones that take a writer, reader or buffer first.
---
--- the names are vet's printf list plus the structured loggers vet knows
--- nothing about (logrus, zap's sugar, klog, glog, zerolog's Msgf), so a
--- `Warnf` next to an `Errorf` doesn't come out a different colour. it stays an
--- explicit list rather than matching any method ending in `f`: the scanner
--- would then read strings that are not format strings, and `Conf("100% off")`
--- has a space flag and an `o` verb in it
+-- second for those that take a writer, reader or buffer first. the names are
+-- vet's printf list plus structured loggers absent from it (logrus, zap's
+-- sugar, klog, glog, zerolog's Msgf). an explicit list, not any method ending
+-- in `f`: `Conf("100% off")` has a space flag and an `o` verb in it
 local QUERY = [[
   ((call_expression
     function: (selector_expression
@@ -119,8 +111,8 @@ local function verb_ranges(s)
   end
 end
 
---- mark every verb in one string-content node. a raw string can hold newlines,
---- so each of its lines is scanned against its own buffer row
+--- a raw string can hold newlines, so each of its lines is scanned against its
+--- own buffer row
 ---@param buf integer
 ---@param node TSNode
 local function mark(buf, node)
@@ -138,11 +130,8 @@ local function mark(buf, node)
   end
 end
 
--- match the ceiling plugins/treesitter.lua puts on `vim.treesitter.start`: past
--- it there is no highlighting to decorate, and parsing a generated file the
--- config deliberately skipped would be the expensive half of what it avoided.
--- measured from the buffer rather than fs_stat, which would miss unsaved edits
--- and touch disk on every debounce
+-- the ceiling plugins/treesitter.lua puts on `vim.treesitter.start`. measured
+-- from the buffer, not fs_stat, which misses unsaved edits and touches disk
 local MAX_BYTES = 1024 * 1024
 
 ---@param buf integer
@@ -181,8 +170,7 @@ end
 
 local timers = {}
 
---- coalesce redraws while typing; a keystroke-rate full-buffer pass is wasted
---- work when only the line under the cursor can have changed
+--- debounced, so redraws coalesce while typing
 ---@param buf integer
 local function schedule(buf)
   local timer = timers[buf]

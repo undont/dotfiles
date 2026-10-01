@@ -5,10 +5,9 @@
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# --list mode: output entries only (used by fzf reload-sync)
-# detect this early so the hot reload path can skip the picker-only
-# initialisation (common.sh, ui.sh, load_fzf_theme); those together
-# add ~100ms of bash sourcing that visibly stalls the UI on every `x`
+# --list mode: output entries only (used by fzf reload-sync). detected early so
+# the reload path skips the picker-only initialisation (common.sh, ui.sh,
+# load_fzf_theme)
 LIST_MODE=0
 [[ "${1:-}" == "--list" ]] && LIST_MODE=1
 
@@ -123,7 +122,7 @@ if [[ $count -eq 0 ]]; then
     exit 0
 fi
 
-# single alert: jump directly instead of paying for an fzf startup
+# single alert: jump directly, no fzf startup
 if [[ $count -eq 1 ]]; then
     _navigate_to_target "$(_extract_target "$entry_list")"
     exit 0

@@ -1,6 +1,6 @@
 # Themes Directory
 
-This directory contains theme definitions for the dotfiles environment. Themes are applied consistently across tmux, Ghostty, FZF, and Neovim.
+This directory contains theme definitions for the dotfiles environment. Themes apply to tmux, Ghostty, FZF, Neovim, gh-dash, yazi, and the AI CLI agent statusline.
 
 ## Available Themes
 
@@ -103,12 +103,12 @@ scripts/theme-contrast-check --fix themes/my-theme.theme
 - **All 6 accent colours** on both backgrounds
 - **Ghostty palette colours 1-6** as foreground on the terminal background
 - **Palette 8** (bright black / comments) on background
-- **Each palette colour as a background** — must be readable with either black or white text (for terminal apps like LazyGit that use ANSI colours as backgrounds)
+- **Each palette colour as a background**: must be readable with either black or white text (for terminal apps like LazyGit that use ANSI colours as backgrounds)
 
 ### Tips for Fixing Contrast Issues
 
 - **Lighten foreground colours** rather than darkening backgrounds (preserves theme character)
-- **FG_SECONDARY** is the most common failure — it needs to pass 4.5:1 on _both_ BG_PRIMARY and BG_SECONDARY
+- **FG_SECONDARY** is the most common failure: it needs to pass 4.5:1 on _both_ BG_PRIMARY and BG_SECONDARY
 - **GHOSTTY_PALETTE_8** should match or be close to FG_SECONDARY
 - Use [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) for quick manual checks
 - Test visually with `dotfiles theme switch <name>` and open Neovim, LazyGit, and Neo-tree
@@ -126,23 +126,23 @@ Theme files only define **base colours** and **accents**. The following are auto
 
 ### Overriding Individual Derived Variables
 
-Any variable set in the `.theme` file before `apply_theme_defaults` runs will be respected — the defaults use `${VAR:-fallback}` so they won't clobber an explicit value.
+Any variable set in the `.theme` file before `apply_theme_defaults` runs will be respected: the defaults use `${VAR:-fallback}` so they won't clobber an explicit value.
 
 For example, to use cyan for agent/zoom alerts while keeping purple as the active window accent:
 
 ```bash
 THEME_ACTIVE_ACCENT="purple"
-TMUX_STATUS_BELL_FG="#8be9fd"    # Cyan — overrides the purple default
+TMUX_STATUS_BELL_FG="#8be9fd"    # Cyan, overrides the purple default
 ```
 
 ### Consumer Scripts
 
-Two scripts consume theme files and apply defaults:
+Two scripts source the `.theme` file, then `theme-defaults.sh`, then call `apply_theme_defaults()`:
 
-1. **`scripts/theme-switch`**: Applies theme to tmux and Ghostty templates
-2. **`scripts/fzf-theme.sh`**: Generates FZF colours (sourced by `.zshrc`)
+1. **`scripts/theme-switch`**: Renders the tmux, Ghostty, gh-dash and yazi templates
+2. **`scripts/fzf-theme.sh`**: Generates FZF colours (sourced by `zsh/dotfiles.zsh`)
 
-Both scripts source the `.theme` file, then `theme-defaults.sh`, then call `apply_theme_defaults()`.
+A third, **`scripts/_lib/statusline-theme.sh`**, parses the `.theme` file by pattern without sourcing it, to colour an AI CLI agent's statusline. See [Theme System](../docs/THEME-SYSTEM.md).
 
 ## Testing a New Theme
 

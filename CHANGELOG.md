@@ -4,6 +4,24 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.147] - 2026-10-01
+
+### Fixed
+
+- `clip` selects the Wayland and Termux backends again. Spaces had crept into their command checks, so neither could ever be picked. `zsh/dotfiles.zsh`
+- The terminal title follows `git switch`: the cached branch refreshes at the next prompt after a git command rather than before the command runs. `zsh/dotfiles.zsh`
+- The installer's next steps no longer treat an untouched secrets template as configured, and the backup restore hint copies the dot-prefixed files its old `/*` glob missed. `install.sh`, `scripts/install/backup-existing.sh`
+- `dotfiles update --preview` numbers the steps the way the installer does and groups Brewfile and installer changes under their categories. `scripts/dotfiles`
+- `run-tests.sh --no-tmux` runs every test that doesn't start a tmux server, instead of skipping nearly all of them. `scripts/run-tests.sh`
+- neo-tree's git status shows a deleted file whose directory is also gone, under a virtual parent directory. `nvim/lua/custom/features/neo-tree-git-patch.lua`
+- tmux test cleanup removes the test server's real socket. `tmux/scripts/tests/_test-helpers.sh`
+
+### Removed
+
+- `tkill`: the session-closed hook already prunes a killed session's backup, and `trestore --delete` removes the backup of a session that isn't running. `zsh/dotfiles.zsh`, `tmux/scripts/resurrect/delete.sh`
+- differ's `<leader>dc`, `<leader>de`, `<leader>dd` and `<leader>dl` keymaps, and the which-key maps on `differ://` buffers. `nvim/lua/custom/plugins/differ.lua`, `nvim/cheatsheet.txt`
+- seeql from the Brewfile. `Brewfile`, `README.md`
+
 ## [0.2.146] - 2026-09-30
 
 ### Added

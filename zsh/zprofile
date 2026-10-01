@@ -1,26 +1,18 @@
 # =============================================================================
 # ZSH PROFILE (Login Shell Configuration)
 # =============================================================================
-# This file is sourced for LOGIN shells only (e.g., when opening a new
-# terminal window or SSH session). Use this for:
-#   - PATH additions that installers add automatically
-#   - Environment setup that only needs to run once per session
+# sourced for login shells only (a new terminal window, an ssh session). holds
+# PATH entries added by third-party installers on this machine; the entries the
+# dotfiles framework owns live in zsh/dotfiles.zsh. interactive config
+# (aliases, functions, prompt) goes in ~/.zshrc
 #
-# For interactive shell config (aliases, functions, prompt), use ~/.zshrc
-#
-# Load order: .zshenv → .zprofile (login) → .zshrc (interactive) → .zlogin
-#
-# Conventions:
-#   - This file is for PATH entries added by third-party installers (per machine).
-#   - PATH entries the dotfiles framework owns live in zsh/dotfiles.zsh.
-#   - Don't duplicate framework entries here; typeset -U below dedupes anyway.
+# load order: .zshenv → .zprofile (login) → .zshrc (interactive) → .zlogin
 
-# Keep $path (and therefore $PATH) deduplicated across all later additions,
-# including any made by the framework in zsh/dotfiles.zsh.
+# dedupes $path across all later additions, including the framework's
 typeset -U path PATH
 
-# Homebrew environment (PATH, MANPATH, INFOPATH, FPATH for completions)
-# Sets HOMEBREW_PREFIX and adds site-functions to fpath (needed by compinit).
+# homebrew environment: HOMEBREW_PREFIX, PATH, MANPATH, INFOPATH, and
+# site-functions on fpath (needed by compinit)
 if [[ -f /opt/homebrew/bin/brew ]]; then
   eval "$(/opt/homebrew/bin/brew shellenv)"
 elif [[ -f /usr/local/bin/brew ]]; then
@@ -29,25 +21,21 @@ elif [[ -f /home/linuxbrew/.linuxbrew/bin/brew ]]; then
   eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
 fi
 
-# Bun global packages (bun install -g)
+# bun global packages (bun install -g)
 export PATH="$HOME/.bun/bin:$PATH"
 
-# User-local binaries (~/.local/bin) — common install target for pipx,
-# `cargo install`, Antigravity CLI, etc.
+# user-local binaries: install target for `uv tool install` and other CLIs
 export PATH="$HOME/.local/bin:$PATH"
 
-# System admin binaries (/usr/sbin, /sbin) — hold tools like smartctl, that
-# aren't on a non-root user's default PATH on Debian/Ubuntu. Appended (not
-# prepended) so they act as a fallback and never shadow brew/user binaries.
-# No-op on macOS (already in PATH) and Arch/Fedora (symlinked into /usr/bin);
-# typeset -U above dedupes. Guarded on directory existence.
+# /usr/sbin and /sbin hold tools like smartctl that are not on a non-root
+# user's default PATH on Debian/Ubuntu. appended so they never shadow brew or
+# user binaries; already on PATH on macOS, Arch and Fedora
 [[ -d /usr/sbin ]] && export PATH="$PATH:/usr/sbin"
 [[ -d /sbin ]] && export PATH="$PATH:/sbin"
 
-# over ssh, terminal emulators don't forward COLORTERM, so remote TUIs (claude
-# code, etc.) see only TERM=*-256color and downsample 24-bit brand colours to
-# the 256 palette. we always drive from a truecolor terminal (ghostty+tmux), so
-# assert it when it's missing inside an ssh session.
+# terminal emulators don't forward COLORTERM over ssh, so remote TUIs see only
+# TERM=*-256color and downsample 24-bit colours. the driving terminal
+# (ghostty + tmux) is truecolor, so set it when missing in an ssh session
 if [[ -z "${COLORTERM:-}" && -n "${SSH_CONNECTION:-}" ]]; then
   export COLORTERM=truecolor
 fi

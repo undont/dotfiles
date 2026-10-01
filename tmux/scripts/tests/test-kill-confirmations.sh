@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test confirmation dialogs in kill-pane.sh, kill-window.sh, kill-session.sh
+# test confirmation dialogs in panes/kill.sh, windows/kill.sh, sessions/kill.sh
 # verifies that all kill scripts use show_visual_confirm with context-aware messages
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -71,7 +71,7 @@ done
 
 section "Context-aware messages"
 
-# kill-pane.sh should have context-aware messages for last pane
+# panes/kill.sh should have context-aware messages for last pane
 if grep -q "Last pane in" "$SCRIPTS_DIR/panes/kill.sh"; then
     pass "kill-pane.sh has context-aware message for last pane"
 else
@@ -84,7 +84,7 @@ else
     fail "kill-pane.sh doesn't mention session switching"
 fi
 
-# kill-window.sh should have context-aware messages for last window
+# windows/kill.sh should have context-aware messages for last window
 if grep -q "Last window" "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh has context-aware message for last window"
 else
@@ -97,7 +97,7 @@ else
     fail "kill-window.sh doesn't mention session switching"
 fi
 
-# kill-session.sh should ask about switching to another session
+# sessions/kill.sh should ask about switching to another session
 if grep -q "Kill session.*and switch to" "$SCRIPTS_DIR/sessions/kill.sh"; then
     pass "kill-session.sh has context-aware message for session switching"
 else
@@ -127,7 +127,7 @@ done
 
 section "Flag support"
 
-# kill-pane.sh and kill-window.sh should support --force flag
+# panes/kill.sh and windows/kill.sh should support --force flag
 for script in kill-pane.sh kill-window.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "\-\-force" "$SCRIPTS_DIR/$script_path"; then
@@ -139,7 +139,7 @@ for script in kill-pane.sh kill-window.sh; do
     fi
 done
 
-# kill-window.sh and kill-session.sh should support --no-confirm flag
+# windows/kill.sh and sessions/kill.sh should support --no-confirm flag
 for script in kill-window.sh kill-session.sh; do
     script_path="${KILL_SCRIPTS[$script]}"
     if grep -q "\-\-no-confirm" "$SCRIPTS_DIR/$script_path"; then
@@ -188,7 +188,7 @@ done
 
 section "Alert cleanup integration"
 
-# kill-window.sh and kill-session.sh should clear alerts
+# windows/kill.sh and sessions/kill.sh should clear alerts
 if grep -q "clear_window_alerts" "$SCRIPTS_DIR/windows/kill.sh"; then
     pass "kill-window.sh clears window alerts"
 else
@@ -217,7 +217,7 @@ done
 
 section "save_undo_state resilience"
 
-# regression: save_undo_state must return 0 even when no backup exists,
+# save_undo_state must return 0 even when no backup exists,
 # otherwise set -e kills the script before the session gets killed.
 # this happens when a session is created, killed, recreated, and killed
 # again before the auto-save cycle captures it

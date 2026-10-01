@@ -1,12 +1,11 @@
 #!/usr/bin/env bash
-# proclist: unified picker source for running + finished processes.
-#   running rows come from the in-flight registry (RUNNING_DIR), written by the
-#   zsh cmd-alert hook while a tracked command is executing.
-#   finished rows come from the alerts file (:exit: lines), set on completion.
+# proclist: picker source for running + finished processes
+#   running rows: the in-flight registry (RUNNING_DIR), written by the zsh cmd-alert hook
+#   finished rows: the finished history (FINISHED_FILE), appended on completion
 # emits a 3-line legend header then tab-delimited rows for fzf:
-#   {1}=display(shown)  {2}=type(run|exit)  {3}=jump/preview target
-#   {4}=argA  {5}=argB   (run: argA=pane_id; exit: argA=session, argB=window)
-# the prefix+P binding in tmux.conf.template runs fzf over this output.
+#   {1}=display(shown)  {2}=type(run|done)  {3}=jump/preview target
+#   {4}=argA  {5}=argB   (run: argA=pane_id; done: argA=epoch, argB=window_id)
+# the prefix+P binding in tmux.conf.template runs fzf over this output
 set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -109,13 +108,11 @@ if [[ -d "$SUPPRESS_DIR" ]]; then
 fi
 
 # ── finished rows (history file): newest first, last hour ───────────────────
-# the alerts file (status-right + window-status exit indicators) has no TTL of
-# its own: an exit line clears only when its window is selected or its session
-# dies. the finished file ages out at an hour, so a window you never revisit
-# kept its indicator long after the proclist "done" row had gone. when a row is
-# dropped here (aged out, or evicted to bound the file) we clear that window's
-# exit indicator too, keyed on the stable window_id, unless a retained row still
-# justifies it
+# the alerts file (status-right + window-status exit indicators) has no TTL: an
+# exit line clears only when its window is selected or its session dies. so when
+# a row is dropped here (aged out, or evicted to bound the file) that window's
+# exit indicator is cleared too, keyed on window_id, unless a retained row still
+# covers the window
 FINISHED_MAX_AGE=3600 # drop entries older than an hour
 FINISHED_MAX_SHOW=20  # show at most this many
 FINISHED_MAX_KEEP=200 # retain at most this many in the file (newest first),

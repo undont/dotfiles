@@ -6,7 +6,6 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# source shared test helpers (colours, pass/fail/skip/section, assertions, sandbox)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 UNINSTALL_SCRIPT="$DOTFILES_DIR/scripts/install/uninstall.sh"
@@ -17,42 +16,36 @@ UNINSTALL_SCRIPT="$DOTFILES_DIR/scripts/install/uninstall.sh"
 
 section "Uninstall script structure"
 
-# test 1: script exists and is executable
 if [[ -x "$UNINSTALL_SCRIPT" ]]; then
     pass "uninstall.sh exists and is executable"
 else
     fail "uninstall.sh missing or not executable"
 fi
 
-# test 2: script sources common.sh
 if grep -q 'source.*common\.sh' "$UNINSTALL_SCRIPT"; then
     pass "uninstall.sh sources common.sh"
 else
     fail "uninstall.sh does not source common.sh"
 fi
 
-# test 3: script has --restore-backup flag
 if grep -q 'restore.backup' "$UNINSTALL_SCRIPT"; then
     pass "uninstall.sh supports --restore-backup flag"
 else
     fail "uninstall.sh missing --restore-backup support"
 fi
 
-# test 4: script has --remove-brew-packages flag
 if grep -q 'remove.brew.packages' "$UNINSTALL_SCRIPT"; then
     pass "uninstall.sh supports --remove-brew-packages flag"
 else
     fail "uninstall.sh missing --remove-brew-packages support"
 fi
 
-# test 5: script has help output
 if bash "$UNINSTALL_SCRIPT" --help 2>&1 | grep -qi "uninstall\|usage\|remove" 2>/dev/null; then
     pass "uninstall.sh has help output"
 else
     skip "uninstall.sh has no --help flag"
 fi
 
-# test 6: script handles local override files
 for override in ghostty tmux nvim; do
     if grep -q "$override.*local" "$UNINSTALL_SCRIPT"; then
         pass "uninstall.sh handles $override local override"
@@ -66,10 +59,9 @@ section "Symlink removal logic (sandboxed)"
 setup_sandbox
 trap cleanup_sandbox EXIT
 
-# test 7/8: run uninstall.sh's removal loop over a mixed set. this mirrors the
-# `[[ -L "$link" ]]` guard at uninstall.sh:159 rather than executing the script,
-# which prompts for confirmation; the real file is in the list so the guard is
-# what keeps it, not its absence from the loop
+# a copy of uninstall.sh's removal loop and its `[[ -L "$link" ]]` guard; the
+# script itself prompts for confirmation, so it is not executed. the real file
+# is in the list, so only the guard keeps it
 mkdir -p "$TEST_HOME/.config/zsh"
 ln -sf "$DOTFILES_DIR/zsh/dotfiles.zsh" "$TEST_HOME/.config/zsh/dotfiles.zsh"
 ln -sf "$DOTFILES_DIR/zsh/zprofile" "$TEST_HOME/.zprofile"
@@ -134,13 +126,13 @@ installer_exprs=$(grep -E '^[[:space:]]*create_link ' \
     "$DOTFILES_DIR/scripts/install/create-symlinks.sh" |
     sed -E 's/^[[:space:]]*create_link "[^"]+" "([^"]+)".*/\1/')
 
-# destinations uninstall knows about: the array body plus any += appends
+# destinations in uninstall.sh: the array body plus any += appends
 uninstall_exprs=$({
     sed -n '/^SYMLINKS=(/,/^)/p' "$UNINSTALL_SCRIPT"
     grep -E 'SYMLINKS\+=\(' "$UNINSTALL_SCRIPT"
 } | grep -oE '"[^"]+"' | tr -d '"')
 
-# resolve the uninstall side once, under both lazydocker layouts
+# both lazydocker layouts
 uninstall_resolved=""
 while IFS= read -r expr; do
     [[ -z "$expr" ]] && continue

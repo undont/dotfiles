@@ -4,7 +4,6 @@ local M = {}
 
 local scan_runner = require 'custom.features.scan-runner'
 
---- detect package manager from lockfile in a directory
 ---@param dir string
 ---@return string runner 'bun', 'pnpm', 'yarn', or 'npm'
 local function detect_pkg_runner(dir)
@@ -18,7 +17,6 @@ local function detect_pkg_runner(dir)
   return 'npm'
 end
 
---- build tsc command using the detected package manager
 ---@param dir string
 ---@return string[] cmd
 local function tsc_cmd(dir)
@@ -33,7 +31,7 @@ local function tsc_cmd(dir)
   return { 'npx', 'tsc', '--noEmit', '--pretty', 'false' }
 end
 
---- build check command (eslint + tsc) using the detected package manager
+--- the project's `check` script (eslint + tsc)
 ---@param dir string
 ---@return string[] cmd
 local function check_cmd(dir)
@@ -48,15 +46,13 @@ local function check_cmd(dir)
   return { 'npm', 'run', 'check' }
 end
 
---- find the best dotnet build target, preferring solutions over projects.
---- from the matched .csproj directory, walks up to cwd looking for .sln/.slnx
+--- a solution between the .csproj directory and cwd wins over the project
 ---@param csproj_dir string directory containing the matched .csproj
 ---@return string target path to build
 local function find_dotnet_target(csproj_dir)
   local cwd = vim.fn.getcwd()
   local dir = csproj_dir
 
-  -- walk up looking for a solution file
   while #dir >= #cwd do
     for _, ext in ipairs { '*.slnx', '*.sln' } do
       local matches = vim.fn.glob(dir .. '/' .. ext, false, true)
@@ -74,7 +70,6 @@ local function find_dotnet_target(csproj_dir)
     dir = parent
   end
 
-  -- no solution found, use the .csproj directly
   local csproj = vim.fn.glob(csproj_dir .. '/*.csproj', false, true)
   return csproj[1] or csproj_dir
 end
@@ -116,7 +111,6 @@ local make_build_patterns = {
   { pattern = 'check', plain = true },
 }
 
---- parse Makefile and extract build-related targets
 ---@param makefile_path string
 ---@return string[] targets
 local function parse_make_build_targets(makefile_path)
@@ -154,8 +148,6 @@ local function parse_make_build_targets(makefile_path)
   return targets
 end
 
---- resolve a build config's cmd for a given directory
---- cmd can be a static table or a function(dir) returning a table
 ---@param cfg table
 ---@param dir string
 ---@return table resolved config with cmd as table and build_dir set
@@ -164,7 +156,6 @@ local function resolve_config(cfg, dir)
   return { cmd = cmd, efm = cfg.efm, build_dir = dir }
 end
 
---- check a directory for any language-specific marker
 ---@param dir string
 ---@return table|nil resolved config with build_dir
 local function check_dir_for_markers(dir)
@@ -183,16 +174,14 @@ local function check_dir_for_markers(dir)
   return nil
 end
 
---- detect project type and return build config
---- walks up from the current buffer's directory to find the nearest
---- language-specific marker before falling back to Makefile targets
+--- the nearest language-specific marker from the current buffer's directory up
+--- to cwd wins; Makefile targets are the fallback
 ---@return table|nil config, boolean|nil is_makefile
 local function detect_build()
   local cwd = vim.fn.getcwd()
 
-  -- walk up from current buffer dir to cwd looking for language markers.
-  -- only attempt for normal file buffers; special buffers (neo-tree, oil,
-  -- terminal, dashboard, etc) can return nonsensical paths from expand()
+  -- normal file buffers only: special buffers (neo-tree, oil, terminal,
+  -- dashboard) return unusable paths from expand()
   if vim.bo.buftype == '' then
     local buf_file = vim.fn.expand '%:p'
     if buf_file ~= '' and buf_file:find(cwd, 1, true) == 1 then
@@ -211,13 +200,11 @@ local function detect_build()
     end
   end
 
-  -- no marker found from buffer walk, check cwd itself
   local cfg = check_dir_for_markers(cwd)
   if cfg then
     return cfg, false
   end
 
-  -- check for Makefile with build targets
   local makefile_path = cwd .. '/Makefile'
   if vim.fn.filereadable(makefile_path) == 1 then
     local targets = parse_make_build_targets(makefile_path)
@@ -229,22 +216,19 @@ local function detect_build()
   return nil, nil
 end
 
---- strip ANSI escape codes from a string
 ---@param str string
 ---@return string
 local function strip_ansi(str)
   return (str:gsub('\027%[[%d;]*m', ''))
 end
 
---- detect whether a command argument is a filesystem path.
---- used only for shortening notification text; execution still uses the full cmd
+--- only shortens notification text; execution uses the full cmd
 ---@param arg string
 ---@return boolean
 local function is_path_arg(arg)
   return arg:find '^/' or arg:find '^%./' or arg:find '^%.%./' or arg:find '^~/' or arg:find('/', 1, true)
 end
 
---- format a command for notifications without noisy path arguments
 ---@param cmd string[]
 ---@return string
 local function format_cmd_for_display(cmd)
@@ -257,7 +241,6 @@ local function format_cmd_for_display(cmd)
   return table.concat(parts, ' ')
 end
 
---- create a fidget progress handle for builds if the plugin is available
 ---@param cmd_str string
 ---@return table|nil
 local function start_build_progress(cmd_str)
@@ -275,8 +258,6 @@ end
 -- directories to skip when hunting for a real path in a monorepo
 local ignore_dirs = { ['node_modules'] = true, ['.git'] = true, ['dist'] = true, ['build'] = true, ['.next'] = true, ['.turbo'] = true }
 
---- search for cand inside build_dir up to `max_depth` subdirs deep,
---- skipping heavy/irrelevant directories (node_modules, .git, etc)
 ---@param build_dir string
 ---@param cand string relative path from some package root
 ---@param max_depth integer
@@ -356,12 +337,9 @@ local function resolve_real_path(name, build_dir)
     end
   end
 
-  -- fallback: when `setqflist({lines=...})` parses build output it resolves relative
-  -- filenames against nvim's CWD, not the build tool's CWD (build_dir). in monorepos
-  -- where the build subdirectory differs from the project root (e.g. a `web/` workspace
-  -- inside the git root) this produces absolute paths missing the subdirectory prefix.
-  -- strip the nvim CWD prefix to recover the relative portion and re-resolve against
-  -- build_dir
+  -- `setqflist({lines=...})` resolves relative filenames against nvim's cwd, not
+  -- build_dir, so a build run in a subdirectory yields absolute paths missing that
+  -- subdirectory. strip the nvim cwd prefix and re-resolve against build_dir
   local nvim_cwd = vim.fn.getcwd() .. '/'
   for _, cand in ipairs(candidates) do
     if cand:sub(1, #nvim_cwd) == nvim_cwd then
@@ -408,7 +386,6 @@ local function repair_qf_paths(items, build_dir)
   return items
 end
 
---- deduplicate quickfix items produced from build output
 ---@param items table[]
 ---@return table[]
 local function dedupe_qf_items(items)
@@ -442,7 +419,6 @@ local function dedupe_qf_items(items)
   return deduped
 end
 
---- run async build and populate quickfix list, then open the quickfix window
 ---@param cfg table Build config with cmd and optional efm
 local function run_build(cfg)
   local cmd_str = format_cmd_for_display(cfg.cmd)
@@ -458,7 +434,6 @@ local function run_build(cfg)
       local output = strip_ansi((result.stdout or '') .. (result.stderr or ''))
       local lines = vim.split(output, '\n', { trimempty = true })
 
-      -- build succeeded
       if result.code == 0 then
         if progress then
           progress:finish()
@@ -467,7 +442,6 @@ local function run_build(cfg)
         return
       end
 
-      -- build failed but no output
       if #lines == 0 then
         if progress then
           progress:finish()
@@ -476,7 +450,6 @@ local function run_build(cfg)
         return
       end
 
-      -- parse output into quickfix entries
       local qf_opts = { title = 'Build: ' .. cmd_str, lines = lines }
       if cfg.efm then
         qf_opts.efm = cfg.efm
@@ -485,9 +458,8 @@ local function run_build(cfg)
 
       local qf_items = dedupe_qf_items(vim.fn.getqflist())
 
-      -- check ORIGINAL validity before repair: if efm matched nothing,
-      -- the tool was probably just noisy (e.g. bun echoing scripts) and
-      -- we treat a non-zero exit as success
+      -- validity is read before repair: when efm matched nothing (e.g. bun
+      -- echoing scripts) a non-zero exit counts as success
       local has_valid = false
       for _, item in ipairs(qf_items) do
         if item.valid == 1 then
@@ -509,37 +481,32 @@ local function run_build(cfg)
       if progress then
         progress:finish()
       end
-      vim.notify('Failed — ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
+      vim.notify('Failed, ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
       vim.cmd 'botright copen'
     end)
   )
 end
 
---- build a combined efm from all build_configs (most specific patterns first)
---- used for Makefile targets where the underlying tool is unknown.
---- strips %-G%.%# (catch-all ignore) from individual efms so earlier configs
---- don't swallow lines that later configs need to match
+--- efm for Makefile targets, where the underlying tool is unknown: every
+--- build_configs efm in order, with each catch-all ignore (%-G%.%#) replaced by
+--- one at the end so an earlier config can't swallow a later config's lines
 ---@return string combined errorformat
 local function combined_efm()
   local parts = {}
   for _, cfg in ipairs(build_configs) do
-    -- remove catch-all ignore patterns that would short-circuit later configs
     local efm = cfg.efm:gsub(',?%%%-G%%.%%#', '')
     if efm ~= '' then
       table.insert(parts, efm)
     end
   end
-  -- single catch-all at the very end, after all patterns have been tried
   table.insert(parts, '%-G%.%#')
   return table.concat(parts, ',')
 end
 
---- show make target picker and run selected target
 ---@param targets string[]
 local function pick_make_target(targets)
   local efm = combined_efm()
 
-  -- single target, run directly without sub-picker
   if #targets == 1 then
     run_build { cmd = { 'make', targets[1] }, efm = efm }
     return
@@ -563,7 +530,6 @@ local function pick_make_target(targets)
   end)
 end
 
---- run project build (auto-detects project type)
 function M.run()
   local cfg, is_makefile = detect_build()
   if not cfg then
@@ -593,26 +559,12 @@ function M.run_make()
   pick_make_target(targets)
 end
 
---- prune diagnostics-backed qf entries as the underlying issues are fixed.
---- fires on DiagnosticChanged: for a loaded buffer with an LSP attached,
---- drops qf items that no longer have a matching live diagnostic. triggers
---- on titles starting with "<Kind>:" where Kind is in AUTO_CLEAR_KINDS.
----
---- the `match` field selects how an item is matched against live diagnostics:
----   - 'line'      : drop if no diagnostic exists on the same line. used for
----                   Build entries, which come from compiler output and don't
----                   carry the `[source]` text prefix that the diagnostic
----                   lists use.
----   - 'line_text' : drop unless a live diagnostic has the same (lnum, text)
----                   tuple. used for the scan-backed lists (Sonar, Modified,
----                   Branch, Ticket, Project, Buffer), where items are built
----                   via scan_runner.diag_to_item and carry a `[source]
----                   message` text. stops stale entries surviving just because
----                   an unrelated diagnostic landed on the row.
----
---- the live `<leader>xx` list (title `Diagnostics: all`) is deliberately absent:
---- lists.lua's debounced rebuild fully owns it (it both adds and removes), so a
---- second pruner here would just race that rebuild.
+--- qf/loclist titles starting "<Kind>:" are pruned on DiagnosticChanged.
+--- 'line' drops an item when its line has no live diagnostic (Build items come
+--- from compiler output and lack the `[source]` text prefix). 'line_text' drops
+--- it unless a live diagnostic has the same (lnum, text), the shape
+--- scan_runner.diag_to_item builds. `Diagnostics: all` is absent: lists.lua's
+--- debounced rebuild owns that list
 local AUTO_CLEAR_KINDS = {
   Build = { label = 'Build errors resolved', match = 'line' },
   Sonar = { label = 'Sonar issues resolved', match = 'line_text' },
@@ -623,16 +575,10 @@ local AUTO_CLEAR_KINDS = {
   Buffer = { label = 'Buffer diagnostics resolved', match = 'line_text' },
 }
 
---- prune diagnostic-backed items from `list` for `bufnr`. returns
---- (kind, label) when the list ends up empty so the caller can close
---- the window and notify; returns nil when nothing was dropped or the
---- title isn't in AUTO_CLEAR_KINDS.
----
---- preserves the list's current-entry idx across the rebuild: if the
---- entry the user was pointed at survives, it stays current; if it was
---- the one just resolved, idx snaps to the nearest surviving predecessor
---- so the next ]q advances forward to the next outstanding issue rather
---- than jumping back to entry 1 (setqflist's default after replace).
+--- returns (kind, label) when the list ends up empty, nil when nothing was
+--- dropped or the title isn't in AUTO_CLEAR_KINDS. the current entry stays
+--- current when it survives, otherwise idx moves to the nearest surviving
+--- predecessor (setqflist resets idx to the first entry on replace)
 local function prune_diag_list(list, replace, set_idx, bufnr, lookups)
   if not list.title then
     return
@@ -683,13 +629,9 @@ local function prune_diag_list(list, replace, set_idx, bufnr, lookups)
   end
 end
 
--- per-buffer baseline of `changedtick` recorded on the first DiagnosticChanged
--- we observe. auto-clear is gated on the tick having advanced past the
--- baseline, i.e. the user has actually edited the buffer since we first saw
--- it. without this, a `]q` jump into a fresh buffer fires the LSP's initial
--- publish, whose line set may not overlap with the qf entries' source (build
--- output, sonar scan, modified-scan snapshot), and the prune wipes still-valid
--- entries that the user hasn't fixed.
+-- `changedtick` at the first DiagnosticChanged seen per buffer. pruning waits
+-- for the tick to advance past it: the LSP's initial publish on a `]q` jump
+-- into a fresh buffer need not cover the lines the qf entries came from
 local first_seen_tick = {}
 
 local function setup_auto_clear()
@@ -732,7 +674,6 @@ local function setup_auto_clear()
       end
       local lookups = { line = lines_with_diag, line_text = diag_keys }
 
-      -- quickfix list
       local qf = vim.fn.getqflist { title = 0, items = 0, idx = 0 }
       local qf_kind, qf_label = prune_diag_list(qf, function(d)
         vim.fn.setqflist({}, 'r', d)
@@ -750,8 +691,7 @@ local function setup_auto_clear()
         vim.notify(qf_label, vim.log.levels.INFO, { title = qf_kind, timeout = 3000 })
       end
 
-      -- per-window location lists. skip qf/loclist windows themselves to
-      -- avoid double-processing (their getloclist points back to the parent)
+      -- qf/loclist windows are skipped: their getloclist points back to the parent
       for _, win in ipairs(vim.api.nvim_list_wins()) do
         local b = vim.api.nvim_win_get_buf(win)
         if vim.bo[b].buftype ~= 'quickfix' then

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# test that list scripts use file-based alert lookups (not per-window tmux calls)
-# guards against the performance regression from commit 53671a7 where
-# sessions/list.sh was changed to call tmux show-options per window
+# test that list scripts use file-based alert lookups, not per-window tmux
+# calls (tmux show-options per window)
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

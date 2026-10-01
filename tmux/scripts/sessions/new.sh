@@ -8,10 +8,8 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 
 require_tmux
 
-# load current theme colours for fzf
 load_fzf_theme
 
-# prompt for session name
 newname=$(printf '' | fzf \
     --print-query \
     --query='' \
@@ -32,21 +30,16 @@ if [[ -z "$newname" ]]; then
     exit 0
 fi
 
-# sanitise session name (convert spaces and invalid chars to dashes)
 newname=$(sanitise_session_name "$newname")
 
-# validate session name
 if ! validate_session_name "$newname"; then
     # validate_session_name already outputs error message via error()
     exit 1
 fi
 
-# check if session already exists
 if session_exists "$newname"; then
-    # session exists, switch to it
     tmux switch-client -t "$newname"
 else
-    # create new session at home directory and switch to it
     tmux new-session -d -s "$newname" -n "zsh" -c ~
     tmux switch-client -t "$newname"
 fi

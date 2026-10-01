@@ -2,8 +2,7 @@
 # shellcheck disable=SC1091
 set -euo pipefail
 
-# backup existing configuration files before creating symlinks
-# creates timestamped backup directory
+# moves existing configuration files into a timestamped backup directory
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -12,7 +11,6 @@ source "$SCRIPT_DIR/../_lib/rollback.sh"
 PRESET="${DOTFILES_PRESET:-full}"
 BACKUP_DIR="$HOME/.dotfiles-backup/$(date +%Y%m%d-%H%M%S)-$$"
 
-# ensure parent backup directory exists with restrictive permissions
 mkdir -p "$HOME/.dotfiles-backup"
 chmod 700 "$HOME/.dotfiles-backup"
 
@@ -51,17 +49,17 @@ if should_install "core"; then
     backup_if_exists "$HOME/.config/nvim" "$BACKUP_DIR/.config/nvim" && BACKED_UP=1
 fi
 
-# Hammerspoon (full)
+# hammerspoon (full)
 if should_install "full"; then
     backup_if_exists "$HOME/.hammerspoon" "$BACKUP_DIR/.hammerspoon" && BACKED_UP=1
 fi
 
-# Ghostty (core)
+# ghostty (core)
 if should_install "core"; then
     backup_if_exists "$HOME/.config/ghostty" "$BACKUP_DIR/.config/ghostty" && BACKED_UP=1
 fi
 
-# Karabiner (full)
+# karabiner (full)
 if should_install "full"; then
     backup_if_exists "$HOME/.config/karabiner" "$BACKUP_DIR/.config/karabiner" && BACKED_UP=1
 fi
@@ -73,9 +71,8 @@ if [[ $BACKED_UP -eq 1 ]]; then
     echo "Backup location: $BACKUP_DIR"
     echo ""
     echo "To restore, run:"
-    echo "  cp -r $BACKUP_DIR/* \$HOME/"
+    echo "  cp -R $BACKUP_DIR/. \$HOME/"
 
-    # Record backup location for rollback
     record_backup_location "$BACKUP_DIR"
 else
     echo "No existing configuration files found to backup."

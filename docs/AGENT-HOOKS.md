@@ -21,7 +21,7 @@ Each agent has a dedicated icon and colour in the status bar:
 | Agent    | Icon | Colour |
 | -------- | ---- | ------ |
 | Claude   | ⚡   | Yellow |
-| Codex    | ⌘    | Cyan   |
+| Codex    | ⌘    | Green  |
 | OpenCode |     | Purple |
 | Copilot  |     | Blue   |
 
@@ -126,7 +126,7 @@ Add the following to your `settings.json`:
 
 #### Optional: Nvim Buffer Sync (Beta feature)
 
-If you pair Claude Code with a running Neovim instance (via the `nvim-pair` function), you can add a hook that automatically loads edited files into Neovim's buffer list:
+If you run Claude Code alongside a Neovim instance that listens on a socket, you can add a hook that adds edited files to Neovim's buffer list:
 
 ```json
 {
@@ -146,7 +146,7 @@ If you pair Claude Code with a running Neovim instance (via the `nvim-pair` func
 }
 ```
 
-This reads the `NVIM_SOCKET` environment variable (set by `nvim-pair`) and calls `nvim --server` to add the file to the buffer list.
+This reads the `NVIM_SOCKET` environment variable and calls `nvim --server` to add the file to the buffer list. Nothing in the dotfiles sets `NVIM_SOCKET`: start Neovim with `nvim --listen <socket>` and export `NVIM_SOCKET=<socket>` in the shell that launches Claude Code. With the variable unset, or pointing at a path that is not a socket, the hook exits without doing anything.
 
 ### OpenCode
 
@@ -291,15 +291,15 @@ Only Claude Code produces state today; the format carries an agent field so othe
 
 **Event mapping** (in `scripts/hooks/agent-state.sh`):
 
-| Hook event                                                   | State                  |
-| ------------------------------------------------------------ | ---------------------- |
-| `SessionStart`, `Stop`, `Notification` (`idle_prompt`)       | idle                   |
-| `UserPromptSubmit`, `PreToolUse` (most tools), `PostToolUse` | working                |
-| `PreToolUse` (`AskUserQuestion`, `ExitPlanMode`)             | needs-input            |
-| `PermissionRequest`, `Notification` (`permission_prompt`)    | needs-input            |
-| `StopFailure`                                                | error                  |
-| `SessionEnd`                                                 | removes the state file |
-| `SubagentStop`, anything else                                | no change              |
+| Hook event                                                                                           | State                  |
+| ---------------------------------------------------------------------------------------------------- | ---------------------- |
+| `SessionStart`, `Stop`, `Notification` (`idle_prompt`)                                               | idle                   |
+| `UserPromptSubmit`, `PreToolUse` (most tools), `PostToolUse`                                         | working                |
+| `PreToolUse` (`AskUserQuestion`, `ExitPlanMode`)                                                     | needs-input            |
+| `PermissionRequest`, `Notification` (`permission_prompt`, `elicitation_dialog`, `agent_needs_input`) | needs-input            |
+| `StopFailure`                                                                                        | error                  |
+| `SessionEnd`                                                                                         | removes the state file |
+| `SubagentStop`, anything else                                                                        | no change              |
 
 "Stuck" is never stored: the switcher derives it at render time when the state says working, the last event is older than `AGENT_STUCK_SECS` (default 120), and the pane title no longer starts with Claude's braille spinner character. A long tool run keeps its spinner, so it stays "working" no matter how old the last event is.
 
@@ -479,7 +479,7 @@ tmux/scripts/alerts/clear.sh
 
 ## Command Exit Alerts
 
-The alert system also supports command exit code notifications via the `notify` shell function. See [CMD-ALERTS.md](CMD-ALERTS.md) for details.
+The alert system also shows exit alerts for shell commands that finish while you are in another window, with no wrapper needed. See [CMD-ALERTS.md](CMD-ALERTS.md) for details.
 
 ## Troubleshooting
 

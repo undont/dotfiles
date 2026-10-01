@@ -462,7 +462,7 @@ fi
 
 section "launchers/new.sh: Tmux Exact-Match Session Targets"
 
-# regression guard: the wizard template must emit `=$SESSION` for tmux
+# the wizard template must emit `=$SESSION` for tmux
 # session targets. bare `"$SESSION"` triggers tmux's prefix-matching,
 # so launching "foo-15" would silently re-attach to a running "foo-1533"
 # instead of creating a new session
@@ -508,7 +508,7 @@ else
 fi
 
 # ===========================================================================
-# Shared library: launcher path constants
+# shared library: launcher path constants
 # ===========================================================================
 
 section "Shared Library: Launcher Path Constants"
@@ -534,14 +534,14 @@ else
 fi
 
 # ===========================================================================
-# launchers/list.sh: Tab-delimited format (name weighting for fzf)
+# launchers/list.sh: tab-delimited format (name weighting for fzf)
 # ===========================================================================
 
 section "launchers/list.sh: Tab-Delimited Output Format"
 
 list_output=$("$LIST_LAUNCHERS" 2>&1) || true
 
-# strip header lines (7 logo lines), then check data lines
+# strip the logo header lines, then check data lines
 data_lines=$(printf '%s\n' "$list_output" | tail -n +8)
 
 if [[ -n "$data_lines" ]]; then
@@ -663,14 +663,14 @@ else
     fail "should use -copy suffix for duplicates"
 fi
 
-# Should handle successive copies (-copy-2, -copy-3, ...)
+# should handle successive copies (-copy-2, -copy-3, ...)
 if [[ "$dup_content" == *"-copy-\${n}"* ]] || [[ "$dup_content" == *'copy-${n}'* ]]; then
     pass "auto-increments copy suffix (-copy-2, -copy-3, ...)"
 else
     fail "should auto-increment copy suffix"
 fi
 
-# Should strip existing -copy suffix before generating new one
+# should strip existing -copy suffix before generating new one
 if [[ "$dup_content" == *"-copy"*"sed"* ]] || [[ "$dup_content" == *"s/-copy"* ]]; then
     pass "strips existing -copy suffix before renumbering"
 else
@@ -758,7 +758,7 @@ fi
 rm -rf "$TEST_XDG"
 
 # ===========================================================================
-# Summary
+# summary
 # ===========================================================================
 
 print_summary

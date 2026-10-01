@@ -35,7 +35,7 @@ if command -v pipx >/dev/null 2>&1; then
     if [[ -n "$managed" ]]; then
         echo "    Snapshotting pipx-managed apps to $snapshot"
         {
-            echo "# pipx-managed apps removed by 0.2.99-uninstall-pipx.sh"
+            echo "# pipx-managed apps removed by 0.2.100-uninstall-pipx.sh"
             echo "# Re-install with: uv tool install <name>"
             echo "$managed"
         } >"$snapshot"

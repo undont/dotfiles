@@ -1,13 +1,9 @@
--- fix-all-in-file (grf) and the diagnostic-refreshing code-action picker (gra).
--- extracted from plugins/lsp.lua. fix_all_in_file applies a quickfix action for
--- every diagnostic bottom-up so line shifts don't break later fixes;
--- code_action_with_refresh wraps the built-in picker to re-pull diagnostics
--- after the chosen action applies
+-- fix-all-in-file (grf) and the diagnostic-refreshing code-action picker (gra)
 
 local M = {}
 
---- collect, deduplicate, and sort diagnostics for fix-all-in-file.
---- returns items sorted bottom-up so line shifts don't affect earlier fixes.
+--- deduplicated and sorted bottom-up, so a fix's line shifts don't move the
+--- diagnostics still to be fixed
 local function collect_fixable_diagnostics(bufnr)
   local diagnostics = vim.diagnostic.get(bufnr)
   if #diagnostics == 0 then
@@ -45,8 +41,7 @@ local function collect_fixable_diagnostics(bufnr)
   return items
 end
 
---- resolve a code action if needed, then apply it.
---- some servers (Roslyn) return lazy actions that need codeAction/resolve.
+--- some servers (Roslyn) return lazy actions that need codeAction/resolve
 local function resolve_and_apply(bufnr, action, client, on_done)
   local function apply(a)
     if a.edit then
@@ -70,8 +65,7 @@ local function resolve_and_apply(bufnr, action, client, on_done)
   end
 end
 
---- nudge attached LSPs to recompute diagnostics after code actions/fix-all.
---- some servers republish on didChange, others only on an explicit pull.
+--- some servers republish on didChange, others only on an explicit pull
 ---@param bufnr integer
 local function refresh_diagnostics_soon(bufnr)
   local delays = { 100, 300, 800, 1500 }
@@ -90,8 +84,8 @@ local function refresh_diagnostics_soon(bufnr)
   end
 end
 
---- wrap the built-in code action picker so we can refresh diagnostics after
---- the chosen action is applied without reimplementing nvim's selector flow.
+--- the built-in picker, with a diagnostics refresh after the chosen action
+--- applies
 function M.code_action_with_refresh()
   local bufnr = vim.api.nvim_get_current_buf()
   local orig_select = vim.ui.select
@@ -126,8 +120,7 @@ function M.code_action_with_refresh()
   end, 1500)
 end
 
---- apply all quickfix code actions for every diagnostic in the current buffer.
---- processes bottom-up so line shifts from earlier fixes don't break later ones.
+--- applies a quickfix code action for every diagnostic in the current buffer
 function M.fix_all_in_file()
   local bufnr = vim.api.nvim_get_current_buf()
   local items = collect_fixable_diagnostics(bufnr)

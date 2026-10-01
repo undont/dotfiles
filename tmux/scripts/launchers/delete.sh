@@ -16,7 +16,6 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 # shellcheck source=tmux/scripts/_lib/ui.sh
 source "$SCRIPT_DIR/../_lib/ui.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 
 name="${1:-}"

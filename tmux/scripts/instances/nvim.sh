@@ -7,12 +7,10 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# check if tmux is available
 if ! command -v tmux &>/dev/null; then
     exit 1
 fi
 
-# check if any sessions exist
 if ! tmux list-sessions &>/dev/null; then
     exit 0
 fi
@@ -25,16 +23,9 @@ while IFS= read -r sock; do
     socket_map[$pid]="$sock"
 done < <(find "${TMPDIR}nvim.${USER}" -type s -name "nvim.*" 2>/dev/null || true)
 
-# build PID -> PPID map for all nvim socket PIDs in one ps call.
-# this avoids repeated ps calls when walking the process tree
+# PID -> PPID map from one ps call, for walking the process tree
 declare -A ppid_map=()
 if [[ ${#socket_map[@]} -gt 0 ]]; then
-    # collect all PIDs we might need to walk (nvim pids + ancestors up to 5 levels)
-    all_pids=()
-    for pid in "${!socket_map[@]}"; do
-        all_pids+=("$pid")
-    done
-    # get ppid for all processes in one call (faster than per-pid ps)
     while IFS= read -r pline; do
         [[ -z "$pline" ]] && continue
         p_pid="${pline%% *}"
@@ -54,7 +45,6 @@ while IFS= read -r wline; do
     window_names["$key"]="$name"
 done < <(tmux list-windows -a -F '#{session_name}:#{window_index} #{window_name}')
 
-# store results
 nvim_panes=()
 
 # iterate through all panes in all sessions, sorted by last viewed (most recent first)
@@ -66,10 +56,8 @@ while IFS= read -r line; do
     pane_pid="${rest2%% *}" # pane_pid
     command="${rest2#* }"   # command
 
-    # check if the command is nvim
     [[ "$command" == "nvim" ]] || continue
 
-    # extract session and window_idx for lookups
     session="${target%%:*}"
     win_pane="${target#*:}"
     window_idx="${win_pane%%.*}"
@@ -99,7 +87,7 @@ while IFS= read -r line; do
     # build display: target window_name <tab> socket
     display="${target} ${window_name}"
 
-    # append socket path after tab for pick-nvim.sh to extract
+    # append the socket path after a tab (connect-nvim.sh reads it)
     if [[ -n "$socket" ]]; then
         nvim_panes+=("${display}"$'\t'"${socket}")
     else

@@ -1,20 +1,8 @@
--- SonarLint diagnostics via the official sonarlint-language-server.
--- https://gitlab.com/schrieveslaach/sonarlint.nvim
---
--- connected mode (SonarCloud) is enabled when both SONARQUBE_TOKEN and
--- SONARQUBE_ORG are present in the environment (typically sourced from
--- ~/.config/zsh/secrets.zsh). without them the plugin still loads in
--- local-only mode, you just lose server-side rule profile overrides.
---
--- per-project binding uses the standard `.sonarlint/connectedMode.json`
--- convention shared with the JetBrains/VSCode "SonarQube for IDE" plugins:
---   { "projectKey": "my-org_my-project" }
---
--- this file is the thin lazy spec + config wiring. the bespoke concerns live
--- in features/: sonar-scan (project/changed/ticket scans), sonar-rules
--- (localRules.json model + live silence), sonar-actions (silence code
--- actions), sonar-rule-popup (rich rule-description popup), and sonar-common
--- (shared constants + sonar-diagnostic accessors)
+-- sonarlint.nvim spec and config wiring; scans, rules, code actions and the
+-- rule popup are in features/sonar-*.lua.
+-- connected mode (SonarCloud) needs SONARQUBE_TOKEN and SONARQUBE_ORG in the
+-- environment; without them the server runs local-only. per-project binding
+-- is `.sonarlint/connectedMode.json`: { "projectKey": "my-org_my-project" }
 
 local common = require 'custom.features.sonar-common'
 local rules = require 'custom.features.sonar-rules'
@@ -26,17 +14,13 @@ local CONNECTION_ID = 'sonarcloud'
 local FILETYPES = common.FILETYPES
 local SONARLINT_CLIENT_NAME = common.SONARLINT_CLIENT_NAME
 
---- Mason install root. `vim.env.MASON` is only set after `mason.setup()`
---- runs, which may not have happened by the time sonarlint.nvim's config
---- fires (sonarlint.nvim doesn't depend on mason.nvim, so lazy-loading via
---- `ft = FILETYPES` can outrun mason). fall back to mason's documented
---- default install location so paths resolve regardless of load order
+--- mason install root. `vim.env.MASON` is unset until `mason.setup()` runs,
+--- which this `ft`-loaded config can precede
 local function mason_root()
   return vim.env.MASON or (vim.fn.stdpath 'data' .. '/mason')
 end
 
---- build the analyzer jar list, filtering out any that aren't on disk so a
---- partial Mason install doesn't make the language server fail to start
+--- analyzer jars present on disk; a missing jar stops the language server starting
 local function analyzer_jars()
   local dir = mason_root() .. '/share/sonarlint-analyzers'
   local candidates = {
@@ -44,12 +28,10 @@ local function analyzer_jars()
     'sonarcfamily.jar', -- C / C++
     'sonarjs.jar', -- JavaScript / TypeScript
     'sonargo.jar',
-    -- no C# analyzer, deliberately. sonarcsharp.jar is the server-side
-    -- plugin (`SonarLint-Supported: false` in its manifest, so the language
-    -- server silently skips it), and the real sonarlint C# path
-    -- (sonarlintomnisharp.jar) spawns a bundled omnisharp that does a second
-    -- MSBuild solution load competing with roslyn.nvim. read
-    -- .claude/rules/sonarlint.md before re-adding either
+    -- no C# analyzer: the language server skips sonarcsharp.jar
+    -- (`SonarLint-Supported: false`), and sonarlintomnisharp.jar spawns an
+    -- omnisharp that loads the solution a second time beside roslyn.nvim.
+    -- see .claude/rules/sonarlint.md
     'sonarphp.jar',
     'sonarhtml.jar', -- HTML + CSS
     'sonariac.jar', -- Terraform, Kubernetes, Docker, CloudFormation
@@ -111,17 +93,12 @@ return {
           settings = {
             sonarlint = {},
           },
-          -- always-on: load `.sonarlint/localRules.json` and apply it.
-          -- `rules` is merged into config.settings.sonarlint.rules (sent to
-          -- the LSP server). `overrides` are compiled into glob matchers and
-          -- stashed on the config; the LspAttach hook below uses them to
-          -- filter diagnostics client-side. the connected-mode branch below
-          -- wraps this to additionally bind the project key when SonarCloud
-          -- creds are present
+          -- applies `.sonarlint/localRules.json`: `rules` merges into
+          -- config.settings.sonarlint.rules, `overrides` compile into glob
+          -- matchers on the config for the LspAttach hook below. the
+          -- connected-mode branch wraps this to bind the project key
           before_init = function(params, config)
-            -- always stash the root so the silence-rule writer and the
-            -- override recompile can find the project even before any
-            -- localRules.json exists
+            -- the silence-rule writer needs the root before any localRules.json exists
             local root = params.rootPath or config.root_dir
             config._sonarlint_root = root
             local cfg = rules.read_project_config(root)
@@ -174,17 +151,11 @@ return {
           end
         end
 
-        -- upstream bug workaround: sonarlint.nvim's `find_server_url` crashes
-        -- on SonarCloud-only setups. two issues:
-        --   1. unconditionally iterates `connections.sonarqube` (nil when only
-        --      sonarcloud is configured) -> bad argument to ipairs
-        --   2. treats `connections.sonarcloud` as a single object but the
-        --      documented config (and ours) makes it an array of connections
-        -- patch both notification handlers before setup() captures the
-        -- function references on line 113-114 of sonarlint.lua.
-        --
-        -- upstream tracking: https://gitlab.com/schrieveslaach/sonarlint.nvim/-/issues/42
-        -- remove this block once the fix lands and we've bumped the plugin
+        -- sonarlint.nvim's `find_server_url` crashes on SonarCloud-only setups:
+        -- it iterates `connections.sonarqube` (nil here) and treats
+        -- `connections.sonarcloud` as one object, not the documented array.
+        -- both notification handlers are patched before setup() captures them.
+        -- https://gitlab.com/schrieveslaach/sonarlint.nvim/-/issues/42
         local cm = require 'sonarlint.connected_mode'
         local function safe_server_url(client, connection_id)
           local conns = vim.tbl_get(client, 'config', 'settings', 'sonarlint', 'connectedMode', 'connections') or {}
@@ -234,24 +205,19 @@ return {
 
       require('sonarlint').setup(opts)
 
-      -- apply project-local `overrides` from .sonarlint/localRules.json at
-      -- diagnostic publish time. we wrap the sonarlint client's
-      -- publishDiagnostics handler once on first attach so each diagnostic
-      -- gets filtered against the compiled glob+rule matchers. the compiled
-      -- overrides and root are read from `client.config` *inside* the handler
-      -- rather than captured up front, so a silence-rule code action that adds
-      -- an override at runtime takes effect on the next publish without a
-      -- restart. filtering is subtractive only: a rule that's off globally
-      -- can't be re-enabled per-glob because the server has already stopped
-      -- emitting those diagnostics
+      -- `overrides` from .sonarlint/localRules.json filter diagnostics at
+      -- publish time, via a wrap of the client's publishDiagnostics handler
+      -- installed on first attach. the handler reads the compiled overrides
+      -- from `client.config` on each call, so an override added at runtime
+      -- applies on the next publish. filtering only removes: the server does
+      -- not emit diagnostics for a globally disabled rule
       vim.api.nvim_create_autocmd('LspAttach', {
         callback = function(args)
           local client = vim.lsp.get_client_by_id(args.data.client_id)
           if not client or client.name ~= SONARLINT_CLIENT_NAME then
             return
           end
-          -- make sonar's own codeAction responses carry our silence actions,
-          -- so they appear right after sonar's entries in the gra picker
+          -- sonar's codeAction responses carry the silence actions
           actions.wrap_sonar_codeaction(client)
 
           if client._sonarlint_overrides_wrapped then
@@ -259,8 +225,7 @@ return {
           end
           client._sonarlint_overrides_wrapped = true
 
-          -- replace sonar's generic rule-description popup with our richer one
-          -- (deprecation note + full description). see rich_rule_handler
+          -- rule-description popup from features/sonar-rule-popup
           client.handlers['sonarlint/showRuleDescription'] = rule_popup.rich_rule_handler
 
           local default = client.handlers['textDocument/publishDiagnostics'] or vim.lsp.handlers['textDocument/publishDiagnostics']
@@ -282,11 +247,9 @@ return {
         end,
       })
 
-      -- silence-rule code actions: execute the action's Command locally (no
-      -- round-trip to a server). the codeAction wrap is installed from the
-      -- LspAttach hook above; here we register the command handler and wrap any
-      -- sonar client that already attached before the hook existed (e.g. the ft
-      -- buffer that loaded this plugin)
+      -- silence-rule code actions run their Command locally. this registers
+      -- the command handler and wraps any sonar client attached before the
+      -- LspAttach hook above existed
       vim.lsp.commands[actions.SILENCE_COMMAND] = function(command)
         local arg = command.arguments and command.arguments[1]
         if arg then

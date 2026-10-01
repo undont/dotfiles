@@ -1,19 +1,17 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# unit tests for theme-switch script
-# tests theme switching functionality including template substitution,
-# file handling, and error cases
+# tests the theme-switch CLI (list, current, argument errors) and the real
+# theme files. the sections from "Template Substitution" to "Theme File
+# Validation" run TEST_WRAPPER, a test-local apply_theme, not scripts/theme-switch
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
 THEME_SWITCH="$DOTFILES_ROOT/scripts/theme-switch"
 THEMES_DIR="$DOTFILES_ROOT/themes"
 
-# source shared test helpers (colours, pass/fail/skip/section, assertions)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
-# create test environment
 setup_test_env() {
     TEST_DIR=$(mktemp -d)
     TEST_CONFIG_DIR="$TEST_DIR/config"
@@ -27,7 +25,6 @@ setup_test_env() {
     mkdir -p "$TEST_CONFIG_DIR"
     mkdir -p "$TEST_THEMES_DIR"
 
-    # create test templates with placeholders
     cat >"$TEST_TMUX_TEMPLATE" <<'EOF'
 # Theme: {{THEME_NAME}}
 # Tmux configuration
@@ -50,7 +47,6 @@ palette=1={{GHOSTTY_PALETTE_1}}
 keybind={{PLATFORM_MOD}}+c=text:\x1bc
 EOF
 
-    # create test theme (using new base variable format)
     cat >"$TEST_THEMES_DIR/test-theme.theme" <<'EOF'
 THEME_NAME="Test Theme"
 THEME_ACTIVE_ACCENT="purple"
@@ -97,7 +93,6 @@ GHOSTTY_PALETTE_15="#ffffff"
 NVIM_COLORSCHEME="test-theme"
 EOF
 
-    # create minimal theme for testing (using new base variable format)
     cat >"$TEST_THEMES_DIR/minimal.theme" <<'EOF'
 THEME_NAME="Minimal Theme"
 THEME_ACTIVE_ACCENT="cyan"
@@ -157,7 +152,6 @@ cleanup_test_env() {
     rm -rf "${TEST_DIR:-}"
 }
 
-# trap to ensure cleanup
 trap cleanup_test_env EXIT
 
 # ===========================================================================
@@ -214,7 +208,7 @@ else
     fail "list command should show theme display names"
 fi
 
-# check for current theme marker (may not exist if no theme is set or saved theme is missing from disk)
+# no marker is printed when no theme is set or the saved theme is missing from disk
 saved_theme=""
 [[ -f ~/.config/dotfiles/current-theme ]] && saved_theme=$(cat ~/.config/dotfiles/current-theme)
 if [[ "$list_output" == *"#current"* ]]; then
@@ -237,8 +231,7 @@ else
     fail "current command should show 'Current theme' header"
 fi
 
-# should show some theme name (format: "Display Name (theme-id)")
-# accept any known theme
+# format: "Display Name (theme-id)"
 if [[ "$current_output" =~ \(.*\) ]]; then
     pass "current command shows theme name"
 else
@@ -289,11 +282,11 @@ else
     fail "should suggest listing available themes"
 fi
 
-section "Template Substitution with Test Environment"
+section "Template Substitution (test-local apply_theme)"
 
 setup_test_env
 
-# create a wrapper script that uses test paths
+# a re-implemented apply_theme pointed at test paths
 TEST_WRAPPER="$TEST_DIR/theme-switch-test"
 cat >"$TEST_WRAPPER" <<EOF
 #!/bin/bash
@@ -309,7 +302,6 @@ TMUX_OUTPUT="$TEST_TMUX_OUTPUT"
 GHOSTTY_TEMPLATE="$TEST_GHOSTTY_TEMPLATE"
 GHOSTTY_OUTPUT="$TEST_GHOSTTY_OUTPUT"
 
-# Source the theme-switch script functions
 RED='\033[0;31m'
 GREEN='\033[0;32m'
 YELLOW='\033[1;33m'
@@ -340,7 +332,6 @@ apply_theme() {
 
     source "\$theme_file"
 
-    # Apply theme defaults to generate derived variables
     source "$DOTFILES_ROOT/themes/theme-defaults.sh"
     apply_theme_defaults
 
@@ -384,21 +375,17 @@ EOF
 
 chmod +x "$TEST_WRAPPER"
 
-# apply test theme
 "$TEST_WRAPPER" test-theme 2>/dev/null || true
 
-# test tmux template substitution
 if [[ -f "$TEST_TMUX_OUTPUT" ]]; then
     tmux_content=$(cat "$TEST_TMUX_OUTPUT")
 
-    # check that no placeholders remain
     if ! grep -q "{{.*}}" "$TEST_TMUX_OUTPUT"; then
         pass "tmux template has all variables substituted"
     else
         fail "tmux template contains unsubstituted variables"
     fi
 
-    # check specific substitutions
     if [[ "$tmux_content" == *"#ff0000"* ]]; then
         pass "tmux template substitutes TMUX_STATUS_BG correctly"
     else
@@ -414,18 +401,15 @@ else
     fail "tmux output file not created"
 fi
 
-# test ghostty template substitution
 if [[ -f "$TEST_GHOSTTY_OUTPUT" ]]; then
     ghostty_content=$(cat "$TEST_GHOSTTY_OUTPUT")
 
-    # check that no placeholders remain
     if ! grep -q "{{.*}}" "$TEST_GHOSTTY_OUTPUT"; then
         pass "ghostty template has all variables substituted"
     else
         fail "ghostty template contains unsubstituted variables"
     fi
 
-    # check specific substitutions
     if [[ "$ghostty_content" == *"#000000"* ]]; then
         pass "ghostty template substitutes GHOSTTY_BACKGROUND correctly"
     else
@@ -438,7 +422,6 @@ if [[ -f "$TEST_GHOSTTY_OUTPUT" ]]; then
         fail "ghostty template should substitute THEME_NAME"
     fi
 
-    # check PLATFORM_MOD substitution (keybindings moved to template in this branch)
     if [[ "$ghostty_content" == *"opt+c"* ]]; then
         pass "ghostty template substitutes PLATFORM_MOD correctly"
     else
@@ -463,36 +446,29 @@ fi
 
 section "Missing Template Handling"
 
-# remove ghostty template
 mv "$TEST_GHOSTTY_TEMPLATE" "$TEST_GHOSTTY_TEMPLATE.hidden"
 rm -f "$TEST_GHOSTTY_OUTPUT"
 
-# apply theme again
 "$TEST_WRAPPER" test-theme 2>/dev/null || true
 
-# tmux should still work
 if [[ -f "$TEST_TMUX_OUTPUT" ]]; then
     pass "tmux config generated even when ghostty template missing"
 else
     fail "tmux config should be generated independently"
 fi
 
-# Ghostty should be skipped
 if [[ ! -f "$TEST_GHOSTTY_OUTPUT" ]]; then
     pass "ghostty config skipped when template missing"
 else
     fail "ghostty config should not be created without template"
 fi
 
-# restore template
 mv "$TEST_GHOSTTY_TEMPLATE.hidden" "$TEST_GHOSTTY_TEMPLATE"
 
 section "Config Directory Creation"
 
-# remove config directory
 rm -rf "$TEST_CONFIG_DIR"
 
-# apply theme, should create directory
 "$TEST_WRAPPER" test-theme 2>/dev/null || true
 
 if [[ -d "$TEST_CONFIG_DIR" ]]; then
@@ -509,11 +485,9 @@ fi
 
 section "Multiple Theme Switching"
 
-# apply first theme
 "$TEST_WRAPPER" test-theme 2>/dev/null || true
 first_theme=$(cat "$TEST_CURRENT_THEME")
 
-# apply second theme
 "$TEST_WRAPPER" minimal 2>/dev/null || true
 second_theme=$(cat "$TEST_CURRENT_THEME")
 
@@ -523,7 +497,6 @@ else
     fail "theme preference should update (got: $first_theme -> $second_theme)"
 fi
 
-# check that second theme actually applied
 if grep -q "#000000" "$TEST_TMUX_OUTPUT"; then
     pass "second theme applied successfully"
 else
@@ -532,11 +505,9 @@ fi
 
 section "File Overwrite Safety"
 
-# create existing config
 echo "# Existing config" >"$TEST_TMUX_OUTPUT"
 original_content=$(cat "$TEST_TMUX_OUTPUT")
 
-# apply theme
 "$TEST_WRAPPER" test-theme 2>/dev/null || true
 
 new_content=$(cat "$TEST_TMUX_OUTPUT")
@@ -555,41 +526,35 @@ fi
 
 section "Theme File Validation"
 
-# test with empty theme file
 echo "" >"$TEST_THEMES_DIR/empty.theme"
 
 empty_output=$("$TEST_WRAPPER" empty 2>&1) && exit_code=0 || exit_code=$?
 
-# the script will source the empty file and fail due to undefined variables
-# this is acceptable behaviour: bash will complain about unbound variables
+# an empty theme file leaves the theme variables unbound, which fails under set -u
 if [[ $exit_code -ne 0 ]] || ! grep -q "{{THEME_NAME}}" "$TEST_TMUX_OUTPUT" 2>/dev/null; then
-    pass "handles empty theme file (fails or leaves placeholders)"
+    pass "empty theme file exits non-zero or leaves no THEME_NAME placeholder"
 else
-    fail "should fail or warn on empty theme file"
+    fail "empty theme file exited zero and left a THEME_NAME placeholder"
 fi
 
 section "Real Theme Files Validation"
 
-# verify all real theme files are valid and generate required variables after applying defaults
 for theme_file in "$THEMES_DIR"/*.theme; do
     if [[ -f "$theme_file" ]]; then
         theme_name=$(basename "$theme_file" .theme)
 
-        # source theme in subshell to avoid polluting current shell
         (
             set -euo pipefail
             # shellcheck disable=SC1090
             source "$theme_file"
 
-            # apply theme defaults to generate derived variables
             # shellcheck disable=SC1091
             source "$THEMES_DIR/theme-defaults.sh"
             apply_theme_defaults
 
-            # check critical base variables are defined
             [[ -n "${THEME_NAME:-}" ]] || exit 1
             [[ -n "${GHOSTTY_BACKGROUND:-}" ]] || exit 1
-            # check generated variables exist after apply_theme_defaults
+            # generated by apply_theme_defaults
             [[ -n "${TMUX_STATUS_BG:-}" ]] || exit 1
         ) && pass "$theme_name theme file is valid" || fail "$theme_name theme file is missing required variables"
     fi
@@ -597,7 +562,6 @@ done
 
 section "Colour Format Validation (Basic)"
 
-# test that theme files contain hex colour codes
 for theme_file in "$THEMES_DIR"/*.theme; do
     if [[ -f "$theme_file" ]]; then
         theme_name=$(basename "$theme_file" .theme)
@@ -612,7 +576,6 @@ done
 
 section "Ghostty Config Template PLATFORM_MOD Placeholder"
 
-# verify the real config.template uses {{PLATFORM_MOD}} for keybindings
 GHOSTTY_REAL_TEMPLATE="$DOTFILES_ROOT/ghostty/config.template"
 if [[ -f "$GHOSTTY_REAL_TEMPLATE" ]]; then
     if grep -q '{{PLATFORM_MOD}}' "$GHOSTTY_REAL_TEMPLATE"; then
@@ -621,24 +584,21 @@ if [[ -f "$GHOSTTY_REAL_TEMPLATE" ]]; then
         fail "config.template should use {{PLATFORM_MOD}} for platform keybindings"
     fi
 
-    # keybindings should no longer be generated in theme-switch itself
     if ! grep -q 'keybind.*=text:' "$THEME_SWITCH"; then
-        pass "theme-switch no longer contains inline keybindings"
+        pass "theme-switch contains no inline keybindings"
     else
         fail "keybindings should be in config.template, not theme-switch"
     fi
 fi
 
-# verify theme-switch substitutes PLATFORM_MOD in ghostty_vars
 if grep -q 'PLATFORM_MOD' "$THEME_SWITCH"; then
-    pass "theme-switch includes PLATFORM_MOD in ghostty variable map"
+    pass "theme-switch mentions PLATFORM_MOD"
 else
     fail "theme-switch should substitute PLATFORM_MOD in ghostty_vars"
 fi
 
 section "Ghostty Reload Integration"
 
-# check that theme-switch script references reload-ghostty.sh
 if grep -q "reload-ghostty.sh" "$THEME_SWITCH"; then
     pass "theme-switch references reload-ghostty.sh"
 else
@@ -646,22 +606,19 @@ else
 fi
 
 
-# check that reload-ghostty.sh handles platform detection internally
 GHOSTTY_RELOAD_SCRIPT="$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh"
 if grep -q 'ghostty' "$GHOSTTY_RELOAD_SCRIPT"; then
-    pass "reload-ghostty.sh handles ghostty process detection"
+    pass "reload-ghostty.sh mentions ghostty"
 else
-    fail "reload-ghostty.sh should handle ghostty process detection"
+    fail "reload-ghostty.sh should mention ghostty"
 fi
 
-# check that ghostty reload respects --no-reload flag
 if grep -q 'no_reload.*true' "$THEME_SWITCH"; then
-    pass "theme-switch respects --no-reload flag"
+    pass "theme-switch has a no_reload branch"
 else
-    fail "theme-switch should respect --no-reload flag"
+    fail "theme-switch should have a no_reload branch"
 fi
 
-# verify reload-ghostty.sh script exists
 GHOSTTY_RELOAD="$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh"
 if [[ -f "$GHOSTTY_RELOAD" ]]; then
     pass "reload-ghostty.sh script exists"

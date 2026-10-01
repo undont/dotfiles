@@ -1,6 +1,5 @@
 -- core autocommands
 
--- custom filetype detection
 vim.filetype.add {
   extension = {
     template = 'template',
@@ -10,8 +9,6 @@ vim.filetype.add {
 local M = {}
 
 function M.setup()
-  -- highlight on yank. the clipboard sync itself is `unnamedplus` in
-  -- options.lua; tmux needs `set-clipboard on` to pass it to the terminal
   vim.api.nvim_create_autocmd('TextYankPost', {
     desc = 'Highlight on yank',
     group = vim.api.nvim_create_augroup('kickstart-highlight-yank', { clear = true }),
@@ -24,11 +21,9 @@ function M.setup()
     end,
   })
 
-  -- auto-reload: check for external changes on focus/cursor events.
-  -- BufEnter is deliberately omitted: it cascades :checktime across every
-  -- loaded buffer each time a plugin (e.g. differ) spawns buffers, which
-  -- can race with the autosave below and surface a `(L)oad File` prompt
-  -- when `autoread` is bypassed by a transiently modified buffer.
+  -- no BufEnter: a plugin spawning buffers (e.g. differ) would run :checktime
+  -- across every loaded buffer, racing the autosave below into a
+  -- `(L)oad File` prompt
   local reload_group = vim.api.nvim_create_augroup('auto-reload', { clear = true })
   vim.api.nvim_create_autocmd({ 'FocusGained', 'CursorHold' }, {
     desc = 'Check for external file changes',
@@ -40,10 +35,8 @@ function M.setup()
     end,
   })
 
-  -- force reload on external change. `autoread` is silently bypassed when a
-  -- buffer is `modified` (e.g. a plugin's transient mid-layout buffers), which
-  -- surfaces the `(L)oad File` prompt. auto-save below flushes local edits to
-  -- disk on focus/buffer leave, so discarding the in-memory copy is safe.
+  -- `autoread` is bypassed for a `modified` buffer and prompts instead. the
+  -- auto-save below has already written local edits by then
   vim.api.nvim_create_autocmd('FileChangedShell', {
     desc = 'Always reload externally-changed files without prompting',
     group = reload_group,
@@ -52,11 +45,10 @@ function M.setup()
     end,
   })
 
-  -- restore the cursor to the `"` mark, centred. the deferred zz has to
-  -- re-check the window: a background bufload runs this in a throwaway autocmd
-  -- window that is gone by the time the schedule fires, and an unguarded zz
-  -- would recentre whichever window happens to be current instead. git reuses
-  -- one path for commit messages, so its mark points into the previous one
+  -- restore the cursor to the `"` mark, centred. a background bufload runs
+  -- this in an autocmd window that is gone when the scheduled zz fires, hence
+  -- the window re-check. git reuses one path for commit messages, so its mark
+  -- points into the previous one
   vim.api.nvim_create_autocmd('BufReadPost', {
     callback = function(args)
       if vim.tbl_contains({ 'gitcommit', 'gitrebase' }, vim.bo[args.buf].filetype) then
@@ -78,10 +70,8 @@ function M.setup()
     end,
   })
 
-  -- auto-save: write buffer on text change and on focus/buffer leave.
-  -- FocusLost/BufLeave guarantee the buffer is clean before an external
-  -- agent edits the file, so the FocusGained checktime above can silently
-  -- reload via `autoread` instead of prompting.
+  -- auto-save. FocusLost/BufLeave leave the buffer clean before an external
+  -- edit, so the FocusGained checktime above reloads without prompting
   local autosave_group = vim.api.nvim_create_augroup('auto-save', { clear = true })
   local autosaving = false
   vim.api.nvim_create_autocmd({ 'InsertLeave', 'TextChanged', 'FocusLost', 'BufLeave' }, {
@@ -89,7 +79,6 @@ function M.setup()
     group = autosave_group,
     callback = function(ev)
       local buf = ev.buf
-      -- only save if: buffer is modifiable, has a file, is modified, and not a special buffer
       if autosaving or not (vim.bo[buf].modifiable and vim.bo[buf].modified and vim.fn.bufname(buf) ~= '' and vim.bo[buf].buftype == '') then
         return
       end
@@ -98,12 +87,10 @@ function M.setup()
         vim.api.nvim_buf_call(buf, function()
           vim.cmd 'silent! write'
         end)
-        -- autocmds don't nest, so a `:write` from in here emits no write events at
-        -- all and everything keyed on BufWritePost silently stops seeing saves.
-        -- neotest re-discovers a file's test positions there, so without this its
-        -- table test cases only ever refresh when the buffer is first opened.
-        -- re-emitted rather than switching the autocmd to `nested`, which would
-        -- also re-run BufWritePre (format-on-save) on every keystroke-level edit
+        -- autocmds don't nest, so this `:write` emits no write events.
+        -- BufWritePost is re-emitted for its consumers (neotest re-discovers
+        -- test positions there); `nested` would also run BufWritePre
+        -- (format-on-save) on every edit
         if not vim.bo[buf].modified then
           vim.api.nvim_exec_autocmds('BufWritePost', { buffer = buf })
         end
@@ -112,20 +99,10 @@ function M.setup()
     end,
   })
 
-  -- write vault notes IN PLACE, never rename-and-replace.
-  --
-  -- with the default `backupcopy=auto`, vim is free to implement a write by
-  -- renaming the original out of the way and creating a new file at the same
-  -- path. that is invisible locally, but if ~/obsidian is watched by
-  -- livesync-bridge, it sees the rename as an `unlink` and replicates a
-  -- genuine DELETE of the note to CouchDB, which propagates to every device,
-  -- immediately followed by a re-create
-  --
-  -- `backupcopy=yes` forces copy-then-overwrite, so the original inode survives
-  -- and the watcher reports a plain `change`. buffer-local because it is only
-  -- correct where something is watching; elsewhere `auto` is faster.
-  -- (services/mirror-notes.sh in ~/nextcloud avoids the same trap by copying in
-  -- place rather than temp+rename - same reasoning, different tool.)
+  -- vault notes are written in place. `backupcopy=auto` may rename the
+  -- original and create a new file, which a sync watcher on the vault
+  -- replicates as a delete followed by a create. `backupcopy=yes` keeps the
+  -- inode, so the watcher sees a change
   local vault_group = vim.api.nvim_create_augroup('vault-inplace-write', { clear = true })
   vim.api.nvim_create_autocmd({ 'BufReadPre', 'BufNewFile' }, {
     desc = 'Write vault notes in place so the sync watcher sees no delete',
@@ -138,10 +115,10 @@ function M.setup()
 
   -- gopls has no `constant` token type: consts, nil and iota arrive as
   -- `variable` + `readonly`, func-typed vars as `variable` + `signature`.
-  -- an empty group contributes no attributes, so clearing @lsp.type.variable
-  -- lets treesitter's @constant and @function.call paint at 100 rather than
-  -- lose to the semantic token at 125. treesitter only captures @constant at
-  -- the declaration, so the readonly typemod carries it to reference sites
+  -- clearing @lsp.type.variable lets treesitter's @constant and
+  -- @function.call show through the higher-priority semantic token.
+  -- treesitter only captures @constant at the declaration, so the readonly
+  -- typemod carries it to reference sites
   local function lsp_semantic_token_hls()
     vim.api.nvim_set_hl(0, '@lsp.type.variable', {})
     vim.api.nvim_set_hl(0, '@lsp.typemod.variable.readonly', { link = '@constant' })
@@ -153,13 +130,10 @@ function M.setup()
     group = vim.api.nvim_create_augroup('lsp-semantic-token-overrides', { clear = true }),
     callback = lsp_semantic_token_hls,
   })
-  -- apply immediately for the current colourscheme
   lsp_semantic_token_hls()
 
-  -- Lazy.nvim links `LazyDimmed` to `Conceal` for low-value commits
-  -- (chore/deps bumps). Conceal is built for hiding chars, so on most dark
-  -- themes the dimmed lines are effectively invisible. re-link to Comment,
-  -- which is tuned for legible-but-subdued text.
+  -- lazy.nvim links `LazyDimmed` (chore/deps commits) to `Conceal`, which is
+  -- near-invisible on most dark themes
   vim.api.nvim_create_autocmd('ColorScheme', {
     desc = 'Make Lazy.nvim dimmed commit lines legible',
     group = vim.api.nvim_create_augroup('lazy-dimmed-readable', { clear = true }),
@@ -169,10 +143,8 @@ function M.setup()
   })
   vim.api.nvim_set_hl(0, 'LazyDimmed', { link = 'Comment' })
 
-  -- vim.snippet paints the active tabstop with SnippetTabstop, which defaults
-  -- to Visual: a bright block over the argument just typed after accepting an
-  -- LSP call snippet (e.g. gopls). re-link to the subtle LspReference band
-  -- every theme defines. SnippetTabstopActive links here by default
+  -- SnippetTabstop defaults to Visual, a bright block over the argument just
+  -- typed. SnippetTabstopActive links here by default
   local snippet_group = vim.api.nvim_create_augroup('snippet-tabstop', { clear = true })
   vim.api.nvim_create_autocmd('ColorScheme', {
     desc = 'Subtle snippet tabstop highlight',
@@ -184,9 +156,8 @@ function M.setup()
   vim.api.nvim_set_hl(0, 'SnippetTabstop', { link = 'LspReferenceText' })
 
   -- the built-in session only ends on cursor moves in insert/select mode, so
-  -- Esc leaves the tabstop extmark (and its highlight) alive indefinitely.
-  -- end it on return to normal mode; `*:n` (not InsertLeave) so tabstop jumps
-  -- via select mode survive
+  -- Esc leaves the tabstop extmark alive. `*:n`, not InsertLeave, so tabstop
+  -- jumps via select mode survive
   vim.api.nvim_create_autocmd('ModeChanged', {
     desc = 'Stop snippet session on return to normal mode',
     group = snippet_group,
@@ -198,13 +169,11 @@ function M.setup()
     end,
   })
 
-  -- dynamic diff highlights (differ)
   local diff_highlights = require 'custom.core.diff-highlights'
   diff_highlights.setup()
 
   -- render-markdown links code blocks to ColorColumn by default, which
-  -- collides with our CursorLine tint. give markdown code its own subtle
-  -- background derived from the active theme palette.
+  -- matches the CursorLine tint
   local function apply_markdown_code_highlights()
     local function get(group, fallback)
       local hl = vim.api.nvim_get_hl(0, { name = group, link = false })
@@ -230,10 +199,8 @@ function M.setup()
   })
   apply_markdown_code_highlights()
 
-  -- fire `User RealDotnetFile` only for real cs/razor files. lets heavy dotnet
-  -- plugins (roslyn.nvim) lazy-load on this event instead of `ft = 'cs'`, so
-  -- cold-start `<leader>do` from a dashboard doesn't pay their config cost just
-  -- to render diff buffers
+  -- `User RealDotnetFile` fires only for real cs/razor files. roslyn.nvim
+  -- lazy-loads on it instead of `ft = 'cs'`, so diff buffers don't load it
   vim.api.nvim_create_autocmd('FileType', {
     pattern = { 'cs', 'razor' },
     callback = function(args)
@@ -244,7 +211,7 @@ function M.setup()
     end,
   })
 
-  -- sort JSON keys (strip trailing commas, sort with jq, reformat with prettier)
+  -- strip trailing commas, sort keys with jq, reformat with prettier
   local function sort_json_keys(buf)
     local lines = vim.api.nvim_buf_get_lines(buf, 0, -1, false)
     local content = table.concat(lines, '\n')
@@ -265,38 +232,33 @@ function M.setup()
     sort_json_keys(ctx.bufnr)
   end
 
-  -- start each session with an empty jumplist. shada restores the jumplist at
-  -- startup (`:h startup` step 16) with no notion of cwd, so <C-o> in a fresh
-  -- instance walks back into whatever repo was open last. only the current
-  -- window's jumplist is stored, so clearing that one window covers the restore
+  -- shada restores the jumplist regardless of cwd, so <C-o> in a fresh
+  -- instance would walk into the last session's repo. only the current
+  -- window's jumplist is stored
   vim.api.nvim_create_autocmd('VimEnter', {
     desc = 'Drop the shada-restored jumplist',
     group = vim.api.nvim_create_augroup('jumplist-scope', { clear = true }),
     command = 'clearjumps',
   })
 
-  -- graceful process cleanup on exit
-  -- explicitly stops LSP servers and terminal jobs so they don't orphan
-  -- (dotnet Roslyn, OmniSharp, EasyDotnet build servers, etc.)
+  -- stop LSP servers and terminal jobs on exit so they don't orphan (roslyn,
+  -- easy-dotnet build servers)
   vim.api.nvim_create_autocmd('VimLeavePre', {
     desc = 'Stop LSP clients, DAP, and terminal jobs on exit',
     group = vim.api.nvim_create_augroup('cleanup-on-exit', { clear = true }),
     callback = function()
-      -- stop all LSP clients (Roslyn, OmniSharp, etc.)
       for _, client in ipairs(vim.lsp.get_clients()) do
         client:stop(true)
       end
 
-      -- terminate debug adapter if running. only when dap is already loaded:
-      -- requiring it here pulls the whole plugin in at exit (~18ms) just to
-      -- terminate a session that cannot exist if it was never loaded
+      -- a require here would load the whole plugin at exit
       if package.loaded['dap'] then
         pcall(function()
           require('dap').terminate()
         end)
       end
 
-      -- close all terminal buffers (forces child process termination)
+      -- deleting a terminal buffer terminates its child process
       for _, buf in ipairs(vim.api.nvim_list_bufs()) do
         if vim.api.nvim_buf_is_valid(buf) and vim.bo[buf].buftype == 'terminal' then
           pcall(vim.api.nvim_buf_delete, buf, { force = true })
@@ -305,13 +267,10 @@ function M.setup()
     end,
   })
 
-  -- clean up unnamed empty buffers when opening a file: the default [No Name]
-  -- buffer nvim creates at startup, and the blank landing buffers left behind
-  -- when something closes over one. only a buffer that was created unnamed can
-  -- ever qualify, so track those and check just them on entry; rescanning every
-  -- open buffer on every BufEnter costs O(buffers) per keystroke-ish event. the
-  -- check re-validates, so a tracked buffer that has since been named, filled or
-  -- given a buftype drops out of the set on the next pass
+  -- delete unnamed empty buffers when a file opens: the startup [No Name]
+  -- buffer and blank landing buffers. only buffers created unnamed are
+  -- tracked, so BufEnter checks that set rather than every open buffer. a
+  -- tracked buffer that has been named, filled or given a buftype drops out
   local cleanup_group = vim.api.nvim_create_augroup('cleanup-empty-buffers', { clear = true })
   local unnamed = {}
 
@@ -350,8 +309,7 @@ function M.setup()
       if next(unnamed) == nil then
         return
       end
-      -- deferred via vim.schedule to avoid interfering with plugin layout creation
-      -- (a plugin's window-splitting during layout setup can trigger BufEnter mid-layout)
+      -- scheduled: a plugin splitting windows can trigger BufEnter mid-layout
       vim.schedule(function()
         local current = vim.api.nvim_get_current_buf()
         for buf in pairs(unnamed) do

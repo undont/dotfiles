@@ -5,8 +5,8 @@
 # yazi was previously symlinked as a whole directory (~/.config/yazi -> repo/yazi).
 # `dotfiles theme` now generates a theme.toml into the yazi config dir, and with a
 # whole-dir symlink that generated file would land back inside the repo. removing
-# the symlink here lets the symlinks step (create-symlinks.sh, which runs straight
-# after migrations during `dotfiles update`) recreate yazi.toml and keymap.toml as
+# the symlink here lets the symlinks step (create-symlinks.sh, which runs later
+# in the same `dotfiles update`) recreate yazi.toml and keymap.toml as
 # individual links and leave room for the generated theme.toml
 
 set -euo pipefail

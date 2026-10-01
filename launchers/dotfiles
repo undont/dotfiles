@@ -6,7 +6,6 @@ set -euo pipefail
 SESSION="${SESSION_NAME:-dotfiles}"
 PROJECT_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 
-# Help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat <<EOF
 $SESSION - Dotfiles editing session
@@ -37,7 +36,6 @@ if [[ ! -d "$PROJECT_DIR" ]]; then
     exit 1
 fi
 
-# Check if session already exists
 if tmux has-session -t "$SESSION" 2>/dev/null; then
     if [[ -n "${TMUX:-}" ]]; then
         tmux switch-client -t "$SESSION"
@@ -47,11 +45,10 @@ if tmux has-session -t "$SESSION" 2>/dev/null; then
     exit 0
 fi
 
-# Window 1: nvim (opening directory triggers oil)
+# window 1: nvim (opening directory triggers oil)
 tmux new-session -d -s "$SESSION" -n "nvim" -c "$PROJECT_DIR"
 tmux send-keys -t "$SESSION:nvim" "nvim ." Enter
 
-# Attach to session
 if [[ -n "${TMUX:-}" ]]; then
     tmux switch-client -t "$SESSION"
 else

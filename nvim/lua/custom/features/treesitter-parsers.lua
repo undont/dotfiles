@@ -1,27 +1,19 @@
--- nvim-treesitter parser maintenance. extracted from plugins/treesitter.lua.
--- purge_if_updated() runs before install(): it drops compiled parsers (and their
--- orphaned query dirs) when the plugin rev changes to avoid ABI crashes, and
--- removes nvim-treesitter copies of parsers bundled with nvim so nvim's own
--- always-compatible versions win, and clears stale binaries from the legacy
--- plugin-dir parser location
+-- nvim-treesitter parser maintenance. purge_if_updated() runs before install()
 
 local M = {}
 
---- purge stale compiled parsers on a plugin update, then strip nvim-bundled
---- parser copies. idempotent; safe to call on every startup
+--- idempotent
 function M.purge_if_updated()
-  -- purge compiled parsers when nvim-treesitter updates to prevent ABI crashes.
-  -- old .so files compiled against a previous treesitter ABI can crash nvim
-  -- when opened (e.g. markdown, c_sharp after breaking updates). remove the
-  -- matching query directories too, otherwise health checks report orphaned
-  -- queries for parsers that no longer exist on disk
+  -- .so files compiled against a previous treesitter ABI can crash nvim, so
+  -- compiled parsers are purged when the plugin rev changes. their query
+  -- directories go too, or health checks report orphaned queries
   local parser_dir = vim.fn.stdpath 'data' .. '/site/parser'
   local query_dir = vim.fn.stdpath 'data' .. '/site/queries'
   local marker_path = vim.fn.stdpath 'data' .. '/nvim-treesitter-rev'
   local plugin_dir = vim.fn.stdpath 'data' .. '/lazy/nvim-treesitter'
-  -- argv form, no shell: shell diagnostics once leaked into the captured rev
-  -- and poisoned the marker file. --git-dir neutralises any inherited GIT_DIR
-  -- (an empty env override makes git fail outright). only trust a hex rev
+  -- argv form, no shell, so only git's output is captured. --git-dir overrides
+  -- an inherited GIT_DIR (an empty env override makes git fail). only a hex rev
+  -- is accepted
   local res = vim.system({ 'git', '-C', plugin_dir, '--git-dir', '.git', 'rev-parse', '--short', 'HEAD' }):wait()
   local out = res.code == 0 and vim.trim(res.stdout or '') or ''
   local current_rev = out:match '^%x+$' and out or ''
@@ -34,7 +26,6 @@ function M.purge_if_updated()
       stored_rev = stored_rev:gsub('%s+', '')
     end
     if stored_rev ~= current_rev then
-      -- plugin updated, purge all compiled parsers so they reinstall cleanly
       local stat = vim.uv.fs_stat(parser_dir)
       if stat and stat.type == 'directory' then
         local handle = vim.uv.fs_scandir(parser_dir)
@@ -54,9 +45,8 @@ function M.purge_if_updated()
             end
           end
         end
-        vim.notify('nvim-treesitter updated — reinstalling parsers', vim.log.levels.INFO)
+        vim.notify('nvim-treesitter updated, reinstalling parsers', vim.log.levels.INFO)
       end
-      -- write new marker
       f = io.open(marker_path, 'w')
       if f then
         f:write(current_rev)
@@ -65,8 +55,8 @@ function M.purge_if_updated()
     end
   end
 
-  -- remove any nvim-treesitter-managed copies of parsers bundled with nvim
-  -- so that nvim's own (always-compatible) versions take precedence
+  -- nvim-treesitter copies of parsers bundled with nvim are removed, so nvim's
+  -- own are used
   local nvim_bundled = { 'lua', 'luadoc', 'vim', 'vimdoc', 'query', 'markdown', 'markdown_inline' }
   for _, lang in ipairs(nvim_bundled) do
     local so = parser_dir .. '/' .. lang .. '.so'
@@ -75,9 +65,9 @@ function M.purge_if_updated()
     end
   end
 
-  -- the plugin dir is a legacy parser location (main installs to site). stale
-  -- binaries there shadow the install dir, satisfy the missing-parser probe,
-  -- and are invisible to the rev purge above, so drop every .so found
+  -- the plugin dir is a legacy parser location (main installs to site).
+  -- binaries there shadow the install dir, satisfy the missing-parser probe and
+  -- are skipped by the rev purge above
   local legacy_dir = plugin_dir .. '/parser'
   local scan = vim.uv.fs_scandir(legacy_dir)
   if scan then

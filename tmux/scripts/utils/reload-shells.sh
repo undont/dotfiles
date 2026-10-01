@@ -21,7 +21,6 @@ while IFS=' ' read -r pane_id cmd; do
     fi
 done < <(tmux list-panes -a -F '#{pane_id} #{pane_current_command}')
 
-# report via tmux message
 if [[ $count -gt 0 ]]; then
     tmux display-message "Sourced ~/.zshrc in $count pane(s) ($skipped skipped)"
 else

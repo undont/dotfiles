@@ -1,7 +1,5 @@
--- editable breakpoint-list float (<leader>bl). extracted from the dap spec
--- (formerly kickstart/plugins/debug.lua). open() pops a scratch float listing
--- every breakpoint; deleting lines removes those breakpoints on close, <CR>
--- jumps to the one under the cursor
+-- editable breakpoint-list float (<leader>bl): deleting lines removes those
+-- breakpoints on close, <CR> jumps to the one under the cursor
 
 local M = {}
 
@@ -23,7 +21,6 @@ function M.open()
     return
   end
 
-  -- editable scratch buffer; delete lines to remove breakpoints
   local buf = vim.api.nvim_create_buf(false, true)
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].bufhidden = 'wipe'

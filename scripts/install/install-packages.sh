@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# install packages from Brewfile based on preset
+# installs the Brewfile packages for a preset, then per-tool setup
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
@@ -14,30 +14,25 @@ PRESET="${DOTFILES_PRESET:-full}"
 
 print_section "Installing Homebrew Packages"
 
-# check if Brewfile exists
 if [[ ! -f "$DOTFILES_DIR/Brewfile" ]]; then
     error "Brewfile not found at $DOTFILES_DIR/Brewfile"
     exit 1
 fi
 
-# check if brew is available
 if ! command_exists brew; then
     error "Homebrew not found. Run install-homebrew.sh first."
     exit 1
 fi
 
-# create filtered Brewfile
 echo "Filtering Brewfile for preset: $PRESET"
 FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 
-# set up cleanup trap for filtered Brewfile
 cleanup() { rm -f "$FILTERED_BREWFILE"; }
 trap cleanup EXIT
 
-# trust the Brewfile's third-party taps before bundling. the shell exports
-# HOMEBREW_REQUIRE_TAP_TRUST=1, so without this `brew bundle` would refuse to
-# load formulae/casks from these taps on a fresh machine. `brew trust` is a
-# no-op on Homebrew versions that predate the command
+# the shell exports HOMEBREW_REQUIRE_TAP_TRUST=1, under which `brew bundle`
+# refuses untrusted third-party taps. homebrew versions without `brew trust`
+# skip this
 if brew trust --help >/dev/null 2>&1; then
     while read -r _ tap_name; do
         tap_name="${tap_name%\"}"
@@ -46,15 +41,9 @@ if brew trust --help >/dev/null 2>&1; then
     done < <(grep -E '^tap "' "$FILTERED_BREWFILE")
 fi
 
-# skip the install entirely if everything in the Brewfile is already present
-# and up to date. `brew bundle check` exits 0 when nothing needs installing or
-# upgrading (it checks for outdated entries by default).
-#
-# we only care about its exit code here, so its output is discarded: on a fresh
-# or out-of-date machine it prints an alarming "brew bundle can't satisfy your
-# Brewfile's dependencies" summary (even with --quiet, which only suppresses the
-# per-package lines). that's not a failure, it's exactly what triggers the
-# install below, so silencing it keeps the install output clean
+# `brew bundle check` exits 0 when nothing needs installing or upgrading. its
+# output is discarded: --quiet still prints a "can't satisfy your Brewfile's
+# dependencies" summary on a machine that needs the install below
 echo "Checking Brewfile state..."
 echo ""
 
@@ -78,21 +67,20 @@ else
     fi
 fi
 
-# post-installation setup for specific tools
 echo ""
 info "Running post-installation setup..."
 echo ""
 
-# Linux: fix gcc symlinks and prefer system gcc for native builds
-# find -printf and grep -oP are GNU-only; this block is Linux-only by design
+# linux: gcc symlinks, system gcc for native builds
+# find -printf and grep -oP are GNU-only
 if is_linux; then
     BREW_BIN=""
     if command_exists brew; then
         BREW_BIN="$(brew --prefix)/bin"
     fi
 
-    # fix gcc symlinks (brew post-install often fails on non-standard distros)
-    # without these, formulas that need source compilation can't find gcc/g++
+    # brew's post-install can fail to link gcc on non-standard distros, and
+    # formulas compiled from source need gcc/g++
     if [[ -n "$BREW_BIN" ]]; then
         GCC_VERSION=$(find "$BREW_BIN" -maxdepth 1 -name 'gcc-[0-9]*' -printf '%f\n' 2>/dev/null |
             grep -oP 'gcc-\K\d+' | sort -rn | head -1 || true)
@@ -107,15 +95,13 @@ if is_linux; then
         fi
     fi
 
-    # prefer system gcc over Homebrew's for general compilation.
-    # Homebrew's gcc has broken include_next paths (can't find system stdint.h etc.)
-    # which causes tree-sitter and other native builds to fail
+    # homebrew's gcc can't find system headers through include_next (stdint.h
+    # etc.), which fails tree-sitter and other native builds
     if ! command -v /usr/bin/gcc &>/dev/null; then
         echo "Installing system gcc (needed for native builds like tree-sitter)..."
         install_system_package "gcc" || true
     fi
 
-    # point cc at system gcc when available (not Homebrew's)
     if [[ -n "$BREW_BIN" ]]; then
         if [[ -x /usr/bin/gcc ]]; then
             ln -sf /usr/bin/gcc "$BREW_BIN/cc"
@@ -127,17 +113,14 @@ if is_linux; then
     fi
 fi
 
-# postgresql@17: homebrew-core's post_install hardcodes
-# `initdb --locale=en_US.UTF-8`, which fails on Linux systems that haven't
-# generated that locale (common outside US locale setups; macOS ships it by
-# default so this never bites there). When that happens the bottle still
-# installs but the data cluster is left uninitialized, so finish the job here
-# with a UTF-8 locale that actually exists on this machine.
+# postgresql@17: homebrew-core's post_install runs
+# `initdb --locale=en_US.UTF-8`, which fails on linux systems without that
+# locale and leaves the data cluster uninitialised. initdb runs here with a
+# UTF-8 locale that exists on this machine
 if is_linux && command_exists brew && brew list postgresql@17 &>/dev/null; then
     PG_DATADIR="$(brew --prefix)/var/postgresql@17"
     if [[ -d "$PG_DATADIR" ]] && [[ ! -f "$PG_DATADIR/PG_VERSION" ]]; then
-        # grep exits 1 when the locale is absent; guard both lookups so set -e
-        # doesn't abort the install before the fallbacks below can run
+        # grep exits 1 when the locale is absent, which would abort under set -e
         PG_LOCALE=$(locale -a | grep -im1 '^en_US\.utf-\?8$' || true)
         PG_LOCALE="${PG_LOCALE:-$(locale -a | grep -im1 'utf-\?8$' || true)}"
         PG_LOCALE="${PG_LOCALE:-C}"
@@ -152,7 +135,7 @@ if is_linux && command_exists brew && brew list postgresql@17 &>/dev/null; then
     fi
 fi
 
-# Linux alternatives for macOS cask-only packages
+# linux alternatives for macOS cask-only packages
 if should_install "core" && is_linux; then
     echo "Installing Linux alternatives for cask packages..."
 
@@ -162,25 +145,25 @@ if should_install "core" && is_linux; then
         brew install dotnet || warn ".NET SDK install failed — install manually from https://dotnet.microsoft.com"
     fi
 
-    # Google Cloud SDK (cask "gcloud-cli" on macOS; no Linux formula)
+    # google cloud SDK (cask "gcloud-cli" on macOS; no Linux formula)
     if ! command_exists gcloud; then
         info "gcloud not installed. Install manually: https://cloud.google.com/sdk/docs/install"
     fi
 
-    # Ghostty (cask on macOS, system package on Linux, not managed by brew)
+    # ghostty (cask on macOS, system package on linux)
     if ! command_exists ghostty; then
         if grep -qi steamos /etc/os-release 2>/dev/null; then
             info "Ghostty not available on SteamOS (read-only filesystem)."
             echo "  Install manually: sudo steamos-readonly disable && sudo pacman -S ghostty"
         elif command_exists pacman; then
-            # Arch Linux: ghostty is in the [extra] repo
+            # arch: ghostty is in the [extra] repo
             echo "Installing Ghostty (pacman)..."
             sudo pacman -S --noconfirm ghostty || warn "Ghostty install failed — see https://ghostty.org/docs/install/binary"
         elif command_exists apt-get; then
-            # Ubuntu/Debian: not in default repos, handled in post-install next steps
+            # ubuntu/debian: not in the default repos; install options are printed below
             :
         elif command_exists dnf; then
-            # Fedora: available via Terra repository
+            # fedora: terra repository when the default repos lack it
             echo "Installing Ghostty (dnf)..."
             if ! sudo dnf install -y ghostty; then
                 echo "  Ghostty not found in default repos. Trying Terra repository..."
@@ -200,26 +183,24 @@ if should_install "core" && is_linux; then
         fi
     fi
 
-    # fnm (macOS uses brew; Linux needs manual install, brew compile often fails)
+    # fnm comes from brew on macOS; on linux it is a manual install
     if ! command_exists fnm; then
         warn "fnm not found. Install manually: curl -fsSL https://fnm.vercel.app/install | bash"
         echo "  Or download a release from https://github.com/Schniz/fnm/releases"
     fi
 
-    # Nerd Fonts (cask "font-*-nerd-font" on macOS; manual TTF install on Linux)
+    # nerd fonts are casks on macOS; install-fonts.sh installs them on linux
     "$SCRIPT_DIR/install-fonts.sh" || warn "Nerd Font install failed — see output above."
 
-    # Ghostty theme catalogue (bundled with Ghostty on macOS and on distros that
-    # package it; fetched into the user dir where Ghostty is unavailable so
-    # `dotfiles theme generate` still works)
+    # `dotfiles theme generate` reads ghostty's theme catalogue, which is
+    # fetched into the user dir where ghostty is not installed
     "$SCRIPT_DIR/install-ghostty-themes.sh" || warn "Ghostty theme catalogue install failed — see output above."
 
     echo ""
 fi
 
-# Ollama: native install (replaces brew formula for faster updates)
+# ollama: native install in place of the brew formula
 if should_install "core"; then
-    # uninstall brew formula if present to avoid conflicts
     if brew list ollama &>/dev/null; then
         echo "Removing Homebrew Ollama formula (switching to native install)..."
         brew uninstall ollama || warn "Failed to uninstall brew ollama"
@@ -227,7 +208,7 @@ if should_install "core"; then
 
     if ! command_exists ollama; then
         echo "Installing Ollama (native)..."
-        # trust decision: first-party URL (ollama.com), no third-party CDN involved
+        # first-party URL (ollama.com), no third-party CDN
         if ! curl -fsSL https://ollama.com/install.sh | sh; then
             warn "Ollama install failed. You can retry manually: curl -fsSL https://ollama.com/install.sh | sh"
         fi
@@ -236,9 +217,8 @@ if should_install "core"; then
     fi
 fi
 
-# Claude Code: native install (replaces brew cask)
+# Claude Code: native install in place of the brew cask
 if should_install "core"; then
-    # uninstall brew cask version if present to avoid conflicts (macOS only)
     if is_macos && brew list --cask claude-code &>/dev/null; then
         echo "Removing Homebrew Claude Code cask (switching to native install)..."
         brew uninstall --cask claude-code || warn "Failed to uninstall brew claude-code cask"
@@ -246,8 +226,7 @@ if should_install "core"; then
 
     if ! command_exists claude; then
         echo "Installing Claude Code (native)..."
-        # trust decision: first-party URL (claude.ai), no third-party CDN involved.
-        # no published checksum available; accepted risk for first-party installer
+        # first-party URL (claude.ai), no third-party CDN; no published checksum
         if ! curl -fsSL https://claude.ai/install.sh | bash; then
             warn "Claude Code install failed. You can retry manually: curl -fsSL https://claude.ai/install.sh | bash"
         fi
@@ -273,7 +252,6 @@ if command_exists gh; then
     gh extension install undont/gh-bench 2>/dev/null || true
 fi
 
-# fnm shell setup reminder
 if command_exists fnm; then
     echo ""
     info "fnm installed. To install Node.js:"
@@ -281,7 +259,7 @@ if command_exists fnm; then
     echo "  fnm default lts-latest"
 fi
 
-# Ghostty next steps (Ubuntu/Debian, no official apt package)
+# ubuntu/debian have no official ghostty apt package
 if should_install "core" && is_linux && ! command_exists ghostty; then
     if command_exists apt-get; then
         ghostty_commit="655c77ad73ff1a6c38d1141e30d4c53eccb5a054"

@@ -12,16 +12,13 @@ source "$SCRIPT_DIR/../_lib/paths.sh"
 QUICK_MODE=false
 [[ "${1:-}" == "--quick" ]] && QUICK_MODE=true
 
-# only load UI if not in quick mode
 if [[ "$QUICK_MODE" == false ]]; then
     source "$SCRIPT_DIR/../_lib/ui.sh"
 fi
 
-# get undo file paths
 UNDO_FILE=$(get_session_undo_file)
 UNDO_BACKUP=$(get_session_undo_backup)
 
-# check if there's something to undo
 if [[ ! -f "$UNDO_FILE" ]]; then
     if [[ "$QUICK_MODE" == false ]]; then
         show_centered_message "No session to restore" "" "No recently killed session found."
@@ -32,7 +29,6 @@ fi
 
 SESSION_NAME=$(cat "$UNDO_FILE")
 
-# check if backup exists
 if [[ ! -f "$UNDO_BACKUP" ]]; then
     cleanup_undo_files "session"
     if [[ "$QUICK_MODE" == false ]]; then

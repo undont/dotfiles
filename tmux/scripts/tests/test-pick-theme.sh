@@ -12,7 +12,7 @@ THEMES_DIR="$DOTFILES_ROOT/themes"
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ===========================================================================
-# Tests
+# tests
 # ===========================================================================
 
 section "Script Exists and Is Executable"
@@ -267,7 +267,6 @@ if ! $theme_picker_bound; then
 fi
 
 # check that theme picker script calls reload-ghostty.sh
-# (moved from inline tmux template to picker.sh)
 PICKER_SCRIPT="$SCRIPT_DIR/../themes/picker.sh"
 if [[ -f "$PICKER_SCRIPT" ]]; then
     if grep -q "reload-ghostty.sh" "$PICKER_SCRIPT"; then
@@ -387,7 +386,7 @@ else
 fi
 
 # ===========================================================================
-# Summary
+# summary
 # ===========================================================================
 
 print_summary

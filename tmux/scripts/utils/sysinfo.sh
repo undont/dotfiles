@@ -1,15 +1,14 @@
 #!/usr/bin/env bash
-# cached battery/cpu/ram segment for the tmux status bar.
+# cached battery/cpu/ram segment for the tmux status bar
 #
-# status-interval is 1 so the clock ticks every second, but re-running the
-# tmux-battery/tmux-cpu plugin scripts every second spawns hundreds of
-# processes per minute (battery_color_charge.sh alone reads ~22 tmux options,
-# one exec each). this wrapper calls the stock plugin scripts at most once
-# per TTL and serves the assembled segment from a cache in between, so the
-# plugins stay unpatched upstream clones.
+# status-interval ticks every second for the clock, and re-running the
+# tmux-battery/tmux-cpu plugin scripts at that rate forks too often. this
+# wrapper calls the stock plugin scripts at most once per TTL and serves the
+# assembled segment from a cache in between, so the plugins stay unpatched
+# upstream clones
 #
-# cache format: line 1 = epoch written, line 2 = payload.
-# TTL override: DOTFILES_SYSINFO_TTL (seconds, default 5)
+# cache format: line 1 = epoch written, line 2 = payload
+# TTL override: DOTFILES_SYSINFO_TTL (seconds)
 
 set -euo pipefail
 
@@ -63,11 +62,10 @@ ram_icon="${ram_icon#\"}"
 battery_scripts="$plugin_root/tmux-battery/scripts"
 cpu_scripts="$plugin_root/tmux-cpu/scripts"
 
-# tmux-battery has no "no battery" case of its own: on machines with no
-# battery (desktops, most SBCs) upower only exposes the synthetic
-# DisplayDevice, so the plugin reports an "unknown" status and 0% instead of
-# nothing. Detect real battery hardware ourselves and skip the segment
-# entirely when there isn't any.
+# tmux-battery has no "no battery" case: on machines without one (desktops,
+# most SBCs) upower only exposes the synthetic DisplayDevice, so the plugin
+# reports an "unknown" status and 0%. the segment is skipped when there is no
+# battery hardware
 has_battery() {
     if command -v pmset >/dev/null 2>&1; then
         pmset -g batt 2>/dev/null | grep -q "No batteries available" && return 1
@@ -90,7 +88,6 @@ cpu_pct=$("$cpu_scripts/cpu_percentage.sh" 2>/dev/null) || cpu_pct=""
 ram_bg=$("$cpu_scripts/ram_bg_color.sh" 2>/dev/null) || ram_bg=""
 ram_pct=$("$cpu_scripts/ram_percentage.sh" 2>/dev/null) || ram_pct=""
 
-# mirrors the segment layout previously inlined in status-right
 payload="${battery_segment}${cpu_bg}#[fg=${fg}] ${cpu_icon} ${cpu_pct} ${ram_bg}#[fg=${fg}] ${ram_icon} ${ram_pct} "
 
 mkdir -p "$CACHE_DIR"

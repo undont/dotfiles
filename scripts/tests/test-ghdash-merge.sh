@@ -6,13 +6,11 @@ set -euo pipefail
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 
-# source shared test helpers (colours, pass/fail/skip/section, assertions, sandbox)
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 setup_sandbox
 trap cleanup_sandbox EXIT
 
-# source ghdash library (sets GHDASH_BASE, GHDASH_CONFIG, GHDASH_LOCAL)
 source "$DOTFILES_DIR/scripts/_lib/common.sh"
 source "$DOTFILES_DIR/scripts/_lib/ghdash.sh"
 
@@ -32,7 +30,6 @@ pass "yq is available"
 
 section "ghdash merge — with local overrides"
 
-# override module-level paths to use sandbox
 GHDASH_DIR="$TEST_HOME/.config/gh-dash"
 mkdir -p "$GHDASH_DIR"
 
@@ -40,7 +37,6 @@ GHDASH_BASE="$GHDASH_DIR/config.base.yml"
 GHDASH_CONFIG="$GHDASH_DIR/config.yml"
 GHDASH_LOCAL="$GHDASH_DIR/local.yml"
 
-# test 1: merge with both base and local present
 cat >"$GHDASH_BASE" <<'EOF'
 prSections:
   - title: My PRs
@@ -58,14 +54,13 @@ EOF
 
 ghdash_merge_local --quiet
 
-# *+ merge appends arrays, so local entries are added after base entries
+# *+ appends arrays: local entries follow base entries
 if yq '.prSections[] | .title' "$GHDASH_CONFIG" 2>/dev/null | grep -q "Team PRs"; then
     pass "local.yml entries merged into base config"
 else
     fail "local.yml entries not found in merged config"
 fi
 
-# verify base entries are also preserved
 if yq '.prSections[] | .title' "$GHDASH_CONFIG" 2>/dev/null | grep -q "My PRs"; then
     pass "base config entries preserved after merge"
 else
@@ -74,7 +69,6 @@ fi
 
 section "ghdash merge — missing local.yml"
 
-# test 2: no local.yml, base should be promoted to config
 cat >"$GHDASH_BASE" <<'EOF'
 prSections:
   - title: My PRs
@@ -91,7 +85,6 @@ fi
 
 section "ghdash merge — empty local.yml"
 
-# test 3: empty local.yml, base should be preserved
 cat >"$GHDASH_BASE" <<'EOF'
 prSections:
   - title: My PRs
@@ -108,7 +101,6 @@ fi
 
 section "ghdash merge — no base config"
 
-# test 4: no base config, should return 0 and do nothing
 rm -f "$GHDASH_BASE" "$GHDASH_CONFIG" "$GHDASH_LOCAL"
 
 if ghdash_merge_local --quiet; then

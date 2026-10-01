@@ -1,5 +1,5 @@
 #compdef dotfiles dot
-# Tab completion for dotfiles command
+# tab completion for the dotfiles command
 
 local -a commands
 commands=(
@@ -22,7 +22,6 @@ commands=(
   'help:Show help message'
 )
 
-# Handle subcommand completions
 if (( CURRENT == 2 )); then
   _describe 'dotfiles command' commands
 elif (( CURRENT == 3 )); then

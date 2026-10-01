@@ -1,5 +1,4 @@
--- core keymaps: basic editing tweaks plus delegation to focused modules.
--- plugin-specific keymaps are defined with their plugins
+-- basic editing keymaps, plus setup() of the modules that own the rest
 
 local M = {}
 
@@ -9,18 +8,13 @@ local function git_root()
 end
 
 function M.setup()
-  -- clear search highlight
   vim.keymap.set('n', '<Esc>', '<cmd>nohlsearch<CR>')
 
-  -- `unnamedplus` routes every register op through +, deletes included, so a
-  -- d/c/x clobbers the clipboard. "0 only ever holds the last yank, so
-  -- <leader>v pastes it back whatever has been deleted since
+  -- `unnamedplus` routes deletes through + too; "0 only holds the last yank
   vim.keymap.set({ 'n', 'x' }, '<leader>v', '"0p', { desc = 'Paste last yank' })
   vim.keymap.set({ 'n', 'x' }, '<leader>V', '"0P', { desc = 'Paste last yank (above)' })
 
-  -- smart i/a on empty lines: reindent via cc (which respects indentexpr)
-  -- rather than dropping the cursor at column 0. uses the black hole register
-  -- so the empty line contents don't clobber the unnamed register
+  -- i/a on an empty line reindent via cc, which respects indentexpr
   local function smart_insert(fallback)
     return function()
       return #vim.api.nvim_get_current_line() == 0 and '"_cc' or fallback
@@ -29,21 +23,17 @@ function M.setup()
   vim.keymap.set('n', 'i', smart_insert 'i', { expr = true, desc = 'Insert (smart indent on empty line)' })
   vim.keymap.set('n', 'a', smart_insert 'a', { expr = true, desc = 'Append (smart indent on empty line)' })
 
-  -- line navigation: m/M for beginning/end of line, gm for marks
+  -- m/M take over line ends, so gm sets marks
   vim.keymap.set({ 'n', 'x', 'o' }, 'm', '^', { desc = 'First non-blank character' })
   vim.keymap.set({ 'n', 'x', 'o' }, 'M', '$', { desc = 'End of line' })
   vim.keymap.set('n', 'gm', 'm', { desc = 'Set mark' })
 
-  -- insert space at cursor without leaving normal mode
   vim.keymap.set('n', '<leader>i', 'i<Space><Esc>', { desc = '[I]nsert space' })
 
-  -- terminal mode escape
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })
 
-  -- gx: open URL under cursor, stripping wrapper chars (<>, (), [], quotes)
-  -- that leak through when the TS highlighter isn't active or the fallback
-  -- <cfile> path is used (e.g. markdown autolinks <https://...> in buffers
-  -- without markdown_inline parsed)
+  -- wrapper chars (<>, (), [], quotes) come through when the treesitter
+  -- highlighter is inactive or the <cfile> fallback is used
   vim.keymap.set('n', 'gx', function()
     local urls = require('vim.ui')._get_urls()
     for _, url in ipairs(urls) do
@@ -52,17 +42,14 @@ function M.setup()
     end
   end, { desc = 'Open URL/file under cursor (strip wrappers)' })
 
-  -- copy buffer path to clipboard
   vim.keymap.set('n', '<leader>by', function()
     local path = vim.fn.expand '%:p'
     vim.fn.setreg('+', path)
     vim.notify(path, vim.log.levels.INFO)
   end, { desc = '[Y]ank file path' })
 
-  -- file explorer
   vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'File [E]xplorer' })
 
-  -- git UI
   vim.keymap.set('n', '<leader>g', function()
     if not git_root() and not (vim.env.GIT_DIR and vim.env.GIT_WORK_TREE) then
       vim.notify('not in a git repository', vim.log.levels.WARN)
@@ -71,13 +58,11 @@ function M.setup()
     vim.cmd 'LazyGit'
   end, { desc = 'Lazy[G]it' })
 
-  -- undo tree
   vim.keymap.set('n', '<leader>u', function()
     vim.cmd 'packadd nvim.undotree'
     require('undotree').open { command = '60vnew' }
   end, { desc = '[U]ndo tree' })
 
-  -- focused modules own their own keymaps
   require('custom.core.folding').setup()
   require('custom.features.lists').setup()
   require('custom.features.diag-scan').setup()

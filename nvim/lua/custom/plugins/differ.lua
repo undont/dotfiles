@@ -1,36 +1,18 @@
--- differ.nvim: local diffs, file history, staging, pr review, merge conflicts,
--- all through one renderer with the same UX. owns every <leader>d* launcher,
--- including dT (diff by ticket, reusing features/ticket.lua's commit discovery;
--- differ's own revspec grammar covers both shapes it needs, so no plugin-side
--- change was required), and the <leader>p* pr launchers. thread/comment actions
--- are in-diff gestures bound by differ itself in the pr diff: ga comment,
--- gp reply, gr resolve, gx delete, gc collapse, ]t/[t thread nav.
+-- differ.nvim: local diffs, file history, staging, pr review and merge
+-- conflicts. owns the <leader>d* and <leader>p* launchers; thread and comment
+-- actions are in-diff gestures bound by differ itself. the build hook compiles
+-- the go sidecar for pr review and needs go + make on PATH
 
--- the build hook compiles the go sidecar (pr review) on install/update; it needs
--- go + make on PATH. local diffs work without it.
-
--- local-dev toggle: flip to true (and restart nvim) to run differ.nvim from the
--- ~/code/differ.nvim checkout instead of the installed release. lazy serves the
--- plugin's modules from `dir`, so this is the only place the swap actually takes
--- (an rtp prepend elsewhere loses to lazy's loader). the sidecar self-locates its
--- bin off its own lua file, so PR features then need `make go-build` run in the
--- checkout; local diffs/history/staging work without it. false = installed release.
---
--- the swap is guarded by a real checkout existing, so leaving this true in shared
--- dots stays safe: machines without ~/code/differ.nvim (or with a stale/empty one)
--- fall back to the release instead of pointing lazy at a dir with no modules
--- (which would break :Differ entirely). the guard checks the entry module rather
--- than just the dir so an empty or half-cloned checkout doesn't count as dev
+-- true runs differ.nvim from the ~/code/differ.nvim checkout (restart nvim),
+-- where pr features need `make go-build` run in the checkout. falls back to
+-- the release when the checkout has no entry module
 local DIFFER_DEV = true
 local DIFFER_LOCAL = vim.fn.expand '~/code/differ.nvim'
 local DIFFER_USE_DEV = DIFFER_DEV and vim.fn.filereadable(DIFFER_LOCAL .. '/lua/differ/init.lua') == 1
 
--- :D as a cold-start alias for :Differ. a cmdline abbrev, not differ's
--- command_alias, so it expands before the plugin is loaded: `:D ...` rewrites to
--- `:Differ ...`, which is the lazy `cmd` trigger. defined here at startup (this
--- spec module is required when lazy builds its plugin list) rather than in the
--- plugin's config, which would only run after the load it's meant to trigger. the
--- getcmdtype/getcmdline guard keeps it from expanding mid-line, e.g. in :s/D/x/
+-- :D expands to :Differ, the lazy `cmd` trigger. a cmdline abbrev defined at
+-- startup, not differ's command_alias, which only exists once the plugin has
+-- loaded. the guard stops it expanding mid-line, e.g. in :s/D/x/
 vim.cmd [[cnoreabbrev <expr> D (getcmdtype() == ':' && getcmdline() ==# 'D') ? 'Differ' : 'D']]
 
 return {
@@ -41,36 +23,27 @@ return {
     cmd = 'Differ',
     keys = {
       { '<leader>do', '<cmd>Differ<CR>', desc = '[D]iff [O]pen (vs index)' },
-      { '<leader>dc', '<cmd>Differ close<CR>', desc = '[D]iff [C]lose' },
       { '<leader>dt', '<cmd>Differ base<CR>', desc = '[D]iff branch [T]otal (vs base)' },
       {
         '<leader>dT',
         function()
-          -- commit discovery shared with <leader>xT / <leader>lT (features/ticket.lua).
-          -- both revspecs below are native :Differ grammar (rev vs worktree, two-dot
-          -- range), so no differ-side support was needed for this
+          -- commit discovery shared with <leader>xT / <leader>lT (features/ticket.lua)
           require('custom.features.ticket').prompt_commits(function(ctx)
             local oldest, newest = ctx.commits[#ctx.commits], ctx.commits[1]
             if newest == ctx.head then
-              -- single-rev form diffs against the working tree, so uncommitted
-              -- and untracked changes are included
+              -- the single-rev form diffs against the working tree
               vim.cmd(('Differ %s^'):format(oldest))
             else
-              -- commits exist after the newest match; a working-tree diff would
-              -- include them, so stick to the fixed range
+              -- a working-tree diff would include the commits after the newest match
               vim.cmd(('Differ %s^..%s'):format(oldest, newest))
             end
           end)
         end,
         desc = '[D]iff branch by [T]icket',
       },
-      { '<leader>de', '<cmd>Differ gofile<CR>', desc = '[D]iff [E]dit file' },
-      { '<leader>dd', '<cmd>Differ panel<CR>', desc = '[D]iff panel toggle' },
       { '<leader>dh', '<cmd>Differ log<CR>', desc = '[D]iff file [H]istory' },
       { '<leader>dp', '<cmd>Differ log origin/HEAD...HEAD<CR>', desc = '[D]iff [P]R review' },
-      { '<leader>dl', '<cmd>Differ layout<CR>', desc = '[D]iff change [L]ayout' },
-      -- pr review (sidecar). distinct from <leader>dp above, which is a local
-      -- pr-range history diff with no github round trip
+      -- pr review through the sidecar; <leader>dp above is a local history diff
       { '<leader>pl', '<cmd>Differ pr list<CR>', desc = '[L]ist PRs' },
       {
         '<leader>po',
@@ -98,33 +71,8 @@ return {
       { '<leader>pq', '<cmd>Differ close<CR>', desc = '[Q]uit PR' },
     },
     config = function()
-      -- :D alias is a cmdline abbrev defined at startup above, not command_alias,
-      -- so it survives a cold start before this config runs
-      -- includes differ_opts for local overrides via local.lua in nvim config
+      -- vim.g.differ_opts is set in local.lua
       require('differ').setup(vim.g.differ_opts or {})
-
-      -- pin a permanent <Space>/]/[ to which-key on differ buffers. which-key's
-      -- auto-trigger system has suspension windows (ModeChanged, BufNew) where the
-      -- trigger keymap is absent, and each wk.add calls Buf.clear() which drops all
-      -- triggers globally. a .cs diff makes it reliable: the roslyn/dotnet open churn
-      -- (User RealDotnetFile, semantic token refresh, scan_files buffer create/delete)
-      -- fires the very events that hit the suspension windows. every differ buffer is
-      -- named differ://, so key off the name; a plain buffer-local map isn't managed
-      -- by the trigger system, so it survives
-      vim.api.nvim_create_autocmd('BufWinEnter', {
-        group = vim.api.nvim_create_augroup('differ-whichkey', { clear = true }),
-        callback = function(ev)
-          if not vim.api.nvim_buf_get_name(ev.buf):match '^differ://' then
-            return
-          end
-          local wk = require 'which-key'
-          for _, key in ipairs { ' ', ']', '[' } do
-            vim.keymap.set('n', key, function()
-              wk.show(key)
-            end, { buffer = ev.buf })
-          end
-        end,
-      })
     end,
   },
 }

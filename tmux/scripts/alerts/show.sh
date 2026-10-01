@@ -20,7 +20,6 @@ fi
 
 CURRENT_SESSION=$(tmux display-message -p '#S' 2>/dev/null)
 
-# source the alerts library for agent configuration
 [[ -f "$SCRIPT_DIR/../_lib/alerts.sh" ]] || exit 0
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
@@ -44,7 +43,7 @@ _find_idx() {
 while IFS= read -r line; do
     [[ -z "$line" ]] && continue
 
-    # split on ':'; exit alerts have 6 fields, agent alerts have 3
+    # split on ':'; exit alerts have 6 fields, agent alerts 4 (3 without an id)
     IFS=':' read -r session _window field3 _wid field5 field6 <<<"$line"
 
     # skip current session and malformed entries
@@ -116,7 +115,6 @@ for ((i = 0; i < session_count && i < 3; i++)); do
     fi
 done
 
-# show overflow count if more than 3 sessions
 if [[ $session_count -gt 3 ]]; then
     echo "${output}+ $((session_count - 3)) "
 else

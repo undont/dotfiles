@@ -119,7 +119,7 @@ dotfiles edit      # open dotfiles in $EDITOR
 
 ## Themes
 
-From within tmux, `` ` t `` opens an fzf picker over the hand-crafted set and Ghostty's themes; selecting one re-skins tmux, ghostty, neovim, fzf, gh-dash and lazygit instantly with no restart.
+From within tmux, `` ` t `` opens an fzf picker over the hand-crafted set and Ghostty's themes; selecting one re-skins tmux, ghostty, neovim and fzf with no restart; gh-dash and yazi pick up the new theme on their next launch.
 
 Two sources feed the picker:
 
@@ -142,13 +142,12 @@ See [docs/THEME-SYSTEM.md](docs/THEME-SYSTEM.md) for the architecture, the gener
 
 Three flavours selected at install time (`--minimal`, `--core`, `--full`), filtered from a single [`Brewfile`](Brewfile) via preset markers. Browse it directly for the full list.
 
-My own tools included in it:
+My own tools installed by it (gh-bench as a `gh` extension, the rest from the Brewfile):
 
 | Tool                                               | What it does                                                                               |
 | -------------------------------------------------- | ------------------------------------------------------------------------------------------ |
 | [supplyscan](https://github.com/undont/supplyscan) | Go CLI / MCP that scans JS-ecosystem projects for vulnerabilities and supply-chain attacks |
 | [jiru](https://github.com/undont/jiru)             | Bubble Tea TUI for managing Jira issues and Confluence pages                               |
-| [seeql](https://github.com/undont/seeql)           | SQL client TUI                                                                             |
 | [gh-bench](https://github.com/undont/gh-bench)     | `gh` CLI extension for benchmarking GitHub Actions and tracking failures                   |
 
 Homebrew is set to require explicit trust for non-official taps (`HOMEBREW_REQUIRE_TAP_TRUST=1`). The taps these tools come from are trusted during install; to add your own, approve it once with `brew trust --tap <user/repo>`.
@@ -193,10 +192,11 @@ The full sets are all available in-product, and stay current because they're gen
 
 ## Documentation
 
-- [Agent Hooks](docs/AGENT-HOOKS.md): setup guide for agent alert hooks (Claude Code, OpenCode)
+- [Agent Hooks](docs/AGENT-HOOKS.md): setup guide for agent alert hooks (Claude Code, OpenCode, Codex, Copilot)
 - [Command Exit Alerts](docs/CMD-ALERTS.md): auto ✓/✗ alerts when commands finish in other windows
 - [Installation Guide](docs/INSTALLATION-GUIDE.md): detailed walkthrough of each installation step
 - [Local Layer](docs/LOCAL-LAYER.md): override files, and syncing them between your machines
+- [SonarLint](docs/SONARLINT.md): SonarQube/SonarCloud diagnostics in Neovim
 - [Theme System](docs/THEME-SYSTEM.md): how themes work, the Ghostty theme generator, and WCAG contrast checks
 - [Troubleshooting](docs/TROUBLESHOOTING.md): common issues and solutions
 

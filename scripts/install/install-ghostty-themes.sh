@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# install the Ghostty theme catalogue on Linux boxes that don't have Ghostty.
-#
-# `dotfiles theme generate <builtin>` imports a colour palette from Ghostty's
-# bundled theme files (its source of truth), but Ghostty isn't packaged on some
-# Linux distros (e.g. Debian / Raspberry Pi OS), so those files are absent and
-# generation fails. The theme resolver already searches
-# ~/.local/share/ghostty/themes, so we populate that with the upstream Ghostty
-# theme files (from mbadolato/iTerm2-Color-Schemes, which ships a ready-made
-# ghostty/ directory) — no Ghostty binary required.
-#
-# On macOS the themes live inside Ghostty.app; where Ghostty is packaged
-# (Arch/Fedora) /usr/share/ghostty/themes exists — both are skipped.
+# installs ghostty's theme catalogue into ~/.local/share/ghostty/themes on
+# linux machines without ghostty, from mbadolato/iTerm2-Color-Schemes.
+# `dotfiles theme generate <builtin>` reads palettes from those files
+# usage: install-ghostty-themes.sh [--force]    --force refetches an existing catalogue
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
@@ -27,7 +19,7 @@ if is_macos; then
     exit 0
 fi
 
-# if Ghostty is installed system-wide, it already provides the catalogue
+# a system-wide ghostty install provides the catalogue
 for d in /usr/share/ghostty/themes /usr/local/share/ghostty/themes; do
     if [[ -d "$d" ]]; then
         info "Ghostty theme catalogue already present ($d)."
@@ -35,7 +27,6 @@ for d in /usr/share/ghostty/themes /usr/local/share/ghostty/themes; do
     fi
 done
 
-# idempotent: skip if we already populated the user dir
 if [[ "$FORCE" != "--force" ]] && compgen -G "$DEST/*" >/dev/null 2>&1; then
     echo "Ghostty theme catalogue already installed at $DEST."
     exit 0
@@ -51,8 +42,7 @@ tmp="$(mktemp -d)"
 # shellcheck disable=SC2064
 trap "rm -rf '$tmp'" EXIT
 
-# partial + sparse clone: fetch only the ghostty/ directory's blobs, not the
-# repo's large screenshot history
+# partial + sparse clone: only the ghostty/ directory's blobs
 if ! git clone --depth 1 --filter=blob:none --sparse "$SCHEMES_REPO" "$tmp/repo" 2>/dev/null; then
     warn "Failed to clone theme catalogue (network issue?). Skipping."
     exit 0

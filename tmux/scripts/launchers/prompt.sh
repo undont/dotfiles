@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# New Launcher Prompt (fzf become target)
+# new launcher prompt (fzf become target)
 # ══════════════════════════════════════════════════════════════
 # prompts for a launcher name, then hands off to new.sh
 # called via fzf become() from the launcher picker (prefix + p)
@@ -17,7 +17,6 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 

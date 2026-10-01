@@ -1,10 +1,8 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# verify dotfiles installation is correct
-# checks symlinks, plugin managers, and basic functionality
+# verifies the dotfiles installation for the current preset
 
-# help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat <<'EOF'
 health-check.sh - Dotfiles installation health check
@@ -13,14 +11,18 @@ USAGE:
     ./scripts/install/health-check.sh
 
 DESCRIPTION:
-    Runs comprehensive health checks on the dotfiles installation:
-      • Verifies all symlinks point to correct locations
-      • Validates generated configs exist (tmux, ghostty, gh-dash, theme)
-      • Checks plugin managers and TPM-managed plugins
-      • Validates secrets file exists
-      • Checks alert system hooks are executable
-      • Reports local override file status
-      • Tests custom scripts and tools are in PATH
+    Checks the dotfiles installation for the active preset:
+      • Symlinks point to the correct locations
+      • Generated configs exist (tmux, ghostty, gh-dash, theme)
+      • Plugin managers and TPM-managed plugins are installed
+      • No stale packer install shadows lazy.nvim
+      • Secrets file exists
+      • Optional environment variables (informational)
+      • Session launchers are in PATH
+      • Alert system hooks are executable
+      • Local override files and local layer sync (informational)
+      • ~/.local/bin is in PATH and yq is installed
+      • zsh completion directories pass compaudit
 
 OPTIONS:
     -h, --help   Show this help message
@@ -29,18 +31,15 @@ EXAMPLES:
     # Run health check from dotfiles root
     ./scripts/install/health-check.sh
 
-    # Run from anywhere (if in PATH)
-    health-check.sh
-
 OUTPUT:
-    Displays status for each check:
-      ✓ Check passed (green OK)
-      ✗ Check failed (red MISSING or WRONG TARGET)
+    Prints one status per check: OK in green, a problem in red or yellow
+    (MISSING, WRONG TARGET, WARN, ...). Informational checks print in cyan
+    and never fail.
 
-    Exit code 0 if all checks pass, non-zero otherwise.
+    Exit code 0 if no check found a problem, 1 otherwise.
 
 SEE ALSO:
-    ./install.sh --check-only    Dry-run installation without changes
+    ./install.sh --check-only    Only run prerequisite and health checks
     ./scripts/install/rollback.sh  Restore backup if issues found
 EOF
     exit 0
@@ -50,7 +49,6 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# derive DOTFILES_DIR from script location if not set
 if [[ -z "${DOTFILES_DIR:-}" ]]; then
     DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 fi
@@ -191,7 +189,7 @@ check_symlink "$HOME/.editorconfig" "$DOTFILES_DIR/formatters/editorconfig" ".ed
 check_symlink "$HOME/.local/bin/dotfiles" "$DOTFILES_DIR/scripts/dotfiles" "dotfiles CLI"
 
 # tmux (minimal)
-# note: .tmux.conf is generated to XDG location and symlinked
+# ~/.tmux.conf links to the generated config in the XDG location
 XDG_TMUX_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
 check_symlink "$HOME/.tmux.conf" "$XDG_TMUX_CONF" ".tmux.conf"
 check_symlink "$HOME/.tmux" "$DOTFILES_DIR/tmux" ".tmux"
@@ -216,22 +214,22 @@ if should_install "full"; then
     check_symlink "$HOME/.hammerspoon/init.lua" "$DOTFILES_DIR/hammerspoon/init.lua" "hammerspoon"
 fi
 
-# Ghostty (core)
-# config is generated to XDG; Ghostty reads ~/.config/ghostty/config natively on all platforms
+# ghostty (core)
+# config is generated to the XDG location, which ghostty reads on all platforms
 if should_install "core"; then
     check_file "$HOME/.config/ghostty/config" "ghostty config (XDG)"
     # the generated config includes config-file = ~/.config/ghostty/local
     check_file "$HOME/.config/ghostty/local" "ghostty local override"
 fi
 
-# Zed (core)
+# zed (core)
 if should_install "core"; then
     check_symlink "$HOME/.config/zed/keymap.json" "$DOTFILES_DIR/zed/keymap.json" "zed keymap"
     check_symlink "$HOME/.config/zed/tasks.json" "$DOTFILES_DIR/zed/tasks.json" "zed tasks"
     check_file "$HOME/.config/zed/settings.json" "zed settings (copy-on-install)"
 fi
 
-# Karabiner (full)
+# karabiner (full)
 if should_install "full"; then
     check_file "$HOME/.config/karabiner/karabiner.json" "karabiner config"
 fi
@@ -284,9 +282,7 @@ fi
 if should_install "core"; then
     check_directory "$HOME/.local/share/nvim/lazy" "lazy.nvim (Neovim)"
 
-    # warn if old packer install exists; it shadows lazy.nvim plugins in the
-    # runtimepath and can cause "attempt to call field X (a nil value)" errors
-    # when nvim loads the wrong (pre-rewrite) version of a plugin module
+    # a packer install shadows lazy.nvim plugins in the runtimepath
     PACKER_DIR="$HOME/.local/share/nvim/site/pack/packer"
     printf "Checking %-30s" "no stale packer install..."
     if [[ -d "$PACKER_DIR" ]]; then
@@ -349,7 +345,6 @@ echo ""
 echo "Alerts System:"
 echo "--------------"
 
-# hook scripts (must be executable for alerts to fire)
 check_executable "$DOTFILES_DIR/scripts/hooks/agent-alert.sh" "agent-alert hook"
 check_executable "$DOTFILES_DIR/scripts/hooks/agent-alert-clear.sh" "agent-alert-clear hook"
 check_executable "$DOTFILES_DIR/scripts/hooks/cmd-alert.sh" "cmd-alert hook"
@@ -364,7 +359,7 @@ echo ""
 echo "Local Overrides:"
 echo "----------------"
 
-# these are user-owned files created from templates, informational only
+# informational only
 check_local_override "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/local.conf" "tmux local.conf"
 if should_install "core"; then
     check_local_override "$HOME/.config/nvim/local.lua" "nvim local.lua"
@@ -375,8 +370,7 @@ if should_install "full"; then
     check_local_override "$HOME/.hammerspoon/local.lua" "hammerspoon local.lua"
 fi
 
-# local layer sync (optional feature, informational; a broken pointer warns
-# but never fails the check)
+# local layer sync is optional: a broken pointer warns without setting ISSUES
 printf "Checking %-30s" "local layer sync..."
 local_layer_dir="${DOTFILES_LOCAL_DIR:-}"
 local_ptr="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local-repo"
@@ -422,7 +416,7 @@ if should_install "core"; then
     fi
 fi
 
-# zsh completion dirs; a dirty compaudit makes the daily full compinit prompt
+# compinit prompts on its full run when compaudit reports insecure dirs
 printf "Checking %-30s" "compinit dir permissions..."
 if ! command_exists zsh; then
     printf '%sSKIPPED%s (zsh not found)\n' "${YELLOW}" "${NC}"

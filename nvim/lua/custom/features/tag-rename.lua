@@ -1,18 +1,10 @@
--- lightweight tag-pair auto-rename. watches the buffer for edits to a
--- tag name and updates the matching opening or closing tag to match.
---
--- operates by regex over the buffer text (no treesitter), so it works the
--- same in markdown's html injection as it does in jsx/html: no parser
--- timing issues, no injection-range fragility. multi-line tag bodies are
--- supported, so JSX's `<div\n  className="x"\n>` pairs with `</div>`.
---
--- no keymap interception. snapshots the cursor's tag on `ModeChanged`
--- (catches `c{motion}`/`d{motion}`/`R`/`s` the moment the operator is
--- pressed, before any text is touched), `CursorMoved`/`CursorMovedI` (for
--- `r{char}` and post-edit cursor jiggle), and `BufEnter`/`FileType` (for
--- buffers entered with the cursor already on a tag). propagation runs
--- from `TextChanged`/`TextChangedI`, so `cfn`, `c$`, `cit`, `r{char}`,
--- `R`, dot-repeat, macros, and multi-cursor edits all flow through
+-- tag-pair auto-rename: an edit to a tag name updates its opening or closing
+-- partner. regex over the buffer text, no treesitter, so markdown's html
+-- injection works like jsx/html; tags may span lines.
+-- no keymap interception: the cursor's tag is snapshotted on ModeChanged
+-- (before an operator touches text), CursorMoved(I) and BufEnter/FileType, and
+-- propagation runs from TextChanged(I), which covers operators, `r`, `R`,
+-- dot-repeat and macros
 
 local M = {}
 
@@ -21,14 +13,10 @@ local applying = false
 
 local NAME_PAT = '[%w_:.%-]+'
 
--- scan the buffer for `<...>` tags. returns a list in document order;
--- each entry is { row, col, end_row, end_col, name, is_close,
--- is_self_closing }. row/col are the 0-indexed position of `<`;
--- end_row/end_col are 0-indexed one-past-`>`. a tag may span multiple
--- lines (row != end_row) when its body crosses newlines.
--- limitation: tag bodies containing `>` (e.g. `<x attr="a>b">` or JSX
--- generics like `<Foo<string>>`) are not detected; fine for our editing
--- usage
+-- every `<...>` tag in document order, as { row, col, end_row, end_col, name,
+-- is_close, is_self_closing }. row/col are the 0-indexed position of `<`;
+-- end_row/end_col are one past `>`. tag bodies containing `>` (`<x a="a>b">`,
+-- JSX generics like `<Foo<string>>`) are not detected
 local function scan_buffer()
   local lines = vim.api.nvim_buf_get_lines(0, 0, -1, false)
   local text = table.concat(lines, '\n')
@@ -93,11 +81,9 @@ local function find_tag_at(row, col)
   end
 end
 
--- find the structural partner of `tag` by walking the buffer's tag list
--- forward (for opens) or backward (for closes), depth-counting same-name
--- tags. anchors to the source by (row, col), *not* by name, so it still
--- works while the user is mid-edit and the source's actual buffer name
--- no longer matches what we're looking for the partner under
+-- depth-counts same-name tags forward (opens) or backward (closes). the source
+-- is anchored by (row, col), not by name: mid-edit, the source's name in the
+-- buffer differs from the name the partner is looked up under
 local function find_partner(tag)
   if tag.is_self_closing then
     return
@@ -140,15 +126,11 @@ local function find_partner(tag)
   end
 end
 
--- take or refresh `pending` if the cursor is on a tag. doesn't clear when
--- find_tag_at fails: an in-flight `ciw`/`cit` deletion can briefly leave
--- the cursor in `<>` (no name → no tag) before the user starts typing the
--- replacement, and clearing here would lose the snapshot we need.
---
--- the "same tag we already snapshotted? bail" check is load-bearing:
--- partner_name advances after each successful sync to track the partner's
--- current name, and a re-snapshot mid-edit would reset it back to the
--- (now-stale) cursor-side name and break the next find_partner
+-- takes or refreshes `pending` when the cursor is on a tag. a failed
+-- find_tag_at doesn't clear it: a `ciw`/`cit` deletion leaves the cursor in
+-- `<>` (no name, so no tag) before the replacement is typed.
+-- a tag already snapshotted is skipped: partner_name advances after each sync,
+-- and a re-snapshot mid-edit would reset it to the cursor-side name
 local function refresh_snapshot()
   if applying then
     return
@@ -184,8 +166,7 @@ local function sync()
     return
   end
 
-  -- re-read at the original `<` position. the user may have edited the
-  -- tag name; the `<` itself shouldn't have moved
+  -- the name may have been edited; the `<` position is unchanged
   local current = find_tag_at(p.tag.row, p.tag.col)
   if not current or current.is_close ~= p.tag.is_close then
     return
@@ -194,9 +175,8 @@ local function sync()
     return
   end
 
-  -- re-locate the partner each time. same-line partner positions shift
-  -- whenever the rename changes name length, so we walk from scratch
-  -- using the partner's *current* name
+  -- same-line partner positions shift when the rename changes the name
+  -- length, so the partner is located again by its current name
   local partner = find_partner {
     name = p.partner_name,
     is_close = p.tag.is_close,
@@ -250,8 +230,7 @@ function M.setup(opts)
         callback = refresh_snapshot,
       })
 
-      -- vim.schedule defers the buffer write out of the autocmd so we
-      -- don't fight the editor's mid-event state
+      -- vim.schedule moves the buffer write out of the autocmd
       vim.api.nvim_create_autocmd({ 'TextChanged', 'TextChangedI' }, {
         group = group,
         buffer = args.buf,
@@ -263,18 +242,16 @@ function M.setup(opts)
         end,
       })
 
-      -- final sync on insert exit catches anything TextChangedI may have
-      -- missed (e.g. cursor moved past `>` on the last keystroke)
+      -- covers what TextChangedI missed (e.g. cursor moved past `>` on the
+      -- last keystroke)
       vim.api.nvim_create_autocmd('InsertLeave', {
         group = group,
         buffer = args.buf,
         callback = sync,
       })
 
-      -- initial snapshot for the buffer that triggered this FileType: on
-      -- first load BufEnter may have already fired before the autocmd
-      -- above existed, so a cold-open `<cursor on tag> + r{char}` would
-      -- otherwise miss its snapshot
+      -- BufEnter may have fired before the autocmd above existed, so the
+      -- buffer that triggered this FileType is snapshotted here
       vim.schedule(function()
         if vim.api.nvim_buf_is_valid(args.buf) and vim.api.nvim_get_current_buf() == args.buf then
           refresh_snapshot()

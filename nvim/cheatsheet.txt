@@ -37,17 +37,16 @@ Live grep | <leader>sg
 Search keymaps | <leader>sk
 Search help | <leader>sh
 Search current word | <leader>sw
-Buffer search | <leader>/
 Open buffers | <leader><leader>
 Search diagnostics | <leader>sd
 Search resume | <leader>sr
 Search recent files | <leader>s.
-Search in open files | <leader>s/
+Fuzzy search current buffer | <leader>s/
 Search Neovim config | <leader>sn
 Select Telescope picker | <leader>ss
 Grep (literal/fixed-strings) | <leader>sG
 Search git modified files | <leader>sm
-Browse snippets for filetype | <leader>sS
+Browse snippets for filetype | <leader>sS (or :Snippets)
 Search & replace (grug-far) | <leader>sR
 Open cheatsheet | <leader>?
 Telescope: toggle selection, move down | <Tab>
@@ -68,17 +67,10 @@ Undo / redo | u / <C-r>
 Repeat last action | .
 Insert space at cursor | <leader>i
 Split/join arguments, tables, lists (toggle) | gS
-
-## multi-cursor @multi-cursor
-Select word / find next | <C-n>
-Add cursor below / above | <M-Down> / <M-Up>
-Skip current, find next | q
-Remove cursor from match | Q
-Select all occurrences | \A
-Add cursor at position | \c
-Next / prev match | n / N
-Toggle cursor/extend mode | <Tab>
-Exit multi-cursor | Esc
+Open all folds | zr
+Close fold recursively | zc
+Close all folds | zm
+Exit terminal mode | <Esc><Esc>
 
 ## text-objects @text-objects
 Inner/around word | iw / aw
@@ -132,6 +124,8 @@ Format file | <leader>f
 Build project / pick Make target | <leader>q
 Pick Make target | <leader>Q
 Notification history | <leader>Nn
+Sort JSON keys | :JsonSort
+Reload theme | :ThemeReload
 
 ## binary-view @binary-view
 Symbols (nm, demangled) | s
@@ -161,6 +155,7 @@ Qf stack newer (redo filter) | <leader>x]
 
 ## windows @windows
 Move to window | <C-hjkl>
+Clear multicursors (nvim 0.13) | <C-l>
 Split vertical | :vs (or <C-v> in Telescope)
 Split horizontal | :sp (or <C-x> in Telescope)
 Zoom toggle | <leader>z
@@ -241,15 +236,11 @@ Case-aware substitute | :S/{from}/{to}/g
 Subvert (multi-form sub) | :Subvert/facilit{y,ies}/building{,s}/g
 
 ## diff @differ
-Diff open (working tree) | <leader>do
-Diff close | <leader>dc
+Diff open (vs index) | <leader>do (or :D)
 Diff branch total (vs base) | <leader>dt
 Diff branch by ticket | <leader>dT
 Diff file history | <leader>dh
 Diff PR-range review | <leader>dp
-Diff edit file | <leader>de
-Diff hide/show panel | <leader>dd
-Diff change layout | <leader>dl
 Next/prev hunk | ]c / [c
 Next/prev file | ]f / [f
 More/less context | d= / d-
@@ -408,7 +399,6 @@ Next/prev jump | ]j / [j
 Next/prev location | ]l / [l
 Next/prev oldfile | ]o / [o
 Next/prev quickfix | ]q / [q
-Next/prev treesitter | ]T / [T
 Next/prev undo | ]u / [u
 Next/prev window | ]w / [w
 Next/prev conflict | ]x / [x
@@ -439,3 +429,14 @@ Previous misspelling | [s
 
 ## undo @undo
 Undo tree | <leader>u
+
+## ai @ai
+Chat toggle | <leader>ac
+Inline assist | <leader>ai
+Action palette | <leader>aa
+
+## music @music
+Toggle now playing | <leader>kp
+Next track | <leader>kn
+Previous track | <leader>kb
+Play/pause | <leader>ks

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # ══════════════════════════════════════════════════════════════
-# Launcher Runner (fzf become target)
+# launcher runner (fzf become target)
 # ══════════════════════════════════════════════════════════════
 # post-selection handler for the launcher picker (prefix + p).
 # routes to the appropriate handler based on launcher type:
@@ -32,7 +32,6 @@ if [[ -z "${DOTFILES_ROOT:-}" ]] || [[ ! -d "$DOTFILES_ROOT" ]]; then
     exit 1
 fi
 
-# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
@@ -44,7 +43,7 @@ fi
 # record launcher usage for MRU ordering
 mkdir -p "$(dirname "$LAUNCHER_HISTORY")"
 printf '%s\n' "$name" >>"$LAUNCHER_HISTORY"
-# trim to last 100 entries
+# cap the history length
 if [[ $(wc -l <"$LAUNCHER_HISTORY") -gt 100 ]]; then
     tail -100 "$LAUNCHER_HISTORY" >"$LAUNCHER_HISTORY.tmp" && mv "$LAUNCHER_HISTORY.tmp" "$LAUNCHER_HISTORY"
 fi

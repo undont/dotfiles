@@ -31,7 +31,7 @@ source "$SCRIPTS_DIR/_lib/common.sh"
 source "$SCRIPTS_DIR/_lib/alerts.sh"
 
 # ═══════════════════════════════════════════════════════════════
-# Hook Script Validation
+# hook script validation
 # ═══════════════════════════════════════════════════════════════
 
 section "Hook Script Existence and Syntax"
@@ -106,7 +106,7 @@ for agent in claude opencode; do
 done
 
 # ═══════════════════════════════════════════════════════════════
-# Alert Library Functional Tests
+# alert library functional tests
 # ═══════════════════════════════════════════════════════════════
 
 section "Alert Library - set_window_alert"
@@ -150,7 +150,7 @@ section "Alert Library - Window Renames"
 
 # an agent's window name follows its pane title under automatic-rename, so it
 # drifts between the alert and the clear. the row is keyed on window_id to
-# survive that; these are the regressions for a name-keyed row
+# survive that
 RENAME_WIN="renamewin-$$"
 test_tmux new-window -t "$TEST_SESSION" -n "$RENAME_WIN" -c /tmp
 RENAME_WIN_ID=$(test_tmux list-windows -t "$TEST_SESSION" -F '#{window_name}|#{window_id}' | grep -F "${RENAME_WIN}|" | cut -d'|' -f2)
@@ -192,7 +192,7 @@ else
     fail "cleanup_stale_alerts should refresh the name (file: $(cat "$ALERTS_FILE"))"
 fi
 
-# rows written before the id was recorded still clear on the name alone
+# rows without an id still clear on the name alone
 printf '%s:testwin:claude\n' "$TEST_SESSION" >"$ALERTS_FILE"
 clear_window_alerts "$TEST_SESSION" "testwin" "" 2>/dev/null || true
 if [[ -s "$ALERTS_FILE" ]]; then
@@ -265,7 +265,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Summary
+# summary
 # ═══════════════════════════════════════════════════════════════
 
 echo ""

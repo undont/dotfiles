@@ -2,7 +2,7 @@
 # ZSH CONFIGURATION
 # =============================================================================
 # your personal shell config; this file is yours, add anything you want.
-# the dotfiles framework is sourced below; your customisations go after it.
+# the dotfiles framework is sourced below; your customisations go after it
 #
 # file structure:
 #   ~/.zshrc                           - this file (your personal config)
@@ -15,7 +15,7 @@
 # POWERLEVEL10K INSTANT PROMPT
 # =============================================================================
 # must be at the top of ~/.zshrc. caches prompt for instant display.
-# disabled for SSH to avoid input issues with remote connections.
+# disabled for SSH to avoid input issues with remote connections
 if [[ -z "$SSH_CONNECTION" && -r "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh" ]]; then
   source "${XDG_CACHE_HOME:-$HOME/.cache}/p10k-instant-prompt-${(%):-%n}.zsh"
 fi
@@ -35,7 +35,7 @@ fi
 # =============================================================================
 # everything below this line is yours. add aliases, PATH changes, functions,
 # overrides, anything you want. this runs AFTER the framework, so you can
-# override any setting from dotfiles.zsh.
+# override any setting from dotfiles.zsh
 #
 # examples:
 #   export EDITOR="code"              # override default editor (framework sets nvim)

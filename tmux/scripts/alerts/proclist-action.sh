@@ -2,7 +2,7 @@
 # proclist x-binding dispatcher: stop a running process or dismiss a finished one.
 #   run  <pane target> <pane_id>     -> interrupt the pane's foreground command
 #   done <window_id>   <epoch> <wid> -> drop the entry from finished history
-# called from the prefix+P fzf binding with the row's hidden fields.
+# called from the prefix+P fzf binding with the row's hidden fields
 set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
@@ -39,10 +39,9 @@ case "$TYPE" in
             fi
         fi
         # clear the window's exit indicator (status-right + window-status) on the
-        # same keystroke, keyed on window_id. the indicator is one-per-window,
-        # decoupled from how many finished rows the window has, so gating on a
-        # remaining-rows count stranded it whenever the other rows aged out via
-        # GC. the id is stable under automatic-rename where the stored name is not
+        # same keystroke, keyed on window_id: the indicator is one-per-window,
+        # independent of how many finished rows the window has. the id is stable
+        # under automatic-rename where the stored name is not
         [[ -n "$B" ]] && clear_window_exit_alert "$B"
         ;;
 esac

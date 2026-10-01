@@ -1,4 +1,4 @@
--- dial: increment/decrement engine + TailwindCSS class support
+-- dial: increment/decrement, including tailwind classes
 
 return {
   {
@@ -103,7 +103,6 @@ return {
     end,
   },
 
-  -- TailwindCSS dial: increment/decrement tailwind classes
   {
     'ruicsh/tailwindcss-dial.nvim',
     dependencies = { 'monaqa/dial.nvim' },

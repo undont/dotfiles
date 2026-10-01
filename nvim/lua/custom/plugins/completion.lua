@@ -1,4 +1,4 @@
--- completion configuration (blink.cmp)
+-- blink.cmp completion
 
 -- the rest of the line is only closers and separators, as in `f(g(x|)),`
 local function at_closing_tail()
@@ -66,8 +66,7 @@ return {
         -- accept is a no-op without a selection, so with preselect off a bare
         -- <CR> falls through to a newline until an item is picked
         ['<CR>'] = { 'accept', 'fallback' },
-        -- Shift+Enter (Ghostty sends ESC+CR = M-CR) inserts a literal newline
-        -- without accepting the visible completion item
+        -- ghostty sends Shift+Enter as M-CR: a newline without accepting
         ['<M-CR>'] = {
           function(cmp)
             if cmp.is_visible() then
@@ -77,10 +76,9 @@ return {
             return true
           end,
         },
-        -- the menu wins while it is open: select_and_accept takes the
-        -- highlighted item, or the top one when nothing is selected. copilot
-        -- ghost text and snippet jumps only get <Tab> once the menu is gone.
-        -- after those, a closing tail jumps to end of line
+        -- while the menu is open <Tab> takes the highlighted item, or the top
+        -- one. with no menu it goes to copilot ghost text, then snippet
+        -- jumps, then a jump past a closing tail
         ['<Tab>'] = {
           function(cmp)
             if cmp.is_visible() then
@@ -141,7 +139,7 @@ return {
       sources = {
         default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'ripgrep', 'copilot' },
         providers = {
-          -- require() paths and plugin module annotations, types served by lazydev
+          -- require() paths and plugin module annotations
           lazydev = {
             name = 'LazyDev',
             module = 'lazydev.integrations.blink',
@@ -155,9 +153,8 @@ return {
           },
           snippets = {
             score_offset = -3,
-            -- nvim/snippets is scanned ahead of friendly-snippets, so keeping the
-            -- first item for a prefix lets a local json file override one upstream
-            -- snippet without taking over the whole filetype
+            -- nvim/snippets is scanned ahead of friendly-snippets, so the first
+            -- item for a prefix is the local override
             transform_items = function(_, items)
               local snippets = require 'custom.features.snippets'
               local ft = vim.bo.filetype

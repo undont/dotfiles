@@ -1,13 +1,11 @@
 #!/usr/bin/env bash
-# process management utilities for graceful termination
-# ensures running processes are properly shut down before killing panes/windows/sessions
-#
-# pattern: SIGTERM, wait (2s), SIGKILL (matches instances/kill.sh)
+# process utilities for graceful termination before killing panes, windows or
+# sessions: SIGTERM, grace wait, SIGKILL (matches instances/kill.sh)
 
 # list pids whose process name matches exactly, from two sources because
 # neither alone is complete. pgrep excludes itself and all of its ancestors
-# (see -a in man pgrep), so a script running inside the pane it inspects never
-# sees that pane's own process through pgrep. the ps pass has no exclusion.
+# (see -a in man pgrep), so a script running inside the pane it inspects gets
+# no pgrep match for that pane's own process. the ps pass has no exclusion.
 # both match the executable basename, not argv[0]
 # usage: match_process_pids <name>
 match_process_pids() {
@@ -66,13 +64,12 @@ graceful_kill_pids() {
     local pids=("$@")
     [[ ${#pids[@]} -eq 0 ]] && return 0
 
-    # send SIGTERM to all
     local pid
     for pid in "${pids[@]}"; do
         kill -TERM "$pid" 2>/dev/null || true
     done
 
-    # wait for graceful exit (polling at 100ms intervals)
+    # poll for exit until the grace period ends
     local i=0
     local max_wait=$((grace_seconds * 10))
     while [ "$i" -lt "$max_wait" ]; do

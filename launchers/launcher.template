@@ -19,16 +19,15 @@ set -euo pipefail
 #
 # the @description tag is required for the launcher picker (prefix + p).
 # it appears as a one-line summary next to the launcher name in the picker.
-# launchers without this tag are hidden from the picker.
+# launchers without this tag are hidden from the picker
 #
 # optional: @instance tag controls how new instances are created (press n):
 #   # @instance: prompt    - asks for a name (e.g. ticket number → myproject-1234)
 #   # @instance: auto      - auto-increments (myproject-2, myproject-3) [default]
 
 SESSION="${SESSION_NAME:-myproject}"              # tmux session name (SESSION_NAME allows multi-instance)
-PROJECT_DIR="${MYPROJECT_ROOT:-$HOME/src/myproject}"  # from local aliases or fallback
+PROJECT_DIR="${MYPROJECT_ROOT:-$HOME/src/myproject}"  # exported in ~/.zshrc, or the fallback
 
-# help flag handling
 if [[ "${1:-}" == "--help" ]] || [[ "${1:-}" == "-h" ]]; then
     cat << EOF
 $SESSION - Project tmux session launcher
@@ -49,7 +48,7 @@ OPTIONS:
     -h, --help   Show this help message
 
 NOTES:
-    • Reads ${SESSION^^}_ROOT from ~/.zshrc exports
+    • Reads MYPROJECT_ROOT from ~/.zshrc exports
     • Falls back to $PROJECT_DIR if not defined
     • If session exists, attaches instead of creating
 EOF
@@ -62,7 +61,7 @@ fi
 
 if [[ ! -d "$PROJECT_DIR" ]]; then
     echo "Error: Project directory not found: $PROJECT_DIR" >&2
-    echo "Define ${SESSION^^}_ROOT in ~/.zshrc or create the directory." >&2
+    echo "Define MYPROJECT_ROOT in ~/.zshrc or create the directory." >&2
     exit 1
 fi
 
@@ -70,7 +69,6 @@ fi
 # SESSION MANAGEMENT
 # =============================================================================
 
-# check if session already exists
 if tmux has-session -t "$SESSION" 2>/dev/null; then
     if [[ -n "${TMUX:-}" ]]; then
         tmux switch-client -t "$SESSION"
@@ -135,11 +133,9 @@ tmux new-window -t "$SESSION:" -n shell -c "$PROJECT_DIR"
 # ATTACH TO SESSION
 # =============================================================================
 
-# select first window
 tmux select-window -t "$SESSION:1"
 tmux select-pane -t "$SESSION:1.1"
 
-# attach to session
 if [[ -n "${TMUX:-}" ]]; then
     tmux switch-client -t "$SESSION"
 else

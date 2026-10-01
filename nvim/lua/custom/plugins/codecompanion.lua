@@ -27,13 +27,10 @@ return {
       adapters = {
         http = {
           copilot = function()
-            -- force the copilot.vim oauth token. apps.json can hold several
-            -- `github.com:*` entries (gh CLI, Copilot CLI, VS Code), and the
-            -- upstream adapter returns the first one `pairs()` yields, often a
-            -- stale entry whose token exchange 401s, producing an empty bearer
-            -- and a 400 "Authorization header is badly formatted" on every chat.
-            -- pre-seeding `_oauth_token` short-circuits that pick (token.lua
-            -- returns it directly), so duplicates never break the adapter
+            -- apps.json can hold several `github.com:*` entries (gh CLI,
+            -- Copilot CLI, VS Code) and the upstream adapter takes whichever
+            -- `pairs()` yields first, which may be one whose token exchange
+            -- 401s. token.lua returns a pre-seeded `_oauth_token` directly
             pcall(function()
               local token = require 'codecompanion.adapters.http.copilot.token'
               local apps = vim.fn.expand '~/.config/github-copilot/apps.json'

@@ -1,4 +1,4 @@
--- Telescope fuzzy finder configuration
+-- telescope fuzzy finder
 
 return {
   {
@@ -17,7 +17,7 @@ return {
       { 'nvim-tree/nvim-web-devicons', enabled = vim.g.have_nerd_font },
     },
     config = function()
-      -- helper to format path as parent/parent/filename (2 dirs up)
+      -- parent/parent/filename
       local function short_path(path)
         local tail = require('telescope.utils').path_tail(path)
         local parent = vim.fn.fnamemodify(path, ':h:t')
@@ -33,11 +33,9 @@ return {
 
       local actions = require 'telescope.actions'
 
-      -- when a picker is launched from the quickfix/loclist window, telescope
-      -- opens the selection in that window by default, replacing the list with
-      -- the file. route into a real editing window instead: prefer the previous
-      -- window, else the first normal (buftype='') window in the tabpage. return
-      -- 0 (telescope's default = current window) for the common, non-qf case
+      -- a picker launched from the quickfix/loclist window would open the
+      -- selection in that window. use the previous window, else the first
+      -- normal window in the tabpage. 0 is telescope's default (current window)
       local function get_selection_window(picker)
         local origin = picker and picker.original_win_id
         if not origin or not vim.api.nvim_win_is_valid(origin) then
@@ -55,9 +53,7 @@ return {
             return win
           end
         end
-        -- qf is the only window: open a fresh split above it to hold the file
-        -- so the list survives. telescope edits the selection into this window,
-        -- abandoning its empty [No Name] buffer
+        -- qf is the only window: a split above it holds the file
         vim.cmd 'aboveleft new'
         return vim.api.nvim_get_current_win()
       end
@@ -65,7 +61,6 @@ return {
       require('telescope').setup {
         defaults = {
           get_selection_window = get_selection_window,
-          -- results show full relative path (default behaviour)
           path_display = { 'filename_first' },
           file_ignore_patterns = {
             '%.git/',
@@ -124,7 +119,7 @@ return {
         },
       }
 
-      -- override previewer to show short path in title
+      -- the previewer title shows the short path
       local conf = require('telescope.config').values
 
       local original_file_previewer = conf.file_previewer
@@ -168,9 +163,8 @@ return {
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = 'Search [K]eymaps' })
       vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = 'Search [F]iles' })
       vim.keymap.set('n', '<leader>sF', function()
-        -- live regex find: re-run `fd --regex <prompt>` on every keystroke.
-        -- the fuzzy sorter would re-filter rg/fd output and reject regex
-        -- metacharacters like `.*`, so use highlighter_only to preserve order
+        -- re-runs `fd --regex <prompt>` on every keystroke. the fuzzy sorter
+        -- would reject regex metacharacters, hence highlighter_only
         local pickers = require 'telescope.pickers'
         local finders = require 'telescope.finders'
         local make_entry = require 'telescope.make_entry'
@@ -199,10 +193,8 @@ return {
         builtin.live_grep { additional_args = { '--hidden', '--glob=!.git/', '--fixed-strings' } }
       end, { desc = 'Search [G]rep (literal)' })
       vim.keymap.set('n', '<leader>sm', function()
-        -- same file set as the <leader>xm / <leader>lm scans (features/ticket.lua):
-        -- staged or unstaged changes vs HEAD plus untracked files. a plain
-        -- file picker rather than builtin.git_status, so no status letters or
-        -- <Tab> staging; in exchange the three always agree on "modified"
+        -- same file set as the <leader>xm / <leader>lm scans
+        -- (features/ticket.lua): changes vs HEAD plus untracked files
         local files = require('custom.features.ticket').modified_files()
         if not files then
           return
@@ -226,9 +218,7 @@ return {
       end, { desc = 'Search git [M]odified files' })
       vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = 'Search [D]iagnostics' })
       vim.keymap.set('n', '<leader>sr', function()
-        -- resume re-uses cached entries from the previous picker; we want a
-        -- fresh run against the current state of the workspace, so trigger a
-        -- finder refresh once the resumed picker is ready
+        -- resume reuses the previous picker's cached entries; refresh them
         vim.api.nvim_create_autocmd('User', {
           pattern = 'TelescopeResumePost',
           once = true,
@@ -250,7 +240,6 @@ return {
       vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = 'Recent files [.]' })
       vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = 'Buffers' })
 
-      -- fuzzy search in current buffer
       vim.keymap.set('n', '<leader>s/', function()
         builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
           winblend = 10,
@@ -258,7 +247,6 @@ return {
         })
       end, { desc = 'Fuzzy search buffer' })
 
-      -- search nvim config files
       vim.keymap.set('n', '<leader>sn', function()
         builtin.find_files { cwd = vim.fn.stdpath 'config' }
       end, { desc = 'Search [N]eovim files' })

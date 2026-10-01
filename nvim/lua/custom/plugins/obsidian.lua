@@ -1,16 +1,8 @@
--- obsidian vault integration: daily notes, backlinks, tags, templates.
--- markdown rendering and list/link editing stay in markdown-ui.lua
--- (render-markdown + mkdnflow + conceallevel); obsidian.nvim is kept to
--- vault-aware features.
---
--- vault root resolution (in order):
---   1. `vim.g.obsidian_vault_root`: set in ~/.config/nvim/local.lua to override
---   2. ~/obsidian: default path
---   3. neither exists: plugin spec is empty, obsidian.nvim is not loaded
---
--- the resolved root can either be a vault itself (has `.obsidian/` directly
--- inside, e.g. `~/notes/.obsidian`) or a parent directory containing one or
--- more vaults (e.g. `~/vaults/work/.obsidian`, `~/vaults/personal/.obsidian`).
+-- obsidian.nvim: vault features only (daily notes, backlinks, tags,
+-- templates); rendering and list/link editing are in markdown-ui.lua.
+-- vault root: `vim.g.obsidian_vault_root` (set in local.lua), else ~/obsidian.
+-- when neither exists the spec is empty. the root is a vault itself
+-- (`.obsidian/` directly inside) or a parent directory of vaults
 
 local function resolve_vault_root()
   local override = vim.g.obsidian_vault_root
@@ -35,8 +27,6 @@ if not vault_root then
   return {}
 end
 
--- `vault_root` can either be a vault itself (has `.obsidian/` directly inside)
--- or a parent directory containing one or more vaults. handle both.
 local function discover_workspaces()
   local workspaces = {}
   if vim.fn.isdirectory(vault_root .. '/.obsidian') == 1 then
@@ -55,7 +45,7 @@ end
 local workspaces = discover_workspaces()
 if #workspaces == 0 then
   vim.notify(
-    ('obsidian.nvim: no vaults found under %q (expected `.obsidian/` directly inside, or in an immediate subdirectory) — skipping'):format(vault_root),
+    ('obsidian.nvim: no vaults found under %q (expected `.obsidian/` directly inside, or in an immediate subdirectory); skipping'):format(vault_root),
     vim.log.levels.WARN
   )
   return {}
@@ -132,9 +122,8 @@ return {
         time_format = 'HH:mm',
       },
 
-      -- completion is served by obsidian.nvim's built-in `obsidian-ls` LSP
-      -- server (since v3.16); the old `nvim_cmp`/`blink` switches are
-      -- deprecated and removed in 4.0. blink.cmp's `lsp` source picks it up.
+      -- completion comes from obsidian.nvim's built-in `obsidian-ls` server
+      -- through blink.cmp's `lsp` source
       completion = {
         min_chars = 2,
       },
@@ -151,11 +140,9 @@ return {
       new_notes_location = 'notes_subdir',
       notes_subdir = 'scratchpad',
 
-      -- filename already is the title for this vault (human-readable names,
-      -- wiki+shortest links), so the builtin's `id` field is pure noise,
-      -- strip it. aliases are kept only when the note actually has them in
-      -- its frontmatter; otherwise the builtin would emit an empty `aliases:`
-      -- line on every save.
+      -- the filename is the title in this vault, so the builtin's `id` field
+      -- is dropped. aliases are kept only when the note has them; the builtin
+      -- would write an empty `aliases:` line on every save
       frontmatter = {
         sort = false,
         func = function(note)
@@ -168,9 +155,8 @@ return {
         end,
       },
 
-      -- vault uses human-readable titles (e.g. "UI Redesign Ideas.md"),
-      -- not Zettel IDs. preserve the title as-is when given; fall back to
-      -- a timestamp only if `:Obsidian new` is called with no title.
+      -- titles are human-readable, not Zettel IDs; a timestamp is used only
+      -- when `:Obsidian new` has no title
       note_id_func = function(title)
         if title ~= nil and title ~= '' then
           return title
@@ -178,20 +164,14 @@ return {
         return os.date '%Y-%m-%d-%H%M%S'
       end,
 
-      -- render-markdown + mkdnflow + conceallevel already handle display
+      -- markdown-ui.lua handles display
       ui = { enable = false },
 
       attachments = { folder = 'attachments' },
 
-      -- for vault notes only: rebind `gf` to obsidian.nvim's link-follow
-      -- action, matching what `<CR>` does. two non-obvious things about
-      -- the call:
-      --   1. `follow_link` doesn't grab the cursor link itself; it
-      --      requires the raw link string, otherwise its internal
-      --      `parse_link` crashes on a nil.
-      --   2. `open_strategy` is used as a literal vim command, not as a
-      --      strategy enum (despite what some docs imply), so pass
-      --      'edit' / 'vsplit' / 'split', not 'current'.
+      -- `gf` in vault notes follows links as `<CR>` does. `follow_link` needs
+      -- the raw link string, and `open_strategy` is a literal vim command
+      -- ('edit' / 'vsplit' / 'split')
       callbacks = {
         enter_note = function(note)
           vim.keymap.set('n', 'gf', function()

@@ -1,4 +1,4 @@
--- adds git related signs to the gutter, plus utilities for managing changes
+-- gitsigns: gutter signs and hunk actions
 
 return {
   {
@@ -6,7 +6,6 @@ return {
     event = { 'BufReadPre', 'BufNewFile' },
     config = function(_, opts)
       require('gitsigns').setup(opts)
-      -- git sign colours are defined in nvim/colors/*.lua colourschemes
     end,
     opts = {
       signs = {
@@ -16,7 +15,7 @@ return {
         topdelete = { text = '‾' },
         changedelete = { text = '~' },
       },
-      -- above diagnostics (10), below test signs (100 dotnet, 1000 neotest)
+      -- above diagnostics, below the dotnet and neotest test signs
       sign_priority = 30,
       numhl = false,
       linehl = false,
@@ -29,7 +28,6 @@ return {
           vim.keymap.set(mode, l, r, mopts)
         end
 
-        -- navigation: hunks
         map('n', ']c', function()
           if vim.wo.diff then
             vim.cmd.normal { ']c', bang = true }
@@ -48,19 +46,16 @@ return {
           end
         end, { desc = 'Jump to previous git [c]hange' })
 
-        -- actions
-        -- visual mode
         map('v', '<leader>Hs', function()
           gitsigns.stage_hunk { vim.fn.line '.', vim.fn.line 'v' }
         end, { desc = '[S]tage hunk' })
         map('v', '<leader>Hr', function()
           gitsigns.reset_hunk { vim.fn.line '.', vim.fn.line 'v' }
         end, { desc = '[R]eset hunk' })
-        -- normal mode
         map('n', '<leader>Hs', gitsigns.stage_hunk, { desc = '[S]tage hunk' })
         map('n', '<leader>Hr', gitsigns.reset_hunk, { desc = '[R]eset hunk' })
         map('n', '<leader>HS', gitsigns.stage_buffer, { desc = '[S]tage buffer' })
-        -- stage_hunk toggles: on a staged sign it unstages, replacing the deprecated undo_stage_hunk
+        -- stage_hunk toggles: on a staged sign it unstages
         map('n', '<leader>Hu', gitsigns.stage_hunk, { desc = '[U]ndo stage hunk' })
         map('n', '<leader>HR', gitsigns.reset_buffer, { desc = '[R]eset buffer' })
         map('n', '<leader>Hp', gitsigns.preview_hunk, { desc = '[P]review hunk' })

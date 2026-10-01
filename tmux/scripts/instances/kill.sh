@@ -23,7 +23,6 @@ fi
 TARGET="$1"
 PROCESS="$2"
 
-# validate process name
 case "$PROCESS" in
     claude | codex | opencode | copilot | nvim) ;;
     *)
@@ -41,8 +40,8 @@ IFS='|' read -r PANE_PID SESSION WINDOW_IDX WINDOW_NAME WINDOW_ID <<<"$target_in
 [[ -n "$WINDOW_NAME" ]] || WINDOW_NAME="$TARGET"
 
 # find the child process matching process name. match_child_pid tries pgrep
-# first, then the executable basename, which also covers a process pgrep hides
-# as an ancestor of itself
+# first, then the executable basename, which also covers a process pgrep
+# excludes as an ancestor of itself
 MATCH_FLAG="-x"
 [[ "$PROCESS" == "opencode" ]] && MATCH_FLAG="-f"
 
@@ -66,12 +65,11 @@ if [[ -z "$CHILD_PID" ]]; then
     exit 1
 fi
 
-# show confirmation
 if ! show_visual_confirm "Kill Instance" "Kill ${PROCESS} in '${WINDOW_NAME}'?"; then
     exit 0
 fi
 
-# graceful shutdown: SIGTERM → wait 2s → SIGKILL
+# graceful shutdown: SIGTERM, grace wait, SIGKILL
 graceful_kill_pids 2 "$CHILD_PID"
 
 # clear alerts for agent processes (nvim doesn't use alerts)

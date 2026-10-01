@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# test suite for set-default-apps.sh
+# tests for set-default-apps.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/_test-helpers.sh"
@@ -11,9 +11,8 @@ SET_APPS_SCRIPT="$SCRIPT_DIR/../install/set-default-apps.sh"
 
 section "set-default-apps Tests"
 
-# test: non-macOS early exit
 if is_macos; then
-    skip "macOS early-exit test (not on Linux)"
+    skip "non-macOS early-exit test (on macOS)"
 else
     output=$("$SET_APPS_SCRIPT" 2>&1 || true)
     if [[ "$output" == *"macOS-only"* ]]; then
@@ -23,8 +22,7 @@ else
     fi
 fi
 
-# test: duti missing, should warn and exit without touching handlers.
-# duti lives in the Homebrew prefix, so a /usr/bin-only PATH hides it.
+# duti lives in the homebrew prefix, so a /usr/bin-only PATH hides it
 if is_macos; then
     output=$(PATH="/usr/bin:/bin" "$SET_APPS_SCRIPT" 2>&1 || true)
     if [[ "$output" == *"duti not installed"* ]]; then
@@ -36,8 +34,8 @@ else
     skip "duti-missing test (macOS only)"
 fi
 
-# the script runs under whatever bash the shebang resolves to; on a fresh
-# macOS that is system bash 3.2 (no associative arrays), so guard the parse
+# /bin/bash is 3.2 on macOS. `bash -n` catches syntax 3.2 cannot parse, not
+# `declare -A`, which parses and fails at runtime
 if [[ -x /bin/bash ]]; then
     if /bin/bash -n "$SET_APPS_SCRIPT" 2>/dev/null; then
         pass "Parses under system bash 3.2"
@@ -48,7 +46,6 @@ else
     skip "bash 3.2 parse test (/bin/bash absent)"
 fi
 
-# note: the binding path mutates LaunchServices, skip in the suite
 skip "handler-binding path modifies LaunchServices defaults"
 
 print_summary

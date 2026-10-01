@@ -1,8 +1,7 @@
 #!/usr/bin/env bash
-# clipboard backend detection, shared by tmux scripts and theme-switch.
-# self-contained (no common.sh dependency) so any script can source it directly
+# clipboard backend detection, shared by tmux scripts and theme-switch
+# no common.sh dependency
 
-# guard against multiple sourcing
 [[ -n "${_DOTFILES_CLIPBOARD_SH_LOADED:-}" ]] && return 0
 _DOTFILES_CLIPBOARD_SH_LOADED=1
 
@@ -24,19 +23,17 @@ clipboard_backend() {
     elif command -v termux-clipboard-set &>/dev/null; then
         printf 'termux'
     elif [[ -n "${WAYLAND_DISPLAY:-}" || -n "${DISPLAY:-}" ]]; then
-        # a display server is running but its tool is missing. reported apart
-        # from `osc52` so callers do not silently push the payload out through
-        # the terminal when the local clipboard was what was asked for
+        # a display server is running but its tool is missing. kept apart
+        # from `osc52` so callers can refuse instead of writing to the terminal
         printf 'missing'
     else
         printf 'osc52'
     fi
 }
 
-# clipboard copy command as a string, for embedding in fzf --bind, tmux
-# copy-pipe, and the like. the `none` case discards instead of falling back to
-# OSC 52: these call sites run detached from a tty, and tmux's own
-# `set-clipboard on` already emits OSC 52 for copy-pipe, so it would double up
+# clipboard copy command as a string, for embedding in fzf --bind and tmux
+# copy-pipe. `missing` and `osc52` discard stdin: these call sites run detached
+# from a tty, and tmux's `set-clipboard on` already emits OSC 52 for copy-pipe
 clipboard_copy_cmd() {
     case "$(clipboard_backend)" in
         pb) printf 'pbcopy' ;;
@@ -49,9 +46,8 @@ clipboard_copy_cmd() {
     esac
 }
 
-# write stdin to the terminal clipboard via OSC 52. needs a writable tty, and
-# terminals cap the payload, so oversized input is refused rather than silently
-# truncated into a half-copy
+# write stdin to the terminal clipboard via OSC 52. needs a writable tty;
+# input over the terminal payload cap is refused, not truncated
 clipboard_osc52() {
     local b64
     b64=$(base64 | tr -d '\r\n') || return 1
@@ -68,8 +64,7 @@ clipboard_osc52() {
     printf '\033]52;c;%s\a' "$b64" >/dev/tty
 }
 
-# copy stdin to the system clipboard. falls back to OSC 52 so it still works
-# headless and over ssh; tmux forwards that onward via `set-clipboard on`
+# copy stdin to the system clipboard, via OSC 52 when headless or over ssh
 clipboard_copy() {
     case "$(clipboard_backend)" in
         pb) pbcopy ;;

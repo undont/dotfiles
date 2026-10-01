@@ -8,16 +8,15 @@ set -euo pipefail
 DOTFILES_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 export DOTFILES_DIR
 
-# source shared utilities
 source "$DOTFILES_DIR/scripts/_lib/common.sh"
 source "$DOTFILES_DIR/scripts/_lib/rollback.sh"
 
 # preset definitions:
 #   minimal - zsh + tmux only (servers, remote machines)
 #   core    - minimal + nvim + ghostty + AI/CLI tools + session launch scripts (cross-platform dev)
-#   full    - core + Hammerspoon + Karabiner (macOS power user)
+#   full    - core + hammerspoon + karabiner on macOS, keyd on linux
 
-# error handler for automatic rollback
+# prints rollback instructions on failure
 on_error() {
     local exit_code=$?
     local line_no=$1
@@ -33,17 +32,15 @@ on_error() {
         echo "Or to manually restore your backup:"
         backup_dir=$(get_backup_location)
         if [[ -n "$backup_dir" ]] && [[ -d "$backup_dir" ]]; then
-            echo "  cp -r $backup_dir/* \$HOME/"
+            echo "  cp -R $backup_dir/. \$HOME/"
         fi
     fi
 
     exit $exit_code
 }
 
-# set up error trap
 trap 'on_error $LINENO' ERR
 
-# parse arguments
 SKIP_BACKUP=0
 SKIP_BREW=0
 CHECK_ONLY=0
@@ -51,7 +48,7 @@ NO_LOGO=0
 UPDATE_MODE=0
 AUTO_YES=0
 SKIP_STEPS=""
-PRESET="full" # default preset
+PRESET="full"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -110,6 +107,7 @@ while [[ $# -gt 0 ]]; do
             echo "  --skip-steps L   Skip comma-separated list of steps"
             echo "                   (homebrew,packages,symlinks,keyd)"
             echo "  --check-only     Only run prerequisite and health checks"
+            echo "  --no-logo        Skip the logo banner"
             echo "  --update         Update mode (skips logo, uses update terminology)"
             echo "  --yes, -y        Skip confirmation prompt"
             echo "  -h, --help       Show this help message"
@@ -150,13 +148,11 @@ if [[ -n "$SKIP_STEPS" ]]; then
     unset _skip_arr _step
 fi
 
-# check if a step should be skipped (by name)
 is_step_skipped() {
     local step_name="$1"
     [[ ",$SKIP_STEPS," == *",$step_name,"* ]]
 }
 
-# validate preset value
 case "$PRESET" in
     minimal | core | full)
         # valid preset
@@ -168,7 +164,6 @@ case "$PRESET" in
         ;;
 esac
 
-# export preset for sub-scripts
 export DOTFILES_PRESET="$PRESET"
 
 # step labels: update mode uses shorter verbs since the header already says "Applying Updates"
@@ -184,7 +179,6 @@ else
     STEP7_LABEL="Setting up keyd (keyboard remapping)..."
 fi
 
-# initialise rollback state
 init_rollback_state
 
 [[ $NO_LOGO -eq 0 ]] && print_logo
@@ -197,7 +191,6 @@ else
     echo ""
 fi
 
-# display preset info and confirmation
 echo "Selected preset: ${CYAN}${PRESET}${NC}"
 if [[ $UPDATE_MODE -eq 0 ]]; then
     case "$PRESET" in
@@ -218,14 +211,14 @@ if [[ $UPDATE_MODE -eq 0 ]]; then
 fi
 echo ""
 
-# confirmation prompt (skipped in update mode or with --yes)
+# confirmation prompt (skipped with --yes)
 if [[ $AUTO_YES -eq 0 ]]; then
     if [[ -t 0 ]]; then
         printf 'Proceed with %s%s%s installation? [y/N] ' "${CYAN}" "${PRESET}" "${NC}"
         read -r response
     else
         error "Non-interactive shell detected. Cannot prompt for confirmation."
-        info "Re-run with a TTY or pipe 'yes' to confirm."
+        info "Re-run in a terminal, or pass --yes to skip the prompt."
         exit 1
     fi
     case "$response" in
@@ -246,8 +239,7 @@ if [[ $SKIP_BREW -eq 0 && $CHECK_ONLY -eq 0 ]] && ! is_step_skipped "homebrew"; 
     "$DOTFILES_DIR/scripts/install/install-homebrew.sh"
     record_step "homebrew"
 
-    # ensure Homebrew is in PATH for subsequent steps
-    # (the install script runs in a subshell, so PATH changes don't propagate)
+    # the install script runs in a subshell, so its PATH changes don't reach later steps
     HOMEBREW_PREFIX=$(get_homebrew_prefix)
     if [[ -x "$HOMEBREW_PREFIX/bin/brew" ]]; then
         eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
@@ -401,7 +393,7 @@ if [[ ! -f "$SECRETS_DIR/secrets.zsh" ]]; then
             umask 077
             touch "$SECRETS_DIR/secrets.zsh"
         )
-        chmod 600 "$SECRETS_DIR/secrets.zsh" # belt and suspenders
+        chmod 600 "$SECRETS_DIR/secrets.zsh"
         warn "Created empty secrets file."
     fi
 else
@@ -484,17 +476,16 @@ elif [[ -t 0 ]]; then
     esac
 fi
 
-# mark that we've asked about project directories
+# record that the project directory prompts ran
 mkdir -p "$(dirname "$dirs_asked_file")"
 touch "$dirs_asked_file"
 
 record_step "project-dirs"
 
-# step 14: import local layer (only when a private local-layer repo is
-# configured; see `dotfiles help local`). runs after the preset save so the
-# manifest gating reads the fresh preset. unconfigured machines skip
-# silently, but a repo already cloned to the default location is adopted
-# so "clone dotfiles-local, then install" needs no extra configuration
+# step 14: import local layer when a private local-layer repo is configured
+# (see `dotfiles help local`). runs after the preset save so the manifest
+# gating reads the fresh preset. a repo already cloned to the default
+# location is adopted
 LOCAL_PTR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local-repo"
 DEFAULT_LOCAL_DIR="$HOME/.dotfiles-local"
 LOCAL_ADOPTED=0
@@ -515,8 +506,7 @@ if [[ -n "${DOTFILES_LOCAL_DIR:-}" || -f "$LOCAL_PTR" ]]; then
     record_step "local-import"
 fi
 
-# clean up rollback state on success. everything below this point is
-# reporting, so the last mutating step has already succeeded
+# everything below this point is reporting
 cleanup_rollback_state
 
 # detect what's already configured to tailor next steps
@@ -528,12 +518,10 @@ has_dev_root=false
 has_projects_root=false
 has_p10k=false
 
-# tmux plugins already installed?
 if [[ -d "$HOME/.tmux/plugins/tmux-resurrect" ]]; then
     has_tmux_plugins=true
 fi
 
-# nvim lazy.nvim packages populated?
 if [[ -d "$HOME/.local/share/nvim/lazy" ]]; then
     lazy_count=$(find "$HOME/.local/share/nvim/lazy" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | wc -l)
     if [[ "$lazy_count" -gt 1 ]]; then
@@ -541,23 +529,21 @@ if [[ -d "$HOME/.local/share/nvim/lazy" ]]; then
     fi
 fi
 
-# Node.js available?
 if command -v node &>/dev/null; then
     has_node=true
 fi
 
-# secrets file has real content (not just template comments)?
+# an `export` line that is not one of the template's placeholders
 secrets_file="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/secrets.zsh"
-if [[ -f "$secrets_file" ]] && grep -q '^export ' "$secrets_file" 2>/dev/null; then
+secrets_template="$DOTFILES_DIR/zsh/secrets.zsh.template"
+if [[ -f "$secrets_file" ]] && grep -vxF -f "$secrets_template" "$secrets_file" 2>/dev/null | grep -q '^export '; then
     has_secrets_content=true
 fi
 
-# Powerlevel10k configured?
 if [[ -f "$HOME/.p10k.zsh" ]]; then
     has_p10k=true
 fi
 
-# project directories configured?
 if grep -q '^export DEV_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
     has_dev_root=true
 fi
@@ -565,7 +551,6 @@ if grep -q '^export PROJECTS_ROOT=' "$HOME/.zshrc" 2>/dev/null; then
     has_projects_root=true
 fi
 
-# done
 [[ $NO_LOGO -eq 0 ]] && print_logo
 
 if [[ $UPDATE_MODE -eq 1 ]]; then
@@ -577,7 +562,7 @@ fi
 echo "Preset: $PRESET"
 echo ""
 
-# collect next steps into an array, only including relevant ones
+# next steps, only the relevant ones
 STEPS=()
 
 if [[ $UPDATE_MODE -eq 0 ]]; then
@@ -621,7 +606,6 @@ fi
 local_overrides+="       ~/.config/tmux/local.conf      → Extra tmux settings"
 STEPS+=("Personalise with local override files (never overwritten by updates):\n${local_overrides}")
 
-# print numbered steps
 if [[ ${#STEPS[@]} -gt 0 ]]; then
     echo "Next steps:"
     for i in "${!STEPS[@]}"; do
@@ -635,22 +619,19 @@ if [[ $SKIP_BACKUP -eq 0 ]] && [[ -d "${BACKUP_DIR:-}" ]]; then
     echo ""
 fi
 
-# when nearly everything is already done, show a positive message
+# few steps left means nearly everything is already set up
 if [[ ${#STEPS[@]} -le 2 ]]; then
     if [[ $UPDATE_MODE -eq 1 ]]; then
         success "Update applied successfully!"
     else
-        success "Everything looks good — you're all set!"
+        success "Everything looks good, you're all set!"
     fi
 fi
 
-# post-update notices left by migrations. install.sh is invoked fresh
-# from disk after `dotfiles update` pulls, so this path is the new
-# version even on the upgrade hop where the running `dotfiles`
-# dispatcher is still the pre-pull copy parsed in memory. the
-# cmd_update dispatcher also calls a notice helper as a safety net
-# for the "already up-to-date" branch on subsequent runs; this clears
-# the file so it doesn't double-print
+# post-update notices left by migrations. install.sh is run fresh from disk
+# after `dotfiles update` pulls, so this is the new version even when the
+# running dispatcher is the pre-pull copy. removing the file stops cmd_update's
+# _print_update_notices from printing it again
 notice_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/.state/update-notices.txt"
 if [[ -s "$notice_file" ]]; then
     echo ""
@@ -659,10 +640,10 @@ if [[ -s "$notice_file" ]]; then
     rm -f "$notice_file"
 fi
 
-# stamp the last install/update time. reaching here means the apply succeeded.
-# `dotfiles update` early-returns before invoking install.sh when nothing is to
-# be applied, so this only advances on a real install or update. read back by
-# `dotfiles version`/`status` as the "Updated" field (UPDATE_STAMP_FILE in cli.sh)
+# last install/update time, read back by `dotfiles version`/`status` as the
+# "Updated" field (UPDATE_STAMP_FILE in cli.sh). `dotfiles update` returns
+# before running install.sh when there is nothing to apply, so this only
+# advances on a real install or update
 update_stamp_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/.state"
 mkdir -p "$update_stamp_dir"
 date '+%Y-%m-%d %H:%M' >"$update_stamp_dir/last-update"

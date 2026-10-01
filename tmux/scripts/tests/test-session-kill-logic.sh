@@ -51,7 +51,7 @@ test_tmux new-session -d -s "$TEST_SESSION_2" -c /tmp
 echo "Created test sessions: $TEST_SESSION_1, $TEST_SESSION_2"
 
 # ═══════════════════════════════════════════════════════════════
-# Basic Kill Tests
+# basic kill tests
 # ═══════════════════════════════════════════════════════════════
 
 section "Basic Session Kill"
@@ -81,7 +81,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════
-# Alert Cleanup After Session Kill
+# alert cleanup after session kill
 # ═══════════════════════════════════════════════════════════════
 
 section "Alert Cleanup After Kill"

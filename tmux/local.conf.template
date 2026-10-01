@@ -3,9 +3,9 @@
 # =============================================================================
 # your personal tmux settings; this file is yours, add anything you want.
 # it is sourced AFTER the base config and plugins, so your values override
-# the defaults.
+# the defaults
 #
-# this file survives dotfiles theme and dotfiles update.
+# this file survives dotfiles theme and dotfiles update
 # after making changes, reload with: prefix + r
 #
 # file structure:

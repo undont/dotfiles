@@ -1,33 +1,24 @@
 #!/usr/bin/env bash
 # ══════════════════════════════════════════════════════════════
-# split-resurrect.sh
+# resurrect/split.sh
 # ══════════════════════════════════════════════════════════════
-# post-save hook for tmux-resurrect.
-#
-# by default, tmux-resurrect saves ALL sessions to a single combined
-# file. this hook runs after each save and splits that file into
-# individual per-session files, enabling independent session restore.
-#
-# called automatically via: @resurrect-hook-post-save-all
+# post-save hook for tmux-resurrect (@resurrect-hook-post-save-all): splits the
+# combined save file into per-session files so sessions restore independently,
+# and removes files for sessions that no longer exist
 #
 # input:  ~/.tmux/resurrect/last (symlink to latest save)
 # output: ~/.tmux/resurrect/sessions/<session-name>.txt
-#
-# also cleans up session files for sessions that no longer exist
 # ══════════════════════════════════════════════════════════════
 
 set -euo pipefail
 
-# source path utilities
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source "$SCRIPT_DIR/../_lib/paths.sh"
 
-# get the resurrect directories using shared functions
 RESURRECT_DIR=$(get_resurrect_dir)
 SESSIONS_DIR=$(get_resurrect_sessions_dir)
 LAST_FILE="${RESURRECT_DIR}/last"
 
-# ensure sessions directory exists
 mkdir -p "${SESSIONS_DIR}"
 
 # get file modification time (cross-platform)
@@ -118,7 +109,7 @@ done
 # ─────────────────────────────────────────
 # cleanup: remove old resurrect save files
 # ─────────────────────────────────────────
-# keep only the 20 most recent saves to prevent unbounded growth
+# cap the number of retained saves
 cleanup_old_backups() {
     local dir="$1"
     local keep="$2"

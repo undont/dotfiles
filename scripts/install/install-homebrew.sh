@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# install Homebrew if not present, update if already installed
+# installs homebrew when missing, otherwise runs `brew update`
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=/dev/null
@@ -11,18 +11,15 @@ print_section "Homebrew Setup"
 
 HOMEBREW_PREFIX=$(get_homebrew_prefix)
 
-# check if Homebrew is installed
 if command_exists brew; then
     success "Homebrew is already installed"
     echo ""
 
     info "Updating Homebrew..."
-    # `brew update` is only a metadata refresh; a failure here does not block
-    # the package install below, so it must not be fatal under `set -e`. it can
-    # also crash with its own internal bugs the first time Homebrew self-updates
-    # (e.g. "uninitialized constant DescriptionCacheStore::FormulaVersions" on
-    # 5.x), which then self-clear on the next run. retry once to recover from
-    # that, then warn and continue rather than aborting the whole update
+    # `brew update` is a metadata refresh, so a failure must not abort under
+    # `set -e`. a run that self-updates homebrew can crash once (e.g.
+    # "uninitialized constant DescriptionCacheStore::FormulaVersions") and
+    # succeed on the retry
     if brew update || brew update; then
         echo ""
         success "Homebrew updated successfully"
@@ -35,15 +32,12 @@ else
     warn "Homebrew not found. Installing..."
     echo ""
 
-    # install platform-specific build prerequisites
     if is_macos; then
-        # check for Command Line Tools
         if ! xcode-select -p &>/dev/null; then
             warn "Installing Command Line Tools..."
             echo "A dialog may appear - please click 'Install' and wait for completion."
             xcode-select --install
 
-            # wait for installation with timeout
             echo ""
             echo "Waiting for Command Line Tools installation..."
             if ! read_with_timeout "Press Enter once the installation is complete: " _ 600; then
@@ -65,23 +59,19 @@ else
         fi
     fi
 
-    # install Homebrew
     info "Installing Homebrew..."
     /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"
 
-    # add Homebrew to PATH for this session
     eval "$("$HOMEBREW_PREFIX/bin/brew" shellenv)"
 
     echo ""
     success "Homebrew installed successfully"
 fi
 
-# verify installation
 echo ""
 echo "Homebrew version: $(brew --version | head -n1)"
 echo "Homebrew prefix: $(brew --prefix)"
 
-# disable analytics (optional but recommended for privacy)
 brew analytics off 2>/dev/null || true
 
 echo ""

@@ -34,7 +34,7 @@ echo "${CYAN}══════════════════════�
 echo ""
 
 # ═══════════════════════════════════════════════════════════════════════════
-# test: Clear alerts for session with no alert options set
+# test: clear alerts for session with no alert options set
 # ═══════════════════════════════════════════════════════════════════════════
 section "Clear alerts - no options set"
 
@@ -56,7 +56,7 @@ fi
 cleanup_test_server
 
 # ═══════════════════════════════════════════════════════════════════════════
-# test: Clear alerts for session with alert options set
+# test: clear alerts for session with alert options set
 # ═══════════════════════════════════════════════════════════════════════════
 section "Clear alerts - options set"
 
@@ -88,7 +88,7 @@ fi
 cleanup_test_server
 
 # ═══════════════════════════════════════════════════════════════════════════
-# test: Sanitise session names
+# test: sanitise session names
 # ═══════════════════════════════════════════════════════════════════════════
 section "Sanitise session names"
 
@@ -113,7 +113,7 @@ result=$(sanitise_session_name "music.nvim")
 assert_equals "Dots converted to dashes" "music-nvim" "$result"
 
 # ═══════════════════════════════════════════════════════════════════════════
-# test: Validate session names
+# test: validate session names
 # ═══════════════════════════════════════════════════════════════════════════
 section "Validate session names"
 
@@ -156,7 +156,7 @@ else
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
-# test: Rename session workflow (no alerts)
+# test: rename session workflow (no alerts)
 # ═══════════════════════════════════════════════════════════════════════════
 section "Rename workflow - no alerts"
 
@@ -206,7 +206,7 @@ fi
 cleanup_test_server
 
 # ═══════════════════════════════════════════════════════════════════════════
-# test: Rename session workflow (with alerts, alerts preserved)
+# test: rename session workflow (with alerts, alerts preserved)
 # ═══════════════════════════════════════════════════════════════════════════
 section "Rename workflow - alerts preserved"
 
@@ -263,7 +263,7 @@ fi
 cleanup_test_server
 
 # ═══════════════════════════════════════════════════════════════════════════
-# test: Rename to existing session name (should fail)
+# test: rename to existing session name (should fail)
 # ═══════════════════════════════════════════════════════════════════════════
 section "Rename to existing name"
 
@@ -286,7 +286,7 @@ fi
 cleanup_test_server
 
 # ═══════════════════════════════════════════════════════════════════════════
-# test: Clear window alerts with no options (pipefail safe)
+# test: clear window alerts with no options (pipefail safe)
 # ═══════════════════════════════════════════════════════════════════════════
 section "Clear window alerts - pipefail safety"
 
@@ -314,9 +314,9 @@ win_id=$(tmux list-windows -t pipefail-test -F '#D' | head -1)
 cleanup_test_server
 
 # ═══════════════════════════════════════════════════════════════════════════
-# regression tests: rename must update alerts file BEFORE the tmux rename
-# command, otherwise the async cleanup hook races and deletes alert entries
-# see: race condition fix in sessions/rename.sh and windows/rename.sh
+# rename must update alerts file BEFORE the tmux rename command, otherwise
+# the async cleanup hook races and deletes alert entries
+# (sessions/rename.sh and windows/rename.sh)
 # ═══════════════════════════════════════════════════════════════════════════
 
 section "Regression: session rename preserves alerts through cleanup"

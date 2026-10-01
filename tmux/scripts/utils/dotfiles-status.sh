@@ -8,8 +8,8 @@
 #   ↕  diverged (both ahead and behind)
 #   (empty) up-to-date or error (silent fail)
 #
-# caches git fetch (default: 5 min) and computed result (default: 30s)
-# to avoid expensive git operations on every status bar refresh
+# caches git fetch and the computed result (TTLs below) to avoid git
+# operations on every status bar refresh
 
 set -euo pipefail
 
@@ -17,8 +17,8 @@ DOTFILES_DIR="${DOTFILES_DIR:-$HOME/dotfiles}"
 CACHE_DIR="${XDG_CACHE_HOME:-$HOME/.cache}/dotfiles"
 CACHE_FILE="$CACHE_DIR/sync-status"
 FETCH_CACHE_FILE="$CACHE_DIR/last-fetch"
-CACHE_TTL_SECONDS="${DOTFILES_SYNC_CACHE_TTL:-300}"   # 5 minutes default
-RESULT_TTL_SECONDS="${DOTFILES_RESULT_CACHE_TTL:-30}" # 30 seconds default
+CACHE_TTL_SECONDS="${DOTFILES_SYNC_CACHE_TTL:-300}"
+RESULT_TTL_SECONDS="${DOTFILES_RESULT_CACHE_TTL:-30}"
 
 # silent exit helper (no output on failure)
 bail() {
@@ -73,7 +73,6 @@ get_remote_branch() {
     echo "${ref#refs/remotes/}"
 }
 
-# fetch from origin if cache is stale
 maybe_fetch() {
     local now last_fetch age
 
@@ -93,20 +92,16 @@ maybe_fetch() {
     echo "$now" >"$FETCH_CACHE_FILE"
 }
 
-# main logic
 main() {
     local remote_branch behind ahead output=""
 
     remote_branch=$(get_remote_branch) || bail
 
-    # trigger background fetch if needed
     maybe_fetch
 
-    # count commits behind and ahead
     behind=$(git rev-list HEAD.."$remote_branch" --count 2>/dev/null) || behind=0
     ahead=$(git rev-list "$remote_branch"..HEAD --count 2>/dev/null) || ahead=0
 
-    # build output
     if [[ $behind -gt 0 && $ahead -gt 0 ]]; then
         output="↕ "
     elif [[ $behind -gt 0 ]]; then
@@ -119,7 +114,6 @@ main() {
     # builtin-only hot path above)
     printf '%s\n%s\n' "$now" "$output" >"$CACHE_FILE"
 
-    # output for tmux
     printf "%s" "$output"
 }
 

@@ -1,7 +1,6 @@
 #!/usr/bin/env bash
-# local-layer helpers shared by the dotfiles dispatcher: manifest of the
-# user-owned "local layer" plus private-repo plumbing for export/import.
-# source this file after common.sh and cli.sh
+# manifest of the user-owned local layer and private-repo helpers for
+# export/import. source after common.sh and cli.sh
 
 [[ -n "${_DOTFILES_LOCAL_LAYER_SH_LOADED:-}" ]] && return 0
 _DOTFILES_LOCAL_LAYER_SH_LOADED=1
@@ -19,11 +18,9 @@ _DOTFILES_LOCAL_LAYER_SH_LOADED=1
 
 # build LOCAL_PAIRS (files) and LOCAL_DIR_PAIRS (directories) as
 # "repo-relative|system-absolute" strings, preset-gated like the installer.
-# secrets.zsh, .state/, the preset file and current-theme are deliberately
-# absent: theme is a per-machine choice, not synced
+# secrets.zsh, .state/, the preset file and current-theme are never listed
 _local_pairs() {
-    # should_install reads $PRESET (installer export); resolve from the saved
-    # preset when invoked via the CLI, where it is unset
+    # should_install reads $PRESET, which is unset when invoked via the CLI
     local PRESET="${PRESET:-$(get_preset)}"
     local cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
     LOCAL_PAIRS=(
@@ -59,8 +56,8 @@ _local_pairs() {
 # narrow LOCAL_PAIRS / LOCAL_DIR_PAIRS in place to entries matching the given
 # selectors. a selector matches a file pair, or a whole dir pair, by the exact
 # or suffix repo-relative path, the basename, or the system path; a single file
-# inside a dir pair (dir + "/" + subpath) is promoted into LOCAL_PAIRS so it
-# flows through the ordinary file path, no wholesale mirror and no prune.
+# inside a dir pair (dir + "/" + subpath) becomes a LOCAL_PAIRS entry, so the
+# dir is neither mirrored nor pruned.
 # returns 1 if any selector matches nothing. requires _local_pairs first
 _local_select() {
     local -a fpairs=() dpairs=()
@@ -139,22 +136,20 @@ _local_dir_required() {
     printf '%s' "$dir"
 }
 
-# seed .gitignore in the local repo if missing; belt and braces, the
-# manifest never includes these
+# seed .gitignore in the local repo if missing
 _local_seed_gitignore() {
     local dir="$1"
     [[ -f "$dir/.gitignore" ]] && return 0
     printf '%s\n' ".DS_Store" "secrets.zsh" ".state/" "statusline-theme.sh" "config/dotfiles/current-theme" >"$dir/.gitignore"
 }
 
-# write the pointer file
 _local_write_pointer() {
     local dir="$1"
     mkdir -p "$CONFIG_DIR"
     printf '%s\n' "$dir" >"$LOCAL_REPO_FILE"
 }
 
-# commit with an identity fallback so fresh machines without git config work
+# falls back to a generated identity when git has no user.email
 _local_commit() {
     local dir="$1" msg="$2"
     if git -C "$dir" config user.email >/dev/null 2>&1; then

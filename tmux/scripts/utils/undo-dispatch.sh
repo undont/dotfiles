@@ -10,7 +10,6 @@ source "$SCRIPT_DIR/../_lib/ui.sh"
 
 require_tmux
 
-# determine what was most recently deleted
 undo_type=$(get_most_recent_undo_type)
 
 case "$undo_type" in

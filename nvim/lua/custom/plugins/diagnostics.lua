@@ -18,11 +18,10 @@ local function without_neotest(diagnostics)
   return kept
 end
 
--- the renderer reads every namespace and offers no way to exclude one, so a
--- failing test drew its assertion message inline on top of neotest's own output
--- float. filter at the cache instead: the namespace stays populated for the
--- statusline's ✗N count and for ]t/[t. `update_from_event` resyncs through
--- `M.update` on an empty payload, so wrapping both covers that path too
+-- the renderer reads every namespace with no way to exclude one, so neotest's
+-- is filtered at the cache; the namespace itself stays populated for the
+-- statusline count and ]t/[t. `update_from_event` resyncs through `M.update`
+-- on an empty payload, so both are wrapped
 local function drop_neotest_diagnostics()
   local cache = require 'tiny-inline-diagnostic.cache'
   local update, update_from_event = cache.update, cache.update_from_event

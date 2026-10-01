@@ -13,7 +13,6 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 
 # argument parsing
@@ -62,11 +61,9 @@ list_launchers_for_fzf() {
         done < <(print_dotfiles_logo)
     fi
 
-    # collect all launchers in memory
-    # format: name|description|source
+    # collect all launchers in memory as name|description|source
     local all_launchers="" seen_names=""
 
-    # helper: collect a single launcher entry
     collect_launcher() {
         local file="$1"
         local source="${2:-}"
@@ -74,11 +71,9 @@ list_launchers_for_fzf() {
 
         name=$(basename "$file")
 
-        # extract @description tag
         description=$(extract_description "$file" || true)
         [[ -n "$description" ]] || return 0
 
-        # store: name|description|source
         all_launchers+="${name}|${description}|${source}"$'\n'
         seen_names+="${name}"$'\n'
     }
@@ -123,13 +118,11 @@ list_launchers_for_fzf() {
         done
     fi
 
-    # track which launchers have been output
     local outputted=""
 
     # output MRU launchers first
     while IFS= read -r hist_name; do
         [[ -n "$hist_name" ]] || continue
-        # find this launcher in all_launchers
         local entry="" scan_entry
         while IFS= read -r scan_entry; do
             [[ "$scan_entry" == "$hist_name|"* ]] || continue
@@ -156,12 +149,10 @@ list_launchers_for_fzf() {
     local remaining=""
     while IFS='|' read -r name desc source; do
         [[ -n "$name" ]] || continue
-        # skip if already output
         contains_line "$name" "$outputted" && continue
         remaining+="${name}|${desc}|${source}"$'\n'
     done <<<"$all_launchers"
 
-    # sort and output remaining
     while IFS='|' read -r name desc source; do
         [[ -n "$name" ]] || continue
 
@@ -176,7 +167,6 @@ list_launchers_for_fzf() {
     done < <(printf '%s' "$remaining" | sort)
 }
 
-# main
 main() {
     list_launchers_for_fzf
 }

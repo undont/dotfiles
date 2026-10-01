@@ -1,7 +1,7 @@
-# Preview available figlet/toilet fonts
-# Usage: font-preview [text]    — defaults to "Hello"
-#        font-preview -t [text] — toilet fonts only
-#        font-preview -f [text] — figlet fonts only
+# preview figlet/toilet fonts
+# usage: font-preview [text]      defaults to "Hello"
+#        font-preview -t [text]   toilet fonts only
+#        font-preview -f [text]   figlet fonts only
 local text="Hello" tool=""
 
 while [[ $# -gt 0 ]]; do
@@ -21,7 +21,7 @@ if (( !has_figlet && !has_toilet )); then
   return 1
 fi
 
-# Collect font entries as "tool:name" strings
+# entries are "tool:name" strings
 local -a entries=()
 
 if [[ "$tool" != "toilet" ]] && (( has_figlet )); then
@@ -51,12 +51,11 @@ if (( ${#entries[@]} == 0 )); then
   return 1
 fi
 
-# Stream entries through fzf with live preview
 local selected
 if command -v fzf &>/dev/null; then
   selected=$(printf '%s\n' "${entries[@]}" | sort | fzf \
     ${TMUX:+--tmux=100%,85%} --reverse --no-mouse \
-    --header="${#entries[@]} fonts — type to filter" \
+    --header="${#entries[@]} fonts, type to filter" \
     --preview="line={}; t=\${line%%:*}; n=\${line#*:}; \$t -f \"\$n\" -w \$FZF_PREVIEW_COLUMNS '$text'" \
     --preview-window=up,75%,wrap \
     --bind='ctrl-u:preview-half-page-up,ctrl-d:preview-half-page-down' \
@@ -69,7 +68,7 @@ if command -v fzf &>/dev/null; then
   printf "Font: %s (%s)\n" "$sname" "$stool"
   printf "Usage: %s -f %s \"%s\"\n" "$stool" "$sname" "$text"
 else
-  # Fallback: print all previews
+  # no fzf: print every preview
   for entry in "${entries[@]}"; do
     local etool="${entry%%:*}"
     local ename="${entry#*:}"

@@ -1,6 +1,5 @@
 #!/usr/bin/env bash
-# tests for reload-ghostty.sh
-# tests the ghostty-reload.sh helper script
+# tests for themes/reload-ghostty.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 GHOSTTY_RELOAD="$SCRIPT_DIR/../themes/reload-ghostty.sh"
@@ -9,7 +8,7 @@ GHOSTTY_RELOAD="$SCRIPT_DIR/../themes/reload-ghostty.sh"
 source "$SCRIPT_DIR/_test-helpers.sh"
 
 # ══════════════════════════════════════════════════════════════
-# Test Suite
+# test suite
 # ══════════════════════════════════════════════════════════════
 
 section "Script Existence and Permissions"

@@ -1,20 +1,16 @@
 #!/usr/bin/env bash
-# CLI helpers shared by the dotfiles dispatcher and any future tools that
-# need to read the changelog or preset state.
+# changelog, preset and version helpers for the dotfiles dispatcher
 # source this file: source "${BASH_SOURCE%/*}/cli.sh"
-# requires common.sh sourced first (for colour vars + error/warn)
+# requires common.sh sourced first (colour vars, error/warn)
 
 [[ -n "${_DOTFILES_CLI_SH_LOADED:-}" ]] && return 0
 _DOTFILES_CLI_SH_LOADED=1
 
-# fail fast if common.sh has not been sourced; we rely on its colour vars
-# and error/warn helpers
 [[ -z "${_DOTFILES_COMMON_SH_LOADED:-}" ]] && {
     echo "cli.sh requires common.sh to be sourced first" >&2
     return 1
 }
 
-# DOTFILES_DIR must be set by the caller; CONFIG_DIR derives from XDG
 : "${DOTFILES_DIR:?DOTFILES_DIR must be set before sourcing cli.sh}"
 CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
 PRESET_FILE="$CONFIG_DIR/preset"
@@ -23,7 +19,6 @@ LOCAL_REPO_FILE="$CONFIG_DIR/local-repo"
 
 # ── Preset / branch ────────────────────────────────────────────────────
 
-# get the saved preset, default to "full"
 get_preset() {
     if [[ -f "$PRESET_FILE" ]]; then
         cat "$PRESET_FILE"
@@ -42,7 +37,7 @@ get_local_dir() {
     fi
 }
 
-# get the default remote branch (origin/HEAD, with main/master fallback)
+# origin/HEAD, falling back to origin/main then origin/master
 get_remote_branch() {
     local ref
     if ref=$(git -C "$DOTFILES_DIR" symbolic-ref refs/remotes/origin/HEAD 2>/dev/null); then
@@ -72,9 +67,8 @@ _changelog_local_date() {
         "$DOTFILES_DIR/CHANGELOG.md" | head -1
 }
 
-# release timestamp for a version. when the matching "vX.Y.Z" tag exists, use
-# its commit time (YYYY-MM-DD HH:MM). untagged (-dev) versions have no tag, so
-# fall back to the date-only CHANGELOG heading
+# release timestamp for a version: the commit time of its "vX.Y.Z" tag
+# (YYYY-MM-DD HH:MM), or the date-only CHANGELOG heading when untagged
 _release_datetime() {
     local version="$1"
     [[ -z "$version" ]] && return
@@ -86,9 +80,8 @@ _release_datetime() {
     fi
 }
 
-# path to the last-update marker. install.sh writes a pre-formatted local
-# timestamp here at the end of every install/update apply (see UPDATE_STAMP_FILE
-# below); cmd_update reaches install.sh only when changes are actually applied
+# install.sh writes a pre-formatted local timestamp here at the end of every
+# run
 UPDATE_STAMP_FILE="$STATE_DIR/last-update"
 
 # timestamp (YYYY-MM-DD HH:MM) of the last successful install/update. empty if
@@ -149,7 +142,7 @@ _changelog_colorise() {
         -e "s|^- |  ${grey}•${nc} |"
 }
 
-# compare semantic versions: returns 0 if $1 > $2
+# returns 0 if version $1 > $2
 _version_gt() {
     [[ "$1" != "$2" ]] && [[ "$(printf '%s\n%s' "$1" "$2" | sort -V | head -1)" == "$2" ]]
 }

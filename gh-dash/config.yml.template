@@ -1,5 +1,5 @@
 # gh-dash configuration
-# theme colours are managed by dotfiles theme; don't edit colour values directly.
+# theme colours are managed by dotfiles theme; don't edit colour values directly
 # to change theme: dotfiles theme switch <theme-name>
 
 prSections:

@@ -2,14 +2,11 @@
 # common utilities for installation scripts
 # source this file: source "${BASH_SOURCE%/*}/_lib/common.sh"
 
-# guard against multiple sourcing
 [[ -n "${_DOTFILES_COMMON_SH_LOADED:-}" ]] && return 0
 _DOTFILES_COMMON_SH_LOADED=1
 
-# resolve this file's directory once. BASH_SOURCE works when sourced from
-# bash; zsh leaves it empty inside the sourced file, so fall back to zsh's
-# `%x` prompt expansion. lets ad-hoc `source scripts/_lib/common.sh` work
-# from either shell instead of failing with "no such file: /colours.sh"
+# BASH_SOURCE is empty inside a file sourced from zsh, which uses the `%x`
+# prompt expansion instead
 if [[ -n "${BASH_VERSION:-}" ]]; then
     _COMMON_LIB_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 elif [[ -n "${ZSH_VERSION:-}" ]]; then
@@ -19,31 +16,25 @@ else
     return 1
 fi
 
-# source colour definitions
 # shellcheck source=scripts/_lib/colours.sh
 source "$_COMMON_LIB_DIR/colours.sh"
 
-# print error message to stderr
 error() {
     printf "${RED}Error:${NC} %s\n" "$1" >&2
 }
 
-# print warning message to stderr
 warn() {
     printf "${YELLOW}Warning:${NC} %s\n" "$1" >&2
 }
 
-# print info message
 info() {
     printf "${CYAN}%s${NC}\n" "$1"
 }
 
-# print success message
 success() {
     printf "${GREEN}%s${NC}\n" "$1"
 }
 
-# print step header with box style
 print_header() {
     local title="$1"
     echo ""
@@ -53,7 +44,6 @@ print_header() {
     echo ""
 }
 
-# print section header
 print_section() {
     local title="$1"
     echo "============================================"
@@ -62,7 +52,6 @@ print_section() {
     echo ""
 }
 
-# print step with number
 print_step() {
     local step_num="$1"
     local description="$2"
@@ -70,7 +59,6 @@ print_step() {
     echo ""
 }
 
-# print skipped step
 print_skip() {
     local step_num="$1"
     local description="$2"
@@ -79,7 +67,6 @@ print_skip() {
     echo ""
 }
 
-# check if a command exists
 command_exists() {
     command -v "$1" &>/dev/null
 }
@@ -101,7 +88,7 @@ install_system_package() {
         sudo yum install -y "$pkg" 2>/dev/null && return 0
     fi
 
-    # if we get here, either no package manager was found or install failed
+    # no package manager found, or the install failed
     if [[ "$on_failure" == "fatal" ]]; then
         error "Failed to install '$pkg'. Install manually via your system package manager."
         exit 1
@@ -111,7 +98,6 @@ install_system_package() {
     fi
 }
 
-# check for a command and print status
 check_command() {
     local name="$1"
     local cmd="$2"
@@ -140,12 +126,10 @@ check_command() {
     fi
 }
 
-# check if running on macOS
 is_macos() {
     [[ "$(uname)" == "Darwin" ]]
 }
 
-# check if running on Linux
 is_linux() {
     [[ "$(uname)" == "Linux" ]]
 }
@@ -159,8 +143,7 @@ sed_inplace() {
     local sed_args=("${args[@]:0:${#args[@]}-1}")
     local tmp
     tmp=$(mktemp "${file}.XXXXXX") || return 1
-    # preserve the original file's permissions across the swap (mktemp
-    # defaults to 600, which would silently drop e.g. an executable bit)
+    # carry the original file's permissions onto the mktemp file
     cp -p "$file" "$tmp" 2>/dev/null
     if sed "${sed_args[@]}" "$file" >"$tmp"; then
         mv "$tmp" "$file"
@@ -170,12 +153,10 @@ sed_inplace() {
     fi
 }
 
-# check if running on Apple Silicon
 is_apple_silicon() {
     [[ "$(uname -m)" == "arm64" ]]
 }
 
-# get Homebrew prefix based on platform and architecture
 get_homebrew_prefix() {
     if is_macos; then
         if is_apple_silicon; then
@@ -188,9 +169,8 @@ get_homebrew_prefix() {
     fi
 }
 
-# read with timeout (prevents hanging on interactive prompts)
-# usage: read_with_timeout "prompt" variable_name timeout_seconds
-# note: the variable_name is used via nameref for dynamic assignment
+# usage: read_with_timeout "prompt" variable_name [timeout_seconds]
+# variable_name is assigned through a nameref
 read_with_timeout() {
     local prompt="$1"
     local -n _result_var="$2"
@@ -205,7 +185,6 @@ read_with_timeout() {
     fi
 }
 
-# confirm action (y/n prompt)
 confirm() {
     local prompt="${1:-Continue?}"
     local response
@@ -228,13 +207,12 @@ update_zshrc_export() {
         return 1
     fi
 
-    # validate variable name, only allow standard shell variable names
     if [[ ! "$var_name" =~ ^[A-Z_][A-Z0-9_]*$ ]]; then
         error "Invalid variable name: $var_name"
         return 1
     fi
 
-    # validate value doesn't contain newlines (would break sed append)
+    # a newline would break the sed append
     if [[ "$value" == *$'\n'* ]]; then
         error "Value for $var_name contains newlines"
         return 1
@@ -246,15 +224,11 @@ update_zshrc_export() {
     local escaped_value
     escaped_value=$(printf '%s' "$value" | sed 's/[&|\\\/]/\\&/g')
 
-    # check if the export line already exists
     if grep -q "^export ${var_name}=" "$zshrc"; then
-        # replace existing line
         sed_inplace "s|^export ${var_name}=.*|export ${var_name}=\"${escaped_value}\"|" "$zshrc"
     else
-        # append after the "YOUR PERSONAL CONFIGURATION" section marker
         local marker="YOUR PERSONAL CONFIGURATION"
         if grep -q "$marker" "$zshrc"; then
-            # find the marker line and append after the comment block
             local line_num
             line_num=$(grep -n "$marker" "$zshrc" | head -1 | cut -d: -f1)
             # skip past the comment block (lines starting with #) after the marker
@@ -270,13 +244,12 @@ update_zshrc_export() {
                     break
                 fi
             done
-            # sed eats backslashes in an a\ text block, so double them
+            # sed strips backslashes in an a\ text block, so double them
             local appended_value="${value//\\/\\\\}"
             sed_inplace "${insert_after}a\\
 export ${var_name}=\"${appended_value}\"
 " "$zshrc"
         else
-            # no marker found, append to end
             printf '\nexport %s="%s"\n' "$var_name" "$value" >>"$zshrc"
         fi
     fi
@@ -309,27 +282,15 @@ ${project_dirs_line}
     fi
 }
 
-# get the script directory (for relative sourcing)
-get_script_dir() {
-    cd "$(dirname "${BASH_SOURCE[1]}")" && pwd
-}
-
-# source the library from script location
-# usage: source "$(get_lib_path)/common.sh"
-get_lib_path() {
-    echo "$(get_script_dir)/_lib"
-}
-
-# check if a component should be installed based on preset hierarchy
-# usage: should_install "core" returns true if preset is core or full
-# requires PRESET variable to be set (defaults to "full")
+# true when $PRESET (default full) includes the given preset: minimal < core < full
+# usage: should_install "core"
 should_install() {
     local required_preset="$1"
     local current_preset="${PRESET:-full}"
 
     case "$required_preset" in
         minimal)
-            return 0 # always include minimal
+            return 0
             ;;
         core)
             [[ "$current_preset" == "core" || "$current_preset" == "full" ]]
@@ -344,9 +305,8 @@ should_install() {
     esac
 }
 
-# display ASCII logo from logo.txt with theme-aware gradient
-# uses active theme colours when available, red gradient as default
-# usage: print_logo
+# prints logo.txt with a gradient between two accent colours of the active
+# theme, or between two fixed fallback colours when no theme is loaded
 print_logo() {
     local logo_file="$_COMMON_LIB_DIR/logo.txt"
 
@@ -360,7 +320,7 @@ print_logo() {
             return
         fi
 
-        # load theme colours if a theme is active (skip on first install)
+        # no theme is active on a first install
         if [[ -z "${TMUX_ACCENT_CYAN:-}" ]]; then
             local fzf_theme="$_COMMON_LIB_DIR/../fzf-theme.sh"
             local config_dir="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles"
@@ -370,11 +330,9 @@ print_logo() {
             fi
         fi
 
-        # theme-aware: use accent colours if available, sage → forest gradient as default
         local from="${TMUX_ACCENT_CYAN:-#8baf9e}"
         local to="${TMUX_ACCENT_PURPLE:-#38604a}"
 
-        # use truecolor gradient when terminal supports it, otherwise basic ANSI
         if [[ "${COLORTERM:-}" == "truecolor" || "${COLORTERM:-}" == "24bit" ]]; then
             local r1=$((16#${from:1:2})) g1=$((16#${from:3:2})) b1=$((16#${from:5:2}))
             local r2=$((16#${to:1:2})) g2=$((16#${to:3:2})) b2=$((16#${to:5:2}))
@@ -388,7 +346,6 @@ print_logo() {
                 i=$((i + 1))
             done <"$logo_file"
         else
-            # fallback: basic ANSI green
             while IFS= read -r line || [[ -n "$line" ]]; do
                 printf "${GREEN}%s${NC}\n" "$line"
             done <"$logo_file"

@@ -1,17 +1,12 @@
--- readable views for compiled object/library files.
---
--- opening a `.o`/`.a`/`.dylib`/`.so` normally shows raw binary noise. this
--- intercepts the read and renders a decoded, read-only view instead: the
--- symbol table by default (what you reach for when chasing an undefined-symbol
--- link error), with disassembly and a hex dump a keypress away.
---
---   s  symbols      (nm, demangled)
+-- read-only decoded views of compiled object/library files (`.o`, `.a`,
+-- `.dylib`, `.so`), rendered in place of the raw read:
+--   s  symbols      (nm, demangled; the default)
 --   d  disassembly  (otool on macOS, objdump elsewhere)
 --   x  hex dump     (xxd; capped for large files)
 
 local M = {}
 
--- cap rendered output so opening a large dylib can't lock up the editor
+-- caps on rendered output
 local MAX_LINES = 50000
 local HEX_BYTES = 131072 -- 128 KiB
 
@@ -19,7 +14,7 @@ local function has(bin)
   return vim.fn.executable(bin) == 1
 end
 
---- build the shell command for a given view, or nil if no tool is available
+--- nil if no tool is available
 local function view_command(view, path)
   local p = vim.fn.shellescape(path)
   if view == 'symbols' then
@@ -85,7 +80,7 @@ local function render(buf, path, view)
   vim.bo[buf].modifiable = true
   vim.api.nvim_buf_set_lines(buf, 0, -1, false, lines)
   vim.bo[buf].modifiable = false
-  -- 'asm' gives the disassembly real highlighting; the others read fine plain
+  -- 'asm' highlights the disassembly; the other views stay plain
   vim.bo[buf].filetype = (view == 'disasm') and 'asm' or ''
 end
 

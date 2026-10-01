@@ -8,12 +8,10 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/alerts.sh"
 
-# check if tmux is available
 if ! command -v tmux &>/dev/null; then
     exit 1
 fi
 
-# check if any sessions exist
 if ! tmux list-sessions &>/dev/null; then
     exit 0
 fi
@@ -48,7 +46,6 @@ if [[ -f "$ALERTS_FILE" ]]; then
     alerts_content=$(<"$ALERTS_FILE")
 fi
 
-# store results
 codex_panes=()
 
 # iterate through all panes in all sessions, sorted by last viewed (most recent first)
@@ -58,17 +55,14 @@ while IFS= read -r line; do
     target="${rest%% *}"   # session:window_index.pane_index
     pane_pid="${rest##* }" # pane_pid
 
-    # check if this pane has an active codex child
     [[ -n "${active_codex_ppids[$pane_pid]:-}" ]] || continue
 
-    # extract session and window_idx for lookups
     session="${target%%:*}"
     win_pane="${target#*:}"
     window_idx="${win_pane%%.*}"
 
     window_name="${window_names["${session}:${window_idx}"]:-}"
 
-    # check if this window has an alert for codex
     if alerts_has_agent "$alerts_content" codex "$session" "$window_name" "${window_ids["${session}:${window_idx}"]:-}"; then
         display=$(get_agent_display "codex")
         icon="${display%%|*}"

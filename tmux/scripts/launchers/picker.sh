@@ -14,20 +14,16 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
 # argument parsing + auto-detection
 #
-# the dotfiles ASCII logo eats 7 rows of header space, which is fine on a
-# spacious popup but crowds out launchers when the popup is narrow OR short.
-# we query the popup pty directly via `stty size` (env vars from the parent
-# shell can lie about the popup's real dimensions) and drop the logo when:
-#   - width  < 80 rows: matches the session picker's `<80(bottom,40%)`
-#     vertical-preview threshold, so both pickers compact at the same size
-#   - height < 20 rows: leaves at least ~8 visible launcher rows after the
-#     logo + border + prompt chrome (~12 rows) are accounted for
+# the dotfiles ASCII logo is dropped when the popup is too narrow or too short
+# to leave room for launcher rows. the size is read from the popup pty via
+# `stty size`, since env vars from the parent shell may not match the popup.
+# the width threshold matches the session picker's `<80(bottom,40%)`
+# vertical-preview threshold, so both pickers compact at the same size.
 # `--no-logo` forces it off regardless
 LIST_ARGS=()
 HEADER_LINES=7

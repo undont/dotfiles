@@ -18,8 +18,8 @@ STATE_FILE="$STATE_DIR/$TMUX_PANE"
 
 # single parse of the hook payload, one field per line (tab-joined output
 # would collapse empty fields: tab is IFS whitespace to read). cwd is last so
-# an embedded newline in it can't shift the fields that matter.
-# malformed json -> no output -> empty event -> exit
+# an embedded newline in it can't shift the fields that matter. malformed json
+# gives no output, so an empty event, so an exit
 mapfile -t _fields < <(
     jq -r '.hook_event_name // "", .notification_type // "", .tool_name // "",
            .session_id // "", .cwd // ""' 2>/dev/null

@@ -1,7 +1,7 @@
-# Brewfile - Homebrew Bundle
-# Install with: brew bundle install
+# Brewfile: homebrew bundle
+# install with: brew bundle install
 #
-# Preset markers:
+# preset markers:
 #   @preset: minimal - included in minimal, core, and full
 #   @preset: core    - included in core and full
 #   @preset: full    - included in full only
@@ -12,13 +12,13 @@
 # =============================================================================
 
 brew "zsh"
-brew "tmux"                   # >= 3.3 required for popup support
+brew "tmux"                   # >= 3.3 for the popup style options
 brew "powerlevel10k"
 brew "zsh-autosuggestions"
 brew "zsh-completions"
-brew "fzf"                    # >= 0.40 for --tmux flag
+brew "fzf"                    # >= 0.53 for the --tmux flag
 brew "direnv"
-brew "carapace"               # Multi-shell completion provider (bridges zsh completion)
+brew "carapace"               # multi-shell completion provider (bridges zsh completion)
 
 # =============================================================================
 # @preset: core
@@ -35,14 +35,15 @@ tap "oven-sh/bun"
 tap "undont/tap"
 
 # Editors
-brew "neovim"            # >= 0.11 required for nvim-treesitter
-brew "tree-sitter-cli"   # Required by nvim-treesitter for parser compilation
+brew "neovim"            # >= 0.12 required by nvim-treesitter
+brew "tree-sitter-cli"   # required by nvim-treesitter for parser compilation
+brew "nano"
 cask "zed"               # editor
 brew "duti"              # macOS-only; sets Zed as default handler for code files
 
 # AI Coding Assistants
 brew "opencode"
-cask "codexbar" # Menu bar usage monitor for Codex and Claude
+cask "codexbar" # menu bar usage monitor for Codex and Claude
 
 # Git & GitHub
 brew "gh"
@@ -50,40 +51,39 @@ brew "lazygit"       # Git TUI
 
 # Search & Navigation
 brew "ripgrep"       # >= 13.0
-brew "fd"            # Fast find alternative
+brew "fd"            # fast find alternative
 brew "tree"
 brew "jq"
-brew "yq"            # YAML processor (used by gh-dash local merge)
+brew "yq"            # used by the gh-dash local merge
 brew "wget"
-brew "bat"           # Cat with syntax highlighting
-brew "diffnav"       # Diff navigator for GitHub PRs
-brew "monolith" unless OS.linux? && Hardware::CPU.arm?  # No Linux ARM bottle
+brew "bat"           # cat with syntax highlighting
+brew "diffnav"       # diff navigator for GitHub PRs
+brew "monolith" unless OS.linux? && Hardware::CPU.arm?  # no Linux ARM bottle
 brew "zoxide"        # smart cd replacement
 
 # File Manager
-brew "yazi"          # Terminal file manager
+brew "yazi"          # terminal file manager
 brew "poppler"       # PDF rendering (pdftoppm) for yazi file previews
-brew "ffmpegthumbnailer"  # Video thumbnails for yazi file previews
+brew "ffmpegthumbnailer"  # video thumbnails for yazi file previews
 brew "resvg"         # SVG rendering for yazi file previews
-brew "sevenzip"      # Archive previews (7zz) for yazi file previews
+brew "sevenzip"      # archive previews (7zz) for yazi file previews
 
 # Build Tools
 brew "binutils" # GNU binary utilities
 brew "gcc"      # GNU compiler collection
-brew "nasm"     # Netwide assembler
-brew "nano"     # Text editor
-brew "bear"     # Generates compile_commands.json for clang tooling (C/C++/ObjC)
+brew "nasm"     # netwide assembler
+brew "bear"     # generates compile_commands.json for clang tooling (C/C++/ObjC)
 
 # Tmux Extras
-brew "morantron/tmux-fingers/tmux-fingers" # Quick pattern copy (requires gcc on Linux)
-brew "undont/tap/poke"                     # Terminal-native teammate pokes (tmux status segment)
+brew "morantron/tmux-fingers/tmux-fingers" # quick pattern copy (requires gcc on Linux)
+brew "undont/tap/poke"                     # teammate pokes (tmux status segment)
 
 # =============================================================================
 # @preset: core
 # Languages & Runtimes
 # =============================================================================
 
-# Node.js (via fnm - Fast Node Manager)
+# Node.js (via fnm)
 brew "fnm"             # macOS-only (Linux uses curl installer)
 brew "oven-sh/bun/bun" # >= 1.0
 
@@ -92,13 +92,13 @@ brew "go"
 
 # Python
 brew "python@3.13"
-brew "uv"            # Python package + tool manager (replaces pipx; `uv tool install`, `uvx`)
+brew "uv"            # python package and tool manager (`uv tool install`, `uvx`)
 
 
 # Java
 brew "openjdk"
 
-# Android (commandline tools — SDK manager, emulator, adb)
+# Android (commandline tools: SDK manager, emulator, adb)
 cask "android-commandlinetools"
 
 # .NET
@@ -110,22 +110,22 @@ cask "dotnet-sdk"
 # =============================================================================
 
 # Code Quality
-brew "shellcheck"                    # Shell script linter
-brew "luacheck"                      # Lua linter
-brew "undont/tap/supplyscan" # Supply chain vulnerability scanner
+brew "shellcheck"                    # shell script linter
+brew "luacheck"                      # lua linter
+brew "undont/tap/supplyscan" # supply chain vulnerability scanner
 brew "sonar-scanner"
 
 # Database
 brew "postgresql@17"
 brew "mongosh"
 brew "libsql/sqld/sqld"
-brew "undont/tap/seeql"     # SQL client TUI
 
 # Containers & Infrastructure
 brew "act"                          # GitHub Actions locally
 brew "cloudflared"                  # Cloudflare Tunnel client
 brew "lazydocker"                   # Docker TUI
 brew "Adembc/homebrew-tap/lazyssh"  # SSH host manager TUI
+cask "gcloud-cli"
 
 # Misc Dev Tools
 brew "cmake"
@@ -145,20 +145,20 @@ brew "httpyac"
 
 brew "ffmpeg"
 brew "imagemagick"
-brew "btop"                          # System monitor (htop replacement)
-brew "gdu"                           # Disk usage analyzer TUI (du replacement)
-brew "watch"                         # Periodic command refresh (flicker-free re-render)
+brew "btop"                          # system monitor (htop replacement)
+brew "gdu"                           # disk usage analyser TUI (du replacement)
+brew "watch"                         # periodic command refresh
 brew "fastfetch"                     # neofetch replacement (faster, maintained)
-brew "glow"                          # Markdown renderer
-brew "asciinema"                     # Terminal session recorder
+brew "glow"                          # markdown renderer
+brew "asciinema"                     # terminal session recorder
 brew "figlet"                        # ASCII art text banners
-brew "toilet"                        # Unicode/colour text banners (figlet-compatible)
-brew "chafa"                         # Terminal image renderer (used by music.nvim)
-brew "charmbracelet/tap/freeze"      # Render code/terminal output to an image
+brew "toilet"                        # unicode/colour text banners (figlet-compatible)
+brew "chafa"                         # terminal image renderer (used by music.nvim)
+brew "charmbracelet/tap/freeze"      # render code/terminal output to an image
 brew "undont/tap/jiru"               # Jira TUI app
-brew "neur0map/tap/gpk"              # Unified package manager TUI
-brew "hyperfine"                     # Benchmarking CLI
-brew "snitch" unless OS.linux? && Hardware::CPU.arm? # No Linux ARM bottle
+brew "neur0map/tap/gpk"              # unified package manager TUI
+brew "hyperfine"                     # benchmarking CLI
+brew "snitch" unless OS.linux? && Hardware::CPU.arm? # no Linux ARM bottle
 
 # =============================================================================
 # @preset: core
@@ -168,9 +168,6 @@ brew "snitch" unless OS.linux? && Hardware::CPU.arm? # No Linux ARM bottle
 # Terminal
 cask "ghostty"
 
-# Cloud
-cask "gcloud-cli"
-
 # Nerd Fonts for terminal icons
 cask "font-meslo-lg-nerd-font"
 cask "font-jetbrains-mono-nerd-font"
@@ -178,12 +175,12 @@ cask "font-monaspace-nf"            # Monaspace Neon NF
 
 # =============================================================================
 # @preset: full
-# macOS-Specific Applications
+# Desktop Applications
 # =============================================================================
 
 # Automation
 cask "hammerspoon"
-cask "karabiner-elements"  # Keyboard customisation
+cask "karabiner-elements"  # keyboard customisation
 
 # Music
 cask "music-presence"      # Discord Rich Presence for Apple Music

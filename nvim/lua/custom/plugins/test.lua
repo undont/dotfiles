@@ -1,10 +1,7 @@
--- test runner with neotest
--- https://github.com/nvim-neotest/neotest
--- .NET tests handled by easy-dotnet.nvim (see dotnet.lua)
+-- neotest. .NET tests run through easy-dotnet.nvim (see dotnet.lua)
 
---- find the nearest directory containing node_modules/.bin/<bin>.
---- walks up from the path, then checks immediate subdirectories as fallback (monorepo root).
---- results are cached per (path, bin) since binary locations don't change in a session
+--- nearest directory containing node_modules/.bin/<bin>: walks up from the
+--- path, then checks immediate subdirectories (monorepo root)
 local node_bin_root_cache = {} ---@type table<string, string|false>
 local function find_node_bin_root(path, bin)
   local start = vim.fn.isdirectory(path) == 1 and path or vim.fn.fnamemodify(path, ':h')
@@ -20,7 +17,6 @@ local function find_node_bin_root(path, bin)
     end
     dir = vim.fn.fnamemodify(dir, ':h')
   end
-  -- walk-up failed (e.g. monorepo root); check immediate subdirectories
   for name, type in vim.fs.dir(start) do
     if type == 'directory' and name ~= 'node_modules' then
       if vim.uv.fs_stat(start .. '/' .. name .. '/node_modules/.bin/' .. bin) then
@@ -40,7 +36,7 @@ local function find_jest_root(path)
   return find_node_bin_root(path, 'jest')
 end
 
---- wrap a neotest function to skip .cs files (handled by easy-dotnet)
+--- skips .cs files, which easy-dotnet handles
 local function neotest_fn(fn)
   return function()
     if vim.bo.filetype ~= 'cs' then
@@ -49,11 +45,9 @@ local function neotest_fn(fn)
   end
 end
 
---- neotest parses with nvim's default 256 in-progress tree-sitter match cap, and
---- past it the earliest-starting matches are dropped, so long table-driven tests
---- are silently truncated to their tail (43 cases for a keyed `tt := []struct{}`
---- table, 84 for map and unkeyed shapes). neotest takes a match_limit, but no
---- adapter passes one
+--- neotest parses with nvim's default in-progress tree-sitter match cap, past
+--- which the earliest matches are dropped, truncating long table-driven tests
+--- to their tail. neotest takes a match_limit, but no adapter passes one
 local function raise_treesitter_match_limit()
   local ok, ts = pcall(require, 'neotest.lib.treesitter')
   if not ok or ts.match_limit_raised then
@@ -66,13 +60,12 @@ local function raise_treesitter_match_limit()
   ts.match_limit_raised = true
 end
 
---- the subtest query captures any string literal as a name, so `t.Run("", ...)`
---- yields one position named `""`, while go runs the loop body once per table
---- row and names those `TestX/#00`, `#01` and so on. the single node matches no
---- event, and neotest fills a result-less position with the run root's status
---- (client/runner.lua) and propagates it up, reddening the real parent too.
---- count the rows the loop iterates and stand in one position per row, matching
---- go's numbering; drop the node when the row count can't be read statically
+--- the subtest query yields one position named `""` for `t.Run("", ...)`,
+--- while go names each table row `TestX/#00`, `#01` and so on. the single node
+--- matches no event, and neotest gives a result-less position the run root's
+--- status (client/runner.lua), which propagates to the parent. one position
+--- per row is substituted, numbered as go does; the node is dropped when the
+--- row count can't be read statically
 local function expand_empty_subtest_positions()
   local ok, ts = pcall(require, 'neotest.lib.treesitter')
   if not ok or ts.empty_subtests_expanded then
@@ -207,12 +200,10 @@ local function expand_empty_subtest_positions()
   ts.empty_subtests_expanded = true
 end
 
---- neotest-golang intermittently returns no result for a position (a file or
---- package whose events were still in flight when the stream was stopped), and
---- neotest fills a result-less position with `failed`, then propagates that over
---- the parent's real status. on a suite run that reddens a random passing
---- package about one run in eight. give any missing position the aggregate of
---- its descendants, and a missing leaf `skipped`, so the fill never fires
+--- neotest-golang can return no result for a position whose events were in
+--- flight when the stream stopped, and neotest marks a result-less position
+--- `failed` and propagates that to the parent. a missing position gets the
+--- aggregate of its descendants, a missing leaf `skipped`
 local function backfill_missing_results()
   local ok, rf = pcall(require, 'neotest-golang.results_finalize')
   if not ok or rf.missing_results_backfilled then
@@ -242,7 +233,7 @@ local function backfill_missing_results()
         results[pos_id] = { status = status }
         return status
       end
-      -- a leaf whose result was dropped: unknown, which is not the same as failed
+      -- a leaf whose result was dropped is unknown, not failed
       results[pos_id] = { status = 'skipped' }
       return 'skipped'
     end
@@ -252,13 +243,11 @@ local function backfill_missing_results()
   rf.missing_results_backfilled = true
 end
 
---- neotest-golang keys its per-file discovery cache on whole-second mtime, so a
---- second write inside the same second is served the stale tree, and nothing
---- expires it afterwards. autosave writes on every normal-mode edit (see
---- core/autocmds.lua), so deleting table test cases strands them in the summary.
---- re-key on the full stat signature, captured before the parse: a write landing
---- mid-parse then leaves the entry stamped stale rather than fresh, costing a
---- re-parse instead of serving stale positions
+--- neotest-golang keys its per-file discovery cache on whole-second mtime, so
+--- a second write inside the same second gets the stale tree; autosave
+--- (core/autocmds.lua) writes that often. the cache is keyed on the full stat
+--- signature, captured before the parse so a write mid-parse leaves the entry
+--- stale
 local function fix_golang_discovery_cache()
   local ok, cache = pcall(require, 'neotest-golang.lib.discovery_cache')
   if not ok or type(cache.get) ~= 'function' or type(cache.set) ~= 'function' then
@@ -294,10 +283,9 @@ local function fix_golang_discovery_cache()
   end
 end
 
---- the summary's expanded set lives on each adapter's SummaryComponent and no
---- public function clears it (`e` toggles the subtree under the cursor), so a
---- whole-tree collapse needs the instances. wrap the module's constructor before
---- the consumer requires it, which happens inside neotest.setup
+--- the summary's expanded set lives on each adapter's SummaryComponent with no
+--- public function to clear it. the constructor is wrapped to collect the
+--- instances, before neotest.setup requires the consumer
 local summary_components = {}
 local function track_summary_components()
   local module = 'neotest.consumers.summary.component'
@@ -312,7 +300,6 @@ local function track_summary_components()
   end
 end
 
---- collapse or expand every node in the summary tree
 local function set_summary_expanded(expanded)
   require('nio').run(function()
     for _, component in ipairs(summary_components) do
@@ -332,9 +319,7 @@ local function set_summary_expanded(expanded)
   end)
 end
 
---- rows of `position_type`, found the way upstream finds failures: by the
---- highlight the name carries, which is the position's type whatever its run
---- status, so a failing file row is still a file row
+--- rows of `position_type`, found by the highlight the name carries, which is independent of run status
 local function summary_rows(position_type)
   local group = require('neotest.config').highlights[position_type]
   local ns = require('neotest.consumers.summary.canvas').namespace
@@ -347,8 +332,7 @@ local function summary_rows(position_type)
   return rows
 end
 
---- step the cursor between those rows, wrapping past the ends and saying so, as
---- differ's panel does on the same keys
+--- steps the cursor between those rows, wrapping with a notification
 local function summary_row_jump(position_type, forward)
   return function()
     local rows = summary_rows(position_type)
@@ -388,11 +372,10 @@ return {
     'nvim-lua/plenary.nvim',
     'antoinemadec/FixCursorHold.nvim',
     'nvim-treesitter/nvim-treesitter',
-    -- adapters
-    'fredrikaverpil/neotest-golang', -- Go
-    'marilari88/neotest-vitest', -- Vitest/Bun test runner
-    'haydenmeade/neotest-jest', -- Jest (React Native, RTL, plain JS/TS)
-    'nvim-neotest/neotest-python', -- pytest/unittest
+    'fredrikaverpil/neotest-golang',
+    'marilari88/neotest-vitest',
+    'haydenmeade/neotest-jest',
+    'nvim-neotest/neotest-python',
   },
   keys = {
     { '<leader>tt', neotest_fn(function()
@@ -445,20 +428,18 @@ return {
             if not dir then
               return 'vitest'
             end
-            -- return `node <vitest.mjs>` rather than the .bin/vitest wrapper:
-            -- neotest-vitest passes command[1] as DAP's `runtimeExecutable`,
-            -- which must be a node-equivalent runtime. using `.bin/vitest`
-            -- directly breaks package.json resolution under js-debug-adapter
+            -- `node <vitest.mjs>`, not the .bin/vitest wrapper: neotest-vitest
+            -- passes command[1] as DAP's `runtimeExecutable`, which must be a
+            -- node runtime
             local vitest_mjs = dir .. '/node_modules/vitest/vitest.mjs'
             if vim.uv.fs_stat(vitest_mjs) then
               return 'node ' .. vitest_mjs
             end
             return dir .. '/node_modules/.bin/vitest'
           end,
-          -- don't override cwd: neotest-vitest defaults to the dir of the
-          -- nearest vitest.config.*, which is the per-project root in a
-          -- monorepo. forcing the hoisted-node_modules root here causes
-          -- vitest's per-project `include` globs to miss the test file
+          -- cwd stays at neotest-vitest's default, the dir of the nearest
+          -- vitest.config.*; from the hoisted-node_modules root vitest's
+          -- per-project `include` globs miss the test file
           filter_dir = function(name)
             return name ~= 'node_modules' and name ~= 'dist' and name ~= '.git' and name ~= 'coverage'
           end,
@@ -469,8 +450,7 @@ return {
             return dir and (dir .. '/node_modules/.bin/jest') or 'jest'
           end,
           cwd = find_jest_root,
-          -- only claim files when a jest binary is reachable, so this adapter stays
-          -- out of vitest projects (which use the same .test./.spec. naming)
+          -- vitest projects use the same .test./.spec. naming, so a jest binary must be reachable
           is_test_file = function(path)
             if not path:match '%.test%.[jt]sx?$' and not path:match '%.spec%.[jt]sx?$' then
               return false
@@ -494,9 +474,7 @@ return {
           -- list is the disable: a `false` reaches nvim_buf_set_keymap as an lhs
           short = {},
           help = { '?', 'g?' },
-          -- buffer-local, so they shadow the global ]t/[t (which walk a source
-          -- buffer's failed positions) with the summary's own tree walk. J/K
-          -- stay bound
+          -- buffer-local, shadowing the global ]t/[t with the summary's tree walk
           next_failed = { 'J', ']t' },
           prev_failed = { 'K', '[t' },
         },
@@ -504,26 +482,20 @@ return {
       output = {
         open_on_run = false,
       },
-      -- neotest's quickfix consumer is on by default and pushes a fresh
-      -- untitled list on every failing run, which drops the forward half of
-      -- the qf stack and pauses the live <leader>xx diagnostics sync (it only
-      -- rebuilds while the current list is titled `Diagnostics: all`). the
-      -- summary, signs and ]t/[t jump-to-failed cover the same ground
+      -- neotest's quickfix consumer pushes an untitled list on every failing
+      -- run, which drops the forward half of the qf stack and pauses the
+      -- <leader>xx diagnostics sync (it rebuilds only while the current list
+      -- is titled `Diagnostics: all`)
       quickfix = { enabled = false },
-      -- test output is a terminal buffer, so its grid is resized to whatever
-      -- window shows it and the scrollback is truncated, not reflowed, when
-      -- that window is much narrower than the pty it was written at
-      -- (vim.o.columns). at 0.7 a long assertion line lost its tail outright,
-      -- and no window option recovers it: the characters are gone from the
-      -- buffer. width stays min(content, max_width - 2), so this lifts the
-      -- ceiling rather than widening every float
+      -- test output is a terminal buffer: in a window narrower than the pty
+      -- it was written at (vim.o.columns) the scrollback is truncated, not
+      -- reflowed. width stays min(content, max_width - 2)
       floating = {
         border = 'rounded',
         max_height = 0.7,
         max_width = 0.95,
       },
-      -- ]t/[t read the failed signs to find each failing position, so signs
-      -- off leaves them walking diagnostics alone (see features/lists.lua)
+      -- ]t/[t read the failed signs (see features/lists.lua)
       status = {
         virtual_text = false,
         signs = true,
@@ -537,22 +509,14 @@ return {
       },
     }
 
-    -- the diagnostic consumer publishes failures as real ERROR diagnostics, so
-    -- a failing test drew an error squiggle and an error sign and read as a
-    -- file that doesn't compile. drop both markers: neotest's own ✗ status sign
-    -- already owns the gutter cell (priority 1000 against the diagnostic sign's
-    -- 10), and plugins/diagnostics.lua keeps the message out of the inline
-    -- renderer, leaving the failure to neotest's output float. the namespace
-    -- stays populated for the statusline, which counts it separately as ✗N
-    -- rather than EN, and the <leader>xx list filters it out; see
-    -- features/statusline.lua and features/lists.lua, where ]t/[t land on this
-    -- namespace and ]d/[d skip it. neotest-golang sets severity per error, so
-    -- `diagnostic.severity` above wouldn't reach these
+    -- the diagnostic consumer publishes failures as ERROR diagnostics. their
+    -- underline and sign are dropped: neotest's status sign has the gutter
+    -- cell, and plugins/diagnostics.lua keeps the message out of the inline
+    -- renderer. the namespace stays populated for the statusline count and
+    -- for ]t/[t (features/statusline.lua, features/lists.lua)
     vim.diagnostic.config({ underline = false, signs = false }, vim.api.nvim_create_namespace 'neotest')
 
-    -- C/O collapse and expand the whole tree, as they do in differ's panel.
-    -- the canvas rebinds its own action keys on every render but never these,
-    -- so they survive
+    -- C/O collapse and expand the whole tree; the canvas only rebinds its own action keys on render
     vim.api.nvim_create_autocmd('FileType', {
       pattern = 'neotest-summary',
       callback = function(args)
@@ -565,9 +529,7 @@ return {
         map('O', function()
           set_summary_expanded(true)
         end, 'Expand all')
-        -- ]f/[f and ]]/[[ step files and dirs, as they do in differ's panel.
-        -- both fall through to mini.bracketed otherwise, whose file jump is
-        -- inert here: the summary window is winfixbuf, so its edit can't land
+        -- ]f/[f and ]]/[[ step files and dirs; mini.bracketed's file jump cannot edit a winfixbuf window
         map(']f', summary_row_jump('file', true), 'Next file')
         map('[f', summary_row_jump('file', false), 'Previous file')
         map(']]', summary_row_jump('dir', true), 'Next directory')
@@ -575,7 +537,7 @@ return {
       end,
     })
 
-    -- close output preview on any keypress for a transient popup feel
+    -- any keypress closes the output preview
     vim.api.nvim_create_autocmd('FileType', {
       pattern = 'neotest-output',
       callback = function(args)

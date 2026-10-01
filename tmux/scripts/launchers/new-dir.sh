@@ -17,7 +17,6 @@ SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
 
-# load current theme colours for fzf
 load_fzf_theme
 require_fzf
 
@@ -76,7 +75,6 @@ selection=$(printf '%s' "$content" | fzf \
     --bind 'esc:abort' \
     2>/dev/null) || exit 130
 
-# extract the root name from selection
 root_name=$(printf '%s' "$selection" | awk '{print $1}')
 
 case "$root_name" in
@@ -87,7 +85,7 @@ case "$root_name" in
         root_path="$projects_root"
         ;;
     Any)
-        # free-form path prompt (mirrors original behaviour)
+        # free-form path prompt
         dir=$(printf '' | fzf \
             --print-query --query='' \
             --prompt='Path: ' \
@@ -133,7 +131,6 @@ name=$(printf '' | fzf \
 
 dir="${root_path}/${name}"
 
-# create directory if it doesn't exist
 if [[ ! -d "$dir" ]]; then
     mkdir -p "$dir"
 fi

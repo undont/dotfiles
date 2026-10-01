@@ -1,8 +1,8 @@
 -- deduplicated references/definitions/implementation/type-definition pickers.
--- extracted from plugins/lsp.lua. dedup(method) returns the keymap handler for
--- grr/gri/grd/grt: it drives the LSP request directly so empty results reach
--- our on_list path (the built-in handlers short-circuit on empty), dedupes
--- across mixed-encoding clients, jumps on a single hit, else opens telescope
+-- dedup(method) returns the keymap handler for grr/gri/grd/grt: it drives the
+-- LSP request directly (the built-in handlers return early on empty results),
+-- dedupes across mixed-encoding clients, jumps on a single hit and otherwise
+-- opens telescope
 
 local M = {}
 
@@ -32,7 +32,6 @@ local function telescope_locations(title, items)
     :find()
 end
 
---- return the keymap handler for a dedup'd LSP location method
 function M.dedup(method)
   local spec = assert(lsp_dedup_methods[method], 'unsupported lsp_dedup method: ' .. method)
   return function()
@@ -45,14 +44,13 @@ function M.dedup(method)
       return
     end
 
-    -- build params per-client so mixed-encoding setups (e.g. utf-8 + utf-16
-    -- LSPs on the same buffer) get correctly aligned column offsets. the
-    -- response side already does this correctly via `client.offset_encoding`
+    -- params are built per client, so mixed-encoding setups (utf-8 + utf-16
+    -- on one buffer) get aligned column offsets
     local function make_params(client)
       local p = vim.lsp.util.make_position_params(0, client.offset_encoding or 'utf-16')
       if method == 'references' then
-        -- exclude the declaration so `grr` on a symbol with no callers triggers
-        -- the `No references found` warning instead of jumping to the decl itself
+        -- without the declaration, `grr` on a symbol with no callers gives
+        -- `No references found`
         p.context = { includeDeclaration = false }
       end
       return p

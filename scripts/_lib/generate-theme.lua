@@ -1,5 +1,4 @@
--- Ghostty theme generator
--- Parses a Ghostty theme file and generates:
+-- parses a ghostty theme file and generates:
 --   themes/generated/<name>.theme
 --   nvim/colors/generated/<name>.lua
 
@@ -9,10 +8,9 @@ local colour = require("colour-utils")
 
 local M = {}
 
---- Validate a hex colour string
---- @param val string The value to validate
---- @param field string Field name for error messages
---- @return string The validated hex colour
+--- @param val string
+--- @param field string field name for the error message
+--- @return string val the validated hex colour
 local function assert_hex(val, field)
     if
         type(val) ~= "string" or not val:match("^#[0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F][0-9a-fA-F]$")
@@ -22,9 +20,8 @@ local function assert_hex(val, field)
     return val
 end
 
---- Format a WCAG adjustment entry for reporting
---- @param adj table adjustment entry {name, delta, surface}, {name, swapped} or {name, saturated}
---- @return string human-readable description
+--- @param adj table {name, delta, surface}, {name, swapped} or {name, saturated}
+--- @return string description
 local function format_adjustment(adj)
     if adj.swapped then
         return string.format("%s swapped to bright palette variant", adj.name)
@@ -39,9 +36,8 @@ end
 -- Ghostty Theme Parsing
 -- ══════════════════════════════════════════════════════════════
 
---- Parse a Ghostty theme file into a table of key-value pairs
---- Format: "key = value" with "palette = N=#RRGGBB" for palette entries
----@param path string path to Ghostty theme file
+--- file format: "key = value", with "palette = N=#RRGGBB" for palette entries
+---@param path string path to ghostty theme file
 ---@return table|nil parsed theme, string|nil error
 function M.parse_ghostty_theme(path)
     local f = io.open(path, "r")
@@ -51,8 +47,7 @@ function M.parse_ghostty_theme(path)
 
     local theme = { palette = {} }
     for raw_line in f:lines() do
-        -- Skip comments and empty lines
-        local line = raw_line:match("^%s*(.-)%s*$") -- trim
+        local line = raw_line:match("^%s*(.-)%s*$")
         if line ~= "" and not line:match("^#") then
             local key, value = line:match("^([%w_-]+)%s*=%s*(.+)$")
             if key and value then
@@ -69,11 +64,9 @@ function M.parse_ghostty_theme(path)
     end
     f:close()
 
-    -- Validate minimum required fields
     if not theme.background or not theme.foreground then
         return nil, "Theme missing background or foreground"
     end
-    -- Need at least palette 0-7
     for i = 0, 7 do
         if not theme.palette[i] then
             return nil, string.format("Theme missing palette colour %d", i)
@@ -87,53 +80,48 @@ end
 -- Colour Extraction (Ghostty ANSI -> Semantic Palette)
 -- ══════════════════════════════════════════════════════════════
 
---- Extract semantic colour palette from parsed Ghostty theme
----@param ghostty table parsed Ghostty theme
+---@param ghostty table parsed ghostty theme
 ---@return table colours semantic colour palette
 function M.extract_colours(ghostty)
     local p = ghostty.palette
     local bg = ghostty.background
     local fg = ghostty.foreground
 
-    -- Derive bg_secondary: use palette 0 if it's a good sidebar/float background
-    -- Requirements: distinct enough from bg, not too far, and not pure black when bg is coloured
+    -- bg_secondary (sidebars, floats) is palette 0 when its contrast against
+    -- bg falls inside a band and it is not near-black
     local bg_secondary
     local bg_lum = colour.luminance(bg)
     local p0_lum = colour.luminance(p[0])
     local p0_ratio = colour.contrast_ratio(p[0], bg)
 
-    -- Reject p[0] as bg_secondary if it's pure/near-black and bg has colour character,
-    -- since pure black strips the theme's hue from sidebars and floating windows
+    -- a near-black p[0] would strip the theme's hue from sidebars and floats
     local p0_usable = p0_ratio >= 1.1 and p0_ratio <= 2.5 and p0_lum >= 0.005
 
     if p0_usable then
         bg_secondary = p[0]
     elseif bg_lum < 0.03 then
-        -- Very dark bg: lighten more aggressively to ensure visible distinction
+        -- a very dark bg needs a larger lift to stay distinct
         bg_secondary = colour.lighten(bg, 10)
     else
         bg_secondary = colour.lighten(bg, 8)
     end
 
-    -- Derive fg_secondary: use palette 8 (bright black) if readable, else derive
+    -- fg_secondary is palette 8 (bright black) when readable, else a blend
     local fg_secondary
     local p8_ratio = p[8] and colour.contrast_ratio(p[8], bg) or 0
     if p8_ratio >= 4.0 then
         fg_secondary = p[8]
     else
-        -- Blend closer to fg (0.35 = 65% fg, 35% bg) for better baseline readability
         fg_secondary = colour.blend(fg, bg, 0.35)
     end
 
-    -- Derive fg_variable: keep variable identifiers distinct from Normal text
-    -- without making them read like another accent class.
+    -- fg_variable is fg tinted slightly toward cyan, so variable identifiers
+    -- differ from Normal text without becoming an accent
     local fg_variable = colour.blend(fg, p[6], 0.10)
     fg_variable = colour.ensure_contrast(fg_variable, bg, 4.5)
 
-    -- Line highlight (CursorLine/ColorColumn): a subtle lift of bg, kept below
-    -- bg_secondary so the cursor line reads as a band rather than a panel. Very
-    -- dark backgrounds need a larger lightness delta to register the same visual
-    -- step (e.g. near-black greys), so lift those a touch more.
+    -- line highlight (CursorLine/ColorColumn) is a lift of bg smaller than
+    -- bg_secondary's. a very dark bg needs a larger lift to show the same step
     local line_highlight
     if bg_lum < 0.03 then
         line_highlight = colour.lighten(bg, 7)
@@ -141,7 +129,6 @@ function M.extract_colours(ghostty)
         line_highlight = colour.lighten(bg, 5)
     end
 
-    -- Selection: use Ghostty's selection_bg if present, else bg_secondary
     local selection = ghostty["selection-background"] or bg_secondary
 
     return {
@@ -156,7 +143,7 @@ function M.extract_colours(ghostty)
         cursor_colour = ghostty["cursor-color"] or fg,
         cursor_text = ghostty["cursor-text"] or bg,
 
-        -- Accent colours mapped from ANSI palette
+        -- accent colours mapped from the ANSI palette
         red = p[1], -- ANSI red
         green = p[2], -- ANSI green
         yellow = p[3], -- ANSI yellow
@@ -164,7 +151,7 @@ function M.extract_colours(ghostty)
         pink = p[5], -- ANSI magenta -> "pink" role
         cyan = p[6], -- ANSI cyan
 
-        -- Full 16-colour palette for Ghostty config passthrough
+        -- full 16-colour palette, passed through to the ghostty config
         palette = p,
     }
 end
@@ -173,9 +160,8 @@ end
 -- Chroma
 -- ══════════════════════════════════════════════════════════════
 
---- Chroma of a hex colour (RGB max-min, 0-255)
---- Used instead of HSL saturation, which over-rates pale pastels and would
---- wrongly rank e.g. Dracula's bright lavender above its identity purple
+--- chroma of a hex colour (RGB max-min, 0-255). HSL saturation over-rates
+--- pale pastels (dracula's bright lavender above its purple)
 ---@param hex string
 ---@return number chroma
 local function chroma(hex)
@@ -183,25 +169,23 @@ local function chroma(hex)
     return math.max(r, g, b) - math.min(r, g, b)
 end
 
--- An accent below this chroma reads as tinted grey and cannot differentiate
--- syntax roles. Deliberately dull-but-chromatic accents sit well above it
--- (Spacegray Eighties Dull's dimmest is ~41), so those themes keep their
--- designer palette untouched.
+-- an accent below this chroma reads as tinted grey. the accents of
+-- dull-but-chromatic themes (Spacegray Eighties Dull) sit above it
 local NEAR_GREY_CHROMA = 30
 
--- Ceiling on a bright-row swap, as a multiple of the most chromatic other
--- accent. Kanagawa Dragon's bright red lands far outside its palette's chroma
--- band; Spacegray Eighties Dull's stays in family.
+-- ceiling on a bright-row swap, as a multiple of the most chromatic other
+-- accent. Kanagawa Dragon's bright red exceeds it; Spacegray Eighties Dull's
+-- does not
 local BRIGHT_SWAP_CHROMA_CEILING = 1.5
 
 -- ══════════════════════════════════════════════════════════════
 -- WCAG Auto-Correction
 -- ══════════════════════════════════════════════════════════════
 
---- Apply WCAG contrast corrections to all accent colours
---- Adjusts against bg_primary, bg_secondary, and line_highlight
+--- corrects accent contrast against bg_primary, bg_secondary and
+--- line_highlight, and fg_secondary against the two backgrounds
 ---@param colours table semantic colour palette (mutated in place)
----@return table adjustments list of {name, delta} adjustments made
+---@return table adjustments list of {name, delta, surface} or {name, swapped}
 function M.apply_wcag_corrections(colours)
     local adjustments = {}
     local accents = { "red", "green", "yellow", "purple", "pink", "cyan" }
@@ -209,15 +193,15 @@ function M.apply_wcag_corrections(colours)
     -- ANSI palette index for each accent role; bright variant = index + 8
     local accent_index = { red = 1, green = 2, yellow = 3, purple = 4, pink = 5, cyan = 6 }
 
-    -- Chroma of every accent on entry, so the band a swap is judged against
+    -- chroma of every accent on entry, so the band a swap is judged against
     -- doesn't shift as earlier accents in the loop are corrected
     local entry_chroma = {}
     for _, name in ipairs(accents) do
         entry_chroma[name] = chroma(colours[name])
     end
 
-    -- Highest chroma among the other five accents, floored at NEAR_GREY_CHROMA
-    -- so a near-monochrome palette doesn't reject every swap
+    -- highest chroma among the other accents, floored at NEAR_GREY_CHROMA so
+    -- a near-monochrome palette doesn't reject every swap
     local function peer_chroma(accent_name)
         local peak = NEAR_GREY_CHROMA
         for _, name in ipairs(accents) do
@@ -228,19 +212,17 @@ function M.apply_wcag_corrections(colours)
         return peak
     end
 
-    -- Surfaces that accents must be readable on (ordered hardest-first).
-    -- line_highlight only needs WCAG's 3:1 large-text/UI minimum: CursorLine
-    -- is a transient emphasis surface, not body text, and demanding 4.5:1
-    -- there brightens every dim-row colour in deliberately dull themes
-    -- (e.g. Spacegray Eighties Dull) away from the designer's palette.
+    -- surfaces accents must be readable on. line_highlight takes WCAG's
+    -- large-text/UI minimum: the body-text minimum there brightens every
+    -- dim-row colour in dull themes (Spacegray Eighties Dull)
     local accent_surfaces = {
         { name = "bg_secondary", colour = colours.bg_secondary, min = 4.5 },
         { name = "line_highlight", colour = colours.line_highlight, min = 3.0 },
         { name = "bg_primary", colour = colours.bg_primary, min = 4.5 },
     }
 
-    -- Worst-case contrast margin of a colour across all accent surfaces,
-    -- normalised by each surface's required minimum (1.0 = exactly passing)
+    -- worst contrast margin of a colour across the accent surfaces, as a
+    -- fraction of each surface's minimum (1.0 = exactly passing)
     local function worst_margin(hex)
         local worst = math.huge
         for _, surface in ipairs(accent_surfaces) do
@@ -252,8 +234,8 @@ function M.apply_wcag_corrections(colours)
         return worst
     end
 
-    -- Where lightening alone would land an accent, with no adjustment
-    -- bookkeeping: the fallback a declined bright swap drops through to
+    -- the colour lightening alone would produce, without recording an
+    -- adjustment
     local function lightened(hex)
         for _, surface in ipairs(accent_surfaces) do
             hex = colour.ensure_contrast(hex, surface.colour, surface.min)
@@ -261,9 +243,8 @@ function M.apply_wcag_corrections(colours)
         return hex
     end
 
-    -- Whether a bright variant is the better palette fit: inside the peer
-    -- band, or at least no louder than the fallback, which holds saturation
-    -- while raising lightness and so can out-chroma the variant it replaces
+    -- a bright variant fits when it is inside the peer band, or no more
+    -- chromatic than the lightened fallback
     local function bright_fits(accent_name, bright)
         if chroma(bright) <= peer_chroma(accent_name) * BRIGHT_SWAP_CHROMA_CEILING then
             return true
@@ -272,14 +253,10 @@ function M.apply_wcag_corrections(colours)
     end
 
     for _, accent_name in ipairs(accents) do
-        -- Prefer the theme's own bright variant over synthetic lightening:
-        -- themes that keep dim normal-row colours (e.g. Bluloco Dark's
-        -- #3476ff blue) usually carry their real identity colours in the
-        -- bright row. Lightening the dim row invents pastels the designer
-        -- never chose, so swap to the bright variant first when it reads
-        -- better, then let ensure_contrast top up any remaining shortfall.
-        -- A bright variant far more chromatic than every other accent sits
-        -- outside the palette's band, and falls through to lightening instead.
+        -- a failing accent swaps to the theme's bright variant when that has
+        -- the better margin and fits the palette (Bluloco Dark's dim blue);
+        -- ensure_contrast below covers any remaining shortfall. lightening the
+        -- dim row alone produces pastels that are not in the theme
         if worst_margin(colours[accent_name]) < 1 then
             local bright = colours.palette and colours.palette[accent_index[accent_name] + 8]
             if
@@ -302,8 +279,7 @@ function M.apply_wcag_corrections(colours)
         end
     end
 
-    -- Fix fg_secondary contrast — must be readable on all bg surfaces
-    -- Use a higher threshold (5.0) since comments/line numbers need to be clearly legible
+    -- fg_secondary (line numbers, UI chrome) takes a higher minimum than the accents
     local fg_sec_surfaces = {
         { name = "bg_secondary", colour = colours.bg_secondary },
         { name = "bg_primary", colour = colours.bg_primary },
@@ -324,13 +300,9 @@ end
 -- Saturation Preference
 -- ══════════════════════════════════════════════════════════════
 
---- Swap near-grey accents for the theme's own bright-row variant
---- Muted themes (e.g. Kanagawa Dragon) keep normal-row accents within a few
---- percent of grey but carry their identity colours in the bright row; syntax
---- highlighting built on the near-grey row reads as monochrome. Only accents
---- below NEAR_GREY_CHROMA are eligible, and only when the bright variant is
---- meaningfully more chromatic. Runs before WCAG correction so contrast
---- enforcement stays in one place.
+--- swaps accents below NEAR_GREY_CHROMA for the theme's bright-row variant
+--- when that is clearly more chromatic (Kanagawa Dragon keeps its accent
+--- colours in the bright row). runs before the WCAG correction
 ---@param colours table semantic colour palette (mutated in place)
 ---@return table adjustments list of {name, saturated} adjustments made
 function M.apply_saturation_preference(colours)
@@ -360,10 +332,10 @@ end
 -- Active Accent Selection
 -- ══════════════════════════════════════════════════════════════
 
---- Choose the best active accent based on the palette characteristics
---- Picks the accent with the highest contrast against bg_primary from {purple, cyan, green}
+--- picks whichever of purple, cyan and green has the highest contrast
+--- against bg_primary
 ---@param colours table semantic colour palette
----@return string accent name ("purple", "cyan", "green", etc.)
+---@return string accent "purple", "cyan" or "green"
 function M.choose_active_accent(colours)
     local candidates = { "purple", "cyan", "green" }
     local best_name = "purple"
@@ -384,9 +356,9 @@ end
 -- Plugin Status Indicator Colours
 -- ══════════════════════════════════════════════════════════════
 
---- Derive CPU/RAM/Battery status indicator backgrounds
+--- CPU/RAM/battery status indicator backgrounds
 ---@param colours table semantic colour palette
----@return table status_colours 8 status bg colours
+---@return table status_colours status bg colours
 function M.derive_status_colours(colours)
     local bg = colours.bg_primary
     return {
@@ -405,16 +377,14 @@ end
 -- .theme File Generation
 -- ══════════════════════════════════════════════════════════════
 
---- Generate .theme file content
 ---@param name string theme name (kebab-case)
 ---@param display_name string display name (Title Case)
 ---@param colours table semantic colour palette
 ---@param status table status indicator colours
 ---@param active_accent string chosen active accent
----@param adjustments table WCAG adjustments made
+---@param adjustments table adjustments made
 ---@return string theme file content
 function M.generate_theme_file(name, display_name, colours, status, active_accent, adjustments)
-    -- Validate all colours before writing
     assert_hex(colours.bg_primary, "bg_primary")
     assert_hex(colours.fg_primary, "fg_primary")
     assert_hex(colours.bg_secondary, "bg_secondary")
@@ -430,7 +400,6 @@ function M.generate_theme_file(name, display_name, colours, status, active_accen
     assert_hex(colours.purple, "purple")
     assert_hex(colours.pink, "pink")
     assert_hex(colours.cyan, "cyan")
-    -- Validate palette entries
     for i = 0, 15 do
         if colours.palette[i] then
             assert_hex(colours.palette[i], string.format("palette_%d", i))
@@ -522,13 +491,10 @@ end
 -- Neovim Colourscheme Generation
 -- ══════════════════════════════════════════════════════════════
 
--- Selection band. Steps are HSL lightness points off line_highlight: the band is
--- pushed toward BAND_STEP_MAX and backed off until every accent clears
--- BAND_CONTRAST_FLOOR against it, so selected text stays readable. The hue is
--- fixed rather than taken from the background, matching the cool selections
--- 12 of the 14 hand-crafted schemes in nvim/colors/ use; at this saturation it
--- reads as a cool grey and barely moves relative luminance, so the step search
--- lands where it would on a background-hued band.
+-- selection band. steps are HSL lightness points off line_highlight: the
+-- largest step up to BAND_STEP_MAX at which every accent clears
+-- BAND_CONTRAST_FLOOR against the band. the hue is fixed, matching the cool
+-- selections of most hand-crafted schemes in nvim/colors/
 local BAND_STEP_MIN = 6
 local BAND_STEP_MAX = 16
 local BAND_CONTRAST_FLOOR = 3.0
@@ -536,23 +502,17 @@ local BAND_HUE = 220
 local BAND_SATURATION = 0.16
 local BAND_ACCENTS = { "fg_primary", "fg_variable", "purple", "pink", "cyan", "green", "yellow", "red" }
 
---- Generate nvim/colors/*.lua file content
+--- content of nvim/colors/generated/<name>.lua
 ---@param name string colourscheme name (kebab-case)
 ---@param colours table semantic colour palette
 ---@return string lua file content
 function M.generate_nvim_colourscheme(name, colours)
     local neotree_cursor = colour.lighten(colours.bg_secondary, 12)
 
-    -- Selection band. Ghostty's selection-background is tuned for terminal text,
-    -- not for a syntax-highlighted buffer, and taking it verbatim fails two ways:
-    -- an inverted selection (light bg, dark fg, e.g. Bluloco Dark) needs a fg on
-    -- Visual, which overrides every syntax colour and flattens the selection to
-    -- one tone, while a saturated accent selection (e.g. Aura's violet) leaves
-    -- accents at ~1:1 on the block. Derive the band off line_highlight instead so
-    -- Visual stays background-only, and lift it as far clear of the cursor line as
-    -- the palette allows: one fixed step reads as a second cursor line on themes
-    -- with bright accents and washes the syntax out on themes with dim ones.
-    -- Reference-style highlights (LspReference*, TelescopeSelection) share it.
+    -- the selection band is derived from line_highlight, not ghostty's
+    -- selection-background: an inverted selection (Bluloco Dark) needs a fg on
+    -- Visual, which overrides syntax colours, and a saturated one (Aura) leaves
+    -- accents unreadable on it. LspReference* and TelescopeSelection share it
     local function band_at(step)
         local _, _, line_l = colour.hex_to_hsl(colours.line_highlight)
         local l = colour.luminance(colours.bg_primary) < 0.5 and math.min(1, line_l + step / 100)
@@ -575,26 +535,18 @@ function M.generate_nvim_colourscheme(name, colours)
         end
     end
 
-    -- Comments sit dimmer than fg_secondary (which @variable.parameter, LineNr and
-    -- the UI chrome use) so doc comments don't read as loud as parameter names —
-    -- previously both shared fg_secondary verbatim and became indistinguishable.
-    -- Blend toward the background for the dim, with a contrast floor so comments
-    -- stay legible against the editor background across all generated themes.
+    -- comments are dimmer than fg_secondary (@variable.parameter, LineNr, UI
+    -- chrome), with a contrast floor against the editor background
     local comment = colour.blend(colours.fg_secondary, colours.bg_primary, 0.30)
     comment = colour.ensure_contrast(comment, colours.bg_primary, 4.0)
 
-    -- Punctuation gets a subtle tint toward the purple accent (mirroring the
-    -- hand-crafted schemes' muted-violet punctuation) instead of plain fg.
+    -- punctuation is fg tinted toward purple, as in the hand-crafted schemes
     local punct =
         colour.ensure_contrast(colour.blend(colours.fg_primary, colours.purple, 0.35), colours.bg_primary, 4.5)
 
-    -- Semantic role mapping mirroring the hand-crafted schemes: strings=green,
-    -- functions=purple (the ANSI blue role), types/modules=cyan, literal data
-    -- and properties=yellow, keywords/control-flow=pink. Symbolic operators
-    -- share the keyword pink so they no longer flatten into plain fg; builtin
-    -- functions use cyan to read apart from user-defined ones. This gives
-    -- functions, types, and data three distinct hue families where they
-    -- previously crowded onto cyan/yellow.
+    -- role mapping shared with the hand-crafted schemes: strings green,
+    -- functions purple (the ANSI blue role), types and modules cyan, literal
+    -- data and properties yellow, keywords, control flow and operators pink
     local c = {
         constant = "colors.yellow",
         string = "colors.green",
@@ -629,7 +581,6 @@ function M.generate_nvim_colourscheme(name, colours)
         table.insert(lines, line)
     end
 
-    -- Header
     add(string.format("-- %s colourscheme for Neovim", name))
     add("-- Generated from Ghostty theme by scripts/generate-theme")
     add("")
@@ -642,7 +593,6 @@ function M.generate_nvim_colourscheme(name, colours)
     add("vim.o.termguicolors = true")
     add("")
 
-    -- Colors table
     add("local colors = {")
     add(string.format("  bg_primary = '%s',", colours.bg_primary))
     add(string.format("  fg_primary = '%s',", colours.fg_primary))
@@ -665,13 +615,12 @@ function M.generate_nvim_colourscheme(name, colours)
     add("}")
     add("")
 
-    -- Helper function
     add("local function hl(group, opts)")
     add("  vim.api.nvim_set_hl(0, group, opts)")
     add("end")
     add("")
 
-    -- Editor highlights (fixed mappings — not worth parameterising)
+    -- editor highlights (fixed mappings)
     local editor = {
         { "Normal", "fg = colors.fg_primary, bg = colors.bg_primary" },
         { "NormalFloat", "fg = colors.fg_primary, bg = colors.bg_secondary" },
@@ -718,7 +667,7 @@ function M.generate_nvim_colourscheme(name, colours)
     end
     add("")
 
-    -- Vim syntax groups (use role mapping)
+    -- vim syntax groups (role mapping)
     local syntax = {
         { "Comment", "fg = colors.comment, italic = true" },
         { "Constant", "fg = " .. c.constant },
@@ -763,7 +712,7 @@ function M.generate_nvim_colourscheme(name, colours)
     end
     add("")
 
-    -- Git signs, diagnostics, LSP (fixed — same for all themes)
+    -- git signs, diagnostics, LSP (fixed mappings)
     add("-- Git signs")
     add("hl('GitSignsAdd', { fg = colors.green })")
     add("hl('GitSignsChange', { fg = colors.yellow })")
@@ -787,7 +736,7 @@ function M.generate_nvim_colourscheme(name, colours)
     add("hl('LspReferenceWrite', { bg = colors.reference })")
     add("")
 
-    -- Treesitter groups (use role mapping)
+    -- treesitter groups (role mapping)
     local ts = {
         { "@variable", "fg = colors.fg_primary" }, -- plain text; swap to colors.fg_variable for a subtle tint
         { "@variable.builtin", "fg = colors.red" },
@@ -850,7 +799,7 @@ function M.generate_nvim_colourscheme(name, colours)
     end
     add("")
 
-    -- Plugin highlights (Telescope, Neo-tree, Which-key, Mini)
+    -- plugin highlights
     add("-- Telescope")
     add("hl('TelescopeBorder', { fg = colors.purple, bg = colors.bg_secondary })")
     add("hl('TelescopePromptBorder', { fg = colors.pink, bg = colors.bg_secondary })")
@@ -931,14 +880,12 @@ end
 -- Display Name Derivation
 -- ══════════════════════════════════════════════════════════════
 
---- Convert a Ghostty theme filename to a display name
---- Sanitises to prevent shell injection when sourced
----@param filename string Ghostty theme filename (no path)
+--- display name from a ghostty theme filename. the name is written into a
+--- sourced shell assignment, so only safe display characters are kept
+---@param filename string ghostty theme filename (no path)
 ---@return string display_name
 function M.display_name(filename)
-    -- Strip anything outside safe display characters
     local safe = filename:gsub("[^%w%s%-%_%(%)%.%,]", "")
-    -- Strip double quotes to prevent breaking out of shell assignment
     safe = safe:gsub('"', "")
     if safe == "" then
         safe = "Unknown Theme"
@@ -946,14 +893,13 @@ function M.display_name(filename)
     return safe
 end
 
---- Convert a Ghostty theme filename to a kebab-case name for file paths
---- e.g. "3024 Night" -> "3024-night", "Aardvark Blue" -> "aardvark-blue"
----@param filename string Ghostty theme filename
+--- kebab-case name for file paths: "3024 Night" -> "3024-night"
+---@param filename string ghostty theme filename
 ---@return string kebab name
 function M.kebab_name(filename)
     local name = filename:lower()
-    name = name:gsub("[^%w]+", "-") -- replace non-alphanumeric runs with hyphen
-    name = name:gsub("^-+", ""):gsub("-+$", "") -- trim leading/trailing hyphens
+    name = name:gsub("[^%w]+", "-")
+    name = name:gsub("^-+", ""):gsub("-+$", "")
     return name
 end
 
@@ -961,8 +907,9 @@ end
 -- Main Generation Entry Point
 -- ══════════════════════════════════════════════════════════════
 
---- Generate theme files from a Ghostty theme
----@param ghostty_path string path to Ghostty theme file
+--- writes the .theme file and the nvim colourscheme, and prints the theme
+--- name on stdout
+---@param ghostty_path string path to ghostty theme file
 ---@param themes_dir string path to themes/generated/ output directory
 ---@param nvim_dir string path to nvim/colors/generated/ output directory
 ---@param opts table|nil options: { quiet = bool }
@@ -972,33 +919,26 @@ function M.generate(ghostty_path, themes_dir, nvim_dir, opts)
     opts = opts or {}
     local quiet = opts.quiet or false
 
-    -- Determine names from the Ghostty theme filename
     local filename = ghostty_path:match("[/\\]([^/\\]+)$") or ghostty_path
     local display = M.display_name(filename)
     local name = M.kebab_name(filename)
 
-    -- Parse Ghostty theme
     local ghostty, err = M.parse_ghostty_theme(ghostty_path)
     if not ghostty then
         return false, err
     end
 
-    -- Extract semantic colours
     local colours = M.extract_colours(ghostty)
 
-    -- Rescue near-grey accents, then apply WCAG corrections
     local adjustments = M.apply_saturation_preference(colours)
     for _, adj in ipairs(M.apply_wcag_corrections(colours)) do
         table.insert(adjustments, adj)
     end
 
-    -- Choose active accent
     local active_accent = M.choose_active_accent(colours)
 
-    -- Derive status indicator colours
     local status = M.derive_status_colours(colours)
 
-    -- Generate .theme file
     local theme_content = M.generate_theme_file(name, display, colours, status, active_accent, adjustments)
     local theme_path = themes_dir .. "/" .. name .. ".theme"
     local f = io.open(theme_path, "w")
@@ -1008,7 +948,6 @@ function M.generate(ghostty_path, themes_dir, nvim_dir, opts)
     f:write(theme_content)
     f:close()
 
-    -- Generate nvim colourscheme
     local nvim_content = M.generate_nvim_colourscheme(name, colours)
     local nvim_path = nvim_dir .. "/" .. name .. ".lua"
     f = io.open(nvim_path, "w")
@@ -1029,7 +968,6 @@ function M.generate(ghostty_path, themes_dir, nvim_dir, opts)
         end
     end
 
-    -- Output the theme name for callers
     io.write(name)
 
     return true, nil
@@ -1039,7 +977,7 @@ end
 -- CLI Entry Point (when run as script)
 -- ══════════════════════════════════════════════════════════════
 
--- Only run CLI when executed directly (not required as module)
+-- true only when executed directly, not when required as a module
 if not pcall(debug.getlocal, 4, 1) then
     local ghostty_path = arg[1]
     local themes_dir = arg[2]
