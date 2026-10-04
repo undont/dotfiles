@@ -35,6 +35,8 @@ return {
           end
         end,
       })
+
+      require('custom.features.sqlc-lint').setup()
     end,
   },
 }

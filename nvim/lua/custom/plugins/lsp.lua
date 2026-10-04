@@ -346,6 +346,14 @@ return {
         },
       })
 
+      -- sqruff's tokens are coarser than the sql treesitter captures they would
+      -- outrank: table names come through as `variable`, not `type`
+      vim.lsp.config('sqruff', {
+        on_init = function(client)
+          client.server_capabilities.semanticTokensProvider = nil
+        end,
+      })
+
       local servers = {
         astro = {},
         basedpyright = {},
@@ -357,6 +365,7 @@ return {
         html = {},
         jsonls = {},
         lua_ls = {},
+        sqruff = {},
         tailwindcss = {},
         ts_ls = {},
         yamlls = {},
@@ -389,6 +398,7 @@ return {
             'html',
             'jsonls',
             'lua_ls',
+            'sqruff',
             'tailwindcss',
             'ts_ls',
             'rust_analyzer',
@@ -484,6 +494,7 @@ return {
         lua = { 'stylua' },
         python = { 'ruff_organize_imports', 'ruff_format' },
         sh = { 'shfmt' },
+        sql = { 'sqruff' },
         bash = { 'shfmt' },
         zsh = { 'shfmt' },
         typescript = { 'prettier' },
