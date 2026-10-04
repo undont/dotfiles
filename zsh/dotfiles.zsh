@@ -903,6 +903,7 @@ alias j="cl && jiru"                                                            
 alias lg="cl && lazygit"                                                              # cl + lazygit
 alias ld="cl && lazydocker"                                                           # cl + lazydocker
 alias gols="ls ~/go/bin"                                                              # list Go binaries
+alias rsls="ls ~/.cargo/bin"                                                          # list Rust binaries
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'" # clear nvim cache
 
 # @cheat: nvim-sync | sync Lazy.nvim plugins
