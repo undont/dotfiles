@@ -309,6 +309,7 @@ Table align default | <leader>mAx
 Preview in browser | <leader>mp
 Toggle inline render | <leader>mr
 Next/prev heading | ]] / [[
+Follow link or anchor / go back | <C-]> / <BS>
 
 ## obsidian @obsidian
 Open today's daily note | <leader>oo

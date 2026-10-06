@@ -69,6 +69,7 @@ return {
           MkdnToggleToDo = { 'n', '<leader>mt' }, -- the default <C-Space> is blink's
           MkdnEnter = false, -- mangles numbered lists on <CR>
           MkdnNewListItem = false, -- mangles links on <CR> in insert mode
+          MkdnFollowLink = { 'n', '<C-]>' },
           MkdnGoBack = { 'n', '<BS>' },
           MkdnGoForward = { 'n', '<Del>' },
           MkdnNextHeading = { 'n', ']]' },
