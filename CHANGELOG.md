@@ -4,6 +4,20 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.148] - 2026-10-06
+
+### Added
+
+- sql gets treesitter highlighting, the sqruff language server and formatter, and `sqlc compile` diagnostics on enter and write in projects with a sqlc config. Bare column lists (insert targets, `using`, aliases) highlight like other columns. `nvim/lua/custom/plugins/treesitter.lua`, `nvim/lua/custom/plugins/lsp.lua`, `nvim/after/queries/sql/highlights.scm`, `nvim/lua/custom/features/sqlc-lint.lua`, `nvim/lua/kickstart/plugins/lint.lua`
+- rust formats with rustfmt, using the nightly toolchain when the project's rustfmt config sets `unstable_features = true` and nightly is installed. `nvim/lua/custom/plugins/lsp.lua`
+- `rsls` lists the binaries in `~/.cargo/bin`. `zsh/dotfiles.zsh`
+- sqlc, goose and oxker are installed with the core preset. `Brewfile`
+
+### Changed
+
+- Typing a lua keyword such as `do` or `if` ranks lua_ls's matching snippet first. `nvim/lua/custom/plugins/completion.lua`
+- The global `.editorconfig` no longer sets `end_of_line`, so files keep their existing line endings. `formatters/editorconfig`
+
 ## [0.2.147] - 2026-10-01
 
 ### Fixed

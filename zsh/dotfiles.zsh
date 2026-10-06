@@ -796,9 +796,10 @@ clip() {
     esac
 
     local backend
+    # `(e)` on hyphenated keys keeps shfmt from reading `wl-copy` as `wl - copy`
     if [[ "$IS_MACOS" == "1" ]]; then
         backend=pb
-    elif [[ -n "$WAYLAND_DISPLAY" ]] && ((${+commands[wl-copy]})); then
+    elif [[ -n "$WAYLAND_DISPLAY" ]] && ((${+commands[(e)wl-copy]})); then
         backend=wayland
     elif [[ -n "$DISPLAY" ]] && (($+commands[xclip])); then
         backend=xclip
@@ -806,7 +807,7 @@ clip() {
         backend=xsel
     elif (($+commands[clip.exe])); then
         backend=wsl
-    elif ((${+commands[termux-clipboard-set]})); then
+    elif ((${+commands[(e)termux-clipboard-set]})); then
         backend=termux
     elif [[ -n "$WAYLAND_DISPLAY" || -n "$DISPLAY" ]]; then
         # a display server is running but its tool is missing. OSC 52 here would
@@ -903,6 +904,7 @@ alias j="cl && jiru"                                                            
 alias lg="cl && lazygit"                                                              # cl + lazygit
 alias ld="cl && lazydocker"                                                           # cl + lazydocker
 alias gols="ls ~/go/bin"                                                              # list Go binaries
+alias rsls="ls ~/.cargo/bin"                                                          # list Rust binaries
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'" # clear nvim cache
 
 # @cheat: nvim-sync | sync Lazy.nvim plugins

@@ -27,6 +27,7 @@ return {
         'objc',
         'rust',
         'python',
+        'sql',
         -- lua, luadoc, vim, vimdoc, query, markdown, markdown_inline are bundled
         -- with nvim, whose queries match its own parsers
         'swift',

@@ -346,6 +346,14 @@ return {
         },
       })
 
+      -- sqruff's tokens are coarser than the sql treesitter captures they would
+      -- outrank: table names come through as `variable`, not `type`
+      vim.lsp.config('sqruff', {
+        on_init = function(client)
+          client.server_capabilities.semanticTokensProvider = nil
+        end,
+      })
+
       local servers = {
         astro = {},
         basedpyright = {},
@@ -357,6 +365,7 @@ return {
         html = {},
         jsonls = {},
         lua_ls = {},
+        sqruff = {},
         tailwindcss = {},
         ts_ls = {},
         yamlls = {},
@@ -389,6 +398,7 @@ return {
             'html',
             'jsonls',
             'lua_ls',
+            'sqruff',
             'tailwindcss',
             'ts_ls',
             'rust_analyzer',
@@ -484,7 +494,9 @@ return {
         lua = { 'stylua' },
         python = { 'ruff_organize_imports', 'ruff_format' },
         sh = { 'shfmt' },
+        sql = { 'sqruff' },
         bash = { 'shfmt' },
+        rust = { 'rustfmt' },
         zsh = { 'shfmt' },
         typescript = { 'prettier' },
         typescriptreact = { 'prettier' },
@@ -498,6 +510,29 @@ return {
         },
         goimports = {
           command = vim.fn.stdpath 'data' .. '/mason/bin/goimports',
+        },
+        rustfmt = {
+          -- stable rustfmt skips every unstable option, so a project that opts
+          -- into them formats with nightly; never `+nightly` without one
+          -- installed, rustup would download the toolchain mid-format
+          prepend_args = function(_, ctx)
+            local config = vim.fs.find({ 'rustfmt.toml', '.rustfmt.toml' }, { path = ctx.dirname, upward = true })[1]
+            if not config then
+              return {}
+            end
+            local unstable = false
+            for line in io.lines(config) do
+              if line:match '^%s*unstable_features%s*=%s*true' then
+                unstable = true
+                break
+              end
+            end
+            local rustup_home = vim.env.RUSTUP_HOME or vim.fs.joinpath(vim.env.HOME, '.rustup')
+            if not unstable or vim.fn.glob(vim.fs.joinpath(rustup_home, 'toolchains', 'nightly-*')) == '' then
+              return {}
+            end
+            return { '+nightly' }
+          end,
         },
         csharpier = {
           -- conform's default args are for `dotnet csharpier`; mason's
