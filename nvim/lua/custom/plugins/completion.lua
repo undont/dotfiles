@@ -139,6 +139,23 @@ return {
       sources = {
         default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'ripgrep', 'copilot' },
         providers = {
+          lsp = {
+            -- lua_ls keyword snippets (`do .. end`, `if .. then`) filter on their
+            -- keyword, so typing `do` is an exact match and sorts first.
+            -- `do return end` is offered on `return`, not `do`
+            transform_items = function(_, items)
+              local snippet = require('blink.cmp.types').CompletionItemKind.Snippet
+              for _, item in ipairs(items) do
+                if item.client_name == 'lua_ls' and item.kind == snippet and not item.filterText then
+                  local keyword = item.label:match '^(%a+) '
+                  if keyword and item.label ~= 'do return end' then
+                    item.filterText = keyword
+                  end
+                end
+              end
+              return items
+            end,
+          },
           -- require() paths and plugin module annotations
           lazydev = {
             name = 'LazyDev',
