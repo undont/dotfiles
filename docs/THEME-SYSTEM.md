@@ -79,7 +79,7 @@ Ghostty's `selection-background` does not reach the Neovim output. It is tuned f
 
 ### Neovim Theme Integration
 
-The Neovim theme loader (`nvim/lua/custom/core/theme.lua`) reads `~/.config/dotfiles/current-theme` and applies the corresponding colourscheme:
+The Neovim theme loader (`nvim/lua/core/theme.lua`) reads `~/.config/dotfiles/current-theme` and applies the corresponding colourscheme:
 
 1. **Hand-crafted themes** are mapped via a lookup table (e.g. `tokyo-night` -> `tokyonight-night`)
 2. **Generated themes** fall through to `nvim/colors/generated/<name>.lua` via `dofile()`
@@ -95,7 +95,7 @@ Italic marks text that is not literal code. Three groups carry it, in every them
 - `@markup.italic`: markdown emphasis, where italic is the literal meaning
 
 One group outside that rule is italic: `@lsp.typemod.variable.signature`, set in
-`nvim/lua/custom/core/autocmds.lua`. gopls reports a func-typed variable as
+`nvim/lua/core/autocmds.lua`. gopls reports a func-typed variable as
 `variable` + `signature`, and the italic marks it callable at its use sites.
 
 No syntax group is italic. Syntax roles are separated by colour alone, so italic
@@ -112,7 +112,7 @@ Because syntax groups carry no italic, plugin highlights can link to them
 safely. Where a plugin points a UI element at a syntax role and only the colour
 is wanted, copy the resolved foreground rather than linking, since a link
 inherits attributes and cannot cancel them:
-`nvim/lua/custom/plugins/dashboard.lua` does this for the snacks dashboard,
+`nvim/lua/plugins/dashboard.lua` does this for the snacks dashboard,
 whose upstream defaults link `Desc` and `File` to `Special`.
 
 ### Statusline Integration

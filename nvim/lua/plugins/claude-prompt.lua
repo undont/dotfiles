@@ -16,7 +16,7 @@ return {
         pattern = '*.md',
         group = group,
         callback = function(ev)
-          require('custom.features.claude-comments').setup(ev.buf)
+          require('features.claude-comments').setup(ev.buf)
 
           local filename = vim.fn.fnamemodify(ev.file, ':t')
           local abs_path = vim.fn.fnamemodify(ev.file, ':p')
@@ -24,7 +24,7 @@ return {
             return
           end
 
-          require('custom.features.prompt-file-ref').setup(ev.buf)
+          require('features.prompt-file-ref').setup(ev.buf)
         end,
       })
     end,

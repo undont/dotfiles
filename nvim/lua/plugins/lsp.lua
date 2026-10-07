@@ -1,8 +1,8 @@
 -- LSP servers, mason and formatting
 
-local lsp_nav = require 'custom.features.lsp-navigation'
-local lsp_fix_all = require 'custom.features.lsp-fix-all'
-local lsp_patches = require 'custom.features.lsp-patches'
+local lsp_nav = require 'features.lsp-navigation'
+local lsp_fix_all = require 'features.lsp-fix-all'
+local lsp_patches = require 'features.lsp-patches'
 
 --- true for ordinary on-disk file buffers. plugin buffers carry a `scheme://`
 --- name or a non-empty `buftype`, and csharpier crashes resolving a config
@@ -274,7 +274,7 @@ return {
             -- gopls sends one `string` token per literal, which outranks
             -- treesitter's @string.escape and @string.regexp. its only extra is
             -- a `format` modifier on printf verbs, which
-            -- custom.features.go-format-verbs marks
+            -- features.go-format-verbs marks
             semanticTokenTypes = { string = false },
             codelenses = {
               generate = true,

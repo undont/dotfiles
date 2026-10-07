@@ -4,11 +4,11 @@
 -- environment; without them the server runs local-only. per-project binding
 -- is `.sonarlint/connectedMode.json`: { "projectKey": "my-org_my-project" }
 
-local common = require 'custom.features.sonar-common'
-local rules = require 'custom.features.sonar-rules'
-local actions = require 'custom.features.sonar-actions'
-local rule_popup = require 'custom.features.sonar-rule-popup'
-local scan = require 'custom.features.sonar-scan'
+local common = require 'features.sonar-common'
+local rules = require 'features.sonar-rules'
+local actions = require 'features.sonar-actions'
+local rule_popup = require 'features.sonar-rule-popup'
+local scan = require 'features.sonar-scan'
 
 local CONNECTION_ID = 'sonarcloud'
 local FILETYPES = common.FILETYPES

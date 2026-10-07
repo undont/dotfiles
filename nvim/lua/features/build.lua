@@ -2,7 +2,7 @@
 
 local M = {}
 
-local scan_runner = require 'custom.features.scan-runner'
+local scan_runner = require 'features.scan-runner'
 
 ---@param dir string
 ---@return string runner 'bun', 'pnpm', 'yarn', or 'npm'

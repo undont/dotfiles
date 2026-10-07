@@ -47,14 +47,14 @@ return {
         'regex',
       }
 
-      require('custom.features.treesitter-parsers').purge_if_updated()
+      require('features.treesitter-parsers').purge_if_updated()
 
       -- the go grammar takes new/make's first argument as a type, so go 1.26's
       -- new(expr) is a syntax error and the file collapses into ERROR nodes
       -- (highlighting, folds, neotest discovery). this pins the open upstream
       -- pr, tree-sitter-go#193; drop the entry once it merges. it mis-parses
       -- `new[i]` on a variable shadowing the builtin (tree-sitter-go#189)
-      require('custom.features.treesitter-parsers').sync_pins {
+      require('features.treesitter-parsers').sync_pins {
         go = {
           -- upstream serves the commit as the head of the open pr
           url = 'https://github.com/tree-sitter/tree-sitter-go',
@@ -92,7 +92,7 @@ return {
       })
 
       -- go format verbs, which no query can reach: see the module header
-      require('custom.features.go-format-verbs').setup()
+      require('features.go-format-verbs').setup()
 
       -- language aliases for markdown code fences
       vim.treesitter.language.register('c_sharp', { 'csharp', 'cs' })

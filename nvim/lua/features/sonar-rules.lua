@@ -6,7 +6,7 @@
 -- ({ files = globs, rules }) apply client-side at publish time and can only
 -- silence, since a globally-off rule yields no diagnostics to re-enable
 
-local common = require 'custom.features.sonar-common'
+local common = require 'features.sonar-common'
 
 local M = {}
 

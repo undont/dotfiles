@@ -79,7 +79,7 @@ return {
         -- whose single-cell sign segment would drop one of the two
         win_options = { signcolumn = 'yes:2', statuscolumn = '' },
         -- `sort` names the `notedate` column registered in config below
-        view_options = { show_hidden = true, sort = require('custom.features.dated-notes').oil_sort },
+        view_options = { show_hidden = true, sort = require('features.dated-notes').oil_sort },
         keymaps = {
           ['-'] = { mode = 'n', callback = oil_close },
           ['<BS>'] = { 'actions.parent', mode = 'n' },
@@ -90,7 +90,7 @@ return {
     end,
     config = function(_, opts)
       require('oil').setup(opts)
-      require('custom.features.dated-notes').setup_oil()
+      require('features.dated-notes').setup_oil()
     end,
   },
 

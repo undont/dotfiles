@@ -169,7 +169,7 @@ function M.setup()
     end,
   })
 
-  local diff_highlights = require 'custom.core.diff-highlights'
+  local diff_highlights = require 'core.diff-highlights'
   diff_highlights.setup()
 
   -- render-markdown links code blocks to ColorColumn by default, which

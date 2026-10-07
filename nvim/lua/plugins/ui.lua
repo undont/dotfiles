@@ -225,7 +225,7 @@ return {
       require('fidget').setup(opts)
 
       -- after fidget setup: override_vim_notify replaces earlier wraps
-      require('custom.features.notify-filter').install()
+      require('features.notify-filter').install()
 
       vim.keymap.set('n', '<leader>Nn', '<cmd>Fidget history<cr>', { desc = 'Notification history' })
     end,

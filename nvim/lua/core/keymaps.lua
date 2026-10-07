@@ -63,17 +63,17 @@ function M.setup()
     require('undotree').open { command = '60vnew' }
   end, { desc = '[U]ndo tree' })
 
-  require('custom.core.folding').setup()
-  require('custom.features.lists').setup()
-  require('custom.features.diag-scan').setup()
-  require('custom.core.windows').setup()
-  require('custom.core.macos-nav').setup()
-  require('custom.core.refresh').setup()
-  require('custom.core.spellcheck').setup()
-  require('custom.features.build').setup()
-  require('custom.features.binary-view').setup()
-  require('custom.features.go').setup()
-  require('custom.features.snippets').setup()
+  require('core.folding').setup()
+  require('features.lists').setup()
+  require('features.diag-scan').setup()
+  require('core.windows').setup()
+  require('core.macos-nav').setup()
+  require('core.refresh').setup()
+  require('core.spellcheck').setup()
+  require('features.build').setup()
+  require('features.binary-view').setup()
+  require('features.go').setup()
+  require('features.snippets').setup()
 end
 
 return M

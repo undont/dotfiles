@@ -269,8 +269,8 @@ end
 -- scan_runner.diag_to_item, not vim.diagnostic.setqflist: its `[source]` text
 -- prefix is what the auto-clear's (lnum, text) match compares
 local function diags_to_items(diagnostics)
-  local scan_runner = require 'custom.features.scan-runner'
-  local scan_ignored = require('custom.features.diag-scan').scan_ignored
+  local scan_runner = require 'features.scan-runner'
+  local scan_ignored = require('features.diag-scan').scan_ignored
   local items = {}
   -- get(nil) spans every buffer, so the same file open under two bufnrs
   -- (a git-diff/review split, a second-window reopen) yields byte-identical

@@ -64,8 +64,8 @@ return {
     end,
     config = function(_, opts)
       resolve_solution_target()
-      require('custom.features.roslyn-diagnostics').patch_diagnostic_set()
-      require('custom.features.roslyn-semantic-tokens').setup()
+      require('features.roslyn-diagnostics').patch_diagnostic_set()
+      require('features.roslyn-semantic-tokens').setup()
 
       vim.lsp.config('roslyn', {
         -- roslyn's runtimeconfig.json sets System.GC.Server=true, one GC
@@ -167,7 +167,7 @@ return {
         require('easy-dotnet.test-runner').open()
       end, { desc = 'Test [E]xplorer (.NET)' })
 
-      require('custom.features.dotnet-test').setup()
+      require('features.dotnet-test').setup()
     end,
   },
 }

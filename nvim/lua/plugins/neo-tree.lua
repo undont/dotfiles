@@ -63,6 +63,6 @@ return {
   },
   config = function(_, opts)
     require('neo-tree').setup(opts)
-    require('custom.features.neo-tree-git-patch').apply()
+    require('features.neo-tree-git-patch').apply()
   end,
 }

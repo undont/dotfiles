@@ -6,7 +6,7 @@
 -- groups actions per responding client. each carries a Command, run locally
 -- via vim.lsp.commands[SILENCE_COMMAND], registered by the spec
 
-local common = require 'custom.features.sonar-common'
+local common = require 'features.sonar-common'
 
 local M = {}
 

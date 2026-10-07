@@ -87,7 +87,7 @@ return {
     {
       '<leader>bl',
       function()
-        require('custom.features.dap-breakpoints').open()
+        require('features.dap-breakpoints').open()
       end,
       desc = '[B]reakpoint [L]ist',
     },
@@ -112,7 +112,7 @@ return {
       -- registered via dap.adapters[...], and the install stalls on the lockfile
       automatic_installation = false,
       handlers = {},
-      -- per-machine mason opt-out (see custom/plugins/lsp.lua)
+      -- per-machine mason opt-out (see plugins/lsp.lua)
       ensure_installed = vim.g.disable_mason_auto_install and {} or { 'delve', 'coreclr', 'debugpy', 'js', 'codelldb' },
     }
 

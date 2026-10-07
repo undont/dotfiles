@@ -4,7 +4,7 @@
 
 local M = {}
 
-local scan_runner = require 'custom.features.scan-runner'
+local scan_runner = require 'features.scan-runner'
 
 -- roslyn only pushes diagnostics for visible documents, so scanned buffers
 -- need a `textDocument/diagnostic` pull. a pull before its workspace
@@ -114,7 +114,7 @@ local SCAN_BATCH_SIZE = 12
 local scanning = false
 
 local function scan_in_progress()
-  return scanning or require('custom.features.scan-runner').is_active()
+  return scanning or require('features.scan-runner').is_active()
 end
 
 --- `created` is the subset of bufnrs this call created, deleted after the
@@ -322,7 +322,7 @@ end
 -- modified-file discovery shared with <leader>lm and <leader>sm
 -- (features/ticket.lua), so scan and picker operate on the same set
 local function open_git_modified()
-  local paths = require('custom.features.ticket').modified_files()
+  local paths = require('features.ticket').modified_files()
   if not paths then
     return
   end
@@ -341,7 +341,7 @@ end
 -- every file changed on the branch vs main, the same merge-base discovery as
 -- <leader>dt (features/ticket.lua)
 local function open_branch_scan()
-  local paths = require('custom.features.ticket').branch_files()
+  local paths = require('features.ticket').branch_files()
   if not paths then
     return
   end
@@ -415,7 +415,7 @@ local function open_ticket_scan()
     return
   end
 
-  local ticket = require 'custom.features.ticket'
+  local ticket = require 'features.ticket'
   ticket.prompt_commits(function(ctx)
     local paths = ticket.commit_files(ctx)
     if not paths then

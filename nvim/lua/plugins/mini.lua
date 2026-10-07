@@ -68,15 +68,15 @@ return {
       -- an empty suffix disables the pair
       require('mini.bracketed').setup {
         comment = { suffix = '' }, -- ]c/[c is gitsigns
-        diagnostic = { suffix = '' }, -- ]d/[d is custom.features.lists
+        diagnostic = { suffix = '' }, -- ]d/[d is features.lists
         file = { suffix = 'f' }, -- differ overrides ]f/[f when open; features/dated-notes shadows it on dated notes
-        treesitter = { suffix = '' }, -- ]t/[t is failed tests (custom.features.lists)
-        quickfix = { suffix = '' }, -- ]q/[q is custom.features.lists
-        location = { suffix = '' }, -- ]l/[l is custom.features.lists
+        treesitter = { suffix = '' }, -- ]t/[t is failed tests (features.lists)
+        quickfix = { suffix = '' }, -- ]q/[q is features.lists
+        location = { suffix = '' }, -- ]l/[l is features.lists
       }
 
       -- ]f/[f walk DD-MM-YYYY note directories by date rather than lexically
-      require('custom.features.dated-notes').setup_bracketed()
+      require('features.dated-notes').setup_bracketed()
 
       -- redirect ]f/[f from neo-tree to the first normal editing window
       vim.api.nvim_create_autocmd('FileType', {
@@ -112,7 +112,7 @@ return {
         end,
       })
 
-      require('custom.features.statusline').setup()
+      require('features.statusline').setup()
     end,
   },
 }

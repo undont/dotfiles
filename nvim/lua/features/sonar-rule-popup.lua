@@ -5,7 +5,7 @@
 -- deprecation is detected by a co-located diagnostic carrying the LSP
 -- `Deprecated` tag, so there is no rule-key list
 
-local common = require 'custom.features.sonar-common'
+local common = require 'features.sonar-common'
 
 local M = {}
 

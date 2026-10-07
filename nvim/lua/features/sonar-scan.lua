@@ -4,7 +4,7 @@
 -- <leader>lm / lb / lT / lS take the same file sets as <leader>xm / xb / xT /
 -- xS in features/diag-scan.lua
 
-local common = require 'custom.features.sonar-common'
+local common = require 'features.sonar-common'
 
 local M = {}
 
@@ -83,13 +83,13 @@ local function list_scan_targets(mode)
   if mode == 'changed' then
     -- same file set as <leader>xm / <leader>sm (features/ticket.lua). nil
     -- (already notified) outside a git repo
-    local paths = require('custom.features.ticket').modified_files()
+    local paths = require('features.ticket').modified_files()
     return paths and scannable(paths) or nil
   end
 
   if mode == 'branch' then
     -- every file changed vs merge-base(main), same set as <leader>xb
-    local paths = require('custom.features.ticket').branch_files()
+    local paths = require('features.ticket').branch_files()
     return paths and scannable(paths) or nil
   end
 
@@ -163,7 +163,7 @@ local function start_scan(files, label)
 
   local collect = vim.list_extend(vim.list_extend({}, watched), extra)
 
-  require('custom.features.scan-runner').start {
+  require('features.scan-runner').start {
     bufnrs = watched,
     collect_bufnrs = collect,
     get_diagnostics = common.sonarlint_diagnostics,
@@ -186,7 +186,7 @@ end
 
 --- @param mode 'changed' | 'branch' | 'ticket' | 'all'
 function M.run_scan(mode)
-  if require('custom.features.scan-runner').is_active() then
+  if require('features.scan-runner').is_active() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
     return
   end
@@ -195,7 +195,7 @@ function M.run_scan(mode)
   -- discovery as <leader>dT / <leader>xT (features/ticket.lua), filtered to
   -- sonarlint-scannable files
   if mode == 'ticket' then
-    local ticket = require 'custom.features.ticket'
+    local ticket = require 'features.ticket'
     ticket.prompt_commits(function(ctx)
       local paths = ticket.commit_files(ctx)
       if not paths then

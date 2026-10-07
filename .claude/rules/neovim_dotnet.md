@@ -1,14 +1,14 @@
 ---
 paths:
-  - "nvim/lua/custom/plugins/dotnet.lua"
-  - "nvim/lua/custom/plugins/lsp.lua"
-  - "nvim/lua/custom/plugins/differ.lua"
-  - "nvim/lua/custom/features/roslyn-diagnostics.lua"
-  - "nvim/lua/custom/features/roslyn-semantic-tokens.lua"
-  - "nvim/lua/custom/features/diag-scan.lua"
-  - "nvim/lua/custom/features/scan-runner.lua"
-  - "nvim/lua/custom/features/lsp-patches.lua"
-  - "nvim/lua/custom/plugins/sonarlint.lua"
+  - "nvim/lua/plugins/dotnet.lua"
+  - "nvim/lua/plugins/lsp.lua"
+  - "nvim/lua/plugins/differ.lua"
+  - "nvim/lua/features/roslyn-diagnostics.lua"
+  - "nvim/lua/features/roslyn-semantic-tokens.lua"
+  - "nvim/lua/features/diag-scan.lua"
+  - "nvim/lua/features/scan-runner.lua"
+  - "nvim/lua/features/lsp-patches.lua"
+  - "nvim/lua/plugins/sonarlint.lua"
 ---
 
 # C# / Roslyn LSP — Architecture & Debugging
@@ -140,7 +140,7 @@ means killing the daemon — see Daemon Mode above.
 ### Scan snapshots have a second code filter (features/diag-scan.lua)
 
 The diagnostics scans (`<leader>xm` / `<leader>xb` / `<leader>xT` /
-`<leader>xS`, `custom/features/diag-scan.lua`) snapshot `vim.diagnostic.get`
+`<leader>xS`, `features/diag-scan.lua`) snapshot `vim.diagnostic.get`
 for hidden-loaded buffers into the quickfix. IDE0079 ("Suppression is
 unnecessary") and IDE0005 false positives reach those snapshots despite
 `patch_diagnostic_set`: they vanish when the file is opened for real, and

@@ -2,23 +2,22 @@
   nvim configuration
 
   structure:
-    lua/custom/core/      - core settings (options, keymaps, autocmds)
-    lua/custom/features/  - bespoke features, each owning its keymaps
-    lua/custom/plugins/   - lazy plugin specs
-    lua/kickstart/        - kickstart-provided plugins
+    lua/core/      - core settings (options, keymaps, autocmds)
+    lua/features/  - bespoke features, each owning its keymaps
+    lua/plugins/   - lazy plugin specs
 
   <leader>? opens cheatsheet.txt
 --]]
 
-require('custom.core.options').setup()
-require('custom.core.keymaps').setup()
-require('custom.core.autocmds').setup()
-require('custom.features.tag-rename').setup()
+require('core.options').setup()
+require('core.keymaps').setup()
+require('core.autocmds').setup()
+require('features.tag-rename').setup()
 
-require('custom.lazy-bootstrap').setup()
+require('lazy-bootstrap').setup()
 
 -- before lazy.setup: plugins read highlight groups during their own setup
-require('custom.core.theme').setup()
+require('core.theme').setup()
 
 -- user-owned overrides. loaded before lazy.setup so plugin specs can read
 -- `vim.g.*` set there (e.g. `vim.g.obsidian_vault_root`)
@@ -28,8 +27,7 @@ if vim.uv.fs_stat(local_config) then
 end
 
 require('lazy').setup({
-  { import = 'custom.plugins' },
-  { import = 'kickstart.plugins' },
+  { import = 'plugins' },
 }, {
   ui = {
     icons = vim.g.have_nerd_font and {} or {

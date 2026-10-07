@@ -173,7 +173,7 @@ return {
             -- nvim/snippets is scanned ahead of friendly-snippets, so the first
             -- item for a prefix is the local override
             transform_items = function(_, items)
-              local snippets = require 'custom.features.snippets'
+              local snippets = require 'features.snippets'
               local ft = vim.bo.filetype
               local seen, out = {}, {}
               for _, item in ipairs(items) do
