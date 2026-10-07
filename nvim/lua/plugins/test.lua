@@ -375,6 +375,7 @@ return {
     'marilari88/neotest-vitest',
     'haydenmeade/neotest-jest',
     'nvim-neotest/neotest-python',
+    'MisanthropicBit/neotest-busted',
   },
   keys = {
     { '<leader>tt', neotest_fn(function()
@@ -462,6 +463,7 @@ return {
           args = { '-v' },
           dap = { justMyCode = false },
         },
+        require 'neotest-busted' { local_luarocks_only = false },
       },
       summary = {
         animated = true,
