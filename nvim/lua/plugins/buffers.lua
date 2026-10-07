@@ -2,7 +2,7 @@
 
 return {
   {
-    'echasnovski/mini.bufremove',
+    'echasnovski/mini.nvim',
     keys = {
       {
         '<leader>bd',
