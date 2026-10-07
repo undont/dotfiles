@@ -370,7 +370,6 @@ return {
   dependencies = {
     'nvim-neotest/nvim-nio',
     'nvim-lua/plenary.nvim',
-    'antoinemadec/FixCursorHold.nvim',
     'nvim-treesitter/nvim-treesitter',
     'fredrikaverpil/neotest-golang',
     'marilari88/neotest-vitest',
