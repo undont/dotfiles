@@ -135,7 +135,17 @@ return {
             Snacks.picker.lsp_symbols()
           end, 'Document symbols')
           map('gW', function()
-            Snacks.picker.lsp_workspace_symbols()
+            Snacks.picker.lsp_workspace_symbols {
+              filter = {
+                cwd = true,
+                -- lua_ls reports local functions as `Variable`
+                lua = { 'Class', 'Constructor', 'Enum', 'Field', 'Function', 'Interface', 'Method', 'Module', 'Namespace', 'Property', 'Struct', 'Trait', 'Variable' },
+              },
+              -- the lsp finders never apply `filter.cwd` themselves
+              transform = function(item, ctx)
+                return ctx.filter:match(item)
+              end,
+            }
           end, 'Workspace symbols')
           map('grt', lsp_nav.dedup 'type_definition', '[T]ype definition')
           map('<leader>lr', function()
