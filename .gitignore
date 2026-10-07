@@ -48,7 +48,7 @@ nvim/colors/generated/
 .agents/skills/
 .opencode
 
-# Local markdown files
+# Local files
 scratch/*
 /zsh/p10k.zsh
 /Dockerfile.timemachine

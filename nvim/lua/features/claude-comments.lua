@@ -7,7 +7,7 @@ local M = {}
 --- blank lines are added only next to a neighbour that has text
 local function insert_snippet(trigger)
   local ls = require 'luasnip'
-  local snippets = ls.get_snippets 'all'
+  local snippets = ls.get_snippets 'claude'
   for _, snip in ipairs(snippets) do
     if snip.trigger == trigger then
       local row = vim.api.nvim_win_get_cursor(0)[1]
