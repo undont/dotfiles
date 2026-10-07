@@ -69,6 +69,24 @@ local function resolve_and_apply(bufnr, action, client, on_done)
   end
 end
 
+--- the first quickfix-kind action across all clients, else the first action
+---@param results table<integer, { err: lsp.ResponseError?, result: lsp.CodeAction[]? }>
+---@return lsp.CodeAction?, integer?
+local function pick_action(results)
+  local fallback, fallback_id
+  for client_id, res in pairs(results) do
+    for _, a in ipairs(not res.err and res.result or {}) do
+      if a.kind and a.kind:find '^quickfix' then
+        return a, client_id
+      end
+      if not fallback then
+        fallback, fallback_id = a, client_id
+      end
+    end
+  end
+  return fallback, fallback_id
+end
+
 --- some servers republish on didChange, others only on an explicit pull
 ---@param bufnr integer
 local function refresh_diagnostics_soon(bufnr)
@@ -153,31 +171,16 @@ function M.fix_all_in_file()
       context = { diagnostics = { item.lsp } },
     }
 
-    local handled = false
-    vim.lsp.buf_request(bufnr, 'textDocument/codeAction', params, function(err, result, ctx)
-      if handled then
-        return
-      end
-      handled = true
-
-      if err or not result or #result == 0 then
+    vim.lsp.buf_request_all(bufnr, 'textDocument/codeAction', params, function(results)
+      local action, client_id = pick_action(results)
+      if not action then
         vim.defer_fn(function()
           apply_next(idx + 1)
         end, 50)
         return
       end
 
-      -- prefer quickfix kind, fall back to first action
-      local action
-      for _, a in ipairs(result) do
-        if a.kind and a.kind:find '^quickfix' then
-          action = a
-          break
-        end
-      end
-      action = action or result[1]
-
-      local client = vim.lsp.get_client_by_id(ctx.client_id)
+      local client = vim.lsp.get_client_by_id(client_id)
       resolve_and_apply(bufnr, action, client, function(was_applied)
         if was_applied then
           applied = applied + 1
