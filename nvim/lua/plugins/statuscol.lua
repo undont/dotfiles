@@ -18,7 +18,7 @@ return {
     event = { 'BufReadPre', 'BufNewFile' },
     config = function()
       require('statuscol').setup {
-        -- oil draws two git status columns in its own signcolumn (see plugins/navigation.lua).
+        -- oil draws two git status columns in its own signcolumn (see plugins/oil.lua).
         -- the rest are ui2's cmdline and message windows, which exist before this loads
         ft_ignore = { 'oil', 'cmd', 'msg', 'pager', 'dialog', 'differpanel' },
         segments = {
