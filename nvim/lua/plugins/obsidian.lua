@@ -1,5 +1,6 @@
 -- obsidian.nvim: vault features only (daily notes, backlinks, tags,
--- templates); rendering and list/link editing are in markdown-ui.lua.
+-- templates); rendering and list/link editing are in render-markdown.lua
+-- and mkdnflow.lua.
 -- vault root: `vim.g.obsidian_vault_root` (set in local.lua), else ~/obsidian.
 -- when neither exists the spec is empty. the root is a vault itself
 -- (`.obsidian/` directly inside) or a parent directory of vaults
@@ -164,7 +165,7 @@ return {
         return os.date '%Y-%m-%d-%H%M%S'
       end,
 
-      -- markdown-ui.lua handles display
+      -- render-markdown.lua handles display
       ui = { enable = false },
 
       attachments = { folder = 'attachments' },

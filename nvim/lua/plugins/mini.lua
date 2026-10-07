@@ -24,7 +24,7 @@ return {
           -- transcript speaker fences (```claude / ```me) in vault notes.
           -- render-markdown resolves the fence word through vim.filetype.match,
           -- where 'me' is nroff, so the `me` glyph is set on nroff
-          claude = { glyph = claude_icon, hl = 'ClaudeIcon' }, -- ClaudeIcon defined in plugins/ui.lua
+          claude = { glyph = claude_icon, hl = 'ClaudeIcon' }, -- ClaudeIcon defined in plugins/which-key.lua
           nroff = { glyph = me_icon, hl = 'MiniIconsBlue' },
         },
         os = {
