@@ -81,7 +81,7 @@
     }
   },
 
-  // core motions: m/M/gm swap, matches nvim/lua/custom/core/keymaps.lua.
+  // core motions: m/M/gm swap, matches nvim/lua/core/keymaps.lua.
   // native motions, not SendKeystrokes, so counts, operator-pending and visual work
   {
     "context": "Editor && VimControl",
@@ -132,7 +132,7 @@
       "space l h": "editor::ToggleInlayHints",
       "space l l": "lsp_tool::ToggleMenu", // Zed default is ctrl-cmd-l
 
-      // folding: zr/zc/zm -> zR/zC/zM, matches nvim/lua/custom/core/folding.lua
+      // folding: zr/zc/zm -> zR/zC/zM, matches nvim/lua/core/folding.lua
       "z r": "editor::UnfoldAll",
       "z c": "editor::FoldRecursive",
       "z m": "editor::FoldAll",

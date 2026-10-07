@@ -60,7 +60,7 @@ Create a custom colourscheme file. Use any existing file as a template (e.g. `nv
 
 The `colors` table at the top should match the `.theme` file values. `NVIM_COLORSCHEME` must match `vim.g.colors_name`, and `NVIM_FG_VARIABLE` should match the colourscheme's `fg_variable`.
 
-### 3. Update Theme Mapping: `nvim/lua/custom/core/theme.lua`
+### 3. Update Theme Mapping: `nvim/lua/core/theme.lua`
 
 Add an entry to the `theme_map` table:
 
