@@ -223,7 +223,7 @@ function M.setup()
   }
   ---@diagnostic disable-next-line: duplicate-set-field
   statusline.section_diagnostics = function(args)
-    if statusline.is_truncated(args.trunc_width) or vim.diagnostic.count == nil then
+    if statusline.is_truncated(args.trunc_width) then
       return ''
     end
     local counts = vim.diagnostic.count(0)

@@ -13,7 +13,7 @@ local UNDATED = math.huge
 
 ---@param name string
 ---@return integer|nil -- YYYYMMDD, sortable as a plain number
-function M.date_value(name)
+local function date_value(name)
   local d, m, y = name:match '(%d%d)%-(%d%d)%-(%d%d%d%d)'
   if not d then
     return nil
@@ -41,7 +41,7 @@ function M.setup_oil()
       error 'notedate is a sort-only column'
     end,
     get_sort_value = function(entry)
-      return M.date_value(entry[FIELD_NAME]) or UNDATED
+      return date_value(entry[FIELD_NAME]) or UNDATED
     end,
   })
 end
@@ -61,12 +61,12 @@ local function dated_siblings(path)
     if not name then
       break
     end
-    if fs_type ~= 'directory' and M.date_value(name) then
+    if fs_type ~= 'directory' and date_value(name) then
       table.insert(files, name)
     end
   end
   table.sort(files, function(a, b)
-    local da, db = M.date_value(a), M.date_value(b)
+    local da, db = date_value(a), date_value(b)
     if da ~= db then
       return da < db
     end
@@ -134,7 +134,7 @@ function M.setup_bracketed()
   vim.api.nvim_create_autocmd({ 'BufReadPost', 'BufNewFile' }, {
     group = vim.api.nvim_create_augroup('DatedNotesBracketed', { clear = true }),
     callback = function(ev)
-      if not M.date_value(vim.fn.fnamemodify(vim.api.nvim_buf_get_name(ev.buf), ':t')) then
+      if not date_value(vim.fn.fnamemodify(vim.api.nvim_buf_get_name(ev.buf), ':t')) then
         return
       end
       vim.keymap.set('n', ']f', function()

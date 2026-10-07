@@ -115,9 +115,6 @@ function M.compile_overrides(overrides)
   if not overrides or vim.tbl_isempty(overrides) then
     return nil
   end
-  if not (vim.glob and vim.glob.to_lpeg) then
-    return nil -- needs nvim 0.10+
-  end
   local compiled = {}
   for _, ov in ipairs(overrides) do
     if type(ov) == 'table' and type(ov.files) == 'table' and type(ov.rules) == 'table' then

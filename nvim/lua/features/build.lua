@@ -530,7 +530,7 @@ local function pick_make_target(targets)
   end)
 end
 
-function M.run()
+local function run()
   local cfg, is_makefile = detect_build()
   if not cfg then
     vim.notify('No build config detected (go.mod, vite.config.*, tsconfig.json, *.csproj, Makefile)', vim.log.levels.WARN)
@@ -544,7 +544,7 @@ function M.run()
 end
 
 --- run the Makefile build picker directly, bypassing language-specific detection
-function M.run_make()
+local function run_make()
   local cwd = vim.fn.getcwd()
   local makefile_path = cwd .. '/Makefile'
   if vim.fn.filereadable(makefile_path) ~= 1 then
@@ -714,8 +714,8 @@ local function setup_auto_clear()
 end
 
 function M.setup()
-  vim.keymap.set('n', '<leader>q', M.run, { desc = 'Build project or pick Make target' })
-  vim.keymap.set('n', '<leader>Q', M.run_make, { desc = 'Pick Make target' })
+  vim.keymap.set('n', '<leader>q', run, { desc = 'Build project or pick Make target' })
+  vim.keymap.set('n', '<leader>Q', run_make, { desc = 'Pick Make target' })
   setup_auto_clear()
 end
 

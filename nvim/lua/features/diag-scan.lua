@@ -114,7 +114,7 @@ local SCAN_BATCH_SIZE = 12
 local scanning = false
 
 local function scan_in_progress()
-  return scanning or require('features.scan-runner').is_active()
+  return scanning or scan_runner.is_active()
 end
 
 --- `created` is the subset of bufnrs this call created, deleted after the
@@ -262,7 +262,7 @@ local function scan_files(paths, opts)
       -- ...unless sonarlint is attached to a scanned buffer: its java analyzers
       -- publish later than the buffer's first report, which debounce_ms covers
       settle_check = function()
-        for _, client in ipairs(vim.lsp.get_clients { name = 'sonarlint.nvim' }) do
+        for _, client in ipairs(vim.lsp.get_clients { name = require('features.sonar-common').SONARLINT_CLIENT_NAME }) do
           for _, b in ipairs(bufnrs) do
             if (client.attached_buffers or {})[b] then
               return false

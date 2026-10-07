@@ -95,7 +95,7 @@ end
 --- every snippet expandable in a buffer of this filetype, sorted by prefix
 ---@param ft string
 ---@return table[]
-function M.collect(ft)
+local function collect(ft)
   local items = {}
   add_blink(items, ft)
   add_luasnip(items, ft)
@@ -117,9 +117,9 @@ local function expand(item)
   end
 end
 
-function M.pick()
+local function pick()
   local ft = vim.bo.filetype
-  local items = M.collect(ft)
+  local items = collect(ft)
   if #items == 0 then
     vim.notify('No snippets for filetype ' .. (ft == '' and '(none)' or ft), vim.log.levels.INFO)
     return
@@ -193,8 +193,8 @@ function M.pick()
 end
 
 function M.setup()
-  vim.api.nvim_create_user_command('Snippets', M.pick, { desc = 'Browse snippets for the current filetype' })
-  vim.keymap.set('n', '<leader>sS', M.pick, { desc = '[S]earch [S]nippets' })
+  vim.api.nvim_create_user_command('Snippets', pick, { desc = 'Browse snippets for the current filetype' })
+  vim.keymap.set('n', '<leader>sS', pick, { desc = '[S]earch [S]nippets' })
 end
 
 return M

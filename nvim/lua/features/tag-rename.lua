@@ -200,23 +200,19 @@ local function sync()
   p.partner_name = current.name
 end
 
-function M.setup(opts)
-  opts = opts or {}
-  local filetypes = opts.filetypes
-    or {
-      'markdown',
-      'html',
-      'xml',
-      'svg',
-      'vue',
-      'svelte',
-      'astro',
-      'jsx',
-      'tsx',
-      'javascriptreact',
-      'typescriptreact',
-      'php',
-    }
+function M.setup()
+  local filetypes = {
+    'markdown',
+    'html',
+    'xml',
+    'svg',
+    'vue',
+    'svelte',
+    'astro',
+    'javascriptreact',
+    'typescriptreact',
+    'php',
+  }
 
   local group = vim.api.nvim_create_augroup('custom-tag-rename', { clear = true })
 

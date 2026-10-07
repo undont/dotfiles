@@ -39,7 +39,7 @@ local SOURCE_LABEL = {
 --- SOURCE_LABEL wins, then the buffer's filetype (subanalyzer sources such as
 --- gopls modernize's stringscut collapse under the language), then the raw
 --- source
-function M.source_label(d)
+local function source_label(d)
   local src = d.source
   if not src or src == '' then
     return nil
@@ -60,7 +60,7 @@ end
 --- diagnostic text with a `[label] ` prefix. build.lua's auto-clear keys its
 --- live-diagnostic lookups by this function
 function M.qf_text(d)
-  local label = M.source_label(d)
+  local label = source_label(d)
   if label then
     return '[' .. label .. '] ' .. (d.message or '')
   end
