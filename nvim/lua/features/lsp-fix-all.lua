@@ -42,12 +42,18 @@ local function collect_fixable_diagnostics(bufnr)
 end
 
 --- some servers (Roslyn) return lazy actions that need codeAction/resolve
+---@param client vim.lsp.Client?
 local function resolve_and_apply(bufnr, action, client, on_done)
+  if not client then
+    on_done(false)
+    return
+  end
+
   local function apply(a)
     if a.edit then
-      vim.lsp.util.apply_workspace_edit(a.edit, 'utf-8')
+      vim.lsp.util.apply_workspace_edit(a.edit, client.offset_encoding)
       return true
-    elseif a.command and client then
+    elseif a.command then
       client:exec_cmd(a.command)
       return true
     end
@@ -55,13 +61,11 @@ local function resolve_and_apply(bufnr, action, client, on_done)
   end
 
   if action.edit or action.command then
-    local applied = apply(action)
-    on_done(applied)
+    on_done(apply(action))
   else
-    vim.lsp.buf_request(bufnr, 'codeAction/resolve', action, function(err, resolved)
-      local applied = not err and resolved and apply(resolved) or false
-      on_done(applied)
-    end)
+    client:request('codeAction/resolve', action, function(err, resolved)
+      on_done(not err and resolved ~= nil and apply(resolved))
+    end, bufnr)
   end
 end
 
