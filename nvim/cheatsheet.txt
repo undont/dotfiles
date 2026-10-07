@@ -98,7 +98,6 @@ Go to implementation | gri
 Go to type definition | grt
 Rename symbol | grn
 Code action | gra
-Fix all in file | grf
 Document symbols | gO
 Workspace symbols | gW
 Hover documentation | K

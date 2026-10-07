@@ -1,7 +1,7 @@
 -- LSP servers and mason
 
 local lsp_nav = require 'features.lsp-navigation'
-local lsp_fix_all = require 'features.lsp-fix-all'
+local lsp_code_action = require 'features.lsp-code-action'
 local lsp_patches = require 'features.lsp-patches'
 
 local function restart_lsp_clients(bufnr)
@@ -114,8 +114,7 @@ return {
 
           map('K', vim.lsp.buf.hover, 'Hover')
           map('grn', vim.lsp.buf.rename, 'Re[n]ame')
-          map('gra', lsp_fix_all.code_action_with_refresh, 'Code [A]ction', { 'n', 'x' })
-          map('grf', lsp_fix_all.fix_all_in_file, '[F]ix all in file')
+          map('gra', lsp_code_action.code_action_with_refresh, 'Code [A]ction', { 'n', 'x' })
           map('grr', lsp_nav.dedup 'references', '[R]eferences')
           map('gri', lsp_nav.dedup 'implementation', '[I]mplementation')
           map('grd', lsp_nav.dedup 'definition', '[D]efinition')
