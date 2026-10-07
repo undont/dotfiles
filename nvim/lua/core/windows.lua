@@ -26,11 +26,17 @@ end
 
 local function toggle_zoom()
   if vim.t.zoomed then
-    -- closing the tab discards its `zoomed` flag
+    -- closing the tab discards its `zoomed` flag; a bare `tab close` lands on the tab to the right
+    local origin = vim.t.zoom_origin
     vim.cmd 'tab close'
+    if origin and vim.api.nvim_tabpage_is_valid(origin) then
+      vim.api.nvim_set_current_tabpage(origin)
+    end
   elseif vim.fn.winnr '$' > 1 then
+    local origin = vim.api.nvim_get_current_tabpage()
     vim.cmd 'tab split'
     vim.t.zoomed = true
+    vim.t.zoom_origin = origin
   end
 end
 
