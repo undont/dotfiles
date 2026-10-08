@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.149] - 2026-10-08
+
+### Added
+
+- `<C-]>` in markdown follows the link or anchor under the cursor, and `<BS>` goes back. `nvim/lua/plugins/mkdnflow.lua`, `nvim/cheatsheet.txt`
+- Lua specs run under neotest through neotest-busted, using the luajit busted installed in `~/.luarocks`. `nvim/lua/plugins/test.lua`
+- must.nvim, loaded on `:Must`. `nvim/lua/plugins/must.lua`
+
+### Changed
+
+- nvim's lua modules sit directly under `nvim/lua/` (`core/`, `features/`, `plugins/`) instead of `custom/` and `kickstart/`, and the ui, markdown, navigation, treesitter and git specs are split into one file per plugin. A `local.lua` that requires a `custom.*` module needs the prefix dropped. `nvim/init.lua`, `nvim/lua/`
+
+### Removed
+
+- `grf` (fix all in file). `gra` keeps the code-action picker and its diagnostics refresh. `nvim/lua/features/lsp-code-action.lua`, `nvim/lua/plugins/lsp.lua`, `nvim/cheatsheet.txt`
+- vim-sleuth, which duplicated guess-indent's indent detection. `nvim/lua/plugins/tpope.lua`
+- FixCursorHold.nvim from neotest's dependencies, now that nvim fixes CursorHold itself. `nvim/lua/plugins/test.lua`
+
+### Fixed
+
+- Unzooming a window returns to the tab it was zoomed from, rather than whichever tab sat to the right of the zoom tab. `nvim/lua/core/windows.lua`
+- `gW` lists lua local functions, which lua_ls reports as variables, and leaves out symbols from files outside the working directory such as plugin and runtime sources. `nvim/lua/plugins/lsp.lua`
+- image.nvim images hide while a float covers them and while nvim is unfocused, so they no longer stay drawn over lazygit, pickers, other tmux panes and popups. Needs tmux `focus-events on`. `nvim/lua/plugins/image.lua`
+- ui-select pickers (code actions and the like) keep entries in the order they were given when match scores tie, instead of moving shorter entries first. `nvim/lua/plugins/telescope.lua`
+
 ## [0.2.148] - 2026-10-06
 
 ### Added
