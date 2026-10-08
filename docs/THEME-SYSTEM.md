@@ -368,7 +368,7 @@ Tmux config is generated to `~/.config/tmux/tmux.conf` and should not affect the
 
 ## See Also
 
-- `CLAUDE.md`: Config ownership patterns
+- `AGENTS.md`: Config ownership patterns
 - `themes/`: Hand-crafted theme definitions
 - `themes/generated/`: Auto-generated themes (gitignored)
 - `scripts/generate-theme`: Theme generation CLI

@@ -296,7 +296,7 @@ fi
 section "Documentation"
 
 readme="$DOTFILES_ROOT/README.md"
-claude_md="$DOTFILES_ROOT/CLAUDE.md"
+agents_md="$DOTFILES_ROOT/AGENTS.md"
 
 doc_mentions_themes=false
 
@@ -307,9 +307,9 @@ if [[ -f "$readme" ]]; then
     fi
 fi
 
-if [[ -f "$claude_md" ]]; then
-    if grep -qi "theme" "$claude_md"; then
-        pass "CLAUDE.md mentions themes"
+if [[ -f "$agents_md" ]]; then
+    if grep -qi "theme" "$agents_md"; then
+        pass "AGENTS.md mentions themes"
         doc_mentions_themes=true
     fi
 fi

@@ -6,7 +6,7 @@ After completing any code change, check whether relevant documentation needs upd
 
 - `README.md` -- feature summaries and a short keybinding highlights table only
 - `zsh/dotfiles.zsh` -- shell aliases/functions; `dotfiles aliases` parses this file
-- `CLAUDE.md` -- architecture, conventions, common commands
+- `AGENTS.md` -- architecture, conventions, common commands
 - `docs/` -- detailed guides (theme system, agent hooks, troubleshooting, etc.)
 
 **What to check:**
@@ -25,7 +25,7 @@ After completing any code change, check whether relevant documentation needs upd
   `test-cheatsheet.sh` fails on a bind with a trailing comment instead), nvim
   bindings go in `nvim/cheatsheet.txt`. `README.md` carries a short highlights table only, and
   regrowing it into full per-tool tables re-creates a copy that goes stale.
-- New install behaviour/presets -> update `CLAUDE.md` and `README.md`
+- New install behaviour/presets -> update `AGENTS.md` and `README.md`
 - New test files -> confirm they're discovered by `scripts/run-tests.sh` (auto-discovery)
 
 ## Style
