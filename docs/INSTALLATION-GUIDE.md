@@ -378,7 +378,7 @@ Step 5: Creating symlinks...
 **lazy.nvim (Neovim)**:
 
 - Auto-installed on first Neovim launch
-- Plugins defined in: `~/.config/nvim/lua/custom/plugins/`
+- Plugins defined in: `~/.config/nvim/lua/plugins/`
 - Install/update: Run `:Lazy sync` in Neovim
 
 **What you'll see**:

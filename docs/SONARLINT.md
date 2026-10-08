@@ -2,7 +2,7 @@
 
 SonarLint runs as a second LSP client (`sonarlint-language-server`, Mason-managed)
 surfacing SonarQube/SonarCloud diagnostics alongside the editor-facing language
-servers. Config lives in `nvim/lua/custom/plugins/sonarlint.lua`.
+servers. Config lives in `nvim/lua/plugins/sonarlint.lua`.
 
 Two per-project files drive it, both under `.sonarlint/` at the project root:
 

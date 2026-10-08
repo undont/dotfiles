@@ -1,6 +1,6 @@
 // global tasks: space q (keymap.json) opens a picker over this list
 //
-// nvim's <leader>q (nvim/lua/custom/features/build.lua) detects the project
+// nvim's <leader>q (nvim/lua/features/build.lua) detects the project
 // type from marker files; Zed's task system has no such detection, so this is
 // a static menu with one entry per project type
 [

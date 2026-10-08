@@ -9,10 +9,8 @@ paths:
 Based on kickstart.nvim with modular organisation. Three-way split: `core/` =
 editor settings + fundamental behaviour with no plugin coupling; `features/` =
 self-contained bespoke features (each owns its keymaps via `setup()`);
-`plugins/` = thin lazy specs that `require('custom.features.X')`. Only
-`lua/kickstart/plugins/` (lint.lua, indent_line.lua) tracks upstream
-kickstart; the debug, neo-tree and gitsigns specs diverge from it and live in
-`custom/plugins/`.
+`plugins/` = thin lazy specs that `require('features.X')`. `init.lua` only
+runs `{ import = 'plugins' }`, so a lazy spec placed anywhere else never loads.
 
 `core/keymaps.lua` is a slim entry point: it defines a few fundamental
 editing tweaks (`<Esc>` hl-clear, `<leader>v`/`<leader>V` paste-last-yank,
@@ -32,7 +30,7 @@ disables noisy diagnostic categories.
 
 Type libraries (the neovim runtime plus plugin types like `Snacks` and `Mini*`) are **not**
 listed here — they are supplied on demand by `lazydev.nvim`
-(`lua/custom/plugins/lazydev.lua`), which loads each plugin's annotations when its trigger
+(`lua/plugins/lazydev.lua`), which loads each plugin's annotations when its trigger
 word appears in a lua buffer, giving `K` hover and completion for those globals. This is
 why `.luarc.json` must **not** declare `workspace.library`: lua_ls treats `.luarc.json` as
 authoritative, so a static `workspace.library` would override the libraries lazydev pushes
