@@ -114,6 +114,9 @@ return {
           ['ui-select'] = {
             require('telescope.themes').get_dropdown {
               width = 0.9,
+              tiebreak = function()
+                return false
+              end,
             },
           },
         },
