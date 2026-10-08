@@ -25,24 +25,10 @@ if ! tmux list-sessions &>/dev/null; then
     exit 0
 fi
 
-# set of PIDs that are ancestors of an active (non-suspended) claude process.
-# the walk up the process tree covers wrapper scripts. match_process_pids also
-# returns the pane's own claude, which pgrep excludes as an ancestor of itself
 declare -A active_claude_ppids
-while IFS= read -r cpid; do
-    state=$(ps -o state= -p "$cpid" 2>/dev/null) || continue
-    [[ "$state" == T* ]] && continue
-    # include claude itself: tmux new-window 'claude ...' execs claude as the pane process
-    active_claude_ppids[$cpid]=1
-    pid="$cpid"
-    while true; do
-        ppid=$(ps -o ppid= -p "$pid" 2>/dev/null) || break
-        ppid="${ppid// /}"
-        [[ "$ppid" == "0" || "$ppid" == "1" || -z "$ppid" ]] && break
-        active_claude_ppids[$ppid]=1
-        pid="$ppid"
-    done
-done < <(match_process_pids claude)
+while IFS= read -r pid; do
+    active_claude_ppids[$pid]=1
+done < <(agent_pane_pids claude)
 
 # pre-fetch window names: "session:window_index window_name"
 declare -A window_names

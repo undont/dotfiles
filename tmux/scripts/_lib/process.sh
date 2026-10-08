@@ -2,24 +2,27 @@
 # process utilities for graceful termination before killing panes, windows or
 # sessions: SIGTERM, grace wait, SIGKILL (matches instances/kill.sh)
 
-# list pids whose process name matches exactly, from two sources because
-# neither alone is complete. pgrep excludes itself and all of its ancestors
-# (see -a in man pgrep), so a script running inside the pane it inspects gets
-# no pgrep match for that pane's own process. the ps pass has no exclusion.
-# both match the executable basename, not argv[0]
-# usage: match_process_pids <name>
-match_process_pids() {
-    local name="$1"
-    {
-        pgrep -x "$name" 2>/dev/null || true
-        ps -axo pid=,comm= 2>/dev/null | awk -v n="$name" '
-            {
-                pid = $1
-                sub(/^[[:space:]]*[0-9]+[[:space:]]+/, "")
-                sub(/.*\//, "")
-                if ($0 == n) print pid
-            }'
-    } | sort -un
+# every non-stopped process whose executable basename is name, plus all of its
+# ancestors, from one ps snapshot. ps rather than pgrep: pgrep excludes itself
+# and its ancestors, so a lister running inside an agent's pane would miss that
+# pane. a pane runs the agent when its pane_pid is in the set
+# usage: agent_pane_pids <name>
+agent_pane_pids() {
+    ps -axo pid=,ppid=,stat=,comm= 2>/dev/null | awk -v n="$1" '
+        {
+            pid = $1
+            parent[pid] = $2
+            stat = $3
+            sub(/^[[:space:]]*[0-9]+[[:space:]]+[0-9]+[[:space:]]+[^[:space:]]+[[:space:]]+/, "")
+            sub(/.*\//, "")
+            if ($0 == n && stat !~ /^T/) hit[pid] = 1
+        }
+        END {
+            for (p in hit)
+                for (q = p; q + 0 > 1 && !(q in seen); q = parent[q])
+                    seen[q] = 1
+            for (q in seen) print q
+        }'
 }
 
 # first direct child of a pid matching name, by pgrep then executable basename

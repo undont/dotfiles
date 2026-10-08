@@ -862,6 +862,37 @@ TWO_LINES=$(printf 'first\nsecond\n' | reverse_lines)
 assert_equals "  reverses two lines" "$(printf 'second\nfirst')" "$TWO_LINES"
 
 # ─────────────────────────────────────────
+# test process.sh
+# ─────────────────────────────────────────
+section "Testing process.sh"
+
+# a fixed process table: pid ppid stat comm
+#   100 shell -> 200 codex (pane runs a wrapper)
+#   300 codex, its own pane process
+#   400 codex stopped with ctrl-z
+#   500 /opt/homebrew/bin/codex, matched by basename
+#   600 codex-helper, a near miss
+agent_pane_pids_result=$(
+    # shellcheck disable=SC2329 # called by agent_pane_pids
+    ps() {
+        printf '%s\n' \
+            '    1     0 Ss   launchd' \
+            '  100     1 Ss   -zsh' \
+            '  200   100 S+   codex' \
+            '  300     1 S+   codex' \
+            '  410     1 Ss   -zsh' \
+            '  400   410 T    codex' \
+            '  510     1 Ss   bash' \
+            '  500   510 S+   /opt/homebrew/bin/codex' \
+            '  600     1 S+   codex-helper'
+    }
+    source "$SCRIPT_DIR/process.sh"
+    agent_pane_pids codex | sort -n | tr '\n' ' '
+)
+assert_equals "  agent_pane_pids: running agents and their ancestors, not stopped ones or pid 1" \
+    "100 200 300 500 510 " "$agent_pane_pids_result"
+
+# ─────────────────────────────────────────
 # syntax check all scripts
 # ─────────────────────────────────────────
 section "Syntax checking scripts"

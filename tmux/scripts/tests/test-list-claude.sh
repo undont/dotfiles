@@ -68,7 +68,7 @@ fi
 if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/process.sh"'* ]]; then
     pass "Sources process.sh library"
 else
-    fail "Should source process.sh library (match_process_pids)"
+    fail "Should source process.sh library (agent_pane_pids)"
 fi
 
 if [[ "$script_content" == *'tmux list-panes -a'* ]]; then
@@ -189,62 +189,18 @@ fi
 
 section "Command Detection"
 
-# script should batch-detect Claude processes (pgrep plus an executable-basename
-# pass, which covers the pane's own claude that pgrep excludes as its ancestor)
-if [[ "$script_content" == *'match_process_pids claude'* ]]; then
-    pass "Uses match_process_pids to find Claude processes"
+# agent_pane_pids (process.sh) finds non-stopped claude processes and their
+# ancestors; its behaviour is covered in test-tmux-libs.sh
+if [[ "$script_content" == *'agent_pane_pids claude'* ]]; then
+    pass "Uses agent_pane_pids to find Claude panes"
 else
-    fail "Should use match_process_pids to find Claude processes"
+    fail "Should use agent_pane_pids to find Claude panes"
 fi
 
-# script should filter out suspended processes
-if [[ "$script_content" == *'T*'* ]]; then
-    pass "Filters out suspended (Ctrl+Z) processes"
-else
-    fail "Should filter out suspended processes"
-fi
-
-section "Process Tree Ancestor Walking"
-
-# script should build a set of ancestor PIDs by walking up the process tree
-if [[ "$script_content" == *'active_claude_ppids'* ]]; then
-    pass "Uses active_claude_ppids associative array"
-else
-    fail "Should use active_claude_ppids for ancestor tracking"
-fi
-
-# should walk up via ppid loop
-if [[ "$script_content" == *'ppid=$(ps -o ppid='* ]]; then
-    pass "Walks process tree via ps -o ppid="
-else
-    fail "Should walk process tree via ps -o ppid="
-fi
-
-# should terminate walk at PID 0 or 1 (init)
-if [[ "$script_content" == *'"0"'* ]] && [[ "$script_content" == *'"1"'* ]]; then
-    pass "Terminates ancestor walk at PID 0 or 1"
-else
-    fail "Should terminate ancestor walk at PID 0 or 1"
-fi
-
-# should match pane PIDs against the ancestor set (not just direct children)
 if [[ "$script_content" == *'active_claude_ppids[$pane_pid]'* ]]; then
-    pass "Matches pane PIDs against ancestor set"
+    pass "Matches pane PIDs against the agent_pane_pids set"
 else
-    fail "Should match pane PIDs against ancestor set (not just direct children)"
-fi
-
-# should handle wrapper scripts that spawn claude
-# the ancestor walk means any wrapper that eventually spawns claude will be detected
-if [[ "$script_content" == *'wrapper'* ]] || [[ "$script_content" == *'Walks up'* ]] || [[ "$script_content" == *'ancestor'* ]]; then
-    pass "Documents wrapper script support via ancestor walking"
-else
-    # the implementation handles it even without explicit docs
-    if [[ "$script_content" == *'while true'* ]] && [[ "$script_content" == *'ppid='* ]]; then
-        pass "Ancestor walk loop enables wrapper script detection"
-    else
-        fail "Should support wrapper scripts via ancestor walking"
-    fi
+    fail "Should match pane PIDs against the agent_pane_pids set"
 fi
 
 # ===========================================================================
