@@ -36,6 +36,6 @@ Version-gated scripts in `scripts/migrations/` run automatically during `dotfile
 3. Use `echo` for status messages (indented with 4 spaces to align with the migration runner output)
 4. Make it executable (`chmod +x`)
 
-**Example:** `0.2.57-unlink-p10k.sh` -- converts `~/.p10k.zsh` from a symlink pointing into the repo to a standalone user-owned copy.
+**Example:** `<version>-unlink-<file>.sh`, converting a file from a symlink pointing into the repo to a standalone user-owned copy.
 
 **Tracking:** Applied migrations are recorded in `~/.config/dotfiles/.state/migrations` so they only run once.

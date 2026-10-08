@@ -57,7 +57,7 @@ it stays copy-on-install instead (see below).
 yazi is symlinked **per file** (`yazi/yazi.toml`, `yazi/keymap.toml` ->
 `~/.config/yazi/`), not as a whole directory, so theme-switch can write a
 generated `~/.config/yazi/theme.toml` alongside without it landing back in the
-repo. The 0.2.109 migration converts older whole-dir symlinks. The generated
+repo. The installer replaces an older whole-dir symlink with a real directory. The generated
 theme file is described in `.claude/rules/themes.md`.
 
 The ImageMagick font map (`imagemagick/type.xml`) only installs on macOS:

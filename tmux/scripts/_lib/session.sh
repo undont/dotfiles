@@ -47,14 +47,6 @@ get_current_window() {
     tmux display-message -p '#{window_index}'
 }
 
-get_current_pane() {
-    tmux display-message -p '#{pane_index}'
-}
-
-get_pane_directory() {
-    tmux display-message -p '#{pane_current_path}'
-}
-
 get_window_layout() {
     tmux display-message -p '#{window_layout}'
 }

@@ -152,32 +152,6 @@ assert_failure "  rejects 'has\$dollar'" validate_session_name 'has$dollar'
 assert_failure "  rejects name with newline" validate_session_name $'foo\nbar'
 assert_failure "  rejects name with tab" validate_session_name $'foo\tbar'
 
-# validate_pane_id tests
-echo ""
-echo "  validate_pane_id:"
-assert_success "  accepts '%123'" validate_pane_id "%123"
-assert_success "  accepts '%0'" validate_pane_id "%0"
-assert_success "  accepts '%999999'" validate_pane_id "%999999"
-assert_failure "  rejects '123' (no %)" validate_pane_id "123"
-assert_failure "  rejects '%' (no number)" validate_pane_id "%"
-assert_failure "  rejects '' (empty)" validate_pane_id ""
-assert_failure "  rejects '%-1' (negative)" validate_pane_id "%-1"
-assert_failure "  rejects '%abc' (letters)" validate_pane_id "%abc"
-assert_failure "  rejects '%%123' (double %)" validate_pane_id "%%123"
-assert_failure "  rejects '%12.3' (decimal)" validate_pane_id "%12.3"
-
-# validate_window_index tests
-echo ""
-echo "  validate_window_index:"
-assert_success "  accepts '0'" validate_window_index "0"
-assert_success "  accepts '5'" validate_window_index "5"
-assert_success "  accepts '999'" validate_window_index "999"
-assert_failure "  rejects 'abc'" validate_window_index "abc"
-assert_failure "  rejects '' (empty)" validate_window_index ""
-assert_failure "  rejects '-1' (negative)" validate_window_index "-1"
-assert_failure "  rejects '1.5' (decimal)" validate_window_index "1.5"
-assert_failure "  rejects '1a' (mixed)" validate_window_index "1a"
-
 # test output functions (capture output)
 echo ""
 echo "  output functions:"
@@ -254,9 +228,6 @@ echo ""
 echo "  session undo paths:"
 SESSION_FILE=$(get_session_undo_file)
 assert_equals "  get_session_undo_file returns correct path" "$UNDO_DIR/session" "$SESSION_FILE"
-
-SESSION_STATE=$(get_session_undo_state)
-assert_equals "  get_session_undo_state returns correct path" "$UNDO_DIR/session-state.txt" "$SESSION_STATE"
 
 SESSION_BACKUP=$(get_session_undo_backup)
 assert_equals "  get_session_undo_backup returns correct path" "$UNDO_DIR/session-backup" "$SESSION_BACKUP"
@@ -368,12 +339,6 @@ if [[ -n "${TMUX:-}" ]]; then
     WINDOW=$(get_current_window)
     assert_matches "  get_current_window returns window index" "^[0-9]+$" "$WINDOW"
 
-    PANE=$(get_current_pane)
-    assert_matches "  get_current_pane returns pane index" "^[0-9]+$" "$PANE"
-
-    PANE_DIR=$(get_pane_directory)
-    assert_dir_exists "  get_pane_directory returns valid directory" "$PANE_DIR"
-
     LAYOUT=$(get_window_layout)
     if [[ -n "$LAYOUT" ]]; then
         pass "  get_window_layout returns layout: ${LAYOUT:0:30}..."
@@ -392,8 +357,6 @@ else
     echo "  (not in tmux - skipping tmux-dependent tests)"
     skip "  get_current_session"
     skip "  get_current_window"
-    skip "  get_current_pane"
-    skip "  get_pane_directory"
     skip "  get_window_layout"
     skip "  find_other_session"
 fi
@@ -623,18 +586,18 @@ cleanup_test_server
 echo ""
 echo "  agent display functions:"
 
-CLAUDE_ICON=$(get_agent_icon "claude")
+CLAUDE_ICON=$(get_agent_display "claude" | cut -d"|" -f1)
 if [[ "$CLAUDE_ICON" == "⚡" ]]; then
-    pass "  get_agent_icon returns correct icon for claude"
+    pass "  get_agent_display returns correct icon for claude"
 else
-    fail "  get_agent_icon should return ⚡ for claude, got: $CLAUDE_ICON"
+    fail "  get_agent_display should return ⚡ for claude, got: $CLAUDE_ICON"
 fi
 
-OPENCODE_ICON=$(get_agent_icon "opencode")
+OPENCODE_ICON=$(get_agent_display "opencode" | cut -d"|" -f1)
 if [[ "$OPENCODE_ICON" == "" ]]; then
-    pass "  get_agent_icon returns correct icon for opencode"
+    pass "  get_agent_display returns correct icon for opencode"
 else
-    fail "  get_agent_icon should return  for opencode, got: $OPENCODE_ICON"
+    fail "  get_agent_display should return  for opencode, got: $OPENCODE_ICON"
 fi
 
 CLAUDE_COLOUR=$(get_agent_colour "claude")
