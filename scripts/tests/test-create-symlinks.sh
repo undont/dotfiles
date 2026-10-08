@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# source checks on scripts/install/create-symlinks.sh and symlink.sh. the
-# script is not run: it would modify the real $HOME
+# checks on scripts/manifest.conf and create-symlinks.sh. the installer runs
+# against a sandbox $HOME with a sandbox tmux socket
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CREATE_SYMLINKS="$DOTFILES_DIR/scripts/install/create-symlinks.sh"
 SYMLINK_LIB="$DOTFILES_DIR/scripts/_lib/symlink.sh"
+MANIFEST="$DOTFILES_DIR/scripts/manifest.conf"
 
 source "$SCRIPT_DIR/_test-helpers.sh"
 
@@ -36,309 +37,138 @@ else
     fail "create-symlinks.sh has syntax errors"
 fi
 
-section "Library Dependencies"
+section "Manifest Format"
 
-script_content=$(cat "$CREATE_SYMLINKS")
-symlink_content=$(cat "$SYMLINK_LIB")
+# shellcheck source=/dev/null
+source "$DOTFILES_DIR/scripts/_lib/common.sh"
+# shellcheck source=/dev/null
+source "$DOTFILES_DIR/scripts/_lib/manifest.sh"
 
-if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
-    pass "Sources common.sh"
+bad_lines=$(grep -vE '^(#|$|\[.+\]$)' "$MANIFEST" | awk 'NF < 5 || NF > 6 { print NR": "$0 }')
+assert_equals "every entry has 5 or 6 fields" "" "$bad_lines"
+
+rows=$(manifest_entries)
+row_count=$(printf '%s\n' "$rows" | wc -l | tr -d ' ')
+
+ungrouped=$(printf '%s\n' "$rows" | awk -F'\t' '$4 == "" { print $0 }')
+assert_equals "every entry is under a [group] header" "" "$ungrouped"
+
+bad_values=$(printf '%s\n' "$rows" | awk -F'\t' '
+    $1 !~ /^(link|copy|local|link-generated|sync)$/ { print "kind: "$0; next }
+    $2 !~ /^(minimal|core|full)$/ { print "preset: "$0; next }
+    $3 !~ /^(any|macos|linux)$/ { print "os: "$0 }')
+assert_equals "kind, preset and os take known values" "" "$bad_values"
+
+bad_dests=$(printf '%s\n' "$rows" | awk -F'\t' '$6 !~ /^(~|\$cfg|\$appsupport)\// { print $0 }')
+assert_equals "every dest starts with ~/, \$cfg/ or \$appsupport/" "" "$bad_dests"
+
+linux_appsupport=$(printf '%s\n' "$rows" | awk -F'\t' '$3 != "macos" && ($5 ~ /^\$appsupport/ || $6 ~ /^\$appsupport/) { print $0 }')
+assert_equals "\$appsupport is only used on macos rows" "" "$linux_appsupport"
+
+if [[ "$row_count" -gt 0 ]]; then
+    pass "manifest has $row_count rows"
 else
-    fail "Should source common.sh"
+    fail "manifest has no rows"
 fi
 
-if [[ "$script_content" == *'source "$SCRIPT_DIR/../_lib/rollback.sh"'* ]]; then
-    pass "Sources rollback.sh"
-else
-    fail "Should source rollback.sh"
-fi
+section "Manifest Sources"
 
-if [[ "$script_content" == *'_lib/symlink.sh'* ]]; then
-    pass "Sources symlink.sh (shared link helpers)"
-else
-    fail "Should source symlink.sh"
-fi
+missing_sources=""
+while IFS=$'\t' read -r kind _ _ _ source _ _; do
+    case "$kind" in
+        link | copy | local)
+            [[ -e "$DOTFILES_DIR/$source" ]] || missing_sources+="$source "
+            ;;
+    esac
+done <<<"$rows"
+assert_equals "every link, copy and local source exists in the repo" "" "$missing_sources"
 
-# ═══════════════════════════════════════════════════════════════
-# Minimal Preset Symlinks
-# ═══════════════════════════════════════════════════════════════
+section "Manifest Destinations"
 
-section "Minimal Preset Symlinks"
-
-if [[ "$script_content" == *'.zprofile'* ]]; then
-    pass "Links .zprofile"
-else
-    fail "Should link .zprofile"
-fi
-
-if [[ "$script_content" != *'copy_config'*'.p10k.zsh'* ]]; then
-    pass "Does not manage .p10k.zsh (user-owned via p10k configure)"
-else
-    fail "Should not manage .p10k.zsh"
-fi
-
-if [[ "$script_content" == *'$HOME/.tmux'* ]]; then
-    pass "Links tmux directory"
-else
-    fail "Should link tmux directory"
-fi
-
-if [[ "$script_content" == *'.local/bin/dotfiles'* ]]; then
-    pass "Links dotfiles CLI"
-else
-    fail "Should link dotfiles CLI"
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# Core Preset Symlinks
-# ═══════════════════════════════════════════════════════════════
-
-section "Core Preset Symlinks"
-
-if [[ "$script_content" == *'should_install "core"'* ]]; then
-    pass "Uses should_install for core gating"
-else
-    fail "Should use should_install for core"
-fi
-
-if [[ "$script_content" == *'.config/nvim'* ]]; then
-    pass "Links nvim config (core)"
-else
-    fail "Should link nvim config for core preset"
-fi
-
-if [[ "$script_content" == *'.config/lazygit'* ]]; then
-    pass "Links lazygit config (core)"
-else
-    fail "Should link lazygit config for core preset"
-fi
-
-if [[ "$script_content" == *'.config/lazydocker'* ]]; then
-    pass "Installs lazydocker config (core)"
-else
-    fail "Should install lazydocker config for core preset"
-fi
-
-if [[ "$script_content" == *'ghostty'* ]]; then
-    pass "Handles ghostty config (core)"
-else
-    fail "Should handle ghostty for core preset"
-fi
-
-if [[ "$script_content" == *'.local/launchers'* ]]; then
-    pass "Links into ~/.local/launchers (core)"
-else
-    fail "Should link into ~/.local/launchers for core preset"
-fi
-
-if [[ "$script_content" == *'gh-dash'* ]]; then
-    pass "Handles gh-dash config directory (core)"
-else
-    fail "Should handle gh-dash for core preset"
-fi
-
-if echo "$script_content" | grep -q 'create_link.*zed/keymap\.json'; then
-    pass "Links zed keymap.json (core)"
-else
-    fail "Should link zed keymap.json for core preset"
-fi
-
-if echo "$script_content" | grep -q 'create_link.*zed/tasks\.json'; then
-    pass "Links zed tasks.json (core)"
-else
-    fail "Should link zed tasks.json for core preset"
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# Full Preset Symlinks
-# ═══════════════════════════════════════════════════════════════
-
-section "Full Preset Symlinks"
-
-if [[ "$script_content" == *'should_install "full"'* ]]; then
-    pass "Uses should_install for full gating"
-else
-    fail "Should use should_install for full"
-fi
-
-if [[ "$script_content" == *'.hammerspoon'* ]]; then
-    pass "Links hammerspoon config (full)"
-else
-    fail "Should link hammerspoon for full preset"
-fi
-
-if [[ "$script_content" == *'karabiner.json'* ]]; then
-    pass "Installs karabiner config (full)"
-else
-    fail "Should install karabiner config for full preset"
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# create_link Function
-# ═══════════════════════════════════════════════════════════════
-
-section "create_link Function"
-
-if [[ "$symlink_content" == *'create_link()'* ]]; then
-    pass "Defines create_link function (in symlink.sh)"
-else
-    fail "Should define create_link function in symlink.sh"
-fi
-
-if [[ "$symlink_content" == *'record_symlink'* ]]; then
-    pass "Records symlinks for rollback"
-else
-    fail "Should record symlinks for rollback"
-fi
-
-if [[ "$symlink_content" == *'ln -sf'* ]]; then
-    pass "Uses ln -sf for symlink creation"
-else
-    fail "Should use ln -sf"
-fi
-
-if [[ "$script_content" == *'mkdir -p'* ]]; then
-    pass "Creates parent directories"
-else
-    fail "Should create parent directories"
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# Backup Behaviour
-# ═══════════════════════════════════════════════════════════════
-
-section "Backup on Conflict"
-
-if [[ "$symlink_content" == *'.dotfiles-backup'* ]]; then
-    pass "Backs up to .dotfiles-backup directory"
-else
-    fail "Should back up to .dotfiles-backup"
-fi
-
-if [[ "$symlink_content" == *'mv "$dest"'* ]]; then
-    pass "Moves existing files before symlinking"
-else
-    fail "Should move existing files before symlinking"
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# Theme Generation
-# ═══════════════════════════════════════════════════════════════
-
-section "Theme Generation Integration"
-
-if [[ "$script_content" == *'theme-switch'* ]]; then
-    pass "Invokes theme-switch for config generation"
-else
-    fail "Should invoke theme-switch"
-fi
-
-if [[ "$script_content" == *'.tmux.conf'* ]]; then
-    pass "Creates tmux.conf compatibility symlink"
-else
-    fail "Should create tmux.conf compatibility symlink"
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# Local Override Files
-# ═══════════════════════════════════════════════════════════════
-
-section "Local Override Files"
-
-if [[ "$script_content" == *'local.conf.template'* ]]; then
-    pass "Creates tmux local override from template"
-else
-    fail "Should create tmux local override"
-fi
-
-if [[ "$script_content" == *'local.lua.template'* ]]; then
-    pass "Creates nvim local override from template"
-else
-    fail "Should create nvim local override"
-fi
-
-if [[ "$script_content" == *'local.template'* ]]; then
-    pass "Creates ghostty local override from template"
-else
-    fail "Should create ghostty local override"
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# Zsh Configuration
-# ═══════════════════════════════════════════════════════════════
-
-section "Zsh Configuration Handling"
-
-if [[ "$script_content" == *'zshrc.template'* ]]; then
-    pass "Has zshrc template for new installs"
-else
-    fail "Should have zshrc template path"
-fi
-
-if [[ "$script_content" == *'dotfiles.zsh'* ]]; then
-    pass "Checks for dotfiles framework sourcing"
-else
-    fail "Should check for dotfiles.zsh sourcing"
-fi
-
-# ═══════════════════════════════════════════════════════════════
-# Copy-on-Install Pattern
-# ═══════════════════════════════════════════════════════════════
-
-section "copy_config Function"
-
-if [[ "$symlink_content" == *'copy_config()'* ]]; then
-    pass "Defines copy_config function (in symlink.sh)"
-else
-    fail "Should define copy_config function in symlink.sh"
-fi
-
-# this -L test is in create_link; copy_config has none
-if [[ "$symlink_content" == *'-L "$dest"'* ]]; then
-    pass "symlink.sh tests the destination for a symlink"
-else
-    fail "symlink.sh should test the destination for a symlink"
-fi
-
-if [[ "$symlink_content" == *'cp "$source" "$dest"'* ]]; then
-    pass "copy_config copies files (not symlinks)"
-else
-    fail "copy_config should copy files"
-fi
-
-section "Copy-on-Install Configs"
-
-for config in "btop.conf" "karabiner.json" "settings.json"; do
-    config_name=$(basename "$config")
-    if echo "$script_content" | grep -q "copy_config.*$config_name"; then
-        pass "$config_name uses copy_config"
-    else
-        fail "$config_name should use copy_config (not create_link)"
-    fi
+for os in macos linux; do
+    dupes=$(printf '%s\n' "$rows" | awk -F'\t' -v os="$os" '$3 == "any" || $3 == os { print $6 }' | sort | uniq -d)
+    assert_equals "no dest is listed twice on $os" "" "$dupes"
 done
 
-if echo "$script_content" | grep -q "copy_config.*config.yml"; then
-    pass "lazydocker config.yml uses copy_config"
+dupe_keys=$(printf '%s\n' "$rows" | awk -F'\t' '$7 != "-" { print $3"\t"$7 }' | sort | uniq -d)
+assert_equals "no local key is listed twice for one os" "" "$dupe_keys"
+
+if ! grep -q '\.p10k\.zsh' "$MANIFEST"; then
+    pass ".p10k.zsh is not managed (user-owned via p10k configure)"
 else
-    fail "lazydocker config.yml should use copy_config"
+    fail ".p10k.zsh should not be in the manifest"
 fi
 
-if echo "$script_content" | grep -q 'create_link.*hammerspoon.*init\.lua'; then
-    pass "Hammerspoon uses create_link for init.lua (layered config)"
+section "Sandbox Install"
+
+SANDBOX=$(mktemp -d)
+cleanup_sandbox() { rm -rf "$SANDBOX"; }
+trap cleanup_sandbox EXIT
+
+run_install() {
+    env -u TMUX -u XDG_CONFIG_HOME -u XDG_DATA_HOME \
+        HOME="$SANDBOX/home" TMUX_TMPDIR="$SANDBOX" \
+        DOTFILES_DIR="$DOTFILES_DIR" DOTFILES_PRESET="$1" \
+        bash "$CREATE_SYMLINKS" >"$SANDBOX/install.log" 2>&1
+    mkdir -p "$SANDBOX/home/.config/dotfiles"
+    echo "$1" >"$SANDBOX/home/.config/dotfiles/preset"
+}
+
+# manifest rows for a preset, resolved against the sandbox home
+sandbox_rows() {
+    HOME="$SANDBOX/home" XDG_CONFIG_HOME="" PRESET="$1" manifest_rows "${@:2}"
+}
+
+mkdir -p "$SANDBOX/home"
+if run_install full; then
+    pass "full install exits 0"
 else
-    fail "Hammerspoon should use create_link for init.lua"
+    fail "full install failed: $(tail -5 "$SANDBOX/install.log")"
 fi
 
-if echo "$script_content" | grep -q 'install_local.*hammerspoon'; then
-    pass "Hammerspoon installs local override from template"
+wrong_links=""
+while IFS=$'\t' read -r _ _ source dest _; do
+    [[ "$(readlink "$dest" 2>/dev/null)" == "$source" ]] || wrong_links+="$dest "
+done < <(sandbox_rows full link link-generated)
+assert_equals "every full-preset link points at its source" "" "$wrong_links"
+
+missing_files=""
+while IFS=$'\t' read -r _ _ _ dest _; do
+    [[ -f "$dest" && ! -L "$dest" ]] || missing_files+="$dest "
+done < <(sandbox_rows full copy local)
+assert_equals "every full-preset copy and local file is a regular file" "" "$missing_files"
+
+# a core link re-pointed by hand survives the preset change
+repointed="$SANDBOX/home/.config/lazygit/config.yml"
+ln -sf /dev/null "$repointed"
+
+run_install minimal
+
+stale_links=""
+while IFS=$'\t' read -r _ _ source dest _; do
+    [[ "$dest" == "$repointed" ]] && continue
+    [[ -L "$dest" ]] && stale_links+="$dest "
+done < <(comm -23 <(sandbox_rows full link link-generated | sort) <(sandbox_rows minimal link link-generated | sort))
+assert_equals "switching to minimal removes the full preset's other links" "" "$stale_links"
+
+kept_links=""
+while IFS=$'\t' read -r _ _ source dest _; do
+    [[ "$(readlink "$dest" 2>/dev/null)" == "$source" ]] || kept_links+="$dest "
+done < <(sandbox_rows minimal link link-generated)
+assert_equals "switching to minimal keeps the minimal links" "" "$kept_links"
+
+assert_equals "a link re-pointed by hand is kept" "/dev/null" "$(readlink "$repointed")"
+
+if [[ -f "$SANDBOX/home/.config/btop/btop.conf" ]]; then
+    pass "switching to minimal keeps copied files"
 else
-    fail "Hammerspoon should install local override from template"
+    fail "switching to minimal should keep copied files"
 fi
 
 section "copy_config Function Behaviour"
 
-TEST_DIR=$(mktemp -d)
-trap 'rm -rf "$TEST_DIR"' EXIT
+TEST_DIR="$SANDBOX/copy-config"
+mkdir -p "$TEST_DIR"
 
 source "$DOTFILES_DIR/scripts/_lib/colours.sh"
 
@@ -368,91 +198,6 @@ fi
 echo "user customised" >"$TEST_DIR/existing.conf"
 copy_config "$TEST_DIR/source.conf" "$TEST_DIR/existing.conf"
 assert_equals "copy_config preserves existing file content" "user customised" "$(cat "$TEST_DIR/existing.conf")"
-
-# ═══════════════════════════════════════════════════════════════
-# Source File Existence
-# ═══════════════════════════════════════════════════════════════
-
-section "Source Files Exist"
-
-declare -a SOURCE_FILES=(
-    "zsh/zprofile"
-    "zsh/zshrc.template"
-    "tmux/local.conf.template"
-    "gh-dash/config.yml.template"
-    "scripts/dotfiles"
-    "zed/keymap.json"
-    "zed/tasks.json"
-)
-
-for src_file in "${SOURCE_FILES[@]}"; do
-    if [[ -e "$DOTFILES_DIR/$src_file" ]]; then
-        pass "Source exists: $src_file"
-    else
-        fail "Source missing: $src_file"
-    fi
-done
-
-section "Config Source Files Exist"
-
-# copy-on-install sources plus the symlinked hammerspoon and lazygit configs
-declare -a COPY_SOURCES=(
-    "btop/btop.conf"
-    "karabiner/karabiner.json"
-    "hammerspoon/init.lua"
-    "lazygit/config.yml"
-    "lazydocker/config.yml"
-    "zed/settings.json"
-)
-
-for src_file in "${COPY_SOURCES[@]}"; do
-    if [[ -e "$DOTFILES_DIR/$src_file" ]]; then
-        pass "Config source exists: $src_file"
-    else
-        fail "Config source missing: $src_file"
-    fi
-done
-
-# ═══════════════════════════════════════════════════════════════
-# Uninstall Script Consistency
-# ═══════════════════════════════════════════════════════════════
-
-section "Uninstall Script - Copy-on-Install Handling"
-
-UNINSTALL="$DOTFILES_DIR/scripts/install/uninstall.sh"
-uninstall_content=$(cat "$UNINSTALL")
-
-if echo "$uninstall_content" | grep -A 20 '^SYMLINKS=(' | grep -q 'karabiner'; then
-    fail "Uninstall SYMLINKS should not contain karabiner (copy-on-install)"
-else
-    pass "Uninstall SYMLINKS does not contain karabiner"
-fi
-
-if echo "$uninstall_content" | grep -A 20 '^SYMLINKS=(' | grep -q 'hammerspoon'; then
-    pass "Uninstall SYMLINKS contains hammerspoon init.lua (layered pattern)"
-else
-    fail "Uninstall SYMLINKS should contain hammerspoon init.lua symlink"
-fi
-
-if echo "$uninstall_content" | grep -A 30 '^SYMLINKS=(' | grep -q 'zed/keymap\.json'; then
-    pass "Uninstall SYMLINKS contains zed keymap.json (symlinked)"
-else
-    fail "Uninstall SYMLINKS should contain zed keymap.json symlink"
-fi
-
-if echo "$uninstall_content" | grep -A 30 '^SYMLINKS=(' | grep -q 'zed/settings\.json'; then
-    fail "Uninstall SYMLINKS should not contain zed settings.json (copy-on-install)"
-else
-    pass "Uninstall SYMLINKS does not contain zed settings.json"
-fi
-
-for config in "btop" "karabiner" "hammerspoon" "lazygit" "lazydocker" "zed"; do
-    if [[ "$uninstall_content" == *"personal config"*"$config"* ]] || [[ "$uninstall_content" == *"$config"*"personal config"* ]]; then
-        pass "Uninstall preserves $config with warning"
-    else
-        fail "Uninstall should preserve $config with personal config warning"
-    fi
-done
 
 # ═══════════════════════════════════════════════════════════════
 # Summary

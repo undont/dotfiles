@@ -29,6 +29,19 @@ if should_install "core" && [[ -L "${XDG_CONFIG_HOME:-$HOME/.config}/yazi" ]]; t
     rm "${XDG_CONFIG_HOME:-$HOME/.config}/yazi"
 fi
 
+# on a preset change, the previous preset's links are removed before this
+# preset's are created; one re-pointed by hand is kept
+saved_preset_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
+saved_preset=$(cat "$saved_preset_file" 2>/dev/null || true)
+if [[ -n "$saved_preset" && "$saved_preset" != "$PRESET" ]]; then
+    while IFS=$'\t' read -r _ _ source dest _; do
+        if [[ -L "$dest" && "$(readlink "$dest")" == "$source" ]]; then
+            rm "$dest"
+        fi
+    done < <(PRESET="$saved_preset" manifest_rows link link-generated)
+    info "Removed the $saved_preset preset's links"
+fi
+
 group_shown=""
 while IFS=$'\t' read -r kind group source dest _; do
     if [[ "$group" != "$group_shown" ]]; then

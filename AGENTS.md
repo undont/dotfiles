@@ -14,8 +14,12 @@ make lint         # Run all linters (shell, zsh, lua, theme contrast)
 
 Three patterns are used for configuration files. Choose based on whether the tool
 supports a local override mechanism and how personal the config tends to be.
-`scripts/install/create-symlinks.sh` is the source of truth for which file uses
-which pattern.
+`scripts/manifest.conf` is the source of truth for which file uses which pattern:
+one row per managed path (kind, preset, os, source, dest, local-layer key). The
+installer, `dotfiles links`, `health-check`, `uninstall` and the local layer all
+read it through `scripts/_lib/manifest.sh`, so a new managed file is one new row.
+Changing preset on install removes the previous preset's links before creating
+the new ones, so the saved preset always matches what is on disk.
 
 ### 1. Symlinked
 
@@ -121,13 +125,9 @@ personal launchers) can be synced across a user's own machines via a private
 git repo (`dotfiles local` / `export` / `import`).
 The public repo never references it; the link is a machine-local pointer at
 `~/.config/dotfiles/local-repo` (env override: `DOTFILES_LOCAL_DIR`). Logic
-lives in `scripts/_lib/local-layer.sh`. **When adding a new local-override or
-copy-on-install file to the installer, add it to `_local_pairs()` there too**;
-the drift-guard test in `scripts/tests/test-dotfiles-local.sh` fails if an
-`install_local`/`copy_config` destination is missing from the manifest. The
-manifest can also carry purely-personal files the installer never touches (e.g.
-`~/.ai/claude/CLAUDE.local.md`): the drift guard only checks installer ->
-manifest, not the reverse, so an entry with no installer counterpart is fine.
+lives in `scripts/_lib/local-layer.sh`. The synced files are the manifest rows
+with a local key; a `sync` row carries a purely-personal file the installer
+never touches (e.g. `~/.ai/claude/CLAUDE.local.md`).
 Secrets (`~/.config/zsh/secrets.zsh`), `.state/`, the saved preset file, and
 the `current-theme` pointer are hard-excluded and must stay that way: theme is a
 per-machine choice, so it is never synced. The `.gitignore` seeded into the

@@ -53,6 +53,8 @@ if [[ -z "${DOTFILES_DIR:-}" ]]; then
     DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 fi
 export DOTFILES_DIR
+# shellcheck source=/dev/null
+source "$SCRIPT_DIR/../_lib/manifest.sh"
 
 PRESET="${DOTFILES_PRESET:-full}"
 
@@ -63,7 +65,7 @@ check_symlink() {
     local target="$2"
     local name="$3"
 
-    printf "Checking %-30s" "$name..."
+    printf "Checking %-44s " "$name..."
 
     if [[ -L "$link" ]]; then
         local actual_target
@@ -91,7 +93,7 @@ check_directory() {
     local dir="$1"
     local name="$2"
 
-    printf "Checking %-30s" "$name..."
+    printf "Checking %-44s " "$name..."
 
     if [[ -d "$dir" ]]; then
         printf '%sOK%s\n' "${GREEN}" "${NC}"
@@ -107,7 +109,7 @@ check_file() {
     local file="$1"
     local name="$2"
 
-    printf "Checking %-30s" "$name..."
+    printf "Checking %-44s " "$name..."
 
     if [[ -f "$file" ]]; then
         printf '%sOK%s\n' "${GREEN}" "${NC}"
@@ -123,7 +125,7 @@ check_executable() {
     local file="$1"
     local name="$2"
 
-    printf "Checking %-30s" "$name..."
+    printf "Checking %-44s " "$name..."
 
     if [[ -x "$file" ]]; then
         printf '%sOK%s\n' "${GREEN}" "${NC}"
@@ -145,7 +147,7 @@ check_local_override() {
     local file="$1"
     local name="$2"
 
-    printf "Checking %-30s" "$name..."
+    printf "Checking %-44s " "$name..."
 
     if [[ -f "$file" ]]; then
         printf '%sOK%s\n' "${GREEN}" "${NC}"
@@ -164,7 +166,7 @@ echo "Symlinks:"
 echo "---------"
 
 # zsh (minimal)
-printf "Checking %-30s" ".zshrc..."
+printf "Checking %-44s " ".zshrc..."
 if [[ -f "$HOME/.zshrc" ]]; then
     if grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
         printf '%sOK%s\n' "${GREEN}" "${NC}"
@@ -178,60 +180,18 @@ else
     echo "  Run: cp ~/dotfiles/zsh/zshrc.template ~/.zshrc"
     ISSUES=1
 fi
-check_symlink "$HOME/.zprofile" "$DOTFILES_DIR/zsh/zprofile" ".zprofile"
 check_file "$HOME/.p10k.zsh" ".p10k.zsh"
 
-# formatters
-check_symlink "$HOME/.prettierrc" "$DOTFILES_DIR/formatters/prettierrc.json" ".prettierrc"
-check_symlink "$HOME/.editorconfig" "$DOTFILES_DIR/formatters/editorconfig" ".editorconfig"
+while IFS=$'\t' read -r kind _ source dest _; do
+    case "$kind" in
+        link | link-generated) check_symlink "$dest" "$source" "${dest/#"$HOME"/\~}" ;;
+        copy) check_file "$dest" "${dest/#"$HOME"/\~} (copy-on-install)" ;;
+    esac
+done < <(manifest_rows link link-generated copy)
 
-# dotfiles CLI (minimal)
-check_symlink "$HOME/.local/bin/dotfiles" "$DOTFILES_DIR/scripts/dotfiles" "dotfiles CLI"
-
-# tmux (minimal)
-# ~/.tmux.conf links to the generated config in the XDG location
-XDG_TMUX_CONF="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
-check_symlink "$HOME/.tmux.conf" "$XDG_TMUX_CONF" ".tmux.conf"
-check_symlink "$HOME/.tmux" "$DOTFILES_DIR/tmux" ".tmux"
-
-# nvim (core)
-if should_install "core"; then
-    check_symlink "$HOME/.config/nvim" "$DOTFILES_DIR/nvim" "nvim config"
-fi
-
-# lazygit (core)
-if should_install "core"; then
-    check_symlink "$HOME/.config/lazygit/config.yml" "$DOTFILES_DIR/lazygit/config.yml" "lazygit config"
-fi
-
-# gh-dash sync (core)
-if should_install "core"; then
-    check_symlink "$HOME/.local/bin/dash-repo-sync" "$DOTFILES_DIR/gh-dash/dash-repo-sync" "dash-repo-sync"
-fi
-
-# hammerspoon (full)
-if should_install "full"; then
-    check_symlink "$HOME/.hammerspoon/init.lua" "$DOTFILES_DIR/hammerspoon/init.lua" "hammerspoon"
-fi
-
-# ghostty (core)
 # config is generated to the XDG location, which ghostty reads on all platforms
 if should_install "core"; then
-    check_file "$HOME/.config/ghostty/config" "ghostty config (XDG)"
-    # the generated config includes config-file = ~/.config/ghostty/local
-    check_file "$HOME/.config/ghostty/local" "ghostty local override"
-fi
-
-# zed (core)
-if should_install "core"; then
-    check_symlink "$HOME/.config/zed/keymap.json" "$DOTFILES_DIR/zed/keymap.json" "zed keymap"
-    check_symlink "$HOME/.config/zed/tasks.json" "$DOTFILES_DIR/zed/tasks.json" "zed tasks"
-    check_file "$HOME/.config/zed/settings.json" "zed settings (copy-on-install)"
-fi
-
-# karabiner (full)
-if should_install "full"; then
-    check_file "$HOME/.config/karabiner/karabiner.json" "karabiner config"
+    check_file "${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/config" "ghostty config (XDG)"
 fi
 
 echo ""
@@ -242,7 +202,7 @@ echo "------------------"
 check_file "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf" "tmux config (generated)"
 
 # current theme (minimal)
-printf "Checking %-30s" "current theme..."
+printf "Checking %-44s " "current theme..."
 THEME_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
 if [[ -f "$THEME_FILE" ]]; then
     printf '%sOK%s (%s)\n' "${GREEN}" "${NC}" "$(cat "$THEME_FILE")"
@@ -263,7 +223,7 @@ echo "----------------"
 check_directory "$HOME/.tmux/plugins/tpm" "TPM (Tmux Plugin Manager)"
 
 # key TPM-managed plugins (installed via prefix + I inside tmux)
-printf "Checking %-30s" "tmux plugins (via TPM)..."
+printf "Checking %-44s " "tmux plugins (via TPM)..."
 MISSING_PLUGINS=()
 for plugin in tmux-resurrect tmux-continuum tmux-yank tmux-fingers; do
     if [[ ! -d "$HOME/.tmux/plugins/$plugin" ]]; then
@@ -284,7 +244,7 @@ if should_install "core"; then
 
     # a packer install shadows lazy.nvim plugins in the runtimepath
     PACKER_DIR="$HOME/.local/share/nvim/site/pack/packer"
-    printf "Checking %-30s" "no stale packer install..."
+    printf "Checking %-44s " "no stale packer install..."
     if [[ -d "$PACKER_DIR" ]]; then
         printf '%sWARN%s\n' "${YELLOW}" "${NC}"
         printf '  Stale packer plugins at %s\n' "$PACKER_DIR"
@@ -313,7 +273,7 @@ if should_install "core"; then
         local var="$1"
         local desc="$2"
 
-        printf "Checking %-30s" "$var..."
+        printf "Checking %-44s " "$var..."
 
         if [[ -n "${!var:-}" ]]; then
             printf '%sOK%s\n' "${GREEN}" "${NC}"
@@ -333,9 +293,9 @@ if should_install "core"; then
     echo "Session Launchers:"
     echo "------------------"
     if command_exists dev; then
-        printf "Checking %-30s${GREEN}OK${NC}\n" "dev command"
+        printf "Checking %-44s ${GREEN}OK${NC}\n" "dev command"
     else
-        printf "Checking %-30s${YELLOW}NOT IN PATH${NC}\n" "dev command"
+        printf "Checking %-44s ${YELLOW}NOT IN PATH${NC}\n" "dev command"
         echo "  Add ~/.local/launchers to your PATH"
     fi
 
@@ -360,18 +320,14 @@ echo "Local Overrides:"
 echo "----------------"
 
 # informational only
-check_local_override "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/local.conf" "tmux local.conf"
-if should_install "core"; then
-    check_local_override "$HOME/.config/nvim/local.lua" "nvim local.lua"
-    check_local_override "$HOME/.config/lazygit/local.yml" "lazygit local.yml"
-    check_local_override "$HOME/.config/gh-dash/local.yml" "gh-dash local.yml"
-fi
-if should_install "full"; then
-    check_local_override "$HOME/.hammerspoon/local.lua" "hammerspoon local.lua"
-fi
+while IFS=$'\t' read -r _ _ _ dest _; do
+    # ~/.zshrc is checked with the symlinks
+    [[ "$dest" == "$HOME/.zshrc" ]] && continue
+    check_local_override "$dest" "${dest/#"$HOME"/\~}"
+done < <(manifest_rows local)
 
 # local layer sync is optional: a broken pointer warns without setting ISSUES
-printf "Checking %-30s" "local layer sync..."
+printf "Checking %-44s " "local layer sync..."
 local_layer_dir="${DOTFILES_LOCAL_DIR:-}"
 local_ptr="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/local-repo"
 if [[ -z "$local_layer_dir" && -f "$local_ptr" ]]; then
@@ -394,7 +350,7 @@ echo "-------------"
 
 # ~/.local/bin in PATH (required for dotfiles CLI, dash-repo-sync)
 # shellcheck disable=SC2088
-printf "Checking %-30s" "~/.local/bin in PATH..."
+printf "Checking %-44s " "~/.local/bin in PATH..."
 if [[ ":$PATH:" == *":$HOME/.local/bin:"* ]]; then
     printf '%sOK%s\n' "${GREEN}" "${NC}"
 else
@@ -405,7 +361,7 @@ fi
 
 # yq (required for gh-dash local merge)
 if should_install "core"; then
-    printf "Checking %-30s" "yq (gh-dash merge)..."
+    printf "Checking %-44s " "yq (gh-dash merge)..."
     if command_exists yq; then
         printf '%sOK%s\n' "${GREEN}" "${NC}"
     else
@@ -417,7 +373,7 @@ if should_install "core"; then
 fi
 
 # compinit prompts on its full run when compaudit reports insecure dirs
-printf "Checking %-30s" "compinit dir permissions..."
+printf "Checking %-44s " "compinit dir permissions..."
 if ! command_exists zsh; then
     printf '%sSKIPPED%s (zsh not found)\n' "${YELLOW}" "${NC}"
 elif [[ -z "$(zsh -fc 'autoload -Uz compaudit; compaudit' 2>/dev/null)" ]]; then

@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# manifest of the user-owned local layer and private-repo helpers for
-# export/import. source after common.sh and cli.sh
+# the user-owned local layer (scripts/manifest.conf rows with a local key) and
+# private-repo helpers for export/import. source after common.sh and cli.sh
 
 [[ -n "${_DOTFILES_LOCAL_LAYER_SH_LOADED:-}" ]] && return 0
 _DOTFILES_LOCAL_LAYER_SH_LOADED=1
@@ -16,41 +16,26 @@ _DOTFILES_LOCAL_LAYER_SH_LOADED=1
 
 : "${DOTFILES_DIR:?DOTFILES_DIR must be set before sourcing local-layer.sh}"
 
+# shellcheck source=/dev/null
+source "$DOTFILES_DIR/scripts/_lib/manifest.sh"
+
 # build LOCAL_PAIRS (files) and LOCAL_DIR_PAIRS (directories) as
-# "repo-relative|system-absolute" strings, preset-gated like the installer.
-# secrets.zsh, .state/, the preset file and current-theme are never listed
+# "repo-relative|system-absolute" strings from the manifest rows with a local
+# key. secrets.zsh, .state/, the preset file and current-theme are never listed
 _local_pairs() {
     # should_install reads $PRESET, which is unset when invoked via the CLI
     local PRESET="${PRESET:-$(get_preset)}"
-    local cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
-    LOCAL_PAIRS=(
-        "zshrc|$HOME/.zshrc"
-        "config/tmux/local.conf|$cfg/tmux/local.conf"
-    )
+    local dest local_key
+    LOCAL_PAIRS=()
     LOCAL_DIR_PAIRS=()
-    if should_install "core"; then
-        LOCAL_PAIRS+=(
-            "config/nvim/local.lua|$cfg/nvim/local.lua"
-            "config/ghostty/local|$cfg/ghostty/local"
-            "config/gh-dash/local.yml|$cfg/gh-dash/local.yml"
-            "config/lazygit/local.yml|$cfg/lazygit/local.yml"
-            "config/zed/settings.json|$cfg/zed/settings.json"
-            "config/btop/btop.conf|$cfg/btop/btop.conf"
-            "ai/claude/CLAUDE.local.md|$HOME/.ai/claude/CLAUDE.local.md"
-        )
-        if is_macos; then
-            LOCAL_PAIRS+=("lazydocker/config.yml|$HOME/Library/Application Support/lazydocker/config.yml")
+    while IFS=$'\t' read -r _ _ _ dest local_key; do
+        [[ "$local_key" == - ]] && continue
+        if [[ "$dest" == */ ]]; then
+            LOCAL_DIR_PAIRS+=("$local_key|${dest%/}")
         else
-            LOCAL_PAIRS+=("lazydocker/config.yml|$cfg/lazydocker/config.yml")
+            LOCAL_PAIRS+=("$local_key|$dest")
         fi
-        LOCAL_DIR_PAIRS+=("config/dotfiles/launchers|$cfg/dotfiles/launchers")
-    fi
-    if should_install "full"; then
-        LOCAL_PAIRS+=(
-            "hammerspoon/local.lua|$HOME/.hammerspoon/local.lua"
-            "config/karabiner/karabiner.json|$cfg/karabiner/karabiner.json"
-        )
-    fi
+    done < <(manifest_rows local copy sync)
 }
 
 # narrow LOCAL_PAIRS / LOCAL_DIR_PAIRS in place to entries matching the given

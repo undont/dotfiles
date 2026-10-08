@@ -12,6 +12,7 @@ export DOTFILES_DIR
 source "$SCRIPT_DIR/../_lib/common.sh"
 source "$SCRIPT_DIR/../_lib/brewfile.sh"
 source "$SCRIPT_DIR/../_lib/rollback.sh"
+source "$SCRIPT_DIR/../_lib/manifest.sh"
 
 RESTORE_BACKUP=0
 REMOVE_BREW=0
@@ -66,36 +67,21 @@ done
 print_logo
 print_header "Dotfiles Uninstall"
 
-# every create_link destination in create-symlinks.sh; ~/.zshrc is handled
-# separately
-SYMLINKS=(
-    # minimal
-    "$HOME/.zprofile"
-    "$HOME/.tmux.conf"
-    "$HOME/.tmux"
-    "$HOME/.local/bin/dotfiles"
-    "$HOME/.prettierrc"
-    "$HOME/.editorconfig"
-    # core
-    "$HOME/.config/nvim"
-    "$HOME/.local/bin/dash-repo-sync"
-    "$HOME/.local/launchers/dev"
-    "$HOME/.config/lazygit/config.yml"
-    "$HOME/.config/yazi/yazi.toml"
-    "$HOME/.config/yazi/keymap.toml"
-    "$HOME/.config/zed/keymap.json"
-    "$HOME/.config/zed/tasks.json"
-    "$HOME/.config/lazydocker/format-logs.awk"
-    "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/statusline-theme.sh"
-    # full
-    "$HOME/.hammerspoon/init.lua"
-)
-
-# macOS-only links
-if [[ "$(uname)" == "Darwin" ]]; then
-    SYMLINKS+=("$HOME/Library/Application Support/lazydocker/format-logs.awk")
-    SYMLINKS+=("${XDG_CONFIG_HOME:-$HOME/.config}/ImageMagick/type.xml")
+PRESET_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
+if [[ -f "$PRESET_FILE" ]]; then
+    PRESET=$(cat "$PRESET_FILE")
+    echo "Using saved preset: $PRESET"
+else
+    PRESET="full"
+    echo "No saved preset found, assuming: $PRESET"
 fi
+echo ""
+
+# the preset's links; ~/.zshrc is handled separately
+SYMLINKS=()
+while IFS=$'\t' read -r _ _ _ dest _; do
+    SYMLINKS+=("$dest")
+done < <(manifest_rows link link-generated)
 
 # the installer creates no ghostty Application Support symlink; one that exists is removed
 if [[ "$(uname)" == "Darwin" ]] && [[ -L "$HOME/Library/Application Support/com.mitchellh.ghostty/config" ]]; then
@@ -302,15 +288,6 @@ if [[ $REMOVE_BREW -eq 1 ]]; then
     info "Removing Homebrew packages..."
 
     if [[ -f "$DOTFILES_DIR/Brewfile" ]] && command_exists brew; then
-        PRESET_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
-        if [[ -f "$PRESET_FILE" ]]; then
-            PRESET=$(cat "$PRESET_FILE")
-            echo "Using saved preset: $PRESET"
-        else
-            PRESET="full"
-            echo "No saved preset found, assuming: $PRESET"
-        fi
-
         FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 
         # shellcheck disable=SC2064
