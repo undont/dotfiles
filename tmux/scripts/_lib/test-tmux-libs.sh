@@ -836,7 +836,7 @@ section "Testing process.sh"
 #   500 /opt/homebrew/bin/codex, matched by basename
 #   600 codex-helper, a near miss
 agent_pane_pids_result=$(
-    # shellcheck disable=SC2329 # called by agent_pane_pids
+    # shellcheck disable=SC2317,SC2329 # called by agent_pane_pids
     ps() {
         printf '%s\n' \
             '    1     0 Ss   launchd' \
