@@ -264,7 +264,7 @@ local function bracketed_failed_test(direction)
   end
 end
 
--- diagnostics into native lists. the titles are what build.lua's auto-clear
+-- diagnostics into native lists. the titles are what qf-auto-clear.lua
 -- matches (`^(%w+):` against AUTO_CLEAR_KINDS). items come from
 -- scan_runner.diag_to_item, not vim.diagnostic.setqflist: its `[source]` text
 -- prefix is what the auto-clear's (lnum, text) match compares
@@ -320,7 +320,7 @@ local function rebuild_live_qf()
       return
     end
     vim.fn.setqflist({}, 'r', { title = DIAG_QF_TITLE, items = {} })
-    -- build.lua's auto-clear skips the DIAG_QF_TITLE list, so the close and
+    -- qf-auto-clear.lua skips the DIAG_QF_TITLE list, so the close and
     -- notify happen here
     for _, win in ipairs(vim.fn.getwininfo()) do
       if win.quickfix == 1 and win.loclist == 0 then
@@ -332,7 +332,7 @@ local function rebuild_live_qf()
     return
   end
 
-  -- same current-entry handling as build.lua's prune_diag_list. items are
+  -- same current-entry handling as qf-auto-clear.lua's prune_diag_list. items are
   -- sorted by (bufnr, lnum, col) on both sides, so the predecessor is positional
   local new_idx
   local cur = qf.idx and qf.idx > 0 and qf.items[qf.idx] or nil
@@ -371,7 +371,7 @@ end
 -- :Cfilter / :Lfilter with cfilter.vim's matching (optional /"' delimiters,
 -- empty pat = last search, ! to invert, case-sensitive against text +
 -- filename). a source title carrying a "Kind:" prefix is kept with the filter
--- appended, so build.lua's auto-clear still matches it; other lists get
+-- appended, so qf-auto-clear.lua still matches it; other lists get
 -- cfilter's own title
 local function filter_list(is_qf, searchpat, bang)
   local pat = searchpat

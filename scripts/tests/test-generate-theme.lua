@@ -656,10 +656,10 @@ else
 end
 
 local ref = inverted:match("reference = '(#%x%x%x%x%x%x)'")
-if ref == sel then
-    pass("reference shares the derived band")
+if ref and sel and ref ~= sel and colour_utils.luminance(ref) < colour_utils.luminance(sel) then
+    pass("reference sits below selection on the derived band")
 else
-    fail("reference bg", tostring(ref))
+    fail("reference bg", tostring(ref) .. " vs selection " .. tostring(sel))
 end
 
 if inverted:find("hl('LspReferenceText', { bg = colors.reference })", 1, true) then

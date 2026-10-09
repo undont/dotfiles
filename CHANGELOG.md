@@ -4,6 +4,25 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.150] - 2026-10-09
+
+### Added
+
+- Lua code in love2d projects gets `love.*` completion and types through lazydev. `nvim/lua/plugins/lazydev.lua`
+
+### Changed
+
+- Every managed file is listed in one manifest, which install, `dotfiles links`, `health-check`, `uninstall` and local-layer sync all read. Switching preset on install removes the old preset's links first. `scripts/manifest.conf`, `scripts/_lib/manifest.sh`, `scripts/install/create-symlinks.sh`, `scripts/dotfiles`
+- LSP reference highlights have their own background, nearer the cursor line, so they no longer look like a visual selection. `scripts/_lib/generate-theme.lua`, `nvim/colors/*.lua`
+
+### Removed
+
+- Migrations up to 0.2.138. A machine updating from an older version than that needs a fresh `install.sh` run instead. `scripts/migrations/`
+
+### Fixed
+
+- Install scripts run under homebrew bash rather than macOS's bash 3.2. `Brewfile`, `scripts/_lib/common.sh`
+
 ## [0.2.149] - 2026-10-08
 
 ### Added

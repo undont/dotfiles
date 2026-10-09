@@ -57,7 +57,7 @@ local function source_label(d)
   return src
 end
 
---- diagnostic text with a `[label] ` prefix. build.lua's auto-clear keys its
+--- diagnostic text with a `[label] ` prefix. qf-auto-clear.lua keys its
 --- live-diagnostic lookups by this function
 function M.qf_text(d)
   local label = source_label(d)

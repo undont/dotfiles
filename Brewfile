@@ -11,6 +11,7 @@
 # Shell & Terminal Essentials (zsh + tmux)
 # =============================================================================
 
+brew "bash"                   # macOS ships 3.2; the scripts need 4+ (declare -A, local -n)
 brew "zsh"
 brew "tmux"                   # >= 3.3 for the popup style options
 brew "powerlevel10k"

@@ -170,13 +170,14 @@ get_homebrew_prefix() {
 }
 
 # usage: read_with_timeout "prompt" variable_name [timeout_seconds]
-# variable_name is assigned through a nameref
+# runs before homebrew's bash exists, so this stays bash 3.2 compatible (no nameref)
 read_with_timeout() {
     local prompt="$1"
-    local -n _result_var="$2"
     local timeout="${3:-300}"
+    local _rwt_reply
 
-    if read -r -t "$timeout" -p "$prompt" _result_var; then
+    if read -r -t "$timeout" -p "$prompt" _rwt_reply; then
+        printf -v "$2" '%s' "$_rwt_reply"
         return 0
     else
         echo ""

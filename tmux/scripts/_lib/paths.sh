@@ -35,7 +35,6 @@ get_window_undo_contents_dir() {
 
 # session undo paths
 get_session_undo_file() { echo "${UNDO_BASE_DIR}/session"; }
-get_session_undo_state() { echo "${UNDO_BASE_DIR}/session-state.txt"; }
 
 get_session_undo_backup() {
     echo "${UNDO_BASE_DIR}/session-backup"

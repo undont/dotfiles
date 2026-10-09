@@ -16,6 +16,7 @@ return {
         -- busted's library declares `it` alongside `describe`
         { path = '${3rd}/busted/library', words = { 'describe%s*%(' } },
         { path = '${3rd}/luassert/library', words = { 'assert%.' } },
+        { path = '${3rd}/love2d/library', words = { 'love%.' } },
       },
     },
   },

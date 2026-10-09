@@ -257,7 +257,7 @@ bind -N "tools: claude instances" c display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 bind -N "tools: codex instances" x display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/instances/codex.sh | \
+  ~/.tmux/scripts/instances/agents.sh codex | \
   fzf --ansi --reverse --exact --disabled --cycle \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --header-lines=5 \
@@ -275,7 +275,7 @@ bind -N "tools: codex instances" x display-popup -w 95% -h 95% -E "\
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:up,ctrl-l:clear-query' \
       --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh codex)+abort' \
-      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) codex)+reload-sync(~/.tmux/scripts/instances/codex.sh)' | \
+      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) codex)+reload-sync(~/.tmux/scripts/instances/agents.sh codex)' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────
@@ -285,7 +285,7 @@ bind -N "tools: codex instances" x display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 bind -N "tools: opencode instances" o display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/instances/opencode.sh | \
+  ~/.tmux/scripts/instances/agents.sh opencode | \
   fzf --ansi --reverse --exact --disabled --cycle \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --header-lines=5 \
@@ -303,7 +303,7 @@ bind -N "tools: opencode instances" o display-popup -w 95% -h 95% -E "\
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:up,ctrl-l:clear-query' \
       --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh opencode)+abort' \
-      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) opencode)+reload-sync(~/.tmux/scripts/instances/opencode.sh)' | \
+      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) opencode)+reload-sync(~/.tmux/scripts/instances/agents.sh opencode)' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────
@@ -313,7 +313,7 @@ bind -N "tools: opencode instances" o display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 bind -N "tools: copilot instances" a display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/instances/copilot.sh | \
+  ~/.tmux/scripts/instances/agents.sh copilot | \
   fzf --ansi --reverse --exact --disabled --cycle \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --header-lines=6 \
@@ -331,7 +331,7 @@ bind -N "tools: copilot instances" a display-popup -w 95% -h 95% -E "\
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:up,ctrl-l:clear-query' \
       --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh copilot)+abort' \
-      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) copilot)+reload-sync(~/.tmux/scripts/instances/copilot.sh)' | \
+      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh \$(echo {} | cut -d\" \" -f1) copilot)+reload-sync(~/.tmux/scripts/instances/agents.sh copilot)' | \
   cut -d' ' -f1 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────

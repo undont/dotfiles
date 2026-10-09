@@ -180,39 +180,6 @@ validate_session_name() {
     return 0
 }
 
-# validate pane ID format (e.g. %123)
-validate_pane_id() {
-    local pane_id="$1"
-
-    if [[ -z "$pane_id" ]]; then
-        error "Pane ID cannot be empty"
-        return 1
-    fi
-
-    if [[ ! "$pane_id" =~ ^%[0-9]+$ ]]; then
-        error "Invalid pane ID format: '$pane_id'"
-        return 1
-    fi
-
-    return 0
-}
-
-validate_window_index() {
-    local index="$1"
-
-    if [[ -z "$index" ]]; then
-        error "Window index cannot be empty"
-        return 1
-    fi
-
-    if [[ ! "$index" =~ ^[0-9]+$ ]]; then
-        error "Invalid window index: '$index'"
-        return 1
-    fi
-
-    return 0
-}
-
 # check if a session exists (exact match, not prefix)
 session_exists() {
     local session="$1"
@@ -236,18 +203,6 @@ get_window_count() {
 is_last_session() {
     local count
     count=$(tmux list-sessions 2>/dev/null | wc -l | tr -d ' ')
-    [[ "$count" -eq 1 ]]
-}
-
-is_last_window() {
-    local count
-    count=$(get_window_count "$(tmux display-message -p '#{session_name}')")
-    [[ "$count" -eq 1 ]]
-}
-
-is_last_pane() {
-    local count
-    count=$(get_pane_count)
     [[ "$count" -eq 1 ]]
 }
 

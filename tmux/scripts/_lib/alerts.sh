@@ -92,19 +92,6 @@ _fmt_elapsed() {
     fi
 }
 
-# get agent icon (compatible with bash 3.2, no associative arrays)
-# usage: get_agent_icon "agent_name"
-get_agent_icon() {
-    local agent="$1"
-    case "$agent" in
-        claude) echo "⚡" ;;
-        codex) echo "⌘" ;;
-        opencode) echo "" ;;
-        copilot) echo "" ;;
-        *) echo "󱜙" ;;
-    esac
-}
-
 # get agent colour (compatible with bash 3.2, no associative arrays)
 # usage: get_agent_colour "agent_name"
 get_agent_colour() {
@@ -153,20 +140,6 @@ _exit_code_is_signal() {
     [[ "$1" =~ ^[0-9]+$ ]] && (($1 > 128))
 }
 
-# exit code icon (separate from agent icons)
-# usage: get_exit_code_icon "exit_code"
-get_exit_code_icon() {
-    local code="$1"
-    _exit_code_is_signal "$code" && {
-        echo "⊘"
-        return
-    }
-    case "$code" in
-        0) echo "✓" ;;
-        *) echo "✗" ;;
-    esac
-}
-
 # exit code colour
 # usage: get_exit_code_colour "exit_code"
 get_exit_code_colour() {
@@ -200,50 +173,6 @@ get_exit_code_display() {
         0) echo "✓|#7aab88" ;;
         *) echo "✗|#c07878" ;;
     esac
-}
-
-# build alert icon string from tmux window options output
-# usage: icons=$(get_window_alert_icons "$opts")
-# returns: ANSI-coloured icon string (empty if no alerts)
-get_window_alert_icons() {
-    local opts="$1"
-    local icons=""
-
-    # exit alert
-    if printf '%s\n' "$opts" | grep -q '^@exit_alert '; then
-        local exit_code exit_label display icon colour
-        exit_code=$(printf '%s\n' "$opts" | grep '^@exit_alert_code ' | cut -d' ' -f2)
-        exit_label=$(printf '%s\n' "$opts" | grep '^@exit_alert_label ' | cut -d' ' -f2-)
-        exit_label="${exit_label#\"}"
-        exit_label="${exit_label%\"}"
-        # escape '#' to prevent tmux format injection
-        exit_label="${exit_label//\#/##}"
-        display=$(get_exit_code_display "$exit_code")
-        icon="${display%%|*}"
-        colour="${display##*|}"
-        icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon} ${exit_label}\033[0m "
-    fi
-
-    # agent alerts
-    local agent
-    for agent in claude codex opencode copilot; do
-        if printf '%s\n' "$opts" | grep -q "^@${agent}_alert "; then
-            display=$(get_agent_display "$agent")
-            icon="${display%%|*}"
-            colour="${display##*|}"
-            # apply colour only for non-emoji icons (emojis are self-coloured)
-            case "$agent" in
-                copilot)
-                    icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon}\033[0m "
-                    ;;
-                *)
-                    icons="${icons}${icon} "
-                    ;;
-            esac
-        fi
-    done
-
-    printf '%s' "$icons"
 }
 
 # build alert icons from pre-read alerts file content

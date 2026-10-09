@@ -497,6 +497,8 @@ end
 -- selections of most hand-crafted schemes in nvim/colors/
 local BAND_STEP_MIN = 6
 local BAND_STEP_MAX = 16
+local BAND_REFERENCE_GAP = 8
+local BAND_REFERENCE_STEP_MIN = 2
 local BAND_CONTRAST_FLOOR = 3.0
 local BAND_HUE = 220
 local BAND_SATURATION = 0.16
@@ -512,7 +514,8 @@ function M.generate_nvim_colourscheme(name, colours)
     -- the selection band is derived from line_highlight, not ghostty's
     -- selection-background: an inverted selection (Bluloco Dark) needs a fg on
     -- Visual, which overrides syntax colours, and a saturated one (Aura) leaves
-    -- accents unreadable on it. LspReference* and TelescopeSelection share it
+    -- accents unreadable on it. LspReference* sits BAND_REFERENCE_GAP steps
+    -- nearer line_highlight so it stays distinct from Visual
     local function band_at(step)
         local _, _, line_l = colour.hex_to_hsl(colours.line_highlight)
         local l = colour.luminance(colours.bg_primary) < 0.5 and math.min(1, line_l + step / 100)
@@ -526,14 +529,15 @@ function M.generate_nvim_colourscheme(name, colours)
         end
         return worst
     end
-    local selection_bg = band_at(BAND_STEP_MIN)
+    local selection_step = BAND_STEP_MIN
     for step = BAND_STEP_MAX, BAND_STEP_MIN + 1, -1 do
-        local candidate = band_at(step)
-        if band_worst_accent(candidate) >= BAND_CONTRAST_FLOOR then
-            selection_bg = candidate
+        if band_worst_accent(band_at(step)) >= BAND_CONTRAST_FLOOR then
+            selection_step = step
             break
         end
     end
+    local selection_bg = band_at(selection_step)
+    local reference_bg = band_at(math.max(selection_step - BAND_REFERENCE_GAP, BAND_REFERENCE_STEP_MIN))
 
     -- comments are dimmer than fg_secondary (@variable.parameter, LineNr, UI
     -- chrome), with a contrast floor against the editor background
@@ -607,7 +611,7 @@ function M.generate_nvim_colourscheme(name, colours)
     add(string.format("  red = '%s',", colours.red))
     add("")
     add(string.format("  selection = '%s',", selection_bg))
-    add(string.format("  reference = '%s',", selection_bg))
+    add(string.format("  reference = '%s',", reference_bg))
     add(string.format("  comment = '%s',", comment))
     add(string.format("  ghost = '%s',", colour.blend(colours.fg_secondary, colours.bg_primary, 0.40)))
     add(string.format("  punct = '%s',", punct))
@@ -806,7 +810,7 @@ function M.generate_nvim_colourscheme(name, colours)
     add("hl('TelescopePromptTitle', { fg = colors.pink, bold = true })")
     add("hl('TelescopePreviewTitle', { fg = colors.purple, bold = true })")
     add("hl('TelescopeResultsTitle', { fg = colors.purple, bold = true })")
-    add("hl('TelescopeSelection', { fg = colors.purple, bg = colors.reference, bold = true })")
+    add("hl('TelescopeSelection', { fg = colors.purple, bg = colors.selection, bold = true })")
     add("hl('TelescopeMatching', { fg = colors.green, bold = true })")
     add("")
     add("-- Neo-tree")

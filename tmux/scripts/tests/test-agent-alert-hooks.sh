@@ -216,10 +216,10 @@ test_tmux kill-window -t "$RENAME_WIN_ID" 2>/dev/null || true
 section "Alert Library - Agent Icons"
 
 # test agent icon lookup
-assert_equals "Claude icon is ⚡" "⚡" "$(get_agent_icon claude)"
-assert_equals "OpenCode icon is " "" "$(get_agent_icon opencode)"
+assert_equals "Claude icon is ⚡" "⚡" "$(get_agent_display claude | cut -d"|" -f1)"
+assert_equals "OpenCode icon is " "" "$(get_agent_display opencode | cut -d"|" -f1)"
 
-assert_equals "Unknown agent icon is 󱜙" "󱜙" "$(get_agent_icon unknown)"
+assert_equals "Unknown agent icon is 󱜙" "󱜙" "$(get_agent_display unknown | cut -d"|" -f1)"
 
 section "Alert Library - Agent Colours"
 

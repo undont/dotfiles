@@ -263,18 +263,15 @@ _show_pending_migrations() {
     fi
 }
 
-# copy-on-install pairs, shared by diff and sync
+# copy-on-install pairs as "repo-relative|installed" strings, shared by diff
+# and sync
 _copy_pairs() {
-    COPY_PAIRS=(
-        "btop/btop.conf|$HOME/.config/btop/btop.conf"
-        "karabiner/karabiner.json|$HOME/.config/karabiner/karabiner.json"
-        "zed/settings.json|$HOME/.config/zed/settings.json"
-    )
-    if is_macos; then
-        COPY_PAIRS+=("lazydocker/config.yml|$HOME/Library/Application Support/lazydocker/config.yml")
-    else
-        COPY_PAIRS+=("lazydocker/config.yml|$HOME/.config/lazydocker/config.yml")
-    fi
+    local PRESET="${PRESET:-$(get_preset)}"
+    local source dest
+    COPY_PAIRS=()
+    while IFS=$'\t' read -r _ _ source dest _; do
+        COPY_PAIRS+=("${source#"$DOTFILES_DIR"/}|$dest")
+    done < <(manifest_rows copy)
 }
 
 # render one managed-symlink row for cmd_links, mutating the outer
@@ -899,62 +896,22 @@ cmd_links() {
         shift
     done
 
-    local preset
-    preset=$(get_preset)
+    local PRESET
+    PRESET=$(get_preset)
 
-    local ok=0 broken=0 absent=0 file_exists=0
+    local ok=0 broken=0 absent=0 file_exists=0 group group_shown="" dest
 
     print_logo
     print_header "Managed Symlinks"
-    printf "${CYAN}Preset:${NC} %s\n\n" "$preset"
+    printf "${CYAN}Preset:${NC} %s\n" "$PRESET"
 
-    # zsh (minimal)
-    printf "${CYAN}Zsh${NC}\n"
-    _check_link "$HOME/.zprofile"
-
-    # tmux (minimal)
-    printf "\n${CYAN}Tmux${NC}\n"
-    _check_link "$HOME/.tmux"
-    _check_link "$HOME/.tmux.conf"
-
-    # cli (minimal)
-    printf "\n${CYAN}CLI${NC}\n"
-    _check_link "$HOME/.local/bin/dotfiles"
-
-    # formatters
-    printf "\n${CYAN}Formatters${NC}\n"
-    _check_link "$HOME/.prettierrc"
-    _check_link "$HOME/.editorconfig"
-
-    # nvim (core)
-    if should_install "core"; then
-        printf "\n${CYAN}Neovim${NC}\n"
-        _check_link "$HOME/.config/nvim"
-    fi
-
-    # gh-dash (core): config is generated, not symlinked
-    if should_install "core"; then
-        printf "\n${CYAN}gh-dash${NC}\n"
-        _check_link "$HOME/.local/bin/dash-repo-sync"
-    fi
-
-    # launchers (core)
-    if should_install "core"; then
-        printf "\n${CYAN}Launchers${NC}\n"
-        _check_link "$HOME/.local/launchers/dev"
-    fi
-
-    # lazygit (core)
-    if should_install "core"; then
-        printf "\n${CYAN}LazyGit${NC}\n"
-        _check_link "$HOME/.config/lazygit/config.yml"
-    fi
-
-    # hammerspoon (full)
-    if should_install "full"; then
-        printf "\n${CYAN}Hammerspoon${NC}\n"
-        _check_link "$HOME/.hammerspoon/init.lua"
-    fi
+    while IFS=$'\t' read -r _ group _ dest _; do
+        if [[ "$group" != "$group_shown" ]]; then
+            printf "\n${CYAN}%s${NC}\n" "$group"
+            group_shown="$group"
+        fi
+        _check_link "$dest"
+    done < <(manifest_rows link link-generated)
 
     local total=$((ok + broken + absent + file_exists))
     echo ""

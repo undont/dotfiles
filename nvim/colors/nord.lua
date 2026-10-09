@@ -28,6 +28,7 @@ local colors = {
 
   -- additional shades
   selection = '#434c5e',
+  reference = '#3b4352',
   comment = '#616e88',
   line_highlight = '#333a47',
   blue = '#81a1c1',
@@ -137,9 +138,9 @@ hl('DiagnosticUnderlineInfo', { undercurl = true, sp = colors.cyan })
 hl('DiagnosticUnderlineHint', { undercurl = true, sp = colors.purple })
 
 -- LSP
-hl('LspReferenceText', { bg = colors.selection })
-hl('LspReferenceRead', { bg = colors.selection })
-hl('LspReferenceWrite', { bg = colors.selection })
+hl('LspReferenceText', { bg = colors.reference })
+hl('LspReferenceRead', { bg = colors.reference })
+hl('LspReferenceWrite', { bg = colors.reference })
 
 -- Treesitter
 hl('@variable', { fg = colors.fg_variable })
