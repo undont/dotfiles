@@ -201,9 +201,10 @@ local function expand_empty_subtest_positions()
 end
 
 --- neotest-golang can return no result for a position whose events were in
---- flight when the stream stopped, and neotest marks a result-less position
---- `failed` and propagates that to the parent. a missing position gets the
---- aggregate of its descendants, a missing leaf `skipped`
+--- flight when the stream stopped, and neotest gives a result-less position the
+--- run root's status (client/runner.lua), which propagates to the parent. a
+--- missing position gets the aggregate of its descendants, a missing leaf
+--- `skipped`
 local function backfill_missing_results()
   local ok, rf = pcall(require, 'neotest-golang.results_finalize')
   if not ok or rf.missing_results_backfilled then
