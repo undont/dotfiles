@@ -61,6 +61,7 @@ brew "bat"           # cat with syntax highlighting
 brew "diffnav"       # diff navigator for GitHub PRs
 brew "monolith" unless OS.linux? && Hardware::CPU.arm?  # no Linux ARM bottle
 brew "zoxide"        # smart cd replacement
+brew "tlrc"          # cli for https://tldr.sh/ (man page summaries)
 
 # File Manager
 brew "yazi"          # terminal file manager
