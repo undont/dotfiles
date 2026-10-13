@@ -318,6 +318,11 @@ return {
         vim.lsp.enable 'sourcekit'
       end
 
+      -- zls comes from brew: mason's zls has no build for the installed zig
+      if vim.fn.executable 'zls' == 1 then
+        vim.lsp.enable 'zls'
+      end
+
       -- basedpyright's default `recommended` reports the inferred-Any rules
       -- on untyped code; `standard` is pyright's mode. the rest of the
       -- settings table comes from lspconfig
@@ -402,10 +407,6 @@ return {
             'ts_ls',
             'rust_analyzer',
             'yamlls',
-            -- zls only attaches to its own zig minor series, and the servers
-            -- list above takes no version, so zls is pinned here.
-            -- mason-lspconfig enables it off the installed package
-            { 'zls', version = '0.15.1' },
             -- from Crashdummyy/mason-registry
             'roslyn',
             -- configured in plugins/sonarlint.lua
