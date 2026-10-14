@@ -222,17 +222,7 @@ In-card copy sha | y
 In-card open PR | p
 
 ## coerce @coerce
-To snake_case | crs
-To camelCase | crc
-To MixedCase | crm
-To kebab-case | crk
-To UPPER_CASE | cru
-To dash-case | cr-
-To dot.case | cr.
-To space case | cr<Space>
-To Title Case | crt
-Case-aware substitute | :S/{from}/{to}/g
-Subvert (multi-form sub) | :Subvert/facilit{y,ies}/building{,s}/g
+Case-aware substitute (live preview) | :S/{from}/{to}/
 
 ## diff @differ
 Diff open (vs index) | <leader>do (or :D)
