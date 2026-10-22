@@ -6,6 +6,7 @@ set -euo pipefail
 #   - launchers/run.sh (get_base_session_name, is_fixed_session, metadata)
 #   - launchers/delete.sh (repo protection, path traversal guard)
 #   - launchers/new.sh (name validation)
+#   - _lib/launcher-gen.sh (generated output, load/generate round trip)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -452,33 +453,90 @@ else
     fail "should cap window count at 20"
 fi
 
-section "launchers/new.sh: Single-Quote Escaping in Generated Scripts"
+section "_lib/launcher-gen.sh: Generated Launcher"
 
-if [[ "$nl_content" == *"wcmd=\"\${wcmd//\\'/"* ]] || [[ "$nl_content" == *"Escape single quotes"* ]]; then
+LAUNCHER_GEN="$DOTFILES_ROOT/tmux/scripts/_lib/launcher-gen.sh"
+GEN_TMP="$(mktemp -d)"
+# shellcheck disable=SC2329  # Called indirectly via trap
+_cleanup_gen_tmp() { rm -rf "$GEN_TMP"; }
+trap _cleanup_gen_tmp EXIT
+
+# wizard state for a sample launcher: a dotted name, an apostrophe in the
+# project path, and single quotes in both a pane command and a split command
+# shellcheck disable=SC2329  # Called in subshells below
+gen_fixture() {
+    name="my.app"
+    description="Sample launcher"
+    instance_mode="y"
+    project_dir="\$HOME/src/it's here"
+    worktree_aware="n"
+    worktrees_dir=""
+    win_names=(one two)
+    win_cmds=("echo 'hi there'" "")
+    win_splits=(no yes)
+    win_split_cmds=("" "printf '%s' x")
+}
+
+gen_file="$GEN_TMP/my.app"
+(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    gen_fixture
+    generate_launcher >"$gen_file"
+)
+gen_content=$(cat "$gen_file")
+
+if bash -n "$gen_file" 2>/dev/null; then
+    pass "generated launcher is valid bash"
+else
+    fail "generated launcher has a syntax error"
+fi
+
+# echo 'hi there' is embedded as 'echo '\''hi there'\'''
+expected_send_keys="tmux send-keys -t \"\$SESSION:one\" 'echo '\\''hi there'\\''' Enter"
+if [[ "$gen_content" == *"$expected_send_keys"* ]]; then
     pass "escapes single quotes in generated send-keys commands"
 else
     fail "should escape single quotes in user commands for generated scripts"
 fi
 
-section "launchers/new.sh: Tmux Exact-Match Session Targets"
+if [[ "$gen_content" == *$'\n# @generated\n'* ]]; then
+    pass "generated launcher carries the @generated marker"
+else
+    fail "generated launcher should carry the @generated marker"
+fi
+
+marker_results=$(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    is_generated_launcher "$gen_file" && echo "generated:yes" || echo "generated:no"
+    is_generated_launcher "$DOTFILES_ROOT/launchers/btop" && echo "btop:yes" || echo "btop:no"
+)
+if [[ "$marker_results" == *generated:yes* && "$marker_results" == *btop:no* ]]; then
+    pass "is_generated_launcher tells generated from hand-written launchers"
+else
+    fail "is_generated_launcher should match only marked launchers"
+fi
+
+section "_lib/launcher-gen.sh: Tmux Exact-Match Session Targets"
 
 # the wizard template must emit `=$SESSION` for tmux
 # session targets. bare `"$SESSION"` triggers tmux's prefix-matching,
 # so launching "foo-15" would silently re-attach to a running "foo-1533"
 # instead of creating a new session
-if [[ "$nl_content" == *'tmux has-session -t "=$SESSION"'* ]]; then
+if [[ "$gen_content" == *'tmux has-session -t "=$SESSION"'* ]]; then
     pass "generated has-session uses exact-match (=\$SESSION)"
 else
     fail "generated has-session should use =\$SESSION (prefix-match bug)"
 fi
 
-if [[ "$nl_content" == *'tmux switch-client -t "=$SESSION"'* ]]; then
+if [[ "$gen_content" == *'tmux switch-client -t "=$SESSION"'* ]]; then
     pass "generated switch-client uses exact-match (=\$SESSION)"
 else
     fail "generated switch-client should use =\$SESSION (prefix-match bug)"
 fi
 
-if [[ "$nl_content" == *'tmux attach-session -t "=$SESSION"'* ]]; then
+if [[ "$gen_content" == *'tmux attach-session -t "=$SESSION"'* ]]; then
     pass "generated attach-session uses exact-match (=\$SESSION)"
 else
     fail "generated attach-session should use =\$SESSION (prefix-match bug)"
@@ -504,7 +562,7 @@ section "Launchers: @launcher Session Tag"
 # set-option -t takes a target-pane, so a bare "=$SESSION" is parsed as a
 # window name and fails with "no such session". the trailing colon makes it the
 # exact-match session's current window, and the option lands at session level
-if [[ "$nl_content" == *"printf 'tmux set-option -t \"=\$SESSION:\" @launcher %s\\n' \"\$target_name\""* ]]; then
+if [[ "$gen_content" == *'tmux set-option -t "=$SESSION:" @launcher my.app'* ]]; then
     pass "generated launchers tag the session with their own name"
 else
     fail "generated launchers should emit set-option -t \"=\$SESSION:\" @launcher <name>"
@@ -519,6 +577,42 @@ for launcher_file in "$DOTFILES_ROOT"/launchers/*; do
         fail "launchers/$launcher_name should set @launcher $launcher_name on its session (with =\$SESSION: target)"
     fi
 done
+
+section "_lib/launcher-gen.sh: Load/Generate Round Trip"
+
+# loading a generated launcher must give back the state that wrote it, and
+# writing that state again must reproduce the file byte for byte, so editing
+# in the wizard never drifts (single quotes used to be escaped again per edit)
+round_trip=$(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    gen_fixture
+    want=$(declare -p description instance_mode worktree_aware win_names win_cmds win_splits win_split_cmds)
+    load_existing_launcher "$gen_file"
+    got=$(declare -p description instance_mode worktree_aware win_names win_cmds win_splits win_split_cmds)
+    [[ "$want" == "$got" ]] && echo "state-ok"
+    # shellcheck disable=SC2088
+    [[ "$project_dir" == "~/src/it's here" ]] && echo "dir-ok"
+    project_dir="${project_dir/#\~/\$HOME}"
+    cmp -s <(generate_launcher) "$gen_file" && echo "regen-ok"
+    true
+)
+
+if [[ "$round_trip" == *state-ok* ]]; then
+    pass "load_existing_launcher returns the state generate_launcher wrote"
+else
+    fail "load_existing_launcher should return the generated state (quotes, splits, instance mode)"
+fi
+if [[ "$round_trip" == *dir-ok* ]]; then
+    pass "load_existing_launcher returns the project dir in ~ form"
+else
+    fail "load_existing_launcher should return the project dir in ~ form"
+fi
+if [[ "$round_trip" == *regen-ok* ]]; then
+    pass "regenerating a loaded launcher is byte-identical"
+else
+    fail "regenerating a loaded launcher should reproduce the file exactly"
+fi
 
 section "launchers/new.sh: exec < /dev/tty Documentation"
 
