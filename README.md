@@ -84,7 +84,7 @@ Modular config based on kickstart.nvim with lazy.nvim, Treesitter, and Mason-man
 - **Multi-agent alerts** show coloured indicators when Claude, OpenCode, Copilot or Codex need attention, clearing when you switch to the session. The Claude and OpenCode switchers also show live per-instance state and how long it has been waiting. See [docs/AGENT-HOOKS.md](docs/AGENT-HOOKS.md)
 - **Process list** is one fzf switcher over everything you're watching: live commands with elapsed time plus finished ✓/✗ rows, with jump, stop, clear and rerun
 - **Undo** restores the most recently closed pane or window with directory, scrollback and layout intact
-- **Session launchers** cover `dev`, `github`, `btop`, `docker`, `dotfiles` and `config`, with a wizard to scaffold new ones. Also reachable from a plain shell with `tl`
+- **Session launchers** cover `dev`, `github`, `btop`, `docker`, `dotfiles` and `config`, with a wizard to scaffold new ones, or `s` in the launcher picker to save the current session as one. Also reachable from a plain shell with `tl`
 
 ### Zsh
 

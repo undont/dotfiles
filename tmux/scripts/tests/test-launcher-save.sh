@@ -55,7 +55,8 @@ section "Helpers"
 
 assert_equals "--resume <id> is dropped" "claude" "$(strip_resume_args "claude --resume abc")"
 assert_equals "-r <id> is dropped, other flags kept" "claude --model opus" "$(strip_resume_args "claude -r abc --model opus")"
-assert_equals "a bare --resume doesn't eat the next flag" "claude --model opus" "$(strip_resume_args "claude --resume --model opus")"
+assert_equals "a bare --resume is kept (opens the resume picker)" "claude --resume --model opus" "$(strip_resume_args "claude --resume --model opus")"
+assert_equals "a bare -r at the end is kept" "claude -r" "$(strip_resume_args "claude -r")"
 assert_equals "--resume=<id> is dropped" "codex" "$(strip_resume_args "codex --resume=xyz")"
 assert_equals "--continue is kept" "claude --continue" "$(strip_resume_args "claude --continue")"
 assert_equals "other programs are untouched" "npm run -r x" "$(strip_resume_args "npm run -r x")"
@@ -81,31 +82,38 @@ rows+=$'pane\t1\t1\t0\t0\t/p\tnvim\t\npane\t1\t2\t100\t0\t/p\tnpm run dev\t\npan
 rows+=$'pane\t2\t1\t0\t0\t/p\t\t\npane\t2\t2\t100\t0\t/p\t\t\n'
 rows+=$'pane\t3\t1\t0\t0\t/p\tclaude --resume abc\tresumes a specific session\n'
 rows+=$'pane\t4\t1\t0\t0\t/p\tless log\tpager\npane\t4\t2\t0\t25\t/p\t\t\n'
+rows+=$'window\t5\tnvim\t2\tL\nwindow\t6\tbare\t1\tL\n'
+rows+=$'pane\t5\t1\t0\t0\t/p\tnvim\t\npane\t5\t2\t100\t0\t/p\tclaude -r abc\tresumes a specific session\n'
+rows+=$'pane\t6\t1\t0\t0\t/p\tclaude -r\t\n'
 build_state_from_capture "$rows"
 
 expected_state="code|nvim|yes|npm run dev
 code-2||yes|
 agent|claude|no|
-logs|less log|yes|"
+logs|less log|yes|
+nvim|nvim|yes|claude
+bare|claude -r|no|"
 assert_equals "windows map to name|cmd|split|split cmd" "$expected_state" "$(describe_state)"
 assert_equals "session, tag and dir are read" "demo||/p" "$cap_session|$cap_tag|$cap_dir"
 
 notes=$(printf '%s\n' "${save_notes[@]}")
-for want in "code: 3 panes, saving the first 2 side by side" \
-    "agent: saved as 'claude' (was 'claude --resume abc')" \
-    "logs: 'less log' is a pager, may not replay well" \
-    "logs: stacked split, saving it side by side"; do
+for want in "code window: 3 panes, saving the first 2 side by side" \
+    "agent window: 'claude --resume abc' → 'claude'" \
+    "logs window, top pane: 'less log' is a pager, may not replay well" \
+    "logs window: stacked split, saving it side by side" \
+    "nvim window, right pane: 'claude -r abc' → 'claude'"; do
     if [[ "$notes" == *"$want"* ]]; then
         pass "note: $want"
     else
         fail "missing note: $want (got: $notes)"
     fi
 done
-if [[ "$notes" != *"code-2"* ]]; then
-    pass "a plain side-by-side split gets no note"
+if [[ "$notes" != *"code-2"* && "$notes" != *"bare"* ]]; then
+    pass "a plain split and a bare claude -r get no note"
 else
-    fail "a plain side-by-side split should get no note"
+    fail "a plain split and a bare claude -r should get no note (got: $notes)"
 fi
+assert_equals "one note per finding" "5" "${#save_notes[@]}"
 
 # ═══════════════════════════════════════════════════════════════════════════
 section "Save as new, then replay"
@@ -121,14 +129,15 @@ tmux new-session -d -s orig -n code -c "$TEST_DIR/proj" -x 200 -y 50
 tmux split-window -h -t "=orig:code" -c "$TEST_DIR/proj"
 tmux new-window -t "=orig:" -n srv -c "$TEST_DIR/proj"
 tmux send-keys -t "=orig:code.2" 'sleep 300 | cat -u' Enter
-tmux send-keys -t "=orig:srv" 'sleep 301' Enter
+printf 'x\n' >"$TEST_DIR/proj/my notes.txt"
+tmux send-keys -t "=orig:srv" "tail -f '$TEST_DIR/proj/my notes.txt'" Enter
 wait_for_command "=orig:code.2" || fail "pipeline did not start"
 wait_for_command "=orig:srv" || fail "srv command did not start"
 
 build_state_from_capture "$("$CAPTURE" orig)"
 original_state=$(describe_state)
 assert_equals "captures the original session" "code||yes|sleep 300 | cat -u
-srv|sleep 301|no|" "$original_state"
+srv|tail -f '$TEST_DIR/proj/my notes.txt'|no|" "$original_state"
 write_new_launcher "saved"
 saved="$USER_LAUNCHERS/saved"
 
@@ -230,6 +239,16 @@ if (
     pass "updates a launcher without worktree settings"
 else
     fail "should update a launcher without worktree settings"
+fi
+
+# a failed capture (session gone) leaves no windows: neither path may write
+cp "$USER_LAUNCHERS/plain" "$TEST_DIR/plain.before"
+build_state_from_capture ""
+if ! update_launcher "plain" && ! write_new_launcher "empty" &&
+    cmp -s "$TEST_DIR/plain.before" "$USER_LAUNCHERS/plain" && [[ ! -e "$USER_LAUNCHERS/empty" ]]; then
+    pass "an empty capture writes nothing"
+else
+    fail "an empty capture must not write or overwrite a launcher"
 fi
 
 tmux set-option -t "=orig:" @launcher hand

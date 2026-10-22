@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- `s` in the launcher picker (`prefix + p`) saves the current session as a launcher, or updates the launcher the session came from. Launchers tag their sessions with `@launcher` and the wizard marks its output `# @generated`; a migration adds both to existing wizard launchers it recognises. `tmux/scripts/launchers/save.sh`, `tmux/scripts/launchers/capture.sh`, `tmux/scripts/_lib/launcher-gen.sh`, `scripts/migrations/0.2.153-mark-generated-launchers.sh`
+
+### Changed
+
+- Settings in the launcher picker moved from `s` to `S`. `tmux/scripts/launchers/picker.sh`
+
+### Fixed
+
+- Editing a launcher in the wizard no longer escapes single quotes in its commands again, or adds a trailing slash to its directory. `tmux/scripts/_lib/launcher-gen.sh`, `tmux/scripts/_lib/common.sh`
+
 ## [0.2.152] - 2026-10-22
 
 ### Added

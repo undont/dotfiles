@@ -18,7 +18,7 @@ set -euo pipefail
 # with more panes keeps its first two, side by side. agent CLIs lose the args
 # that pin them to one conversation (claude --resume <id> → claude)
 #
-# usage: save.sh [session]    (default: the current client's session)
+# usage: save.sh [session]    (default: the current session)
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
@@ -36,10 +36,10 @@ cap_tag=""
 cap_dir=""
 declare -a save_notes=()
 
-# drop the args that resume one specific agent conversation. a flag's value is
-# only consumed when it isn't another flag (`claude --resume` alone opens a picker)
+# drop the args that resume one specific agent conversation. a flag without an
+# id after it is kept: a bare `claude -r` opens the resume picker
 strip_resume_args() {
-    local cmd="$1" prog w skip=0
+    local cmd="$1" prog i w
     prog="${cmd%% *}"
     case "${prog##*/}" in
         claude | codex | opencode | copilot) ;;
@@ -50,13 +50,16 @@ strip_resume_args() {
     esac
     local -a words out=()
     read -ra words <<<"$cmd"
-    for w in "${words[@]}"; do
-        if ((skip)); then
-            skip=0
-            [[ "$w" != -* ]] && continue
-        fi
+    for ((i = 0; i < ${#words[@]}; i++)); do
+        w="${words[$i]}"
         case "$w" in
-            --resume | -r | --session | -s) skip=1 ;;
+            --resume | -r | --session | -s)
+                if [[ -n "${words[i + 1]:-}" && "${words[i + 1]}" != -* ]]; then
+                    i=$((i + 1))
+                    continue
+                fi
+                out+=("$w")
+                ;;
             --resume=* | --session=*) ;;
             *) out+=("$w") ;;
         esac
@@ -98,7 +101,7 @@ build_state_from_capture() {
     local rows="$1"
     local kind f1 f2 f3 f4 f5 f6 f7
     local -a order=()
-    local -A wname=() count=() cmd1=() cmd2=() top1=() top2=() seen=()
+    local -A wname=() count=() cmd1=() cmd2=() top1=() top2=() note1=() note2=() seen=()
 
     win_names=()
     win_cmds=()
@@ -118,21 +121,25 @@ build_state_from_capture() {
                 ;;
             pane)
                 # f1 window, f2 pane, f3 left, f4 top, f5 cwd, f6 cmd, f7 note
-                local w="$f1" cmd="$f6" note="$f7" stripped
+                # notes are worded once the window's final name is known;
+                # panes past the second aren't saved, so they get none
+                local w="$f1" cmd="$f6" note="$f7" text="" stripped
                 count[$w]=$((${count[$w]:-0} + 1))
                 if [[ "$note" == "resumes a specific session" ]]; then
                     stripped=$(strip_resume_args "$cmd")
-                    save_notes+=("${wname[$w]:-?}: saved as '$stripped' (was '$cmd')")
+                    text="'$cmd' → '$stripped'"
                     cmd="$stripped"
                 elif [[ -n "$note" ]]; then
-                    save_notes+=("${wname[$w]:-?}: '$cmd' is a $note, may not replay well")
+                    text="'$cmd' is a $note, may not replay well"
                 fi
                 if ((count[$w] == 1)); then
                     cmd1[$w]="$cmd"
                     top1[$w]="$f4"
+                    note1[$w]="$text"
                 elif ((count[$w] == 2)); then
                     cmd2[$w]="$cmd"
                     top2[$w]="$f4"
+                    note2[$w]="$text"
                 fi
                 ;;
         esac
@@ -160,9 +167,27 @@ build_state_from_capture() {
         fi
 
         if ((count[$w] > 2)); then
-            save_notes+=("$name: ${count[$w]} panes, saving the first 2 side by side")
+            save_notes+=("$name window: ${count[$w]} panes, saving the first 2 side by side")
         elif ((count[$w] == 2)) && [[ "${top1[$w]}" != "${top2[$w]}" ]]; then
-            save_notes+=("$name: stacked split, saving it side by side")
+            save_notes+=("$name window: stacked split, saving it side by side")
+        fi
+
+        # name panes by where they sit in the session being saved
+        local first="$name window" second=""
+        if ((count[$w] >= 2)); then
+            if [[ "${top1[$w]}" == "${top2[$w]}" ]]; then
+                first="$name window, left pane"
+                second="$name window, right pane"
+            else
+                first="$name window, top pane"
+                second="$name window, bottom pane"
+            fi
+        fi
+        if [[ -n "${note1[$w]:-}" ]]; then
+            save_notes+=("$first: ${note1[$w]}")
+        fi
+        if [[ -n "${note2[$w]:-}" ]]; then
+            save_notes+=("$second: ${note2[$w]}")
         fi
     done
 }
@@ -176,6 +201,8 @@ update_target() {
 
 # write the current win_* state as a new launcher rooted at the session's dir
 write_new_launcher() {
+    # a failed capture leaves no windows; never write an empty launcher
+    [[ ${#win_names[@]} -gt 0 ]] || return 1
     name="$1"
     description="Saved from the '$cap_session' session"
     instance_mode="n"
@@ -189,6 +216,7 @@ write_new_launcher() {
 
 # replace the windows of a wizard-generated launcher, keeping everything else
 update_launcher() {
+    [[ ${#win_names[@]} -gt 0 ]] || return 1
     name="$1"
     local -a keep_names=("${win_names[@]}") keep_cmds=("${win_cmds[@]}")
     local -a keep_splits=("${win_splits[@]}") keep_split_cmds=("${win_split_cmds[@]}")
@@ -306,6 +334,10 @@ main() {
                 "It will appear in the launcher picker (prefix + p)"
         fi
         sleep 1
+        # tell the launcher picker which launcher to select on return
+        if [[ -n "${SAVE_RESULT_FILE:-}" ]]; then
+            printf '%s\n' "$name" >"$SAVE_RESULT_FILE"
+        fi
         exit 0
     done
 }

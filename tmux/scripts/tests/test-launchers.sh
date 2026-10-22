@@ -614,6 +614,26 @@ else
     fail "regenerating a loaded launcher should reproduce the file exactly"
 fi
 
+section "launchers/picker.sh: Search Mode Keys"
+
+# every single-letter action key must be unbound while searching (/) and
+# rebound on esc, or the letter can't be typed into the search
+picker_content=$(cat "$SCRIPT_DIR/../launchers/picker.sh")
+unbind_list=$(printf '%s' "$picker_content" | grep -o "enable-search[^']*+unbind([^)]*)" | head -1)
+rebind_list=$(printf '%s' "$picker_content" | grep -o "disable-search[^']*+rebind([^)]*)" | head -1)
+for key in $(printf '%s' "$picker_content" | grep -oE "\-\-bind ['\"][A-Za-z]:(become|execute)" | sed -E "s/--bind ['\"]//; s/:.*//"); do
+    if [[ "$unbind_list" == *[\(,]"$key"[,\)]* && "$rebind_list" == *[\(,]"$key"[,\)]* ]]; then
+        pass "picker key '$key' is unbound while searching"
+    else
+        fail "picker key '$key' should be in both the unbind and rebind lists"
+    fi
+done
+if [[ "$picker_content" == *"'s:become(printf \"ACTION:save\")'"* && "$picker_content" == *"'S:become(printf \"ACTION:set\")'"* ]]; then
+    pass "s saves the session, S opens settings"
+else
+    fail "s should save the session and S open settings"
+fi
+
 section "launchers/new.sh: exec < /dev/tty Documentation"
 
 if [[ "$nl_content" == *"Security note"* ]] || [[ "$nl_content" == *"controlling terminal"* ]]; then

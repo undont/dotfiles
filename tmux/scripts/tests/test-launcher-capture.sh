@@ -67,10 +67,29 @@ assert_equals "claude --resume is flagged" "resumes a specific session" "$(repla
 assert_equals "codex --resume= is flagged" "resumes a specific session" "$(replay_note "codex --resume=abc")"
 assert_equals "claude -r is flagged" "resumes a specific session" "$(replay_note "claude -r abc")"
 assert_equals "plain claude is not flagged" "" "$(replay_note "claude")"
+assert_equals "bare claude -r (resume picker) is not flagged" "" "$(replay_note "claude -r")"
+assert_equals "bare --resume before another flag is not flagged" "" "$(replay_note "claude --resume --model opus")"
 assert_equals "claude --continue is not flagged" "" "$(replay_note "claude --continue")"
 assert_equals "nvim is not flagged" "" "$(replay_note "nvim")"
 
 # ═══════════════════════════════════════════════════════════════════════════
+section "Helpers: quoting and path rejoining"
+
+assert_equals "plain words stay bare" "nvim" "$(shell_quote nvim)"
+assert_equals "paths stay bare" "/a/b-c_d.md" "$(shell_quote /a/b-c_d.md)"
+assert_equals "spaces are single-quoted" "'a b'" "$(shell_quote "a b")"
+assert_equals "single quotes are escaped" "'it'\\''s'" "$(shell_quote "it's")"
+assert_equals "empty arguments are kept" "''" "$(shell_quote "")"
+
+mkdir -p "$TEST_DIR/my dir"
+touch "$TEST_DIR/my dir/my notes.md" "$TEST_DIR/proj/rel file.txt"
+joined=$(rejoin_path_words "$TEST_DIR/proj" nvim "$TEST_DIR/my" "dir/my" notes.md | paste -sd'|' -)
+assert_equals "an absolute path with spaces is rejoined" "nvim|$TEST_DIR/my dir/my notes.md" "$joined"
+joined=$(rejoin_path_words "$TEST_DIR/proj" nvim rel file.txt other | paste -sd'|' -)
+assert_equals "a relative path is rejoined against the cwd" "nvim|rel file.txt|other" "$joined"
+joined=$(rejoin_path_words "$TEST_DIR/proj" git commit -m two words | paste -sd'|' -)
+assert_equals "words that aren't a path stay split" "git|commit|-m|two|words" "$joined"
+
 section "Session capture"
 # ═══════════════════════════════════════════════════════════════════════════
 
@@ -84,8 +103,12 @@ tmux split-window -h -t "=cap:code" -c "$TEST_DIR/proj"
 tmux new-window -t "=cap:" -n srv -c "$TEST_DIR/proj/sub"
 tmux send-keys -t "=cap:code.1" 'sleep 300 | cat -u' Enter
 tmux send-keys -t "=cap:srv" "sh -c 'sleep 301; :'" Enter
+printf 'x\n' >"$TEST_DIR/proj/my notes.txt"
+tmux new-window -t "=cap:" -n notes -c "$TEST_DIR/proj"
+tmux send-keys -t "=cap:notes" "tail -f '$TEST_DIR/proj/my notes.txt'" Enter
 wait_for_command "=cap:code.1" || fail "pipeline did not start"
 wait_for_command "=cap:srv" || fail "child-process command did not start"
+wait_for_command "=cap:notes" || fail "tail did not start"
 
 out=$("$CAPTURE" cap)
 code_idx=$(tmux display-message -p -t "=cap:code" '#{window_index}')
@@ -105,7 +128,7 @@ else
 fi
 
 pane_rows=$(printf '%s\n' "$out" | grep -c '^pane' || true)
-assert_equals "one pane row per pane" "3" "$pane_rows"
+assert_equals "one pane row per pane" "4" "$pane_rows"
 
 assert_equals "idle shell pane has no command" "" "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$left_pane" 7)"
 assert_equals "pipeline is rebuilt from its stages" "sleep 300 | cat -u" "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$((left_pane + 1))" 7)"
@@ -116,7 +139,17 @@ else
     fail "right pane should have a positive x offset"
 fi
 
-assert_equals "child processes of the foreground job are left out" "sh -c sleep 301; :" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 7)"
+# linux reads the exact argv; elsewhere ps loses the argument boundaries, so
+# the ';' word is quoted on its own (still one stage, no child sleep)
+if [[ -r /proc/self/cmdline ]]; then
+    expected_child="sh -c 'sleep 301; :'"
+else
+    expected_child="sh -c sleep '301;' :"
+fi
+assert_equals "child processes of the foreground job are left out" "$expected_child" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 7)"
+notes_idx=$(tmux display-message -p -t "=cap:notes" '#{window_index}')
+assert_equals "an argument with a space is quoted" "tail -f '$TEST_DIR/proj/my notes.txt'" \
+    "$(row_field "$out" $'pane\t'"$notes_idx"$'\t'"$left_pane" 7)"
 assert_equals "pane row carries its own cwd" "$TEST_DIR/proj/sub" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 6)"
 
 # ═══════════════════════════════════════════════════════════════════════════
