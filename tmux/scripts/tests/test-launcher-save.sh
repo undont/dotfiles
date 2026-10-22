@@ -77,14 +77,18 @@ section "Mapping captured rows"
 # ═══════════════════════════════════════════════════════════════════════════
 
 rows=$'session\tdemo\nlauncher\t\ndir\t/p\n'
-rows+=$'window\t1\tcode\t3\tL\nwindow\t2\tcode\t2\tL\nwindow\t3\tagent\t1\tL\nwindow\t4\tlogs\t2\tL\n'
-rows+=$'pane\t1\t1\t0\t0\t/p\tnvim\t\npane\t1\t2\t100\t0\t/p\tnpm run dev\t\npane\t1\t3\t100\t25\t/p\t\t\n'
-rows+=$'pane\t2\t1\t0\t0\t/p\t\t\npane\t2\t2\t100\t0\t/p\t\t\n'
-rows+=$'pane\t3\t1\t0\t0\t/p\tclaude --resume abc\tresumes a specific session\n'
-rows+=$'pane\t4\t1\t0\t0\t/p\tless log\tpager\npane\t4\t2\t0\t25\t/p\t\t\n'
-rows+=$'window\t5\tnvim\t2\tL\nwindow\t6\tbare\t1\tL\n'
-rows+=$'pane\t5\t1\t0\t0\t/p\tnvim\t\npane\t5\t2\t100\t0\t/p\tclaude -r abc\tresumes a specific session\n'
-rows+=$'pane\t6\t1\t0\t0\t/p\tclaude -r\t\n'
+# a 200x50 window per layout: pane rows are window, pane, left, top, width,
+# height, cwd, cmd, note
+rows+=$'window\t1\tcode\t3\nwindow\t2\tcode\t2\nwindow\t3\tagent\t1\nwindow\t4\tlogs\t2\n'
+rows+=$'pane\t1\t1\t0\t0\t99\t50\t/p\tnvim\t\npane\t1\t2\t100\t0\t100\t24\t/p\tnpm run dev\t\n'
+rows+=$'pane\t1\t3\t100\t25\t100\t25\t/p\t\t\n'
+rows+=$'pane\t2\t1\t0\t0\t99\t50\t/p\t\t\npane\t2\t2\t100\t0\t100\t50\t/p\t\t\n'
+rows+=$'pane\t3\t1\t0\t0\t200\t50\t/p\tclaude --resume abc\tresumes a specific session\n'
+rows+=$'pane\t4\t1\t0\t0\t200\t24\t/p\tless log\tpager\npane\t4\t2\t0\t25\t200\t25\t/p\t\t\n'
+rows+=$'window\t5\tnvim\t2\nwindow\t6\tbare\t1\n'
+rows+=$'pane\t5\t1\t0\t0\t99\t50\t/p\tnvim\t\n'
+rows+=$'pane\t5\t2\t100\t0\t100\t50\t/p\tclaude -r abc\tresumes a specific session\n'
+rows+=$'pane\t6\t1\t0\t0\t200\t50\t/p\tclaude -r\t\n'
 build_state_from_capture "$rows"
 
 expected_state="code|nvim|yes|npm run dev

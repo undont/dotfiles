@@ -22,7 +22,7 @@ _cleanup_capture_tests() {
 trap _cleanup_capture_tests EXIT INT TERM
 
 # field N (1-based) of the first row whose leading fields match the given prefix
-# usage: row_field "$output" $'pane\t0\t1' 7
+# usage: row_field "$output" $'pane\t0\t1' 9
 row_field() {
     printf '%s\n' "$1" | awk -F'\t' -v prefix="$2" -v n="$3" \
         'index($0, prefix "\t") == 1 { print $n; exit }'
@@ -121,17 +121,19 @@ assert_equals "dir is the most common pane cwd" "$TEST_DIR/proj" "$(row_field "$
 
 assert_equals "window row carries the name" "code" "$(row_field "$out" $'window\t'"$code_idx" 3)"
 assert_equals "window row carries the pane count" "2" "$(row_field "$out" $'window\t'"$code_idx" 4)"
-if [[ -n "$(row_field "$out" $'window\t'"$code_idx" 5)" ]]; then
-    pass "window row carries the layout"
-else
-    fail "window row should carry the layout"
-fi
+# pane row fields: 4 left, 5 top, 6 width, 7 height, 8 cwd, 9 command
+left_w=$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$left_pane" 6)
+right_w=$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$((left_pane + 1))" 6)
+assert_equals "pane widths fill the window (plus the 1-column border)" "200" "$((left_w + right_w + 1))"
+assert_equals "side-by-side panes have the same height" \
+    "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$left_pane" 7)" \
+    "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$((left_pane + 1))" 7)"
 
 pane_rows=$(printf '%s\n' "$out" | grep -c '^pane' || true)
 assert_equals "one pane row per pane" "4" "$pane_rows"
 
-assert_equals "idle shell pane has no command" "" "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$left_pane" 7)"
-assert_equals "pipeline is rebuilt from its stages" "sleep 300 | cat -u" "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$((left_pane + 1))" 7)"
+assert_equals "idle shell pane has no command" "" "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$left_pane" 9)"
+assert_equals "pipeline is rebuilt from its stages" "sleep 300 | cat -u" "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$((left_pane + 1))" 9)"
 assert_equals "left pane is at x=0" "0" "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$left_pane" 4)"
 if [[ "$(row_field "$out" $'pane\t'"$code_idx"$'\t'"$((left_pane + 1))" 4)" -gt 0 ]]; then
     pass "right pane has a positive x offset"
@@ -146,11 +148,11 @@ if [[ -r /proc/self/cmdline ]]; then
 else
     expected_child="sh -c sleep '301;' :"
 fi
-assert_equals "child processes of the foreground job are left out" "$expected_child" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 7)"
+assert_equals "child processes of the foreground job are left out" "$expected_child" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 9)"
 notes_idx=$(tmux display-message -p -t "=cap:notes" '#{window_index}')
 assert_equals "an argument with a space is quoted" "tail -f '$TEST_DIR/proj/my notes.txt'" \
-    "$(row_field "$out" $'pane\t'"$notes_idx"$'\t'"$left_pane" 7)"
-assert_equals "pane row carries its own cwd" "$TEST_DIR/proj/sub" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 6)"
+    "$(row_field "$out" $'pane\t'"$notes_idx"$'\t'"$left_pane" 9)"
+assert_equals "pane row carries its own cwd" "$TEST_DIR/proj/sub" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 8)"
 
 # ═══════════════════════════════════════════════════════════════════════════
 section "Session capture: tag and tie-break"

@@ -14,8 +14,8 @@ set -euo pipefail
 #   session   <name>
 #   launcher  <@launcher tag, empty if untagged>
 #   dir       <most common pane cwd; ties go to the earliest pane>
-#   window    <index> <name> <pane count> <layout>
-#   pane      <window index> <pane index> <left> <top> <cwd> <command> <note>
+#   window    <index> <name> <pane count>
+#   pane      <window index> <pane index> <left> <top> <width> <height> <cwd> <command> <note>
 #
 # <command> is the pane's foreground job with its arguments, empty when the
 # pane sits at a shell prompt. <note> is empty, or a short reason the command
@@ -149,7 +149,7 @@ replay_note() {
 
 main() {
     local session="${1:-}" windows panes dir cmd note
-    local w_index w_name w_panes w_layout p_window p_index p_left p_top p_cwd p_tty
+    local w_index w_name w_panes p_window p_index p_left p_top p_width p_height p_cwd p_tty
     if [[ -z "$session" ]]; then
         # the popup's client session, or the session of the pane this runs in
         session=$(tmux display-message -p '#{session_name}' 2>/dev/null || true)
@@ -162,20 +162,20 @@ main() {
     printf 'session\t%s\n' "$session"
     printf 'launcher\t%s\n' "$(tmux show-options -qv -t "=$session:" @launcher 2>/dev/null || true)"
 
-    windows=$(tmux list-windows -t "=$session" -F '#{window_index}	#{window_name}	#{window_panes}	#{window_layout}')
-    panes=$(tmux list-panes -s -t "=$session" -F '#{window_index}	#{pane_index}	#{pane_left}	#{pane_top}	#{pane_current_path}	#{pane_tty}')
+    windows=$(tmux list-windows -t "=$session" -F '#{window_index}	#{window_name}	#{window_panes}')
+    panes=$(tmux list-panes -s -t "=$session" -F '#{window_index}	#{pane_index}	#{pane_left}	#{pane_top}	#{pane_width}	#{pane_height}	#{pane_current_path}	#{pane_tty}')
 
     # most common cwd, ties to the earliest pane (list-panes -s is in window,pane order)
     dir=$(printf '%s\n' "$panes" | awk -F'\t' '
-        { if (!($5 in count)) order[++n] = $5; count[$5]++ }
+        { if (!($7 in count)) order[++n] = $7; count[$7]++ }
         END { best = order[1]; for (i = 2; i <= n; i++) if (count[order[i]] > count[best]) best = order[i]; print best }')
     printf 'dir\t%s\n' "$dir"
 
-    while IFS=$'\t' read -r w_index w_name w_panes w_layout; do
-        printf 'window\t%s\t%s\t%s\t%s\n' "$w_index" "$(clean_field "$w_name")" "$w_panes" "$w_layout"
+    while IFS=$'\t' read -r w_index w_name w_panes; do
+        printf 'window\t%s\t%s\t%s\n' "$w_index" "$(clean_field "$w_name")" "$w_panes"
     done <<<"$windows"
 
-    while IFS=$'\t' read -r p_window p_index p_left p_top p_cwd p_tty; do
+    while IFS=$'\t' read -r p_window p_index p_left p_top p_width p_height p_cwd p_tty; do
         cmd=$(foreground_command "$p_tty" "$p_cwd")
         if is_shell "$cmd"; then
             cmd=""
@@ -183,8 +183,9 @@ main() {
         cmd=$(clean_field "$cmd")
         note=""
         [[ -n "$cmd" ]] && note=$(replay_note "$cmd")
-        printf 'pane\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
-            "$p_window" "$p_index" "$p_left" "$p_top" "$(clean_field "$p_cwd")" "$cmd" "$note"
+        printf 'pane\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
+            "$p_window" "$p_index" "$p_left" "$p_top" "$p_width" "$p_height" \
+            "$(clean_field "$p_cwd")" "$cmd" "$note"
     done <<<"$panes"
 }
 

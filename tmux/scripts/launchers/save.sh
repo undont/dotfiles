@@ -99,7 +99,7 @@ generator_path() {
 # usage: build_state_from_capture "$(capture.sh session)"
 build_state_from_capture() {
     local rows="$1"
-    local kind f1 f2 f3 f4 f5 f6 f7
+    local kind f1 f2 f3 f4 f5 f6 f7 f8 f9
     local -a order=()
     local -A wname=() count=() cmd1=() cmd2=() top1=() top2=() note1=() note2=() seen=()
 
@@ -109,7 +109,7 @@ build_state_from_capture() {
     win_split_cmds=()
     save_notes=()
 
-    while IFS=$'\t' read -r kind f1 f2 f3 f4 f5 f6 f7; do
+    while IFS=$'\t' read -r kind f1 f2 f3 f4 f5 f6 f7 f8 f9; do
         case "$kind" in
             session) cap_session="$f1" ;;
             launcher) cap_tag="$f1" ;;
@@ -120,10 +120,11 @@ build_state_from_capture() {
                 count[$f1]=0
                 ;;
             pane)
-                # f1 window, f2 pane, f3 left, f4 top, f5 cwd, f6 cmd, f7 note
+                # f1 window, f2 pane, f3 left, f4 top, f5 width, f6 height,
+                # f7 cwd, f8 cmd, f9 note
                 # notes are worded once the window's final name is known;
                 # panes past the second aren't saved, so they get none
-                local w="$f1" cmd="$f6" note="$f7" text="" stripped
+                local w="$f1" cmd="$f8" note="$f9" text="" stripped
                 count[$w]=$((${count[$w]:-0} + 1))
                 if [[ "$note" == "resumes a specific session" ]]; then
                     stripped=$(strip_resume_args "$cmd")
