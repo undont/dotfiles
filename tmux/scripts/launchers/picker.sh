@@ -120,6 +120,12 @@ main() {
                     show_error "Cannot edit system launcher '$edit_name'"
                     continue
                 fi
+                # and only wizard output: the wizard would silently drop what
+                # it can't read from a hand-written launcher
+                if ! grep -qxF '# @generated' "$USER_LAUNCHERS/$edit_name"; then
+                    show_error "Cannot edit '$edit_name': written by hand"
+                    continue
+                fi
                 "$SCRIPT_DIR/prompt.sh" --edit "$edit_name" && break
                 continue
                 ;;

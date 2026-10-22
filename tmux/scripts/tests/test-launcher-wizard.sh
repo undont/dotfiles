@@ -184,6 +184,35 @@ else
 fi
 assert_equals "one window remains" "1" "$(grep -c '^tmux new-' "$LAUNCHERS/rich")"
 
+# ═══════════════════════════════════════════════════════════════════════════
+section "Hand-written launchers are refused"
+# ═══════════════════════════════════════════════════════════════════════════
+
+# the wizard only understands its own output: editing dana (unnamed window,
+# three panes) used to show a mangled window list and save would drop them
+printf '#!/usr/bin/env bash\n# @description: hand-written\ntmux new-session -d -s dana\n' >"$LAUNCHERS/hand"
+chmod +x "$LAUNCHERS/hand"
+cp "$LAUNCHERS/hand" "$TEST_DIR/hand.before"
+tmux kill-session -t "=wiz" 2>/dev/null || true
+tmux new-session -d -s wiz -x 120 -y 40 \
+    "env XDG_CONFIG_HOME='$CONFIG' PROJECT_DIRS='$TEST_DIR' bash '$NEW_SH' --edit hand; echo EXIT=\$? >'$TEST_DIR/exit'; sleep 30"
+
+wait_for "written by hand"
+shown=$(screen)
+if [[ "$shown" == *"The wizard can only edit launchers it created"* ]]; then
+    pass "the wizard refuses to edit a hand-written launcher"
+else
+    fail "the wizard should refuse hand-written launchers (screen: $shown)"
+fi
+answer "spc/enter close" " "
+# new.sh exits, then the pane writes the exit code
+for _i in $(seq 1 30); do [[ -s "$TEST_DIR/exit" ]] && break; sleep 0.1; done
+if grep -qx 'EXIT=1' "$TEST_DIR/exit" && cmp -s "$TEST_DIR/hand.before" "$LAUNCHERS/hand"; then
+    pass "it exits without touching the launcher"
+else
+    fail "refusal should exit 1 and leave the launcher unchanged"
+fi
+
 cleanup_test_server
 
 print_summary

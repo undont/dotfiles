@@ -715,6 +715,13 @@ if [[ "$picker_content" == *"'s:become(printf \"ACTION:save\")'"* && "$picker_co
 else
     fail "s should save the session and S open settings"
 fi
+# the wizard can only edit its own output; the picker must not send hand-written
+# launchers there
+if [[ "$picker_content" == *"grep -qxF '# @generated'"* && "$picker_content" == *"written by hand"* ]]; then
+    pass "the picker refuses to edit hand-written launchers"
+else
+    fail "the picker should refuse to edit hand-written launchers"
+fi
 
 section "launchers/new.sh: exec < /dev/tty Documentation"
 

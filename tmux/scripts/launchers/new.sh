@@ -307,6 +307,31 @@ if [[ -n "$edit_source" ]]; then
         printf "  ${RED}Launcher '%s' not found${NC}\n\n" "$edit_source"
         exit 1
     fi
+    # the wizard only understands its own output; editing anything else would
+    # silently drop what it can't read (unnamed windows, extra panes, ...)
+    if ! is_generated_launcher "$edit_file"; then
+        clear
+        printf "\n"
+        printf "  ${RED}Launcher '%s' was written by hand${NC}\n\n" "$edit_source"
+        printf "  ${DIM}The wizard can only edit launchers it created (# @generated).${NC}\n"
+        printf "  ${DIM}Edit it in an editor, or save the session over it with s.${NC}\n\n"
+        # pin hint to bottom, like the name-exists error
+        _hw_tw=${COLUMNS:-$(tput cols)}
+        _hw_th=${LINES:-$(tput lines)}
+        _hw_hint=" spc/enter close "
+        _hw_side=$(((_hw_tw - ${#_hw_hint}) / 2))
+        [[ $_hw_side -lt 1 ]] && _hw_side=1
+        _hw_border=$(printf '─%.0s' $(seq 1 $_hw_side))
+        printf '\033[%d;1H' "$((_hw_th - 1))"
+        printf "${DIM}%s${NC}${CYAN}%s${NC}${DIM}%s${NC}" "$_hw_border" "$_hw_hint" "$_hw_border"
+        printf '\033[6;1H'
+        while true; do
+            read -rsn1 _hw_key
+            case "$_hw_key" in
+                ' ' | '' | q | $'\x1b') exit 1 ;;
+            esac
+        done
+    fi
     load_existing_launcher "$edit_file"
     if [[ ${#win_names[@]} -gt 0 ]]; then
         num_windows="${#win_names[@]}"
