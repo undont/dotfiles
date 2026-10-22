@@ -577,12 +577,12 @@ if [[ "$IS_MACOS" == "1" ]]; then
 else
     alias ls="ls --color=auto"
 fi
-alias ll="ls -alF"
-alias la="ls -A"
-alias l="ls -lF"
+alias ll="ls -alF" # ls -alF
+alias la="ls -A"   # ls -A
+alias l="ls -lF"   # ls -lF
 
-alias cp="cp -i" # (safe overwrite)
-alias mv="mv -i" # (safe overwrite)
+alias cp="cp -i" # cp -i (safe overwrite)
+alias mv="mv -i" # mv -i (safe overwrite)
 
 alias -s md='glow -t' # open .md files with glow
 
