@@ -77,6 +77,7 @@ fi
 
 # window 1: zsh
 tmux new-session -d -s "$session" -n "zsh" -c "$dir"
+tmux set-option -t "=$session:" @launcher dev
 
 # window 2: nvim
 tmux new-window -t "$session:" -n "nvim" -c "$dir"

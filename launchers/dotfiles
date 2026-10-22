@@ -47,6 +47,7 @@ fi
 
 # window 1: nvim (opening directory triggers oil)
 tmux new-session -d -s "$SESSION" -n "nvim" -c "$PROJECT_DIR"
+tmux set-option -t "=$SESSION:" @launcher dotfiles
 tmux send-keys -t "$SESSION:nvim" "nvim ." Enter
 
 if [[ -n "${TMUX:-}" ]]; then

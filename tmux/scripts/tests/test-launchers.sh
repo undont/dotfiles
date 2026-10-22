@@ -499,6 +499,27 @@ else
     skip "launchers/dev not found"
 fi
 
+section "Launchers: @launcher Session Tag"
+
+# set-option -t takes a target-pane, so a bare "=$SESSION" is parsed as a
+# window name and fails with "no such session". the trailing colon makes it the
+# exact-match session's current window, and the option lands at session level
+if [[ "$nl_content" == *"printf 'tmux set-option -t \"=\$SESSION:\" @launcher %s\\n' \"\$target_name\""* ]]; then
+    pass "generated launchers tag the session with their own name"
+else
+    fail "generated launchers should emit set-option -t \"=\$SESSION:\" @launcher <name>"
+fi
+
+for launcher_file in "$DOTFILES_ROOT"/launchers/*; do
+    launcher_name=$(basename "$launcher_file")
+    [[ "$launcher_name" == *.template ]] && continue
+    if grep -qE "^tmux set-option -t \"=\\\$(SESSION|session):\" @launcher ${launcher_name}\$" "$launcher_file"; then
+        pass "launchers/$launcher_name tags its session as @launcher $launcher_name"
+    else
+        fail "launchers/$launcher_name should set @launcher $launcher_name on its session (with =\$SESSION: target)"
+    fi
+done
+
 section "launchers/new.sh: exec < /dev/tty Documentation"
 
 if [[ "$nl_content" == *"Security note"* ]] || [[ "$nl_content" == *"controlling terminal"* ]]; then

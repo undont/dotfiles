@@ -84,6 +84,9 @@ fi
 
 # window 1: dev (split panes - Claude left, terminal right)
 tmux new-session -d -s "$SESSION" -n dev -c "$PROJECT_DIR"
+# tag the session with this launcher's file name, so "save session" (s in the
+# launcher picker) can offer to update this launcher. rename it with the file
+tmux set-option -t "=$SESSION:" @launcher myproject
 tmux split-window -t "$SESSION:dev" -h -c "$PROJECT_DIR"
 tmux send-keys -t "$SESSION:dev.1" 'claude' Enter
 

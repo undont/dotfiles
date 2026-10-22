@@ -932,6 +932,7 @@ VALIDATE
         if [[ $i -eq 0 ]]; then
             printf '# Window 1: %s\n' "$wname"
             printf 'tmux new-session -d -s "$SESSION" -n "%s" -c "$PROJECT_DIR"\n' "$wname"
+            printf 'tmux set-option -t "=$SESSION:" @launcher %s\n' "$target_name"
         else
             printf '\n# Window %d: %s\n' "$((i + 1))" "$wname"
             printf 'tmux new-window -t "$SESSION:" -n "%s" -c "$PROJECT_DIR"\n' "$wname"
