@@ -1127,6 +1127,28 @@ bindkey '^k' up-line-or-history   # Ctrl+K → Up
 zmodload -i zsh/complist 2>/dev/null
 bindkey -M menuselect '^j' down-line-or-history
 bindkey -M menuselect '^k' up-line-or-history
+
+# terminal flow control (^S/^Q) off in zle so ^S reaches the widget
+unsetopt FLOW_CONTROL
+
+# fzf over the top-level dirs of PROJECT_DIRS, then a dev session in the pick
+# @cheat: Ctrl+S | dev session from a project dir (fzf)
+_sessionizer-widget() {
+    local -a roots dirs
+    roots=(${(s.:.)PROJECT_DIRS:-$HOME/code:$HOME/playground})
+    dirs=(${^roots}/*(/N))
+    _fzf_theme_refresh 2>/dev/null
+    local dir
+    dir="$(printf '%s\n' "${dirs[@]/#$HOME/~}" | fzf --height=40% --reverse)"
+    if [[ -z "$dir" ]]; then
+        zle redisplay
+        return 0
+    fi
+    dev "${dir/#\~/$HOME}" </dev/tty
+    zle reset-prompt
+}
+zle -N _sessionizer-widget
+bindkey '^s' _sessionizer-widget
 # @cheat: Cmd+Backspace | delete to line start
 bindkey '\e[127;5u' backward-kill-line # Cmd+Backspace (via Ghostty: super+backspace → Ctrl+Backspace)
 
