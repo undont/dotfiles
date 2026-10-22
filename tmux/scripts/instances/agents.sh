@@ -1,8 +1,11 @@
 #!/usr/bin/env bash
-# list all running codex, opencode or copilot instances across all tmux sessions
-# shows a logo header then one "session:window.pane window_name [icon]" row per
-# instance, most recently viewed first. claude has its own lister (claude.sh)
-# usage: agents.sh <codex|opencode|copilot>
+# list all running codex or copilot instances across all tmux sessions
+# emits a logo header then tab-delimited rows for fzf, in claude.sh's format:
+#   {1}=display(shown)  {2}=jump/preview target session:window.pane
+# the display leads with the agent's alert icon while its window has an alert.
+# most recently viewed first. agents with per-pane state have their own
+# listers (claude.sh, opencode.sh)
+# usage: agents.sh <codex|copilot>
 
 set -euo pipefail
 
@@ -13,9 +16,9 @@ source "$SCRIPT_DIR/../_lib/process.sh"
 
 agent="${1:-}"
 case "$agent" in
-    codex | opencode | copilot) ;;
+    codex | copilot) ;;
     *)
-        echo "usage: agents.sh <codex|opencode|copilot>" >&2
+        echo "usage: agents.sh <codex|copilot>" >&2
         exit 2
         ;;
 esac
@@ -46,30 +49,27 @@ if [[ -f "$ALERTS_FILE" ]]; then
     alerts_content=$(<"$ALERTS_FILE")
 fi
 
+TAB=$(printf '\t')
+
 panes=()
 
-# all panes, most recently viewed first: "last_viewed session:window.pane pane_pid"
-while IFS= read -r line; do
-    rest="${line#* }"
-    target="${rest%% *}"
-    pane_pid="${rest##* }"
-
+# all panes, most recently viewed first
+while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_pid; do
     [[ -n "${agent_pids[$pane_pid]:-}" ]] || continue
 
-    session="${target%%:*}"
-    win_pane="${target#*:}"
-    window_idx="${win_pane%%.*}"
+    target="${session}:${window_idx}.${pane_idx}"
     window_name="${window_names["${session}:${window_idx}"]:-}"
+    # blank status keeps targets aligned with rows that have an icon
+    icon="  "
 
     if alerts_has_agent "$alerts_content" "$agent" "$session" "$window_name" "${window_ids["${session}:${window_idx}"]:-}"; then
         display=$(get_agent_display "$agent")
         icon="${display%%|*}"
         [[ "$agent" == copilot ]] && icon=$(_ansi "${display##*|}" "$icon")
-        panes+=("${target} ${window_name} ${icon}")
-    else
-        panes+=("${target} ${window_name}")
     fi
-done < <(tmux list-panes -a -F '#{?#{@pane-viewed},#{@pane-viewed},0} #{session_name}:#{window_index}.#{pane_index} #{pane_pid}' | sort -rn)
+
+    panes+=("${icon}  ${target} ${window_name}${TAB}${target}")
+done < <(tmux list-panes -a -F "#{?#{@pane-viewed},#{@pane-viewed},0}${TAB}#{session_name}${TAB}#{window_index}${TAB}#{pane_index}${TAB}#{pane_pid}" | sort -rn)
 
 # the header height here is the binding's --header-lines in tmux.conf.template
 echo ""
@@ -78,17 +78,6 @@ case "$agent" in
         printf "${GREEN}█▀▀ █▀▀█ █▀▀▄ █▀▀ █ █${NC}\n"
         printf "${GREEN}█   █  █ █  █ █▀▀ ▄▀▄${NC}\n"
         printf "${GREEN}▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀ ▀ ▀${NC}\n"
-        echo ""
-        ;;
-    opencode)
-        # two-tone blue from the theme's cyan accent
-        load_fzf_theme
-        accent_cyan="${TMUX_ACCENT_CYAN:-#8be9fd}"
-        dark=$(hex_fg "$(hex_dim "$accent_cyan" 65)")
-        light=$(hex_fg "$accent_cyan")
-        printf "${dark}█▀▀█ █▀▀█ █▀▀█ █▀▀▄${NC} ${light}█▀▀ █▀▀█ █▀▀▄ █▀▀█${NC}\n"
-        printf "${dark}█  █ █  █ █▀▀▀ █  █${NC} ${light}█   █  █ █  █ █▀▀▀${NC}\n"
-        printf "${dark}▀▀▀▀ █▀▀▀ ▀▀▀▀ ▀  ▀${NC} ${light}▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀${NC}\n"
         echo ""
         ;;
     copilot)
@@ -104,6 +93,7 @@ case "$agent" in
         ;;
 esac
 
+# tab-delimited rows below the header
 for pane_info in ${panes[@]+"${panes[@]}"}; do
-    echo "$pane_info"
+    printf '%s\n' "$pane_info"
 done

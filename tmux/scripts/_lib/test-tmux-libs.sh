@@ -22,6 +22,8 @@ source "$SCRIPT_DIR/common.sh"
 _TEST_ALERTS_DIR="$(mktemp -d)"
 export ALERTS_FILE="$_TEST_ALERTS_DIR/alerts"
 touch "$ALERTS_FILE"
+export AGENT_STATE_DIR="$_TEST_ALERTS_DIR/agent-state"
+mkdir -p "$AGENT_STATE_DIR"
 
 _cleanup_lib_tests() {
     cleanup_test_server 2>/dev/null || true
@@ -682,6 +684,63 @@ if [[ -z "$_BAI_EMPTY" ]]; then
 else
     fail "  empty content should return empty"
 fi
+
+echo ""
+echo "  agent state helpers:"
+
+printf 'opencode\tidle\t1000\tsetup\tses_1\t/tmp\n' >"$AGENT_STATE_DIR/%71"
+assert_equals "  agent_state_read returns state and age" "idle$(printf '\t')30" \
+    "$(agent_state_read opencode %71 1030)"
+assert_equals "  agent_state_read ignores another agent's record" "" \
+    "$(agent_state_read claude %71 1030)"
+assert_equals "  agent_state_read clamps a future epoch to 0" "idle$(printf '\t')0" \
+    "$(agent_state_read opencode %71 900)"
+assert_equals "  agent_state_read is empty without a record" "" \
+    "$(agent_state_read opencode %72 1030)"
+
+_ASR_ROW=$(agent_state_row idle 125 "s:1.1" "my label")
+if [[ "$_ASR_ROW" == *"○"*"  s:1.1 my label  2m" ]]; then
+    pass "  agent_state_row shows dot, target, label and age"
+else
+    fail "  agent_state_row unexpected: $_ASR_ROW"
+fi
+_ASR_ROW=$(agent_state_row working 125 "s:1.1" "my label")
+if [[ "$_ASR_ROW" == *"●"*"  s:1.1 my label" ]]; then
+    pass "  agent_state_row hides the age while working"
+else
+    fail "  agent_state_row should hide the age while working: $_ASR_ROW"
+fi
+_ASR_ROW=$(agent_state_row "" "" "s:1.1" "my label")
+if [[ "$_ASR_ROW" == *"·"*"  s:1.1 my label" ]]; then
+    pass "  agent_state_row shows the unknown dot without a record"
+else
+    fail "  agent_state_row should show the unknown dot: $_ASR_ROW"
+fi
+
+_ASL=$(agent_state_legend)
+if [[ "$_ASL" == *" input "*" error" && "$_ASL" != *"stuck"* ]]; then
+    pass "  agent_state_legend lists the four stored states"
+else
+    fail "  agent_state_legend unexpected: $_ASL"
+fi
+if [[ "$(agent_state_legend stuck)" == *" stuck" ]]; then
+    pass "  agent_state_legend stuck adds the derived state"
+else
+    fail "  agent_state_legend stuck should end with stuck"
+fi
+
+# %71 opencode, live, still running opencode: kept
+# %73 opencode, live, opencode exited: dropped
+# %74 claude, live, not running opencode: left for claude's lister
+# %75 any agent, pane gone: dropped
+printf 'opencode\tidle\t1\n' >"$AGENT_STATE_DIR/%73"
+printf 'claude\tidle\t1\n' >"$AGENT_STATE_DIR/%74"
+printf 'claude\tidle\t1\n' >"$AGENT_STATE_DIR/%75"
+agent_state_sweep opencode $'%71\n%73\n%74\n' $'%71\n'
+_ASS_LEFT=""
+for _ass_f in "$AGENT_STATE_DIR"/*; do _ASS_LEFT+="${_ass_f##*/} "; done
+assert_equals "  agent_state_sweep keeps live records and drops stale ones" "%71 %74 " "$_ASS_LEFT"
+rm -f "$AGENT_STATE_DIR"/*
 
 # ─────────────────────────────────────────
 # test state file parsing (panes/undo.sh logic)

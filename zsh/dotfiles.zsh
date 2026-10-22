@@ -468,6 +468,7 @@ unset _lg_base _lg_local
 # point opencode-tmux-alert plugin to dotfiles hook scripts
 export OPENCODE_ALERT_SCRIPT="$DOTFILES_ROOT/scripts/hooks/wrappers/opencode-alert.sh"
 export OPENCODE_CLEAR_SCRIPT="$DOTFILES_ROOT/scripts/hooks/agent-alert-clear.sh"
+export OPENCODE_STATE_SCRIPT="$DOTFILES_ROOT/scripts/hooks/wrappers/opencode-state.sh"
 
 # =============================================================================
 # SSH WRAPPER

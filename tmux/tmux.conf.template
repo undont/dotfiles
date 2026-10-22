@@ -288,12 +288,12 @@ bind -N "tools: codex instances" x display-popup -w 95% -h 95% -E "\
 # ─────────────────────────────────────────
 bind -N "tools: opencode instances" o display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/instances/agents.sh opencode | \
+  ~/.tmux/scripts/instances/opencode.sh | \
   fzf --ansi --reverse --exact --disabled --cycle \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --delimiter=\$'\\t' \
       --with-nth=1 \
-      --header-lines=7 \
+      --header-lines=8 \
       --prompt ': ' \
       --border=rounded \
       --border-label=' j/k · g/G · spc/⏎ sel · / srch · n new · x kill · q/esc ' \
@@ -301,7 +301,7 @@ bind -N "tools: opencode instances" o display-popup -w 95% -h 95% -E "\
       --preview '~/.tmux/scripts/utils/preview-pane.sh {2}' \
       --preview-window='right,60%,<60(bottom,40%)' \
       --bind 'every(0.5):refresh-preview' \
-      --bind 'every(2):reload-sync(~/.tmux/scripts/instances/agents.sh opencode)' \
+      --bind 'every(2):reload-sync(~/.tmux/scripts/instances/opencode.sh)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
@@ -309,7 +309,7 @@ bind -N "tools: opencode instances" o display-popup -w 95% -h 95% -E "\
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:up,ctrl-l:clear-query' \
       --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh opencode)+abort' \
-      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh {2} opencode)+reload-sync(~/.tmux/scripts/instances/agents.sh opencode)' | \
+      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh {2} opencode)+reload-sync(~/.tmux/scripts/instances/opencode.sh)' | \
   cut -f2 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────
