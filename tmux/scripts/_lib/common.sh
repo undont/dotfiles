@@ -240,6 +240,9 @@ list_project_dirs() {
             find "$root" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
         fi
     done | while IFS= read -r d; do
+        # fd prints directories with a trailing slash (find doesn't); strip it so
+        # a picked directory matches the stored one and edits don't drift
+        d="${d%/}"
         printf '%s\n' "${d/#$HOME/\~}"
     done
 }

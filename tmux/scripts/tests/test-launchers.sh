@@ -648,6 +648,29 @@ else
     fail "common.sh should define require_fzf helper"
 fi
 
+section "Shared Library: list_project_dirs"
+
+# fd prints directories with a trailing slash; picking one in the wizard used
+# to store ".../proj/" and change the launcher on an otherwise no-op edit
+pd_root="$(mktemp -d)"
+pd_root="$(cd "$pd_root" && pwd -P)"
+mkdir -p "$pd_root/alpha" "$pd_root/beta"
+
+pd_output=$(
+    # shellcheck source=tmux/scripts/_lib/common.sh
+    source "$DOTFILES_ROOT/tmux/scripts/_lib/common.sh"
+    # stand-in for fd, emitting its trailing-slash format
+    # shellcheck disable=SC2329  # Called by list_project_dirs via command -v
+    fd() { printf '%s/\n' "${!#}/alpha" "${!#}/beta"; }
+    PROJECT_DIRS="$pd_root" list_project_dirs
+)
+if [[ "$pd_output" == "$pd_root/alpha"$'\n'"$pd_root/beta" ]]; then
+    pass "list_project_dirs strips fd's trailing slash"
+else
+    fail "list_project_dirs should strip trailing slashes (got: $pd_output)"
+fi
+rm -rf "$pd_root"
+
 # ===========================================================================
 # launchers/list.sh: tab-delimited format (name weighting for fzf)
 # ===========================================================================
