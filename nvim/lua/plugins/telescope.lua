@@ -161,6 +161,24 @@ return {
       pcall(require('telescope').load_extension, 'ui-select')
       pcall(require('telescope').load_extension, 'harpoon')
 
+      -- number ui-select entries like the builtin inputlist does; codeaction has its own display
+      local ui_select = vim.ui.select
+      vim.ui.select = function(items, opts, on_choice)
+        opts = opts or {}
+        if opts.kind ~= 'codeaction' then
+          local format = opts.format_item or tostring
+          opts.format_item = function(item)
+            for i, candidate in ipairs(items) do
+              if candidate == item then
+                return ('%d: %s'):format(i, format(item))
+              end
+            end
+            return format(item)
+          end
+        end
+        return ui_select(items, opts, on_choice)
+      end
+
       local builtin = require 'telescope.builtin'
       vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = 'Search [H]elp' })
       vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = 'Search [K]eymaps' })

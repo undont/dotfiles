@@ -4,6 +4,31 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [0.2.151] - 2026-10-22
+
+### Added
+
+- `Ctrl+S` in zsh picks a top-level dir under `PROJECT_DIRS` (default `~/code:~/playground`) with fzf and opens a `dev` session in it. Terminal flow control is off so the key reaches the widget. `zsh/dotfiles.zsh`
+- Zig files format with `zig fmt` from `~/.zig/zig<minor>` when the nearest `build.zig.zon` pins a `minimum_zig_version`, else the `zig` on PATH. A newer fmt rewrites builtins to names an older project can't build. `nvim/lua/plugins/conform.lua`
+- gitignore.nvim. `nvim/lua/plugins/gitignore.lua`
+- tlrc (tldr pages client). `Brewfile`
+
+### Changed
+
+- `:S` is text-case.nvim's case-aware substitute with a live preview, replacing vim-abolish. The `cr*` coercions and `:Subvert` are gone. `nvim/lua/plugins/text-case.lua`, `nvim/lua/plugins/tpope.lua`, `nvim/cheatsheet.txt`
+- `vim.ui.select` entries in telescope are numbered, except code actions. `nvim/lua/plugins/telescope.lua`
+- Spell check is on in markdown only, not every buffer. `nvim/lua/core/options.lua`, `nvim/after/ftplugin/markdown.lua`
+- Go comment leaders continue onto new lines. `nvim/after/ftplugin/go.lua`
+- zls installs from brew instead of a mason-pinned 0.15.1, which has no build for the installed zig. `Brewfile`, `nvim/lua/plugins/lsp.lua`
+- must.nvim loads at startup, from `~/code/must.nvim` when that checkout exists. `nvim/lua/plugins/must.lua`
+- `l` lists in long format (`ls -lF`). `zsh/dotfiles.zsh`
+- Docker Desktop's per-user `~/.docker/bin` is appended to PATH when it exists. `zsh/zprofile`
+- The tmux claude picker shows the new Claude ghost. `tmux/scripts/instances/claude.sh`
+
+### Fixed
+
+- `---@` annotations in lua comments are highlighted as luadoc. The luadoc parser installs from nvim-treesitter instead of being purged as bundled. `nvim/lua/plugins/treesitter.lua`, `nvim/lua/features/treesitter-parsers.lua`, `nvim/queries/lua/injections.scm`
+
 ## [0.2.150] - 2026-10-09
 
 ### Added

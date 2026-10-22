@@ -3,3 +3,4 @@
 
 vim.opt_local.suffixesadd:prepend '.md'
 vim.opt_local.includeexpr = "v:lua.require'wiki'.resolve(v:fname)"
+vim.opt_local.spell = true

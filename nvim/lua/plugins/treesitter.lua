@@ -28,8 +28,9 @@ return {
         'rust',
         'python',
         'sql',
-        -- lua, luadoc, vim, vimdoc, query, markdown, markdown_inline are bundled
+        -- lua, vim, vimdoc, query, markdown, markdown_inline are bundled
         -- with nvim, whose queries match its own parsers
+        'luadoc',
         'swift',
         'tsx',
         'typescript',

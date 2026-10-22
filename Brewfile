@@ -61,6 +61,7 @@ brew "bat"           # cat with syntax highlighting
 brew "diffnav"       # diff navigator for GitHub PRs
 brew "monolith" unless OS.linux? && Hardware::CPU.arm?  # no Linux ARM bottle
 brew "zoxide"        # smart cd replacement
+brew "tlrc"          # cli for https://tldr.sh/ (man page summaries)
 
 # File Manager
 brew "yazi"          # terminal file manager
@@ -90,6 +91,9 @@ brew "oven-sh/bun/bun" # >= 1.0
 
 # Go
 brew "go"
+
+# Zig
+brew "zls"           # zig language server for nvim; pulls in zig
 
 # Python
 brew "python@3.13"
