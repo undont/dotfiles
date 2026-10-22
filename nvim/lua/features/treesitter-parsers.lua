@@ -57,7 +57,7 @@ function M.purge_if_updated()
 
   -- nvim-treesitter copies of parsers bundled with nvim are removed, so nvim's
   -- own are used
-  local nvim_bundled = { 'lua', 'luadoc', 'vim', 'vimdoc', 'query', 'markdown', 'markdown_inline' }
+  local nvim_bundled = { 'lua', 'vim', 'vimdoc', 'query', 'markdown', 'markdown_inline' }
   for _, lang in ipairs(nvim_bundled) do
     local so = parser_dir .. '/' .. lang .. '.so'
     if vim.uv.fs_stat(so) then
