@@ -27,6 +27,10 @@ export PATH="$HOME/.bun/bin:$PATH"
 # user-local binaries: install target for `uv tool install` and other CLIs
 export PATH="$HOME/.local/bin:$PATH"
 
+# Docker Desktop CLI tools (docker, compose, buildx, ...) when it installs them
+# per-user rather than into /usr/local/bin
+[[ -d "$HOME/.docker/bin" ]] && export PATH="$PATH:$HOME/.docker/bin"
+
 # /usr/sbin and /sbin hold tools like smartctl that are not on a non-root
 # user's default PATH on Debian/Ubuntu. appended so they never shadow brew or
 # user binaries; already on PATH on macOS, Arch and Fedora
