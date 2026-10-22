@@ -150,31 +150,29 @@ This reads the `NVIM_SOCKET` environment variable and calls `nvim --server` to a
 
 ### OpenCode
 
-OpenCode uses the [`opencode-tmux-alert`](https://github.com/undont/opencode-tmux-alert) plugin. The plugin triggers alerts on session idle, permission requests, tool pending, and prompt appends, and clears when the user sends a message.
+OpenCode uses the [`opencode-tmux-alert`](https://github.com/undont/opencode-tmux-alert) CLI plugin. It runs inside each terminal OpenCode, so alerts land on the window that OpenCode is in. It alerts on permission requests, questions, and finished, failed or stalled turns. It clears once nothing is pending, e.g. after you answer or send the next message.
 
-**1. Install the plugin:**
-
-```bash
-cd ~/.config/opencode  # or wherever your opencode.json lives
-bun install opencode-tmux-alert
-```
-
-**2. Register the plugin** in `opencode.json`:
+**1. Register the plugin** in `~/.config/opencode/cli.json` (CLI settings, not `opencode.json`):
 
 ```json
 {
-  "plugin": ["opencode-tmux-alert"]
+  "plugins": ["opencode-tmux-alert"]
 }
 ```
 
-**3. Set environment variables** so the plugin uses the dotfiles hook scripts (already set in `dotfiles.zsh`):
+OpenCode installs the package itself; no `bun install` needed.
+
+**2. Set environment variables** so the plugin uses the dotfiles hook scripts (already set in `dotfiles.zsh`):
 
 ```bash
 export OPENCODE_ALERT_SCRIPT="$HOME/dotfiles/scripts/hooks/wrappers/opencode-alert.sh"
 export OPENCODE_CLEAR_SCRIPT="$HOME/dotfiles/scripts/hooks/agent-alert-clear.sh"
+export OPENCODE_STATE_SCRIPT="$HOME/dotfiles/scripts/hooks/wrappers/opencode-state.sh"
 ```
 
-Without these env vars, the plugin falls back to its own bundled scripts that set a `@opencode-alert` tmux user option and send a bell character.
+Without these, the plugin falls back to its bundled scripts. Those set a `@opencode-alert` tmux user option and ring the bell.
+
+Don't list the plugin under `plugins` in `opencode.json`. That loads it into the shared OpenCode background service (versions before 2.0 only), which sends every alert to whichever window started the service.
 
 ### Codex CLI
 
@@ -269,9 +267,9 @@ Create `~/.copilot/hooks/hooks.json`:
 - **preToolUse**: Agent is about to run a tool (covers permission-request style prompts)
 - **userPromptSubmitted**: You sent a message, so clear the alert
 
-## Per-Pane Agent State (Claude Code)
+## Per-Pane Agent State
 
-Beyond the binary "needs attention" alert, Claude Code hooks can also maintain a live state per tmux pane. The prefix+c instance switcher renders it as a coloured icon, plus, for the states where it's waiting on you (idle, needs-input, error, stuck), how long it's been in that state (a working turn shows no age, since that clock just tracks the last tool call):
+Beyond the binary "needs attention" alert, Claude Code hooks and the OpenCode plugin can also maintain a live state per tmux pane. The prefix+c (Claude) and prefix+o (OpenCode) instance switchers render it as a coloured icon, plus, for the states where it's waiting on you (idle, needs-input, error, stuck), how long it's been in that state (a working turn shows no age, since that clock just tracks the last tool call):
 
 | State       | Icon | Meaning                                                    |
 | ----------- | ---- | ---------------------------------------------------------- |
@@ -287,9 +285,9 @@ State lives in `~/.config/tmux-alerts/agent-state/`, one file per pane named by 
 agent  state  epoch  event  session_id  cwd
 ```
 
-Only Claude Code produces state today; the format carries an agent field so other agents can plug in later via their own thin wrapper.
+Claude Code and OpenCode produce state. The format carries an agent field so other agents can plug in through their own thin wrapper; `agent-state.sh` accepts either hook JSON on stdin (Claude) or an already-mapped state in `AGENT_STATE` (direct mode, used by the OpenCode wrapper).
 
-**Event mapping** (in `scripts/hooks/agent-state.sh`):
+**Claude event mapping** (in `scripts/hooks/agent-state.sh`):
 
 | Hook event                                                                                           | State                  |
 | ---------------------------------------------------------------------------------------------------- | ---------------------- |
@@ -306,6 +304,20 @@ Only Claude Code produces state today; the format carries an agent field so othe
 The switcher also derives the reverse: no hook event fires at the moment a permission prompt is approved, so a stored needs-input can go stale while the agent is already running again. If the pane title shows the spinner, needs-input is rendered as working. The stored state corrects itself at the next hook event (the approved tool's `PostToolUse`, or the next `PreToolUse`).
 
 Stale files are cleaned up on three paths: `SessionEnd` removes the file, the switcher drops files for panes without a live claude process, and the tmux session-closed/renamed hooks sweep files for dead panes.
+
+**OpenCode** reports state through the `opencode-tmux-alert` plugin's state script (`OPENCODE_STATE_SCRIPT`, already exported in `dotfiles.zsh` to `scripts/hooks/wrappers/opencode-state.sh`). The plugin derives the state from OpenCode's own events and only runs the script when it changes:
+
+| OpenCode event                                                 | State                                              |
+| -------------------------------------------------------------- | -------------------------------------------------- |
+| OpenCode starts                                                | idle (working if the session is already running)   |
+| `session.execution.started`                                    | working                                            |
+| `permission.asked`, `form.created`                             | needs-input while unanswered                       |
+| `permission.replied`, `form.replied`, `form.cancelled`         | back to working, or idle/error if the turn is over |
+| `session.execution.succeeded`, `session.execution.interrupted` | idle                                               |
+| `session.execution.failed`                                     | error                                              |
+| OpenCode exits                                                 | removes the state file                             |
+
+OpenCode reports permission replies, so needs-input never goes stale. There's no stuck state for OpenCode: its pane title has no activity spinner to tell a long tool run from a hang. The prefix+o switcher drops files for panes without a live opencode process.
 
 **Setup** (in the same `settings.json` as the alert hooks; both can share events):
 
@@ -513,6 +525,8 @@ Point `AGENT_STATE_DIR` or `ALERTS_FILE` at a scratch path first to keep a probe
 
 **OpenCode plugin not loading:**
 
-1. Ensure `opencode-tmux-alert` is installed (`bun install opencode-tmux-alert` in the opencode config directory)
-2. Ensure `opencode.json` has `"opencode-tmux-alert"` in the `"plugin"` array
-3. Verify the env vars are set: `echo $OPENCODE_ALERT_SCRIPT $OPENCODE_CLEAR_SCRIPT`
+1. Ensure `cli.json` has `"opencode-tmux-alert"` in its `"plugins"` array, then restart OpenCode
+2. Check `/plugins` in OpenCode lists it as an active TUI plugin (or run `opencode plugin list`)
+3. Verify the env vars are set in the shell that launched OpenCode: `echo $OPENCODE_ALERT_SCRIPT $OPENCODE_CLEAR_SCRIPT`
+
+**OpenCode alerts land on the wrong window:** an old server-plugin install is still active. Remove `opencode-tmux-alert` from `plugins` in `opencode.json` and run `opencode service restart`.

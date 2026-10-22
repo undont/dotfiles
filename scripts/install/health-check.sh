@@ -314,6 +314,7 @@ check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/claude-alert.sh" "claude 
 check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/claude-alert-clear.sh" "claude alert-clear wrapper"
 check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/opencode-alert.sh" "opencode alert wrapper"
 check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/opencode-alert-clear.sh" "opencode alert-clear wrapper"
+check_executable "$DOTFILES_DIR/scripts/hooks/wrappers/opencode-state.sh" "opencode state wrapper"
 
 echo ""
 echo "Local Overrides:"

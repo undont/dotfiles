@@ -103,16 +103,28 @@ fi
 
 section "Agent State Rendering"
 
-if [[ "$script_content" == *'AGENT_STATE_DIR'* ]]; then
-    pass "Reads the agent-state registry"
+if [[ "$script_content" == *'agent_state_read claude'* ]]; then
+    pass "Reads claude records from the agent-state registry"
 else
-    fail "Should read the agent-state registry (AGENT_STATE_DIR)"
+    fail "Should read the agent-state registry via agent_state_read claude"
 fi
 
-if [[ "$script_content" == *'get_agent_state_display'* ]]; then
-    pass "Renders states via get_agent_state_display"
+if [[ "$script_content" == *'agent_state_row'* ]]; then
+    pass "Renders rows via agent_state_row"
 else
-    fail "Should render states via get_agent_state_display"
+    fail "Should render rows via agent_state_row"
+fi
+
+if [[ "$script_content" == *'agent_state_sweep claude'* ]]; then
+    pass "Sweeps stale state files via agent_state_sweep"
+else
+    fail "Should sweep stale state files via agent_state_sweep claude"
+fi
+
+if [[ "$script_content" == *'agent_state_legend stuck'* ]]; then
+    pass "Legend includes the derived stuck state"
+else
+    fail "Should print the legend with stuck (agent_state_legend stuck)"
 fi
 
 if [[ "$script_content" == *'AGENT_STUCK_SECS'* ]]; then
@@ -141,12 +153,6 @@ if [[ "$script_content" == *'od -An -tx1'* ]]; then
     pass "Spinner check tests raw utf-8 bytes (locale-independent)"
 else
     fail "Spinner check should be byte-based, not a locale-sensitive range"
-fi
-
-if [[ "$script_content" == *'_fmt_elapsed'* ]]; then
-    pass "Humanises state age via _fmt_elapsed"
-else
-    fail "Should humanise state age via _fmt_elapsed"
 fi
 
 section "Ghost Decoration"

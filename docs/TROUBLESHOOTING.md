@@ -647,7 +647,7 @@ chmod +x ~/.tmux/scripts/**/*.sh
 # macos-option-as-alt = true
 ```
 
-### Claude Switcher Shows No State Icons
+### Agent Switcher Shows No State Icons
 
 **Symptom**: The Claude instance switcher (prefix + c) lists instances but every row shows the grey `·` placeholder instead of working/idle/input icons.
 
@@ -672,6 +672,19 @@ command -v jq
 - Hook settings only apply to new Claude Code sessions; restart instances that were already running
 - Install `jq` if missing (`brew install jq`); the hook exits silently without it
 - Stale files from a tmux server restart clear themselves the next time the switcher opens
+
+The OpenCode switcher (prefix + o) reads the same files, written by the `opencode-tmux-alert` plugin:
+
+```bash
+# the plugin needs this exported in the shell that launched opencode
+echo $OPENCODE_STATE_SCRIPT
+
+# fake a state change; a state file should appear for your pane
+OPENCODE_AGENT_STATE=idle ~/dotfiles/scripts/hooks/wrappers/opencode-state.sh
+cat ~/.config/tmux-alerts/agent-state/"$TMUX_PANE"
+```
+
+If the file appears but opencode never writes one, check the plugin is registered in `cli.json` (see [AGENT-HOOKS.md](AGENT-HOOKS.md)) and restart opencode.
 
 ---
 

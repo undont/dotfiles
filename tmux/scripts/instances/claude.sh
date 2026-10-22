@@ -2,10 +2,10 @@
 # list all running Claude Code instances across all tmux sessions
 # emits a 7-line header (logo + state legend) then tab-delimited rows for fzf:
 #   {1}=display(shown)  {2}=jump/preview target session:window.pane
-# state comes from the agent-state registry (AGENT_STATE_DIR), written by the
-# claude code hooks (scripts/hooks/agent-state.sh); "stuck" is derived here
-# from event age plus the pane title losing claude's braille spinner, and a
-# stale needs-input flips back to working when the spinner returns
+# state comes from the agent-state registry (_lib/alerts.sh agent_state_*),
+# written by the claude code hooks (scripts/hooks/agent-state.sh); "stuck" is
+# derived here from event age plus the pane title losing claude's braille
+# spinner, and a stale needs-input flips back to working when the spinner returns
 
 set -euo pipefail
 
@@ -55,16 +55,16 @@ _title_has_spinner() {
 
 # store results; track panes for the stale-state sweep below
 claude_panes=()
-declare -A pane_seen pane_has_claude
+live_panes="" claude_pane_ids=""
 
 # iterate through all panes in all sessions, sorted by last viewed (most recent
 # first). pane_title is last so an embedded tab in it can't shift other fields
 while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid title; do
     [[ -n "$pane_id" ]] || continue
-    pane_seen[$pane_id]=1
+    live_panes+="${pane_id}"$'\n'
 
     [[ -n "${active_claude_ppids[$pane_pid]:-}" ]] || continue
-    pane_has_claude[$pane_id]=1
+    claude_pane_ids+="${pane_id}"$'\n'
 
     target="${session}:${window_idx}.${pane_idx}"
     window_name="${window_names["${session}:${window_idx}"]:-}"
@@ -77,58 +77,27 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_id pane_pid ti
     label="${label#"${label%%[a-zA-Z0-9]*}"}"
     case "$label" in "" | "Claude Code" | claude) label="$window_name" ;; esac
 
-    # state + age from the registry (agent/state/epoch lead the line and are
-    # always non-empty, so a plain tab read is safe)
-    state="" age_str=""
-    state_file="$AGENT_STATE_DIR/$pane_id"
-    if [[ -f "$state_file" ]]; then
-        s_agent="" s_state="" s_epoch=""
-        IFS="$TAB" read -r s_agent s_state s_epoch _ <"$state_file" || true
-        if [[ "$s_agent" == "claude" && -n "$s_state" && "$s_epoch" =~ ^[0-9]+$ ]]; then
-            state="$s_state"
-            age=$((now - s_epoch))
-            ((age < 0)) && age=0
-            # stuck: nominally working, no hook event for a while, and the
-            # pane title no longer shows the spinner
-            if [[ "$state" == "working" ]] && ((age > STUCK_SECS)) && ! _title_has_spinner "$title"; then
-                state="stuck"
-            fi
-            # the reverse: no hook fires when a permission prompt is
-            # approved, so needs-input goes stale while the agent runs. a
-            # spinner in the title means it's actively working again
-            if [[ "$state" == "needs-input" ]] && _title_has_spinner "$title"; then
-                state="working"
-            fi
-            # age is the wait time for idle/input and the stall time for stuck/error.
-            # during a live working turn it tracks the last tool call and jitters, so
-            # it's hidden
-            [[ "$state" != "working" ]] && age_str=$(_fmt_elapsed "$age")
-        fi
+    state="" age=""
+    IFS="$TAB" read -r state age <<<"$(agent_state_read claude "$pane_id" "$now")"
+    # stuck: nominally working, no hook event for a while, and the pane title
+    # no longer shows the spinner
+    if [[ "$state" == "working" ]] && ((age > STUCK_SECS)) && ! _title_has_spinner "$title"; then
+        state="stuck"
+    fi
+    # the reverse: no hook fires when a permission prompt is approved, so
+    # needs-input goes stale while the agent runs. a spinner in the title means
+    # it's actively working again
+    if [[ "$state" == "needs-input" ]] && _title_has_spinner "$title"; then
+        state="working"
     fi
 
-    sdisp=$(get_agent_state_display "$state")
-    row="$(_ansi "${sdisp##*|}" "${sdisp%%|*}")  ${session}:${window_idx}.${pane_idx} ${label}"
-    [[ -n "$age_str" ]] && row="${row}  ${age_str}"
-
+    row=$(agent_state_row "$state" "$age" "$target" "$label")
     claude_panes+=("${row}${TAB}${target}")
 done < <(tmux list-panes -a -F "#{?#{@pane-viewed},#{@pane-viewed},0}${TAB}#{session_name}${TAB}#{window_index}${TAB}#{pane_index}${TAB}#{pane_id}${TAB}#{pane_pid}${TAB}#{pane_title}" | sort -rn)
 
-# opportunistic GC: drop state files (and tmp litter) for panes that are gone,
-# and claude files for panes whose claude has exited. other agents' files are
-# left for their own listers
-if [[ -d "$AGENT_STATE_DIR" ]]; then
-    for f in "$AGENT_STATE_DIR"/*; do
-        [[ -e "$f" ]] || continue
-        fname="${f##*/}"
-        if [[ -z "${pane_seen[$fname]:-}" ]]; then
-            rm -f "$f"
-        elif [[ -z "${pane_has_claude[$fname]:-}" ]]; then
-            f_agent=""
-            IFS="$TAB" read -r f_agent _ <"$f" || true
-            [[ "$f_agent" == "claude" ]] && rm -f "$f"
-        fi
-    done
-fi
+# opportunistic GC: drop state files for panes that are gone, and claude files
+# for panes whose claude has exited
+agent_state_sweep claude "$live_panes" "$claude_pane_ids"
 
 # og Claude Code ghost (Anthropic terracotta: #D77757 = 215;119;87)
 # echo ""
@@ -145,17 +114,7 @@ printf "\033[38;2;215;119;87m ▝▝   ▝▝\033[0m\n"
 echo ""
 
 # state legend (line 6 of the 7-line header)
-l_working=$(get_agent_state_display working)
-l_input=$(get_agent_state_display needs-input)
-l_idle=$(get_agent_state_display idle)
-l_error=$(get_agent_state_display error)
-l_stuck=$(get_agent_state_display stuck)
-printf '  %s working %s input %s idle %s error %s stuck\n' \
-    "$(_ansi "${l_working##*|}" "${l_working%%|*}")" \
-    "$(_ansi "${l_input##*|}" "${l_input%%|*}")" \
-    "$(_ansi "${l_idle##*|}" "${l_idle%%|*}")" \
-    "$(_ansi "${l_error##*|}" "${l_error%%|*}")" \
-    "$(_ansi "${l_stuck##*|}" "${l_stuck%%|*}")"
+agent_state_legend stuck
 echo ""
 
 # display results (empty list shows just the header)

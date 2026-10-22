@@ -133,6 +133,76 @@ get_agent_state_display() {
     esac
 }
 
+# read a pane's agent-state record for one agent
+# usage: agent_state_read "agent" "pane_id" "now_epoch"
+# prints: state<tab>age_secs, or nothing when the pane has no valid record for
+# that agent (agent/state/epoch lead the line and are always non-empty, so a
+# plain tab read is safe)
+agent_state_read() {
+    local agent="$1" state_file="$AGENT_STATE_DIR/$2" now="$3"
+    [[ -f "$state_file" ]] || return 0
+
+    local s_agent="" s_state="" s_epoch=""
+    IFS=$'\t' read -r s_agent s_state s_epoch _ <"$state_file" || true
+    if [[ "$s_agent" != "$agent" || -z "$s_state" || ! "$s_epoch" =~ ^[0-9]+$ ]]; then
+        return 0
+    fi
+
+    local age=$((now - s_epoch))
+    ((age < 0)) && age=0
+    printf '%s\t%s' "$s_state" "$age"
+}
+
+# the shown column of a state lister row: state dot, target, label, then the
+# time in state. the age is the wait time for idle/input/error/stuck; during a
+# working turn it tracks the last event and jitters, so it's hidden
+# usage: row=$(agent_state_row "state" "age_secs" "target" "label")
+agent_state_row() {
+    local state="$1" age="$2" target="$3" label="$4" sdisp row
+    sdisp=$(get_agent_state_display "$state")
+    row="$(_ansi "${sdisp##*|}" "${sdisp%%|*}")  ${target} ${label}"
+    if [[ -n "$state" && "$state" != "working" && -n "$age" ]]; then
+        row="${row}  $(_fmt_elapsed "$age")"
+    fi
+    printf '%s' "$row"
+}
+
+# state legend line for a lister header
+# usage: agent_state_legend [stuck]
+agent_state_legend() {
+    local states=(working needs-input idle error) s sdisp line=""
+    [[ "${1:-}" == "stuck" ]] && states+=(stuck)
+    for s in "${states[@]}"; do
+        sdisp=$(get_agent_state_display "$s")
+        line="${line} $(_ansi "${sdisp##*|}" "${sdisp%%|*}") ${s/needs-input/input}"
+    done
+    printf ' %s\n' "$line"
+}
+
+# drop agent-state files (and tmp litter) for panes that are gone, and one
+# agent's files for panes no longer running it. other agents' files on live
+# panes are left for their own listers
+# usage: agent_state_sweep "agent" "$live_pane_ids" "$agent_pane_ids"
+#   pane id lists are newline-separated
+agent_state_sweep() {
+    local agent="$1" live="$2" running="$3" f pane f_agent
+    [[ -d "$AGENT_STATE_DIR" ]] || return 0
+
+    for f in "$AGENT_STATE_DIR"/*; do
+        [[ -e "$f" ]] || continue
+        pane="${f##*/}"
+        if ! grep -qxF "$pane" <<<"$live"; then
+            rm -f "$f"
+            continue
+        fi
+        grep -qxF "$pane" <<<"$running" && continue
+        f_agent=""
+        IFS=$'\t' read -r f_agent _ <"$f" || true
+        [[ "$f_agent" == "$agent" ]] && rm -f "$f"
+    done
+    return 0
+}
+
 # a shell reports a signal death as exit code 128+N (SIGINT 130, SIGTERM 143,
 # SIGKILL 137, SIGHUP 129). those are interruptions, not run-to-completion
 # failures, so they get a neutral state rather than the red ✗

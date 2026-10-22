@@ -4,6 +4,19 @@ All notable changes to this project will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
+## [Unreleased]
+
+## [0.2.152] - 2026-10-22
+
+### Added
+
+- The tmux opencode picker shows each instance's live state (working, needs-input, idle, error) and time in state, like the claude picker. `scripts/hooks/agent-state.sh`, `scripts/hooks/wrappers/opencode-state.sh`, `tmux/scripts/instances/opencode.sh`, `tmux/scripts/_lib/alerts.sh`, `zsh/dotfiles.zsh`
+
+### Changed
+
+- The codex, opencode and copilot pickers use the claude picker's row layout and refresh every 2s. `tmux/scripts/instances/agents.sh`, `tmux/tmux.conf.template`
+- The opencode picker's preview is the same width as the claude picker's. `tmux/tmux.conf.template`
+
 ## [0.2.151] - 2026-10-22
 
 ### Added
