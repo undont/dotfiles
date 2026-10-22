@@ -73,6 +73,7 @@ load_existing_launcher() {
         worktrees_dir="${worktrees_dir/#\$HOME/\~}"
     else
         worktree_aware="n"
+        worktrees_dir=""
     fi
 
     win_names=()
