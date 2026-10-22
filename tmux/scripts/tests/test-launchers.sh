@@ -614,6 +614,88 @@ else
     fail "regenerating a loaded launcher should reproduce the file exactly"
 fi
 
+section "_lib/launcher-gen.sh: Rich Windows"
+
+# a simple window, then a rich one: three panes (one left, two stacked right),
+# each with its own directory, and a command with single quotes
+# shellcheck disable=SC2329  # Called in subshells below
+rich_fixture() {
+    name="rich"
+    description="Rich launcher"
+    instance_mode="n"
+    project_dir="\$HOME/src/rich"
+    worktree_aware="n"
+    worktrees_dir=""
+    win_names=(edit dev)
+    win_cmds=(nvim "")
+    win_splits=(no no)
+    win_split_cmds=("" "")
+    win_panes=("" 3)
+    win_layouts=("" $'1 h 70 2\n2 v 48 3')
+    pane_cmds=(["1:1"]="make status" ["1:2"]="echo 'it works'" ["1:3"]="")
+    pane_dirs=(["1:1"]="" ["1:2"]="backend" ["1:3"]="/tmp")
+}
+
+rich_file="$GEN_TMP/rich"
+(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    rich_fixture
+    generate_launcher >"$rich_file"
+)
+rich_content=$(cat "$rich_file")
+
+if bash -n "$rich_file" 2>/dev/null; then
+    pass "a launcher with a rich window is valid bash"
+else
+    fail "a launcher with a rich window has a syntax error"
+fi
+# shellcheck disable=SC2016
+for want in 'p1=$(tmux display-message -p -t "$SESSION:dev" '\''#{pane_id}'\'')' \
+    'p2=$(tmux split-window -d -t "$p1" -h -l 70% -c "$PROJECT_DIR/backend" -P -F '\''#{pane_id}'\'')' \
+    'p3=$(tmux split-window -d -t "$p2" -v -l 48% -c "/tmp" -P -F '\''#{pane_id}'\'')' \
+    "tmux send-keys -t \"\$p2\" 'echo '\\''it works'\\''' Enter"; do
+    if [[ "$rich_content" == *"$want"* ]]; then
+        pass "rich window writes: $want"
+    else
+        fail "rich window should write: $want"
+    fi
+done
+if [[ "$rich_content" != *'send-keys -t "$p3"'* ]]; then
+    pass "a pane without a command gets no send-keys"
+else
+    fail "a pane without a command should get no send-keys"
+fi
+# shellcheck disable=SC2016
+if [[ "$rich_content" == *'-x "$_cols" -y "$_rows"'* && "$rich_content" == *'_cols=$(tmux display-message'* ]]; then
+    pass "rich launchers create the session at the client's size"
+else
+    fail "rich launchers should size the session (-x/-y), or the layout skews on attach"
+fi
+
+rich_round_trip=$(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    rich_fixture
+    want=$(declare -p win_names win_cmds win_splits win_split_cmds win_panes win_layouts pane_cmds pane_dirs)
+    load_existing_launcher "$rich_file"
+    got=$(declare -p win_names win_cmds win_splits win_split_cmds win_panes win_layouts pane_cmds pane_dirs)
+    [[ "$want" == "$got" ]] && echo "state-ok"
+    project_dir="${project_dir/#\~/\$HOME}"
+    cmp -s <(generate_launcher) "$rich_file" && echo "regen-ok"
+    true
+)
+if [[ "$rich_round_trip" == *state-ok* ]]; then
+    pass "load_existing_launcher reads a rich window back exactly"
+else
+    fail "load_existing_launcher should read a rich window back exactly"
+fi
+if [[ "$rich_round_trip" == *regen-ok* ]]; then
+    pass "regenerating a loaded rich launcher is byte-identical"
+else
+    fail "regenerating a loaded rich launcher should reproduce the file exactly"
+fi
+
 section "launchers/picker.sh: Search Mode Keys"
 
 # every single-letter action key must be unbound while searching (/) and

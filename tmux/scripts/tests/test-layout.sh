@@ -129,6 +129,69 @@ for name in SINGLE TWO_H TWO_V UNEVEN THREE_H LEFT_STACK GRID NESTED; do
     fi
 done
 
+# ═══════════════════════════════════════════════════════════════════════════
+section "Launcher with a rich window"
+# ═══════════════════════════════════════════════════════════════════════════
+
+# generate a launcher whose second window is one pane on the left and two
+# stacked on the right, each in its own directory, then run it and read the
+# session back
+# shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
+RICH_DIR="$(mktemp -d)"
+RICH_DIR="$(cd "$RICH_DIR" && pwd -P)"
+mkdir -p "$RICH_DIR/proj/backend" "$RICH_DIR/elsewhere"
+printf 'x\n' >"$RICH_DIR/proj/my notes.txt"
+
+tmux set-option -g default-shell /bin/sh
+tmux set-option -g base-index 1
+tmux set-option -g pane-base-index 1
+
+name="rich"
+description="Rich launcher"
+instance_mode="n"
+project_dir="$RICH_DIR/proj"
+worktree_aware="n"
+worktrees_dir=""
+win_names=(edit dev)
+win_cmds=("" "")
+win_splits=(no no)
+win_split_cmds=("" "")
+win_panes=("" 3)
+win_layouts=("" "$(splits "$LEFT_STACK")")
+pane_cmds=(["1:1"]="sleep 300" ["1:2"]="tail -f '$RICH_DIR/proj/my notes.txt'" ["1:3"]="")
+pane_dirs=(["1:1"]="" ["1:2"]="backend" ["1:3"]="$RICH_DIR/elsewhere")
+generate_launcher >"$RICH_DIR/rich"
+
+# the launcher attaches at the end, which fails without a terminal. with no
+# client on the test server it sizes itself from tput, which we stand in for
+tput() { [[ "$1" == cols ]] && echo 200 || echo 50; }
+export -f tput
+SESSION_NAME=richrun bash "$RICH_DIR/rich" >/dev/null 2>&1 || true
+unset -f tput
+sleep 1
+
+out=$("$SCRIPT_DIR/../launchers/capture.sh" richrun)
+dev_idx=$(tmux display-message -p -t "=richrun:dev" '#{window_index}')
+dev_rows=$(printf '%s\n' "$out" | awk -F'\t' -v w="$dev_idx" '$1 == "pane" && $2 == w')
+
+assert_equals "rich window has three panes" "3" "$(printf '%s\n' "$dev_rows" | grep -c .)"
+assert_equals "panes start in their own directories" \
+    "$RICH_DIR/proj|$RICH_DIR/proj/backend|$RICH_DIR/elsewhere" \
+    "$(printf '%s\n' "$dev_rows" | cut -f8 | paste -sd'|' -)"
+assert_equals "panes run their own commands" \
+    "sleep 300|tail -f '$RICH_DIR/proj/my notes.txt'|" \
+    "$(printf '%s\n' "$dev_rows" | cut -f9 | paste -sd'|' -)"
+rebuilt=$(printf '%s\n' "$dev_rows" | awk -F'\t' '{ print $3, $4, $5, $6, $7 }')
+if splits_close "$(splits "$LEFT_STACK")" "$(splits "$rebuilt")" 3; then
+    pass "rich window rebuilds its layout"
+else
+    fail "rich window should rebuild one left, two stacked (got: $(splits "$rebuilt" | tr '\n' ';'))"
+fi
+assert_equals "the simple window is untouched" "1" \
+    "$(tmux display-message -p -t "=richrun:edit" '#{window_panes}')"
+rm -rf "$RICH_DIR"
+
 cleanup_test_server
 
 print_summary

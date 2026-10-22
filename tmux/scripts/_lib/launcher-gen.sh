@@ -12,9 +12,42 @@
 #   worktree_aware  y/n, resolve instance suffixes to worktree directories
 #   worktrees_dir   worktree root (same $HOME/~ convention as project_dir)
 #   win_names, win_cmds, win_splits (yes/no), win_split_cmds   parallel arrays
+#
+# a window the wizard's model can't describe (more panes, stacked splits, a
+# directory per pane) is "rich": win_panes[i] holds its pane count and the
+# simple fields above are ignored for it
+#   win_panes       pane count per window, empty for a simple window
+#   win_layouts     split steps per window, one per line: <pane> <h|v> <pct> <new>
+#                   (layout_splits format); panes are numbered 1..N, 1 = top-left
+#   pane_cmds       ["<window index>:<pane>"] command, empty for a shell
+#   pane_dirs       ["<window index>:<pane>"] directory: empty = the project
+#                   directory, relative = under it, absolute or $HOME/... as is
 
 [[ -n "${_TMUX_LAUNCHER_GEN_SH_LOADED:-}" ]] && return 0
 _TMUX_LAUNCHER_GEN_SH_LOADED=1
+
+declare -ga win_panes=() win_layouts=()
+declare -gA pane_cmds=() pane_dirs=()
+
+# "$PROJECT_DIR"-relative form of a pane directory, for generated -c arguments
+pane_dir_expr() {
+    local dir="$1"
+    case "$dir" in
+        "") printf '%s' '$PROJECT_DIR' ;;
+        /* | '$HOME' | '$HOME/'*) printf '%s' "$dir" ;;
+        *) printf '%s' "\$PROJECT_DIR/$dir" ;;
+    esac
+}
+
+# the reverse of pane_dir_expr
+pane_dir_from_expr() {
+    local expr="$1"
+    case "$expr" in
+        '$PROJECT_DIR') printf '' ;;
+        '$PROJECT_DIR/'*) printf '%s' "${expr#\$PROJECT_DIR/}" ;;
+        *) printf '%s' "$expr" ;;
+    esac
+}
 
 # marks a launcher written by generate_launcher. only these are safe to
 # regenerate in place: load_existing_launcher understands nothing else
@@ -80,21 +113,41 @@ load_existing_launcher() {
     win_cmds=()
     win_splits=()
     win_split_cmds=()
+    win_panes=()
+    win_layouts=()
+    pane_cmds=()
+    pane_dirs=()
 
-    local current_win="" line idx
+    # rich windows (see the header) name their panes $p1..$pN; their lines
+    # follow the window's new-session/new-window, so they belong to the last
+    # window read. first_dir is that window's -c, which is pane 1's directory
+    local current_win="" line idx w first_dir="" k
     while IFS= read -r line; do
-        if [[ "$line" =~ ^tmux\ new-session.*-n\ \"?([^\"]+)\"? ]]; then
-            current_win="${BASH_REMATCH[1]}"
+        if [[ "$line" =~ ^tmux\ new-(session|window).*-n\ \"?([^\"]+)\"? ]]; then
+            current_win="${BASH_REMATCH[2]}"
             win_names+=("$current_win")
             win_cmds+=("")
             win_splits+=("no")
             win_split_cmds+=("")
-        elif [[ "$line" =~ ^tmux\ new-window.*-n\ \"?([^\"]+)\"? ]]; then
-            current_win="${BASH_REMATCH[1]}"
-            win_names+=("$current_win")
-            win_cmds+=("")
-            win_splits+=("no")
-            win_split_cmds+=("")
+            win_panes+=("")
+            win_layouts+=("")
+            first_dir='$PROJECT_DIR'
+            [[ "$line" =~ \ -c\ \"([^\"]*)\" ]] && first_dir="${BASH_REMATCH[1]}"
+        elif [[ "$line" =~ ^p1=\$\(tmux\ display-message\ -p\ -t\ \"\$SESSION: ]]; then
+            w=$((${#win_names[@]} - 1))
+            win_panes[w]=1
+            pane_dirs["$w:1"]=$(pane_dir_from_expr "$first_dir")
+            pane_cmds["$w:1"]=""
+        elif [[ "$line" =~ ^p([0-9]+)=\$\(tmux\ split-window\ -d\ -t\ \"\$p([0-9]+)\"\ -([hv])\ -l\ ([0-9]+)%\ -c\ \"([^\"]*)\" ]]; then
+            w=$((${#win_names[@]} - 1))
+            k="${BASH_REMATCH[1]}"
+            win_layouts[w]+="${BASH_REMATCH[2]} ${BASH_REMATCH[3]} ${BASH_REMATCH[4]} $k"$'\n'
+            win_panes[w]=$((${win_panes[w]:-1} + 1))
+            pane_dirs["$w:$k"]=$(pane_dir_from_expr "${BASH_REMATCH[5]}")
+            pane_cmds["$w:$k"]=""
+        elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"\$p([0-9]+)\"\ \'(.*)\'\ Enter ]]; then
+            w=$((${#win_names[@]} - 1))
+            pane_cmds["$w:${BASH_REMATCH[1]}"]="${BASH_REMATCH[2]}"
         elif [[ "$line" =~ ^tmux\ split-window.*-t\ \"?\$SESSION:([^\"\ ]+)\"? ]]; then
             # target may be the window name (generated launchers) or include a pane
             # index like `dev.1` (hand-written launchers); strip a trailing .N so the
@@ -129,6 +182,13 @@ load_existing_launcher() {
         win_cmds[idx]="${win_cmds[idx]//\'\\\'\'/\'}"
         win_split_cmds[idx]="${win_split_cmds[idx]//\'\\\'\'/\'}"
     done
+    for idx in "${!pane_cmds[@]}"; do
+        pane_cmds[$idx]="${pane_cmds[$idx]//\'\\\'\'/\'}"
+    done
+    # steps end with a newline as they're read; layout_splits output doesn't
+    for idx in "${!win_layouts[@]}"; do
+        win_layouts[idx]="${win_layouts[idx]%$'\n'}"
+    done
 }
 
 # write a launcher script for the state variables to stdout
@@ -136,7 +196,7 @@ load_existing_launcher() {
 # shellcheck disable=SC2154  # reads the caller's state variables (see header)
 generate_launcher() {
     local session_name session_var instance_tag worktree_prefix
-    local i wname wcmd wsplit wscmd
+    local i wname wcmd wsplit wscmd wdir
 
     # session name: strip dots (tmux uses '.' as pane separator in target syntax)
     session_name=$(printf '%s' "$name" | tr '.' '-' | sed 's/-*$//')
@@ -233,6 +293,25 @@ fi
 
 VALIDATE
 
+    # a rich layout is a set of proportions, so the session must be created at
+    # the client's size: tmux builds detached sessions at 80x24 and the resize
+    # on attach hands out the difference unevenly, which would skew them
+    has_rich=0
+    for ((i = 0; i < ${#win_names[@]}; i++)); do
+        [[ -n "${win_panes[$i]:-}" ]] && has_rich=1
+    done
+    if [[ $has_rich -eq 1 ]]; then
+        cat <<'SIZING'
+
+# create the session at the client's size (see above)
+_cols=$(tmux display-message -p '#{client_width}' 2>/dev/null || true)
+_rows=$(tmux display-message -p '#{client_height}' 2>/dev/null || true)
+[[ -n "$_cols" ]] || _cols=$(tput cols 2>/dev/null || echo 80)
+[[ -n "$_rows" ]] || _rows=$(tput lines 2>/dev/null || echo 24)
+
+SIZING
+    fi
+
     # generate window commands
     for ((i = 0; i < ${#win_names[@]}; i++)); do
         wname="${win_names[$i]}"
@@ -244,16 +323,39 @@ VALIDATE
         wcmd="${wcmd//\'/\'\\\'\'}"
         wscmd="${wscmd//\'/\'\\\'\'}"
 
+        # a rich window's first pane starts in its own directory
+        wdir='$PROJECT_DIR'
+        if [[ -n "${win_panes[$i]:-}" ]]; then
+            wdir=$(pane_dir_expr "${pane_dirs["$i:1"]:-}")
+        fi
+
         if [[ $i -eq 0 ]]; then
             printf '# Window 1: %s\n' "$wname"
-            printf 'tmux new-session -d -s "$SESSION" -n "%s" -c "$PROJECT_DIR"\n' "$wname"
+            printf 'tmux new-session -d -s "$SESSION" -n "%s" -c "%s"' "$wname" "$wdir"
+            [[ $has_rich -eq 1 ]] && printf ' -x "$_cols" -y "$_rows"'
+            printf '\n'
             printf 'tmux set-option -t "=$SESSION:" @launcher %s\n' "$name"
         else
             printf '\n# Window %d: %s\n' "$((i + 1))" "$wname"
-            printf 'tmux new-window -t "$SESSION:" -n "%s" -c "$PROJECT_DIR"\n' "$wname"
+            printf 'tmux new-window -t "$SESSION:" -n "%s" -c "%s"\n' "$wname" "$wdir"
         fi
 
-        if [[ "$wsplit" == "yes" ]]; then
+        if [[ -n "${win_panes[$i]:-}" ]]; then
+            # panes are addressed by id ($p1..$pN), which stays valid while
+            # splits renumber pane indexes. -d keeps the first pane active
+            printf 'p1=$(tmux display-message -p -t "$SESSION:%s" '\''#{pane_id}'\'')\n' "$wname"
+            local holder dir pct new k pcmd
+            while read -r holder dir pct new; do
+                [[ -n "$holder" ]] || continue
+                printf 'p%s=$(tmux split-window -d -t "$p%s" -%s -l %s%% -c "%s" -P -F '\''#{pane_id}'\'')\n' \
+                    "$new" "$holder" "$dir" "$pct" "$(pane_dir_expr "${pane_dirs["$i:$new"]:-}")"
+            done <<<"${win_layouts[$i]:-}"
+            for ((k = 1; k <= win_panes[i]; k++)); do
+                pcmd="${pane_cmds["$i:$k"]:-}"
+                [[ -n "$pcmd" ]] || continue
+                printf 'tmux send-keys -t "$p%s" '\''%s'\'' Enter\n' "$k" "${pcmd//\'/\'\\\'\'}"
+            done
+        elif [[ "$wsplit" == "yes" ]]; then
             printf 'tmux split-window -t "$SESSION:%s" -h -c "$PROJECT_DIR"\n' "$wname"
             if [[ -n "$wcmd" ]]; then
                 printf 'tmux send-keys -t "$SESSION:%s.1" '\''%s'\'' Enter\n' "$wname" "$wcmd"
