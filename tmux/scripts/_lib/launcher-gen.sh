@@ -11,7 +11,11 @@
 #                   returns a ~/... form for display
 #   worktree_aware  y/n, resolve instance suffixes to worktree directories
 #   worktrees_dir   worktree root (same $HOME/~ convention as project_dir)
+#   worktree_prefix instance <n> opens <worktrees_dir>/<prefix>-<n>-*; empty =
+#                   the launcher name in capitals
 #   win_names, win_cmds, win_splits (yes/no), win_split_cmds   parallel arrays
+#   win_autonames   1 = automatic-rename names the window once it's built; its
+#                   name only targets it while the launcher runs
 #
 # a window the wizard's model can't describe (more panes, stacked splits, a
 # directory per pane) is "rich": win_panes[i] holds its pane count and the
@@ -26,7 +30,7 @@
 [[ -n "${_TMUX_LAUNCHER_GEN_SH_LOADED:-}" ]] && return 0
 _TMUX_LAUNCHER_GEN_SH_LOADED=1
 
-declare -ga win_panes=() win_layouts=()
+declare -ga win_panes=() win_layouts=() win_autonames=()
 declare -gA pane_cmds=() pane_dirs=()
 
 # "$PROJECT_DIR"-relative form of a pane directory, for generated -c arguments
@@ -55,6 +59,27 @@ LAUNCHER_GENERATED_MARKER="# @generated"
 
 is_generated_launcher() {
     grep -qxF "$LAUNCHER_GENERATED_MARKER" "$1" 2>/dev/null
+}
+
+# the default a launcher assigns to VAR, through nested fallbacks:
+# VAR="${A:-${B:-$HOME/x}}" → $HOME/x. a plain VAR="value" gives the value
+# usage: launcher_assignment FILE VAR
+launcher_assignment() {
+    local value
+    value=$(grep -m1 "^$2=" "$1" 2>/dev/null | sed "s/^$2=//" | tr -d '"' || true)
+    while [[ "$value" =~ ^\$\{[A-Za-z0-9_]+:-(.*)\}$ ]]; do
+        value="${BASH_REMATCH[1]}"
+    done
+    printf '%s' "$value"
+}
+
+# base tmux session a launcher creates (SESSION="${SESSION_NAME:-acme}" → acme),
+# empty when the name is computed at run time
+launcher_session_name() {
+    local value
+    value=$(launcher_assignment "$1" SESSION)
+    [[ "$value" == *'$'* ]] && value=""
+    printf '%s' "$value"
 }
 
 # where a pane of a rich window sits, from the split that created it:
@@ -102,13 +127,14 @@ load_existing_launcher() {
     fi
     # a separate `_<SESSION>_ROOT_DEFAULT="$HOME/path"` line handles paths
     # containing apostrophes (which break `"${VAR:-default}"` parsing). the inline
-    # `PROJECT_DIR="${VAR:-default}"` form is read too
+    # `PROJECT_DIR="${VAR:-default}"` form is read too, and hand-written
+    # worktree launchers that set PROJECT_DIR="$BASE_DIR"
     project_dir=$(grep -m1 '^_[A-Z0-9_]*_ROOT_DEFAULT=' "$file" 2>/dev/null |
         sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
     if [[ -z "$project_dir" ]]; then
-        project_dir=$(grep -m1 '^PROJECT_DIR=' "$file" 2>/dev/null | sed 's/^PROJECT_DIR=//' | tr -d '"' || true)
-        if [[ "$project_dir" =~ :-(.+)\}$ ]]; then
-            project_dir="${BASH_REMATCH[1]}"
+        project_dir=$(launcher_assignment "$file" PROJECT_DIR)
+        if [[ "$project_dir" == '$BASE_DIR' ]]; then
+            project_dir=$(launcher_assignment "$file" BASE_DIR)
         fi
     fi
     project_dir="${project_dir/#\$HOME/\~}"
@@ -119,15 +145,20 @@ load_existing_launcher() {
         worktrees_dir=$(grep -m1 '^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null |
             sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
         if [[ -z "$worktrees_dir" ]]; then
-            worktrees_dir=$(grep -m1 '^WORKTREES_DIR=' "$file" 2>/dev/null | sed 's/^WORKTREES_DIR=//' | tr -d '"' || true)
-            if [[ "$worktrees_dir" =~ :-(.+)\}$ ]]; then
-                worktrees_dir="${BASH_REMATCH[1]}"
-            fi
+            worktrees_dir=$(launcher_assignment "$file" WORKTREES_DIR)
         fi
         worktrees_dir="${worktrees_dir/#\$HOME/\~}"
+        # for wt in "$WORKTREES_DIR"/<prefix>-"${ticket_num}"-*; do
+        worktree_prefix=""
+        local glob_line
+        glob_line=$(grep -m1 'ticket_num}"-' "$file" 2>/dev/null || true)
+        if [[ "$glob_line" =~ \"\$WORKTREES_DIR\"/(.+)-\"\$\{ticket_num\}\" ]]; then
+            worktree_prefix="${BASH_REMATCH[1]}"
+        fi
     else
         worktree_aware="n"
         worktrees_dir=""
+        worktree_prefix=""
     fi
 
     win_names=()
@@ -136,6 +167,7 @@ load_existing_launcher() {
     win_split_cmds=()
     win_panes=()
     win_layouts=()
+    win_autonames=()
     pane_cmds=()
     pane_dirs=()
 
@@ -152,6 +184,7 @@ load_existing_launcher() {
             win_split_cmds+=("")
             win_panes+=("")
             win_layouts+=("")
+            win_autonames+=("")
             first_dir='$PROJECT_DIR'
             [[ "$line" =~ \ -c\ \"([^\"]*)\" ]] && first_dir="${BASH_REMATCH[1]}"
         elif [[ "$line" =~ ^p1=\$\(tmux\ display-message\ -p\ -t\ \"\$SESSION: ]]; then
@@ -169,6 +202,10 @@ load_existing_launcher() {
         elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"\$p([0-9]+)\"\ \'(.*)\'\ Enter ]]; then
             w=$((${#win_names[@]} - 1))
             pane_cmds["$w:${BASH_REMATCH[1]}"]="${BASH_REMATCH[2]}"
+        elif [[ "$line" =~ ^tmux\ set-option\ -w\ -t\ \"\$SESSION:([^\"]+)\"\ automatic-rename\ on ]]; then
+            if idx=$(index_for_window "${BASH_REMATCH[1]}"); then
+                win_autonames[idx]=1
+            fi
         elif [[ "$line" =~ ^tmux\ split-window.*-t\ \"?\$SESSION:([^\"\ ]+)\"? ]]; then
             # target may be the window name (generated launchers) or include a pane
             # index like `dev.1` (hand-written launchers); strip a trailing .N so the
@@ -216,7 +253,7 @@ load_existing_launcher() {
 # usage: generate_launcher >"$USER_LAUNCHERS/$name"
 # shellcheck disable=SC2154  # reads the caller's state variables (see header)
 generate_launcher() {
-    local session_name session_var instance_tag worktree_prefix
+    local session_name session_var instance_tag wt_prefix
     local i wname wcmd wsplit wscmd wdir
 
     # session name: strip dots (tmux uses '.' as pane separator in target syntax)
@@ -226,6 +263,23 @@ generate_launcher() {
     instance_tag=""
     if [[ "$instance_mode" == "y" ]]; then
         instance_tag=$'\n'"# @instance: prompt"
+    fi
+
+    wt_prefix="${worktree_prefix:-}"
+    [[ -n "$wt_prefix" ]] || wt_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
+
+    # --help: what the instance suffix does, and the overrides read below
+    local help_worktrees="" help_env
+    help_env="    SESSION_NAME    tmux session name (default: $session_name)
+    ${session_var}_ROOT    project directory (default: ${project_dir/#\$HOME/\~})"
+    if [[ "$worktree_aware" == "y" ]]; then
+        help_worktrees="
+
+    A session named $session_name-<n> opens the worktree $wt_prefix-<n>-*,
+    any other $session_name-<suffix> the worktree named <suffix>, from
+    ${session_var}_WORKTREES"
+        help_env+="
+    ${session_var}_WORKTREES    worktrees directory (default: ${worktrees_dir/#\$HOME/\~})"
     fi
 
     cat <<PREAMBLE
@@ -244,10 +298,13 @@ USAGE:
     $name
 
 DESCRIPTION:
-    Creates or attaches to the '$name' tmux session.
+    Creates or attaches to the '$name' tmux session.${help_worktrees}
 
 OPTIONS:
     -h, --help   Show this help message
+
+ENVIRONMENT:
+$help_env
 EOF
     exit 0
 fi
@@ -262,7 +319,6 @@ PREAMBLE
     # assignment takes apostrophes. the `${PATH/#\~/$HOME}` lines expand a leading
     # `~` from an env-var override (e.g. `FOO_ROOT="~/x"`)
     if [[ "$worktree_aware" == "y" ]]; then
-        worktree_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
         cat <<WTBLOCK
 SESSION="\${SESSION_NAME:-$session_name}"
 _${session_var}_WORKTREES_DEFAULT="$worktrees_dir"
@@ -272,16 +328,19 @@ BASE_DIR="\${${session_var}_ROOT:-\$_${session_var}_ROOT_DEFAULT}"
 WORKTREES_DIR="\${WORKTREES_DIR/#\\~/\$HOME}"
 BASE_DIR="\${BASE_DIR/#\\~/\$HOME}"
 
-# resolve project directory: check for a matching worktree when session has a suffix
+# resolve project directory: a numeric session suffix opens the worktree for
+# that number, any other suffix the worktree with exactly that name
 PROJECT_DIR="\$BASE_DIR"
 if [[ "\$SESSION" =~ -([0-9]+)\$ ]]; then
     ticket_num="\${BASH_REMATCH[1]}"
-    for wt in "\$WORKTREES_DIR"/${worktree_prefix}-"\${ticket_num}"-*; do
+    for wt in "\$WORKTREES_DIR"/${wt_prefix}-"\${ticket_num}"-*; do
         if [[ -d "\$wt" ]]; then
             PROJECT_DIR="\$wt"
             break
         fi
     done
+elif [[ "\$SESSION" == "${session_name}-"* && -d "\$WORKTREES_DIR/\${SESSION#${session_name}-}" ]]; then
+    PROJECT_DIR="\$WORKTREES_DIR/\${SESSION#${session_name}-}"
 fi
 WTBLOCK
     else
@@ -387,6 +446,17 @@ SIZING
         elif [[ -n "$wcmd" ]]; then
             printf 'tmux send-keys -t "$SESSION:%s" '\''%s'\'' Enter\n' "$wname" "$wcmd"
         fi
+    done
+
+    # last: renaming a window breaks the name-based targets above
+    local auto_header=0
+    for ((i = 0; i < ${#win_names[@]}; i++)); do
+        [[ "${win_autonames[$i]:-}" == 1 ]] || continue
+        if [[ $auto_header -eq 0 ]]; then
+            printf '\n# hand these windows back to automatic-rename\n'
+            auto_header=1
+        fi
+        printf 'tmux set-option -w -t "$SESSION:%s" automatic-rename on\n' "${win_names[$i]}"
     done
 
     cat <<'FOOTER'

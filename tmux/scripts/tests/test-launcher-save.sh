@@ -13,6 +13,7 @@ TEST_DIR="$(cd "$TEST_DIR" && pwd -P)"
 mkdir -p "$TEST_DIR/proj" "$TEST_DIR/config"
 # USER_LAUNCHERS (common.sh) is derived from XDG_CONFIG_HOME at source time
 export XDG_CONFIG_HOME="$TEST_DIR/config"
+export XDG_CACHE_HOME="$TEST_DIR/cache"
 
 CAPTURE="$SCRIPT_DIR/../launchers/capture.sh"
 # shellcheck source=tmux/scripts/launchers/save.sh
@@ -150,7 +151,7 @@ wait_for_command "=orig:srv" || fail "srv command did not start"
 build_state_from_capture "$("$CAPTURE" orig)"
 original_state=$(describe_state)
 assert_equals "captures the original session" "code||no||3|1 h 50 2;2 v 48 3|||sleep 300 | cat -u|||sub
-srv|tail -f '$TEST_DIR/proj/my notes.txt'|no|" "$original_state"
+srv|tail -f 'my notes.txt'|no|" "$original_state"
 write_new_launcher "saved"
 saved="$USER_LAUNCHERS/saved"
 
@@ -277,11 +278,7 @@ fi
 
 tmux set-option -t "=orig:" @launcher hand
 build_state_from_capture "$("$CAPTURE" orig)"
-if update_target >/dev/null; then
-    fail "a hand-written launcher must not be offered for update"
-else
-    pass "a hand-written launcher is not offered for update"
-fi
+assert_equals "a tagged hand-written launcher is offered for update" "hand" "$(update_target || true)"
 
 tmux set-option -t "=orig:" @launcher dev
 build_state_from_capture "$("$CAPTURE" orig)"
@@ -290,6 +287,118 @@ if update_target >/dev/null; then
 else
     pass "a built-in launcher is not offered for update"
 fi
+
+# ═══════════════════════════════════════════════════════════════════════════
+section "Worktrees"
+# ═══════════════════════════════════════════════════════════════════════════
+
+repo="$TEST_DIR/repo"
+wts="$TEST_DIR/repo-wt"
+git init -q "$repo"
+git -C "$repo" -c user.name=t -c user.email=t@t commit -q --allow-empty -m init
+git -C "$repo" worktree add -q "$wts/rp-7-fix" -b rp-7-fix
+mkdir -p "$wts/rp-7-fix/src"
+
+tmux new-session -d -s wtsess -n code -c "$wts/rp-7-fix" -x 200 -y 50
+tmux split-window -h -t "=wtsess:code" -c "$wts/rp-7-fix/src"
+build_state_from_capture "$("$CAPTURE" wtsess)"
+assert_equals "pane dirs are relative to the worktree" "code||no||2|1 h 50 2||||src" "$(describe_state)"
+write_new_launcher "repo"
+assert_equals "a new launcher is rooted at the main checkout" "_REPO_ROOT_DEFAULT=\"$repo\"" \
+    "$(grep -m1 '^_REPO_ROOT_DEFAULT=' "$USER_LAUNCHERS/repo")"
+assert_equals "worktrees dir is the linked worktrees' parent" "_REPO_WORKTREES_DEFAULT=\"$wts\"" \
+    "$(grep -m1 '^_REPO_WORKTREES_DEFAULT=' "$USER_LAUNCHERS/repo")"
+if grep -q '^# @instance: prompt' "$USER_LAUNCHERS/repo" && grep -qF '"$WORKTREES_DIR"/rp-"${ticket_num}"-*' "$USER_LAUNCHERS/repo"; then
+    pass "instances prompt and open <prefix>-<n>-* worktrees"
+else
+    fail "a worktree launcher should prompt for instances and glob the worktree prefix"
+fi
+
+SESSION_NAME=repo-7 bash "$USER_LAUNCHERS/repo" >/dev/null 2>&1 || true
+assert_equals "a numbered instance opens its worktree" "$wts/rp-7-fix/src" \
+    "$(tmux display-message -p -t "=repo-7:code.2" '#{pane_current_path}' 2>/dev/null)"
+SESSION_NAME=repo-rp-7-fix bash "$USER_LAUNCHERS/repo" >/dev/null 2>&1 || true
+assert_equals "a named instance opens the worktree with that name" "$wts/rp-7-fix" \
+    "$(tmux display-message -p -t "=repo-rp-7-fix:code.1" '#{pane_current_path}' 2>/dev/null)"
+SESSION_NAME=repo bash "$USER_LAUNCHERS/repo" >/dev/null 2>&1 || true
+assert_equals "the base session opens the main checkout" "$repo" \
+    "$(tmux display-message -p -t "=repo:code.1" '#{pane_current_path}' 2>/dev/null)"
+
+# a hand-written worktree launcher, found by its instance's session name
+cat >"$USER_LAUNCHERS/hw" <<EOF
+#!/usr/bin/env bash
+# @description: Hand-written worktrees
+# @instance: prompt
+SESSION="\${SESSION_NAME:-hw}"
+WORKTREES_DIR="\${HW_WORKTREES:-$wts}"
+BASE_DIR="\${HW_ROOT:-\${BASE_DIR:-$repo}}"
+PROJECT_DIR="\$BASE_DIR"
+if [[ "\$SESSION" =~ -([0-9]+)\$ ]]; then
+    ticket_num="\${BASH_REMATCH[1]}"
+    for wt in "\$WORKTREES_DIR"/rp-"\${ticket_num}"-*; do
+        [[ -d "\$wt" ]] && PROJECT_DIR="\$wt" && break
+    done
+fi
+tmux new-session -d -s "\$SESSION" -n "zsh" -c "\$PROJECT_DIR"
+EOF
+chmod +x "$USER_LAUNCHERS/hw"
+cp "$USER_LAUNCHERS/hw" "$TEST_DIR/hw.before"
+tmux rename-session -t "=wtsess" hw-7
+build_state_from_capture "$("$CAPTURE" hw-7)"
+assert_equals "an untagged instance session finds its launcher by name" "hw" "$(update_target || true)"
+update_launcher "hw"
+if cmp -s "$TEST_DIR/hw.before" "$LAUNCHER_BACKUPS/hw"; then
+    pass "a hand-written launcher is backed up before it's replaced"
+else
+    fail "a hand-written launcher should be copied to LAUNCHER_BACKUPS"
+fi
+hw="$USER_LAUNCHERS/hw"
+if is_generated_launcher "$hw" && bash -n "$hw" &&
+    grep -q '^# @description: Hand-written worktrees' "$hw" && grep -q '^# @instance: prompt' "$hw" &&
+    grep -q "^_HW_ROOT_DEFAULT=\"$repo\"" "$hw" && grep -q "^_HW_WORKTREES_DEFAULT=\"$wts\"" "$hw" &&
+    grep -qF '"$WORKTREES_DIR"/rp-"${ticket_num}"-*' "$hw"; then
+    pass "the rewrite keeps description, instances, dirs and worktree prefix"
+else
+    fail "the rewrite should carry over the hand-written launcher's settings"
+fi
+if grep -qF -- '-c "$PROJECT_DIR/src"' "$hw"; then
+    pass "pane dirs stay relative to the worktree"
+else
+    fail "pane dirs should be relative to the worktree, not absolute"
+fi
+
+help=$(bash "$USER_LAUNCHERS/repo" --help)
+if [[ "$help" == *"repo-<n> opens the worktree rp-<n>-*"* && "$help" == *"REPO_WORKTREES    worktrees directory"* &&
+    "$help" == *"REPO_ROOT    project directory"* ]]; then
+    pass "--help describes worktree instances and the env overrides"
+else
+    fail "--help should describe worktree instances and the env overrides (got: $help)"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════
+section "Auto-named windows"
+# ═══════════════════════════════════════════════════════════════════════════
+
+tmux new-session -d -s autos -n pinned -c "$TEST_DIR/proj" -x 200 -y 50
+tmux new-window -t "=autos:" -c "$TEST_DIR/proj"
+build_state_from_capture "$("$CAPTURE" autos)"
+assert_equals "only the unnamed window is auto-named" " 1" "${win_autonames[*]}"
+write_new_launcher "autos"
+auto_lines=$(grep -c 'automatic-rename on' "$USER_LAUNCHERS/autos" || true)
+last_target=$(grep -n -- '-t "$SESSION:' "$USER_LAUNCHERS/autos" | grep -v 'automatic-rename\|select-' | tail -1 | cut -d: -f1)
+first_rename=$(grep -n 'automatic-rename on' "$USER_LAUNCHERS/autos" | head -1 | cut -d: -f1)
+if [[ "$auto_lines" == 1 && -n "$first_rename" && "$first_rename" -gt "${last_target:-0}" ]]; then
+    pass "renaming is handed back after every name-targeted line"
+else
+    fail "automatic-rename should be set once, after the windows are built"
+fi
+(
+    load_existing_launcher "$USER_LAUNCHERS/autos"
+    assert_equals "auto-named windows survive a load" " 1" "${win_autonames[*]}"
+)
+SESSION_NAME=autos2 bash "$USER_LAUNCHERS/autos" >/dev/null 2>&1 || true
+assert_equals "replay renames only the auto-named window" "0 1" \
+    "$(tmux list-windows -t "=autos2" -F '#{automatic-rename}' 2>/dev/null | tr '\n' ' ' | sed 's/ $//')"
 
 cleanup_test_server
 

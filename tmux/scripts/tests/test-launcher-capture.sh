@@ -81,6 +81,14 @@ assert_equals "spaces are single-quoted" "'a b'" "$(shell_quote "a b")"
 assert_equals "single quotes are escaped" "'it'\\''s'" "$(shell_quote "it's")"
 assert_equals "empty arguments are kept" "''" "$(shell_quote "")"
 
+assert_equals "a program path on PATH becomes its name" "sh" "$(portable_arg 0 /some/where/sh /tmp)"
+assert_equals "a program path not on PATH is kept" "/no/such-prog-x" "$(portable_arg 0 /no/such-prog-x /tmp)"
+assert_equals "a program under the cwd runs as ./" "./bin/run" "$(portable_arg 0 /p/bin/run /p)"
+assert_equals "the cwd itself becomes ." "." "$(portable_arg 1 /p /p)"
+# shellcheck disable=SC2088  # a literal ~ is the expected output
+assert_equals "paths under \$HOME become ~/" "~/'a b/c'" "$(portable_arg 1 "$HOME/a b/c" /p)"
+assert_equals "other paths are kept" "/opt/x" "$(portable_arg 1 /opt/x /p)"
+
 mkdir -p "$TEST_DIR/my dir"
 touch "$TEST_DIR/my dir/my notes.md" "$TEST_DIR/proj/rel file.txt"
 joined=$(rejoin_path_words "$TEST_DIR/proj" nvim "$TEST_DIR/my" "dir/my" notes.md | paste -sd'|' -)
@@ -150,7 +158,7 @@ else
 fi
 assert_equals "child processes of the foreground job are left out" "$expected_child" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 9)"
 notes_idx=$(tmux display-message -p -t "=cap:notes" '#{window_index}')
-assert_equals "an argument with a space is quoted" "tail -f '$TEST_DIR/proj/my notes.txt'" \
+assert_equals "a path argument under the pane's cwd is relative and quoted" "tail -f 'my notes.txt'" \
     "$(row_field "$out" $'pane\t'"$notes_idx"$'\t'"$left_pane" 9)"
 assert_equals "pane row carries its own cwd" "$TEST_DIR/proj/sub" "$(row_field "$out" $'pane\t'"$srv_idx"$'\t'"$left_pane" 8)"
 

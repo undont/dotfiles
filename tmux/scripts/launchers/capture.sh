@@ -14,7 +14,7 @@ set -euo pipefail
 #   session   <name>
 #   launcher  <@launcher tag, empty if untagged>
 #   dir       <most common pane cwd; ties go to the earliest pane>
-#   window    <index> <name> <pane count>
+#   window    <index> <name> <pane count> <automatic-rename: 1 or 0>
 #   pane      <window index> <pane index> <left> <top> <width> <height> <cwd> <command> <note>
 #
 # <command> is the pane's foreground job with its arguments, empty when the
@@ -85,12 +85,36 @@ rejoin_path_words() {
     done
 }
 
+# one argument, quoted, with paths written to replay from another checkout or
+# machine: the program by name when that name is on PATH, a path under the
+# pane's cwd relative to it, any other path under $HOME as ~/…
+# usage: portable_arg POSITION ARG CWD
+portable_arg() {
+    local i="$1" arg="$2" cwd="$3" rel
+    if [[ "$i" -eq 0 && "$arg" == /* ]] && command -v "${arg##*/}" >/dev/null 2>&1; then
+        shell_quote "${arg##*/}"
+        return
+    fi
+    if [[ "$arg" == "$cwd" ]]; then
+        printf '.'
+    elif [[ "$cwd" != / && "$arg" == "$cwd/"* ]]; then
+        rel="${arg#"$cwd"/}"
+        [[ "$i" -eq 0 ]] && rel="./$rel"
+        shell_quote "$rel"
+    elif [[ "$arg" == "$HOME/"* ]]; then
+        # shellcheck disable=SC2088  # a literal ~, expanded when the launcher replays it
+        printf '~/%s' "$(shell_quote "${arg#"$HOME"/}")"
+    else
+        shell_quote "$arg"
+    fi
+}
+
 # a process's arguments, shell-quoted into one command line. linux exposes the
 # exact argv (/proc/PID/cmdline, NUL-separated); elsewhere ps's space-joined
 # args are split and paths with spaces rejoined
 # usage: quoted_command PID CWD
 quoted_command() {
-    local pid="$1" cwd="$2" arg out=""
+    local pid="$1" cwd="$2" arg out="" i=0
     local -a args=()
     if [[ -r "/proc/$pid/cmdline" ]]; then
         while IFS= read -r -d '' arg; do
@@ -105,7 +129,8 @@ quoted_command() {
         done < <(rejoin_path_words "$cwd" "${words[@]}")
     fi
     for arg in "${args[@]}"; do
-        out+="${out:+ }$(shell_quote "$arg")"
+        out+="${out:+ }$(portable_arg "$i" "$arg" "$cwd")"
+        i=$((i + 1))
     done
     printf '%s' "$out"
 }
@@ -149,7 +174,7 @@ replay_note() {
 
 main() {
     local session="${1:-}" windows panes dir cmd note
-    local w_index w_name w_panes p_window p_index p_left p_top p_width p_height p_cwd p_tty
+    local w_index w_name w_panes w_auto p_window p_index p_left p_top p_width p_height p_cwd p_tty
     if [[ -z "$session" ]]; then
         # the popup's client session, or the session of the pane this runs in
         session=$(tmux display-message -p '#{session_name}' 2>/dev/null || true)
@@ -162,7 +187,7 @@ main() {
     printf 'session\t%s\n' "$session"
     printf 'launcher\t%s\n' "$(tmux show-options -qv -t "=$session:" @launcher 2>/dev/null || true)"
 
-    windows=$(tmux list-windows -t "=$session" -F '#{window_index}	#{window_name}	#{window_panes}')
+    windows=$(tmux list-windows -t "=$session" -F '#{window_index}	#{window_name}	#{window_panes}	#{automatic-rename}')
     panes=$(tmux list-panes -s -t "=$session" -F '#{window_index}	#{pane_index}	#{pane_left}	#{pane_top}	#{pane_width}	#{pane_height}	#{pane_current_path}	#{pane_tty}')
 
     # most common cwd, ties to the earliest pane (list-panes -s is in window,pane order)
@@ -171,8 +196,8 @@ main() {
         END { best = order[1]; for (i = 2; i <= n; i++) if (count[order[i]] > count[best]) best = order[i]; print best }')
     printf 'dir\t%s\n' "$dir"
 
-    while IFS=$'\t' read -r w_index w_name w_panes; do
-        printf 'window\t%s\t%s\t%s\n' "$w_index" "$(clean_field "$w_name")" "$w_panes"
+    while IFS=$'\t' read -r w_index w_name w_panes w_auto; do
+        printf 'window\t%s\t%s\t%s\t%s\n' "$w_index" "$(clean_field "$w_name")" "$w_panes" "$w_auto"
     done <<<"$windows"
 
     while IFS=$'\t' read -r p_window p_index p_left p_top p_width p_height p_cwd p_tty; do

@@ -9,14 +9,17 @@ set -euo pipefail
 # writes it with generate_launcher. one screen: a summary of what will be saved
 # above a name prompt
 #
-#   name = the session's @launcher, when that launcher is wizard-generated:
-#          update it in place (keeps its directory, description, instance and
-#          worktree settings; replaces the windows)
-#   name = anything else: save a new launcher rooted at the session's directory
+#   name = an existing user launcher (by default the session's own: its
+#          @launcher tag, else the launcher whose session or instance it is):
+#          replace its windows, keeping its directory, description, instance
+#          and worktree settings. a hand-written one is copied to
+#          LAUNCHER_BACKUPS first
+#   name = anything else: save a new launcher rooted at the session's
+#          directory, or at the main checkout with worktree instances when the
+#          repo has linked worktrees
 #
-# the wizard's model is one optional side-by-side split per window, so a window
-# with more panes keeps its first two, side by side. agent CLIs lose the args
-# that pin them to one conversation (claude --resume <id> → claude)
+# agent CLIs lose the args that pin them to one conversation
+# (claude --resume <id> → claude)
 #
 # usage: save.sh [session]    (default: the current session)
 
@@ -31,11 +34,18 @@ source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
 source "$SCRIPT_DIR/../_lib/layout.sh"
 
 DIM=$'\033[2m'
+LAUNCHER_BACKUPS="${XDG_CACHE_HOME:-$HOME/.cache}/tmux/launcher-backups"
 
 # filled by build_state_from_capture
 cap_session=""
 cap_tag=""
 cap_dir=""
+cap_target=""        # user launcher this session belongs to
+cap_root=""          # pane dirs are written relative to this
+cap_checkout=""      # git checkout holding cap_dir
+cap_main=""          # main checkout of that repo
+cap_worktrees_dir="" # parent of its linked worktrees, empty without any
+cap_worktree_prefix=""
 declare -a save_notes=()
 
 # drop the args that resume one specific agent conversation. a flag without an
@@ -97,20 +107,88 @@ generator_path() {
     fi
 }
 
-# map capture.sh rows onto the wizard state (win_* arrays) and collect notes
-# usage: build_state_from_capture "$(capture.sh session)"
-# a pane's directory, relative to the project directory when it's under it,
-# else absolute ($HOME form when under home)
+# a pane's directory, relative to cap_root when it's under it, else absolute
+# ($HOME form when under home)
 pane_dir_relative() {
     local cwd="$1"
-    if [[ "$cwd" == "$cap_dir" ]]; then
+    if [[ "$cwd" == "$cap_root" ]]; then
         printf ''
-    elif [[ "$cwd" == "$cap_dir/"* ]]; then
-        printf '%s' "${cwd#"$cap_dir"/}"
+    elif [[ "$cwd" == "$cap_root/"* ]]; then
+        printf '%s' "${cwd#"$cap_root"/}"
     elif [[ "$cwd" == "$HOME/"* ]]; then
         printf '%s' "$(generator_path "$cwd")"
     else
         printf '%s' "$cwd"
+    fi
+}
+
+# the user launcher a session belongs to: its @launcher tag, else the launcher
+# whose base session it is or is an instance of (acme, acme-42); the longest
+# base wins. a session tagged with a built-in launcher has none
+session_launcher() {
+    if [[ -n "$cap_tag" ]]; then
+        [[ -f "$USER_LAUNCHERS/$cap_tag" ]] && printf '%s' "$cap_tag"
+        return 0
+    fi
+    local file base best="" best_len=0
+    for file in "$USER_LAUNCHERS"/*; do
+        [[ -f "$file" && -x "$file" ]] || continue
+        base=$(launcher_session_name "$file")
+        [[ -n "$base" ]] || continue
+        if [[ "$cap_session" == "$base" || "$cap_session" == "$base-"* ]] && ((${#base} > best_len)); then
+            best="${file##*/}"
+            best_len=${#base}
+        fi
+    done
+    printf '%s' "$best"
+}
+
+# the git layout around cap_dir (see the cap_* globals)
+detect_worktrees() {
+    cap_checkout="" cap_main="" cap_worktrees_dir="" cap_worktree_prefix=""
+    cap_checkout=$(git -C "$cap_dir" rev-parse --show-toplevel 2>/dev/null) || {
+        cap_checkout=""
+        return 0
+    }
+    local -a checkouts=()
+    mapfile -t checkouts < <(git -C "$cap_dir" worktree list --porcelain 2>/dev/null | sed -n 's/^worktree //p')
+    cap_main="${checkouts[0]:-$cap_checkout}"
+    local wt
+    for wt in "${checkouts[@]:1}"; do
+        [[ -n "$cap_worktrees_dir" ]] || cap_worktrees_dir="${wt%/*}"
+        # ts-42-fix-login → ts
+        if [[ -z "$cap_worktree_prefix" && "${wt##*/}" =~ -[0-9]+- ]]; then
+            cap_worktree_prefix="${wt##*/}"
+            cap_worktree_prefix="${cap_worktree_prefix%%"${BASH_REMATCH[0]}"*}"
+        fi
+    done
+    [[ "$cap_checkout" != "$cap_main" ]] && cap_worktrees_dir="${cap_checkout%/*}"
+    return 0
+}
+
+# what PROJECT_DIR will be when the launcher replays this session: the linked
+# worktree it's in, else the target launcher's directory when the session is
+# under it, else the repo root (worktree launchers) or the session's directory
+resolve_root() {
+    local dir=""
+    if [[ -n "$cap_checkout" && "$cap_checkout" != "$cap_main" ]]; then
+        cap_root="$cap_checkout"
+        return
+    fi
+    if [[ -n "$cap_target" ]]; then
+        dir=$(
+            load_existing_launcher "$USER_LAUNCHERS/$cap_target"
+            printf '%s' "${project_dir/#\~/$HOME}"
+        )
+        if [[ -n "$dir" && ("$cap_dir" == "$dir" || "$cap_dir" == "$dir/"*) ]]; then
+            cap_root="$dir"
+            return
+        fi
+    fi
+    if [[ -n "$cap_worktrees_dir" ]]; then
+        cap_root="$cap_checkout"
+    else
+        cap_root="$cap_dir"
     fi
 }
 
@@ -122,7 +200,7 @@ build_state_from_capture() {
     local -a order=()
     # per window: name and ordered pane ids; per pane, by "<win>:<id>":
     # geometry, command, note text, directory
-    local -A wname=() plist=() p_left=() p_top=() p_w=() p_h=() p_cmd=() p_text=() p_cwd=() seen=()
+    local -A wname=() wauto=() plist=() p_left=() p_top=() p_w=() p_h=() p_cmd=() p_text=() p_cwd=() seen=()
 
     win_names=()
     win_cmds=()
@@ -130,6 +208,7 @@ build_state_from_capture() {
     win_split_cmds=()
     win_panes=()
     win_layouts=()
+    win_autonames=()
     pane_cmds=()
     pane_dirs=()
     save_notes=()
@@ -142,6 +221,7 @@ build_state_from_capture() {
             window)
                 order+=("$f1")
                 wname[$f1]="$f2"
+                wauto[$f1]="$f4"
                 plist[$f1]=""
                 ;;
             pane)
@@ -168,6 +248,14 @@ build_state_from_capture() {
         esac
     done <<<"$rows"
 
+    cap_target=""
+    cap_root="$cap_dir"
+    if [[ -n "$cap_dir" ]]; then
+        cap_target=$(session_launcher)
+        detect_worktrees
+        resolve_root
+    fi
+
     local w name base n i id holder dir pct new rank
     for w in "${order[@]}"; do
         base=$(sanitise_window_name "${wname[$w]}")
@@ -182,6 +270,11 @@ build_state_from_capture() {
         win_names+=("$name")
         win_panes+=("")
         win_layouts+=("")
+        if [[ "${wauto[$w]:-0}" == 1 ]]; then
+            win_autonames+=(1)
+        else
+            win_autonames+=("")
+        fi
 
         local -a ids=()
         read -ra ids <<<"${plist[$w]}"
@@ -269,11 +362,10 @@ build_state_from_capture() {
     done
 }
 
-# the wizard-generated user launcher this session can update in place, if any
+# the user launcher this session can update in place, if any
 update_target() {
-    [[ -n "$cap_tag" ]] || return 1
-    is_generated_launcher "$USER_LAUNCHERS/$cap_tag" || return 1
-    printf '%s' "$cap_tag"
+    [[ -n "$cap_target" ]] || return 1
+    printf '%s' "$cap_target"
 }
 
 # write the current win_* state as a new launcher rooted at the session's dir
@@ -285,25 +377,40 @@ write_new_launcher() {
     instance_mode="n"
     worktree_aware="n"
     worktrees_dir=""
-    project_dir=$(generator_path "$cap_dir")
+    worktree_prefix=""
+    project_dir=$(generator_path "$cap_root")
+    if [[ -n "$cap_worktrees_dir" ]]; then
+        instance_mode="y"
+        worktree_aware="y"
+        worktrees_dir=$(generator_path "$cap_worktrees_dir")
+        worktree_prefix="$cap_worktree_prefix"
+        project_dir=$(generator_path "$cap_main")
+    fi
     mkdir -p "$USER_LAUNCHERS"
     generate_launcher >"$USER_LAUNCHERS/$name"
     chmod +x "$USER_LAUNCHERS/$name"
 }
 
-# replace the windows of a wizard-generated launcher, keeping everything else
+# replace the windows of a user launcher, keeping everything else
 update_launcher() {
     [[ ${#win_names[@]} -gt 0 ]] || return 1
     name="$1"
+    local file="$USER_LAUNCHERS/$name"
+    if ! is_generated_launcher "$file"; then
+        mkdir -p "$LAUNCHER_BACKUPS"
+        cp "$file" "$LAUNCHER_BACKUPS/$name"
+    fi
     local -a keep_names=("${win_names[@]}") keep_cmds=("${win_cmds[@]}")
     local -a keep_splits=("${win_splits[@]}") keep_split_cmds=("${win_split_cmds[@]}")
     local -a keep_panes=("${win_panes[@]}") keep_layouts=("${win_layouts[@]}")
+    local -a keep_autonames=("${win_autonames[@]}")
     local -A keep_pane_cmds=() keep_pane_dirs=()
     local key
     for key in "${!pane_cmds[@]}"; do keep_pane_cmds[$key]="${pane_cmds[$key]}"; done
     for key in "${!pane_dirs[@]}"; do keep_pane_dirs[$key]="${pane_dirs[$key]}"; done
 
-    load_existing_launcher "$USER_LAUNCHERS/$name"
+    load_existing_launcher "$file"
+    [[ -n "$project_dir" ]] || project_dir="${cap_main:-$cap_root}"
     project_dir=$(generator_path "$project_dir")
     [[ -n "$worktrees_dir" ]] && worktrees_dir=$(generator_path "$worktrees_dir")
 
@@ -313,19 +420,25 @@ update_launcher() {
     win_split_cmds=("${keep_split_cmds[@]}")
     win_panes=("${keep_panes[@]}")
     win_layouts=("${keep_layouts[@]}")
+    win_autonames=("${keep_autonames[@]}")
     pane_cmds=()
     pane_dirs=()
     for key in "${!keep_pane_cmds[@]}"; do pane_cmds[$key]="${keep_pane_cmds[$key]}"; done
     for key in "${!keep_pane_dirs[@]}"; do pane_dirs[$key]="${keep_pane_dirs[$key]}"; done
 
-    generate_launcher >"$USER_LAUNCHERS/$name"
+    generate_launcher >"$file"
 }
 
 # summary shown above the name prompt
 render_summary() {
     local target="${1:-}" message="${2:-}" i cmd split_cmd k pane_cmds_line
     printf "  ${GREEN}Save session '%s' as a launcher${NC}\n" "$cap_session"
-    printf "  ${DIM}dir${NC}  %s\n\n" "$(display_path "$cap_dir")"
+    printf "  ${DIM}dir${NC}  %s\n" "$(display_path "$cap_dir")"
+    if [[ -z "$target" && -n "$cap_worktrees_dir" ]]; then
+        printf "  ${DIM}worktrees${NC}  %s ${DIM}(instances open %s-<n>-…)${NC}\n" \
+            "$(display_path "$cap_worktrees_dir")" "${cap_worktree_prefix:-<NAME>}"
+    fi
+    printf '\n'
     for ((i = 0; i < ${#win_names[@]}; i++)); do
         if [[ -n "${win_panes[$i]:-}" ]]; then
             # a rich window: its panes' commands in creation order
@@ -352,7 +465,7 @@ render_summary() {
     fi
     printf '\n'
     if [[ -n "$target" ]]; then
-        printf "  ${DIM}'%s' updates that launcher (keeps its dir, description, instances);${NC}\n" "$target"
+        printf "  ${DIM}'%s' updates that launcher (keeps its dir, worktrees, description, instances);${NC}\n" "$target"
         printf "  ${DIM}any other name saves a new one${NC}\n"
     fi
     if [[ -n "$message" ]]; then
@@ -378,9 +491,6 @@ main() {
         default_name="$target"
     else
         default_name=$(sanitise_launcher_name "$cap_session")
-        if [[ -e "$DOTFILES_LAUNCHERS/$default_name" || -e "$USER_LAUNCHERS/$default_name" ]]; then
-            default_name="$default_name-saved"
-        fi
     fi
 
     local message="" query="$default_name" input
@@ -411,12 +521,13 @@ main() {
         fi
 
         if [[ -e "$USER_LAUNCHERS/$name" ]]; then
+            local confirm_title="Update launcher"
+            local confirm_text="Replace the windows of '$name' with this session's?\nIts directory, worktrees, description and instance settings stay."
             if ! is_generated_launcher "$USER_LAUNCHERS/$name"; then
-                message="'$name' was written by hand and can't be overwritten, pick another name"
-                continue
+                confirm_title="Replace hand-written launcher"
+                confirm_text="Rewrite '$name' as a generated launcher with this session's windows?\nIts directory, worktrees, description and instance settings carry over; other custom logic is lost.\nThe original is copied to $(display_path "$LAUNCHER_BACKUPS/$name")."
             fi
-            if ! show_visual_confirm "Update launcher" \
-                "Replace the windows of '$name' with this session's?\nIts directory, description and instance settings stay."; then
+            if ! show_visual_confirm "$confirm_title" "$confirm_text"; then
                 message=""
                 continue
             fi

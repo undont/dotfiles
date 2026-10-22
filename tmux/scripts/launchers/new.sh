@@ -291,6 +291,7 @@ declare -a win_splits=()
 declare -a win_split_cmds=()
 worktree_aware=""
 worktrees_dir=""
+worktree_prefix=""
 default_names=("dev" "edit" "shell")
 
 # calculate total steps (recalculated after step 4)
@@ -634,6 +635,7 @@ while true; do
                     win_split_cmds=()
                     win_panes=()
                     win_layouts=()
+                    win_autonames=()
                     pane_cmds=()
                     pane_dirs=()
                 fi
