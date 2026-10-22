@@ -100,7 +100,7 @@ function M.setup()
     }
   end
 
-  vim.o.spell = true
+  vim.o.spell = false
   vim.opt.spelllang = { 'en_gb' }
   vim.opt.spelloptions = { 'camel' }
   vim.opt.spellcapcheck = ''
