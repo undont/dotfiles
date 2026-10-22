@@ -130,11 +130,18 @@ if [[ -d "$AGENT_STATE_DIR" ]]; then
     done
 fi
 
-# add Claude Code ghost at top (Anthropic terracotta: #D77757 = 215;119;87)
+# og Claude Code ghost (Anthropic terracotta: #D77757 = 215;119;87)
+# echo ""
+# printf "\033[38;2;215;119;87m ▐▛███▜▌\033[0m\n"
+# printf "\033[38;2;215;119;87m▝▜█████▛▘\033[0m\n"
+# printf "\033[38;2;215;119;87m  ▘▘ ▝▝\033[0m\n"
+# echo ""
+
+# add NEW Claude Code ghost at top (Anthropic terracotta: #D77757 = 215;119;87)
 echo ""
-printf "\033[38;2;215;119;87m ▐▛███▜▌\033[0m\n"
-printf "\033[38;2;215;119;87m▝▜█████▛▘\033[0m\n"
-printf "\033[38;2;215;119;87m  ▘▘ ▝▝\033[0m\n"
+printf "\033[38;2;215;119;87m ▐▛███▛█\033[0m\n"
+printf "\033[38;2;215;119;87m▝▜██████▀\033[0m\n"
+printf "\033[38;2;215;119;87m ▝▝   ▝▝\033[0m\n"
 echo ""
 
 # state legend (line 6 of the 7-line header)
