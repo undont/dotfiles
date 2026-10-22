@@ -37,9 +37,16 @@ wait_for_command() {
 
 # window name / first-pane command / split / split command, one line per window
 describe_state() {
-    local i
+    local i k
     for ((i = 0; i < ${#win_names[@]}; i++)); do
-        printf '%s|%s|%s|%s\n' "${win_names[$i]}" "${win_cmds[$i]}" "${win_splits[$i]}" "${win_split_cmds[$i]}"
+        printf '%s|%s|%s|%s' "${win_names[$i]}" "${win_cmds[$i]}" "${win_splits[$i]}" "${win_split_cmds[$i]}"
+        if [[ -n "${win_panes[$i]:-}" ]]; then
+            printf '|%s|%s' "${win_panes[$i]}" "${win_layouts[$i]//$'\n'/;}"
+            for ((k = 1; k <= win_panes[i]; k++)); do
+                printf '|%s|%s' "${pane_cmds["$i:$k"]:-}" "${pane_dirs["$i:$k"]:-}"
+            done
+        fi
+        printf '\n'
     done
 }
 
@@ -91,20 +98,18 @@ rows+=$'pane\t5\t2\t100\t0\t100\t50\t/p\tclaude -r abc\tresumes a specific sessi
 rows+=$'pane\t6\t1\t0\t0\t200\t50\t/p\tclaude -r\t\n'
 build_state_from_capture "$rows"
 
-expected_state="code|nvim|yes|npm run dev
+expected_state="code||no||3|1 h 50 2;2 v 50 3|nvim||npm run dev|||
 code-2||yes|
 agent|claude|no|
-logs|less log|yes|
+logs||no||2|1 v 50 2|less log|||
 nvim|nvim|yes|claude
 bare|claude -r|no|"
 assert_equals "windows map to name|cmd|split|split cmd" "$expected_state" "$(describe_state)"
 assert_equals "session, tag and dir are read" "demo||/p" "$cap_session|$cap_tag|$cap_dir"
 
 notes=$(printf '%s\n' "${save_notes[@]}")
-for want in "code window: 3 panes, saving the first 2 side by side" \
-    "agent window: 'claude --resume abc' → 'claude'" \
-    "logs window, top pane: 'less log' is a pager, may not replay well" \
-    "logs window: stacked split, saving it side by side" \
+for want in "agent window: 'claude --resume abc' → 'claude'" \
+    "logs window, top-left: 'less log' is a pager, may not replay well" \
     "nvim window, right pane: 'claude -r abc' → 'claude'"; do
     if [[ "$notes" == *"$want"* ]]; then
         pass "note: $want"
@@ -112,12 +117,12 @@ for want in "code window: 3 panes, saving the first 2 side by side" \
         fail "missing note: $want (got: $notes)"
     fi
 done
-if [[ "$notes" != *"code-2"* && "$notes" != *"bare"* ]]; then
-    pass "a plain split and a bare claude -r get no note"
+if [[ "$notes" != *"code-2"* && "$notes" != *"bare"* && "$notes" != *"code window"* ]]; then
+    pass "plain layouts get no note"
 else
-    fail "a plain split and a bare claude -r should get no note (got: $notes)"
+    fail "plain layouts should get no note (got: $notes)"
 fi
-assert_equals "one note per finding" "5" "${#save_notes[@]}"
+assert_equals "one note per finding" "3" "${#save_notes[@]}"
 
 # ═══════════════════════════════════════════════════════════════════════════
 section "Save as new, then replay"
@@ -129,8 +134,12 @@ tmux set-option -g default-shell /bin/sh
 tmux set-option -g base-index 1
 tmux set-option -g pane-base-index 1
 
+# a rich code window (one pane left, two stacked right, one pane in a
+# subdirectory) and a simple srv window
+mkdir -p "$TEST_DIR/proj/sub"
 tmux new-session -d -s orig -n code -c "$TEST_DIR/proj" -x 200 -y 50
 tmux split-window -h -t "=orig:code" -c "$TEST_DIR/proj"
+tmux split-window -v -t "=orig:code.2" -c "$TEST_DIR/proj/sub"
 tmux new-window -t "=orig:" -n srv -c "$TEST_DIR/proj"
 tmux send-keys -t "=orig:code.2" 'sleep 300 | cat -u' Enter
 printf 'x\n' >"$TEST_DIR/proj/my notes.txt"
@@ -140,7 +149,7 @@ wait_for_command "=orig:srv" || fail "srv command did not start"
 
 build_state_from_capture "$("$CAPTURE" orig)"
 original_state=$(describe_state)
-assert_equals "captures the original session" "code||yes|sleep 300 | cat -u
+assert_equals "captures the original session" "code||no||3|1 h 50 2;2 v 48 3|||sleep 300 | cat -u|||sub
 srv|tail -f '$TEST_DIR/proj/my notes.txt'|no|" "$original_state"
 write_new_launcher "saved"
 saved="$USER_LAUNCHERS/saved"
@@ -173,8 +182,19 @@ assert_equals "replayed session is tagged with the launcher" "saved" \
 wait_for_command "=replay:code.2" || true
 wait_for_command "=replay:srv" || true
 build_state_from_capture "$("$CAPTURE" replay)"
+# the replay runs at the test server's default size, so split percentages
+# round differently there; compare the structure with percentages blanked
+pct_blanked() { printf '%s\n' "$1" | sed -E 's/ ([hv]) [0-9]+ /\1 N /g'; }
 assert_equals "replayed session matches the original (windows, splits, commands)" \
-    "$original_state" "$(describe_state)"
+    "$(pct_blanked "$original_state")" "$(pct_blanked "$(describe_state)")"
+# …but close to the original's proportions, not just any layout
+orig_v=$(printf '%s\n' "$original_state" | sed -n 1p | sed -En 's/.*;2 v ([0-9]+) 3.*/\1/p')
+replay_v=$(describe_state | sed -n 1p | sed -En 's/.*;2 v ([0-9]+) 3.*/\1/p')
+if [[ -n "$orig_v" && -n "$replay_v" ]] && ((orig_v - replay_v <= 5 && replay_v - orig_v <= 5)); then
+    pass "replayed split proportions are close to the original ($orig_v% → $replay_v%)"
+else
+    fail "replayed proportions should be within a few percent (got $replay_v, was $orig_v)"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════
 section "Update in place"
