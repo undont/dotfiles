@@ -607,6 +607,10 @@ while true; do
                     win_cmds=()
                     win_splits=()
                     win_split_cmds=()
+                    win_panes=()
+                    win_layouts=()
+                    pane_cmds=()
+                    pane_dirs=()
                 fi
                 num_windows="$local_num"
                 total_steps=$((4 + num_windows))
@@ -643,7 +647,9 @@ while true; do
                 local_p_idx=$((p - 1))
                 if [[ $local_p_idx -lt ${#win_names[@]} ]]; then
                     local_split_info=""
-                    if [[ "${win_splits[$local_p_idx]:-no}" == "yes" ]]; then
+                    if [[ -n "${win_panes[$local_p_idx]:-}" ]]; then
+                        local_split_info=" (${win_panes[$local_p_idx]} panes)"
+                    elif [[ "${win_splits[$local_p_idx]:-no}" == "yes" ]]; then
                         local_split_info=" (split)"
                     fi
                     show_context "Win $p" "${win_names[$local_p_idx]}${local_split_info}"
@@ -662,6 +668,39 @@ while true; do
             local_wname=""
             if ! ask "Name" "${local_prev_name:-$local_default}" local_wname; then
                 step=$((step - 1))
+                continue
+            fi
+
+            local_arr_idx=$((local_win_idx - 1))
+
+            # a window the wizard can't describe (more panes, stacked splits, a
+            # directory per pane) keeps its layout and folders as they are; only
+            # its name and each pane's command can change
+            if [[ -n "${win_panes[$local_arr_idx]:-}" ]]; then
+                local_rich="${win_panes[$local_arr_idx]}"
+                printf "\n  ${DIM}layout: custom (%s panes), kept as is${NC}\n\n" "$local_rich"
+                local_pcmds=()
+                local_back=0
+                for ((local_k = 1; local_k <= local_rich; local_k++)); do
+                    local_pdir="${pane_dirs["$local_arr_idx:$local_k"]:-}"
+                    local_plabel="Pane $local_k ($(pane_position_label "$local_arr_idx" "$local_k")${local_pdir:+, in $local_pdir})"
+                    local_pc=""
+                    if ! ask "$local_plabel" "${pane_cmds["$local_arr_idx:$local_k"]:-}" local_pc; then
+                        local_back=1
+                        break
+                    fi
+                    local_pcmds[local_k]="$local_pc"
+                done
+                if [[ $local_back -eq 1 ]]; then
+                    step=$((step - 1))
+                    continue
+                fi
+
+                win_names[local_arr_idx]="$local_wname"
+                for ((local_k = 1; local_k <= local_rich; local_k++)); do
+                    pane_cmds["$local_arr_idx:$local_k"]="${local_pcmds[local_k]}"
+                done
+                step=$((step + 1))
                 continue
             fi
 
@@ -690,7 +729,6 @@ while true; do
             fi
 
             # store window config (replace if going forward again)
-            local_arr_idx=$((local_win_idx - 1))
             win_names[local_arr_idx]="$local_wname"
             win_cmds[local_arr_idx]="$local_wcmd"
             if [[ "$local_wsplit" =~ ^[Yy] ]]; then

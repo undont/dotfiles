@@ -57,6 +57,27 @@ is_generated_launcher() {
     grep -qxF "$LAUNCHER_GENERATED_MARKER" "$1" 2>/dev/null
 }
 
+# where a pane of a rich window sits, from the split that created it:
+# "top-left" for pane 1, else "right of 1" / "below 2"
+# usage: pane_position_label WINDOW_INDEX PANE
+pane_position_label() {
+    local idx="$1" pane="$2" holder dir pct new
+    if [[ "$pane" == 1 ]]; then
+        printf 'top-left'
+        return
+    fi
+    while read -r holder dir pct new; do
+        [[ "$new" == "$pane" ]] || continue
+        if [[ "$dir" == h ]]; then
+            printf 'right of %s' "$holder"
+        else
+            printf 'below %s' "$holder"
+        fi
+        return
+    done <<<"${win_layouts[$idx]:-}"
+    printf 'pane %s' "$pane"
+}
+
 index_for_window() {
     local target="$1"
     local i

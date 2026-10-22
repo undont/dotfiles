@@ -165,6 +165,7 @@ generate_launcher >"$RICH_DIR/rich"
 
 # the launcher attaches at the end, which fails without a terminal. with no
 # client on the test server it sizes itself from tput, which we stand in for
+# shellcheck disable=SC2329  # called by the launcher via export -f
 tput() { [[ "$1" == cols ]] && echo 200 || echo 50; }
 export -f tput
 SESSION_NAME=richrun bash "$RICH_DIR/rich" >/dev/null 2>&1 || true
