@@ -779,9 +779,10 @@ mkdir -p "$USER_LAUNCHERS"
 target_name="$name"
 target_path="$USER_LAUNCHERS/$target_name"
 
-# if editing a user launcher and the name changed, remove the old file
-if [[ -n "$edit_source" ]]; then
-    if [[ -f "$USER_LAUNCHERS/$edit_source" && "$edit_source" != "$target_name" ]]; then
+# if editing a user launcher, back it up, and remove it when the name changed
+if [[ -n "$edit_source" && -f "$USER_LAUNCHERS/$edit_source" ]]; then
+    backup_launcher "$USER_LAUNCHERS/$edit_source"
+    if [[ "$edit_source" != "$target_name" ]]; then
         rm -f "$USER_LAUNCHERS/$edit_source"
     fi
 fi

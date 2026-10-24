@@ -74,7 +74,7 @@ answer() {
 start_wizard() {
     tmux kill-session -t "=wiz" 2>/dev/null || true
     tmux new-session -d -s wiz -x 120 -y 40 \
-        "env XDG_CONFIG_HOME='$CONFIG' PROJECT_DIRS='$TEST_DIR' bash '$NEW_SH' --edit rich; sleep 30"
+        "env XDG_CONFIG_HOME='$CONFIG' XDG_CACHE_HOME='$TEST_DIR/cache' PROJECT_DIRS='$TEST_DIR' bash '$NEW_SH' --edit rich; sleep 30"
 }
 
 # the steps before the windows: description, directory, instances
@@ -158,6 +158,11 @@ if bash -n "$LAUNCHERS/rich" && is_generated_launcher "$LAUNCHERS/rich"; then
 else
     fail "the edited launcher should be valid and marked @generated"
 fi
+if cmp -s "$TEST_DIR/rich.before" "$TEST_DIR/cache/tmux/launcher-backups/rich"; then
+    pass "the original is backed up before the edit is written"
+else
+    fail "editing should copy the original to the launcher backups"
+fi
 
 # ═══════════════════════════════════════════════════════════════════════════
 section "Changing the window count"
@@ -188,14 +193,14 @@ assert_equals "one window remains" "1" "$(grep -c '^tmux new-' "$LAUNCHERS/rich"
 section "Hand-written launchers are refused"
 # ═══════════════════════════════════════════════════════════════════════════
 
-# the wizard only understands its own output: editing dana (unnamed window,
-# three panes) used to show a mangled window list and save would drop them
-printf '#!/usr/bin/env bash\n# @description: hand-written\ntmux new-session -d -s dana\n' >"$LAUNCHERS/hand"
+# the wizard only understands its own output: it can't show an unnamed window or
+# extra panes, and saving would drop them
+printf '#!/usr/bin/env bash\n# @description: hand-written\ntmux new-session -d -s hand\n' >"$LAUNCHERS/hand"
 chmod +x "$LAUNCHERS/hand"
 cp "$LAUNCHERS/hand" "$TEST_DIR/hand.before"
 tmux kill-session -t "=wiz" 2>/dev/null || true
 tmux new-session -d -s wiz -x 120 -y 40 \
-    "env XDG_CONFIG_HOME='$CONFIG' PROJECT_DIRS='$TEST_DIR' bash '$NEW_SH' --edit hand; echo EXIT=\$? >'$TEST_DIR/exit'; sleep 30"
+    "env XDG_CONFIG_HOME='$CONFIG' XDG_CACHE_HOME='$TEST_DIR/cache' PROJECT_DIRS='$TEST_DIR' bash '$NEW_SH' --edit hand; echo EXIT=\$? >'$TEST_DIR/exit'; sleep 30"
 
 wait_for "written by hand"
 shown=$(screen)

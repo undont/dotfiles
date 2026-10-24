@@ -221,7 +221,13 @@ tmux set-option -t "=orig:" @launcher proj
 build_state_from_capture "$("$CAPTURE" orig)"
 assert_equals "a tagged session can update its generated launcher" "proj" "$(update_target || true)"
 
+cp "$USER_LAUNCHERS/proj" "$TEST_DIR/proj.before"
 update_launcher "proj"
+if cmp -s "$TEST_DIR/proj.before" "$LAUNCHER_BACKUPS/proj"; then
+    pass "a generated launcher is backed up before it's replaced"
+else
+    fail "a generated launcher should be copied to LAUNCHER_BACKUPS"
+fi
 updated="$USER_LAUNCHERS/proj"
 assert_equals "update keeps the description" "# @description: Original description" \
     "$(grep -m1 '^# @description:' "$updated")"

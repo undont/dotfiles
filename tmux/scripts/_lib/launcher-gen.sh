@@ -61,6 +61,13 @@ is_generated_launcher() {
     grep -qxF "$LAUNCHER_GENERATED_MARKER" "$1" 2>/dev/null
 }
 
+# copy a user launcher to LAUNCHER_BACKUPS before it's rewritten, replacing
+# the previous copy
+backup_launcher() {
+    mkdir -p "$LAUNCHER_BACKUPS"
+    cp "$1" "$LAUNCHER_BACKUPS/${1##*/}"
+}
+
 # the default a launcher assigns to VAR, through nested fallbacks:
 # VAR="${A:-${B:-$HOME/x}}" → $HOME/x. a plain VAR="value" gives the value
 # usage: launcher_assignment FILE VAR

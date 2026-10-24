@@ -85,7 +85,7 @@ else
 fi
 if [[ ${#skipped[@]} -gt 0 ]]; then
     echo "    Left ${#skipped[@]} launcher(s) as hand-written: ${skipped[*]}"
-    echo "    \"Save session\" will only offer \"save as new\" for these"
+    echo "    The wizard won't edit these; \"save session\" can rewrite one after backing it up"
 fi
 
 exit 0

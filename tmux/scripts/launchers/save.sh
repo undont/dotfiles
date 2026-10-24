@@ -12,7 +12,7 @@ set -euo pipefail
 #   name = an existing user launcher (by default the session's own: its
 #          @launcher tag, else the launcher whose session or instance it is):
 #          replace its windows, keeping its directory, description, instance
-#          and worktree settings. a hand-written one is copied to
+#          and worktree settings. the original is copied to
 #          LAUNCHER_BACKUPS first
 #   name = anything else: save a new launcher rooted at the session's
 #          directory, or at the main checkout with worktree instances when the
@@ -34,7 +34,6 @@ source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
 source "$SCRIPT_DIR/../_lib/layout.sh"
 
 DIM=$'\033[2m'
-LAUNCHER_BACKUPS="${XDG_CACHE_HOME:-$HOME/.cache}/tmux/launcher-backups"
 
 # filled by build_state_from_capture
 cap_session=""
@@ -396,10 +395,7 @@ update_launcher() {
     [[ ${#win_names[@]} -gt 0 ]] || return 1
     name="$1"
     local file="$USER_LAUNCHERS/$name"
-    if ! is_generated_launcher "$file"; then
-        mkdir -p "$LAUNCHER_BACKUPS"
-        cp "$file" "$LAUNCHER_BACKUPS/$name"
-    fi
+    backup_launcher "$file"
     local -a keep_names=("${win_names[@]}") keep_cmds=("${win_cmds[@]}")
     local -a keep_splits=("${win_splits[@]}") keep_split_cmds=("${win_split_cmds[@]}")
     local -a keep_panes=("${win_panes[@]}") keep_layouts=("${win_layouts[@]}")
@@ -521,11 +517,13 @@ main() {
         fi
 
         if [[ -e "$USER_LAUNCHERS/$name" ]]; then
+            local backup
+            backup=$(display_path "$LAUNCHER_BACKUPS/$name")
             local confirm_title="Update launcher"
-            local confirm_text="Replace the windows of '$name' with this session's?\nIts directory, worktrees, description and instance settings stay."
+            local confirm_text="Replace the windows of '$name' with this session's?\nIts directory, worktrees, description and instance settings stay.\nThe original is copied to $backup."
             if ! is_generated_launcher "$USER_LAUNCHERS/$name"; then
                 confirm_title="Replace hand-written launcher"
-                confirm_text="Rewrite '$name' as a generated launcher with this session's windows?\nIts directory, worktrees, description and instance settings carry over; other custom logic is lost.\nThe original is copied to $(display_path "$LAUNCHER_BACKUPS/$name")."
+                confirm_text="Rewrite '$name' as a generated launcher with this session's windows?\nIts directory, worktrees, description and instance settings carry over; other custom logic is lost.\nThe original is copied to $backup."
             fi
             if ! show_visual_confirm "$confirm_title" "$confirm_text"; then
                 message=""

@@ -63,6 +63,7 @@ print_dotfiles_logo() {
 # launcher path constants
 DOTFILES_LAUNCHERS="$DOTFILES_ROOT/launchers"
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
+LAUNCHER_BACKUPS="${XDG_CACHE_HOME:-$HOME/.cache}/tmux/launcher-backups"
 LAUNCHER_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/launcher-history"
 THEME_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-history"
 THEME_FAVOURITES="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-favourites"
