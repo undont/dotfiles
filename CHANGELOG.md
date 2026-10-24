@@ -6,6 +6,22 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.153] - 2026-10-24
+
+### Added
+
+- `s` in the launcher picker (`prefix + p`) saves the current session as a launcher, or replaces the windows of the launcher the session came from while keeping its directory, worktree, description and instance settings. A save or a wizard edit copies the launcher to `~/.cache/tmux/launcher-backups` before rewriting it. Launchers tag their sessions with `@launcher` and the wizard marks its output `# @generated`; a migration adds both to existing wizard launchers it recognises. `tmux/scripts/launchers/save.sh`, `tmux/scripts/launchers/capture.sh`, `tmux/scripts/_lib/launcher-gen.sh`, `scripts/migrations/0.2.153-mark-generated-launchers.sh`
+- Generated launchers can hold windows with any number of panes, any split layout and a directory per pane; saving a session reproduces its layout exactly, and the session opens at the client's size so the splits land where they were. `tmux/scripts/_lib/launcher-gen.sh`, `tmux/scripts/_lib/layout.sh`, `tmux/scripts/launchers/capture.sh`
+
+### Changed
+
+- Settings in the launcher picker moved from `s` to `S`. `tmux/scripts/launchers/picker.sh`
+- The launcher wizard edits windows with multiple panes and keeps their layout, and refuses to edit a hand-written launcher rather than dropping what it can't read. `tmux/scripts/launchers/new.sh`, `tmux/scripts/launchers/picker.sh`
+
+### Fixed
+
+- Editing a launcher in the wizard no longer escapes single quotes in its commands again, or adds a trailing slash to its directory. `tmux/scripts/_lib/launcher-gen.sh`, `tmux/scripts/_lib/common.sh`
+
 ## [0.2.152] - 2026-10-22
 
 ### Added

@@ -14,6 +14,8 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
 source "$SCRIPT_DIR/../_lib/common.sh"
+# shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
 
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 
@@ -84,114 +86,6 @@ resolve_edit_source() {
     fi
     printf '%s' ""
     return 1
-}
-
-index_for_window() {
-    local target="$1"
-    local i
-    for ((i = 0; i < ${#win_names[@]}; i++)); do
-        if [[ "${win_names[$i]}" == "$target" ]]; then
-            printf '%s' "$i"
-            return 0
-        fi
-    done
-    return 1
-}
-
-load_existing_launcher() {
-    local file="$1"
-
-    description=$(grep -m1 '# @description:' "$file" 2>/dev/null | sed 's/.*# @description: *//' || true)
-    if grep -q '# @instance: *prompt' "$file" 2>/dev/null; then
-        instance_mode="y"
-    else
-        instance_mode="n"
-    fi
-    # a separate `_<SESSION>_ROOT_DEFAULT="$HOME/path"` line handles paths
-    # containing apostrophes (which break `"${VAR:-default}"` parsing). the inline
-    # `PROJECT_DIR="${VAR:-default}"` form is read too
-    project_dir=$(grep -m1 '^_[A-Z0-9_]*_ROOT_DEFAULT=' "$file" 2>/dev/null |
-        sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
-    if [[ -z "$project_dir" ]]; then
-        project_dir=$(grep -m1 '^PROJECT_DIR=' "$file" 2>/dev/null | sed 's/^PROJECT_DIR=//' | tr -d '"' || true)
-        if [[ "$project_dir" =~ :-(.+)\}$ ]]; then
-            project_dir="${BASH_REMATCH[1]}"
-        fi
-    fi
-    project_dir="${project_dir/#\$HOME/\~}"
-
-    # detect worktree configuration
-    if grep -q '^WORKTREES_DIR=\|^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null; then
-        worktree_aware="y"
-        worktrees_dir=$(grep -m1 '^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null |
-            sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
-        if [[ -z "$worktrees_dir" ]]; then
-            worktrees_dir=$(grep -m1 '^WORKTREES_DIR=' "$file" 2>/dev/null | sed 's/^WORKTREES_DIR=//' | tr -d '"' || true)
-            if [[ "$worktrees_dir" =~ :-(.+)\}$ ]]; then
-                worktrees_dir="${BASH_REMATCH[1]}"
-            fi
-        fi
-        worktrees_dir="${worktrees_dir/#\$HOME/\~}"
-    else
-        worktree_aware="n"
-    fi
-
-    win_names=()
-    win_cmds=()
-    win_splits=()
-    win_split_cmds=()
-
-    local current_win=""
-    while IFS= read -r line; do
-        if [[ "$line" =~ ^tmux\ new-session.*-n\ \"?([^\"]+)\"? ]]; then
-            current_win="${BASH_REMATCH[1]}"
-            win_names+=("$current_win")
-            win_cmds+=("")
-            win_splits+=("no")
-            win_split_cmds+=("")
-        elif [[ "$line" =~ ^tmux\ new-window.*-n\ \"?([^\"]+)\"? ]]; then
-            current_win="${BASH_REMATCH[1]}"
-            win_names+=("$current_win")
-            win_cmds+=("")
-            win_splits+=("no")
-            win_split_cmds+=("")
-        elif [[ "$line" =~ ^tmux\ split-window.*-t\ \"?\$SESSION:([^\"\ ]+)\"? ]]; then
-            # target may be the window name (generated launchers) or include a pane
-            # index like `dev.1` (hand-written launchers); strip a trailing .N so the
-            # window still matches and the split flag is preserved
-            local split_win="${BASH_REMATCH[1]}"
-            [[ "$split_win" =~ \.[0-9]+$ ]] && split_win="${split_win%.*}"
-            if idx=$(index_for_window "$split_win"); then
-                win_splits[idx]="yes"
-            fi
-        elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"?\$SESSION:([^\"\ ]+)\.([12])\"?\ \'(.*)\'\ Enter ]]; then
-            local cmd_win="${BASH_REMATCH[1]}"
-            local pane="${BASH_REMATCH[2]}"
-            local cmd="${BASH_REMATCH[3]}"
-            if idx=$(index_for_window "$cmd_win"); then
-                if [[ "$pane" == "1" ]]; then
-                    win_cmds[idx]="$cmd"
-                else
-                    win_split_cmds[idx]="$cmd"
-                fi
-            fi
-        elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"?\$SESSION:([^\"\ ]+)\"?\ \'(.*)\'\ Enter ]]; then
-            local cmd_win="${BASH_REMATCH[1]}"
-            local cmd="${BASH_REMATCH[2]}"
-            if idx=$(index_for_window "$cmd_win"); then
-                win_cmds[idx]="$cmd"
-            fi
-        fi
-    done <"$file"
-
-    if [[ ${#win_names[@]} -gt 0 ]]; then
-        num_windows="${#win_names[@]}"
-    fi
-
-    # recalculate total steps with pre-loaded window count
-    if [[ -n "$num_windows" ]]; then
-        total_steps=$((4 + num_windows))
-    fi
 }
 
 # ─────────────────────────────────────────
@@ -397,6 +291,7 @@ declare -a win_splits=()
 declare -a win_split_cmds=()
 worktree_aware=""
 worktrees_dir=""
+worktree_prefix=""
 default_names=("dev" "edit" "shell")
 
 # calculate total steps (recalculated after step 4)
@@ -413,7 +308,36 @@ if [[ -n "$edit_source" ]]; then
         printf "  ${RED}Launcher '%s' not found${NC}\n\n" "$edit_source"
         exit 1
     fi
+    # the wizard only understands its own output; editing anything else would
+    # silently drop what it can't read (unnamed windows, extra panes, ...)
+    if ! is_generated_launcher "$edit_file"; then
+        clear
+        printf "\n"
+        printf "  ${RED}Launcher '%s' was written by hand${NC}\n\n" "$edit_source"
+        printf "  ${DIM}The wizard can only edit launchers it created (# @generated).${NC}\n"
+        printf "  ${DIM}Edit it in an editor, or save the session over it with s.${NC}\n\n"
+        # pin hint to bottom, like the name-exists error
+        _hw_tw=${COLUMNS:-$(tput cols)}
+        _hw_th=${LINES:-$(tput lines)}
+        _hw_hint=" spc/enter close "
+        _hw_side=$(((_hw_tw - ${#_hw_hint}) / 2))
+        [[ $_hw_side -lt 1 ]] && _hw_side=1
+        _hw_border=$(printf '─%.0s' $(seq 1 $_hw_side))
+        printf '\033[%d;1H' "$((_hw_th - 1))"
+        printf "${DIM}%s${NC}${CYAN}%s${NC}${DIM}%s${NC}" "$_hw_border" "$_hw_hint" "$_hw_border"
+        printf '\033[6;1H'
+        while true; do
+            read -rsn1 _hw_key
+            case "$_hw_key" in
+                ' ' | '' | q | $'\x1b') exit 1 ;;
+            esac
+        done
+    fi
     load_existing_launcher "$edit_file"
+    if [[ ${#win_names[@]} -gt 0 ]]; then
+        num_windows="${#win_names[@]}"
+        total_steps=$((4 + num_windows))
+    fi
     if [[ -z "$name" ]]; then
         name="$edit_source"
     fi
@@ -709,6 +633,11 @@ while true; do
                     win_cmds=()
                     win_splits=()
                     win_split_cmds=()
+                    win_panes=()
+                    win_layouts=()
+                    win_autonames=()
+                    pane_cmds=()
+                    pane_dirs=()
                 fi
                 num_windows="$local_num"
                 total_steps=$((4 + num_windows))
@@ -745,7 +674,9 @@ while true; do
                 local_p_idx=$((p - 1))
                 if [[ $local_p_idx -lt ${#win_names[@]} ]]; then
                     local_split_info=""
-                    if [[ "${win_splits[$local_p_idx]:-no}" == "yes" ]]; then
+                    if [[ -n "${win_panes[$local_p_idx]:-}" ]]; then
+                        local_split_info=" (${win_panes[$local_p_idx]} panes)"
+                    elif [[ "${win_splits[$local_p_idx]:-no}" == "yes" ]]; then
                         local_split_info=" (split)"
                     fi
                     show_context "Win $p" "${win_names[$local_p_idx]}${local_split_info}"
@@ -764,6 +695,39 @@ while true; do
             local_wname=""
             if ! ask "Name" "${local_prev_name:-$local_default}" local_wname; then
                 step=$((step - 1))
+                continue
+            fi
+
+            local_arr_idx=$((local_win_idx - 1))
+
+            # a window the wizard can't describe (more panes, stacked splits, a
+            # directory per pane) keeps its layout and folders as they are; only
+            # its name and each pane's command can change
+            if [[ -n "${win_panes[$local_arr_idx]:-}" ]]; then
+                local_rich="${win_panes[$local_arr_idx]}"
+                printf "\n  ${DIM}layout: custom (%s panes), kept as is${NC}\n\n" "$local_rich"
+                local_pcmds=()
+                local_back=0
+                for ((local_k = 1; local_k <= local_rich; local_k++)); do
+                    local_pdir="${pane_dirs["$local_arr_idx:$local_k"]:-}"
+                    local_plabel="Pane $local_k ($(pane_position_label "$local_arr_idx" "$local_k")${local_pdir:+, in $local_pdir})"
+                    local_pc=""
+                    if ! ask "$local_plabel" "${pane_cmds["$local_arr_idx:$local_k"]:-}" local_pc; then
+                        local_back=1
+                        break
+                    fi
+                    local_pcmds[local_k]="$local_pc"
+                done
+                if [[ $local_back -eq 1 ]]; then
+                    step=$((step - 1))
+                    continue
+                fi
+
+                win_names[local_arr_idx]="$local_wname"
+                for ((local_k = 1; local_k <= local_rich; local_k++)); do
+                    pane_cmds["$local_arr_idx:$local_k"]="${local_pcmds[local_k]}"
+                done
+                step=$((step + 1))
                 continue
             fi
 
@@ -792,7 +756,6 @@ while true; do
             fi
 
             # store window config (replace if going forward again)
-            local_arr_idx=$((local_win_idx - 1))
             win_names[local_arr_idx]="$local_wname"
             win_cmds[local_arr_idx]="$local_wcmd"
             if [[ "$local_wsplit" =~ ^[Yy] ]]; then
@@ -816,154 +779,15 @@ mkdir -p "$USER_LAUNCHERS"
 target_name="$name"
 target_path="$USER_LAUNCHERS/$target_name"
 
-# if editing a user launcher and the name changed, remove the old file
-if [[ -n "$edit_source" ]]; then
-    if [[ -f "$USER_LAUNCHERS/$edit_source" && "$edit_source" != "$target_name" ]]; then
+# if editing a user launcher, back it up, and remove it when the name changed
+if [[ -n "$edit_source" && -f "$USER_LAUNCHERS/$edit_source" ]]; then
+    backup_launcher "$USER_LAUNCHERS/$edit_source"
+    if [[ "$edit_source" != "$target_name" ]]; then
         rm -f "$USER_LAUNCHERS/$edit_source"
     fi
 fi
 
-# session name: strip dots (tmux uses '.' as pane separator in target syntax)
-session_name=$(printf '%s' "$name" | tr '.' '-' | sed 's/-*$//')
-session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '.-' '_')
-
-{
-    instance_tag=""
-    if [[ "$instance_mode" == "y" ]]; then
-        instance_tag=$'\n'"# @instance: prompt"
-    fi
-
-    cat <<PREAMBLE
-#!/usr/bin/env bash
-set -euo pipefail
-
-# @description: $description${instance_tag}
-
-# Help flag handling
-if [[ "\${1:-}" == "--help" ]] || [[ "\${1:-}" == "-h" ]]; then
-    cat << 'EOF'
-$name - Project tmux session launcher
-
-USAGE:
-    $name
-
-DESCRIPTION:
-    Creates or attaches to the '$name' tmux session.
-
-OPTIONS:
-    -h, --help   Show this help message
-EOF
-    exit 0
-fi
-
-PREAMBLE
-
-    # generate SESSION and PROJECT_DIR (worktree-aware or simple)
-    #
-    # path defaults are staged in `_<SESSION>_…_DEFAULT` variables, not embedded
-    # inline as `${VAR:-/path}`: a single quote inside a parameter-expansion
-    # default breaks bash's quoting even within `"…"`, while a plain `VAR="…"`
-    # assignment takes apostrophes. the `${PATH/#\~/$HOME}` lines expand a leading
-    # `~` from an env-var override (e.g. `FOO_ROOT="~/x"`)
-    if [[ "$worktree_aware" == "y" ]]; then
-        worktree_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
-        cat <<WTBLOCK
-SESSION="\${SESSION_NAME:-$session_name}"
-_${session_var}_WORKTREES_DEFAULT="$worktrees_dir"
-_${session_var}_ROOT_DEFAULT="$project_dir"
-WORKTREES_DIR="\${${session_var}_WORKTREES:-\$_${session_var}_WORKTREES_DEFAULT}"
-BASE_DIR="\${${session_var}_ROOT:-\$_${session_var}_ROOT_DEFAULT}"
-WORKTREES_DIR="\${WORKTREES_DIR/#\\~/\$HOME}"
-BASE_DIR="\${BASE_DIR/#\\~/\$HOME}"
-
-# resolve project directory: check for a matching worktree when session has a suffix
-PROJECT_DIR="\$BASE_DIR"
-if [[ "\$SESSION" =~ -([0-9]+)\$ ]]; then
-    ticket_num="\${BASH_REMATCH[1]}"
-    for wt in "\$WORKTREES_DIR"/${worktree_prefix}-"\${ticket_num}"-*; do
-        if [[ -d "\$wt" ]]; then
-            PROJECT_DIR="\$wt"
-            break
-        fi
-    done
-fi
-WTBLOCK
-    else
-        cat <<SIMPLE
-SESSION="\${SESSION_NAME:-$session_name}"
-_${session_var}_ROOT_DEFAULT="$project_dir"
-PROJECT_DIR="\${${session_var}_ROOT:-\$_${session_var}_ROOT_DEFAULT}"
-PROJECT_DIR="\${PROJECT_DIR/#\\~/\$HOME}"
-SIMPLE
-    fi
-
-    cat <<'VALIDATE'
-
-# Validate project directory exists
-if [[ ! -d "$PROJECT_DIR" ]]; then
-    echo "Error: Project directory not found: $PROJECT_DIR" >&2
-    exit 1
-fi
-
-# Check if session already exists (= forces exact match; bare names would
-# prefix-match e.g. "foo-15" against an existing "foo-1533")
-if tmux has-session -t "=$SESSION" 2>/dev/null; then
-    if [[ -n "${TMUX:-}" ]]; then
-        tmux switch-client -t "=$SESSION"
-    else
-        tmux attach-session -t "=$SESSION"
-    fi
-    exit 0
-fi
-
-VALIDATE
-
-    # generate window commands
-    for ((i = 0; i < ${#win_names[@]}; i++)); do
-        wname="${win_names[$i]}"
-        wcmd="${win_cmds[$i]}"
-        wsplit="${win_splits[$i]}"
-        wscmd="${win_split_cmds[$i]}"
-
-        # escape single quotes for safe embedding in generated send-keys commands
-        wcmd="${wcmd//\'/\'\\\'\'}"
-        wscmd="${wscmd//\'/\'\\\'\'}"
-
-        if [[ $i -eq 0 ]]; then
-            printf '# Window 1: %s\n' "$wname"
-            printf 'tmux new-session -d -s "$SESSION" -n "%s" -c "$PROJECT_DIR"\n' "$wname"
-        else
-            printf '\n# Window %d: %s\n' "$((i + 1))" "$wname"
-            printf 'tmux new-window -t "$SESSION:" -n "%s" -c "$PROJECT_DIR"\n' "$wname"
-        fi
-
-        if [[ "$wsplit" == "yes" ]]; then
-            printf 'tmux split-window -t "$SESSION:%s" -h -c "$PROJECT_DIR"\n' "$wname"
-            if [[ -n "$wcmd" ]]; then
-                printf 'tmux send-keys -t "$SESSION:%s.1" '\''%s'\'' Enter\n' "$wname" "$wcmd"
-            fi
-            if [[ -n "$wscmd" ]]; then
-                printf 'tmux send-keys -t "$SESSION:%s.2" '\''%s'\'' Enter\n' "$wname" "$wscmd"
-            fi
-        elif [[ -n "$wcmd" ]]; then
-            printf 'tmux send-keys -t "$SESSION:%s" '\''%s'\'' Enter\n' "$wname" "$wcmd"
-        fi
-    done
-
-    cat <<'FOOTER'
-
-# Select first window
-tmux select-window -t "$SESSION:1"
-tmux select-pane -t "$SESSION:1.1"
-
-# Attach to session
-if [[ -n "${TMUX:-}" ]]; then
-    tmux switch-client -t "=$SESSION"
-else
-    tmux attach-session -t "=$SESSION"
-fi
-FOOTER
-} >"$target_path"
+generate_launcher >"$target_path"
 
 chmod +x "$target_path"
 

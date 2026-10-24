@@ -38,6 +38,7 @@ fi
 
 # window 1: docker
 tmux new-session -d -s "$SESSION" -n "docker" -c "$PROJECT_DIR"
+tmux set-option -t "=$SESSION:" @launcher docker
 tmux send-keys -t "$SESSION:docker" 'lazydocker' Enter
 
 tmux select-window -t "$SESSION:1"

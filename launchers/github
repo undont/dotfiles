@@ -38,6 +38,7 @@ fi
 
 # window 1: dash
 tmux new-session -d -s "$SESSION" -n "dash" -c "$PROJECT_DIR"
+tmux set-option -t "=$SESSION:" @launcher github
 tmux send-keys -t "$SESSION:dash" 'dash' Enter
 
 tmux select-window -t "$SESSION:1"

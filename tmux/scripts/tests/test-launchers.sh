@@ -6,6 +6,7 @@ set -euo pipefail
 #   - launchers/run.sh (get_base_session_name, is_fixed_session, metadata)
 #   - launchers/delete.sh (repo protection, path traversal guard)
 #   - launchers/new.sh (name validation)
+#   - _lib/launcher-gen.sh (generated output, load/generate round trip)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
@@ -452,33 +453,90 @@ else
     fail "should cap window count at 20"
 fi
 
-section "launchers/new.sh: Single-Quote Escaping in Generated Scripts"
+section "_lib/launcher-gen.sh: Generated Launcher"
 
-if [[ "$nl_content" == *"wcmd=\"\${wcmd//\\'/"* ]] || [[ "$nl_content" == *"Escape single quotes"* ]]; then
+LAUNCHER_GEN="$DOTFILES_ROOT/tmux/scripts/_lib/launcher-gen.sh"
+GEN_TMP="$(mktemp -d)"
+# shellcheck disable=SC2329  # Called indirectly via trap
+_cleanup_gen_tmp() { rm -rf "$GEN_TMP"; }
+trap _cleanup_gen_tmp EXIT
+
+# wizard state for a sample launcher: a dotted name, an apostrophe in the
+# project path, and single quotes in both a pane command and a split command
+# shellcheck disable=SC2329  # Called in subshells below
+gen_fixture() {
+    name="my.app"
+    description="Sample launcher"
+    instance_mode="y"
+    project_dir="\$HOME/src/it's here"
+    worktree_aware="n"
+    worktrees_dir=""
+    win_names=(one two)
+    win_cmds=("echo 'hi there'" "")
+    win_splits=(no yes)
+    win_split_cmds=("" "printf '%s' x")
+}
+
+gen_file="$GEN_TMP/my.app"
+(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    gen_fixture
+    generate_launcher >"$gen_file"
+)
+gen_content=$(cat "$gen_file")
+
+if bash -n "$gen_file" 2>/dev/null; then
+    pass "generated launcher is valid bash"
+else
+    fail "generated launcher has a syntax error"
+fi
+
+# echo 'hi there' is embedded as 'echo '\''hi there'\'''
+expected_send_keys="tmux send-keys -t \"\$SESSION:one\" 'echo '\\''hi there'\\''' Enter"
+if [[ "$gen_content" == *"$expected_send_keys"* ]]; then
     pass "escapes single quotes in generated send-keys commands"
 else
     fail "should escape single quotes in user commands for generated scripts"
 fi
 
-section "launchers/new.sh: Tmux Exact-Match Session Targets"
+if [[ "$gen_content" == *$'\n# @generated\n'* ]]; then
+    pass "generated launcher carries the @generated marker"
+else
+    fail "generated launcher should carry the @generated marker"
+fi
+
+marker_results=$(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    is_generated_launcher "$gen_file" && echo "generated:yes" || echo "generated:no"
+    is_generated_launcher "$DOTFILES_ROOT/launchers/btop" && echo "btop:yes" || echo "btop:no"
+)
+if [[ "$marker_results" == *generated:yes* && "$marker_results" == *btop:no* ]]; then
+    pass "is_generated_launcher tells generated from hand-written launchers"
+else
+    fail "is_generated_launcher should match only marked launchers"
+fi
+
+section "_lib/launcher-gen.sh: Tmux Exact-Match Session Targets"
 
 # the wizard template must emit `=$SESSION` for tmux
 # session targets. bare `"$SESSION"` triggers tmux's prefix-matching,
 # so launching "foo-15" would silently re-attach to a running "foo-1533"
 # instead of creating a new session
-if [[ "$nl_content" == *'tmux has-session -t "=$SESSION"'* ]]; then
+if [[ "$gen_content" == *'tmux has-session -t "=$SESSION"'* ]]; then
     pass "generated has-session uses exact-match (=\$SESSION)"
 else
     fail "generated has-session should use =\$SESSION (prefix-match bug)"
 fi
 
-if [[ "$nl_content" == *'tmux switch-client -t "=$SESSION"'* ]]; then
+if [[ "$gen_content" == *'tmux switch-client -t "=$SESSION"'* ]]; then
     pass "generated switch-client uses exact-match (=\$SESSION)"
 else
     fail "generated switch-client should use =\$SESSION (prefix-match bug)"
 fi
 
-if [[ "$nl_content" == *'tmux attach-session -t "=$SESSION"'* ]]; then
+if [[ "$gen_content" == *'tmux attach-session -t "=$SESSION"'* ]]; then
     pass "generated attach-session uses exact-match (=\$SESSION)"
 else
     fail "generated attach-session should use =\$SESSION (prefix-match bug)"
@@ -497,6 +555,172 @@ if [[ -f "$dev_launcher" ]]; then
     fi
 else
     skip "launchers/dev not found"
+fi
+
+section "Launchers: @launcher Session Tag"
+
+# set-option -t takes a target-pane, so a bare "=$SESSION" is parsed as a
+# window name and fails with "no such session". the trailing colon makes it the
+# exact-match session's current window, and the option lands at session level
+if [[ "$gen_content" == *'tmux set-option -t "=$SESSION:" @launcher my.app'* ]]; then
+    pass "generated launchers tag the session with their own name"
+else
+    fail "generated launchers should emit set-option -t \"=\$SESSION:\" @launcher <name>"
+fi
+
+for launcher_file in "$DOTFILES_ROOT"/launchers/*; do
+    launcher_name=$(basename "$launcher_file")
+    [[ "$launcher_name" == *.template ]] && continue
+    if grep -qE "^tmux set-option -t \"=\\\$(SESSION|session):\" @launcher ${launcher_name}\$" "$launcher_file"; then
+        pass "launchers/$launcher_name tags its session as @launcher $launcher_name"
+    else
+        fail "launchers/$launcher_name should set @launcher $launcher_name on its session (with =\$SESSION: target)"
+    fi
+done
+
+section "_lib/launcher-gen.sh: Load/Generate Round Trip"
+
+# loading a generated launcher must give back the state that wrote it, and
+# writing that state again must reproduce the file byte for byte, so editing
+# in the wizard never drifts (single quotes used to be escaped again per edit)
+round_trip=$(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    gen_fixture
+    want=$(declare -p description instance_mode worktree_aware win_names win_cmds win_splits win_split_cmds)
+    load_existing_launcher "$gen_file"
+    got=$(declare -p description instance_mode worktree_aware win_names win_cmds win_splits win_split_cmds)
+    [[ "$want" == "$got" ]] && echo "state-ok"
+    # shellcheck disable=SC2088
+    [[ "$project_dir" == "~/src/it's here" ]] && echo "dir-ok"
+    project_dir="${project_dir/#\~/\$HOME}"
+    cmp -s <(generate_launcher) "$gen_file" && echo "regen-ok"
+    true
+)
+
+if [[ "$round_trip" == *state-ok* ]]; then
+    pass "load_existing_launcher returns the state generate_launcher wrote"
+else
+    fail "load_existing_launcher should return the generated state (quotes, splits, instance mode)"
+fi
+if [[ "$round_trip" == *dir-ok* ]]; then
+    pass "load_existing_launcher returns the project dir in ~ form"
+else
+    fail "load_existing_launcher should return the project dir in ~ form"
+fi
+if [[ "$round_trip" == *regen-ok* ]]; then
+    pass "regenerating a loaded launcher is byte-identical"
+else
+    fail "regenerating a loaded launcher should reproduce the file exactly"
+fi
+
+section "_lib/launcher-gen.sh: Rich Windows"
+
+# a simple window, then a rich one: three panes (one left, two stacked right),
+# each with its own directory, and a command with single quotes
+# shellcheck disable=SC2329  # Called in subshells below
+rich_fixture() {
+    name="rich"
+    description="Rich launcher"
+    instance_mode="n"
+    project_dir="\$HOME/src/rich"
+    worktree_aware="n"
+    worktrees_dir=""
+    win_names=(edit dev)
+    win_cmds=(nvim "")
+    win_splits=(no no)
+    win_split_cmds=("" "")
+    win_panes=("" 3)
+    win_layouts=("" $'1 h 70 2\n2 v 48 3')
+    pane_cmds=(["1:1"]="make status" ["1:2"]="echo 'it works'" ["1:3"]="")
+    pane_dirs=(["1:1"]="" ["1:2"]="backend" ["1:3"]="/tmp")
+}
+
+rich_file="$GEN_TMP/rich"
+(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    rich_fixture
+    generate_launcher >"$rich_file"
+)
+rich_content=$(cat "$rich_file")
+
+if bash -n "$rich_file" 2>/dev/null; then
+    pass "a launcher with a rich window is valid bash"
+else
+    fail "a launcher with a rich window has a syntax error"
+fi
+# shellcheck disable=SC2016
+for want in 'p1=$(tmux display-message -p -t "$SESSION:dev" '\''#{pane_id}'\'')' \
+    'p2=$(tmux split-window -d -t "$p1" -h -l 70% -c "$PROJECT_DIR/backend" -P -F '\''#{pane_id}'\'')' \
+    'p3=$(tmux split-window -d -t "$p2" -v -l 48% -c "/tmp" -P -F '\''#{pane_id}'\'')' \
+    "tmux send-keys -t \"\$p2\" 'echo '\\''it works'\\''' Enter"; do
+    if [[ "$rich_content" == *"$want"* ]]; then
+        pass "rich window writes: $want"
+    else
+        fail "rich window should write: $want"
+    fi
+done
+if [[ "$rich_content" != *'send-keys -t "$p3"'* ]]; then
+    pass "a pane without a command gets no send-keys"
+else
+    fail "a pane without a command should get no send-keys"
+fi
+# shellcheck disable=SC2016
+if [[ "$rich_content" == *'-x "$_cols" -y "$_rows"'* && "$rich_content" == *'_cols=$(tmux display-message'* ]]; then
+    pass "rich launchers create the session at the client's size"
+else
+    fail "rich launchers should size the session (-x/-y), or the layout skews on attach"
+fi
+
+rich_round_trip=$(
+    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    source "$LAUNCHER_GEN"
+    rich_fixture
+    want=$(declare -p win_names win_cmds win_splits win_split_cmds win_panes win_layouts pane_cmds pane_dirs)
+    load_existing_launcher "$rich_file"
+    got=$(declare -p win_names win_cmds win_splits win_split_cmds win_panes win_layouts pane_cmds pane_dirs)
+    [[ "$want" == "$got" ]] && echo "state-ok"
+    project_dir="${project_dir/#\~/\$HOME}"
+    cmp -s <(generate_launcher) "$rich_file" && echo "regen-ok"
+    true
+)
+if [[ "$rich_round_trip" == *state-ok* ]]; then
+    pass "load_existing_launcher reads a rich window back exactly"
+else
+    fail "load_existing_launcher should read a rich window back exactly"
+fi
+if [[ "$rich_round_trip" == *regen-ok* ]]; then
+    pass "regenerating a loaded rich launcher is byte-identical"
+else
+    fail "regenerating a loaded rich launcher should reproduce the file exactly"
+fi
+
+section "launchers/picker.sh: Search Mode Keys"
+
+# every single-letter action key must be unbound while searching (/) and
+# rebound on esc, or the letter can't be typed into the search
+picker_content=$(cat "$SCRIPT_DIR/../launchers/picker.sh")
+unbind_list=$(printf '%s' "$picker_content" | grep -o "enable-search[^']*+unbind([^)]*)" | head -1)
+rebind_list=$(printf '%s' "$picker_content" | grep -o "disable-search[^']*+rebind([^)]*)" | head -1)
+for key in $(printf '%s' "$picker_content" | grep -oE "\-\-bind ['\"][A-Za-z]:(become|execute)" | sed -E "s/--bind ['\"]//; s/:.*//"); do
+    if [[ "$unbind_list" == *[\(,]"$key"[,\)]* && "$rebind_list" == *[\(,]"$key"[,\)]* ]]; then
+        pass "picker key '$key' is unbound while searching"
+    else
+        fail "picker key '$key' should be in both the unbind and rebind lists"
+    fi
+done
+if [[ "$picker_content" == *"'s:become(printf \"ACTION:save\")'"* && "$picker_content" == *"'S:become(printf \"ACTION:set\")'"* ]]; then
+    pass "s saves the session, S opens settings"
+else
+    fail "s should save the session and S open settings"
+fi
+# the wizard can only edit its own output; the picker must not send hand-written
+# launchers there
+if [[ "$picker_content" == *"grep -qxF '# @generated'"* && "$picker_content" == *"written by hand"* ]]; then
+    pass "the picker refuses to edit hand-written launchers"
+else
+    fail "the picker should refuse to edit hand-written launchers"
 fi
 
 section "launchers/new.sh: exec < /dev/tty Documentation"
@@ -532,6 +756,29 @@ if [[ "$common_content" == *"require_fzf()"* ]]; then
 else
     fail "common.sh should define require_fzf helper"
 fi
+
+section "Shared Library: list_project_dirs"
+
+# fd prints directories with a trailing slash; picking one in the wizard used
+# to store ".../proj/" and change the launcher on an otherwise no-op edit
+pd_root="$(mktemp -d)"
+pd_root="$(cd "$pd_root" && pwd -P)"
+mkdir -p "$pd_root/alpha" "$pd_root/beta"
+
+pd_output=$(
+    # shellcheck source=tmux/scripts/_lib/common.sh
+    source "$DOTFILES_ROOT/tmux/scripts/_lib/common.sh"
+    # stand-in for fd, emitting its trailing-slash format
+    # shellcheck disable=SC2329  # Called by list_project_dirs via command -v
+    fd() { printf '%s/\n' "${!#}/alpha" "${!#}/beta"; }
+    PROJECT_DIRS="$pd_root" list_project_dirs
+)
+if [[ "$pd_output" == "$pd_root/alpha"$'\n'"$pd_root/beta" ]]; then
+    pass "list_project_dirs strips fd's trailing slash"
+else
+    fail "list_project_dirs should strip trailing slashes (got: $pd_output)"
+fi
+rm -rf "$pd_root"
 
 # ===========================================================================
 # launchers/list.sh: tab-delimited format (name weighting for fzf)

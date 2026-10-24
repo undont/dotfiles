@@ -50,9 +50,26 @@ if ((NO_LOGO)); then
 fi
 
 main() {
+    local select_name="" save_result
+    save_result=$(mktemp)
+    # shellcheck disable=SC2064  # expand now: the path is fixed for this run
+    trap "rm -f '$save_result'" EXIT
+
     while true; do
-        local action
-        action=$("$SCRIPT_DIR/list.sh" "${LIST_ARGS[@]}" | fzf \
+        local action list select_bind=()
+        list=$("$SCRIPT_DIR/list.sh" "${LIST_ARGS[@]}")
+
+        # after a save, start on the launcher just written (fzf positions
+        # count from the first row below the header lines)
+        if [[ -n "$select_name" ]]; then
+            local select_pos
+            select_pos=$(printf '%s\n' "$list" | tail -n +$((HEADER_LINES + 1)) |
+                awk -F'\t' -v name="$select_name" '$1 == name { print NR; exit }')
+            [[ -n "$select_pos" ]] && select_bind=(--bind "load:pos($select_pos)+unbind(load)")
+            select_name=""
+        fi
+
+        action=$(printf '%s\n' "$list" | fzf \
             --ansi --reverse --exact --disabled --cycle \
             --delimiter=$'\t' --with-nth=2 --tiebreak=begin,length \
             --color="label:${TMUX_FG_PRIMARY:-#ffffff}" \
@@ -60,26 +77,36 @@ main() {
             --padding=0,0,1,0 \
             --prompt=': ' \
             --border=rounded \
-            --border-label=' j/k · d/u · g/G · spc/⏎ sel · / search · n new · e edit · D dup · x del · s set · q/esc ' \
+            --border-label=' j/k · d/u · g/G · spc/⏎ sel · / search · n new · s save · e edit · D dup · x del · S set · q/esc ' \
             --border-label-pos=bottom \
             --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort' \
             --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
-            --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,n,e,x,s,D)' \
-            --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,n,e,x,s,D)" || echo "abort"' \
+            --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,n,e,x,s,S,D)' \
+            --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,n,e,x,s,S,D)" || echo "abort"' \
             --bind 'ctrl-k:up,ctrl-l:clear-query' \
             --bind 'n:become(printf "ACTION:new")' \
-            --bind 's:become(printf "ACTION:set")' \
+            --bind 's:become(printf "ACTION:save")' \
+            --bind 'S:become(printf "ACTION:set")' \
             --bind 'e:become(printf "ACTION:edit:%s" {1})' \
             --bind "x:execute($SCRIPT_DIR/delete.sh {1})+reload-sync($SCRIPT_DIR/list.sh ${LIST_ARGS[*]})" \
             --bind "D:become(printf 'ACTION:dup:%s' \$($SCRIPT_DIR/duplicate.sh {1}))" \
             --bind 'enter:become(printf "ACTION:run:%s" {1})' \
             --bind 'space:become(printf "ACTION:run:%s" {1})' \
+            "${select_bind[@]}" \
             2>/dev/null) || break # q/esc from main list closes popup
 
         case "$action" in
             ACTION:new)
                 "$SCRIPT_DIR/prompt.sh" && break
                 continue # cancelled, back to picker
+                ;;
+            ACTION:save)
+                # saves the session the popup was opened from, then returns to
+                # the picker with the new launcher selected
+                : >"$save_result"
+                SAVE_RESULT_FILE="$save_result" "$SCRIPT_DIR/save.sh" || true
+                select_name=$(cat "$save_result")
+                continue
                 ;;
             ACTION:set)
                 "$SCRIPT_DIR/settings.sh" || true
@@ -91,6 +118,12 @@ main() {
                 # only user launchers can be edited, system launchers are read-only
                 if [[ ! -f "$USER_LAUNCHERS/$edit_name" ]]; then
                     show_error "Cannot edit system launcher '$edit_name'"
+                    continue
+                fi
+                # and only wizard output: the wizard would silently drop what
+                # it can't read from a hand-written launcher
+                if ! grep -qxF '# @generated' "$USER_LAUNCHERS/$edit_name"; then
+                    show_error "Cannot edit '$edit_name': written by hand"
                     continue
                 fi
                 "$SCRIPT_DIR/prompt.sh" --edit "$edit_name" && break

@@ -38,6 +38,7 @@ fi
 
 # window 1: btop
 tmux new-session -d -s "$SESSION" -n "btop" -c "$PROJECT_DIR"
+tmux set-option -t "=$SESSION:" @launcher btop
 tmux send-keys -t "$SESSION:btop" 'btop' Enter
 
 tmux select-window -t "$SESSION:1"

@@ -63,6 +63,7 @@ print_dotfiles_logo() {
 # launcher path constants
 DOTFILES_LAUNCHERS="$DOTFILES_ROOT/launchers"
 USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
+LAUNCHER_BACKUPS="${XDG_CACHE_HOME:-$HOME/.cache}/tmux/launcher-backups"
 LAUNCHER_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/launcher-history"
 THEME_HISTORY="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-history"
 THEME_FAVOURITES="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-favourites"
@@ -240,6 +241,9 @@ list_project_dirs() {
             find "$root" -maxdepth 1 -mindepth 1 -type d 2>/dev/null | sort
         fi
     done | while IFS= read -r d; do
+        # fd prints directories with a trailing slash (find doesn't); strip it so
+        # a picked directory matches the stored one and edits don't drift
+        d="${d%/}"
         printf '%s\n' "${d/#$HOME/\~}"
     done
 }
