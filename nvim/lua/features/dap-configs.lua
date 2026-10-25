@@ -9,11 +9,12 @@ local function mason()
     -- automatic_installation races ensure_installed when an adapter is
     -- registered via dap.adapters[...], and the install stalls on the lockfile
     automatic_installation = false,
-    -- default setup for every installed adapter, except the ones dap-go and
-    -- dap-python already register configurations for
+    -- default setup for every installed adapter, except the ones dap-go,
+    -- dap-python and native() below register configurations for
     handlers = {
       delve = function() end,
       python = function() end,
+      codelldb = function() end,
     },
     -- per-machine mason opt-out (see plugins/lsp.lua)
     ensure_installed = vim.g.disable_mason_auto_install and {} or { 'delve', 'coreclr', 'debugpy', 'js', 'codelldb' },
@@ -234,7 +235,64 @@ local function js(dap)
   dap.configurations.astro = dap.configurations.javascriptreact
 end
 
---- codelldb via mason, for the native C family and swift
+--- where each build tool writes its binaries, for prefilling the program prompt
+local native_build_dirs = {
+  { marker = 'build.zig', dir = 'zig-out/bin/' },
+  { marker = 'Cargo.toml', dir = 'target/debug/' },
+  { marker = 'Package.swift', dir = '.build/debug/' },
+}
+
+local function native_build_dir()
+  for _, tool in ipairs(native_build_dirs) do
+    local root = vim.fs.root(0, tool.marker)
+    if root then
+      return root .. '/' .. tool.dir
+    end
+  end
+  return vim.fn.getcwd() .. '/'
+end
+
+---@return string|table program path, or dap.ABORT on an empty answer
+local function prompt_native_program()
+  local program = vim.fn.input('Path to executable: ', native_build_dir(), 'file')
+  return program ~= '' and program or require('dap').ABORT
+end
+
+local function native_configs()
+  return {
+    -- `__call` runs before field resolution, so the program prompt comes before args
+    setmetatable({ type = 'codelldb', name = 'Launch (codelldb)', request = 'launch' }, {
+      __call = function(config)
+        return vim.tbl_extend('force', config, {
+          program = prompt_native_program(),
+          args = require('dap.utils').splitstr(vim.fn.input 'Args: '),
+          cwd = '${workspaceFolder}',
+          -- runInTerminal: nvim-dap gives the program a real terminal, so TUIs work
+          terminal = 'integrated',
+        })
+      end,
+    }),
+    {
+      type = 'codelldb',
+      name = 'Attach to process (codelldb)',
+      request = 'attach',
+      pid = function()
+        return require('dap.utils').pick_process()
+      end,
+    },
+    -- attaches as soon as the binary starts, to catch startup code (macOS only)
+    {
+      type = 'codelldb',
+      name = 'Attach when program starts (codelldb)',
+      request = 'attach',
+      program = prompt_native_program,
+      waitFor = true,
+    },
+  }
+end
+
+--- codelldb via mason, for the C family, swift, zig and rust. rustaceanvim
+--- adds its own rust launch configs; it has no attach
 local function native(dap)
   dap.adapters.codelldb = {
     type = 'server',
@@ -244,26 +302,10 @@ local function native(dap)
       args = { '--port', '${port}' },
     },
   }
-
-  -- prompts for the compiled binary (e.g. `.build/debug/<target>` for
-  -- SwiftPM), built with debug symbols
-  local codelldb_launch = {
-    {
-      name = 'Launch (codelldb)',
-      type = 'codelldb',
-      request = 'launch',
-      program = function()
-        return vim.fn.input('Path to executable: ', vim.fn.getcwd() .. '/', 'file')
-      end,
-      cwd = '${workspaceFolder}',
-      stopOnEntry = false,
-      args = {},
-    },
-  }
-  dap.configurations.c = codelldb_launch
-  dap.configurations.cpp = codelldb_launch
-  dap.configurations.objc = codelldb_launch
-  dap.configurations.swift = codelldb_launch
+  local configs = native_configs()
+  for _, ft in ipairs { 'c', 'cpp', 'objc', 'swift', 'zig', 'rust' } do
+    dap.configurations[ft] = configs
+  end
 end
 
 function M.setup()
