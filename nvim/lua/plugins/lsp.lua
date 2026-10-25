@@ -386,7 +386,8 @@ return {
           ensure_installed = mason_auto_install and vim.tbl_keys(servers or {}) or {},
           automatic_installation = false,
           automatic_enable = {
-            exclude = { 'omnisharp' }, -- roslyn.nvim serves C#
+            -- roslyn.nvim serves C#; rustaceanvim (plugins/rust.lua) starts rust-analyzer
+            exclude = { 'omnisharp', 'rust_analyzer' },
           },
         }
 

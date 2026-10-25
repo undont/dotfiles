@@ -377,6 +377,7 @@ return {
     'haydenmeade/neotest-jest',
     'nvim-neotest/neotest-python',
     'MisanthropicBit/neotest-busted',
+    'mrcjkb/rustaceanvim',
   },
   keys = {
     { '<leader>tt', neotest_fn(function()
@@ -470,6 +471,8 @@ return {
           -- resolves spec helpers like require('test.fixtures') through
           busted_paths = { './?.lua', './?/init.lua' },
         },
+        -- test discovery and commands come from rust-analyzer; the dap strategy reuses :RustLsp debuggables
+        require 'rustaceanvim.neotest',
       },
       summary = {
         animated = true,
