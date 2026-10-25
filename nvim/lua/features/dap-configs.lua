@@ -42,6 +42,49 @@ local function dedupe_dap_go_setup(dap)
   end
 end
 
+---@return string[] dirs of the main packages in the current file's module
+local function go_main_packages()
+  local root = vim.fs.root(0, 'go.mod')
+  if not root then
+    return {}
+  end
+  local result = vim.system({ 'go', 'list', '-f', '{{if eq .Name "main"}}{{.Dir}}{{end}}', './...' }, { cwd = root, text = true }):wait()
+  if result.code ~= 0 then
+    vim.notify('go list failed: ' .. vim.trim(result.stderr or ''), vim.log.levels.ERROR)
+  end
+  return vim.split(vim.trim(result.stdout or ''), '\n', { trimempty = true })
+end
+
+--- builds whichever main package is picked, from any file in the module.
+--- nvim-dap calls a config's `__call` before resolving it, so the package
+--- is picked before the args prompt
+local function go_main_package_launch()
+  local base = { type = 'go', name = 'Debug main package', request = 'launch' }
+  return setmetatable(base, {
+    __call = function(config)
+      -- run aborts when a field is ABORT, not the config itself
+      local aborted = vim.tbl_extend('force', config, { program = require('dap').ABORT })
+      local dirs = go_main_packages()
+      if #dirs == 0 then
+        vim.notify('no main package in this module', vim.log.levels.WARN)
+        return aborted
+      end
+      local root = vim.fs.root(0, 'go.mod')
+      local program = require('dap.ui').pick_if_many(dirs, 'Main package: ', function(dir)
+        return vim.fs.relpath(root, dir) or dir
+      end)
+      if not program then
+        return aborted
+      end
+      return vim.tbl_extend('force', config, {
+        program = program,
+        args = require('dap.utils').splitstr(vim.fn.input 'Args: '),
+        outputMode = 'remote',
+      })
+    end,
+  })
+end
+
 local function go(dap)
   dedupe_dap_go_setup(dap)
   require('dap-go').setup {
@@ -49,6 +92,7 @@ local function go(dap)
       detached = vim.fn.has 'win32' == 0,
     },
   }
+  table.insert(dap.configurations.go, 1, go_main_package_launch())
 
   -- attach to a headless delve started with one of:
   --   dlv attach <pid> --headless --listen=127.0.0.1:38697 --api-version=2 --accept-multiclient
