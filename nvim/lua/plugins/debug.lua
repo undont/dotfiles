@@ -111,7 +111,12 @@ return {
       -- automatic_installation races ensure_installed when an adapter is
       -- registered via dap.adapters[...], and the install stalls on the lockfile
       automatic_installation = false,
-      handlers = {},
+      -- default setup for every installed adapter, except the ones dap-go and
+      -- dap-python already register configurations for
+      handlers = {
+        delve = function() end,
+        python = function() end,
+      },
       -- per-machine mason opt-out (see plugins/lsp.lua)
       ensure_installed = vim.g.disable_mason_auto_install and {} or { 'delve', 'coreclr', 'debugpy', 'js', 'codelldb' },
     }
@@ -156,8 +161,8 @@ return {
       auto_toggle = true,
     }
 
-    vim.api.nvim_set_hl(0, 'DapBreak', { fg = '#e51400' })
-    vim.api.nvim_set_hl(0, 'DapStop', { fg = '#ffcc00' })
+    vim.api.nvim_set_hl(0, 'DapBreak', { link = 'DiagnosticError' })
+    vim.api.nvim_set_hl(0, 'DapStop', { link = 'DiagnosticWarn' })
     local breakpoint_icons = vim.g.have_nerd_font and { Breakpoint = '', BreakpointCondition = '', BreakpointRejected = '', LogPoint = '', Stopped = '' }
       or { Breakpoint = '●', BreakpointCondition = '⊜', BreakpointRejected = '⊘', LogPoint = '◆', Stopped = '⭔' }
     for type, icon in pairs(breakpoint_icons) do
@@ -166,7 +171,27 @@ return {
       vim.fn.sign_define(tp, { text = icon, texthl = hl, numhl = hl })
     end
 
-    require('dap-go').setup {
+    -- neotest-golang calls dap-go's setup again before and after every debug
+    -- run, and each call appends dap-go's configurations. entries added under
+    -- a name already in the list are dropped
+    local dap_go = require 'dap-go'
+    local dap_go_setup = dap_go.setup
+    dap_go.setup = function(opts)
+      local configs = dap.configurations.go or {}
+      local existing, seen = #configs, {}
+      for _, config in ipairs(configs) do
+        seen[config.name] = true
+      end
+      dap_go_setup(opts)
+      configs = dap.configurations.go
+      for i = #configs, existing + 1, -1 do
+        if seen[configs[i].name] then
+          table.remove(configs, i)
+        end
+      end
+    end
+
+    dap_go.setup {
       delve = {
         detached = vim.fn.has 'win32' == 0,
       },
