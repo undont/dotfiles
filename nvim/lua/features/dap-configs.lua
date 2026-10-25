@@ -77,6 +77,91 @@ local function python()
   require('dap-python').setup(mason_packages .. '/debugpy/venv/bin/python')
 end
 
+local node_skip = { '<node_internals>/**' }
+
+local function node_configs()
+  return {
+    -- node 23 strips TS types from .ts files (not enums, namespaces or .tsx)
+    launch = {
+      type = 'pwa-node',
+      request = 'launch',
+      name = 'Launch file (node)',
+      program = '${file}',
+      cwd = '${workspaceFolder}',
+      skipFiles = node_skip,
+    },
+    -- SIGUSR1 opens a running node's inspector on its default port. js-debug's
+    -- `processId` attach doesn't send it outside VS Code, so it's sent here
+    attach_pid = {
+      type = 'pwa-node',
+      request = 'attach',
+      name = 'Attach to process (node)',
+      port = function()
+        local pid = require('dap.utils').pick_process { filter = 'node' }
+        if type(pid) ~= 'number' then
+          return pid
+        end
+        vim.uv.kill(pid, 'sigusr1')
+        return 9229
+      end,
+      cwd = '${workspaceFolder}',
+      skipFiles = node_skip,
+    },
+    attach_port = {
+      type = 'pwa-node',
+      request = 'attach',
+      name = 'Attach: node --inspect on :9229',
+      port = 9229,
+      cwd = '${workspaceFolder}',
+      skipFiles = node_skip,
+    },
+  }
+end
+
+--- dev server config file prefixes and the port each server defaults to
+local dev_servers = {
+  { config = 'vite.config', url = 'http://localhost:5173' },
+  { config = 'astro.config', url = 'http://localhost:4321' },
+  { config = 'next.config', url = 'http://localhost:3000' },
+}
+
+local dev_server_configs = {}
+for _, server in ipairs(dev_servers) do
+  for _, ext in ipairs { 'ts', 'mts', 'js', 'mjs' } do
+    table.insert(dev_server_configs, server.config .. '.' .. ext)
+  end
+end
+
+---@return string? path of the nearest dev server config above the current file
+local function find_dev_server_config()
+  return vim.fs.find(dev_server_configs, { upward = true, path = vim.fn.expand '%:p:h' })[1]
+end
+
+--- opens a separate chrome profile at the dev server; breakpoints in source
+--- files bind through the dev server's source maps, whose paths are relative
+--- to the app's root (apps/web in a monorepo), not nvim's cwd
+local function chrome_launch()
+  return {
+    type = 'pwa-chrome',
+    request = 'launch',
+    name = 'Launch chrome (dev server)',
+    url = function()
+      local name = vim.fs.basename(find_dev_server_config() or '')
+      local default = dev_servers[1].url
+      for _, server in ipairs(dev_servers) do
+        if vim.startswith(name, server.config .. '.') then
+          default = server.url
+        end
+      end
+      return vim.fn.input('dev server url: ', default)
+    end,
+    webRoot = function()
+      local config = find_dev_server_config()
+      return config and vim.fs.dirname(config) or vim.fn.getcwd()
+    end,
+  }
+end
+
 --- vscode-js-debug via mason. `${port}` has nvim-dap pick a free port per
 --- session and spawn the adapter as a child. neotest-vitest's
 --- `strategy = 'dap'` uses it
@@ -93,6 +178,16 @@ local function js(dap)
       },
     }
   end
+
+  local node = node_configs()
+  local chrome = chrome_launch()
+  dap.configurations.javascript = { node.launch, chrome, node.attach_pid, node.attach_port }
+  dap.configurations.typescript = dap.configurations.javascript
+  -- node can't run .tsx; react files run in the browser, or in node for SSR
+  dap.configurations.javascriptreact = { chrome, node.attach_pid, node.attach_port }
+  dap.configurations.typescriptreact = dap.configurations.javascriptreact
+  -- astro component frontmatter renders in node; <script> blocks run in the browser
+  dap.configurations.astro = dap.configurations.javascriptreact
 end
 
 --- codelldb via mason, for the native C family and swift
