@@ -43,12 +43,9 @@ local function dedupe_dap_go_setup(dap)
   end
 end
 
----@return string[] dirs of the main packages in the current file's module
-local function go_main_packages()
-  local root = vim.fs.root(0, 'go.mod')
-  if not root then
-    return {}
-  end
+---@param root string module root holding go.mod
+---@return string[] dirs of the main packages in the module
+local function go_main_packages(root)
   local result = vim.system({ 'go', 'list', '-f', '{{if eq .Name "main"}}{{.Dir}}{{end}}', './...' }, { cwd = root, text = true }):wait()
   if result.code ~= 0 then
     vim.notify('go list failed: ' .. vim.trim(result.stderr or ''), vim.log.levels.ERROR)
@@ -65,12 +62,16 @@ local function go_main_package_launch()
     __call = function(config)
       -- run aborts when a field is ABORT, not the config itself
       local aborted = vim.tbl_extend('force', config, { program = require('dap').ABORT })
-      local dirs = go_main_packages()
+      local root = vim.fs.root(0, 'go.mod')
+      if not root then
+        vim.notify('no go.mod above this file', vim.log.levels.WARN)
+        return aborted
+      end
+      local dirs = go_main_packages(root)
       if #dirs == 0 then
         vim.notify('no main package in this module', vim.log.levels.WARN)
         return aborted
       end
-      local root = vim.fs.root(0, 'go.mod')
       local program = require('dap.ui').pick_if_many(dirs, 'Main package: ', function(dir)
         return vim.fs.relpath(root, dir) or dir
       end)
