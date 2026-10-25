@@ -284,6 +284,40 @@ local function fix_golang_discovery_cache()
   end
 end
 
+--- picks one of the test binaries neotest-zig installs to zig-out/test, which
+--- it otherwise asks for as a typed path
+local function pick_zig_test_binary()
+  local dap = require 'dap'
+  local binaries = vim.fn.glob(vim.fn.getcwd() .. '/zig-out/test/*', false, true)
+  if #binaries == 0 then
+    vim.notify('neotest-zig: no test binary in zig-out/test', vim.log.levels.WARN)
+    return dap.ABORT
+  end
+  return require('dap.ui').pick_if_many(binaries, 'Test binary: ', vim.fs.basename) or dap.ABORT
+end
+
+--- neotest-zig's debug spec sources ~/.lldbinit unconditionally, and codelldb
+--- fails the launch when that file doesn't exist
+local function patch_zig_debug_spec()
+  local ok, zig = pcall(require, 'neotest-zig')
+  if not ok or zig.debug_spec_patched then
+    return
+  end
+  local build_spec = zig._build_spec_with_buildfile
+  zig._build_spec_with_buildfile = function(...)
+    local spec = build_spec(...)
+    if spec and type(spec.strategy) == 'table' then
+      spec.strategy.initCommands = nil
+      -- only set when the build succeeded
+      if spec.strategy.program then
+        spec.strategy.program = pick_zig_test_binary
+      end
+    end
+    return spec
+  end
+  zig.debug_spec_patched = true
+end
+
 --- the summary's expanded set lives on each adapter's SummaryComponent with no
 --- public function to clear it. the constructor is wrapped to collect the
 --- instances, before neotest.setup requires the consumer
@@ -378,6 +412,9 @@ return {
     'nvim-neotest/neotest-python',
     'MisanthropicBit/neotest-busted',
     'mrcjkb/rustaceanvim',
+    -- upstream lawrence-laz/neotest-zig stops at zig 0.14; this fork's runner
+    -- builds on 0.17. pinned to the reviewed commit
+    { 'ahmedalhulaibi/neotest-zig', commit = '8e826dbb770a1fffa4c8b184e3cbaefa372f7991' },
   },
   keys = {
     { '<leader>tt', neotest_fn(function()
@@ -416,6 +453,7 @@ return {
     expand_empty_subtest_positions()
     backfill_missing_results()
     fix_golang_discovery_cache()
+    patch_zig_debug_spec()
     track_summary_components()
 
     require('neotest').setup {
@@ -473,6 +511,9 @@ return {
         },
         -- test discovery and commands come from rust-analyzer; the dap strategy reuses :RustLsp debuggables
         require 'rustaceanvim.neotest',
+        require 'neotest-zig' {
+          dap = { adapter = 'codelldb' },
+        },
       },
       summary = {
         animated = true,
