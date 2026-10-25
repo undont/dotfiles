@@ -464,7 +464,12 @@ return {
           args = { '-v' },
           dap = { justMyCode = false },
         },
-        require 'neotest-busted' { local_luarocks_only = false },
+        require 'neotest-busted' {
+          local_luarocks_only = false,
+          -- its package.path drops lua's default ./?.lua, which plain busted
+          -- resolves spec helpers like require('test.fixtures') through
+          busted_paths = { './?.lua', './?/init.lua' },
+        },
       },
       summary = {
         animated = true,

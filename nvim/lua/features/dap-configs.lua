@@ -308,6 +308,57 @@ local function native(dap)
   end
 end
 
+local osv_port = 8086
+
+--- osv debugs lua running inside an nvim: the nvim being debugged starts the
+--- server (`M.osv_toggle`, or NVIM_OSV=1 at startup) and another attaches
+local function lua_configs(dap)
+  dap.adapters.nlua = function(callback, config)
+    callback { type = 'server', host = config.host, port = config.port }
+  end
+
+  local lldebugger = mason_packages .. '/local-lua-debugger-vscode/extension'
+  dap.adapters['local-lua'] = {
+    type = 'executable',
+    command = 'node',
+    args = { lldebugger .. '/extension/debugAdapter.js' },
+    -- the adapter loads lldebugger.lua from extensionPath
+    enrich_config = function(config, on_config)
+      on_config(vim.tbl_extend('keep', config, { extensionPath = lldebugger }))
+    end,
+  }
+
+  dap.configurations.lua = {
+    {
+      type = 'nlua',
+      request = 'attach',
+      name = 'Attach to nvim (osv)',
+      host = '127.0.0.1',
+      port = osv_port,
+    },
+    -- nlua is `nvim -l`: plain lua plus the vim.* API
+    {
+      type = 'local-lua',
+      request = 'launch',
+      name = 'Launch file (nlua)',
+      program = { lua = 'nlua', file = '${file}' },
+      cwd = '${workspaceFolder}',
+    },
+  }
+end
+
+--- starts or stops osv in this nvim, for another nvim to attach to
+function M.osv_toggle()
+  local osv = require 'osv'
+  if osv.is_running() then
+    osv.stop()
+    vim.notify('osv stopped', vim.log.levels.INFO)
+    return
+  end
+  osv.launch { port = osv_port }
+  vim.notify(('osv listening on %d'):format(osv_port), vim.log.levels.INFO)
+end
+
 function M.setup()
   local dap = require 'dap'
   mason()
@@ -315,6 +366,7 @@ function M.setup()
   python()
   js(dap)
   native(dap)
+  lua_configs(dap)
 end
 
 return M

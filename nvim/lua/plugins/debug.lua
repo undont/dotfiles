@@ -25,6 +25,7 @@ return {
     'jay-babu/mason-nvim-dap.nvim',
     'leoluz/nvim-dap-go',
     'mfussenegger/nvim-dap-python',
+    'jbyuki/one-small-step-for-vimkind',
   },
   keys = {
     {

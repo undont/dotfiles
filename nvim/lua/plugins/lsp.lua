@@ -418,6 +418,8 @@ return {
             'prettier',
             'shfmt',
             'stylua',
+            -- lua debug adapter, registered in features/dap-configs.lua
+            'local-lua-debugger-vscode',
             'golangci-lint-langserver',
             'ruff',
             -- go codegen helpers (struct tags, iferr); wired in features/go.lua
