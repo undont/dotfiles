@@ -198,20 +198,23 @@ return {
     }
 
     -- attach to a headless delve started with one of:
-    --   dlv attach <pid> --headless --listen=127.0.0.1:38697 --api-version=2
-    --   dlv exec ./binary --headless --listen=127.0.0.1:38697 --api-version=2
-    -- TUI binaries need this: delve's DAP server ignores
-    -- `console: integratedTerminal` when debugging and `dlv dap` has no
-    -- `--tty` flag, so a launched debuggee gets pipe-based stdio
+    --   dlv attach <pid> --headless --listen=127.0.0.1:38697 --api-version=2 --accept-multiclient
+    --   dlv exec ./binary --headless --listen=127.0.0.1:38697 --api-version=2 --accept-multiclient
+    -- TUI binaries need this: delve's DAP server has no `--tty`, so a launched debuggee gets pipe stdio.
+    -- dap-go's `go` adapter spawns its own `dlv dap` even for remote attach; this one only connects.
+    -- dap-view special-cases adapters named `delve` or `go`
+    dap.adapters.delve = function(callback, config)
+      callback { type = 'server', host = config.host, port = config.port }
+    end
     dap.configurations.go = dap.configurations.go or {}
     table.insert(dap.configurations.go, {
-      type = 'go',
+      type = 'delve',
       name = 'Attach (remote dlv)',
       request = 'attach',
       mode = 'remote',
       host = '127.0.0.1',
       port = function()
-        return tonumber(vim.fn.input 'dlv headless port: ' or '') or 38697
+        return tonumber(vim.fn.input('dlv headless port: ', '38697'))
       end,
     })
 
