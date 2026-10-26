@@ -263,16 +263,24 @@ Toggle file viewed | <Tab>
 
 ## debug @debug
 Start/Continue | F5
+Stop (detaches from an attached program) | F4
 Pause (cancels an interrupted step) | F6
 Step into | F1
 Step over | F2
 Step out | F3
-Toggle breakpoint | <leader>bb
-Conditional breakpoint | <leader>bc
-Logpoint | <leader>bL
-List breakpoints | <leader>bl
-Watch expression | <leader>bw (normal/visual)
+Run to cursor | F8
+Run last config again | F9
 Toggle debug UI | F7
+Toggle breakpoint | <leader>rb
+Conditional breakpoint | <leader>rc
+Logpoint | <leader>rL
+List breakpoints | <leader>rl
+Watch expression | <leader>rw (normal/visual)
+Hover value under cursor | <leader>rh
+Attach (pick an attach config) | <leader>ra
+Start/stop osv in this nvim (debug its lua from another) | <leader>ro
+Debug nvim config from startup | NVIM_OSV=1 nvim, then attach from another nvim
+Debug nearest test | <leader>td
 Switch panel section | W / S / T / B / E / R (in panel)
 Next/prev panel section | ]v / [v (in panel)
 Expand/collapse variable | <CR> (scopes/watches)
@@ -280,6 +288,17 @@ Set variable value | s (scopes/watches)
 Add/edit/delete watch | a / e / d (watches)
 Jump to frame or breakpoint | <CR> (threads/breakpoints)
 Panel keymap help | g? (in panel)
+
+## debug recipes @debug
+Go: launch any main package | F5 > Debug main package
+Go: headless dlv to attach to (TUIs) | dlv debug ./cmd/app --headless --listen=127.0.0.1:38697 --api-version=2 --accept-multiclient -- <args>
+Node: wait for a debugger on start | node --inspect-brk=9229 app.js, then <leader>ra
+Browser (vite/next/astro): launch chrome at the dev server | F5 > Launch chrome (dev server)
+Astro: <script> blocks map to the wrong lines | put debugger; in the script instead of a breakpoint
+Bun: not debuggable from nvim | run it under node to debug
+C/zig/rust TUI in its own pane | F5 > Launch in tmux split (codelldb)
+Zig: test debugging needs named test steps | b.addTest(.{ .name = "mod_tests", ... }) in build.zig
+Lua plugin code | NVIM_OSV=1 nvim or <leader>ro there, then F5 > Attach to nvim (osv) here
 
 ## markdown @markdown
 Toggle todo | <leader>mt

@@ -31,7 +31,8 @@ return {
         spec = {
           -- ── always-visible groups ──
           { '<leader>a', group = '[A]I', icon = { icon = '󰚩 ', color = 'purple' } },
-          { '<leader>b', group = '[B]reakpoint / Buffer', icon = { icon = '󰈔 ', color = 'red' } },
+          { '<leader>b', group = '[B]uffer', icon = { icon = '󰈔 ', color = 'red' } },
+          { '<leader>r', group = 'Debug [R]un', icon = { icon = ' ', color = 'red' } },
           { '<leader>d', group = '[D]iff', icon = { cat = 'filetype', name = 'git' } },
           { '<leader>G', group = '[G]it (Fugitive)', icon = { cat = 'filetype', name = 'git' } },
           { '<leader>H', group = 'Git [H]unk', icon = { cat = 'filetype', name = 'git' } },
@@ -87,10 +88,10 @@ return {
           { '<leader>q', icon = { icon = '', color = 'green' }, hidden = true },
           { '<leader>Q', icon = { icon = '', color = 'green' }, hidden = true },
           { '<leader>f', hidden = true },
-          { '<leader>bb', hidden = true },
-          { '<leader>bc', hidden = true },
-          { '<leader>bL', hidden = true },
-          { '<leader>bl', hidden = true },
+          { '<leader>rb', hidden = true },
+          { '<leader>rc', hidden = true },
+          { '<leader>rL', hidden = true },
+          { '<leader>rl', hidden = true },
         },
       }
 
@@ -136,10 +137,10 @@ return {
           { '<leader>k', group = 'Musi[K]', icon = { icon = '󰎆 ', color = 'purple' }, hidden = not is_code },
           { '<leader>u', icon = { icon = '󰕌 ', color = 'blue' }, hidden = not is_code },
           { '<leader>q', hidden = not is_code },
-          { '<leader>bb', hidden = not is_code },
-          { '<leader>bc', hidden = not is_code },
-          { '<leader>bL', hidden = not is_code },
-          { '<leader>bl', hidden = not is_code },
+          { '<leader>rb', hidden = not is_code },
+          { '<leader>rc', hidden = not is_code },
+          { '<leader>rL', hidden = not is_code },
+          { '<leader>rl', hidden = not is_code },
 
           { '<leader>c', group = '[C]laude', icon = { icon = claude_icon, hl = 'ClaudeIcon' }, hidden = not is_markdown },
           { '<leader>m', group = '[M]arkdown', icon = { cat = 'filetype', name = 'markdown' }, hidden = not is_markdown },

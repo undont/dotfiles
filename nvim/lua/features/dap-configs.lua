@@ -108,7 +108,7 @@ local function go(dap)
   dap.configurations.go = dap.configurations.go or {}
   table.insert(dap.configurations.go, {
     type = 'delve',
-    name = 'Attach (remote dlv)',
+    name = 'Attach: headless dlv (default :38697)',
     request = 'attach',
     mode = 'remote',
     host = '127.0.0.1',
@@ -281,6 +281,17 @@ local function native_configs()
         return require('dap.utils').pick_process()
       end,
     },
+    -- for TUIs: the program gets its own tmux pane beside nvim
+    setmetatable({ type = 'codelldb', name = 'Launch in tmux split (codelldb)', request = 'launch' }, {
+      __call = function(config)
+        return vim.tbl_extend('force', config, {
+          program = prompt_native_program(),
+          args = require('dap.utils').splitstr(vim.fn.input 'Args: '),
+          cwd = '${workspaceFolder}',
+          terminal = 'external',
+        })
+      end,
+    }),
     -- attaches as soon as the binary starts, to catch startup code (macOS only)
     {
       type = 'codelldb',
@@ -303,6 +314,8 @@ local function native(dap)
       args = { '--port', '${port}' },
     },
   }
+  -- `terminal = 'external'` runs the program through this command
+  dap.defaults.codelldb.external_terminal = { command = 'tmux', args = { 'split-window', '-h' } }
   local configs = native_configs()
   for _, ft in ipairs { 'c', 'cpp', 'objc', 'swift', 'zig', 'rust' } do
     dap.configurations[ft] = configs
@@ -358,6 +371,48 @@ function M.osv_toggle()
   end
   osv.launch { port = osv_port }
   vim.notify(('osv listening on %d'):format(osv_port), vim.log.levels.INFO)
+end
+
+--- picks one of the current filetype's attach configs and runs it
+function M.attach()
+  local dap = require 'dap'
+  local configs = vim.tbl_filter(function(config)
+    return config.request == 'attach'
+  end, dap.configurations[vim.bo.filetype] or {})
+  if #configs == 0 then
+    vim.notify(('no attach configs for %s'):format(vim.bo.filetype), vim.log.levels.WARN)
+    return
+  end
+  vim.ui.select(configs, {
+    prompt = 'Attach',
+    format_item = function(config)
+      return config.name
+    end,
+  }, function(config)
+    if config then
+      dap.run(config)
+    end
+  end)
+end
+
+--- ends the session; an attached program is detached from rather than
+--- killed. js-debug's child sessions are attaches under a launch, so the
+--- top-level session decides
+function M.stop()
+  local dap = require 'dap'
+  local session = dap.session()
+  if not session then
+    return
+  end
+  local root = session
+  while root.parent do
+    root = root.parent
+  end
+  if root.config.request == 'attach' then
+    dap.disconnect { terminateDebuggee = false }
+  else
+    dap.terminate()
+  end
 end
 
 function M.setup()

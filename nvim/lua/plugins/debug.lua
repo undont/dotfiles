@@ -65,43 +65,85 @@ return {
       desc = 'Debug: Toggle UI',
     },
     {
-      '<leader>bb',
+      '<F4>',
+      function()
+        require('features.dap-configs').stop()
+      end,
+      desc = 'Debug: Stop (detaches from an attached program)',
+    },
+    {
+      '<F8>',
+      function()
+        require('dap').run_to_cursor()
+      end,
+      desc = 'Debug: Run to cursor',
+    },
+    {
+      '<F9>',
+      function()
+        require('dap').run_last()
+      end,
+      desc = 'Debug: Run last',
+    },
+    {
+      '<leader>rb',
       function()
         require('dap').toggle_breakpoint()
       end,
       desc = 'Toggle [B]reakpoint',
     },
     {
-      '<leader>bc',
+      '<leader>rc',
       function()
         require('dap').set_breakpoint(vim.fn.input 'Breakpoint condition: ')
       end,
       desc = '[C]onditional breakpoint',
     },
     {
-      '<leader>bL',
+      '<leader>rL',
       function()
         require('dap').set_breakpoint(nil, nil, vim.fn.input 'Log message: ')
       end,
-      desc = 'Breakpoint [L]ogpoint',
+      desc = '[L]ogpoint',
     },
     {
-      '<leader>bl',
+      '<leader>rl',
       function()
         require('features.dap-breakpoints').open()
       end,
-      desc = '[B]reakpoint [L]ist',
+      desc = 'Breakpoint [L]ist',
     },
     {
-      '<leader>bw',
+      '<leader>rw',
       '<Cmd>DapViewWatch<CR>',
       desc = '[W]atch expression',
     },
     {
-      '<leader>bw',
+      '<leader>rw',
       ':DapViewWatch<CR>',
       mode = 'v',
       desc = '[W]atch selection',
+    },
+    {
+      '<leader>rh',
+      function()
+        require('dap.ui.widgets').hover()
+      end,
+      desc = '[H]over value',
+    },
+    {
+      '<leader>ra',
+      function()
+        require('features.dap-configs').attach()
+      end,
+      desc = '[A]ttach',
+    },
+    {
+      '<leader>ro',
+      function()
+        require('features.dap-configs').osv_toggle()
+      end,
+      desc = '[O]sv server for this nvim',
     },
   },
   config = function()

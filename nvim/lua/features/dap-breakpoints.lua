@@ -1,4 +1,4 @@
--- editable breakpoint-list float (<leader>bl): lines deleted from it remove
+-- editable breakpoint-list float (<leader>rl): lines deleted from it remove
 -- those breakpoints when the window closes, <CR> jumps to the one under the cursor
 
 local M = {}
