@@ -284,6 +284,28 @@ local function fix_golang_discovery_cache()
   end
 end
 
+--- a .rs buffer outside every known root becomes a new root at its own
+--- directory once is_test_file accepts it (client _update_adapters). stdlib and
+--- dependency sources, opened by go-to-definition or stepping, would each start
+--- a discovery that sends every file in them through rust-analyzer
+local function rust_adapter()
+  local adapter = require 'rustaceanvim.neotest'
+  local is_test_file = adapter.is_test_file
+  local toolchain_dirs = {
+    (vim.env.RUSTUP_HOME or vim.fs.joinpath(vim.env.HOME, '.rustup')) .. '/',
+    (vim.env.CARGO_HOME or vim.fs.joinpath(vim.env.HOME, '.cargo')) .. '/',
+  }
+  adapter.is_test_file = function(path)
+    for _, dir in ipairs(toolchain_dirs) do
+      if vim.startswith(path, dir) then
+        return false
+      end
+    end
+    return is_test_file(path)
+  end
+  return adapter
+end
+
 --- picks one of the test binaries neotest-zig installs to zig-out/test, which
 --- it otherwise asks for as a typed path
 local function pick_zig_test_binary()
@@ -510,7 +532,7 @@ return {
           busted_paths = { './?.lua', './?/init.lua' },
         },
         -- test discovery and commands come from rust-analyzer; the dap strategy reuses :RustLsp debuggables
-        require 'rustaceanvim.neotest',
+        rust_adapter(),
         require 'neotest-zig' {
           dap = { adapter = 'codelldb' },
         },
