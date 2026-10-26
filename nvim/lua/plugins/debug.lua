@@ -1,16 +1,25 @@
 -- nvim-dap with dap-view; adapters and configurations live in features/dap-configs.lua
 
--- stepping while the top frame is runtime.goexit ends the goroutine mid-step.
+-- frames reached once user code has returned: runtime.main after main.main,
+-- runtime.goexit after a goroutine. stepping from runtime.main walks the
+-- runtime's shutdown code. stepping from goexit ends the goroutine mid-step;
 -- delve conditions its stepping breakpoints on that goroutine id, so they can
--- never fire again, and every later step fails with "next while nexting" until
--- a halt cancels it. refuse the step and leave continue as the way out
+-- never fire again and every later step fails with "next while nexting".
+-- either way the step becomes a continue
+local finished_frames = {
+  ['runtime.main'] = 'main has returned',
+  ['runtime.goexit'] = 'goroutine has finished',
+}
+
 local function step(cmd)
   return function()
     local dap = require 'dap'
     local session = dap.session()
     local frame = session and session.current_frame
-    if frame and frame.name == 'runtime.goexit' then
-      vim.notify('dap: goroutine has finished, continue (F5) instead of stepping', vim.log.levels.WARN)
+    local finished = frame and finished_frames[frame.name]
+    if finished then
+      vim.notify(('dap: %s, continuing instead of stepping'):format(finished), vim.log.levels.INFO)
+      dap.continue()
       return
     end
     dap[cmd]()
