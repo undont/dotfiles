@@ -291,7 +291,8 @@ Panel keymap help | g? (in panel)
 
 ## debug recipes @debug
 Go: launch any main package | F5 > Debug main package
-Go: headless dlv to attach to (TUIs) | dlv debug ./cmd/app --headless --listen=127.0.0.1:38697 --api-version=2 --accept-multiclient -- <args>
+Go: TUI in its own pane (tmux) | F5 > Debug TUI in tmux split (go)
+Go: headless dlv to attach to by hand | dlv debug ./cmd/app --headless --listen=127.0.0.1:38697 --api-version=2 --accept-multiclient -- <args>
 Node: wait for a debugger on start | node --inspect-brk=9229 app.js, then <leader>ra
 Browser (vite/next/astro): launch chrome at the dev server | F5 > Launch chrome (dev server)
 Astro: <script> blocks map to the wrong lines | put debugger; in the script instead of a breakpoint

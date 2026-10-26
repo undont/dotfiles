@@ -53,6 +53,23 @@ local function go_main_packages(root)
   return vim.split(vim.trim(result.stdout or ''), '\n', { trimempty = true })
 end
 
+---@return string? dir of the picked main package, nil when none or cancelled
+local function pick_go_main_package()
+  local root = vim.fs.root(0, 'go.mod')
+  if not root then
+    vim.notify('no go.mod above this file', vim.log.levels.WARN)
+    return nil
+  end
+  local dirs = go_main_packages(root)
+  if #dirs == 0 then
+    vim.notify('no main package in this module', vim.log.levels.WARN)
+    return nil
+  end
+  return require('dap.ui').pick_if_many(dirs, 'Main package: ', function(dir)
+    return vim.fs.relpath(root, dir) or dir
+  end)
+end
+
 --- builds whichever main package is picked, from any file in the module.
 --- nvim-dap calls a config's `__call` before resolving it, so the package
 --- is picked before the args prompt
@@ -60,28 +77,90 @@ local function go_main_package_launch()
   local base = { type = 'go', name = 'Debug main package', request = 'launch' }
   return setmetatable(base, {
     __call = function(config)
-      -- run aborts when a field is ABORT, not the config itself
-      local aborted = vim.tbl_extend('force', config, { program = require('dap').ABORT })
-      local root = vim.fs.root(0, 'go.mod')
-      if not root then
-        vim.notify('no go.mod above this file', vim.log.levels.WARN)
-        return aborted
-      end
-      local dirs = go_main_packages(root)
-      if #dirs == 0 then
-        vim.notify('no main package in this module', vim.log.levels.WARN)
-        return aborted
-      end
-      local program = require('dap.ui').pick_if_many(dirs, 'Main package: ', function(dir)
-        return vim.fs.relpath(root, dir) or dir
-      end)
+      local program = pick_go_main_package()
       if not program then
-        return aborted
+        -- run aborts when a field is ABORT, not the config itself
+        return vim.tbl_extend('force', config, { program = require('dap').ABORT })
       end
       return vim.tbl_extend('force', config, {
         program = program,
         args = require('dap.utils').splitstr(vim.fn.input 'Args: '),
         outputMode = 'remote',
+      })
+    end,
+  })
+end
+
+---@return integer port nothing is listening on
+local function free_port()
+  local tcp = assert(vim.uv.new_tcp())
+  tcp:bind('127.0.0.1', 0)
+  local port = tcp:getsockname().port
+  tcp:close()
+  return port
+end
+
+--- suspends the calling coroutine until something listens on the port, or
+--- the timeout passes. dlv only listens once the package has compiled, and a
+--- headless dlv serves a single connection, so the check reads lsof rather
+--- than connecting
+---@return boolean listening
+local function wait_for_port(port, timeout_ms)
+  local co = coroutine.running()
+  local deadline = vim.uv.now() + timeout_ms
+  local function try()
+    vim.system({ 'lsof', '-nP', '-iTCP:' .. port, '-sTCP:LISTEN', '-t' }, { text = true }, function(result)
+      vim.schedule(function()
+        if result.code == 0 and vim.trim(result.stdout or '') ~= '' then
+          coroutine.resume(co, true)
+        elseif vim.uv.now() > deadline then
+          coroutine.resume(co, false)
+        else
+          vim.defer_fn(try, 300)
+        end
+      end)
+    end)
+  end
+  try()
+  return coroutine.yield()
+end
+
+--- delve's DAP server can't give a launched program a terminal, so a TUI runs
+--- under a headless dlv in a tmux pane, whose terminal it inherits, and the
+--- session attaches to that. mason's dlv, since a shell's may predate the go
+--- toolchain
+local function go_tui_launch()
+  local base = { type = 'delve', name = 'Debug TUI in tmux split (go)', request = 'attach' }
+  return setmetatable(base, {
+    __call = function(config)
+      local aborted = vim.tbl_extend('force', config, { port = require('dap').ABORT })
+      local program = pick_go_main_package()
+      if not program then
+        return aborted
+      end
+      local args = require('dap.utils').splitstr(vim.fn.input 'Args: ')
+      local port = free_port()
+      local mason_dlv = vim.fn.stdpath 'data' .. '/mason/bin/dlv'
+      local dlv = vim.fn.executable(mason_dlv) == 1 and mason_dlv or 'dlv'
+      local cmd = { dlv, 'debug', program, '--headless', '--listen=127.0.0.1:' .. port, '--api-version=2', '--' }
+      vim.list_extend(cmd, args)
+      -- beside nvim's pane, in nvim's cwd like the other launches
+      local split = { 'tmux', 'split-window', '-h', '-c', vim.fn.getcwd() }
+      if vim.env.TMUX_PANE then
+        vim.list_extend(split, { '-t', vim.env.TMUX_PANE })
+      end
+      table.insert(split, table.concat(vim.tbl_map(vim.fn.shellescape, cmd), ' '))
+      vim.fn.system(split)
+      if not wait_for_port(port, 120000) then
+        vim.notify('dlv never started listening on ' .. port, vim.log.levels.ERROR)
+        return aborted
+      end
+      return vim.tbl_extend('force', config, {
+        mode = 'remote',
+        host = '127.0.0.1',
+        port = port,
+        -- the program only exists for this session, so stopping ends it
+        stop_terminates = true,
       })
     end,
   })
@@ -95,6 +174,9 @@ local function go(dap)
     },
   }
   table.insert(dap.configurations.go, 1, go_main_package_launch())
+  if vim.env.TMUX then
+    table.insert(dap.configurations.go, 2, go_tui_launch())
+  end
 
   -- attach to a headless delve started with one of:
   --   dlv attach <pid> --headless --listen=127.0.0.1:38697 --api-version=2 --accept-multiclient
@@ -408,7 +490,7 @@ function M.stop()
   while root.parent do
     root = root.parent
   end
-  if root.config.request == 'attach' then
+  if root.config.request == 'attach' and not root.config.stop_terminates then
     dap.disconnect { terminateDebuggee = false }
   else
     dap.terminate()
