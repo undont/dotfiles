@@ -307,7 +307,8 @@ local function rust_adapter()
 end
 
 --- picks one of the test binaries neotest-zig installs to zig-out/test, which
---- it otherwise asks for as a typed path
+--- it otherwise asks for as a typed path. neotest starts the session inside a
+--- nio task, where dap.ui's coroutine-based picker can't suspend
 local function pick_zig_test_binary()
   local dap = require 'dap'
   local binaries = vim.fn.glob(vim.fn.getcwd() .. '/zig-out/test/*', false, true)
@@ -315,7 +316,16 @@ local function pick_zig_test_binary()
     vim.notify('neotest-zig: no test binary in zig-out/test', vim.log.levels.WARN)
     return dap.ABORT
   end
-  return require('dap.ui').pick_if_many(binaries, 'Test binary: ', vim.fs.basename) or dap.ABORT
+  if #binaries == 1 then
+    return binaries[1]
+  end
+  -- nio.ui.select holds the vim.ui.select that existed when nio loaded; this
+  -- looks it up per call, so a picker plugin set up later is used
+  local select = require('nio').wrap(function(items, opts, on_choice)
+    vim.ui.select(items, opts, on_choice)
+  end, 3)
+  local binary = select(binaries, { prompt = 'Test binary', format_item = vim.fs.basename })
+  return binary or dap.ABORT
 end
 
 --- neotest-zig's debug spec sources ~/.lldbinit unconditionally, and codelldb
