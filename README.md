@@ -124,7 +124,7 @@ From within tmux, `` ` t `` opens an fzf picker over the hand-crafted set and Gh
 
 Two sources feed the picker:
 
-- **14 hand-crafted themes** with tuned palettes, all checked against WCAG 2.1 contrast ratios
+- **15 hand-crafted themes** with tuned palettes, all checked against WCAG 2.1 contrast ratios
 - **~460 Ghostty themes** generatable on the fly, deriving semantic roles from a Ghostty palette and correcting for contrast
 
 ```bash
