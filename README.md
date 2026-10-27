@@ -66,7 +66,8 @@ Configured as a clean input layer rather than a productivity surface: keybind re
 
 Modular config based on kickstart.nvim with lazy.nvim, Treesitter, and Mason-managed language servers. Startup is roughly 100ms.
 
-- **LSP** for TypeScript, Go, Python, Lua, C#/.NET (Roslyn), C/C++/Objective-C, Swift, ESLint, Bash, CSS/Tailwind, HTML and YAML, with formatting, linting, and codelldb debugging for the C family and Swift
+- **LSP** for TypeScript, Go, Python, Lua, Rust, Zig, C#/.NET (Roslyn), C/C++/Objective-C, Swift, ESLint, Bash, CSS/Tailwind, HTML and YAML, with formatting and linting
+- **Debugging** (nvim-dap): launch, attach and test debugging for Go, TypeScript/JavaScript (node and the browser), Lua (including nvim plugin code), Rust, Zig, Python, .NET and the C family
 - **SonarLint** as a second LSP client, with connected mode and per-project rule overrides. See [docs/SONARLINT.md](docs/SONARLINT.md)
 - **Diffs and PR review** through differ.nvim (my own plugin): side-by-side diffs, file history, staging, GitHub PR review, merge conflict resolution, and diff-by-ticket, all through one renderer
 - **Build picker** auto-detects Go, TypeScript, .NET and Makefile projects and runs the build into the quickfix list

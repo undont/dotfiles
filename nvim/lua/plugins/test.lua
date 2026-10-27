@@ -284,6 +284,72 @@ local function fix_golang_discovery_cache()
   end
 end
 
+--- a .rs buffer outside every known root becomes a new root at its own
+--- directory once is_test_file accepts it (client _update_adapters). stdlib and
+--- dependency sources, opened by go-to-definition or stepping, would each start
+--- a discovery that sends every file in them through rust-analyzer
+local function rust_adapter()
+  local adapter = require 'rustaceanvim.neotest'
+  local is_test_file = adapter.is_test_file
+  local toolchain_dirs = {
+    (vim.env.RUSTUP_HOME or vim.fs.joinpath(vim.env.HOME, '.rustup')) .. '/',
+    (vim.env.CARGO_HOME or vim.fs.joinpath(vim.env.HOME, '.cargo')) .. '/',
+  }
+  adapter.is_test_file = function(path)
+    for _, dir in ipairs(toolchain_dirs) do
+      if vim.startswith(path, dir) then
+        return false
+      end
+    end
+    return is_test_file(path)
+  end
+  return adapter
+end
+
+--- picks one of the test binaries neotest-zig installs to zig-out/test, which
+--- it otherwise asks for as a typed path. neotest starts the session inside a
+--- nio task, where dap.ui's coroutine-based picker can't suspend
+local function pick_zig_test_binary()
+  local dap = require 'dap'
+  local binaries = vim.fn.glob(vim.fn.getcwd() .. '/zig-out/test/*', false, true)
+  if #binaries == 0 then
+    vim.notify('neotest-zig: no test binary in zig-out/test', vim.log.levels.WARN)
+    return dap.ABORT
+  end
+  if #binaries == 1 then
+    return binaries[1]
+  end
+  -- nio.ui.select holds the vim.ui.select that existed when nio loaded; this
+  -- looks it up per call, so a picker plugin set up later is used
+  local select = require('nio').wrap(function(items, opts, on_choice)
+    vim.ui.select(items, opts, on_choice)
+  end, 3)
+  local binary = select(binaries, { prompt = 'Test binary', format_item = vim.fs.basename })
+  return binary or dap.ABORT
+end
+
+--- neotest-zig's debug spec sources ~/.lldbinit unconditionally, and codelldb
+--- fails the launch when that file doesn't exist
+local function patch_zig_debug_spec()
+  local ok, zig = pcall(require, 'neotest-zig')
+  if not ok or zig.debug_spec_patched then
+    return
+  end
+  local build_spec = zig._build_spec_with_buildfile
+  zig._build_spec_with_buildfile = function(...)
+    local spec = build_spec(...)
+    if spec and type(spec.strategy) == 'table' then
+      spec.strategy.initCommands = nil
+      -- only set when the build succeeded
+      if spec.strategy.program then
+        spec.strategy.program = pick_zig_test_binary
+      end
+    end
+    return spec
+  end
+  zig.debug_spec_patched = true
+end
+
 --- the summary's expanded set lives on each adapter's SummaryComponent with no
 --- public function to clear it. the constructor is wrapped to collect the
 --- instances, before neotest.setup requires the consumer
@@ -377,6 +443,10 @@ return {
     'haydenmeade/neotest-jest',
     'nvim-neotest/neotest-python',
     'MisanthropicBit/neotest-busted',
+    'mrcjkb/rustaceanvim',
+    -- upstream lawrence-laz/neotest-zig stops at zig 0.14; this fork's runner
+    -- builds on 0.17. pinned to the reviewed commit
+    { 'ahmedalhulaibi/neotest-zig', commit = '8e826dbb770a1fffa4c8b184e3cbaefa372f7991' },
   },
   keys = {
     { '<leader>tt', neotest_fn(function()
@@ -415,6 +485,7 @@ return {
     expand_empty_subtest_positions()
     backfill_missing_results()
     fix_golang_discovery_cache()
+    patch_zig_debug_spec()
     track_summary_components()
 
     require('neotest').setup {
@@ -464,7 +535,17 @@ return {
           args = { '-v' },
           dap = { justMyCode = false },
         },
-        require 'neotest-busted' { local_luarocks_only = false },
+        require 'neotest-busted' {
+          local_luarocks_only = false,
+          -- its package.path drops lua's default ./?.lua, which plain busted
+          -- resolves spec helpers like require('test.fixtures') through
+          busted_paths = { './?.lua', './?/init.lua' },
+        },
+        -- test discovery and commands come from rust-analyzer; the dap strategy reuses :RustLsp debuggables
+        rust_adapter(),
+        require 'neotest-zig' {
+          dap = { adapter = 'codelldb' },
+        },
       },
       summary = {
         animated = true,

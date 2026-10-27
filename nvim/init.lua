@@ -9,6 +9,15 @@
   <leader>? opens cheatsheet.txt
 --]]
 
+-- NVIM_OSV=1 freezes startup until a debugger attaches on 8086, so the config
+-- itself can be stepped through. osv's server nvim runs with `-u NONE`
+if vim.env.NVIM_OSV == '1' then
+  -- unset so nvims started from this one (:terminal, git editors) don't block too
+  vim.env.NVIM_OSV = nil
+  vim.opt.rtp:prepend(vim.fn.stdpath 'data' .. '/lazy/one-small-step-for-vimkind')
+  require('osv').launch { port = 8086, blocking = true }
+end
+
 require('core.options').setup()
 require('core.keymaps').setup()
 require('core.autocmds').setup()

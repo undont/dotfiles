@@ -6,6 +6,27 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.154] - 2026-10-27
+
+### Added
+
+- nvim debugs any go main package from anywhere in the module, and debugs go TUIs under a headless dlv in a tmux split so the program keeps a real terminal. `nvim/lua/features/dap-configs.lua`
+- nvim debug configs for ts/js: node launch, chrome launched at a dev server, and attach to a running process. `nvim/lua/features/dap-configs.lua`
+- Shared codelldb launch, attach and tmux-split launch configs for c, c++, objc, swift, rust and zig. `nvim/lua/features/dap-configs.lua`
+- Lua debugging: osv for nvim plugin code, with `NVIM_OSV=1 nvim` holding startup until a debugger attaches so the config itself can be stepped through, and local-lua-debugger for standalone lua. `nvim/init.lua`, `nvim/lua/features/dap-configs.lua`, `nvim/lua/plugins/lsp.lua`
+- rustaceanvim runs rust-analyzer and adds rust debuggables and neotest; tests are rediscovered once rust-analyzer has loaded the workspace rather than on the next write. `nvim/lua/plugins/rust.lua`, `nvim/lua/plugins/lsp.lua`, `nvim/lua/plugins/test.lua`
+- Zig test running and debugging through a pinned neotest-zig fork. `nvim/lua/plugins/test.lua`
+
+### Changed
+
+- nvim debug keys moved from `<leader>b` to `<leader>r`, adding stop (`F4`), run to cursor (`F8`), run last (`F9`), hover and attach. `nvim/lua/plugins/debug.lua`, `nvim/lua/plugins/which-key.lua`, `nvim/cheatsheet.txt`
+
+### Fixed
+
+- Attaching to a headless dlv no longer starts a second delve. `nvim/lua/features/dap-configs.lua`
+- Stepping in go once the program is back in the go runtime continues instead of stepping through runtime code. `nvim/lua/plugins/debug.lua`
+- Removing a breakpoint from the breakpoint list also removes it from running debug sessions, and debug configs are no longer listed twice. `nvim/lua/features/dap-breakpoints.lua`, `nvim/lua/plugins/debug.lua`
+
 ## [0.2.153] - 2026-10-24
 
 ### Added
