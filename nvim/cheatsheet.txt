@@ -229,7 +229,7 @@ Diff open (vs index) | <leader>do (or :D)
 Diff branch total (vs base) | <leader>dt
 Diff branch by ticket | <leader>dT
 Diff file history | <leader>dh
-Diff PR-range review | <leader>dp
+Diff HEAD history (commit by commit) | <leader>dp
 Next/prev hunk | ]c / [c
 Next/prev file | ]f / [f
 More/less context | d= / d-
@@ -238,7 +238,6 @@ Stage / unstage all | S / U
 
 ## pr-review @pr-review
 List PRs | <leader>pl
-Open PR by number | <leader>po
 Start review | <leader>pr
 Resume review | <leader>pe
 Submit review | <leader>pm

@@ -42,20 +42,9 @@ return {
         desc = '[D]iff branch by [T]icket',
       },
       { '<leader>dh', '<cmd>Differ log<CR>', desc = '[D]iff file [H]istory' },
-      { '<leader>dp', '<cmd>Differ log origin/HEAD...HEAD<CR>', desc = '[D]iff [P]R review' },
+      { '<leader>dp', '<cmd>Differ log HEAD<CR>', desc = '[D]iff HEAD history ([P]er commit)' },
       -- pr review through the sidecar; <leader>dp above is a local history diff
       { '<leader>pl', '<cmd>Differ pr list<CR>', desc = '[L]ist PRs' },
-      {
-        '<leader>po',
-        function()
-          vim.ui.input({ prompt = 'PR number: ' }, function(input)
-            if input and input ~= '' then
-              vim.cmd('Differ pr ' .. input)
-            end
-          end)
-        end,
-        desc = '[O]pen by number',
-      },
       { '<leader>pr', '<cmd>Differ pr review<CR>', desc = '[R]eview start' },
       { '<leader>pe', '<cmd>Differ pr review resume<CR>', desc = 'Review r[E]sume' },
       { '<leader>pm', '<cmd>Differ pr review submit<CR>', desc = 'Review sub[M]it' },
