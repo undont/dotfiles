@@ -124,6 +124,9 @@ function M.setup()
     vim.api.nvim_set_hl(0, '@lsp.typemod.variable.readonly', { link = '@constant' })
     local call = vim.api.nvim_get_hl(0, { name = '@function.call', link = false })
     vim.api.nvim_set_hl(0, '@lsp.typemod.variable.signature', { fg = call.fg, italic = true })
+    -- zls sends `escapeSequence` over its own `string` token; nvim has no
+    -- default link for it, so the string colour covers the escape
+    vim.api.nvim_set_hl(0, '@lsp.type.escapeSequence', { link = '@string.escape' })
   end
   vim.api.nvim_create_autocmd('ColorScheme', {
     desc = 'Restyle LSP semantic token groups for the new colourscheme',

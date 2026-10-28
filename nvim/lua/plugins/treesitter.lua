@@ -92,8 +92,10 @@ return {
         end,
       })
 
-      -- go format verbs, which no query can reach: see the module header
+      -- go format verbs and zig format specifiers, which no query can reach:
+      -- see the module headers
       require('features.go-format-verbs').setup()
+      require('features.zig-format-specifiers').setup()
 
       -- language aliases for markdown code fences
       vim.treesitter.language.register('c_sharp', { 'csharp', 'cs' })
