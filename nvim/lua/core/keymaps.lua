@@ -28,6 +28,9 @@ function M.setup()
   vim.keymap.set({ 'n', 'x', 'o' }, 'M', '$', { desc = 'End of line' })
   vim.keymap.set('n', 'gm', 'm', { desc = 'Set mark' })
 
+  -- a count would jump to that buffer number, including ui2's hidden scratch buffers
+  vim.keymap.set('n', '<C-^>', '<Cmd>exe "normal! \\<C-^>"<CR>', { desc = 'Alternate file (ignores count)' })
+
   vim.keymap.set('n', '<leader>i', 'i<Space><Esc>', { desc = '[I]nsert space' })
 
   vim.keymap.set('t', '<Esc><Esc>', '<C-\\><C-n>', { desc = 'Exit terminal mode' })

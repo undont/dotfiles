@@ -14,7 +14,8 @@ runs `{ import = 'plugins' }`, so a lazy spec placed anywhere else never loads.
 
 `core/keymaps.lua` is a slim entry point: it defines a few fundamental
 editing tweaks (`<Esc>` hl-clear, `<leader>v`/`<leader>V` paste-last-yank,
-smart `i`/`a`, `<leader>i` insert-space, `m`/`M`/`gm` line nav, `gx`, terminal
+smart `i`/`a`, `<leader>i` insert-space, `m`/`M`/`gm` line nav, count-free
+`<C-^>`, `gx`, terminal
 escape, `<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
 and then calls `setup()` on the focused modules: core (folding, windows,
 macos-nav, refresh, spellcheck) and features (lists, diag-scan, build,
