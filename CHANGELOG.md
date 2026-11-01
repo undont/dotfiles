@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.155] - 2026-11-01
+
+### Added
+
+- Monokai Pro Astro theme. `themes/monokai-pro-astro.theme`, `nvim/colors/monokai-pro-astro.lua`, `nvim/lua/core/theme.lua`
+- Zig strings highlight format specifiers and escape sequences. `nvim/lua/features/zig-format-specifiers.lua`, `nvim/lua/core/autocmds.lua`, `nvim/lua/plugins/treesitter.lua`
+- nvim sets `GO_STD`, `RUST_STD` and `ZIG_STD` for opening std library sources with `:e`. `nvim/lua/features/std-paths.lua`, `nvim/init.lua`
+
+### Changed
+
+- File icons keep their language brand colours across themes. `nvim/lua/plugins/mini.lua`
+- `<leader>dp` steps through `HEAD` history commit by commit instead of the PR range, and `<leader>po` is removed. `nvim/lua/plugins/differ.lua`, `nvim/cheatsheet.txt`
+- `<C-^>` ignores a count. `nvim/lua/core/keymaps.lua`
+- `:w` closes the breakpoint list. `nvim/lua/features/dap-breakpoints.lua`
+- `o` in c files no longer continues a comment. `nvim/after/ftplugin/c.lua`
+- Kill-window, kill-pane and URL-picker popups act on the current pane. `tmux/tmux.conf.template`
+
+### Fixed
+
+- The exit alert bell no longer hangs the prompt when a tmux client is unresponsive. `tmux/scripts/_lib/alerts.sh`
+- osv no longer pauses on errors that plugins already catch. `nvim/init.lua`, `nvim/lua/features/dap-configs.lua`
+
 ## [0.2.154] - 2026-10-27
 
 ### Added
