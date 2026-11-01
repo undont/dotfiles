@@ -22,6 +22,7 @@ require('core.options').setup()
 require('core.keymaps').setup()
 require('core.autocmds').setup()
 require('features.tag-rename').setup()
+require('features.std-paths').setup()
 
 require('lazy-bootstrap').setup()
 
