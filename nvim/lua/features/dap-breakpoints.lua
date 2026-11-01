@@ -107,6 +107,9 @@ function M.open()
     vim.api.nvim_win_close(win, true)
   end
   vim.keymap.set('n', 'q', close, { buffer = buf })
+  vim.bo[buf].buftype = 'acwrite'
+  vim.api.nvim_buf_set_name(buf, 'dap-breakpoints://list')
+  vim.api.nvim_create_autocmd('BufWriteCmd', { buffer = buf, callback = close })
   vim.keymap.set('n', '<Esc>', close, { buffer = buf })
   vim.keymap.set('n', '<CR>', function()
     -- matched by text: rows shift once lines above are deleted
