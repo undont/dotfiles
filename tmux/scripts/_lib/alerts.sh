@@ -394,7 +394,8 @@ set_exit_alert() {
     if [[ "$ring_bell" == "true" ]]; then
         local _ctty
         while IFS= read -r _ctty; do
-            [[ -n "$_ctty" && -w "$_ctty" ]] && printf '\a' >"$_ctty" 2>/dev/null
+            # backgrounded: a client that stops reading (a sleeping ssh session) blocks the write
+            [[ -n "$_ctty" && -w "$_ctty" ]] && { printf '\a' >"$_ctty"; } 2>/dev/null &
         done < <(tmux list-clients -F '#{client_tty}' 2>/dev/null)
     fi
 }

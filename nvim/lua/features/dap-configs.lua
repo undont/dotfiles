@@ -451,7 +451,9 @@ function M.osv_toggle()
     vim.notify('osv stopped', vim.log.levels.INFO)
     return
   end
-  osv.launch { port = osv_port }
+  -- osv defaults to freezing on any error passed through debug.traceback,
+  -- which plugins' xpcall handlers do for errors they catch
+  osv.launch { port = osv_port, break_on_exception = false }
   vim.notify(('osv listening on %d'):format(osv_port), vim.log.levels.INFO)
 end
 

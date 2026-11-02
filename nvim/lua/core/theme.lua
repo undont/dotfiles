@@ -18,6 +18,7 @@ local theme_map = {
   ['solarized-dark'] = 'solarized-dark',
   ['one-dark'] = 'onedark',
   ['monokai'] = 'monokai',
+  ['monokai-pro-astro'] = 'monokai-pro-astro',
   ['ayu-dark'] = 'ayu-dark',
   ['everforest'] = 'everforest',
   ['kanagawa'] = 'kanagawa',

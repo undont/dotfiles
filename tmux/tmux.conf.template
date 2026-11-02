@@ -211,8 +211,8 @@ bind -N "tabs: rename window" -n M-r if-shell '[ #{client_width} -ge 80 ]' \
 bind -N "tabs: swap window left" -n "M-{" swap-window -t -1 \; select-window -t -1
 bind -N "tabs: swap window right" -n "M-}" swap-window -t +1 \; select-window -t +1
 bind -N "tabs: kill window" -n M-x if-shell '[ #{client_width} -ge 80 ]' \
-  'display-popup -E -w 50 -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"' \
-  'display-popup -E -w 95% -h 10 "TMUX_SESSION=#{session_name} TMUX_WINDOW=#{window_index} ~/.tmux/scripts/windows/kill.sh #{session_name}:#{window_index}"'
+  'display-popup -E -w 50 -h 10 "~/.tmux/scripts/windows/kill.sh"' \
+  'display-popup -E -w 95% -h 10 "~/.tmux/scripts/windows/kill.sh"'
 bind -N "session: kill session" -n M-q if-shell '[ #{client_width} -ge 80 ]' \
   'display-popup -E -w 50 -h 10 "~/.tmux/scripts/sessions/kill.sh"' \
   'display-popup -E -w 95% -h 10 "~/.tmux/scripts/sessions/kill.sh"'
@@ -363,8 +363,8 @@ bind -N "panes: split up" -n M-= split-window -v -b -c "#{pane_current_path}"
 
 # pane operations
 bind -N "panes: kill pane" -n M-s if-shell '[ #{client_width} -ge 80 ]' \
-  'display-popup -E -w 50 -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"' \
-  'display-popup -E -w 95% -h 10 "~/.tmux/scripts/panes/kill.sh #{session_name}:#{window_index}.#{pane_index}"'
+  'display-popup -E -w 50 -h 10 "~/.tmux/scripts/panes/kill.sh"' \
+  'display-popup -E -w 95% -h 10 "~/.tmux/scripts/panes/kill.sh"'
 bind -N "panes: zoom pane" -n M-z resize-pane -Z
 bind -N "panes: equalise pane sizes" -n "M-)" select-layout -E
 bind -N "panes: break pane to new window" E break-pane
@@ -390,7 +390,7 @@ bind -N "panes: resize pane right" -n M-L resize-pane -R 5
 # prefix+u = find all URLs in scrollback and open selected one
 # macOS: override the browser via local.conf, e.g. set -g @browser-app 'Arc'
 unbind u
-bind -N "tools: open a url from scrollback" u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
+bind -N "tools: open a url from scrollback" u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh"
 
 # ─────────────────────────────────────────
 # Nvim instance switcher (prefix + n)
@@ -840,7 +840,7 @@ run '~/.tmux/plugins/tpm/tpm'
 
 # override tmux-yank bindings (must be after plugin load)
 bind -N "scroll: yank line" -T copy-mode-vi Y send-keys -X select-line \; send-keys -X copy-pipe-and-cancel "{{CLIPBOARD_CMD}}"
-bind -N "tools: open a url from scrollback" u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh #{pane_id}"
+bind -N "tools: open a url from scrollback" u display-popup -w 95% -h 95% -E "source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; ~/.tmux/scripts/utils/pick-url.sh"
 
 bind -N "tools: copy a hint (fingers)" Space run -b "#{@fingers-cli} start #{pane_id}"
 bind -N "tools: jump to a hint (fingers)" J run -b "#{@fingers-cli} start #{pane_id} --mode jump"

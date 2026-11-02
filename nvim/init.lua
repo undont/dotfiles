@@ -15,13 +15,14 @@ if vim.env.NVIM_OSV == '1' then
   -- unset so nvims started from this one (:terminal, git editors) don't block too
   vim.env.NVIM_OSV = nil
   vim.opt.rtp:prepend(vim.fn.stdpath 'data' .. '/lazy/one-small-step-for-vimkind')
-  require('osv').launch { port = 8086, blocking = true }
+  require('osv').launch { port = 8086, blocking = true, break_on_exception = false }
 end
 
 require('core.options').setup()
 require('core.keymaps').setup()
 require('core.autocmds').setup()
 require('features.tag-rename').setup()
+require('features.std-paths').setup()
 
 require('lazy-bootstrap').setup()
 

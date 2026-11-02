@@ -1,0 +1,76 @@
+# shellcheck shell=bash
+# Monokai Pro Astro theme
+# monokai pro spectrum accents on a dark grey background
+# https://monokai.pro/
+
+THEME_NAME="Monokai Pro Astro"
+THEME_ACTIVE_ACCENT="green"
+
+# ══════════════════════════════════════════════════════════════
+# Base Colours
+# ══════════════════════════════════════════════════════════════
+
+TMUX_BG_PRIMARY="#1a1a1a"
+TMUX_FG_PRIMARY="#f7f1ff"
+TMUX_BG_SECONDARY="#2c2c2c"
+TMUX_FG_SECONDARY="#b1aeb7"
+
+# ══════════════════════════════════════════════════════════════
+# Accent Colours
+# ══════════════════════════════════════════════════════════════
+
+TMUX_ACCENT_PURPLE="#948ae3"
+TMUX_ACCENT_PINK="#fc618d"
+TMUX_ACCENT_CYAN="#5ad4e6"
+TMUX_ACCENT_GREEN="#7bd88f"
+TMUX_ACCENT_YELLOW="#fce566"
+TMUX_ACCENT_RED="#fc618d"
+
+# ══════════════════════════════════════════════════════════════
+# Plugin Status Indicators
+# ══════════════════════════════════════════════════════════════
+
+TMUX_CPU_LOW_BG="#1b2f31"
+TMUX_CPU_MEDIUM_BG="#35241a"
+TMUX_CPU_HIGH_BG="#242331"
+TMUX_RAM_LOW_BG="#202f23"
+TMUX_RAM_MEDIUM_BG="#1b2f31"
+TMUX_RAM_HIGH_BG="#35241a"
+TMUX_BATTERY_NORMAL_BG="#202f23"
+TMUX_BATTERY_LOW_BG="#351c23"
+
+# ══════════════════════════════════════════════════════════════
+# Ghostty Colours
+# ══════════════════════════════════════════════════════════════
+
+GHOSTTY_BACKGROUND="#1a1a1a"
+GHOSTTY_FOREGROUND="#f7f1ff"
+GHOSTTY_CURSOR_COLOR="#fd9353"
+GHOSTTY_CURSOR_TEXT="#1a1a1a"
+GHOSTTY_SELECTION_BG="#403e41"
+GHOSTTY_SELECTION_FG="#f7f1ff"
+
+# Terminal palette
+GHOSTTY_PALETTE_0="#1a1a1a"
+GHOSTTY_PALETTE_1="#fc618d"
+GHOSTTY_PALETTE_2="#7bd88f"
+GHOSTTY_PALETTE_3="#fce566"
+GHOSTTY_PALETTE_4="#fd9353"
+GHOSTTY_PALETTE_5="#948ae3"
+GHOSTTY_PALETTE_6="#5ad4e6"
+GHOSTTY_PALETTE_7="#f7f1ff"
+GHOSTTY_PALETTE_8="#86848a"
+GHOSTTY_PALETTE_9="#fc618d"
+GHOSTTY_PALETTE_10="#7bd88f"
+GHOSTTY_PALETTE_11="#fce566"
+GHOSTTY_PALETTE_12="#fd9353"
+GHOSTTY_PALETTE_13="#948ae3"
+GHOSTTY_PALETTE_14="#5ad4e6"
+GHOSTTY_PALETTE_15="#f7f1ff"
+
+# ══════════════════════════════════════════════════════════════
+# Neovim Colours
+# ══════════════════════════════════════════════════════════════
+
+NVIM_COLORSCHEME="monokai-pro-astro"
+NVIM_FG_VARIABLE="#f7f1ff"

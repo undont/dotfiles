@@ -4,7 +4,7 @@
 
 Theme colours live in `.theme` files. Switching theme renders the repo's config templates into XDG locations (`~/.config/`), so the chosen theme never shows up as a change in the repository. Themes come in two flavours:
 
-- **Hand-crafted themes**: curated `.theme` files in `themes/` (14 built-in)
+- **Hand-crafted themes**: curated `.theme` files in `themes/` (15 built-in)
 - **Generated themes**: auto-generated from any Ghostty built-in theme via `dotfiles theme generate`
 
 Both types use the same `.theme` format and work with `dotfiles theme`.
@@ -15,7 +15,7 @@ Both types use the same `.theme` format and work with `dotfiles theme`.
 
 ```
 Repository (tracked in git):
-  themes/*.theme                   - Hand-crafted theme definitions (14 themes)
+  themes/*.theme                   - Hand-crafted theme definitions (15 themes)
   tmux/tmux.conf.template          - Tmux config template with {{PLACEHOLDERS}}
   ghostty/config.template          - Ghostty config template with {{PLACEHOLDERS}}
   gh-dash/config.yml.template      - gh-dash config template with {{PLACEHOLDERS}}

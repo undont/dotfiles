@@ -13,35 +13,69 @@ return {
       local shell_icon = vim.fn.nr2char(0xe691) -- nf-seti-shell (matches mini's `sh` filetype glyph)
       local claude_icon = vim.fn.nr2char(0xf06c4) -- nf-md-asterisk (anthropic-style sunburst)
       local me_icon = vim.fn.nr2char(0xf007) -- nf-fa-user
+
+      -- icons without an explicit hl take the nvim-web-devicons brand colour
+      -- instead of mini's theme-derived one. devicons reapplies its DevIcon*
+      -- groups on ColorScheme
+      local devicons = require 'nvim-web-devicons'
+      local brand_lookup = {
+        filetype = function(name)
+          local _, hl = devicons.get_icon_by_filetype(name)
+          return hl
+        end,
+        extension = function(name)
+          local _, hl = devicons.get_icon('', name)
+          return hl
+        end,
+        file = function(name)
+          local _, hl = devicons.get_icon(name)
+          return hl
+        end,
+      }
+      local function with_brand_hl(category, entries)
+        local names = require('mini.icons').list(category)
+        vim.list_extend(names, vim.tbl_keys(entries))
+        for _, name in ipairs(names) do
+          local entry = entries[name] or {}
+          local hl = entry.hl == nil and brand_lookup[category](name) or nil
+          if hl ~= nil then
+            entry.hl = hl
+            entries[name] = entry
+          end
+        end
+        return entries
+      end
+
       require('mini.icons').setup {
-        filetype = {
+        filetype = with_brand_hl('filetype', {
           yaml = { glyph = yaml_icon },
           template = { glyph = template_icon },
           go = { glyph = gopher_icon },
           -- render-markdown looks up code-block languages as filetypes
-          cs = { glyph = csharp_icon, hl = 'MiniIconsGreen' },
-          csharp = { glyph = csharp_icon, hl = 'MiniIconsGreen' },
+          cs = { glyph = csharp_icon },
+          csharp = { glyph = csharp_icon, hl = brand_lookup.filetype 'cs' },
           -- transcript speaker fences (```claude / ```me) in vault notes.
           -- render-markdown resolves the fence word through vim.filetype.match,
           -- where 'me' is nroff, so the `me` glyph is set on nroff
           claude = { glyph = claude_icon, hl = 'ClaudeIcon' }, -- ClaudeIcon defined in plugins/which-key.lua
           nroff = { glyph = me_icon, hl = 'MiniIconsBlue' },
-        },
+        }),
         os = {
           git = { glyph = '' }, -- nf-oct-git_branch
         },
-        extension = {
+        extension = with_brand_hl('extension', {
           template = { glyph = template_icon },
           go = { glyph = gopher_icon },
           yml = { glyph = yaml_icon },
           yaml = { glyph = yaml_icon },
           -- mini.icons resolves sh/bash/zsh through vim.filetype.match(), which
           -- returns nil for them during the dashboard's first paint, and caches
-          -- the generic glyph for the session. hl matches mini's own for these
-          sh = { glyph = shell_icon, hl = 'MiniIconsGrey' },
-          bash = { glyph = shell_icon, hl = 'MiniIconsGrey' },
-          zsh = { glyph = shell_icon, hl = 'MiniIconsGreen' },
-        },
+          -- the generic glyph for the session
+          sh = { glyph = shell_icon },
+          bash = { glyph = shell_icon },
+          zsh = { glyph = shell_icon },
+        }),
+        file = with_brand_hl('file', {}),
       }
 
       -- 'gs' prefix: an 's' prefix delays the native 's'
