@@ -15,7 +15,8 @@ To add a new theme, you need to update **three** files:
 Create a new `.theme` file following the structure of any existing theme. All themes share the same variable format:
 
 ```bash
-#!/bin/bash
+# vim: ft=sh
+# shellcheck shell=bash
 # <Theme Name> theme
 # <URL to theme project>
 
@@ -45,6 +46,7 @@ TMUX_ACCENT_RED="#ffa1a1"
 # Neovim colourscheme name (must match nvim/colors/<name>.lua)
 NVIM_COLORSCHEME="<theme-name>"
 NVIM_FG_VARIABLE="#cfd8f6"      # Variable identifiers
+NVIM_COMMENT="#6272a4"          # nvim-only colours, named after the scheme's colour names
 ```
 
 ### 2. Create Neovim Colourscheme: `nvim/colors/<name>.lua`
@@ -58,7 +60,17 @@ Create a custom colourscheme file. Use any existing file as a template (e.g. `nv
 - **Treesitter**: @variable, @function, @keyword, @string, @type, etc.
 - **Plugins**: Telescope, Neo-tree, Which-key, Mini statusline
 
-The `colors` table at the top should match the `.theme` file values. `NVIM_COLORSCHEME` must match `vim.g.colors_name`, and `NVIM_FG_VARIABLE` should match the colourscheme's `fg_variable`.
+The scheme holds no hex values. Its `colors` table maps each colour name to a key in the `.theme` file:
+
+```lua
+local colors = require('core.palette').load('<theme-name>', {
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  purple = 'GHOSTTY_PALETTE_4',
+  comment = 'NVIM_COMMENT',
+})
+```
+
+Point a colour at the key that already holds its value; add an `NVIM_<NAME>` key only for a colour no other key has. A missing key fails `:colorscheme` with the theme file and key name. `NVIM_COLORSCHEME` must match `vim.g.colors_name`.
 
 ### 3. Update Theme Mapping: `nvim/lua/core/theme.lua`
 

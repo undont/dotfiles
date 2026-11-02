@@ -146,7 +146,7 @@ else
     fail "theme-switch should handle PLATFORM_CONFIG substitution"
 fi
 
-if grep -q 'mod="opt"' "$THEME_SWITCH" && grep -q 'mod="alt"' "$THEME_SWITCH"; then
+if grep -q 'PLATFORM_MOD="opt"' "$THEME_SWITCH" && grep -q 'PLATFORM_MOD="alt"' "$THEME_SWITCH"; then
     pass "theme-switch has both macOS (opt) and Linux (alt) modifier keys"
 else
     fail "theme-switch should have both opt and alt modifier key variants"

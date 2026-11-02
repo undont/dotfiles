@@ -86,6 +86,8 @@ The Neovim theme loader (`nvim/lua/core/theme.lua`) reads `~/.config/dotfiles/cu
 3. A `vim.uv` file watcher monitors `current-theme` for live reload
 4. Scheme names are validated (`^[a-z0-9%-]+$`) before path construction to prevent traversal
 
+The hand-crafted schemes in `nvim/colors/` hold no hex values. Each maps its colour names to `.theme` keys through `require('core.palette').load('<theme>', { ... })`, which reads `themes/<theme>.theme` at load time and errors on a missing key. A colour points at the key that already holds its value (`GHOSTTY_PALETTE_*` first, then `TMUX_*`); colours only nvim uses live under `NVIM_*` keys named after the scheme's own colour names (`NVIM_COMMENT`, `NVIM_PEACH`). Editing a `.theme` value changes every tool that reads it, nvim included.
+
 ### Highlight Attributes
 
 Italic marks text that is not literal code. Three groups carry it, in every theme:
