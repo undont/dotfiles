@@ -302,14 +302,7 @@ generate_nvim_colourscheme()  -- Output nvim/colors/generated/<name>.lua
 
 ### Template Processing
 
-The theme switcher (`scripts/theme-switch`) uses `sed` for fast template processing:
-
-```bash
-sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
-    -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
-    # ... more replacements
-    "$TMUX_TEMPLATE" > "$TMUX_OUTPUT"
-```
+`render_template` in `scripts/theme-switch` fills every template. Each `{{KEY}}` placeholder takes the value of the shell variable `KEY` (a theme variable, a derived value from `theme-defaults.sh`, or one set by the switcher such as `CLIPBOARD_CMD` or `PLATFORM_CONFIG`), so a new placeholder needs no other registration. A placeholder with no matching variable fails the switch and names the missing key. Only `{{UPPER_CASE}}` names are placeholders: gh-dash's own `{{.PrNumber}}` fields pass through unchanged.
 
 ### XDG Directory Creation
 
