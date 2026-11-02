@@ -1,5 +1,4 @@
--- nightfox colourscheme for nvim
--- matches the dotfiles nightfox.theme exactly
+-- nightfox colourscheme for nvim, coloured from themes/nightfox.theme
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -9,43 +8,43 @@ end
 vim.g.colors_name = 'nightfox'
 vim.o.termguicolors = true
 
--- theme colours (matching themes/nightfox.theme)
-local colors = {
+local colors = require('core.palette').load('nightfox', {
   -- base colours
-  bg_primary = '#192330',
-  fg_primary = '#cdcecf',
-  bg_secondary = '#212e3f',
-  fg_secondary = '#71839b',
-  fg_variable = '#b6bbc2',
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  fg_primary = 'GHOSTTY_FOREGROUND',
+  bg_secondary = 'TMUX_BG_SECONDARY',
+  fg_secondary = 'NVIM_COMMENT',
+  fg_variable = 'NVIM_FG_VARIABLE',
 
   -- accents
-  purple = '#c792ea',
-  pink = '#d67ad2',
-  cyan = '#81b29a',
-  green = '#a3be8c',
-  yellow = '#dbc074',
-  red = '#c94f6d',
+  purple = 'TMUX_ACCENT_PURPLE',
+  pink = 'TMUX_ACCENT_PINK',
+  cyan = 'GHOSTTY_PALETTE_2',
+  green = 'TMUX_ACCENT_GREEN',
+  yellow = 'GHOSTTY_PALETTE_3',
+  red = 'NVIM_RED',
 
   -- additional shades
-  selection = '#2b3b51',
-  reference = '#243244',
-  comment = '#71839b',
-  line_highlight = '#1e2a38',
-  blue = '#719cd6',
-  orange = '#f4a261',
+  selection = 'NVIM_SELECTION',
+  reference = 'NVIM_REFERENCE',
+  comment = 'NVIM_COMMENT',
+  line_highlight = 'NVIM_LINE_HIGHLIGHT',
+  blue = 'NVIM_BLUE',
+  orange = 'NVIM_ORANGE',
 
   -- syntax roles (mirroring upstream nightfox.nvim)
-  magenta = '#9d79d6', -- keywords
-  magenta_bright = '#baa1e2', -- conditionals, loops
-  blue_bright = '#86abdc', -- functions
-  cyan_base = '#63cdcf', -- identifiers, constructors
-  cyan_bright = '#7ad5d6', -- builtin types, parameters, modules
-  string_green = '#81b29a', -- strings
-  orange_bright = '#f6b079', -- constants
-  yellow_bright = '#e0c989', -- regex, escapes
-  pink_bright = '#dc8ed9', -- preproc
-  punct = '#aeafb0', -- operators, punctuation
-}
+  magenta = 'NVIM_MAGENTA', -- keywords
+  magenta_bright = 'GHOSTTY_PALETTE_13', -- conditionals, loops
+  blue_bright = 'GHOSTTY_PALETTE_12', -- functions
+  cyan_base = 'GHOSTTY_PALETTE_6', -- identifiers, constructors
+  cyan_bright = 'NVIM_CYAN_BRIGHT', -- builtin types, parameters, modules
+  string_green = 'GHOSTTY_PALETTE_2', -- strings
+  orange_bright = 'NVIM_ORANGE_BRIGHT', -- constants
+  yellow_bright = 'GHOSTTY_PALETTE_11', -- regex, escapes
+  pink_bright = 'NVIM_PINK_BRIGHT', -- preproc
+  punct = 'NVIM_PUNCT', -- operators, punctuation
+  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
+})
 
 -- set a highlight group
 local function hl(group, opts)
@@ -59,14 +58,14 @@ hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
 hl('ColorColumn', { bg = colors.line_highlight })
 hl('Cursor', { fg = colors.bg_primary, bg = colors.fg_primary })
 hl('CursorLine', { bg = colors.line_highlight })
-hl('CursorLineNr', { fg = '#c792ea', bold = true })
+hl('CursorLineNr', { fg = colors.purple, bold = true })
 hl('LineNr', { fg = colors.comment })
 hl('SignColumn', { bg = colors.bg_primary })
 hl('Visual', { bg = colors.selection })
 hl('VisualNOS', { bg = colors.selection })
 hl('Search', { fg = colors.bg_primary, bg = colors.yellow })
-hl('IncSearch', { fg = colors.bg_primary, bg = '#d67ad2' })
-hl('MatchParen', { fg = '#d67ad2', bold = true })
+hl('IncSearch', { fg = colors.bg_primary, bg = colors.pink })
+hl('MatchParen', { fg = colors.pink, bold = true })
 hl('Question', { fg = colors.cyan })
 hl('ModeMsg', { fg = colors.green, bold = true })
 hl('MoreMsg', { fg = colors.green })
@@ -77,16 +76,16 @@ hl('WinSeparator', { fg = colors.bg_secondary })
 hl('Folded', { fg = colors.comment, bg = colors.line_highlight })
 hl('FoldColumn', { fg = colors.comment })
 hl('Pmenu', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('PmenuSel', { fg = colors.bg_primary, bg = '#c792ea' })
+hl('PmenuSel', { fg = colors.bg_primary, bg = colors.purple })
 hl('PmenuSbar', { bg = colors.bg_secondary })
-hl('PmenuThumb', { bg = '#c792ea' })
-hl('StatusLine', { fg = '#c792ea', bg = colors.bg_secondary })
+hl('PmenuThumb', { bg = colors.purple })
+hl('StatusLine', { fg = colors.purple, bg = colors.bg_secondary })
 hl('StatusLineNC', { fg = colors.comment, bg = colors.bg_secondary })
 hl('TabLine', { fg = colors.fg_secondary, bg = colors.bg_secondary })
 hl('TabLineFill', { bg = colors.bg_secondary })
-hl('TabLineSel', { fg = '#c792ea', bg = colors.bg_primary, bold = true })
+hl('TabLineSel', { fg = colors.purple, bg = colors.bg_primary, bold = true })
 hl('Directory', { fg = colors.cyan })
-hl('Title', { fg = '#d67ad2', bold = true })
+hl('Title', { fg = colors.pink, bold = true })
 hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
@@ -126,7 +125,7 @@ hl('Debug', { fg = colors.red })
 hl('Underlined', { fg = colors.cyan, underline = true })
 hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
-hl('Todo', { fg = '#d67ad2', bold = true })
+hl('Todo', { fg = colors.pink, bold = true })
 
 -- git signs
 hl('GitSignsAdd', { fg = colors.green })
@@ -195,43 +194,43 @@ hl('@comment', { link = 'Comment' })
 hl('@markup.strong', { bold = true })
 hl('@markup.italic', { italic = true })
 hl('@markup.underline', { underline = true })
-hl('@markup.heading', { fg = '#d67ad2', bold = true })
+hl('@markup.heading', { fg = colors.pink, bold = true })
 hl('@markup.link', { fg = colors.cyan, underline = true })
 hl('@markup.link.url', { fg = colors.purple, underline = true })
-hl('@markup.list', { fg = '#81b29a' })
-hl('@markup.raw', { fg = '#a3be8c' })
+hl('@markup.list', { fg = colors.cyan })
+hl('@markup.raw', { fg = colors.green })
 
 -- Telescope
-hl('TelescopeBorder', { fg = '#c792ea', bg = colors.bg_secondary })
-hl('TelescopePromptBorder', { fg = '#d67ad2', bg = colors.bg_secondary })
-hl('TelescopePromptTitle', { fg = '#d67ad2', bold = true })
-hl('TelescopePreviewTitle', { fg = '#c792ea', bold = true })
-hl('TelescopeResultsTitle', { fg = '#c792ea', bold = true })
-hl('TelescopeSelection', { fg = '#c792ea', bg = colors.selection, bold = true })
-hl('TelescopeMatching', { fg = '#d67ad2', bold = true })
+hl('TelescopeBorder', { fg = colors.purple, bg = colors.bg_secondary })
+hl('TelescopePromptBorder', { fg = colors.pink, bg = colors.bg_secondary })
+hl('TelescopePromptTitle', { fg = colors.pink, bold = true })
+hl('TelescopePreviewTitle', { fg = colors.purple, bold = true })
+hl('TelescopeResultsTitle', { fg = colors.purple, bold = true })
+hl('TelescopeSelection', { fg = colors.purple, bg = colors.selection, bold = true })
+hl('TelescopeMatching', { fg = colors.pink, bold = true })
 
 -- neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#424d5b' })
+hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
 hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
 hl('NeoTreeDirectoryName', { fg = colors.cyan })
 hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = '#d67ad2' })
+hl('NeoTreeFileNameOpened', { fg = colors.pink })
 hl('NeoTreeGitModified', { fg = colors.yellow })
 hl('NeoTreeGitAdded', { fg = colors.green })
 hl('NeoTreeGitDeleted', { fg = colors.red })
 hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = '#d67ad2', bold = true })
+hl('NeoTreeRootName', { fg = colors.pink, bold = true })
 
 -- which-key
-hl('WhichKey', { fg = '#c792ea' })
-hl('WhichKeyGroup', { fg = '#d67ad2' })
+hl('WhichKey', { fg = colors.purple })
+hl('WhichKeyGroup', { fg = colors.pink })
 hl('WhichKeyDesc', { fg = colors.fg_primary })
 hl('WhichKeySeparator', { fg = colors.comment })
 
 -- mini.nvim statusline
-hl('MiniStatuslineModeNormal', { fg = colors.bg_primary, bg = '#c792ea', bold = true })
+hl('MiniStatuslineModeNormal', { fg = colors.bg_primary, bg = colors.purple, bold = true })
 hl('MiniStatuslineModeInsert', { fg = colors.bg_primary, bg = colors.green, bold = true })
 hl('MiniStatuslineModeVisual', { fg = colors.bg_primary, bg = colors.purple, bold = true })
 hl('MiniStatuslineModeReplace', { fg = colors.bg_primary, bg = colors.red, bold = true })

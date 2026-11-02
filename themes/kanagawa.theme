@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Kanagawa theme
 # https://github.com/rebelot/kanagawa.nvim
@@ -73,3 +74,14 @@ GHOSTTY_PALETTE_15="#dcd7ba"
 
 NVIM_COLORSCHEME="kanagawa"
 NVIM_FG_VARIABLE="#bab6a7"
+NVIM_FG_SECONDARY="#54546d"
+NVIM_RED="#c34043"
+NVIM_SELECTION="#2d4f67"
+NVIM_REFERENCE="#293a4b"
+NVIM_COMMENT="#727169"
+NVIM_LINE_HIGHLIGHT="#25252f"
+NVIM_ORANGE="#ffa066"
+NVIM_PARAMETER="#b8b4d0"
+NVIM_PUNCT="#9cabca"
+NVIM_WAVE_RED="#e46876"
+NVIM_TREE_CURSOR_LINE="#494955"

@@ -1,4 +1,4 @@
--- monokai colorscheme for nvim, matching the dotfiles monokai theme exactly
+-- monokai colourscheme for nvim, coloured from themes/monokai.theme
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -8,37 +8,37 @@ end
 vim.g.colors_name = 'monokai'
 vim.o.termguicolors = true
 
--- theme colours (matching themes/monokai.theme)
-local colors = {
+local colors = require('core.palette').load('monokai', {
   -- base colours
-  bg_primary = '#272822',
-  fg_primary = '#f8f8f2',
-  bg_secondary = '#3e3d32',
-  fg_secondary = '#75715e',
-  fg_variable = '#d7d6cd',
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  fg_primary = 'GHOSTTY_FOREGROUND',
+  bg_secondary = 'TMUX_BG_SECONDARY',
+  fg_secondary = 'NVIM_COMMENT',
+  fg_variable = 'NVIM_FG_VARIABLE',
 
   -- accents
-  purple = '#ae81ff',
-  pink = '#f92672',
-  cyan = '#66d9ef',
-  green = '#a6e22e',
-  yellow = '#e6db74',
-  red = '#ff5555',
+  purple = 'GHOSTTY_PALETTE_5',
+  pink = 'GHOSTTY_PALETTE_9',
+  cyan = 'GHOSTTY_PALETTE_4',
+  green = 'GHOSTTY_PALETTE_2',
+  yellow = 'TMUX_ACCENT_YELLOW',
+  red = 'NVIM_RED',
 
   -- additional shades
-  selection = '#49483e',
-  reference = '#444238',
-  comment = '#75715e',
-  line_highlight = '#3e3d32',
+  selection = 'NVIM_SELECTION',
+  reference = 'NVIM_REFERENCE',
+  comment = 'NVIM_COMMENT',
+  line_highlight = 'GHOSTTY_SELECTION_BG',
 
   -- bright variants
-  bright_green = '#a6e22e',
-  bright_yellow = '#f4bf75',
-  bright_cyan = '#a1efe4',
+  bright_green = 'GHOSTTY_PALETTE_10',
+  bright_yellow = 'GHOSTTY_PALETTE_11',
+  bright_cyan = 'GHOSTTY_PALETTE_14',
 
   -- syntax roles (mirroring upstream monokai.nvim classic)
-  orange = '#fd971f', -- parameters, builtin variables
-}
+  orange = 'NVIM_ORANGE', -- parameters, builtin variables
+  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
+})
 
 -- set a highlight group
 local function hl(group, opts)
@@ -206,7 +206,7 @@ hl('TelescopeMatching', { fg = colors.pink, bold = true })
 -- Neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#5a5a50' })
+hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
 hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
 hl('NeoTreeDirectoryName', { fg = colors.cyan })
 hl('NeoTreeFileName', { fg = colors.fg_primary })

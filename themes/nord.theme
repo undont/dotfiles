@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Nord theme
 # https://www.nordtheme.com/
@@ -73,3 +74,12 @@ GHOSTTY_PALETTE_15="#eceff4"
 
 NVIM_COLORSCHEME="nord"
 NVIM_FG_VARIABLE="#c4c9d2"
+NVIM_FG_SECONDARY="#4c566a"
+NVIM_PINK="#d08770"
+NVIM_SELECTION="#434c5e"
+NVIM_REFERENCE="#3b4352"
+NVIM_COMMENT="#616e88"
+NVIM_LINE_HIGHLIGHT="#333a47"
+NVIM_FROST_BLUE="#5e81ac"
+NVIM_IDENT="#d8dee9"
+NVIM_TREE_CURSOR_LINE="#585e6b"

@@ -1,5 +1,4 @@
--- synthwave colourscheme for nvim
--- matches the dotfiles synthwave theme exactly
+-- synthwave colourscheme for nvim, coloured from themes/synthwave.theme
 -- cyberpunk vaporwave aesthetic
 
 vim.cmd 'highlight clear'
@@ -10,45 +9,45 @@ end
 vim.g.colors_name = 'synthwave'
 vim.o.termguicolors = true
 
--- theme colours (matching themes/synthwave.theme)
-local colors = {
+local colors = require('core.palette').load('synthwave', {
   -- base colours
-  bg_primary = '#1a1226',
-  fg_primary = '#e4dfed',
-  bg_secondary = '#2a1f3d',
-  fg_secondary = '#9d8ec7',
-  fg_variable = '#d2cbe4',
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  fg_primary = 'GHOSTTY_FOREGROUND',
+  bg_secondary = 'TMUX_BG_SECONDARY',
+  fg_secondary = 'GHOSTTY_PALETTE_8',
+  fg_variable = 'NVIM_FG_VARIABLE',
 
   -- accents
-  purple = '#b794f6',
-  pink = '#ff2e97',
-  cyan = '#00d9ff',
-  green = '#39ff14',
-  yellow = '#ffd700',
-  red = '#ff003c',
+  purple = 'TMUX_ACCENT_PURPLE',
+  pink = 'GHOSTTY_PALETTE_5',
+  cyan = 'GHOSTTY_PALETTE_4',
+  green = 'GHOSTTY_PALETTE_2',
+  yellow = 'GHOSTTY_PALETTE_3',
+  red = 'GHOSTTY_PALETTE_1',
 
   -- additional shades
-  selection = '#3d2861',
-  reference = '#30204b',
-  comment = '#6b5a82',
-  line_highlight = '#241735',
+  selection = 'NVIM_SELECTION',
+  reference = 'NVIM_REFERENCE',
+  comment = 'NVIM_COMMENT',
+  line_highlight = 'NVIM_LINE_HIGHLIGHT',
 
   -- bright variants
-  bright_cyan = '#5cefff',
-  bright_pink = '#ff5ac8',
-  bright_green = '#6bff59',
-  bright_purple = '#d6acff',
+  bright_cyan = 'GHOSTTY_PALETTE_12',
+  bright_pink = 'GHOSTTY_PALETTE_13',
+  bright_green = 'GHOSTTY_PALETTE_10',
+  bright_purple = 'NVIM_BRIGHT_PURPLE',
 
   -- syntax roles (mirroring upstream synthwave-vscode)
-  neon_cyan = '#36f9f6', -- functions, escapes
-  neon_yellow = '#fede5d', -- keywords, operators, attributes
-  neon_red = '#fe4450', -- types, modules, builtins
-  neon_orange = '#ff8b39', -- strings
-  salmon = '#f97e72', -- constants, numbers
-  neon_pink = '#ff7edb', -- variables, properties
-  neon_green = '#72f1b8', -- tags, preproc
-  punct = '#b6b1b1', -- punctuation
-}
+  neon_cyan = 'NVIM_NEON_CYAN', -- functions, escapes
+  neon_yellow = 'NVIM_NEON_YELLOW', -- keywords, operators, attributes
+  neon_red = 'NVIM_NEON_RED', -- types, modules, builtins
+  neon_orange = 'NVIM_NEON_ORANGE', -- strings
+  salmon = 'NVIM_SALMON', -- constants, numbers
+  neon_pink = 'NVIM_NEON_PINK', -- variables, properties
+  neon_green = 'NVIM_NEON_GREEN', -- tags, preproc
+  punct = 'NVIM_PUNCT', -- punctuation
+  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
+})
 
 -- set a highlight group
 local function hl(group, opts)
@@ -216,7 +215,7 @@ hl('TelescopeMatching', { fg = colors.pink, bold = true })
 -- Neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#49405a' })
+hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
 hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
 hl('NeoTreeDirectoryName', { fg = colors.cyan })
 hl('NeoTreeFileName', { fg = colors.fg_primary })

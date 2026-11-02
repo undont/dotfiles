@@ -1,5 +1,6 @@
+# vim: ft=sh
 # shellcheck shell=bash
-# Dracula theme - current default
+# Dracula theme
 # https://draculatheme.com/
 
 THEME_NAME="Dracula"

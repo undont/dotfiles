@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Gruvbox Dark theme
 # https://github.com/morhetz/gruvbox
@@ -73,3 +74,12 @@ GHOSTTY_PALETTE_15="#ebdbb2"
 
 NVIM_COLORSCHEME="gruvbox"
 NVIM_FG_VARIABLE="#d5c5a2"
+NVIM_COMMENT="#928374"
+NVIM_PURPLE="#b16286"
+NVIM_SELECTION="#504945"
+NVIM_REFERENCE="#46403e"
+NVIM_DARK_RED="#cc241d"
+NVIM_DARK_BLUE="#458588"
+NVIM_ORANGE="#fe8019"
+NVIM_PUNCT="#bdae93"
+NVIM_TREE_CURSOR_LINE="#595554"

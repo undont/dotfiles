@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Catppuccin Mocha theme
 # https://github.com/catppuccin/catppuccin
@@ -73,3 +74,13 @@ GHOSTTY_PALETTE_15="#a6adc8"
 
 NVIM_COLORSCHEME="catppuccin-mocha"
 NVIM_FG_VARIABLE="#b5bcd8"
+NVIM_COMMENT="#6c7086"
+NVIM_REFERENCE="#2c2c3e"
+NVIM_LINE_HIGHLIGHT="#262637"
+NVIM_PEACH="#fab387"
+NVIM_MAROON="#eba0ac"
+NVIM_LAVENDER="#b4befe"
+NVIM_FLAMINGO="#f2cdcd"
+NVIM_SAPPHIRE="#74c7ec"
+NVIM_OVERLAY2="#9399b2"
+NVIM_TREE_CURSOR_LINE="#4f5060"

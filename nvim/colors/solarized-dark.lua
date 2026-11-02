@@ -1,5 +1,4 @@
--- Solarized Dark colourscheme for nvim
--- matches the dotfiles solarized-dark theme exactly
+-- solarized-dark colourscheme for nvim, coloured from themes/solarized-dark.theme
 -- based on Ethan Schoonover's Solarized colour palette
 
 vim.cmd 'highlight clear'
@@ -10,39 +9,39 @@ end
 vim.g.colors_name = 'solarized-dark'
 vim.o.termguicolors = true
 
--- theme colours (matching themes/solarized-dark.theme)
-local colors = {
+local colors = require('core.palette').load('solarized-dark', {
   -- base colours
-  bg_primary = '#002b36',
-  fg_primary = '#93a1a1',
-  bg_secondary = '#073642',
-  fg_secondary = '#657b83',
-  fg_variable = '#88989a',
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  fg_primary = 'GHOSTTY_FOREGROUND',
+  bg_secondary = 'TMUX_BG_SECONDARY',
+  fg_secondary = 'NVIM_FG_SECONDARY',
+  fg_variable = 'NVIM_FG_VARIABLE',
 
   -- accents
-  purple = '#6c71c4',
-  pink = '#d33682',
-  cyan = '#2aa198',
-  green = '#859900',
-  yellow = '#b58900',
-  red = '#dc322f',
+  purple = 'GHOSTTY_PALETTE_13',
+  pink = 'NVIM_PINK',
+  cyan = 'GHOSTTY_PALETTE_14',
+  green = 'GHOSTTY_PALETTE_10',
+  yellow = 'GHOSTTY_PALETTE_11',
+  red = 'GHOSTTY_PALETTE_9',
 
   -- additional solarized colours
-  blue = '#268bd2',
-  orange = '#cb4b16',
-  base01 = '#586e75',
-  base00 = '#657b83',
-  base0 = '#839496',
-  base1 = '#93a1a1',
-  base2 = '#eee8d5',
-  base3 = '#fdf6e3',
+  blue = 'GHOSTTY_PALETTE_12',
+  orange = 'NVIM_ORANGE',
+  base01 = 'NVIM_COMMENT',
+  base00 = 'NVIM_FG_SECONDARY',
+  base0 = 'NVIM_BASE0',
+  base1 = 'GHOSTTY_FOREGROUND',
+  base2 = 'GHOSTTY_PALETTE_7',
+  base3 = 'GHOSTTY_PALETTE_15',
 
   -- additional shades
-  selection = '#073642',
-  reference = '#133e4a',
-  comment = '#586e75',
-  line_highlight = '#073642',
-}
+  selection = 'GHOSTTY_SELECTION_BG',
+  reference = 'NVIM_REFERENCE',
+  comment = 'NVIM_COMMENT',
+  line_highlight = 'GHOSTTY_PALETTE_0',
+  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
+})
 
 -- helper to set highlight groups
 local function hl(group, opts)
@@ -210,7 +209,7 @@ hl('TelescopeMatching', { fg = colors.orange, bold = true })
 -- neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#2c545e' })
+hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
 hl('NeoTreeDirectoryIcon', { fg = colors.blue })
 hl('NeoTreeDirectoryName', { fg = colors.blue })
 hl('NeoTreeFileName', { fg = colors.fg_primary })
