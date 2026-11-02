@@ -20,6 +20,7 @@ brew "zsh-completions"
 brew "fzf"                    # >= 0.53 for the --tmux flag
 brew "direnv"
 brew "carapace"               # multi-shell completion provider (bridges zsh completion)
+brew "luajit"                 # required for theme-switch and generate-theme
 
 # =============================================================================
 # @preset: core

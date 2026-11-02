@@ -25,37 +25,25 @@ source "$DOTFILES_ROOT/scripts/_lib/clipboard.sh"
 invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
 
 # writes <template> to <output> with each {{KEY}} replaced by the shell
-# variable KEY, failing on any placeholder whose variable is unset
+# variable KEY, failing on any placeholder whose variable is unset. needs $LUA
 # usage: render_template <template> <output>
 render_template() {
     local template="$1" output="$2"
-    local content rest key
-    IFS= read -r -d '' content <"$template" || true
+    local tmp="${output}.tmp.$$"
+    mkdir -p "$(dirname "$output")"
 
-    local -A seen=()
-    local -a missing=()
-    rest="$content"
-    while [[ "$rest" =~ \{\{([A-Z0-9_]+)\}\} ]]; do
-        key="${BASH_REMATCH[1]}"
-        rest="${rest#*"${BASH_REMATCH[0]}"}"
-        [[ -n "${seen[$key]:-}" ]] && continue
-        seen[$key]=1
-        if [[ -z "${!key+set}" ]]; then
-            missing+=("$key")
-            continue
-        fi
-        # quoted so `&` in a value stays literal under patsub_replacement
-        content="${content//"{{$key}}"/"${!key}"}"
-    done
-
-    if ((${#missing[@]} > 0)); then
-        theme_error "$(basename "$template"): no value for ${missing[*]}"
+    # exports stay inside the subshell, away from the reload scripts
+    if ! (
+        for var in $(compgen -v); do
+            # shellcheck disable=SC2163
+            [[ "$var" =~ ^[A-Z][A-Z0-9_]*$ ]] && export "$var"
+        done
+        exec "$LUA" "$DOTFILES_ROOT/scripts/_lib/render-template.lua" "$template"
+    ) >"$tmp"; then
+        rm -f "$tmp"
         return 1
     fi
-
-    mkdir -p "$(dirname "$output")"
-    local tmp="${output}.tmp.$$"
-    printf '%s' "$content" >"$tmp" && mv "$tmp" "$output"
+    mv "$tmp" "$output"
 }
 
 THEMES_DIR="$DOTFILES_ROOT/themes"
@@ -211,6 +199,9 @@ apply_theme() {
             return 1
         fi
     done
+
+    local LUA
+    LUA=$(find_lua) || return 1
 
     [[ "$quiet" != "true" ]] && theme_info "Applying theme: $THEME_NAME"
 

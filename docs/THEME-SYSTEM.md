@@ -302,7 +302,7 @@ generate_nvim_colourscheme()  -- Output nvim/colors/generated/<name>.lua
 
 ### Template Processing
 
-`render_template` in `scripts/theme-switch` fills every template. Each `{{KEY}}` placeholder takes the value of the shell variable `KEY` (a theme variable, a derived value from `theme-defaults.sh`, or one set by the switcher such as `CLIPBOARD_CMD` or `PLATFORM_CONFIG`), so a new placeholder needs no other registration. A placeholder with no matching variable fails the switch and names the missing key. Only `{{UPPER_CASE}}` names are placeholders: gh-dash's own `{{.PrNumber}}` fields pass through unchanged.
+`render_template` in `scripts/theme-switch` fills every template by exporting the uppercase shell variables to `scripts/_lib/render-template.lua` (run with `luajit`, or `lua` as a fallback). Each `{{KEY}}` placeholder takes the value of the shell variable `KEY` (a theme variable, a derived value from `theme-defaults.sh`, or one set by the switcher such as `CLIPBOARD_CMD` or `PLATFORM_CONFIG`), so a new placeholder needs no other registration. A placeholder with no matching variable fails the switch and names the missing key. Only `{{UPPER_CASE}}` names are placeholders: gh-dash's own `{{.PrNumber}}` fields pass through unchanged.
 
 ### XDG Directory Creation
 
