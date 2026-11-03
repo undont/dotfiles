@@ -71,6 +71,18 @@ command_exists() {
     command -v "$1" &>/dev/null
 }
 
+# luajit when available, lua otherwise
+find_lua() {
+    if command_exists luajit; then
+        echo "luajit"
+    elif command_exists lua; then
+        echo "lua"
+    else
+        error "No Lua interpreter found. Install luajit (brew install luajit)."
+        return 1
+    fi
+}
+
 # install a package via the system package manager (Linux only)
 # usage: install_system_package "pkg-name" [fatal]
 #   fatal = exit 1 on failure (default: warn and return 1)

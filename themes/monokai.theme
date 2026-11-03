@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Monokai theme
 # https://monokai.pro/
@@ -73,3 +74,9 @@ GHOSTTY_PALETTE_15="#f9f8f5"
 
 NVIM_COLORSCHEME="monokai"
 NVIM_FG_VARIABLE="#d7d6cd"
+NVIM_COMMENT="#75715e"
+NVIM_RED="#ff5555"
+NVIM_SELECTION="#49483e"
+NVIM_REFERENCE="#444238"
+NVIM_ORANGE="#fd971f"
+NVIM_TREE_CURSOR_LINE="#5a5a50"

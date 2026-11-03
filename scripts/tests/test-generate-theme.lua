@@ -317,6 +317,12 @@ local theme_content = gen.generate_theme_file("test-theme", "Test Theme", {
     battery_low_bg = "#2a3040",
 }, "purple", {})
 
+if theme_content:sub(1, 12) == "# vim: ft=sh" then
+    pass("theme file starts with the ft=sh modeline")
+else
+    fail("theme file modeline", theme_content:sub(1, 40))
+end
+
 if theme_content:find('THEME_NAME="Test Theme"') then
     pass("theme file has THEME_NAME")
 else

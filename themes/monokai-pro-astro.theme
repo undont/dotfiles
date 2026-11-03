@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Monokai Pro Astro theme
 # monokai pro spectrum accents on a dark grey background
@@ -74,3 +75,10 @@ GHOSTTY_PALETTE_15="#f7f1ff"
 
 NVIM_COLORSCHEME="monokai-pro-astro"
 NVIM_FG_VARIABLE="#f7f1ff"
+NVIM_SELECTION="#30343d"
+NVIM_REFERENCE="#252830"
+NVIM_LINE_NR="#6d6a70"
+NVIM_GHOST="#69676c"
+NVIM_LINE_HIGHLIGHT="#242424"
+NVIM_INDENT="#323232"
+NVIM_TREE_CURSOR_LINE="#3a3a3a"

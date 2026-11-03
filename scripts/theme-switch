@@ -24,14 +24,26 @@ source "$DOTFILES_ROOT/scripts/_lib/clipboard.sh"
 # the script basename otherwise
 invoked_as="${DOTFILES_INVOKED_AS:-$(basename "$0")}"
 
-# fills the caller's `sed_args` with -e flags from an associative array of
-# placeholder → value mappings. usage: _build_sed_args <array name>
-_build_sed_args() {
-    local -n _vars=$1
-    sed_args=()
-    for key in "${!_vars[@]}"; do
-        sed_args+=(-e "s|{{${key}}}|${_vars[$key]}|g")
-    done
+# writes <template> to <output> with each {{KEY}} replaced by the shell
+# variable KEY, failing on any placeholder whose variable is unset. needs $LUA
+# usage: render_template <template> <output>
+render_template() {
+    local template="$1" output="$2"
+    local tmp="${output}.tmp.$$"
+    mkdir -p "$(dirname "$output")"
+
+    # exports stay inside the subshell, away from the reload scripts
+    if ! (
+        for var in $(compgen -v); do
+            # shellcheck disable=SC2163
+            [[ "$var" =~ ^[A-Z][A-Z0-9_]*$ ]] && export "$var"
+        done
+        exec "$LUA" "$DOTFILES_ROOT/scripts/_lib/render-template.lua" "$template"
+    ) >"$tmp"; then
+        rm -f "$tmp"
+        return 1
+    fi
+    mv "$tmp" "$output"
 }
 
 THEMES_DIR="$DOTFILES_ROOT/themes"
@@ -188,123 +200,33 @@ apply_theme() {
         fi
     done
 
+    local LUA
+    LUA=$(find_lua) || return 1
+
     [[ "$quiet" != "true" ]] && theme_info "Applying theme: $THEME_NAME"
 
     if [[ -f "$TMUX_TEMPLATE" ]]; then
-        mkdir -p "$(dirname "$TMUX_OUTPUT")"
-        local tmux_tmp="${TMUX_OUTPUT}.tmp.$$"
-
         # platform clipboard command, shared with the tmux scripts
-        local clipboard_cmd
-        clipboard_cmd="$(clipboard_copy_cmd)"
+        local CLIPBOARD_CMD
+        CLIPBOARD_CMD="$(clipboard_copy_cmd)"
 
-        # one entry per template placeholder
-        declare -A tmux_vars=(
-            [THEME_NAME]="$THEME_NAME"
-            [TMUX_BG_PRIMARY]="$TMUX_BG_PRIMARY"
-            [TMUX_FG_PRIMARY]="$TMUX_FG_PRIMARY"
-            [TMUX_STATUS_BG]="$TMUX_STATUS_BG"
-            [TMUX_STATUS_FG]="$TMUX_STATUS_FG"
-            [TMUX_STATUS_ACTIVE_BG]="$TMUX_STATUS_ACTIVE_BG"
-            [TMUX_STATUS_ACTIVE_FG]="$TMUX_STATUS_ACTIVE_FG"
-            [TMUX_STATUS_INACTIVE_FG]="$TMUX_STATUS_INACTIVE_FG"
-            [TMUX_STATUS_BELL_FG]="$TMUX_STATUS_BELL_FG"
-            [TMUX_EXIT_PASS_COLOUR]="$TMUX_EXIT_PASS_COLOUR"
-            [TMUX_EXIT_FAIL_COLOUR]="$TMUX_EXIT_FAIL_COLOUR"
-            [TMUX_ACCENT_CYAN]="$TMUX_ACCENT_CYAN"
-            [TMUX_ACCENT_PINK]="$TMUX_ACCENT_PINK"
-            [TMUX_ACCENT_PURPLE]="$TMUX_ACCENT_PURPLE"
-            [TMUX_ACCENT_YELLOW]="$TMUX_ACCENT_YELLOW"
-            [TMUX_ACCENT_GREEN]="$TMUX_ACCENT_GREEN"
-            [TMUX_BG_SECONDARY]="$TMUX_BG_SECONDARY"
-            [TMUX_FG_SECONDARY]="$TMUX_FG_SECONDARY"
-            [TMUX_PANE_BORDER_INACTIVE]="$TMUX_PANE_BORDER_INACTIVE"
-            [TMUX_PANE_BORDER_ACTIVE]="$TMUX_PANE_BORDER_ACTIVE"
-            [TMUX_MESSAGE_BG]="$TMUX_MESSAGE_BG"
-            [TMUX_MESSAGE_FG]="$TMUX_MESSAGE_FG"
-            [TMUX_MESSAGE_COMMAND_BG]="$TMUX_MESSAGE_COMMAND_BG"
-            [TMUX_MESSAGE_COMMAND_FG]="$TMUX_MESSAGE_COMMAND_FG"
-            [TMUX_CPU_LOW_BG]="$TMUX_CPU_LOW_BG"
-            [TMUX_CPU_MEDIUM_BG]="$TMUX_CPU_MEDIUM_BG"
-            [TMUX_CPU_HIGH_BG]="$TMUX_CPU_HIGH_BG"
-            [TMUX_RAM_LOW_BG]="$TMUX_RAM_LOW_BG"
-            [TMUX_RAM_MEDIUM_BG]="$TMUX_RAM_MEDIUM_BG"
-            [TMUX_RAM_HIGH_BG]="$TMUX_RAM_HIGH_BG"
-            [TMUX_BATTERY_NORMAL_BG]="$TMUX_BATTERY_NORMAL_BG"
-            [TMUX_BATTERY_LOW_BG]="$TMUX_BATTERY_LOW_BG"
-            [CLIPBOARD_CMD]="$clipboard_cmd"
-            [DOTFILES_ROOT]="$DOTFILES_ROOT"
-        )
-        local -a sed_args
-        _build_sed_args tmux_vars
-        sed "${sed_args[@]}" "$TMUX_TEMPLATE" >"$tmux_tmp" || {
-            rm -f "$tmux_tmp"
-            return 1
-        }
-        mv "$tmux_tmp" "$TMUX_OUTPUT"
+        render_template "$TMUX_TEMPLATE" "$TMUX_OUTPUT" || return 1
         [[ "$quiet" != "true" ]] && theme_success "Generated tmux configuration"
     else
         [[ "$quiet" != "true" ]] && theme_warn "Tmux template not found, skipping"
     fi
 
     if [[ -f "$GHOSTTY_TEMPLATE" ]]; then
-        mkdir -p "$(dirname "$GHOSTTY_OUTPUT")"
-        local ghostty_tmp platform_tmp
-        ghostty_tmp=$(mktemp)
-        platform_tmp=$(mktemp)
-
-        # platform-specific settings (keybindings use {{PLATFORM_MOD}} in the template)
-        local mod="alt"
+        # keybindings use {{PLATFORM_MOD}} in the template
+        local PLATFORM_MOD="alt" PLATFORM_CONFIG="# Linux"
         if is_macos; then
-            mod="opt"
-            cat >"$platform_tmp" <<PLATFORM
-macos-icon = glass
+            PLATFORM_MOD="opt"
+            PLATFORM_CONFIG="macos-icon = glass
 macos-icon-frame = chrome
-macos-option-as-alt = left
-PLATFORM
-        else
-            printf "# Linux\n" >"$platform_tmp"
+macos-option-as-alt = left"
         fi
 
-        declare -A ghostty_vars=(
-            [THEME_NAME]="$THEME_NAME"
-            [PLATFORM_MOD]="$mod"
-            [GHOSTTY_BACKGROUND]="$GHOSTTY_BACKGROUND"
-            [GHOSTTY_FOREGROUND]="$GHOSTTY_FOREGROUND"
-            [GHOSTTY_CURSOR_COLOR]="$GHOSTTY_CURSOR_COLOR"
-            [GHOSTTY_CURSOR_TEXT]="$GHOSTTY_CURSOR_TEXT"
-            [GHOSTTY_SELECTION_BG]="$GHOSTTY_SELECTION_BG"
-            [GHOSTTY_SELECTION_FG]="$GHOSTTY_SELECTION_FG"
-            [GHOSTTY_PALETTE_0]="$GHOSTTY_PALETTE_0"
-            [GHOSTTY_PALETTE_1]="$GHOSTTY_PALETTE_1"
-            [GHOSTTY_PALETTE_2]="$GHOSTTY_PALETTE_2"
-            [GHOSTTY_PALETTE_3]="$GHOSTTY_PALETTE_3"
-            [GHOSTTY_PALETTE_4]="$GHOSTTY_PALETTE_4"
-            [GHOSTTY_PALETTE_5]="$GHOSTTY_PALETTE_5"
-            [GHOSTTY_PALETTE_6]="$GHOSTTY_PALETTE_6"
-            [GHOSTTY_PALETTE_7]="$GHOSTTY_PALETTE_7"
-            [GHOSTTY_PALETTE_8]="$GHOSTTY_PALETTE_8"
-            [GHOSTTY_PALETTE_9]="$GHOSTTY_PALETTE_9"
-            [GHOSTTY_PALETTE_10]="$GHOSTTY_PALETTE_10"
-            [GHOSTTY_PALETTE_11]="$GHOSTTY_PALETTE_11"
-            [GHOSTTY_PALETTE_12]="$GHOSTTY_PALETTE_12"
-            [GHOSTTY_PALETTE_13]="$GHOSTTY_PALETTE_13"
-            [GHOSTTY_PALETTE_14]="$GHOSTTY_PALETTE_14"
-            [GHOSTTY_PALETTE_15]="$GHOSTTY_PALETTE_15"
-        )
-        local -a sed_args
-        _build_sed_args ghostty_vars
-        # platform config uses sed's r/d commands, which _build_sed_args can't express
-        sed_args+=(-e "/{{PLATFORM_CONFIG}}/{
-                r $platform_tmp
-                d
-            }")
-        sed "${sed_args[@]}" "$GHOSTTY_TEMPLATE" >"$ghostty_tmp" || {
-            rm -f "$ghostty_tmp" "$platform_tmp"
-            return 1
-        }
-        rm -f "$platform_tmp"
-        mv "$ghostty_tmp" "$GHOSTTY_OUTPUT"
+        render_template "$GHOSTTY_TEMPLATE" "$GHOSTTY_OUTPUT" || return 1
         [[ "$quiet" != "true" ]] && theme_success "Generated ghostty configuration"
 
         # ghostty errors on a missing config-file include
@@ -317,23 +239,7 @@ PLATFORM
     fi
 
     if [[ -f "$GH_DASH_TEMPLATE" ]]; then
-        mkdir -p "$(dirname "$GH_DASH_OUTPUT")"
-        local ghdash_tmp="${GH_DASH_OUTPUT}.tmp.$$"
-        sed -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
-            -e "s|{{TMUX_FG_SECONDARY}}|$TMUX_FG_SECONDARY|g" \
-            -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
-            -e "s|{{TMUX_BG_SECONDARY}}|$TMUX_BG_SECONDARY|g" \
-            -e "s|{{TMUX_ACCENT_YELLOW}}|$TMUX_ACCENT_YELLOW|g" \
-            -e "s|{{TMUX_ACCENT_GREEN}}|$TMUX_ACCENT_GREEN|g" \
-            -e "s|{{TMUX_ACCENT_RED}}|$TMUX_ACCENT_RED|g" \
-            -e "s|{{TMUX_ACCENT_CYAN}}|$TMUX_ACCENT_CYAN|g" \
-            -e "s|{{TMUX_ACCENT_PURPLE}}|$TMUX_ACCENT_PURPLE|g" \
-            -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
-            "$GH_DASH_TEMPLATE" >"$ghdash_tmp" || {
-            rm -f "$ghdash_tmp"
-            return 1
-        }
-        mv "$ghdash_tmp" "$GH_DASH_OUTPUT"
+        render_template "$GH_DASH_TEMPLATE" "$GH_DASH_OUTPUT" || return 1
 
         # merge user local overrides on top
         if [[ "$quiet" == "true" ]]; then
@@ -352,24 +258,7 @@ PLATFORM
         # symlinks). a whole-dir symlink into the repo would put the generated
         # theme in version control; the 0.2.109 migration converts it
         if [[ -d "$yazi_dir" && ! -L "$yazi_dir" ]]; then
-            local yazi_tmp="${YAZI_OUTPUT}.tmp.$$"
-            sed -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
-                -e "s|{{TMUX_FG_PRIMARY}}|$TMUX_FG_PRIMARY|g" \
-                -e "s|{{TMUX_BG_SECONDARY}}|$TMUX_BG_SECONDARY|g" \
-                -e "s|{{TMUX_FG_SECONDARY}}|$TMUX_FG_SECONDARY|g" \
-                -e "s|{{TMUX_STATUS_ACTIVE_BG}}|$TMUX_STATUS_ACTIVE_BG|g" \
-                -e "s|{{TMUX_STATUS_ACTIVE_FG}}|$TMUX_STATUS_ACTIVE_FG|g" \
-                -e "s|{{TMUX_ACCENT_CYAN}}|$TMUX_ACCENT_CYAN|g" \
-                -e "s|{{TMUX_ACCENT_PINK}}|$TMUX_ACCENT_PINK|g" \
-                -e "s|{{TMUX_ACCENT_GREEN}}|$TMUX_ACCENT_GREEN|g" \
-                -e "s|{{TMUX_ACCENT_YELLOW}}|$TMUX_ACCENT_YELLOW|g" \
-                -e "s|{{TMUX_ACCENT_RED}}|$TMUX_ACCENT_RED|g" \
-                -e "s|{{TMUX_ACCENT_PURPLE}}|$TMUX_ACCENT_PURPLE|g" \
-                "$YAZI_TEMPLATE" >"$yazi_tmp" || {
-                rm -f "$yazi_tmp"
-                return 1
-            }
-            mv "$yazi_tmp" "$YAZI_OUTPUT"
+            render_template "$YAZI_TEMPLATE" "$YAZI_OUTPUT" || return 1
             [[ "$quiet" != "true" ]] && theme_success "Generated yazi theme"
         else
             [[ "$quiet" != "true" ]] && theme_warn "Yazi config dir is a legacy symlink; run 'dotfiles update' to migrate"

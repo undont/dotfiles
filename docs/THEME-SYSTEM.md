@@ -86,6 +86,8 @@ The Neovim theme loader (`nvim/lua/core/theme.lua`) reads `~/.config/dotfiles/cu
 3. A `vim.uv` file watcher monitors `current-theme` for live reload
 4. Scheme names are validated (`^[a-z0-9%-]+$`) before path construction to prevent traversal
 
+The hand-crafted schemes in `nvim/colors/` hold no hex values. Each maps its colour names to `.theme` keys through `require('core.palette').load('<theme>', { ... })`, which reads `themes/<theme>.theme` at load time and errors on a missing key. A colour points at the key that already holds its value (`GHOSTTY_PALETTE_*` first, then `TMUX_*`); colours only nvim uses live under `NVIM_*` keys named after the scheme's own colour names (`NVIM_COMMENT`, `NVIM_PEACH`). Editing a `.theme` value changes every tool that reads it, nvim included.
+
 ### Highlight Attributes
 
 Italic marks text that is not literal code. Three groups carry it, in every theme:
@@ -302,14 +304,7 @@ generate_nvim_colourscheme()  -- Output nvim/colors/generated/<name>.lua
 
 ### Template Processing
 
-The theme switcher (`scripts/theme-switch`) uses `sed` for fast template processing:
-
-```bash
-sed -e "s|{{THEME_NAME}}|$THEME_NAME|g" \
-    -e "s|{{TMUX_BG_PRIMARY}}|$TMUX_BG_PRIMARY|g" \
-    # ... more replacements
-    "$TMUX_TEMPLATE" > "$TMUX_OUTPUT"
-```
+`render_template` in `scripts/theme-switch` fills every template by exporting the uppercase shell variables to `scripts/_lib/render-template.lua` (run with `luajit`, or `lua` as a fallback). Each `{{KEY}}` placeholder takes the value of the shell variable `KEY` (a theme variable, a derived value from `theme-defaults.sh`, or one set by the switcher such as `CLIPBOARD_CMD` or `PLATFORM_CONFIG`), so a new placeholder needs no other registration. A placeholder with no matching variable fails the switch and names the missing key. Only `{{UPPER_CASE}}` names are placeholders: gh-dash's own `{{.PrNumber}}` fields pass through unchanged.
 
 ### XDG Directory Creation
 

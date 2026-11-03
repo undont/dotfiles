@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Rose Pine theme
 # https://github.com/rose-pine/rose-pine-theme
@@ -73,3 +74,9 @@ GHOSTTY_PALETTE_15="#e0def4"
 
 NVIM_COLORSCHEME="rose-pine"
 NVIM_FG_VARIABLE="#c4c1d8"
+NVIM_COMMENT="#6e6a86"
+NVIM_SELECTION="#2a2740"
+NVIM_REFERENCE="#242237"
+NVIM_LINE_HIGHLIGHT="#1f1d2e"
+NVIM_SUBTLE="#908caa"
+NVIM_TREE_CURSOR_LINE="#464457"

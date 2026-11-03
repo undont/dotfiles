@@ -1,4 +1,4 @@
--- monokai-pro-astro colourscheme for nvim, matching themes/monokai-pro-astro.theme
+-- monokai-pro-astro colourscheme for nvim, coloured from themes/monokai-pro-astro.theme
 -- syntax roles follow upstream monokai pro: red keywords, green functions,
 -- cyan types, purple numbers, yellow strings, orange parameters
 
@@ -10,28 +10,29 @@ end
 vim.g.colors_name = 'monokai-pro-astro'
 vim.o.termguicolors = true
 
-local colors = {
-  bg_primary = '#1a1a1a',
-  fg_primary = '#f7f1ff',
-  bg_secondary = '#2c2c2c',
-  fg_secondary = '#b1aeb7',
-  fg_variable = '#f7f1ff',
+local colors = require('core.palette').load('monokai-pro-astro', {
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  fg_primary = 'GHOSTTY_FOREGROUND',
+  bg_secondary = 'TMUX_BG_SECONDARY',
+  fg_secondary = 'TMUX_FG_SECONDARY',
+  fg_variable = 'NVIM_FG_VARIABLE',
 
-  red = '#fc618d',
-  orange = '#fd9353',
-  yellow = '#fce566',
-  green = '#7bd88f',
-  cyan = '#5ad4e6',
-  purple = '#948ae3',
+  red = 'GHOSTTY_PALETTE_1',
+  orange = 'GHOSTTY_PALETTE_4',
+  yellow = 'GHOSTTY_PALETTE_3',
+  green = 'GHOSTTY_PALETTE_2',
+  cyan = 'GHOSTTY_PALETTE_6',
+  purple = 'GHOSTTY_PALETTE_5',
 
-  selection = '#30343d',
-  reference = '#252830',
-  comment = '#86848a',
-  line_nr = '#6d6a70',
-  ghost = '#69676c',
-  line_highlight = '#242424',
-  indent = '#323232',
-}
+  selection = 'NVIM_SELECTION',
+  reference = 'NVIM_REFERENCE',
+  comment = 'GHOSTTY_PALETTE_8',
+  line_nr = 'NVIM_LINE_NR',
+  ghost = 'NVIM_GHOST',
+  line_highlight = 'NVIM_LINE_HIGHLIGHT',
+  indent = 'NVIM_INDENT',
+  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
+})
 
 local function hl(group, opts)
   vim.api.nvim_set_hl(0, group, opts)
@@ -199,7 +200,7 @@ hl('TelescopeMatching', { fg = colors.orange, bold = true })
 -- Neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#3a3a3a' })
+hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
 hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
 hl('NeoTreeDirectoryName', { fg = colors.cyan })
 hl('NeoTreeFileName', { fg = colors.fg_primary })

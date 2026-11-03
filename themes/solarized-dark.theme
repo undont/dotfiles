@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Solarized Dark theme
 # https://ethanschoonover.com/solarized/
@@ -73,3 +74,10 @@ GHOSTTY_PALETTE_15="#fdf6e3"
 
 NVIM_COLORSCHEME="solarized-dark"
 NVIM_FG_VARIABLE="#88989a"
+NVIM_FG_SECONDARY="#657b83"
+NVIM_PINK="#d33682"
+NVIM_ORANGE="#cb4b16"
+NVIM_COMMENT="#586e75"
+NVIM_BASE0="#839496"
+NVIM_REFERENCE="#133e4a"
+NVIM_TREE_CURSOR_LINE="#2c545e"

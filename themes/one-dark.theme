@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # One Dark theme
 # https://github.com/joshdick/onedark.vim
@@ -73,3 +74,11 @@ GHOSTTY_PALETTE_15="#ffffff"
 
 NVIM_COLORSCHEME="onedark"
 NVIM_FG_VARIABLE="#979eab"
+NVIM_COMMENT="#5c6370"
+NVIM_RED="#be5046"
+NVIM_REFERENCE="#353a46"
+NVIM_LINE_HIGHLIGHT="#2c313a"
+NVIM_ORANGE="#d19a66"
+NVIM_LIGHT_GREY="#848b98"
+NVIM_DARK_CYAN="#2b6f77"
+NVIM_TREE_CURSOR_LINE="#5a606b"

@@ -39,18 +39,6 @@ find_ghostty_themes() {
 }
 GHOSTTY_THEMES="$(find_ghostty_themes)"
 
-# luajit when available, lua otherwise
-find_lua() {
-    if command -v luajit >/dev/null 2>&1; then
-        echo "luajit"
-    elif command -v lua >/dev/null 2>&1; then
-        echo "lua"
-    else
-        error "No Lua interpreter found. Install lua or luajit."
-        exit 1
-    fi
-}
-
 # filenames on stdin (one per line) to kebab-case names
 _to_kebab() {
     awk '{

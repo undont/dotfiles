@@ -1,5 +1,4 @@
--- dracula colourscheme for nvim
--- matches the dotfiles dracula.theme exactly
+-- dracula colourscheme for nvim, coloured from themes/dracula.theme
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -9,33 +8,33 @@ end
 vim.g.colors_name = 'dracula'
 vim.o.termguicolors = true
 
--- theme colours (matching themes/dracula.theme)
-local colors = {
+local colors = require('core.palette').load('dracula', {
   -- base colours
-  bg_primary = '#282a36',
-  fg_primary = '#f8f8f2',
-  bg_secondary = '#44475a',
-  fg_secondary = '#6272a4',
-  fg_variable = '#d2d6de',
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  fg_primary = 'GHOSTTY_FOREGROUND',
+  bg_secondary = 'TMUX_BG_SECONDARY',
+  fg_secondary = 'NVIM_COMMENT',
+  fg_variable = 'NVIM_FG_VARIABLE',
 
   -- accents
-  purple = '#bd93f9',
-  pink = '#ff93d1',
-  cyan = '#8be9fd',
-  green = '#50fa7b',
-  yellow = '#f1fa8c',
-  red = '#ff5555',
+  purple = 'GHOSTTY_PALETTE_4',
+  pink = 'TMUX_ACCENT_PINK',
+  cyan = 'GHOSTTY_PALETTE_6',
+  green = 'GHOSTTY_PALETTE_2',
+  yellow = 'GHOSTTY_PALETTE_3',
+  red = 'GHOSTTY_PALETTE_1',
 
   -- additional shades
-  selection = '#44475a',
-  reference = '#393c4d',
-  comment = '#6272a4',
-  line_highlight = '#2e3040',
+  selection = 'GHOSTTY_SELECTION_BG',
+  reference = 'NVIM_REFERENCE',
+  comment = 'NVIM_COMMENT',
+  line_highlight = 'NVIM_LINE_HIGHLIGHT',
+  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
 
   -- syntax roles (mirroring upstream dracula.nvim)
-  orange = '#ffb86c', -- parameters, members, modules
-  bright_cyan = '#a4ffff', -- types
-}
+  orange = 'NVIM_ORANGE', -- parameters, members, modules
+  bright_cyan = 'GHOSTTY_PALETTE_14', -- types
+})
 
 -- set a highlight group
 local function hl(group, opts)
@@ -204,7 +203,7 @@ hl('TelescopeMatching', { fg = colors.green, bold = true })
 -- Neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#606272' })
+hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
 hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
 hl('NeoTreeDirectoryName', { fg = colors.cyan })
 hl('NeoTreeFileName', { fg = colors.fg_primary })

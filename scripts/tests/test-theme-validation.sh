@@ -260,7 +260,7 @@ first_theme_name=$(basename "$first_theme" .theme)
 first_theme_vars=()
 while IFS= read -r var; do
     first_theme_vars+=("$var")
-done < <(grep -E '^[A-Z_]+=' "$first_theme" | cut -d= -f1 | sort)
+done < <(grep -E '^[A-Z_]+=' "$first_theme" | grep -v '^NVIM_' | cut -d= -f1 | sort)
 
 for theme_file in "$THEMES_DIR"/*.theme; do
     if [[ -f "$theme_file" ]] && [[ "$theme_file" != "$first_theme" ]]; then
@@ -269,7 +269,8 @@ for theme_file in "$THEMES_DIR"/*.theme; do
         current_vars=()
         while IFS= read -r var; do
             current_vars+=("$var")
-        done < <(grep -E '^[A-Z_]+=' "$theme_file" | cut -d= -f1 | sort)
+        # NVIM_* keys are each colourscheme's own palette names
+        done < <(grep -E '^[A-Z_]+=' "$theme_file" | grep -v '^NVIM_' | cut -d= -f1 | sort)
 
         # here-strings: a pipe into grep -q breaks when grep exits early
         missing_from_current=()

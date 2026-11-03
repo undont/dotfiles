@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Ayu Dark theme
 # https://github.com/ayu-theme/ayu-vim
@@ -73,3 +74,13 @@ GHOSTTY_PALETTE_15="#ffffff"
 
 NVIM_COLORSCHEME="ayu-dark"
 NVIM_FG_VARIABLE="#b8e3f2"
+NVIM_COMMENT="#626a73"
+NVIM_SELECTION="#1a1f29"
+NVIM_REFERENCE="#141921"
+NVIM_LINE_HIGHLIGHT="#0f1319"
+NVIM_ORANGE="#ff8f40"
+NVIM_STRING="#aad94c"
+NVIM_SPECIAL="#e6b673"
+NVIM_OPERATOR="#f29668"
+NVIM_PARAMETER="#cb9ff8"
+NVIM_TREE_CURSOR_LINE="#383c3f"

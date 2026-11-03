@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # theme defaults and shared logic
 # this file is sourced by individual theme files to set up common patterns

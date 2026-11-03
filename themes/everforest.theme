@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Everforest theme
 # https://github.com/sainnhe/everforest
@@ -73,3 +74,8 @@ GHOSTTY_PALETTE_15="#d3c6aa"
 
 NVIM_COLORSCHEME="everforest"
 NVIM_FG_VARIABLE="#bcc8ad"
+NVIM_COMMENT="#859289"
+NVIM_SELECTION="#374145"
+NVIM_REFERENCE="#313a3e"
+NVIM_LINE_HIGHLIGHT="#2b3338"
+NVIM_ORANGE="#e69875"

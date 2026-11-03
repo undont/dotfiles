@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Tokyo Night theme
 # https://github.com/enkia/tokyo-night-vscode-theme
@@ -73,3 +74,14 @@ GHOSTTY_PALETTE_15="#c0caf5"
 
 NVIM_COLORSCHEME="tokyonight-night"
 NVIM_FG_VARIABLE="#a6afda"
+NVIM_COMMENT="#565f89"
+NVIM_PINK="#ff007c"
+NVIM_SELECTION="#283457"
+NVIM_REFERENCE="#232a44"
+NVIM_LINE_HIGHLIGHT="#1e2030"
+NVIM_ORANGE="#ff9e64"
+NVIM_BLUE1="#2ac3de"
+NVIM_BLUE5="#89ddff"
+NVIM_GREEN1="#73daca"
+NVIM_DEEP_PURPLE="#9d7cd8"
+NVIM_TREE_CURSOR_LINE="#444858"

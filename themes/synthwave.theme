@@ -1,3 +1,4 @@
+# vim: ft=sh
 # shellcheck shell=bash
 # Synthwave/Simulation theme
 # Cyberpunk vaporwave aesthetic inspired by Simulation album artwork
@@ -73,3 +74,17 @@ GHOSTTY_PALETTE_15="#ffffff"     # Bright white
 
 NVIM_COLORSCHEME="synthwave"
 NVIM_FG_VARIABLE="#d2cbe4"
+NVIM_SELECTION="#3d2861"
+NVIM_REFERENCE="#30204b"
+NVIM_COMMENT="#6b5a82"
+NVIM_LINE_HIGHLIGHT="#241735"
+NVIM_BRIGHT_PURPLE="#d6acff"
+NVIM_NEON_CYAN="#36f9f6"
+NVIM_NEON_YELLOW="#fede5d"
+NVIM_NEON_RED="#fe4450"
+NVIM_NEON_ORANGE="#ff8b39"
+NVIM_SALMON="#f97e72"
+NVIM_NEON_PINK="#ff7edb"
+NVIM_NEON_GREEN="#72f1b8"
+NVIM_PUNCT="#b6b1b1"
+NVIM_TREE_CURSOR_LINE="#49405a"

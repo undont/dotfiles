@@ -6,6 +6,14 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.156] - 2026-11-03
+
+### Changed
+
+- Theme switching renders its templates with lua, so `luajit` is now part of the minimal preset; run `dotfiles update` before the next switch. A placeholder with no value fails the switch, names the missing key and leaves the previous config in place. `scripts/theme-switch`, `scripts/_lib/render-template.lua`, `scripts/_lib/common.sh`, `Brewfile`
+- Hand-crafted nvim colourschemes take their colours from the matching `.theme` file, so each palette is written once. `nvim/lua/core/palette.lua`, `nvim/colors/*.lua`, `themes/*.theme`
+- Theme files open as shell scripts in nvim. `themes/*.theme`, `scripts/_lib/generate-theme.lua`
+
 ## [0.2.155] - 2026-11-01
 
 ### Added

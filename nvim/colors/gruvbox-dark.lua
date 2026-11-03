@@ -1,6 +1,4 @@
--- gruvbox dark colourscheme for nvim
--- matches the dotfiles gruvbox-dark.theme exactly
--- custom implementation to match terminal colours precisely
+-- gruvbox-dark colourscheme for nvim, coloured from themes/gruvbox-dark.theme
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -10,49 +8,49 @@ end
 vim.g.colors_name = 'gruvbox-dark'
 vim.o.termguicolors = true
 
--- theme colours (matching themes/gruvbox-dark.theme)
-local colors = {
+local colors = require('core.palette').load('gruvbox-dark', {
   -- base colours
-  bg_primary = '#282828',
-  fg_primary = '#ebdbb2',
-  bg_secondary = '#3c3836',
-  fg_secondary = '#928374',
-  fg_variable = '#d5c5a2',
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  fg_primary = 'GHOSTTY_FOREGROUND',
+  bg_secondary = 'TMUX_BG_SECONDARY',
+  fg_secondary = 'NVIM_COMMENT',
+  fg_variable = 'NVIM_FG_VARIABLE',
 
   -- accents
-  purple = '#b16286',
-  pink = '#d3869b',
-  cyan = '#8ec07c',
-  green = '#b8bb26',
-  yellow = '#fabd2f',
-  red = '#fb4934',
+  purple = 'NVIM_PURPLE',
+  pink = 'GHOSTTY_PALETTE_13',
+  cyan = 'GHOSTTY_PALETTE_14',
+  green = 'GHOSTTY_PALETTE_10',
+  yellow = 'GHOSTTY_PALETTE_11',
+  red = 'GHOSTTY_PALETTE_9',
 
   -- additional shades for visual consistency
-  selection = '#504945',
-  reference = '#46403e',
-  comment = '#928374',
-  line_highlight = '#3c3836',
+  selection = 'NVIM_SELECTION',
+  reference = 'NVIM_REFERENCE',
+  comment = 'NVIM_COMMENT',
+  line_highlight = 'GHOSTTY_SELECTION_BG',
 
   -- bright variants from terminal palette
-  bright_red = '#fb4934',
-  bright_green = '#b8bb26',
-  bright_yellow = '#fabd2f',
-  bright_blue = '#83a598',
-  bright_purple = '#d3869b',
-  bright_cyan = '#8ec07c',
+  bright_red = 'GHOSTTY_PALETTE_9',
+  bright_green = 'GHOSTTY_PALETTE_10',
+  bright_yellow = 'GHOSTTY_PALETTE_11',
+  bright_blue = 'GHOSTTY_PALETTE_12',
+  bright_purple = 'GHOSTTY_PALETTE_13',
+  bright_cyan = 'GHOSTTY_PALETTE_14',
 
   -- dark variants from terminal palette
-  dark_red = '#cc241d',
-  dark_green = '#98971a',
-  dark_yellow = '#d79921',
-  dark_blue = '#458588',
-  dark_purple = '#b16286',
-  dark_cyan = '#689d6a',
+  dark_red = 'NVIM_DARK_RED',
+  dark_green = 'GHOSTTY_PALETTE_2',
+  dark_yellow = 'GHOSTTY_PALETTE_3',
+  dark_blue = 'NVIM_DARK_BLUE',
+  dark_purple = 'NVIM_PURPLE',
+  dark_cyan = 'GHOSTTY_PALETTE_6',
 
   -- syntax roles (mirroring upstream gruvbox.nvim dark)
-  orange = '#fe8019', -- operators, builtins, specials
-  punct = '#bdae93', -- fg3, subtle punctuation (upstream uses it for brackets in several langs)
-}
+  orange = 'NVIM_ORANGE', -- operators, builtins, specials
+  punct = 'NVIM_PUNCT', -- fg3, subtle punctuation (upstream uses it for brackets in several langs)
+  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
+})
 
 -- helper to set highlight groups
 local function hl(group, opts)
@@ -221,7 +219,7 @@ hl('TelescopeMatching', { fg = colors.green, bold = true })
 -- Neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#595554' })
+hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
 hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
 hl('NeoTreeDirectoryName', { fg = colors.cyan })
 hl('NeoTreeFileName', { fg = colors.fg_primary })

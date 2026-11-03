@@ -1,5 +1,4 @@
--- Rosé Pine colourscheme for nvim
--- matches the dotfiles rose-pine.theme exactly
+-- rose-pine colourscheme for nvim, coloured from themes/rose-pine.theme
 
 vim.cmd 'highlight clear'
 if vim.fn.exists 'syntax_on' then
@@ -9,38 +8,38 @@ end
 vim.g.colors_name = 'rose-pine'
 vim.o.termguicolors = true
 
--- Theme colours (matching themes/rose-pine.theme)
-local colors = {
+local colors = require('core.palette').load('rose-pine', {
   -- Base colours
-  bg_primary = '#191724',
-  fg_primary = '#e0def4',
-  bg_secondary = '#26233a',
-  fg_secondary = '#6e6a86',
-  fg_variable = '#c4c1d8',
+  bg_primary = 'GHOSTTY_BACKGROUND',
+  fg_primary = 'GHOSTTY_FOREGROUND',
+  bg_secondary = 'TMUX_BG_SECONDARY',
+  fg_secondary = 'NVIM_COMMENT',
+  fg_variable = 'NVIM_FG_VARIABLE',
 
   -- Accents
-  purple = '#c4a7e7',
-  pink = '#eb6f92',
-  cyan = '#31748f',
-  green = '#9ccfd8',
-  yellow = '#f6c177',
-  red = '#eb6f92',
+  purple = 'GHOSTTY_PALETTE_5',
+  pink = 'GHOSTTY_PALETTE_1',
+  cyan = 'GHOSTTY_PALETTE_12',
+  green = 'GHOSTTY_PALETTE_2',
+  yellow = 'GHOSTTY_PALETTE_3',
+  red = 'GHOSTTY_PALETTE_1',
 
   -- Additional shades
-  selection = '#2a2740',
-  reference = '#242237',
-  comment = '#6e6a86',
-  line_highlight = '#1f1d2e',
-  rose = '#ebbcba',
-  subtle = '#908caa',
+  selection = 'NVIM_SELECTION',
+  reference = 'NVIM_REFERENCE',
+  comment = 'NVIM_COMMENT',
+  line_highlight = 'NVIM_LINE_HIGHLIGHT',
+  rose = 'GHOSTTY_PALETTE_6',
+  subtle = 'NVIM_SUBTLE',
 
   -- syntax roles (mirroring upstream rose-pine main)
-  gold = '#f6c177', -- strings, numbers, constants
-  foam = '#9ccfd8', -- types, properties, tags
-  iris = '#c4a7e7', -- parameters, attributes, macros
-  pine = '#31748f', -- keywords, statements
-  love = '#eb6f92', -- builtin variables
-}
+  gold = 'GHOSTTY_PALETTE_3', -- strings, numbers, constants
+  foam = 'GHOSTTY_PALETTE_2', -- types, properties, tags
+  iris = 'GHOSTTY_PALETTE_5', -- parameters, attributes, macros
+  pine = 'GHOSTTY_PALETTE_12', -- keywords, statements
+  love = 'GHOSTTY_PALETTE_1', -- builtin variables
+  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
+})
 
 -- helper to set highlight groups
 local function hl(group, opts)
@@ -54,14 +53,14 @@ hl('FloatBorder', { fg = colors.cyan, bg = colors.bg_secondary })
 hl('ColorColumn', { bg = colors.line_highlight })
 hl('Cursor', { fg = colors.bg_primary, bg = colors.fg_primary })
 hl('CursorLine', { bg = colors.line_highlight })
-hl('CursorLineNr', { fg = '#eb6f92', bold = true })
+hl('CursorLineNr', { fg = colors.pink, bold = true })
 hl('LineNr', { fg = colors.comment })
 hl('SignColumn', { bg = colors.bg_primary })
 hl('Visual', { bg = colors.selection })
 hl('VisualNOS', { bg = colors.selection })
 hl('Search', { fg = colors.bg_primary, bg = colors.yellow })
-hl('IncSearch', { fg = colors.bg_primary, bg = '#eb6f92' })
-hl('MatchParen', { fg = '#eb6f92', bold = true })
+hl('IncSearch', { fg = colors.bg_primary, bg = colors.pink })
+hl('MatchParen', { fg = colors.pink, bold = true })
 hl('Question', { fg = colors.cyan })
 hl('ModeMsg', { fg = colors.green, bold = true })
 hl('MoreMsg', { fg = colors.green })
@@ -72,16 +71,16 @@ hl('WinSeparator', { fg = colors.bg_secondary })
 hl('Folded', { fg = colors.comment, bg = colors.line_highlight })
 hl('FoldColumn', { fg = colors.comment })
 hl('Pmenu', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('PmenuSel', { fg = colors.bg_primary, bg = '#eb6f92' })
+hl('PmenuSel', { fg = colors.bg_primary, bg = colors.pink })
 hl('PmenuSbar', { bg = colors.bg_secondary })
-hl('PmenuThumb', { bg = '#eb6f92' })
-hl('StatusLine', { fg = '#eb6f92', bg = colors.bg_secondary })
+hl('PmenuThumb', { bg = colors.pink })
+hl('StatusLine', { fg = colors.pink, bg = colors.bg_secondary })
 hl('StatusLineNC', { fg = colors.comment, bg = colors.bg_secondary })
 hl('TabLine', { fg = colors.fg_secondary, bg = colors.bg_secondary })
 hl('TabLineFill', { bg = colors.bg_secondary })
-hl('TabLineSel', { fg = '#eb6f92', bg = colors.bg_primary, bold = true })
+hl('TabLineSel', { fg = colors.pink, bg = colors.bg_primary, bold = true })
 hl('Directory', { fg = colors.cyan })
-hl('Title', { fg = '#eb6f92', bold = true })
+hl('Title', { fg = colors.pink, bold = true })
 hl('SpecialKey', { fg = colors.comment })
 hl('NonText', { fg = colors.comment })
 hl('Whitespace', { fg = colors.comment })
@@ -121,7 +120,7 @@ hl('Debug', { fg = colors.rose })
 hl('Underlined', { fg = colors.cyan, underline = true })
 hl('Ignore', { fg = colors.comment })
 hl('Error', { fg = colors.red, bold = true })
-hl('Todo', { fg = '#eb6f92', bold = true })
+hl('Todo', { fg = colors.pink, bold = true })
 
 -- Git signs
 hl('GitSignsAdd', { fg = colors.green })
@@ -190,43 +189,43 @@ hl('@comment', { link = 'Comment' })
 hl('@markup.strong', { bold = true })
 hl('@markup.italic', { italic = true })
 hl('@markup.underline', { underline = true })
-hl('@markup.heading', { fg = '#eb6f92', bold = true })
+hl('@markup.heading', { fg = colors.pink, bold = true })
 hl('@markup.link', { fg = colors.cyan, underline = true })
 hl('@markup.link.url', { fg = colors.purple, underline = true })
-hl('@markup.list', { fg = '#f6c177' })
-hl('@markup.raw', { fg = '#9ccfd8' })
+hl('@markup.list', { fg = colors.yellow })
+hl('@markup.raw', { fg = colors.green })
 
 -- Telescope
-hl('TelescopeBorder', { fg = '#eb6f92', bg = colors.bg_secondary })
-hl('TelescopePromptBorder', { fg = '#eb6f92', bg = colors.bg_secondary })
-hl('TelescopePromptTitle', { fg = '#eb6f92', bold = true })
-hl('TelescopePreviewTitle', { fg = '#eb6f92', bold = true })
-hl('TelescopeResultsTitle', { fg = '#eb6f92', bold = true })
-hl('TelescopeSelection', { fg = '#eb6f92', bg = colors.selection, bold = true })
-hl('TelescopeMatching', { fg = '#eb6f92', bold = true })
+hl('TelescopeBorder', { fg = colors.pink, bg = colors.bg_secondary })
+hl('TelescopePromptBorder', { fg = colors.pink, bg = colors.bg_secondary })
+hl('TelescopePromptTitle', { fg = colors.pink, bold = true })
+hl('TelescopePreviewTitle', { fg = colors.pink, bold = true })
+hl('TelescopeResultsTitle', { fg = colors.pink, bold = true })
+hl('TelescopeSelection', { fg = colors.pink, bg = colors.selection, bold = true })
+hl('TelescopeMatching', { fg = colors.pink, bold = true })
 
 -- Neo-tree
 hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
 hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = '#464457' })
+hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
 hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
 hl('NeoTreeDirectoryName', { fg = colors.cyan })
 hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = '#eb6f92' })
+hl('NeoTreeFileNameOpened', { fg = colors.pink })
 hl('NeoTreeGitModified', { fg = colors.yellow })
 hl('NeoTreeGitAdded', { fg = colors.green })
 hl('NeoTreeGitDeleted', { fg = colors.red })
 hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = '#eb6f92', bold = true })
+hl('NeoTreeRootName', { fg = colors.pink, bold = true })
 
 -- Which-key
-hl('WhichKey', { fg = '#eb6f92' })
-hl('WhichKeyGroup', { fg = '#eb6f92' })
+hl('WhichKey', { fg = colors.pink })
+hl('WhichKeyGroup', { fg = colors.pink })
 hl('WhichKeyDesc', { fg = colors.fg_primary })
 hl('WhichKeySeparator', { fg = colors.comment })
 
 -- Mini.nvim statusline
-hl('MiniStatuslineModeNormal', { fg = colors.bg_primary, bg = '#eb6f92', bold = true })
+hl('MiniStatuslineModeNormal', { fg = colors.bg_primary, bg = colors.pink, bold = true })
 hl('MiniStatuslineModeInsert', { fg = colors.bg_primary, bg = colors.green, bold = true })
 hl('MiniStatuslineModeVisual', { fg = colors.bg_primary, bg = colors.purple, bold = true })
 hl('MiniStatuslineModeReplace', { fg = colors.bg_primary, bg = colors.red, bold = true })
