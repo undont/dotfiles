@@ -1140,7 +1140,15 @@ _sessionizer-widget() {
     dirs=(${^roots}/*(/N))
     _fzf_theme_refresh 2>/dev/null
     local dir
-    dir="$(printf '%s\n' "${dirs[@]/#$HOME/~}" | fzf --height=40% --reverse)"
+    # same nav mode as the launcher's dir picker (tmux/scripts/launchers/run.sh)
+    dir="$(printf '%s\n' "${dirs[@]/#$HOME/~}" | fzf --height=40% --reverse \
+        --exact --disabled --cycle --prompt=': ' \
+        --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort' \
+        --bind 'space:accept,enter:accept' \
+        --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
+        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space)' \
+        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space)" || echo "abort"' \
+        --bind 'ctrl-k:up,ctrl-l:clear-query')"
     if [[ -z "$dir" ]]; then
         zle redisplay
         return 0
