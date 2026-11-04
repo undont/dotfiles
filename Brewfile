@@ -12,6 +12,7 @@
 # =============================================================================
 
 brew "bash"                   # macOS ships 3.2; the scripts need 4+ (declare -A, local -n)
+brew "git"                    # /usr/bin/git is an xcrun shim that adds per-call overhead
 brew "zsh"
 brew "tmux"                   # >= 3.3 for the popup style options
 brew "powerlevel10k"

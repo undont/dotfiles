@@ -6,6 +6,17 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.157] - 2026-11-04
+
+### Changed
+
+- Homebrew `git` is installed over the macOS `/usr/bin/git` shim, which adds xcrun overhead to every call. `Brewfile`, `docs/INSTALLATION-GUIDE.md`
+- The sessionizer widget's directory picker uses the launcher's vim-style navigation: `j`/`k`/`g`/`G` to move, `/` to search, `esc` to leave search. `zsh/dotfiles.zsh`
+
+### Fixed
+
+- image.nvim renders obsidian embeds that reference an image by name from anywhere in the vault, and images no longer stay hidden behind ui2's hidden message and cmdline floats. `nvim/lua/plugins/image.lua`
+
 ## [0.2.156] - 2026-11-03
 
 ### Changed

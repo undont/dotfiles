@@ -172,7 +172,7 @@ Step 1: Setting up Homebrew...
 | Shell & Terminal    | zsh, tmux, powerlevel10k, fzf, direnv, carapace, zoxide           |
 | Editors             | neovim                                                            |
 | AI Tools            | opencode (Claude/Codex/Copilot install separately)                |
-| Git Tools           | gh (GitHub CLI), lazygit, diffnav, act                            |
+| Git Tools           | git, gh (GitHub CLI), lazygit, diffnav, act                       |
 | Search & Navigation | ripgrep, fd, tree, jq, yq, bat, zoxide                            |
 | Languages           | fnm (Node.js), bun, Go, Python 3.13 + uv, openjdk, dotnet-sdk     |
 | Databases           | postgresql@17, mongosh, sqld                                      |

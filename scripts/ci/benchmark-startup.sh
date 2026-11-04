@@ -51,32 +51,12 @@ rm -rf "$ZDOTDIR_DIR"
 # ─────────────────────────────────────────
 # parse results
 # ─────────────────────────────────────────
-MEDIAN_S=$(python3 -c "
-import json, sys
-with open('$RESULTS_FILE') as f:
-    data = json.load(f)
-result = data['results'][0]
-print(result['median'])
-")
-
-MEDIAN_MS=$(python3 -c "print(round($MEDIAN_S * 1000, 1))")
-MIN_MS=$(python3 -c "
+# hyperfine 2.x nests the stats under summary.time_wall_clock
+read -r MEDIAN_MS MIN_MS MAX_MS STDDEV_MS < <(python3 -c "
 import json
 with open('$RESULTS_FILE') as f:
-    data = json.load(f)
-print(round(data['results'][0]['min'] * 1000, 1))
-")
-MAX_MS=$(python3 -c "
-import json
-with open('$RESULTS_FILE') as f:
-    data = json.load(f)
-print(round(data['results'][0]['max'] * 1000, 1))
-")
-STDDEV_MS=$(python3 -c "
-import json
-with open('$RESULTS_FILE') as f:
-    data = json.load(f)
-print(round(data['results'][0]['stddev'] * 1000, 1))
+    wall = json.load(f)['results'][0]['summary']['time_wall_clock']
+print(*(round(wall[k] * 1000, 1) for k in ('median', 'min', 'max', 'stddev')))
 ")
 
 echo ""
