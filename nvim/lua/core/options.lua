@@ -115,6 +115,10 @@ function M.setup()
 
   vim.opt.guicursor = 'n-v-c:block,i-ci-ve:block-blinkwait700-blinkon400-blinkoff250'
 
+  -- rex shows this as the pane title; reset my zsh precmd hook on exit
+  vim.o.title = true
+  vim.o.titlestring = "nvim %{fnamemodify(getcwd(), ':~')}"
+
   -- the ui2 msg window shows messages
   vim.o.cmdheight = 0
 
