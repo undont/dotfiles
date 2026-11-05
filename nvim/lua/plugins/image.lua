@@ -6,10 +6,14 @@ local vault_hits = {}
 -- obsidian resolves an embed by name anywhere in the vault, not beside the note
 local function resolve_image_path(document_path, image_path, fallback)
   local path = fallback(document_path, image_path)
-  if vim.uv.fs_stat(path) then return path end
+  if vim.uv.fs_stat(path) then
+    return path
+  end
 
   local vault = vim.fs.root(document_path, '.obsidian')
-  if not vault then return path end
+  if not vault then
+    return path
+  end
 
   local key = vault .. '\0' .. image_path
   if vault_hits[key] == nil then

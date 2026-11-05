@@ -128,7 +128,21 @@ return {
               filter = {
                 cwd = true,
                 -- lua_ls reports local functions as `Variable`
-                lua = { 'Class', 'Constructor', 'Enum', 'Field', 'Function', 'Interface', 'Method', 'Module', 'Namespace', 'Property', 'Struct', 'Trait', 'Variable' },
+                lua = {
+                  'Class',
+                  'Constructor',
+                  'Enum',
+                  'Field',
+                  'Function',
+                  'Interface',
+                  'Method',
+                  'Module',
+                  'Namespace',
+                  'Property',
+                  'Struct',
+                  'Trait',
+                  'Variable',
+                },
               },
               -- the lsp finders never apply `filter.cwd` themselves
               transform = function(item, ctx)
