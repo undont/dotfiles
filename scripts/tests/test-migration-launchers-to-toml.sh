@@ -347,10 +347,10 @@ section "Converted launchers build the same session"
 if ! command -v tmux &>/dev/null; then
     skip "tmux not installed"
 else
-    # shellcheck source=tmux/scripts/_lib/launcher-data.sh
-    source "$DOTFILES_ROOT/tmux/scripts/_lib/launcher-data.sh"
-    # shellcheck source=tmux/scripts/_lib/launcher-tmux.sh
-    source "$DOTFILES_ROOT/tmux/scripts/_lib/launcher-tmux.sh"
+    # shellcheck source=launchers/lib/data.sh
+    source "$DOTFILES_ROOT/launchers/lib/data.sh"
+    # shellcheck source=launchers/lib/tmux.sh
+    source "$DOTFILES_ROOT/launchers/lib/tmux.sh"
     tmux_focus_session() { :; }
 
     # windows and panes of every session but the bootstrap one; an

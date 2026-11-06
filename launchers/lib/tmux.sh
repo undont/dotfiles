@@ -1,12 +1,12 @@
 #!/usr/bin/env bash
-# build a resolved launcher (launcher-data.sh) as a tmux session
-# source this file: source "${BASH_SOURCE%/*}/../_lib/launcher-tmux.sh"
+# build a resolved launcher (data.sh) as a tmux session
+# source this file: source "${BASH_SOURCE%/*}/../lib/tmux.sh"
 
-[[ -n "${_TMUX_LAUNCHER_TMUX_SH_LOADED:-}" ]] && return 0
-_TMUX_LAUNCHER_TMUX_SH_LOADED=1
+[[ -n "${_LAUNCHER_TMUX_SH_LOADED:-}" ]] && return 0
+_LAUNCHER_TMUX_SH_LOADED=1
 
 # shellcheck source=tmux/scripts/_lib/common.sh
-source "${BASH_SOURCE%/*}/common.sh"
+source "${BASH_SOURCE%/*}/../../tmux/scripts/_lib/common.sh"
 
 tmux_sessions() {
     tmux list-sessions -F '#{session_name}' 2>/dev/null || true

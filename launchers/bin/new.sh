@@ -12,8 +12,8 @@ set -euo pipefail
 #        new.sh --edit SOURCE [name]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-# shellcheck source=tmux/scripts/_lib/launcher-gen.sh
-source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
+# shellcheck source=launchers/lib/gen.sh
+source "$SCRIPT_DIR/../lib/gen.sh"
 
 # strip shell-escape backslashes from a pasted path. fzf gives literal text
 # (not shell-parsed), so `~/Library/Mobile\ Documents/...` arrives with the

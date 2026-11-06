@@ -6,7 +6,8 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/_test-helpers.sh"
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../../tmux/scripts/tests/_test-helpers.sh"
 
 TEST_DIR="$(mktemp -d)"
 TEST_DIR="$(cd "$TEST_DIR" && pwd -P)"
@@ -15,11 +16,11 @@ mkdir -p "$TEST_DIR/proj" "$TEST_DIR/config"
 export XDG_CONFIG_HOME="$TEST_DIR/config"
 export XDG_CACHE_HOME="$TEST_DIR/cache"
 
-CAPTURE="$SCRIPT_DIR/../launchers/capture.sh"
-# shellcheck source=tmux/scripts/launchers/save.sh
-source "$SCRIPT_DIR/../launchers/save.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-tmux.sh
-source "$SCRIPT_DIR/../_lib/launcher-tmux.sh"
+CAPTURE="$SCRIPT_DIR/../bin/capture.sh"
+# shellcheck source=launchers/bin/save.sh
+source "$SCRIPT_DIR/../bin/save.sh"
+# shellcheck source=launchers/lib/tmux.sh
+source "$SCRIPT_DIR/../lib/tmux.sh"
 
 # shellcheck disable=SC2329  # Called indirectly via trap
 _cleanup_save_tests() {

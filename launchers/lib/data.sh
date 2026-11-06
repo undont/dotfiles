@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # launcher files (<name>.toml) and the resolved session they describe, which
 # the tmux and rex backends build. the schema is in launchers/launcher.toml.template
-# source this file: source "${BASH_SOURCE%/*}/../_lib/launcher-data.sh"
+# source this file: source "${BASH_SOURCE%/*}/../lib/data.sh"
 #
 # a resolved launcher is JSON:
 #   {name, session, root, windows: [{name, auto_rename, focus, panes:
@@ -10,11 +10,11 @@
 # one focused pane per window (pane 1 outside the focused window), and split
 # and of set on every pane after the first (size stays null for an even split)
 
-[[ -n "${_TMUX_LAUNCHER_DATA_SH_LOADED:-}" ]] && return 0
-_TMUX_LAUNCHER_DATA_SH_LOADED=1
+[[ -n "${_LAUNCHER_DATA_SH_LOADED:-}" ]] && return 0
+_LAUNCHER_DATA_SH_LOADED=1
 
 # shellcheck source=tmux/scripts/_lib/common.sh
-source "${BASH_SOURCE%/*}/common.sh"
+source "${BASH_SOURCE%/*}/../../tmux/scripts/_lib/common.sh"
 
 # usage: launcher_file NAME
 launcher_file() {

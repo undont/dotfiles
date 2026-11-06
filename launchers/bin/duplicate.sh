@@ -11,8 +11,8 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
-# shellcheck source=tmux/scripts/_lib/launcher-data.sh
-source "$SCRIPT_DIR/../_lib/launcher-data.sh"
+# shellcheck source=launchers/lib/data.sh
+source "$SCRIPT_DIR/../lib/data.sh"
 
 name="${1:-}"
 [[ -n "$name" ]] || exit 0

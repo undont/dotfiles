@@ -53,7 +53,7 @@ Full `cd` + `pwd` ensures absolute paths when tests are invoked from different d
 
 - `install.sh` - Uses `$(cd "$(dirname ...)" && pwd)` assigned to `DOTFILES_DIR` (entry point)
 - `tmux/scripts/sessions/list.sh` - Uses `${BASH_SOURCE%/*}` (module script)
-- `tmux/scripts/launchers/dev` - Resolves its own symlink from `${BASH_SOURCE[0]}` (linked into `~/.local/launchers`) to find `launch.sh`
+- `launchers/bin/dev` - Resolves its own symlink from `${BASH_SOURCE[0]}` (linked into `~/.local/launchers`) to find `launch.sh`
 - `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname ...)" && pwd)` (test script)
 - Don't mix patterns within the same category of scripts
 

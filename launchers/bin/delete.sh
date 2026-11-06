@@ -12,9 +12,9 @@ set -euo pipefail
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
 # shellcheck source=tmux/scripts/_lib/common.sh
-source "$SCRIPT_DIR/../_lib/common.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/common.sh"
 # shellcheck source=tmux/scripts/_lib/ui.sh
-source "$SCRIPT_DIR/../_lib/ui.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/ui.sh"
 
 load_fzf_theme
 

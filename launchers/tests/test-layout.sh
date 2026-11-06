@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# test suite for _lib/layout.sh
+# test suite for lib/layout.sh
 # checks the split steps for known layouts, then replays them on the isolated
 # test server and compares the panes tmux builds with the originals
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/_test-helpers.sh"
-source "$SCRIPT_DIR/../_lib/common.sh"
-# shellcheck source=tmux/scripts/_lib/layout.sh
-source "$SCRIPT_DIR/../_lib/layout.sh"
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../../tmux/scripts/tests/_test-helpers.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/common.sh"
+# shellcheck source=launchers/lib/layout.sh
+source "$SCRIPT_DIR/../lib/layout.sh"
 
 # shellcheck disable=SC2329  # Called indirectly via trap
 _cleanup_layout_tests() {
@@ -136,10 +137,10 @@ section "Launcher with a rich window"
 # write a launcher whose second window is one pane on the left and two
 # stacked on the right, each in its own directory, then build it and read the
 # session back
-# shellcheck source=tmux/scripts/_lib/launcher-gen.sh
-source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-tmux.sh
-source "$SCRIPT_DIR/../_lib/launcher-tmux.sh"
+# shellcheck source=launchers/lib/gen.sh
+source "$SCRIPT_DIR/../lib/gen.sh"
+# shellcheck source=launchers/lib/tmux.sh
+source "$SCRIPT_DIR/../lib/tmux.sh"
 RICH_DIR="$(mktemp -d)"
 RICH_DIR="$(cd "$RICH_DIR" && pwd -P)"
 mkdir -p "$RICH_DIR/proj/backend" "$RICH_DIR/elsewhere"
@@ -176,7 +177,7 @@ write_launcher "$RICH_DIR/rich.toml"
 ) >/dev/null 2>&1 || true
 sleep 1
 
-out=$("$SCRIPT_DIR/../launchers/capture.sh" richrun)
+out=$("$SCRIPT_DIR/../bin/capture.sh" richrun)
 dev_idx=$(tmux display-message -p -t "=richrun:dev" '#{window_index}')
 dev_rows=$(printf '%s\n' "$out" | awk -F'\t' -v w="$dev_idx" '$1 == "pane" && $2 == w')
 

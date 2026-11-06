@@ -4,7 +4,7 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # capture a session's layout
 # ══════════════════════════════════════════════════════════════
-# reads a tmux or rex session (launcher-backend.sh picks) and prints its shape
+# reads a tmux or rex session (backend.sh picks) and prints its shape
 # as tab-separated rows, for "save session as launcher" (launchers/save.sh).
 # reports only, no decisions: the caller chooses how to map this onto a launcher
 #
@@ -30,9 +30,9 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
-source "$SCRIPT_DIR/../_lib/common.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-backend.sh
-source "$SCRIPT_DIR/../_lib/launcher-backend.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/common.sh"
+# shellcheck source=launchers/lib/backend.sh
+source "$SCRIPT_DIR/../lib/backend.sh"
 
 # tabs and newlines would break the row format
 clean_field() {

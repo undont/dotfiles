@@ -1,15 +1,15 @@
 #!/usr/bin/env bash
 # session operations on whichever multiplexer the launcher runs under:
 # LAUNCHER_BACKEND (tmux | rex), else tmux inside tmux, else rex inside rex
-# source this file: source "${BASH_SOURCE%/*}/../_lib/launcher-backend.sh"
+# source this file: source "${BASH_SOURCE%/*}/../lib/backend.sh"
 
-[[ -n "${_TMUX_LAUNCHER_BACKEND_SH_LOADED:-}" ]] && return 0
-_TMUX_LAUNCHER_BACKEND_SH_LOADED=1
+[[ -n "${_LAUNCHER_BACKEND_SH_LOADED:-}" ]] && return 0
+_LAUNCHER_BACKEND_SH_LOADED=1
 
-# shellcheck source=tmux/scripts/_lib/launcher-tmux.sh
-source "${BASH_SOURCE%/*}/launcher-tmux.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-rex.sh
-source "${BASH_SOURCE%/*}/launcher-rex.sh"
+# shellcheck source=launchers/lib/tmux.sh
+source "${BASH_SOURCE%/*}/tmux.sh"
+# shellcheck source=launchers/lib/rex.sh
+source "${BASH_SOURCE%/*}/rex.sh"
 
 launcher_backend() {
     if [[ -n "${LAUNCHER_BACKEND:-}" ]]; then

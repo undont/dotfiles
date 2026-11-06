@@ -9,12 +9,13 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/_test-helpers.sh"
-source "$SCRIPT_DIR/../_lib/common.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-gen.sh
-source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../../tmux/scripts/tests/_test-helpers.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/common.sh"
+# shellcheck source=launchers/lib/gen.sh
+source "$SCRIPT_DIR/../lib/gen.sh"
 
-NEW_SH="$SCRIPT_DIR/../launchers/new.sh"
+NEW_SH="$SCRIPT_DIR/../bin/new.sh"
 TEST_DIR="$(mktemp -d)"
 TEST_DIR="$(cd "$TEST_DIR" && pwd -P)"
 CONFIG="$TEST_DIR/config"

@@ -14,10 +14,10 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
-# shellcheck source=tmux/scripts/_lib/launcher-data.sh
-source "$SCRIPT_DIR/../_lib/launcher-data.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-backend.sh
-source "$SCRIPT_DIR/../_lib/launcher-backend.sh"
+# shellcheck source=launchers/lib/data.sh
+source "$SCRIPT_DIR/../lib/data.sh"
+# shellcheck source=launchers/lib/backend.sh
+source "$SCRIPT_DIR/../lib/backend.sh"
 
 # strip shell-escape backslashes from a pasted path. fzf gives literal text
 # (not shell-parsed), so `~/Library/Mobile\ Documents/...` arrives with the

@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # the wizard's and save session's view of a launcher file: load a <name>.toml
 # into state variables, change them, write them back
-# source this file: source "${BASH_SOURCE%/*}/../_lib/launcher-gen.sh"
+# source this file: source "${BASH_SOURCE%/*}/../lib/gen.sh"
 #
 #   name            launcher file name without .toml (also the @launcher tag)
 #   description     one-line summary for the picker
@@ -36,11 +36,11 @@
 #   pane_dirs       ["<window index>:<pane>"] directory: empty = the window
 #                   dir, relative = under the root, absolute or ~/... as is
 
-[[ -n "${_TMUX_LAUNCHER_GEN_SH_LOADED:-}" ]] && return 0
-_TMUX_LAUNCHER_GEN_SH_LOADED=1
+[[ -n "${_LAUNCHER_GEN_SH_LOADED:-}" ]] && return 0
+_LAUNCHER_GEN_SH_LOADED=1
 
-# shellcheck source=tmux/scripts/_lib/launcher-data.sh
-source "${BASH_SOURCE%/*}/launcher-data.sh"
+# shellcheck source=launchers/lib/data.sh
+source "${BASH_SOURCE%/*}/data.sh"
 
 declare -ga win_panes=() win_layouts=() win_autonames=() win_dirs=()
 declare -gA pane_cmds=() pane_dirs=()

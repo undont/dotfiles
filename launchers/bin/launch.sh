@@ -5,12 +5,12 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
-# shellcheck source=tmux/scripts/_lib/launcher-data.sh
-source "$SCRIPT_DIR/../_lib/launcher-data.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-backend.sh
-source "$SCRIPT_DIR/../_lib/launcher-backend.sh"
+# shellcheck source=launchers/lib/data.sh
+source "$SCRIPT_DIR/../lib/data.sh"
+# shellcheck source=launchers/lib/backend.sh
+source "$SCRIPT_DIR/../lib/backend.sh"
 # shellcheck source=tmux/scripts/_lib/ui.sh
-source "$SCRIPT_DIR/../_lib/ui.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/ui.sh"
 
 name="${1:-}"
 dir="${2:-}"

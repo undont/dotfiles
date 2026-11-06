@@ -19,8 +19,8 @@ if [[ ! -d "$USER_LAUNCHERS" ]]; then
     exit 0
 fi
 
-# shellcheck source=tmux/scripts/_lib/launcher-data.sh
-source "$DOTFILES_ROOT/tmux/scripts/_lib/launcher-data.sh"
+# shellcheck source=launchers/lib/data.sh
+source "$DOTFILES_ROOT/launchers/lib/data.sh"
 
 WORK=$(mktemp -d)
 # the instance suffix the second recording runs as; numeric, so a worktree

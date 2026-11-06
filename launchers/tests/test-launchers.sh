@@ -9,16 +9,17 @@ set -euo pipefail
 #   - launchers/run.sh (routing on the session key, metadata)
 #   - launchers/delete.sh (repo protection, path traversal guard)
 #   - launchers/new.sh (name validation)
-#   - _lib/launcher-gen.sh (TOML output, load/write round trip)
+#   - lib/gen.sh (TOML output, load/write round trip)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-LIST_LAUNCHERS="$SCRIPT_DIR/../launchers/list.sh"
-RUN_LAUNCHER="$SCRIPT_DIR/../launchers/run.sh"
-DELETE_LAUNCHER="$SCRIPT_DIR/../launchers/delete.sh"
-NEW_LAUNCHER="$SCRIPT_DIR/../launchers/new.sh"
+DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LIST_LAUNCHERS="$SCRIPT_DIR/../bin/list.sh"
+RUN_LAUNCHER="$SCRIPT_DIR/../bin/run.sh"
+DELETE_LAUNCHER="$SCRIPT_DIR/../bin/delete.sh"
+NEW_LAUNCHER="$SCRIPT_DIR/../bin/new.sh"
 
-source "$SCRIPT_DIR/_test-helpers.sh"
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../../tmux/scripts/tests/_test-helpers.sh"
 
 # ===========================================================================
 # launchers/list.sh tests
@@ -64,10 +65,10 @@ section "launchers/list.sh: Sources the shared libraries (no find_dotfiles_root 
 
 list_content=$(cat "$LIST_LAUNCHERS")
 
-if [[ "$list_content" == *'source "$SCRIPT_DIR/../_lib/launcher-data.sh"'* ]]; then
-    pass "sources launcher-data.sh (and through it common.sh)"
+if [[ "$list_content" == *'source "$SCRIPT_DIR/../lib/data.sh"'* ]]; then
+    pass "sources data.sh (and through it common.sh)"
 else
-    fail "should source launcher-data.sh"
+    fail "should source data.sh"
 fi
 
 if [[ "$list_content" == *"find_dotfiles_root"* ]]; then
@@ -165,7 +166,7 @@ else
 fi
 
 if grep -q 'launcher_field "\$USER_LAUNCHERS" description' "$LIST_LAUNCHERS" &&
-    grep -q '"\${files\[@\]}"' "$DOTFILES_ROOT/tmux/scripts/_lib/launcher-data.sh"; then
+    grep -q '"\${files\[@\]}"' "$DOTFILES_ROOT/launchers/lib/data.sh"; then
     pass "launchers/list.sh reads every description in one yq run (launcher_field)"
 else
     fail "launchers/list.sh should read descriptions in one yq run, not one per file"
@@ -246,8 +247,8 @@ meta_dir=$(mktemp -d)
 meta_file="$meta_dir/multi.toml"
 printf '%s\n' 'description = """two' 'lines"""' 'instance = "prompt"' 'session = "acme"' '[[window]]' >"$meta_file"
 meta=$(
-    # shellcheck source=tmux/scripts/_lib/launcher-data.sh
-    source "$DOTFILES_ROOT/tmux/scripts/_lib/launcher-data.sh"
+    # shellcheck source=launchers/lib/data.sh
+    source "$DOTFILES_ROOT/launchers/lib/data.sh"
     LAUNCHER_FILE="$meta_file"
     eval "$meta_block"
     # shellcheck disable=SC2154 # assigned by the eval'd block
@@ -263,7 +264,7 @@ section "launchers/dev: Symlink Resolution"
 link_dir=$(mktemp -d)
 link_dir=$(cd -P "$link_dir" && pwd)
 mkdir -p "$link_dir/a/b" "$link_dir/c"
-dev_target="$(cd -P "$DOTFILES_ROOT/tmux/scripts/launchers" && pwd)/dev"
+dev_target="$(cd -P "$DOTFILES_ROOT/launchers/bin" && pwd)/dev"
 rel_target=$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$dev_target" "$link_dir/a/b")
 ln -s "$rel_target" "$link_dir/a/b/dev"
 ln -s ../a/b/dev "$link_dir/c/dev"
@@ -457,9 +458,9 @@ else
     fail "should cap window count at 20"
 fi
 
-section "_lib/launcher-gen.sh: Written Launcher"
+section "lib/gen.sh: Written Launcher"
 
-LAUNCHER_GEN="$DOTFILES_ROOT/tmux/scripts/_lib/launcher-gen.sh"
+LAUNCHER_GEN="$DOTFILES_ROOT/launchers/lib/gen.sh"
 GEN_TMP="$(mktemp -d)"
 # shellcheck disable=SC2329  # Called indirectly via trap
 _cleanup_gen_tmp() { rm -rf "$GEN_TMP"; }
@@ -483,7 +484,7 @@ gen_fixture() {
 
 gen_file="$GEN_TMP/my.app.toml"
 (
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     gen_fixture
     write_launcher "$gen_file"
@@ -491,7 +492,7 @@ gen_file="$GEN_TMP/my.app.toml"
 gen_json=$(yq -p toml -o json -I0 "$gen_file" 2>/dev/null || true)
 
 if [[ -n "$gen_json" ]] && [[ -z "$(
-    source "$DOTFILES_ROOT/tmux/scripts/_lib/launcher-data.sh"
+    source "$DOTFILES_ROOT/launchers/lib/data.sh"
     launcher_problems "$gen_json"
 )" ]]; then
     pass "a written launcher is valid TOML that passes the schema"
@@ -514,12 +515,12 @@ for want in '.session == "my-app"' \
     fi
 done
 
-section "_lib/launcher-gen.sh: Load/Write Round Trip"
+section "lib/gen.sh: Load/Write Round Trip"
 
 # loading a written launcher gives back the state that wrote it, and writing
 # that state again leaves the file as it was
 round_trip=$(
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     gen_fixture
     want=$(declare -p description instance_mode worktree_aware win_names win_cmds win_splits win_split_cmds)
@@ -562,7 +563,7 @@ for placement in "window" "first-pane"; do
     } >"$focus_file"
     before=$(cat "$focus_file")
     after=$(
-        # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+        # shellcheck source=launchers/lib/gen.sh
         source "$LAUNCHER_GEN"
         load_existing_launcher "$focus_file"
         name="focus"
@@ -572,7 +573,7 @@ for placement in "window" "first-pane"; do
     assert_equals "focus = true on a $placement keeps its place" "$before" "$after"
 done
 moved=$(
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     load_existing_launcher "$GEN_TMP/focus-first-pane.toml"
     name="focus"
@@ -585,7 +586,7 @@ assert_equals "a different focus still moves the key" "[false,true]" "$moved"
 for repo_launcher in "$DOTFILES_ROOT"/launchers/*.toml; do
     launcher_name=$(basename "$repo_launcher" .toml)
     if (
-        # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+        # shellcheck source=launchers/lib/gen.sh
         source "$LAUNCHER_GEN"
         name="$launcher_name"
         load_existing_launcher "$repo_launcher"
@@ -599,8 +600,8 @@ done
 
 # every schema key, and the template, survive a load and write: same data,
 # same comments
-# shellcheck source=tmux/scripts/_lib/launcher-data.sh
-source "$DOTFILES_ROOT/tmux/scripts/_lib/launcher-data.sh"
+# shellcheck source=launchers/lib/data.sh
+source "$DOTFILES_ROOT/launchers/lib/data.sh"
 cat >"$GEN_TMP/every-key.toml" <<'TOML'
 # a launcher using every key
 description = "every key"
@@ -668,7 +669,7 @@ for fixture in every-key window-focus split-focus template; do
     want=$(launcher_json "$file" | jq -S .)
     comments=$(grep -c '#' "$file")
     (
-        # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+        # shellcheck source=launchers/lib/gen.sh
         source "$LAUNCHER_GEN"
         name="$fixture"
         load_existing_launcher "$file"
@@ -678,7 +679,7 @@ for fixture in every-key window-focus split-focus template; do
     assert_equals "$fixture: every comment is kept" "$comments" "$(grep -c '#' "$file")"
 done
 
-section "_lib/launcher-gen.sh: Comments Survive a Rewrite"
+section "lib/gen.sh: Comments Survive a Rewrite"
 
 comment_file="$GEN_TMP/commented.toml"
 cat >"$comment_file" <<'TESTEOF'
@@ -695,7 +696,7 @@ cmd = "nvim"
 name = "gone"
 TESTEOF
 (
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     name="commented"
     load_existing_launcher "$comment_file"
@@ -722,7 +723,7 @@ else
     fail "a removed window should be dropped from the file"
 fi
 
-section "_lib/launcher-gen.sh: Rich Windows"
+section "lib/gen.sh: Rich Windows"
 
 # a simple window, then a rich one: three panes (one left, two stacked right),
 # each with its own directory, an even split, and a command with single quotes
@@ -746,7 +747,7 @@ rich_fixture() {
 
 rich_file="$GEN_TMP/rich.toml"
 (
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     rich_fixture
     write_launcher "$rich_file"
@@ -764,7 +765,7 @@ for want in '.window[1].pane[0] == {cmd: "make status"}' \
 done
 
 rich_round_trip=$(
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     rich_fixture
     want=$(declare -p win_names win_cmds win_splits win_split_cmds win_panes win_layouts pane_cmds pane_dirs)
@@ -781,7 +782,7 @@ fi
 
 section "Launchers: tmux Session Targets and @launcher Tag"
 
-backend_content=$(cat "$DOTFILES_ROOT/tmux/scripts/_lib/launcher-tmux.sh")
+backend_content=$(cat "$DOTFILES_ROOT/launchers/lib/tmux.sh")
 # set-option -t takes a target-pane, so a bare "=$session" is parsed as a
 # window name; the trailing colon makes it the exact-match session
 if [[ "$backend_content" == *'tmux set-option -t "=$session:" @launcher "$name"'* ]]; then
@@ -799,7 +800,7 @@ section "launchers/picker.sh: Search Mode Keys"
 
 # every single-letter action key must be unbound while searching (/) and
 # rebound on esc, or the letter can't be typed into the search
-picker_content=$(cat "$SCRIPT_DIR/../launchers/picker.sh")
+picker_content=$(cat "$SCRIPT_DIR/../bin/picker.sh")
 unbind_list=$(printf '%s' "$picker_content" | grep -o "enable-search[^']*+unbind([^)]*)" | head -1)
 rebind_list=$(printf '%s' "$picker_content" | grep -o "disable-search[^']*+rebind([^)]*)" | head -1)
 for key in $(printf '%s' "$picker_content" | grep -oE "\-\-bind ['\"][A-Za-z]:(become|execute)" | sed -E "s/--bind ['\"]//; s/:.*//"); do
@@ -937,7 +938,7 @@ fi
 
 section "launchers/picker.sh: Name Weighting Configuration"
 
-picker_content=$(cat "$SCRIPT_DIR/../launchers/picker.sh")
+picker_content=$(cat "$SCRIPT_DIR/../bin/picker.sh")
 
 if [[ "$picker_content" == *"--with-nth=2"* ]]; then
     pass "picker uses --with-nth=2 to hide name weight field"
@@ -955,7 +956,7 @@ fi
 # launchers/duplicate.sh tests
 # ===========================================================================
 
-DUPLICATE_LAUNCHER="$SCRIPT_DIR/../launchers/duplicate.sh"
+DUPLICATE_LAUNCHER="$SCRIPT_DIR/../bin/duplicate.sh"
 
 section "launchers/duplicate.sh: Script Exists and Is Executable"
 

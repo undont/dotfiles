@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# test suite for _lib/launcher-data.sh and the tmux and rex launcher backends:
+# test suite for lib/data.sh and the tmux and rex launcher backends:
 # schema problems, resolving a launcher for a run, writing one back, the rex
 # session.create payload, and a tmux build on the isolated test server
 
@@ -7,13 +7,14 @@
 set -uo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/_test-helpers.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-data.sh
-source "$SCRIPT_DIR/../_lib/launcher-data.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-tmux.sh
-source "$SCRIPT_DIR/../_lib/launcher-tmux.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-rex.sh
-source "$SCRIPT_DIR/../_lib/launcher-rex.sh"
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../../tmux/scripts/tests/_test-helpers.sh"
+# shellcheck source=launchers/lib/data.sh
+source "$SCRIPT_DIR/../lib/data.sh"
+# shellcheck source=launchers/lib/tmux.sh
+source "$SCRIPT_DIR/../lib/tmux.sh"
+# shellcheck source=launchers/lib/rex.sh
+source "$SCRIPT_DIR/../lib/rex.sh"
 
 WORK=$(mktemp -d)
 # shellcheck disable=SC2329  # Called indirectly via trap

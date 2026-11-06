@@ -25,13 +25,13 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
-source "$SCRIPT_DIR/../_lib/common.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/common.sh"
 # shellcheck source=tmux/scripts/_lib/ui.sh
-source "$SCRIPT_DIR/../_lib/ui.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-gen.sh
-source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
-# shellcheck source=tmux/scripts/_lib/layout.sh
-source "$SCRIPT_DIR/../_lib/layout.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/ui.sh"
+# shellcheck source=launchers/lib/gen.sh
+source "$SCRIPT_DIR/../lib/gen.sh"
+# shellcheck source=launchers/lib/layout.sh
+source "$SCRIPT_DIR/../lib/layout.sh"
 
 DIM=$'\033[2m'
 

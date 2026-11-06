@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# build a resolved launcher (launcher-data.sh) as a rex session. a named
+# build a resolved launcher (data.sh) as a rex session. a named
 # window's name is its tab label; an auto-rename or unnamed window keeps rex's
 # default label
-# source this file: source "${BASH_SOURCE%/*}/../_lib/launcher-rex.sh"
+# source this file: source "${BASH_SOURCE%/*}/../lib/rex.sh"
 
-[[ -n "${_TMUX_LAUNCHER_REX_SH_LOADED:-}" ]] && return 0
-_TMUX_LAUNCHER_REX_SH_LOADED=1
+[[ -n "${_LAUNCHER_REX_SH_LOADED:-}" ]] && return 0
+_LAUNCHER_REX_SH_LOADED=1
 
 REX_SHELL_FLAVOR="com.superlogical.terminal.shell"
 

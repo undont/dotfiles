@@ -47,10 +47,11 @@ jobs:
           shellcheck -x $EXCLUDES tmux/scripts/_lib/*.sh
           shellcheck -x $EXCLUDES -e SC2317 tmux/scripts/tests/*.sh
 
-      - name: Run ShellCheck on the dev launcher wrapper
+      - name: Run ShellCheck on launcher scripts
         run: |
           EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
-          shellcheck -x $EXCLUDES tmux/scripts/launchers/dev
+          shellcheck -x $EXCLUDES launchers/bin/*.sh launchers/bin/dev launchers/lib/*.sh
+          shellcheck -x $EXCLUDES -e SC2317 launchers/tests/*.sh
 
       - name: Run ShellCheck on test scripts
         run: |

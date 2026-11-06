@@ -5,9 +5,10 @@
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/_test-helpers.sh"
-CAPTURE="$SCRIPT_DIR/../launchers/capture.sh"
-# shellcheck source=tmux/scripts/launchers/capture.sh
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../../tmux/scripts/tests/_test-helpers.sh"
+CAPTURE="$SCRIPT_DIR/../bin/capture.sh"
+# shellcheck source=launchers/bin/capture.sh
 source "$CAPTURE"
 
 TEST_DIR="$(mktemp -d)"

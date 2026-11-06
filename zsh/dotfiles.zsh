@@ -1117,7 +1117,7 @@ _sessionizer-widget() {
     dirs=(${^roots}/*(/N))
     _fzf_theme_refresh 2>/dev/null
     local dir
-    # same nav mode as the launcher's dir picker (tmux/scripts/launchers/run.sh)
+    # same nav mode as the launcher's dir picker (launchers/bin/run.sh)
     dir="$(printf '%s\n' "${dirs[@]/#$HOME/~}" | fzf --height=40% --reverse \
         --exact --disabled --cycle --prompt=': ' \
         --bind 'j:down,k:up,g:first,G:last,d:half-page-down,u:half-page-up,q:abort' \
@@ -1138,7 +1138,7 @@ bindkey '^s' _sessionizer-widget
 
 # @cheat: Ctrl+O | launcher picker
 _launcher-picker-widget() {
-    ~/.tmux/scripts/launchers/picker.sh </dev/tty
+    "$DOTFILES_ROOT/launchers/bin/picker.sh" </dev/tty
     zle reset-prompt
 }
 zle -N _launcher-picker-widget
