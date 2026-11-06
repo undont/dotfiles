@@ -676,29 +676,6 @@ tattach() {
     return 1
 }
 
-# terminal entry to the launcher system: no args opens the launcher picker,
-# with a query it resolves a directory via zoxide and opens a dev session
-# there (attaches if the session already exists, creates it otherwise)
-# @cheat: tl | launcher picker (no args) or zoxide query into a dev session
-tl() {
-    if (($# == 0)); then
-        ~/.tmux/scripts/launchers/picker.sh
-        return
-    fi
-
-    local dir
-    if [[ -d "$1" ]]; then
-        dir="$1"
-    elif ! dir=$(zoxide query -- "$@" 2>/dev/null); then
-        echo "tl: no directory match for '$*'" >&2
-        return 1
-    fi
-
-    # keep frecency fresh when launched from an explicit path
-    zoxide add "$dir" 2>/dev/null || true
-    dev "$dir"
-}
-
 # tab completion for tmux commands
 _trestore_complete() {
     local -a options sessions
@@ -1158,6 +1135,14 @@ _sessionizer-widget() {
 }
 zle -N _sessionizer-widget
 bindkey '^s' _sessionizer-widget
+
+# @cheat: Ctrl+O | launcher picker
+_launcher-picker-widget() {
+    ~/.tmux/scripts/launchers/picker.sh </dev/tty
+    zle reset-prompt
+}
+zle -N _launcher-picker-widget
+bindkey '^o' _launcher-picker-widget
 # @cheat: Cmd+Backspace | delete to line start
 bindkey '\e[127;5u' backward-kill-line # Cmd+Backspace (via Ghostty: super+backspace → Ctrl+Backspace)
 
