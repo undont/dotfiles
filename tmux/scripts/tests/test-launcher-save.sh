@@ -18,6 +18,8 @@ export XDG_CACHE_HOME="$TEST_DIR/cache"
 CAPTURE="$SCRIPT_DIR/../launchers/capture.sh"
 # shellcheck source=tmux/scripts/launchers/save.sh
 source "$SCRIPT_DIR/../launchers/save.sh"
+# shellcheck source=tmux/scripts/_lib/launcher-tmux.sh
+source "$SCRIPT_DIR/../_lib/launcher-tmux.sh"
 
 # shellcheck disable=SC2329  # Called indirectly via trap
 _cleanup_save_tests() {
@@ -51,6 +53,26 @@ describe_state() {
     done
 }
 
+# build a saved launcher on the test server. there's no client to switch to,
+# so the session is built and left detached
+# usage: replay NAME [SESSION_NAME]
+replay() {
+    (
+        export SESSION_NAME="${2:-}"
+        # shellcheck disable=SC2329  # replaces the backend's client switch
+        tmux_focus_session() { :; }
+        tmux_launch "$(launcher_resolve "$USER_LAUNCHERS/$1.toml")"
+    ) >/dev/null 2>&1 || true
+}
+
+# a jq test against a launcher file
+# usage: toml_has FILE FILTER [JQ_ARGS...]
+toml_has() {
+    local file="$1" filter="$2"
+    shift 2
+    yq -p toml -o json -I0 "$file" 2>/dev/null | jq -e "$@" "$filter" >/dev/null 2>&1
+}
+
 echo ""
 echo "${CYAN}═══════════════════════════════════════════${NC}"
 echo "${CYAN}  Launcher Save Tests${NC}"
@@ -79,6 +101,17 @@ assert_equals "paths under \$HOME map to \$HOME/..." "\$HOME/src/x" "$(generator
 # shellcheck disable=SC2088  # a literal ~ is the input under test
 assert_equals "~ paths map to \$HOME/..." "\$HOME/src/x" "$(generator_path "~/src/x")"
 assert_equals "paths outside \$HOME are kept" "/opt/x" "$(generator_path "/opt/x")"
+
+# a broken user launcher doesn't stop save finding the session's launcher
+match_dir=$(mktemp -d)
+printf '%s\n' 'description = "x"' 'session = "acme"' '[[window]]' >"$match_dir/acme.toml"
+printf '%s\n' 'description = "x"' 'session = "acme-web"' '[[window]]' >"$match_dir/acme-web.toml"
+printf 'not = [toml\n' >"$match_dir/broken.toml"
+assert_equals "an instance session matches its launcher past a broken file" "acme" \
+    "$(USER_LAUNCHERS="$match_dir" cap_tag="" cap_session="acme-12" session_launcher)"
+assert_equals "the longest base session wins" "acme-web" \
+    "$(USER_LAUNCHERS="$match_dir" cap_tag="" cap_session="acme-web-2" session_launcher)"
+rm -rf "$match_dir"
 
 # ═══════════════════════════════════════════════════════════════════════════
 section "Mapping captured rows"
@@ -124,6 +157,25 @@ else
     fail "plain layouts should get no note (got: $notes)"
 fi
 assert_equals "one note per finding" "3" "${#save_notes[@]}"
+assert_equals "no active row leaves the first window and pane" "0 1" "$focus_window $focus_pane"
+
+build_state_from_capture "$rows"$'active\t5\t2\n'
+assert_equals "the active pane becomes the focus, by window index and creation rank" "4 2" \
+    "$focus_window $focus_pane"
+build_state_from_capture "$rows"$'active\t1\t3\n'
+assert_equals "a pane created by a later split keeps its creation rank" "0 3" "$focus_window $focus_pane"
+
+
+# rex prints its split tree as split rows; pane rectangles are then 0 0 0 0
+rex_rows=$'session\tdemo\nlauncher\t\ndir\t/p\nactive\t1\t3\nwindow\t1\tdev\t3\t0\n'
+rex_rows+=$'pane\t1\t1\t0\t0\t0\t0\t/p\tnvim\t\npane\t1\t2\t0\t0\t0\t0\t/p\tmake dev\t\n'
+rex_rows+=$'pane\t1\t3\t0\t0\t0\t0\t/p\t\t\n'
+rex_rows+=$'split\t1\t1\th\t30\t2\nsplit\t1\t2\tv\t40\t3\n'
+build_state_from_capture "$rex_rows"
+assert_equals "split rows are the window's steps" $'1 h 30 2\n2 v 40 3' "${win_layouts[0]}"
+assert_equals "every pane is kept" "3" "${win_panes[0]}"
+assert_equals "pane commands follow the steps' numbering" "make dev" "${pane_cmds["0:2"]:-}"
+assert_equals "the active pane is the focus" "0 3" "$focus_window $focus_pane"
 
 # ═══════════════════════════════════════════════════════════════════════════
 section "Save as new, then replay"
@@ -131,7 +183,7 @@ section "Save as new, then replay"
 
 setup_test_server
 tmux set-option -g default-shell /bin/sh
-# mirror the real config: generated launchers select window 1, pane 1
+# mirror the real config
 tmux set-option -g base-index 1
 tmux set-option -g pane-base-index 1
 
@@ -153,26 +205,33 @@ original_state=$(describe_state)
 assert_equals "captures the original session" "code||no||3|1 h 50 2;2 v 48 3|||sleep 300 | cat -u|||sub
 srv|tail -f 'my notes.txt'|no|" "$original_state"
 write_new_launcher "saved"
-saved="$USER_LAUNCHERS/saved"
+saved="$USER_LAUNCHERS/saved.toml"
 
-if [[ -x "$saved" ]] && bash -n "$saved"; then
-    pass "writes an executable, valid launcher"
+if [[ -f "$saved" && -z "$(launcher_problems "$(launcher_json "$saved")")" ]]; then
+    pass "writes a launcher that passes the schema"
 else
-    fail "should write an executable, valid launcher"
+    fail "should write a launcher that passes the schema"
 fi
-if is_generated_launcher "$saved"; then
-    pass "saved launcher carries the @generated marker"
+if toml_has "$saved" '.description == "Saved from the '"'orig'"' session"'; then
+    pass "description names the source session"
 else
-    fail "saved launcher should carry the @generated marker"
+    fail "description should name the source session"
 fi
-assert_equals "description names the source session" "# @description: Saved from the 'orig' session" \
-    "$(grep -m1 '^# @description:' "$saved")"
-assert_equals "project dir is the session's dir" "_SAVED_ROOT_DEFAULT=\"$TEST_DIR/proj\"" \
-    "$(grep -m1 '^_SAVED_ROOT_DEFAULT=' "$saved")"
+if toml_has "$saved" '.root == $r and (has("root_env") | not)' --arg r "$TEST_DIR/proj"; then
+    pass "root is the session's dir, with no env override"
+else
+    fail "root should be the session's dir, with no root_env"
+fi
 
-# the launcher attaches at the end, which fails without a terminal; the session
-# is built before that
-SESSION_NAME=replay bash "$saved" >/dev/null 2>&1 || true
+if toml_has "$saved" '.window[1].focus == true and ([.. | objects | select(has("focus"))] | length) == 1'; then
+    pass "the session's active window (srv, first pane) is the one focus"
+else
+    fail "the saved launcher should focus the srv window and nothing else"
+fi
+
+replay saved replay
+assert_equals "the replayed session opens on the focused window" "srv" \
+    "$(tmux display-message -p -t "=replay:" '#{window_name}')"
 if tmux has-session -t "=replay" 2>/dev/null; then
     pass "saved launcher builds a session"
 else
@@ -213,39 +272,45 @@ section "Update in place"
     win_cmds=(top)
     win_splits=(no)
     win_split_cmds=("")
-    generate_launcher >"$USER_LAUNCHERS/proj"
+    write_launcher "$USER_LAUNCHERS/proj.toml"
 )
-printf '#!/usr/bin/env bash\n# @description: hand-written\n' >"$USER_LAUNCHERS/hand"
+# a hand-written one, with comments
+cat >"$USER_LAUNCHERS/hand.toml" <<'EOF'
+# notes on this launcher
+description = "hand-written" # shown in the picker
+session = "hand"
+
+[[window]]
+name = "old"
+EOF
 
 tmux set-option -t "=orig:" @launcher proj
 build_state_from_capture "$("$CAPTURE" orig)"
-assert_equals "a tagged session can update its generated launcher" "proj" "$(update_target || true)"
+assert_equals "a tagged session can update its launcher" "proj" "$(update_target || true)"
 
-cp "$USER_LAUNCHERS/proj" "$TEST_DIR/proj.before"
+cp "$USER_LAUNCHERS/proj.toml" "$TEST_DIR/proj.before"
 update_launcher "proj"
-if cmp -s "$TEST_DIR/proj.before" "$LAUNCHER_BACKUPS/proj"; then
-    pass "a generated launcher is backed up before it's replaced"
+if cmp -s "$TEST_DIR/proj.before" "$LAUNCHER_BACKUPS/proj.toml"; then
+    pass "a launcher is backed up before it's replaced"
 else
-    fail "a generated launcher should be copied to LAUNCHER_BACKUPS"
+    fail "a launcher should be copied to LAUNCHER_BACKUPS"
 fi
-updated="$USER_LAUNCHERS/proj"
-assert_equals "update keeps the description" "# @description: Original description" \
-    "$(grep -m1 '^# @description:' "$updated")"
-if grep -q '^# @instance: prompt' "$updated" && grep -q '^_PROJ_WORKTREES_DEFAULT="$HOME/src/proj-worktrees"' "$updated" &&
-    grep -q '^_PROJ_ROOT_DEFAULT="$HOME/src/proj"' "$updated"; then
-    pass "update keeps instance mode, worktrees and project dir"
+updated="$USER_LAUNCHERS/proj.toml"
+if toml_has "$updated" '.description == "Original description"'; then
+    pass "update keeps the description"
 else
-    fail "update should keep instance mode, worktrees and project dir"
+    fail "update should keep the description"
 fi
-if grep -q -- '-n "code"' "$updated" && grep -q -- '-n "srv"' "$updated" && ! grep -q -- '-n "old"' "$updated"; then
+# shellcheck disable=SC2016 # jq source
+if toml_has "$updated" '.instance == "prompt" and .worktrees.dir == "~/src/proj-worktrees" and .root == "~/src/proj"'; then
+    pass "update keeps instance mode, worktrees and root"
+else
+    fail "update should keep instance mode, worktrees and root"
+fi
+if toml_has "$updated" '[.window[].name] == ["code", "srv"]'; then
     pass "update replaces the windows"
 else
     fail "update should replace the windows with the session's"
-fi
-if bash -n "$updated"; then
-    pass "updated launcher is valid bash"
-else
-    fail "updated launcher has a syntax error"
 fi
 
 # no worktrees: load_existing_launcher used to leave worktrees_dir unset, which
@@ -261,22 +326,22 @@ fi
     win_cmds=("")
     win_splits=(no)
     win_split_cmds=("")
-    generate_launcher >"$USER_LAUNCHERS/plain"
+    write_launcher "$USER_LAUNCHERS/plain.toml"
 )
 if (
     unset worktrees_dir
     update_launcher "plain"
-) 2>/dev/null && grep -q -- '-n "srv"' "$USER_LAUNCHERS/plain"; then
+) 2>/dev/null && toml_has "$USER_LAUNCHERS/plain.toml" 'any(.window[]; .name == "srv")'; then
     pass "updates a launcher without worktree settings"
 else
     fail "should update a launcher without worktree settings"
 fi
 
 # a failed capture (session gone) leaves no windows: neither path may write
-cp "$USER_LAUNCHERS/plain" "$TEST_DIR/plain.before"
+cp "$USER_LAUNCHERS/plain.toml" "$TEST_DIR/plain.before"
 build_state_from_capture ""
 if ! update_launcher "plain" && ! write_new_launcher "empty" &&
-    cmp -s "$TEST_DIR/plain.before" "$USER_LAUNCHERS/plain" && [[ ! -e "$USER_LAUNCHERS/empty" ]]; then
+    cmp -s "$TEST_DIR/plain.before" "$USER_LAUNCHERS/plain.toml" && [[ ! -e "$USER_LAUNCHERS/empty.toml" ]]; then
     pass "an empty capture writes nothing"
 else
     fail "an empty capture must not write or overwrite a launcher"
@@ -285,6 +350,14 @@ fi
 tmux set-option -t "=orig:" @launcher hand
 build_state_from_capture "$("$CAPTURE" orig)"
 assert_equals "a tagged hand-written launcher is offered for update" "hand" "$(update_target || true)"
+update_launcher "hand"
+hand="$(cat "$USER_LAUNCHERS/hand.toml")"
+if [[ "$hand" == *"# notes on this launcher"* && "$hand" == *'description = "hand-written"  # shown in the picker'* ]] &&
+    toml_has "$USER_LAUNCHERS/hand.toml" '[.window[].name] == ["code", "srv"]'; then
+    pass "updating a hand-written launcher keeps its comments"
+else
+    fail "updating a hand-written launcher should keep its comments (got: $hand)"
+fi
 
 tmux set-option -t "=orig:" @launcher dev
 build_state_from_capture "$("$CAPTURE" orig)"
@@ -310,75 +383,64 @@ tmux split-window -h -t "=wtsess:code" -c "$wts/rp-7-fix/src"
 build_state_from_capture "$("$CAPTURE" wtsess)"
 assert_equals "pane dirs are relative to the worktree" "code||no||2|1 h 50 2||||src" "$(describe_state)"
 write_new_launcher "repo"
-assert_equals "a new launcher is rooted at the main checkout" "_REPO_ROOT_DEFAULT=\"$repo\"" \
-    "$(grep -m1 '^_REPO_ROOT_DEFAULT=' "$USER_LAUNCHERS/repo")"
-assert_equals "worktrees dir is the linked worktrees' parent" "_REPO_WORKTREES_DEFAULT=\"$wts\"" \
-    "$(grep -m1 '^_REPO_WORKTREES_DEFAULT=' "$USER_LAUNCHERS/repo")"
-if grep -q '^# @instance: prompt' "$USER_LAUNCHERS/repo" && grep -qF '"$WORKTREES_DIR"/rp-"${ticket_num}"-*' "$USER_LAUNCHERS/repo"; then
+# shellcheck disable=SC2016 # jq source
+if toml_has "$USER_LAUNCHERS/repo.toml" '.root == $r and .worktrees.dir == $w' --arg r "$repo" --arg w "$wts"; then
+    pass "a new launcher is rooted at the main checkout, worktrees at their parent"
+else
+    fail "a new launcher should root at the main checkout and point worktrees at their parent"
+fi
+if toml_has "$USER_LAUNCHERS/repo.toml" '.instance == "prompt" and .worktrees.prefix == "rp" and (.worktrees | has("env") | not)'; then
     pass "instances prompt and open <prefix>-<n>-* worktrees"
 else
-    fail "a worktree launcher should prompt for instances and glob the worktree prefix"
+    fail "a worktree launcher should prompt for instances with the worktree prefix"
 fi
 
-SESSION_NAME=repo-7 bash "$USER_LAUNCHERS/repo" >/dev/null 2>&1 || true
+replay repo repo-7
 assert_equals "a numbered instance opens its worktree" "$wts/rp-7-fix/src" \
     "$(tmux display-message -p -t "=repo-7:code.2" '#{pane_current_path}' 2>/dev/null)"
-SESSION_NAME=repo-rp-7-fix bash "$USER_LAUNCHERS/repo" >/dev/null 2>&1 || true
+replay repo repo-rp-7-fix
 assert_equals "a named instance opens the worktree with that name" "$wts/rp-7-fix" \
     "$(tmux display-message -p -t "=repo-rp-7-fix:code.1" '#{pane_current_path}' 2>/dev/null)"
-SESSION_NAME=repo bash "$USER_LAUNCHERS/repo" >/dev/null 2>&1 || true
+replay repo
 assert_equals "the base session opens the main checkout" "$repo" \
     "$(tmux display-message -p -t "=repo:code.1" '#{pane_current_path}' 2>/dev/null)"
 
 # a hand-written worktree launcher, found by its instance's session name
-cat >"$USER_LAUNCHERS/hw" <<EOF
-#!/usr/bin/env bash
-# @description: Hand-written worktrees
-# @instance: prompt
-SESSION="\${SESSION_NAME:-hw}"
-WORKTREES_DIR="\${HW_WORKTREES:-$wts}"
-BASE_DIR="\${HW_ROOT:-\${BASE_DIR:-$repo}}"
-PROJECT_DIR="\$BASE_DIR"
-if [[ "\$SESSION" =~ -([0-9]+)\$ ]]; then
-    ticket_num="\${BASH_REMATCH[1]}"
-    for wt in "\$WORKTREES_DIR"/rp-"\${ticket_num}"-*; do
-        [[ -d "\$wt" ]] && PROJECT_DIR="\$wt" && break
-    done
-fi
-tmux new-session -d -s "\$SESSION" -n "zsh" -c "\$PROJECT_DIR"
+cat >"$USER_LAUNCHERS/hw.toml" <<EOF
+description = "Hand-written worktrees"
+session = "hw"
+instance = "prompt"
+root = "$repo"
+
+[worktrees]
+dir = "$wts"
+prefix = "rp"
+
+[[window]]
+name = "zsh"
 EOF
-chmod +x "$USER_LAUNCHERS/hw"
-cp "$USER_LAUNCHERS/hw" "$TEST_DIR/hw.before"
+cp "$USER_LAUNCHERS/hw.toml" "$TEST_DIR/hw.before"
 tmux rename-session -t "=wtsess" hw-7
 build_state_from_capture "$("$CAPTURE" hw-7)"
 assert_equals "an untagged instance session finds its launcher by name" "hw" "$(update_target || true)"
 update_launcher "hw"
-if cmp -s "$TEST_DIR/hw.before" "$LAUNCHER_BACKUPS/hw"; then
+if cmp -s "$TEST_DIR/hw.before" "$LAUNCHER_BACKUPS/hw.toml"; then
     pass "a hand-written launcher is backed up before it's replaced"
 else
     fail "a hand-written launcher should be copied to LAUNCHER_BACKUPS"
 fi
-hw="$USER_LAUNCHERS/hw"
-if is_generated_launcher "$hw" && bash -n "$hw" &&
-    grep -q '^# @description: Hand-written worktrees' "$hw" && grep -q '^# @instance: prompt' "$hw" &&
-    grep -q "^_HW_ROOT_DEFAULT=\"$repo\"" "$hw" && grep -q "^_HW_WORKTREES_DEFAULT=\"$wts\"" "$hw" &&
-    grep -qF '"$WORKTREES_DIR"/rp-"${ticket_num}"-*' "$hw"; then
+# shellcheck disable=SC2016 # jq source
+if toml_has "$USER_LAUNCHERS/hw.toml" '.description == "Hand-written worktrees" and .instance == "prompt"
+    and .root == $r and .worktrees == {dir: $w, prefix: "rp"}' \
+    --arg r "$repo" --arg w "$wts"; then
     pass "the rewrite keeps description, instances, dirs and worktree prefix"
 else
     fail "the rewrite should carry over the hand-written launcher's settings"
 fi
-if grep -qF -- '-c "$PROJECT_DIR/src"' "$hw"; then
+if toml_has "$USER_LAUNCHERS/hw.toml" '.window[0].pane[1].dir == "src"'; then
     pass "pane dirs stay relative to the worktree"
 else
     fail "pane dirs should be relative to the worktree, not absolute"
-fi
-
-help=$(bash "$USER_LAUNCHERS/repo" --help)
-if [[ "$help" == *"repo-<n> opens the worktree rp-<n>-*"* && "$help" == *"REPO_WORKTREES    worktrees directory"* &&
-    "$help" == *"REPO_ROOT    project directory"* ]]; then
-    pass "--help describes worktree instances and the env overrides"
-else
-    fail "--help should describe worktree instances and the env overrides (got: $help)"
 fi
 
 # ═══════════════════════════════════════════════════════════════════════════
@@ -390,21 +452,90 @@ tmux new-window -t "=autos:" -c "$TEST_DIR/proj"
 build_state_from_capture "$("$CAPTURE" autos)"
 assert_equals "only the unnamed window is auto-named" " 1" "${win_autonames[*]}"
 write_new_launcher "autos"
-auto_lines=$(grep -c 'automatic-rename on' "$USER_LAUNCHERS/autos" || true)
-last_target=$(grep -n -- '-t "$SESSION:' "$USER_LAUNCHERS/autos" | grep -v 'automatic-rename\|select-' | tail -1 | cut -d: -f1)
-first_rename=$(grep -n 'automatic-rename on' "$USER_LAUNCHERS/autos" | head -1 | cut -d: -f1)
-if [[ "$auto_lines" == 1 && -n "$first_rename" && "$first_rename" -gt "${last_target:-0}" ]]; then
-    pass "renaming is handed back after every name-targeted line"
+if toml_has "$USER_LAUNCHERS/autos.toml" '(.window[0] | has("auto_rename") | not) and .window[1].auto_rename == true'; then
+    pass "only the auto-named window is written with auto_rename"
 else
-    fail "automatic-rename should be set once, after the windows are built"
+    fail "only the second window should carry auto_rename = true"
 fi
 (
-    load_existing_launcher "$USER_LAUNCHERS/autos"
+    load_existing_launcher "$USER_LAUNCHERS/autos.toml"
     assert_equals "auto-named windows survive a load" " 1" "${win_autonames[*]}"
 )
-SESSION_NAME=autos2 bash "$USER_LAUNCHERS/autos" >/dev/null 2>&1 || true
+replay autos autos2
 assert_equals "replay renames only the auto-named window" "0 1" \
     "$(tmux list-windows -t "=autos2" -F '#{automatic-rename}' 2>/dev/null | tr '\n' ' ' | sed 's/ $//')"
+
+# ═══════════════════════════════════════════════════════════════════════════
+section "Changes an update would make"
+# ═══════════════════════════════════════════════════════════════════════════
+
+# the file was edited after the session started: auto_rename and a gone window
+cat >"$USER_LAUNCHERS/drift.toml" <<'EOF'
+description = "drift"
+session = "drift"
+
+[[window]]
+name = "pinned"
+auto_rename = true
+
+[[window]]
+name = "gone"
+EOF
+tmux new-session -d -s drift -n pinned -c "$TEST_DIR/proj" -x 200 -y 50
+tmux new-window -t "=drift:" -n added -c "$TEST_DIR/proj"
+build_state_from_capture "$("$CAPTURE" drift)"
+changes=$(update_changes drift)
+assert_equals "lists each changed value and each added or removed window" \
+    $'pinned  auto_rename: true → —\n− window gone\n+ window added' "$changes"
+assert_equals "listing the changes writes nothing" "true" \
+    "$(yq -p toml -o json "$USER_LAUNCHERS/drift.toml" | jq '.window[0].auto_rename')"
+if update_message drift | grep -qF 'pinned  auto_rename: true → —'; then
+    pass "the update confirmation shows the changes"
+else
+    fail "the update confirmation should list the changes"
+fi
+
+cat >"$USER_LAUNCHERS/same.toml" <<'EOF'
+description = "same"
+session = "same"
+
+[[window]]
+name = "only"
+EOF
+tmux new-session -d -s same -n only -c "$TEST_DIR/proj" -x 200 -y 50
+build_state_from_capture "$("$CAPTURE" same)"
+if update_message same | grep -qF 'Nothing in the file changes.'; then
+    pass "an update that changes nothing says so"
+else
+    fail "an unchanged launcher should say nothing changes"
+fi
+
+# ═══════════════════════════════════════════════════════════════════════════
+section "{SESSION} in saved commands"
+# ═══════════════════════════════════════════════════════════════════════════
+
+session_toml='description = "tickets"
+session = "tick"
+
+[[window]]
+name = "jiru"
+cmd = "echo {SESSION}"'
+printf '%s\n' "$session_toml" >"$USER_LAUNCHERS/tick.toml"
+tmux new-session -d -s tick-12 -n jiru -c "$TEST_DIR/proj" -x 200 -y 50
+tmux send-keys -t "=tick-12:jiru" 'sleep 300 TICK-12' Enter
+sleep 0.5
+build_state_from_capture "$("$CAPTURE" tick-12)"
+pane_cmds["0:1"]="echo TICK-12"
+win_cmds[0]="echo TICK-12"
+assert_equals "a command that expands to the captured one isn't a change" "" "$(update_changes tick)"
+update_launcher tick
+assert_equals "an update keeps {SESSION} where it expands to the captured command" "echo {SESSION}" \
+    "$(yq -p toml -o json "$USER_LAUNCHERS/tick.toml" | jq -r '.window[0].cmd')"
+win_cmds[0]="echo other"
+pane_cmds["0:1"]="echo other"
+update_launcher tick
+assert_equals "a different captured command replaces it" "echo other" \
+    "$(yq -p toml -o json "$USER_LAUNCHERS/tick.toml" | jq -r '.window[0].cmd')"
 
 cleanup_test_server
 

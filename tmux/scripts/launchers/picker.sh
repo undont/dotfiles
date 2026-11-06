@@ -115,15 +115,9 @@ main() {
             ACTION:edit:*)
                 local edit_name="${action#ACTION:edit:}"
                 edit_name=$(basename "$edit_name")
-                # only user launchers can be edited, system launchers are read-only
-                if [[ ! -f "$USER_LAUNCHERS/$edit_name" ]]; then
-                    show_error "Cannot edit system launcher '$edit_name'"
-                    continue
-                fi
-                # and only wizard output: the wizard would silently drop what
-                # it can't read from a hand-written launcher
-                if ! grep -qxF '# @generated' "$USER_LAUNCHERS/$edit_name"; then
-                    show_error "Cannot edit '$edit_name': written by hand"
+                # repo launchers are read-only
+                if [[ ! -f "$USER_LAUNCHERS/$edit_name.toml" ]]; then
+                    show_error "Cannot edit system launcher '$edit_name', D duplicates it"
                     continue
                 fi
                 "$SCRIPT_DIR/prompt.sh" --edit "$edit_name" && break
@@ -134,7 +128,7 @@ main() {
                 dup_name=$(basename "$dup_name")
                 "$SCRIPT_DIR/prompt.sh" --edit "$dup_name" && break
                 # cancelled, clean up the copy and return to picker
-                rm -f "$USER_LAUNCHERS/$dup_name"
+                rm -f "$USER_LAUNCHERS/$dup_name.toml"
                 continue
                 ;;
             ACTION:run:*)

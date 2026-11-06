@@ -1,0 +1,7 @@
+description = "Dotfiles - Launches in nvim ~/dotfiles"
+session = "dotfiles"
+root = "~/dotfiles"
+
+[[window]]
+name = "nvim"
+cmd = "nvim ."

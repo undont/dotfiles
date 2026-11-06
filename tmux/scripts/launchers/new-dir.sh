@@ -10,7 +10,7 @@ set -euo pipefail
 # path to the launcher.
 #
 # called via fzf become() from run.sh "n" keybind.
-# usage: new-dir.sh <launcher_path>
+# usage: new-dir.sh <launcher name>
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
@@ -20,8 +20,8 @@ source "$SCRIPT_DIR/../_lib/common.sh"
 load_fzf_theme
 require_fzf
 
-LAUNCHER="${1:-}"
-if [[ -z "$LAUNCHER" ]]; then
+LAUNCHER_NAME="${1:-}"
+if [[ -z "$LAUNCHER_NAME" ]]; then
     exit 1
 fi
 
@@ -103,7 +103,7 @@ case "$root_name" in
         if [[ -d "$dir" ]]; then
             dir=$(cd "$dir" && pwd)
         fi
-        exec "$LAUNCHER" "$dir"
+        exec "$SCRIPT_DIR/launch.sh" "$LAUNCHER_NAME" "$dir"
         ;;
     *)
         exit 130
@@ -135,4 +135,4 @@ if [[ ! -d "$dir" ]]; then
     mkdir -p "$dir"
 fi
 
-exec "$LAUNCHER" "$dir"
+exec "$SCRIPT_DIR/launch.sh" "$LAUNCHER_NAME" "$dir"

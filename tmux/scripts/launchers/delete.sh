@@ -28,15 +28,13 @@ if [[ "$name" == *"/"* ]] || [[ "$name" == "." ]] || [[ "$name" == ".." ]]; then
     exit 1
 fi
 
-# USER_LAUNCHERS and DOTFILES_LAUNCHERS provided by common.sh
-
 # only user launchers can be deleted
-if [[ -f "$USER_LAUNCHERS/$name" ]]; then
+if [[ -f "$USER_LAUNCHERS/$name.toml" ]]; then
     if ! show_visual_confirm "Delete Launcher" "Delete launcher '${name}'?"; then
         exit 0
     fi
-    rm "$USER_LAUNCHERS/$name"
-elif [[ -f "$DOTFILES_LAUNCHERS/$name" ]]; then
+    rm "$USER_LAUNCHERS/$name.toml"
+elif [[ -f "$DOTFILES_LAUNCHERS/$name.toml" ]]; then
     show_error "Cannot delete repo launcher '$name' — edit it in dotfiles instead"
     exit 1
 else

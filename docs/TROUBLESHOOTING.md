@@ -36,7 +36,7 @@ Quick reference for error messages and where to find solutions:
 | `command not found: fnm`              | fnm not installed                   | [fnm Not Working](#fnm--nodejs-not-working)         |
 | `command not found: node`             | Node.js not installed via fnm       | [fnm Not Working](#fnm--nodejs-not-working)         |
 | `already exists and is not a symlink` | Existing config files               | [Installation Failed](#installation-failed-mid-way) |
-| `Project directory not found: ...`    | Launcher project path wrong         | Check PROJECT_DIR in the launcher script            |
+| `Project directory not found: ...`    | Launcher project path wrong         | Check `root` in the launcher's TOML                 |
 | `tmux: command not found`             | tmux not installed                  | Run `brew install tmux`                             |
 | `no matches found` (fzf)              | No results for search               | Expand search query                                 |
 | `adb: command not found`              | ANDROID_HOME not set                | See [ANDROID_HOME Issues](#android_home-issues)     |
@@ -114,7 +114,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
 4. **Permission errors**:
    ```bash
    # Ensure scripts are executable
-   chmod +x install.sh scripts/**/*.sh launchers/*
+   chmod +x install.sh scripts/**/*.sh
 
    # Then re-run install
    ./install.sh
@@ -158,7 +158,7 @@ ln -sf ~/dotfiles/zsh/zprofile ~/.zprofile
 **Solution**:
 
 ```bash
-chmod +x install.sh scripts/**/*.sh launchers/*
+chmod +x install.sh scripts/**/*.sh
 ```
 
 ### Backup Restoration

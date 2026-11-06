@@ -184,5 +184,82 @@ fi
 
 cleanup_test_server
 
+# ═══════════════════════════════════════════════════════════════════════════
+section "Rex session capture"
+# ═══════════════════════════════════════════════════════════════════════════
+
+# a dev window split 70/30 with its right side stacked 60/40 and the top-right
+# pane focused, an unnamed window, and a floating picker layer that isn't part
+# of the layout
+REX_VIEW='{"active_window_id":"w1","windows":[
+  {"window_id":"w1","label":"dev","focused_block_id":"b2","layers":[
+    {"kind":"tiled","layout":{"rect":[0,0,1,1],"split":{"direction":"horizontal","ratio":0.7,
+      "before":{"rect":[0,0,0.7,1],"block_id":"b1"},"after":{"rect":[0.7,0,0.3,1],"split":{"direction":"vertical","ratio":0.6,
+        "before":{"rect":[0.7,0,0.3,0.6],"block_id":"b2"},"after":{"rect":[0.7,0.6,0.3,0.4],"block_id":"b4"}}}}}},
+    {"kind":"floating","layout":{"rect":[0.2,0.2,0.6,0.6],"block_id":"picker"}}]},
+  {"window_id":"w2","label":"Window 0123abcd","focused_block_id":"b3","layers":[
+    {"kind":"tiled","layout":{"rect":[0,0,1,1],"block_id":"b3"}}]}]}'
+
+rex_capture() {
+    (
+        # shellcheck disable=SC2329  # stands in for the rex CLI
+        rex() {
+            case "$1" in
+                ls) printf '{"sessions":[{"label":"acme","session_id":"s1"}]}\n' ;;
+                api) printf '%s\n' "$REX_VIEW" ;;
+                block)
+                    case "$6" in
+                        b1) printf '{"foreground":{"pid":11,"name":"zsh","cwd":"/p"}}\n' ;;
+                        b2) printf '{"foreground":{"pid":12,"name":"nvim","cwd":"/p/sub"}}\n' ;;
+                        b3) printf '{"foreground":{"pid":13,"name":"lazygit","cwd":"/p"}}\n' ;;
+                        b4) printf '{"foreground":{"pid":14,"name":"zsh","cwd":"/p"}}\n' ;;
+                    esac
+                    ;;
+            esac
+        }
+        # shellcheck disable=SC2329  # the tty of a stub pid
+        ps() { printf 'ttys0%s\n' "${*: -1}"; }
+        # shellcheck disable=SC2329  # the command running on a stub tty
+        foreground_command() {
+            case "$1" in
+                /dev/ttys011) printf 'zsh' ;;
+                /dev/ttys012) printf 'nvim' ;;
+                /dev/ttys013) printf 'lazygit' ;;
+                /dev/ttys014) printf 'zsh' ;;
+            esac
+        }
+        LAUNCHER_BACKEND=rex main acme
+    )
+}
+
+rex_rows=$(rex_capture)
+assert_equals "session and an empty launcher tag" $'session\tacme\nlauncher\t' "$(printf '%s\n' "$rex_rows" | head -2)"
+assert_equals "the most common cwd is the dir" "/p" "$(row_field "$rex_rows" "dir" 2)"
+assert_equals "the active pane is the focused block of the active window" $'1\t2' \
+    "$(printf '%s\n' "$rex_rows" | awk -F'\t' '$1 == "active" { print $2 "\t" $3 }')"
+assert_equals "a labelled window keeps its name, automatic-rename off" $'dev\t3\t0' \
+    "$(printf '%s\n' "$rex_rows" | awk -F'\t' '$1 == "window" && $2 == 1 { print $3 "\t" $4 "\t" $5 }')"
+assert_equals "a default-labelled window is auto-named after its program" $'lazygit\t1\t1' \
+    "$(printf '%s\n' "$rex_rows" | awk -F'\t' '$1 == "window" && $2 == 2 { print $3 "\t" $4 "\t" $5 }')"
+assert_equals "floating layers are left out" "4" "$(printf '%s\n' "$rex_rows" | grep -c '^pane')"
+assert_equals "an idle shell has no command" "" "$(row_field "$rex_rows" $'pane\t1\t1' 9)"
+assert_equals "a pane's command and cwd come from its foreground process" $'/p/sub\tnvim' \
+    "$(printf '%s\n' "$rex_rows" | awk -F'\t' '$1 == "pane" && $2 == 1 && $3 == 2 { print $8 "\t" $9 }')"
+
+# an open picker is the focused block; the pane it opened from is the active one
+REX_VIEW=${REX_VIEW//'"focused_block_id":"b2"'/'"focused_block_id":"picker"'}
+REX_VIEW=${REX_VIEW//'"active_window_id":"w1"'/'"active_window_id":"w2"'}
+picker_rows=$(PICK_ORIGIN_BLOCK=b1 rex_capture)
+assert_equals "the picker's origin pane is the active one" $'1\t1' \
+    "$(printf '%s\n' "$picker_rows" | awk -F'\t' '$1 == "active" { print $2 "\t" $3 }')"
+other_rows=$(PICK_ORIGIN_BLOCK=elsewhere rex_capture)
+assert_equals "an origin pane outside the session is ignored" $'2\t1' \
+    "$(printf '%s\n' "$other_rows" | awk -F'\t' '$1 == "active" { print $2 "\t" $3 }')"
+
+assert_equals "the split tree becomes steps, outer split first" $'1 h 30 2\n2 v 40 3' \
+    "$(printf '%s\n' "$rex_rows" | awk -F'\t' '$1 == "split" && $2 == 1 { print $3, $4, $5, $6 }')"
+assert_equals "a window without splits has no split rows" "" \
+    "$(printf '%s\n' "$rex_rows" | awk -F'\t' '$1 == "split" && $2 == 2')"
+
 print_summary
 [[ $FAIL -eq 0 ]]

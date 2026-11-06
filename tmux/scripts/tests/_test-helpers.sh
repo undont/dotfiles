@@ -10,6 +10,10 @@ DOTFILES_ROOT="$(cd "$_TEST_HELPERS_DIR/../../.." && pwd)"
 # shellcheck source=scripts/_lib/colours.sh
 source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
 
+# launcher scripts pick rex when REX_SESSION is set, as it is when the suite
+# runs inside rex; the test servers are tmux
+export LAUNCHER_BACKEND=tmux
+
 # test counters (can be used by test scripts)
 PASS=0
 FAIL=0

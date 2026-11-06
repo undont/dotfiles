@@ -44,7 +44,7 @@ dotfiles local clone you/dotfiles-local
 dotfiles import               # skips files that differ
 
 # sync a single entry instead of the whole layer
-dotfiles import zshrc --force # selectors match by path, suffix, basename, or launcher name
+dotfiles import zshrc --force # selectors match by path, suffix, basename, or launcher file (launchers/acme.toml)
 dotfiles export tmux/local.conf
 ```
 

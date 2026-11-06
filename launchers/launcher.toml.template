@@ -1,0 +1,51 @@
+# session launcher: copy to ~/.config/dotfiles/launchers/<name>.toml
+# the launcher picker (prefix + p) lists every <name>.toml with a description;
+# the wizard (n in the picker) and save session (s) write this format too
+
+description = "My project - dev, edit and shell windows"  # required
+session = "myproject"   # omit for a directory launcher (like dev.toml): the
+                        # session is then named after the directory picked
+instance = "auto"       # n in the picker: auto (myproject-2, -3) or prompt
+                        # (asks for a suffix, e.g. a ticket number)
+root = "~/src/myproject"         # default ~
+
+# optional: an instance suffix picks a worktree as the root.
+# myproject-1234 opens <dir>/<prefix>-1234-*, myproject-foo opens <dir>/foo
+# [worktrees]
+# dir = "~/src/myproject-worktrees"
+# prefix = "PROJ"               # default the launcher name in capitals
+
+# one [[window]] per window, in order. a window without a name is named by
+# tmux's automatic-rename; auto_rename = true names it at creation, then
+# hands it to automatic-rename.
+# focus = true goes on one window or one pane in the whole file: the session
+# opens on that window (at its first pane) or on that pane. default the first
+[[window]]
+name = "dev"
+
+# a window with splits lists one [[window.pane]] per pane. a pane after the
+# first splits pane `of` (default the previous one) h (side by side) or v
+# (stacked), taking `size` percent of it (default an even split). panes
+# count from 1 in creation order
+[[window.pane]]
+cmd = "claude"
+
+[[window.pane]]
+split = "h"
+
+# a single-pane window takes cmd and dir directly. dir is relative to root,
+# or absolute, or ~/...; in any cmd, {SESSION} is the session name in
+# capitals: myproject-1234 runs `j {SESSION}` as `j MYPROJECT-1234`
+[[window]]
+name = "edit"
+cmd = "nvim"
+focus = true
+
+[[window]]
+name = "shell"
+
+# an instance's ticket, with instance = "prompt": myproject-1234 opens
+# MYPROJECT-1234 in jiru (j)
+# [[window]]
+# name = "ticket"
+# cmd = "j {SESSION}"

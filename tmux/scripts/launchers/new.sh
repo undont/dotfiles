@@ -12,12 +12,8 @@ set -euo pipefail
 #        new.sh --edit SOURCE [name]
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
-# shellcheck source=tmux/scripts/_lib/common.sh
-source "$SCRIPT_DIR/../_lib/common.sh"
 # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
 source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
-
-USER_LAUNCHERS="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/launchers"
 
 # strip shell-escape backslashes from a pasted path. fzf gives literal text
 # (not shell-parsed), so `~/Library/Mobile\ Documents/...` arrives with the
@@ -76,16 +72,7 @@ resolve_edit_source() {
         printf '%s' ""
         return 1
     fi
-    if [[ -x "$USER_LAUNCHERS/$source" ]]; then
-        printf '%s' "$USER_LAUNCHERS/$source"
-        return 0
-    fi
-    if [[ -x "$SCRIPT_DIR/../launchers/$source" ]]; then
-        printf '%s' "$SCRIPT_DIR/../launchers/$source"
-        return 0
-    fi
-    printf '%s' ""
-    return 1
+    launcher_file "$source"
 }
 
 # ─────────────────────────────────────────
@@ -308,31 +295,6 @@ if [[ -n "$edit_source" ]]; then
         printf "  ${RED}Launcher '%s' not found${NC}\n\n" "$edit_source"
         exit 1
     fi
-    # the wizard only understands its own output; editing anything else would
-    # silently drop what it can't read (unnamed windows, extra panes, ...)
-    if ! is_generated_launcher "$edit_file"; then
-        clear
-        printf "\n"
-        printf "  ${RED}Launcher '%s' was written by hand${NC}\n\n" "$edit_source"
-        printf "  ${DIM}The wizard can only edit launchers it created (# @generated).${NC}\n"
-        printf "  ${DIM}Edit it in an editor, or save the session over it with s.${NC}\n\n"
-        # pin hint to bottom, like the name-exists error
-        _hw_tw=${COLUMNS:-$(tput cols)}
-        _hw_th=${LINES:-$(tput lines)}
-        _hw_hint=" spc/enter close "
-        _hw_side=$(((_hw_tw - ${#_hw_hint}) / 2))
-        [[ $_hw_side -lt 1 ]] && _hw_side=1
-        _hw_border=$(printf '─%.0s' $(seq 1 $_hw_side))
-        printf '\033[%d;1H' "$((_hw_th - 1))"
-        printf "${DIM}%s${NC}${CYAN}%s${NC}${DIM}%s${NC}" "$_hw_border" "$_hw_hint" "$_hw_border"
-        printf '\033[6;1H'
-        while true; do
-            read -rsn1 _hw_key
-            case "$_hw_key" in
-                ' ' | '' | q | $'\x1b') exit 1 ;;
-            esac
-        done
-    fi
     load_existing_launcher "$edit_file"
     if [[ ${#win_names[@]} -gt 0 ]]; then
         num_windows="${#win_names[@]}"
@@ -347,11 +309,12 @@ fi
 # but validate/sanitise it first
 if [[ -n "$name" ]]; then
     name=$(sanitise_launcher_name "$name")
-    if [[ -z "$edit_source" && -f "$USER_LAUNCHERS/$name" ]]; then
+    # a rename may not land on another launcher either
+    if [[ -f "$USER_LAUNCHERS/$name.toml" && "$name" != "$edit_source" ]]; then
         clear
         printf "\n"
         printf "  ${RED}Launcher '%s' already exists${NC}\n\n" "$name"
-        printf "  ${DIM}%s/%s${NC}\n" "$USER_LAUNCHERS" "$name"
+        printf "  ${DIM}%s/%s.toml${NC}\n" "$USER_LAUNCHERS" "$name"
 
         # pin hint to bottom (prefixed to avoid polluting global namespace)
         _err_tw=${COLUMNS:-$(tput cols)}
@@ -367,7 +330,12 @@ if [[ -n "$name" ]]; then
         while true; do
             read -rsn1 _err_key
             case "$_err_key" in
-                r | ' ' | '') exec "$SCRIPT_DIR/prompt.sh" ;;
+                r | ' ' | '')
+                    if [[ -n "$edit_source" ]]; then
+                        exec "$SCRIPT_DIR/prompt.sh" --edit "$edit_source"
+                    fi
+                    exec "$SCRIPT_DIR/prompt.sh"
+                    ;;
                 q | $'\x1b') exit 0 ;;
             esac
         done
@@ -636,6 +604,9 @@ while true; do
                     win_panes=()
                     win_layouts=()
                     win_autonames=()
+                    win_dirs=()
+                    focus_window=0
+                    focus_pane=1
                     pane_cmds=()
                     pane_dirs=()
                 fi
@@ -777,19 +748,19 @@ done
 mkdir -p "$USER_LAUNCHERS"
 
 target_name="$name"
-target_path="$USER_LAUNCHERS/$target_name"
+target_path="$USER_LAUNCHERS/$target_name.toml"
 
-# if editing a user launcher, back it up, and remove it when the name changed
-if [[ -n "$edit_source" && -f "$USER_LAUNCHERS/$edit_source" ]]; then
-    backup_launcher "$USER_LAUNCHERS/$edit_source"
-    if [[ "$edit_source" != "$target_name" ]]; then
-        rm -f "$USER_LAUNCHERS/$edit_source"
+# an edit writes over a copy of the source file, so its comments carry over
+# (a rename moves a user launcher; a repo one stays where it is)
+if [[ -n "$edit_source" ]]; then
+    [[ "$edit_file" == "$USER_LAUNCHERS/"* ]] && backup_launcher "$edit_file"
+    if [[ "$edit_file" != "$target_path" ]]; then
+        /bin/cp "$edit_file" "$target_path"
+        [[ "$edit_file" == "$USER_LAUNCHERS/"* ]] && rm -f "$edit_file"
     fi
 fi
 
-generate_launcher >"$target_path"
-
-chmod +x "$target_path"
+write_launcher "$target_path"
 
 clear
 printf "\n\n"
@@ -798,6 +769,6 @@ if [[ -n "$edit_source" ]]; then
 else
     printf "  ${GREEN}Launcher created${NC}\n\n"
 fi
-printf "  ${DIM}%s/%s${NC}\n" "$USER_LAUNCHERS" "$target_name"
+printf "  ${DIM}%s${NC}\n" "$target_path"
 printf "  ${DIM}It will appear in the launcher picker (prefix + p)${NC}\n"
 sleep 2

@@ -1,92 +1,55 @@
 #!/usr/bin/env bash
-# read and write generated session launchers
+# the wizard's and save session's view of a launcher file: load a <name>.toml
+# into state variables, change them, write them back
 # source this file: source "${BASH_SOURCE%/*}/../_lib/launcher-gen.sh"
 #
-# both directions share one set of state variables, so a launcher can be loaded,
-# changed and written back:
-#   name            launcher file name (also the @launcher session tag)
+#   name            launcher file name without .toml (also the @launcher tag)
 #   description     one-line summary for the picker
-#   instance_mode   y = prompt for an instance name (# @instance: prompt), n = auto
-#   project_dir     project root; generate expects a $HOME/... form, load
-#                   returns a ~/... form for display
+#   session_mode    fixed, or directory (no session key: named after the
+#                   directory the picker passes, no root)
+#   session_kept    a loaded session key that isn't the one derived from the
+#                   file name; empty = derive it from name
+#   instance_mode   y = prompt for an instance suffix, n = auto
+#   instance_auto   1 = the file spells out instance = "auto"
+#   project_dir     root, as $HOME/..., ~/... or absolute
 #   worktree_aware  y/n, resolve instance suffixes to worktree directories
-#   worktrees_dir   worktree root (same $HOME/~ convention as project_dir)
+#   worktrees_dir   worktree root (same forms as project_dir)
 #   worktree_prefix instance <n> opens <worktrees_dir>/<prefix>-<n>-*; empty =
-#                   the launcher name in capitals
-#   win_names, win_cmds, win_splits (yes/no), win_split_cmds   parallel arrays
-#   win_autonames   1 = automatic-rename names the window once it's built; its
-#                   name only targets it while the launcher runs
+#                   the launcher name in capitals, written out unless
+#                   prefix_absent=1 (a loaded file without one)
+#   focus_window    index of the active window
+#   focus_pane      its active pane, 1 = the first (every other window opens
+#                   on its first pane)
+#   win_names, win_cmds, win_splits (yes/no), win_split_cmds   parallel arrays;
+#                   an empty name leaves the window to automatic-rename
+#   win_autonames   1 = automatic-rename takes over once the window is built
+#   win_dirs        window dir, the default for its panes; empty = the root
 #
 # a window the wizard's model can't describe (more panes, stacked splits, a
 # directory per pane) is "rich": win_panes[i] holds its pane count and the
 # simple fields above are ignored for it
 #   win_panes       pane count per window, empty for a simple window
 #   win_layouts     split steps per window, one per line: <pane> <h|v> <pct> <new>
-#                   (layout_splits format); panes are numbered 1..N, 1 = top-left
+#                   (layout_splits format, pct "-" for an even split); panes
+#                   are numbered 1..N in creation order
 #   pane_cmds       ["<window index>:<pane>"] command, empty for a shell
-#   pane_dirs       ["<window index>:<pane>"] directory: empty = the project
-#                   directory, relative = under it, absolute or $HOME/... as is
+#   pane_dirs       ["<window index>:<pane>"] directory: empty = the window
+#                   dir, relative = under the root, absolute or ~/... as is
 
 [[ -n "${_TMUX_LAUNCHER_GEN_SH_LOADED:-}" ]] && return 0
 _TMUX_LAUNCHER_GEN_SH_LOADED=1
 
-declare -ga win_panes=() win_layouts=() win_autonames=()
+# shellcheck source=tmux/scripts/_lib/launcher-data.sh
+source "${BASH_SOURCE%/*}/launcher-data.sh"
+
+declare -ga win_panes=() win_layouts=() win_autonames=() win_dirs=()
 declare -gA pane_cmds=() pane_dirs=()
-
-# "$PROJECT_DIR"-relative form of a pane directory, for generated -c arguments
-pane_dir_expr() {
-    local dir="$1"
-    case "$dir" in
-        "") printf '%s' '$PROJECT_DIR' ;;
-        /* | '$HOME' | '$HOME/'*) printf '%s' "$dir" ;;
-        *) printf '%s' "\$PROJECT_DIR/$dir" ;;
-    esac
-}
-
-# the reverse of pane_dir_expr
-pane_dir_from_expr() {
-    local expr="$1"
-    case "$expr" in
-        '$PROJECT_DIR') printf '' ;;
-        '$PROJECT_DIR/'*) printf '%s' "${expr#\$PROJECT_DIR/}" ;;
-        *) printf '%s' "$expr" ;;
-    esac
-}
-
-# marks a launcher written by generate_launcher. only these are safe to
-# regenerate in place: load_existing_launcher understands nothing else
-LAUNCHER_GENERATED_MARKER="# @generated"
-
-is_generated_launcher() {
-    grep -qxF "$LAUNCHER_GENERATED_MARKER" "$1" 2>/dev/null
-}
 
 # copy a user launcher to LAUNCHER_BACKUPS before it's rewritten, replacing
 # the previous copy
 backup_launcher() {
     mkdir -p "$LAUNCHER_BACKUPS"
     cp "$1" "$LAUNCHER_BACKUPS/${1##*/}"
-}
-
-# the default a launcher assigns to VAR, through nested fallbacks:
-# VAR="${A:-${B:-$HOME/x}}" → $HOME/x. a plain VAR="value" gives the value
-# usage: launcher_assignment FILE VAR
-launcher_assignment() {
-    local value
-    value=$(grep -m1 "^$2=" "$1" 2>/dev/null | sed "s/^$2=//" | tr -d '"' || true)
-    while [[ "$value" =~ ^\$\{[A-Za-z0-9_]+:-(.*)\}$ ]]; do
-        value="${BASH_REMATCH[1]}"
-    done
-    printf '%s' "$value"
-}
-
-# base tmux session a launcher creates (SESSION="${SESSION_NAME:-acme}" → acme),
-# empty when the name is computed at run time
-launcher_session_name() {
-    local value
-    value=$(launcher_assignment "$1" SESSION)
-    [[ "$value" == *'$'* ]] && value=""
-    printf '%s' "$value"
 }
 
 # where a pane of a rich window sits, from the split that created it:
@@ -122,361 +85,211 @@ index_for_window() {
     return 1
 }
 
+# the state assignments for a launcher's JSON, as shell code to eval
+# shellcheck disable=SC2016 # jq source
+_LOAD_JQ='
+    def q: @sh;
+    def even: has("size") | not;
+    "description=\(.description // "" | q)",
+    "session_mode=\(if has("session") then "fixed" else "directory" end)",
+    "session_kept=\(if (.session // $derived) == $derived then "" else .session end | q)",
+    "instance_mode=\(if .instance == "prompt" then "y" else "n" end)",
+    "instance_auto=\(if .instance == "auto" then "1" else "" end)",
+    "prefix_absent=\(if has("worktrees") and (.worktrees | has("prefix") | not) then "1" else "" end)",
+    "project_dir=\(.root // "~" | q)",
+    "worktree_aware=\(if has("worktrees") then "y" else "n" end)",
+    "worktrees_dir=\(.worktrees.dir // "" | q)",
+    "worktree_prefix=\(.worktrees.prefix // "" | q)",
+    ([.window | to_entries[] | .key as $w | .value |
+        (if .focus == true then [$w, 0] else empty end),
+        ((.pane // []) | to_entries[] | select(.value.focus == true) | [$w, .key])] | first // [0, 0]) as [$fw, $fwp] |
+    "focus_window=\($fw)", "focus_pane=\($fwp + 1)",
+    (.window | to_entries[] | .key as $i | .value |
+        (.pane // [{cmd}]) as $p |
+        (if $i == $fw then $fwp else 0 end) as $fp |
+        ([$p[] | .dir // ""] | all(. == "")) as $nodirs |
+        (($p | length) == 1 or (($p | length) == 2 and $p[1].split == "h"
+            and ($p[1].of // 1) == 1 and ($p[1] | even))) as $simple |
+        "win_names+=(\(.name // "" | q))",
+        "win_dirs+=(\(.dir // "" | q))",
+        "win_autonames+=(\(if .auto_rename == true then "1" else "\"\"" end))",
+        if $simple and $nodirs then
+            "win_cmds+=(\($p[0].cmd // "" | q))",
+            "win_splits+=(\(if ($p | length) == 2 then "yes" else "no" end))",
+            "win_split_cmds+=(\($p[1].cmd // "" | q))",
+            "win_panes+=(\"\")", "win_layouts+=(\"\")"
+        else
+            "win_cmds+=(\"\")", "win_splits+=(no)", "win_split_cmds+=(\"\")",
+            "win_panes+=(\($p | length))",
+            "win_layouts+=(\([$p | to_entries[1:][] |
+                "\(.value.of // .key) \(.value.split) \(.value.size // "-") \(.key + 1)"] | join("\n") | q))",
+            ($p | to_entries[] |
+                "pane_cmds[\("\($i):\(.key + 1)" | q)]=\(.value.cmd // "" | q)",
+                "pane_dirs[\("\($i):\(.key + 1)" | q)]=\(.value.dir // "" | q)")
+        end)'
+
 # usage: load_existing_launcher FILE
 load_existing_launcher() {
-    local file="$1"
-
-    description=$(grep -m1 '# @description:' "$file" 2>/dev/null | sed 's/.*# @description: *//' || true)
-    if grep -q '# @instance: *prompt' "$file" 2>/dev/null; then
-        instance_mode="y"
-    else
-        instance_mode="n"
-    fi
-    # a separate `_<SESSION>_ROOT_DEFAULT="$HOME/path"` line handles paths
-    # containing apostrophes (which break `"${VAR:-default}"` parsing). the inline
-    # `PROJECT_DIR="${VAR:-default}"` form is read too, and hand-written
-    # worktree launchers that set PROJECT_DIR="$BASE_DIR"
-    project_dir=$(grep -m1 '^_[A-Z0-9_]*_ROOT_DEFAULT=' "$file" 2>/dev/null |
-        sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
-    if [[ -z "$project_dir" ]]; then
-        project_dir=$(launcher_assignment "$file" PROJECT_DIR)
-        if [[ "$project_dir" == '$BASE_DIR' ]]; then
-            project_dir=$(launcher_assignment "$file" BASE_DIR)
-        fi
-    fi
-    project_dir="${project_dir/#\$HOME/\~}"
-
-    # detect worktree configuration
-    if grep -q '^WORKTREES_DIR=\|^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null; then
-        worktree_aware="y"
-        worktrees_dir=$(grep -m1 '^_[A-Z0-9_]*_WORKTREES_DEFAULT=' "$file" 2>/dev/null |
-            sed 's/^[^=]*=//' | sed 's/^"//; s/"$//' || true)
-        if [[ -z "$worktrees_dir" ]]; then
-            worktrees_dir=$(launcher_assignment "$file" WORKTREES_DIR)
-        fi
-        worktrees_dir="${worktrees_dir/#\$HOME/\~}"
-        # for wt in "$WORKTREES_DIR"/<prefix>-"${ticket_num}"-*; do
-        worktree_prefix=""
-        local glob_line
-        glob_line=$(grep -m1 'ticket_num}"-' "$file" 2>/dev/null || true)
-        if [[ "$glob_line" =~ \"\$WORKTREES_DIR\"/(.+)-\"\$\{ticket_num\}\" ]]; then
-            worktree_prefix="${BASH_REMATCH[1]}"
-        fi
-    else
-        worktree_aware="n"
-        worktrees_dir=""
-        worktree_prefix=""
-    fi
-
-    win_names=()
-    win_cmds=()
-    win_splits=()
-    win_split_cmds=()
-    win_panes=()
-    win_layouts=()
-    win_autonames=()
-    pane_cmds=()
-    pane_dirs=()
-
-    # rich windows (see the header) name their panes $p1..$pN; their lines
-    # follow the window's new-session/new-window, so they belong to the last
-    # window read. first_dir is that window's -c, which is pane 1's directory
-    local current_win="" line idx w first_dir="" k
-    while IFS= read -r line; do
-        if [[ "$line" =~ ^tmux\ new-(session|window).*-n\ \"?([^\"]+)\"? ]]; then
-            current_win="${BASH_REMATCH[2]}"
-            win_names+=("$current_win")
-            win_cmds+=("")
-            win_splits+=("no")
-            win_split_cmds+=("")
-            win_panes+=("")
-            win_layouts+=("")
-            win_autonames+=("")
-            first_dir='$PROJECT_DIR'
-            [[ "$line" =~ \ -c\ \"([^\"]*)\" ]] && first_dir="${BASH_REMATCH[1]}"
-        elif [[ "$line" =~ ^p1=\$\(tmux\ display-message\ -p\ -t\ \"\$SESSION: ]]; then
-            w=$((${#win_names[@]} - 1))
-            win_panes[w]=1
-            pane_dirs["$w:1"]=$(pane_dir_from_expr "$first_dir")
-            pane_cmds["$w:1"]=""
-        elif [[ "$line" =~ ^p([0-9]+)=\$\(tmux\ split-window\ -d\ -t\ \"\$p([0-9]+)\"\ -([hv])\ -l\ ([0-9]+)%\ -c\ \"([^\"]*)\" ]]; then
-            w=$((${#win_names[@]} - 1))
-            k="${BASH_REMATCH[1]}"
-            win_layouts[w]+="${BASH_REMATCH[2]} ${BASH_REMATCH[3]} ${BASH_REMATCH[4]} $k"$'\n'
-            win_panes[w]=$((${win_panes[w]:-1} + 1))
-            pane_dirs["$w:$k"]=$(pane_dir_from_expr "${BASH_REMATCH[5]}")
-            pane_cmds["$w:$k"]=""
-        elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"\$p([0-9]+)\"\ \'(.*)\'\ Enter ]]; then
-            w=$((${#win_names[@]} - 1))
-            pane_cmds["$w:${BASH_REMATCH[1]}"]="${BASH_REMATCH[2]}"
-        elif [[ "$line" =~ ^tmux\ set-option\ -w\ -t\ \"\$SESSION:([^\"]+)\"\ automatic-rename\ on ]]; then
-            if idx=$(index_for_window "${BASH_REMATCH[1]}"); then
-                win_autonames[idx]=1
-            fi
-        elif [[ "$line" =~ ^tmux\ split-window.*-t\ \"?\$SESSION:([^\"\ ]+)\"? ]]; then
-            # target may be the window name (generated launchers) or include a pane
-            # index like `dev.1` (hand-written launchers); strip a trailing .N so the
-            # window still matches and the split flag is preserved
-            local split_win="${BASH_REMATCH[1]}"
-            [[ "$split_win" =~ \.[0-9]+$ ]] && split_win="${split_win%.*}"
-            if idx=$(index_for_window "$split_win"); then
-                win_splits[idx]="yes"
-            fi
-        elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"?\$SESSION:([^\"\ ]+)\.([12])\"?\ \'(.*)\'\ Enter ]]; then
-            local cmd_win="${BASH_REMATCH[1]}"
-            local pane="${BASH_REMATCH[2]}"
-            local cmd="${BASH_REMATCH[3]}"
-            if idx=$(index_for_window "$cmd_win"); then
-                if [[ "$pane" == "1" ]]; then
-                    win_cmds[idx]="$cmd"
-                else
-                    win_split_cmds[idx]="$cmd"
-                fi
-            fi
-        elif [[ "$line" =~ ^tmux\ send-keys\ -t\ \"?\$SESSION:([^\"\ ]+)\"?\ \'(.*)\'\ Enter ]]; then
-            local cmd_win="${BASH_REMATCH[1]}"
-            local cmd="${BASH_REMATCH[2]}"
-            if idx=$(index_for_window "$cmd_win"); then
-                win_cmds[idx]="$cmd"
-            fi
-        fi
-    done <"$file"
-
-    # undo generate_launcher's '\'' escaping, or every edit would escape again
-    for idx in "${!win_cmds[@]}"; do
-        win_cmds[idx]="${win_cmds[idx]//\'\\\'\'/\'}"
-        win_split_cmds[idx]="${win_split_cmds[idx]//\'\\\'\'/\'}"
-    done
-    for idx in "${!pane_cmds[@]}"; do
-        pane_cmds[$idx]="${pane_cmds[$idx]//\'\\\'\'/\'}"
-    done
-    # steps end with a newline as they're read; layout_splits output doesn't
-    for idx in "${!win_layouts[@]}"; do
-        win_layouts[idx]="${win_layouts[idx]%$'\n'}"
-    done
+    local code derived
+    derived="${1##*/}"
+    derived=$(_derived_session "${derived%.toml}")
+    code=$(launcher_json "$1" | jq -r --arg derived "$derived" "$_LOAD_JQ") || return 1
+    win_names=() win_cmds=() win_splits=() win_split_cmds=()
+    win_panes=() win_layouts=() win_autonames=() win_dirs=()
+    pane_cmds=() pane_dirs=()
+    eval "$code"
 }
 
-# write a launcher script for the state variables to stdout
-# usage: generate_launcher >"$USER_LAUNCHERS/$name"
-# shellcheck disable=SC2154  # reads the caller's state variables (see header)
-generate_launcher() {
-    local session_name session_var instance_tag wt_prefix
-    local i wname wcmd wsplit wscmd wdir
+# the session a launcher named NAME gets: dots are tmux target separators
+_derived_session() {
+    printf '%s' "$1" | tr '.' '-' | sed 's/-*$//'
+}
 
-    # session name: strip dots (tmux uses '.' as pane separator in target syntax)
-    session_name=$(printf '%s' "$name" | tr '.' '-' | sed 's/-*$//')
-    session_var=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]' | tr '.-' '_')
+# $HOME/... as ~/..., for paths the wizard and save hold in $HOME form
+_tilde_path() {
+    local path="$1" tilde='~'
+    case "$path" in
+        '$HOME' | "$HOME") path="$tilde" ;;
+        '$HOME/'*) path="$tilde/${path#\$HOME/}" ;;
+        "$HOME/"*) path="$tilde/${path#"$HOME"/}" ;;
+    esac
+    [[ "$path" == */ && "$path" != / ]] && path="${path%/}"
+    printf '%s' "$path"
+}
 
-    instance_tag=""
-    if [[ "$instance_mode" == "y" ]]; then
-        instance_tag=$'\n'"# @instance: prompt"
-    fi
+# the one focus = true: on the pane when it isn't the window's first, else on
+# the window when it isn't the first window, else nowhere
+_pane_focused() {
+    [[ "${focus_window:-0}" == "$1" && "${focus_pane:-1}" == "$2" && "$2" != 1 ]]
+}
 
-    wt_prefix="${worktree_prefix:-}"
-    [[ -n "$wt_prefix" ]] || wt_prefix=$(printf '%s' "$name" | tr '[:lower:]' '[:upper:]')
+_window_focused() {
+    [[ "${focus_window:-0}" == "$1" && "${focus_pane:-1}" == 1 && "$1" != 0 ]]
+}
 
-    # --help: what the instance suffix does, and the overrides read below
-    local help_worktrees="" help_env
-    help_env="    SESSION_NAME    tmux session name (default: $session_name)
-    ${session_var}_ROOT    project directory (default: ${project_dir/#\$HOME/\~})"
-    if [[ "$worktree_aware" == "y" ]]; then
-        help_worktrees="
+# one pane's JSON: split/of/size from a layout step (empty for pane 1)
+# usage: _pane_json WINDOW_INDEX PANE [HOLDER DIR PCT]
+_pane_json() {
+    local i="$1" k="$2" holder="${3:-}" dir="${4:-}" pct="${5:-}" pdir
+    pdir=$(_tilde_path "${pane_dirs["$i:$k"]:-}")
+    jq -nc --arg split "$dir" --arg of "$holder" --arg size "$pct" --argjson k "$k" \
+        --arg dir "$pdir" --arg cmd "${pane_cmds["$i:$k"]:-}" \
+        --argjson focus "$(_pane_focused "$i" "$k" && echo true || echo false)" '
+        (if $split != "" then {split: $split} else {} end)
+        + (if $of != "" and ($of | tonumber) != $k - 1 then {of: ($of | tonumber)} else {} end)
+        + (if $size != "" and $size != "-" then {size: ($size | tonumber)} else {} end)
+        + (if $dir != "" then {dir: $dir} else {} end)
+        + (if $cmd != "" then {cmd: $cmd} else {} end)
+        + (if $focus then {focus: true} else {} end)'
+}
 
-    A session named $session_name-<n> opens the worktree $wt_prefix-<n>-*,
-    any other $session_name-<suffix> the worktree named <suffix>, from
-    ${session_var}_WORKTREES"
-        help_env+="
-    ${session_var}_WORKTREES    worktrees directory (default: ${worktrees_dir/#\$HOME/\~})"
-    fi
-
-    cat <<PREAMBLE
-#!/usr/bin/env bash
-set -euo pipefail
-
-# @description: $description${instance_tag}
-$LAUNCHER_GENERATED_MARKER
-
-# Help flag handling
-if [[ "\${1:-}" == "--help" ]] || [[ "\${1:-}" == "-h" ]]; then
-    cat << 'EOF'
-$name - Project tmux session launcher
-
-USAGE:
-    $name
-
-DESCRIPTION:
-    Creates or attaches to the '$name' tmux session.${help_worktrees}
-
-OPTIONS:
-    -h, --help   Show this help message
-
-ENVIRONMENT:
-$help_env
-EOF
-    exit 0
-fi
-
-PREAMBLE
-
-    # generate SESSION and PROJECT_DIR (worktree-aware or simple)
-    #
-    # path defaults are staged in `_<SESSION>_…_DEFAULT` variables, not embedded
-    # inline as `${VAR:-/path}`: a single quote inside a parameter-expansion
-    # default breaks bash's quoting even within `"…"`, while a plain `VAR="…"`
-    # assignment takes apostrophes. the `${PATH/#\~/$HOME}` lines expand a leading
-    # `~` from an env-var override (e.g. `FOO_ROOT="~/x"`)
-    if [[ "$worktree_aware" == "y" ]]; then
-        cat <<WTBLOCK
-SESSION="\${SESSION_NAME:-$session_name}"
-_${session_var}_WORKTREES_DEFAULT="$worktrees_dir"
-_${session_var}_ROOT_DEFAULT="$project_dir"
-WORKTREES_DIR="\${${session_var}_WORKTREES:-\$_${session_var}_WORKTREES_DEFAULT}"
-BASE_DIR="\${${session_var}_ROOT:-\$_${session_var}_ROOT_DEFAULT}"
-WORKTREES_DIR="\${WORKTREES_DIR/#\\~/\$HOME}"
-BASE_DIR="\${BASE_DIR/#\\~/\$HOME}"
-
-# resolve project directory: a numeric session suffix opens the worktree for
-# that number, any other suffix the worktree with exactly that name
-PROJECT_DIR="\$BASE_DIR"
-if [[ "\$SESSION" =~ -([0-9]+)\$ ]]; then
-    ticket_num="\${BASH_REMATCH[1]}"
-    for wt in "\$WORKTREES_DIR"/${wt_prefix}-"\${ticket_num}"-*; do
-        if [[ -d "\$wt" ]]; then
-            PROJECT_DIR="\$wt"
-            break
-        fi
-    done
-elif [[ "\$SESSION" == "${session_name}-"* && -d "\$WORKTREES_DIR/\${SESSION#${session_name}-}" ]]; then
-    PROJECT_DIR="\$WORKTREES_DIR/\${SESSION#${session_name}-}"
-fi
-WTBLOCK
-    else
-        cat <<SIMPLE
-SESSION="\${SESSION_NAME:-$session_name}"
-_${session_var}_ROOT_DEFAULT="$project_dir"
-PROJECT_DIR="\${${session_var}_ROOT:-\$_${session_var}_ROOT_DEFAULT}"
-PROJECT_DIR="\${PROJECT_DIR/#\\~/\$HOME}"
-SIMPLE
-    fi
-
-    cat <<'VALIDATE'
-
-# Validate project directory exists
-if [[ ! -d "$PROJECT_DIR" ]]; then
-    echo "Error: Project directory not found: $PROJECT_DIR" >&2
-    exit 1
-fi
-
-# Check if session already exists (= forces exact match; bare names would
-# prefix-match e.g. "foo-15" against an existing "foo-1533")
-if tmux has-session -t "=$SESSION" 2>/dev/null; then
-    if [[ -n "${TMUX:-}" ]]; then
-        tmux switch-client -t "=$SESSION"
-    else
-        tmux attach-session -t "=$SESSION"
-    fi
-    exit 0
-fi
-
-VALIDATE
-
-    # a rich layout is a set of proportions, so the session must be created at
-    # the client's size: tmux builds detached sessions at 80x24 and the resize
-    # on attach hands out the difference unevenly, which would skew them
-    has_rich=0
-    for ((i = 0; i < ${#win_names[@]}; i++)); do
-        [[ -n "${win_panes[$i]:-}" ]] && has_rich=1
-    done
-    if [[ $has_rich -eq 1 ]]; then
-        cat <<'SIZING'
-
-# create the session at the client's size (see above)
-_cols=$(tmux display-message -p '#{client_width}' 2>/dev/null || true)
-_rows=$(tmux display-message -p '#{client_height}' 2>/dev/null || true)
-[[ -n "$_cols" ]] || _cols=$(tput cols 2>/dev/null || echo 80)
-[[ -n "$_rows" ]] || _rows=$(tput lines 2>/dev/null || echo 24)
-
-SIZING
-    fi
-
-    # generate window commands
-    for ((i = 0; i < ${#win_names[@]}; i++)); do
-        wname="${win_names[$i]}"
-        wcmd="${win_cmds[$i]}"
-        wsplit="${win_splits[$i]}"
-        wscmd="${win_split_cmds[$i]}"
-
-        # escape single quotes for safe embedding in generated send-keys commands
-        wcmd="${wcmd//\'/\'\\\'\'}"
-        wscmd="${wscmd//\'/\'\\\'\'}"
-
-        # a rich window's first pane starts in its own directory
-        wdir='$PROJECT_DIR'
-        if [[ -n "${win_panes[$i]:-}" ]]; then
-            wdir=$(pane_dir_expr "${pane_dirs["$i:1"]:-}")
-        fi
-
-        if [[ $i -eq 0 ]]; then
-            printf '# Window 1: %s\n' "$wname"
-            printf 'tmux new-session -d -s "$SESSION" -n "%s" -c "%s"' "$wname" "$wdir"
-            [[ $has_rich -eq 1 ]] && printf ' -x "$_cols" -y "$_rows"'
-            printf '\n'
-            printf 'tmux set-option -t "=$SESSION:" @launcher %s\n' "$name"
-        else
-            printf '\n# Window %d: %s\n' "$((i + 1))" "$wname"
-            printf 'tmux new-window -t "$SESSION:" -n "%s" -c "%s"\n' "$wname" "$wdir"
-        fi
-
-        if [[ -n "${win_panes[$i]:-}" ]]; then
-            # panes are addressed by id ($p1..$pN), which stays valid while
-            # splits renumber pane indexes. -d keeps the first pane active
-            printf 'p1=$(tmux display-message -p -t "$SESSION:%s" '\''#{pane_id}'\'')\n' "$wname"
-            local holder dir pct new k pcmd
+# one window's JSON
+# usage: _window_json WINDOW_INDEX
+_window_json() {
+    local i="$1" panes holder dir pct new single
+    if [[ -n "${win_panes[$i]:-}" ]]; then
+        panes=$(
+            _pane_json "$i" 1
             while read -r holder dir pct new; do
                 [[ -n "$holder" ]] || continue
-                printf 'p%s=$(tmux split-window -d -t "$p%s" -%s -l %s%% -c "%s" -P -F '\''#{pane_id}'\'')\n' \
-                    "$new" "$holder" "$dir" "$pct" "$(pane_dir_expr "${pane_dirs["$i:$new"]:-}")"
+                _pane_json "$i" "$new" "$holder" "$dir" "$pct"
             done <<<"${win_layouts[$i]:-}"
-            for ((k = 1; k <= win_panes[i]; k++)); do
-                pcmd="${pane_cmds["$i:$k"]:-}"
-                [[ -n "$pcmd" ]] || continue
-                printf 'tmux send-keys -t "$p%s" '\''%s'\'' Enter\n' "$k" "${pcmd//\'/\'\\\'\'}"
-            done
-        elif [[ "$wsplit" == "yes" ]]; then
-            printf 'tmux split-window -t "$SESSION:%s" -h -c "$PROJECT_DIR"\n' "$wname"
-            if [[ -n "$wcmd" ]]; then
-                printf 'tmux send-keys -t "$SESSION:%s.1" '\''%s'\'' Enter\n' "$wname" "$wcmd"
-            fi
-            if [[ -n "$wscmd" ]]; then
-                printf 'tmux send-keys -t "$SESSION:%s.2" '\''%s'\'' Enter\n' "$wname" "$wscmd"
-            fi
-        elif [[ -n "$wcmd" ]]; then
-            printf 'tmux send-keys -t "$SESSION:%s" '\''%s'\'' Enter\n' "$wname" "$wcmd"
-        fi
-    done
+        )
+        panes=$(jq -sc . <<<"$panes")
+    elif [[ "${win_splits[$i]}" == yes ]]; then
+        panes=$(jq -nc --arg a "${win_cmds[$i]}" --arg b "${win_split_cmds[$i]}" \
+            --argjson f "$(_pane_focused "$i" 2 && echo true || echo false)" '
+            [if $a != "" then {cmd: $a} else {} end,
+             {split: "h"} + (if $b != "" then {cmd: $b} else {} end) + (if $f then {focus: true} else {} end)]')
+    else
+        panes=$(jq -nc --arg a "${win_cmds[$i]}" '[if $a != "" then {cmd: $a} else {} end]')
+    fi
+    single=$(jq -c 'if length == 1 then .[0] else null end' <<<"$panes")
+    jq -nc --arg name "${win_names[$i]}" --arg auto "${win_autonames[$i]:-}" \
+        --arg dir "$(_tilde_path "${win_dirs[$i]:-}")" \
+        --argjson focus "$(_window_focused "$i" && echo true || echo false)" \
+        --argjson panes "$panes" --argjson single "$single" '
+        (if $name != "" then {name: $name} else {} end)
+        + (if $auto == "1" then {auto_rename: true} else {} end)
+        + (if $focus then {focus: true} else {} end)
+        + (if $dir != "" then {dir: $dir} else {} end)
+        + (if $single != null then $single else {pane: $panes} end)'
+}
 
-    # last: renaming a window breaks the name-based targets above
-    local auto_header=0
-    for ((i = 0; i < ${#win_names[@]}; i++)); do
-        [[ "${win_autonames[$i]:-}" == 1 ]] || continue
-        if [[ $auto_header -eq 0 ]]; then
-            printf '\n# hand these windows back to automatic-rename\n'
-            auto_header=1
-        fi
-        printf 'tmux set-option -w -t "$SESSION:%s" automatic-rename on\n' "${win_names[$i]}"
-    done
+instance_value() {
+    if [[ "${instance_mode:-}" == y ]]; then
+        printf 'prompt'
+    elif [[ "${instance_auto:-}" == 1 ]]; then
+        printf 'auto'
+    fi
+}
 
-    cat <<'FOOTER'
+# shellcheck disable=SC2154 # reads the caller's state variables (see header)
+prefix_value() {
+    if [[ -n "${worktree_prefix:-}" ]]; then
+        printf '%s' "$worktree_prefix"
+    elif [[ "${prefix_absent:-}" != 1 ]]; then
+        printf '%s' "$name" | tr '[:lower:]' '[:upper:]'
+    fi
+}
 
-# Select first window
-tmux select-window -t "$SESSION:1"
-tmux select-pane -t "$SESSION:1.1"
+# the launcher JSON for the state variables
+# shellcheck disable=SC2154 # reads the caller's state variables (see header)
+launcher_state_json() {
+    local windows i
+    windows=$(for ((i = 0; i < ${#win_names[@]}; i++)); do _window_json "$i"; done | jq -sc .)
+    if [[ "${session_mode:-fixed}" == directory ]]; then
+        jq -nc --arg d "$description" --argjson w "$windows" '{description: $d, window: $w}'
+        return
+    fi
+    jq -nc --arg d "$description" \
+        --arg session "${session_kept:-$(_derived_session "$name")}" \
+        --arg instance "$(instance_value)" \
+        --arg root "$(_tilde_path "$project_dir")" \
+        --arg wt "$([[ "$worktree_aware" == y ]] && echo y)" \
+        --arg wt_dir "$(_tilde_path "${worktrees_dir:-}")" \
+        --arg prefix "$(prefix_value)" \
+        --argjson w "$windows" '
+        {description: $d, session: $session}
+        + (if $instance != "" then {instance: $instance} else {} end)
+        + (if $root != "" and $root != "~" then {root: $root} else {} end)
+        + (if $wt != "" then {worktrees: ({dir: $wt_dir}
+            + (if $prefix != "" then {prefix: $prefix} else {} end))} else {} end)
+        + {window: $w}'
+}
 
-# Attach to session
-if [[ -n "${TMUX:-}" ]]; then
-    tmux switch-client -t "=$SESSION"
-else
-    tmux attach-session -t "=$SESSION"
-fi
-FOOTER
+# launcher_state_json for writing over FILE: when FILE opens on the same pane,
+# its focus = true stays where it was written (a window and its first pane
+# mean the same focus)
+# usage: launcher_state_json_for FILE [SESSION]
+#
+# with SESSION, the session the state was captured from, a command written
+# with {SESSION} stays written that way where it expands to the captured one
+# shellcheck disable=SC2016 # jq source
+launcher_state_json_for() {
+    local new
+    new=$(launcher_state_json)
+    if [[ ! -f "$1" ]]; then
+        printf '%s\n' "$new"
+        return
+    fi
+    jq -c --argjson old "$(launcher_json "$1")" --arg session "${2:-}" "$LAUNCHER_EXPAND_JQ"'
+        def focus_paths: [paths(scalars) | select(.[-1] == "focus")];
+        def opens_on: [.window | to_entries[] | .key as $w | .value |
+            (if .focus == true then [$w, 1] else empty end),
+            ((.pane // []) | to_entries[] | select(.value.focus == true) | [$w, .key + 1])] | first // [0, 1];
+        . as $new |
+        if ($old | opens_on) == ($new | opens_on)
+            and all($old | focus_paths[]; . as $p | ($new | getpath($p[:-1]) | type) == "object")
+        then reduce ($old | focus_paths[]) as $p (delpaths($new | focus_paths); setpath($p; true))
+        else . end |
+        reduce ($old | paths(strings) | select(.[-1] == "cmd")) as $p (.;
+            ($old | getpath($p)) as $c |
+            if $session != "" and ($c | contains("{SESSION}")) and getpath($p) == ($c | expand_cmd($session))
+            then setpath($p; $c) else . end)' <<<"$new"
+}
+
+# usage: write_launcher FILE [SESSION]   (SESSION as for launcher_state_json_for)
+write_launcher() {
+    launcher_write "$1" "$(launcher_state_json_for "$1" "${2:-}")"
 }

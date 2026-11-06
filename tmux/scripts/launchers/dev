@@ -1,0 +1,13 @@
+#!/usr/bin/env bash
+# dev <DIRECTORY>: the dev launcher (launchers/dev.toml), linked into
+# ~/.local/launchers for the ctrl+s sessionizer
+set -euo pipefail
+
+source="${BASH_SOURCE[0]}"
+while [[ -L "$source" ]]; do
+    dir=$(cd -P "$(dirname "$source")" && pwd)
+    source=$(readlink "$source")
+    # a relative link target is relative to the link's own directory
+    [[ "$source" == /* ]] || source="$dir/$source"
+done
+exec "$(cd -P "$(dirname "$source")" && pwd)/launch.sh" dev "$@"

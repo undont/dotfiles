@@ -55,7 +55,7 @@ _compute_skip_steps() {
     # homebrew and packages always run so upstream upgrades flow in;
     # install-packages.sh skips the install when `brew bundle check` passes
 
-    local symlink_patterns='^scripts/install/create-symlinks\.sh|\.template$|^zsh/|^tmux/|^nvim/|^ghostty/|^hammerspoon/|^karabiner/|^launchers/|^lazygit/|^lazydocker/|^formatters/|^gh-dash/|^btop/|^themes/|^keyd/'
+    local symlink_patterns='^scripts/install/create-symlinks\.sh|\.template$|^zsh/|^tmux/|^nvim/|^ghostty/|^hammerspoon/|^karabiner/|^launchers/|^scripts/manifest\.conf$|^lazygit/|^lazydocker/|^formatters/|^gh-dash/|^btop/|^themes/|^keyd/'
     if ! printf '%s\n' "$changed_files" | grep -qE "$symlink_patterns"; then
         skippable+=(symlinks)
     fi
@@ -1898,7 +1898,7 @@ commits. Secrets are never exported.
 Pass one or more selectors to export only those entries; a partial export
 scopes the commit to just what it captured. A selector matches a manifest
 entry by its repo-relative path, path suffix, basename, or system path, or a
-single file inside the launchers dir (e.g. launchers/acme).
+single file inside the launchers dir (e.g. launchers/acme.toml).
 
 USAGE
   dotfiles export [OPTIONS] [SELECTOR...]
@@ -1912,7 +1912,7 @@ EXAMPLES
   dotfiles export --push              # Capture all, commit, and push
   dotfiles export zshrc               # Capture just ~/.zshrc
   dotfiles export tmux/local.conf     # Capture one override by path suffix
-  dotfiles export launchers/acme      # Capture a single launcher
+  dotfiles export launchers/acme.toml # Capture a single launcher
 EOF
 }
 
@@ -1943,7 +1943,7 @@ orphans and only deleted under --prune, so machine-local launchers survive a
 
 Pass one or more selectors to import only those entries. A selector matches a
 manifest entry by its repo-relative path, path suffix, basename, or system
-path, or a single file inside the launchers dir (e.g. launchers/acme).
+path, or a single file inside the launchers dir (e.g. launchers/acme.toml).
 
 USAGE
   dotfiles import [OPTIONS] [SELECTOR...]
@@ -1958,7 +1958,7 @@ EXAMPLES
   dotfiles import --force            # Overwrite differing files, keep orphans
   dotfiles import --force --prune    # Overwrite and prune orphaned launchers
   dotfiles import zshrc --force      # Pull just ~/.zshrc, overwriting it
-  dotfiles import launchers/acme     # Pull a single launcher
+  dotfiles import launchers/acme.toml # Pull a single launcher
 EOF
 }
 

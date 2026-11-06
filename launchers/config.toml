@@ -1,0 +1,7 @@
+description = "Config - Launches in nvim ~/.config"
+session = "config"
+root = "~/.config"
+
+[[window]]
+name = "nvim"
+cmd = "nvim ."

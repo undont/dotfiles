@@ -1,5 +1,6 @@
 #!/usr/bin/env bash
-# test suite for editing launchers with rich windows in the wizard (new.sh)
+# test suite for editing launchers in the wizard (new.sh): rich windows, and
+# comments kept across an edit
 # drives the real wizard in a pane on the isolated test server, waiting for each
 # prompt before answering it
 # shellcheck disable=SC2030,SC2031  # fixtures and comparisons run in subshells
@@ -45,8 +46,7 @@ write_rich_launcher() {
         win_layouts=("" $'1 h 70 2\n2 v 48 3')
         pane_cmds=(["1:1"]="make status" ["1:2"]="echo 'it works'" ["1:3"]="")
         pane_dirs=(["1:1"]="" ["1:2"]="backend" ["1:3"]="/tmp")
-        generate_launcher >"$LAUNCHERS/rich"
-        chmod +x "$LAUNCHERS/rich"
+        write_launcher "$LAUNCHERS/rich.toml"
     )
 }
 
@@ -71,10 +71,17 @@ answer() {
     tmux send-keys -t "=wiz:" "$@"
 }
 
+# usage: start_wizard [LAUNCHER [NEW_NAME]]   (default rich)
 start_wizard() {
     tmux kill-session -t "=wiz" 2>/dev/null || true
     tmux new-session -d -s wiz -x 120 -y 40 \
-        "env XDG_CONFIG_HOME='$CONFIG' XDG_CACHE_HOME='$TEST_DIR/cache' PROJECT_DIRS='$TEST_DIR' bash '$NEW_SH' --edit rich; sleep 30"
+        "env XDG_CONFIG_HOME='$CONFIG' XDG_CACHE_HOME='$TEST_DIR/cache' PROJECT_DIRS='$TEST_DIR' bash '$NEW_SH' --edit ${1:-rich} ${2:-}; sleep 30"
+}
+
+# a jq test against a launcher file
+# usage: toml_has FILE FILTER
+toml_has() {
+    yq -p toml -o json -I0 "$1" 2>/dev/null | jq -e "$2" >/dev/null 2>&1
 }
 
 # the steps before the windows: description, directory, instances
@@ -106,7 +113,7 @@ section "Editing a rich window"
 
 setup_test_server
 write_rich_launcher
-cp "$LAUNCHERS/rich" "$TEST_DIR/rich.before"
+cp "$LAUNCHERS/rich.toml" "$TEST_DIR/rich.before"
 
 start_wizard
 answer_basics
@@ -139,7 +146,7 @@ fi
 
 edited=$(
     name=rich
-    load_existing_launcher "$LAUNCHERS/rich"
+    load_existing_launcher "$LAUNCHERS/rich.toml"
     declare -p win_names win_cmds win_panes win_layouts pane_cmds pane_dirs
 )
 expected=$(
@@ -153,12 +160,12 @@ if [[ "$edited" == "$expected" ]]; then
 else
     fail "only pane 2's command should change (got: $edited)"
 fi
-if bash -n "$LAUNCHERS/rich" && is_generated_launcher "$LAUNCHERS/rich"; then
-    pass "the edited launcher is valid and still marked @generated"
+if [[ -z "$(launcher_problems "$(launcher_json "$LAUNCHERS/rich.toml")")" ]]; then
+    pass "the edited launcher passes the schema"
 else
-    fail "the edited launcher should be valid and marked @generated"
+    fail "the edited launcher should pass the schema"
 fi
-if cmp -s "$TEST_DIR/rich.before" "$TEST_DIR/cache/tmux/launcher-backups/rich"; then
+if cmp -s "$TEST_DIR/rich.before" "$TEST_DIR/cache/tmux/launcher-backups/rich.toml"; then
     pass "the original is backed up before the edit is written"
 else
     fail "editing should copy the original to the launcher backups"
@@ -182,41 +189,58 @@ tmux send-keys -t "=wiz:" Enter
 answer "Split pane?" Enter
 wait_for "Launcher updated"
 
-if ! grep -q '^p1=' "$LAUNCHERS/rich" && grep -q "send-keys -t \"\$SESSION:dev\" 'vim' Enter" "$LAUNCHERS/rich"; then
-    pass "a new window count replaces the rich window with a simple one"
+if toml_has "$LAUNCHERS/rich.toml" '.window == [{name: "dev", cmd: "vim"}]'; then
+    pass "a new window count replaces the windows with one simple window"
 else
-    fail "a new window count should drop the rich window (file: $(grep -E '^tmux|^p[0-9]' "$LAUNCHERS/rich" | tr '\n' ';'))"
+    fail "a new window count should leave one simple window (file: $(tr '\n' ';' <"$LAUNCHERS/rich.toml"))"
 fi
-assert_equals "one window remains" "1" "$(grep -c '^tmux new-' "$LAUNCHERS/rich")"
 
 # ═══════════════════════════════════════════════════════════════════════════
-section "Hand-written launchers are refused"
+section "Comments survive an edit"
 # ═══════════════════════════════════════════════════════════════════════════
 
-# the wizard only understands its own output: it can't show an unnamed window or
-# extra panes, and saving would drop them
-printf '#!/usr/bin/env bash\n# @description: hand-written\ntmux new-session -d -s hand\n' >"$LAUNCHERS/hand"
-chmod +x "$LAUNCHERS/hand"
-cp "$LAUNCHERS/hand" "$TEST_DIR/hand.before"
-tmux kill-session -t "=wiz" 2>/dev/null || true
-tmux new-session -d -s wiz -x 120 -y 40 \
-    "env XDG_CONFIG_HOME='$CONFIG' XDG_CACHE_HOME='$TEST_DIR/cache' PROJECT_DIRS='$TEST_DIR' bash '$NEW_SH' --edit hand; echo EXIT=\$? >'$TEST_DIR/exit'; sleep 30"
+cat >"$LAUNCHERS/hand.toml" <<EOF
+# notes kept across edits
+description = "hand-written" # shown in the picker
+session = "hand"
+root = "$TEST_DIR/proj"
 
-wait_for "written by hand"
-shown=$(screen)
-if [[ "$shown" == *"The wizard can only edit launchers it created"* ]]; then
-    pass "the wizard refuses to edit a hand-written launcher"
+[[window]]
+# the main window
+name = "main"
+cmd = "htop"
+EOF
+start_wizard hand
+answer_basics
+answer "Number of windows" Enter
+answer "Window 1" Enter
+answer "Command" Enter
+answer "Split pane?" Enter
+wait_for "Launcher updated"
+
+hand=$(cat "$LAUNCHERS/hand.toml")
+if [[ "$hand" == *"# notes kept across edits"* && "$hand" == *"# the main window"* &&
+    "$hand" == *'description = "hand-written"  # shown in the picker'* ]]; then
+    pass "an edit keeps the file's comments"
 else
-    fail "the wizard should refuse hand-written launchers (screen: $shown)"
+    fail "an edit should keep the file's comments (file: $hand)"
 fi
-answer "spc/enter close" " "
-# new.sh exits, then the pane writes the exit code
-for _i in $(seq 1 30); do [[ -s "$TEST_DIR/exit" ]] && break; sleep 0.1; done
-if grep -qx 'EXIT=1' "$TEST_DIR/exit" && cmp -s "$TEST_DIR/hand.before" "$LAUNCHERS/hand"; then
-    pass "it exits without touching the launcher"
+if toml_has "$LAUNCHERS/hand.toml" '.window == [{name: "main", cmd: "htop"}]'; then
+    pass "an edit that changes nothing leaves the windows as they were"
 else
-    fail "refusal should exit 1 and leave the launcher unchanged"
+    fail "an unchanged edit should keep the windows (file: $hand)"
 fi
+
+# ═══════════════════════════════════════════════════════════════════════════
+section "A rename can't overwrite another launcher"
+# ═══════════════════════════════════════════════════════════════════════════
+
+printf '%s\n' 'description = "beta stays"' 'session = "beta"' '[[window]]' 'name = "b"' >"$LAUNCHERS/beta.toml"
+beta_before=$(cat "$LAUNCHERS/beta.toml")
+start_wizard hand beta
+wait_for "already exists"
+assert_equals "the other launcher is untouched" "$beta_before" "$(cat "$LAUNCHERS/beta.toml")"
+assert_success "the launcher being edited is still there" test -f "$LAUNCHERS/hand.toml"
 
 cleanup_test_server
 
