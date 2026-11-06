@@ -22,6 +22,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Any of your launchers can be edited with `e`, and repo launchers duplicated with `D`; edits and saves keep your comments. `launchers/bin/picker.sh`, `launchers/bin/new.sh`, `launchers/lib/gen.sh`
 - A launcher has one `focus = true`, on a window or a pane, and the session opens there. `launchers/lib/data.sh`
 - nvim sets the terminal title to `nvim <cwd>`, which Rex shows as the pane title. `nvim/lua/core/options.lua`
+- zls installs from Mason again, pinned to `0.17.0`, now that Mason has a build for zig 0.17; the Brewfile installs `zig` directly instead of through `zls`. `nvim/lua/plugins/lsp.lua`, `Brewfile`
 
 ### Removed
 
