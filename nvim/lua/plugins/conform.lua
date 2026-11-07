@@ -10,32 +10,6 @@ local function is_real_file(bufnr)
   return vim.api.nvim_buf_get_name(bufnr):match '^%w+://' == nil
 end
 
-local function minimum_zig_minor(zon)
-  local text = table.concat(vim.fn.readfile(zon), '\n')
-  return text:match '%.minimum_zig_version%s*=%s*"0%.(%d+)'
-end
-
---- `~/.zig/zig<minor>` for the nearest `build.zig.zon` declaring a
---- `minimum_zig_version`, else `zig`. zig fmt rewrites builtins to its own
---- version's names, so an older project's code stops building under a newer fmt
-local function zig_for(dirname)
-  local minor
-  for _, zon in ipairs(vim.fs.find('build.zig.zon', { path = dirname, upward = true, limit = math.huge })) do
-    minor = minimum_zig_minor(zon)
-    if minor then
-      break
-    end
-  end
-  if not minor then
-    return 'zig'
-  end
-  local pinned = vim.fs.joinpath(vim.env.HOME, '.zig', 'zig' .. minor)
-  if vim.fn.executable(pinned) == 0 then
-    return 'zig'
-  end
-  return pinned
-end
-
 return {
   {
     'stevearc/conform.nvim',
@@ -149,11 +123,6 @@ return {
           command = vim.fn.stdpath 'data' .. '/mason/bin/csharpier',
           args = { 'format', '--stdin-path', '$FILENAME' },
           stdin = true,
-        },
-        zigfmt = {
-          command = function(_, ctx)
-            return zig_for(ctx.dirname)
-          end,
         },
         prettier = {
           -- the project's local prettier resolves .prettierrc plugins against
