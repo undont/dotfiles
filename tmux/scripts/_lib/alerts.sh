@@ -101,6 +101,7 @@ get_agent_colour() {
         codex) echo "#50fa7b" ;;    # dracula green (matches codex logo)
         opencode) echo "#bd93f9" ;; # dracula purple
         copilot) echo "#58a6ff" ;;  # GitHub blue
+        pi) echo "#ff79c6" ;;       # dracula pink
         *) echo "#6272a4" ;;        # dracula blue
     esac
 }
@@ -112,6 +113,7 @@ get_agent_display() {
     case "$1" in
         claude) echo "⚡|#f1fa8c" ;;
         codex) echo "⌘|#50fa7b" ;;
+        pi) echo "π|#ff79c6" ;;
         opencode) echo "|#bd93f9" ;;
         copilot) echo "|#58a6ff" ;;
         *) echo "󱜙|#6272a4" ;;
@@ -408,7 +410,7 @@ set_window_alert() {
     local ring_bell="${2:-true}"
 
     case "$agent" in
-        claude | codex | opencode | copilot) ;;
+        claude | codex | opencode | copilot | pi) ;;
         *) return 1 ;;
     esac
 
