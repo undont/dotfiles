@@ -6,7 +6,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
-## [0.2.158] - 2026-11-06
+## [0.2.158] - 2026-11-09
 
 ### Added
 
@@ -22,11 +22,16 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 - Any of your launchers can be edited with `e`, and repo launchers duplicated with `D`; edits and saves keep your comments. `launchers/bin/picker.sh`, `launchers/bin/new.sh`, `launchers/lib/gen.sh`
 - A launcher has one `focus = true`, on a window or a pane, and the session opens there. `launchers/lib/data.sh`
 - nvim sets the terminal title to `nvim <cwd>`, which Rex shows as the pane title. `nvim/lua/core/options.lua`
+- C files use a 2-space indent in editors that read `.editorconfig`. `formatters/editorconfig`
 
 ### Removed
 
 - `tl`; Ctrl+O opens the launcher picker instead. `zsh/dotfiles.zsh`
 - Launchers no longer read a `<NAME>_ROOT` override; the migration writes an override that's set into the launcher's `root`. `launchers/lib/data.sh`
+
+### Fixed
+
+- Theme generation's contrast report goes to stderr, so it no longer mixes into the output scripts capture. `scripts/generate-theme`
 
 ## [0.2.157] - 2026-11-04
 
