@@ -11,8 +11,8 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
-# shellcheck source=tmux/scripts/_lib/common.sh
-source "$SCRIPT_DIR/../_lib/common.sh"
+# shellcheck source=launchers/lib/data.sh
+source "$SCRIPT_DIR/../lib/data.sh"
 
 name="${1:-}"
 [[ -n "$name" ]] || exit 0
@@ -23,15 +23,7 @@ if [[ "$name" == *"/"* ]] || [[ "$name" == "." ]] || [[ "$name" == ".." ]]; then
     exit 1
 fi
 
-# resolve source file (user launchers take priority)
-source_file=""
-if [[ -f "$USER_LAUNCHERS/$name" ]]; then
-    source_file="$USER_LAUNCHERS/$name"
-elif [[ -f "$DOTFILES_LAUNCHERS/$name" ]]; then
-    source_file="$DOTFILES_LAUNCHERS/$name"
-else
-    exit 1
-fi
+source_file=$(launcher_file "$name") || exit 1
 
 # generate unique copy name: name-copy, name-copy-2, name-copy-3, ...
 # strip any existing "-copy" or "-copy-N" suffix first so duplicating a copy
@@ -40,24 +32,18 @@ base_name="$name"
 base_name=$(printf '%s' "$base_name" | sed -E 's/-copy(-[0-9]+)?$//')
 
 copy_name="${base_name}-copy"
-if [[ -f "$USER_LAUNCHERS/$copy_name" ]] || [[ -f "$DOTFILES_LAUNCHERS/$copy_name" ]]; then
+if launcher_file "$copy_name" >/dev/null; then
     n=2
-    while [[ -f "$USER_LAUNCHERS/${base_name}-copy-${n}" ]] ||
-        [[ -f "$DOTFILES_LAUNCHERS/${base_name}-copy-${n}" ]]; do
+    while launcher_file "${base_name}-copy-${n}" >/dev/null; do
         ((n++))
     done
     copy_name="${base_name}-copy-${n}"
 fi
 
 mkdir -p "$USER_LAUNCHERS"
-
-cp "$source_file" "$USER_LAUNCHERS/$copy_name"
-chmod +x "$USER_LAUNCHERS/$copy_name"
-
-# update the @description tag to indicate it's a copy
-if grep -q '# @description:' "$USER_LAUNCHERS/$copy_name" 2>/dev/null; then
-    sed_inplace "s/# @description: .*/# @description: Copy of $name/" "$USER_LAUNCHERS/$copy_name"
-fi
+copy="$USER_LAUNCHERS/$copy_name.toml"
+/bin/cp "$source_file" "$copy"
+launcher_write "$copy" "$(launcher_json "$copy" | jq -c --arg d "Copy of $name" '.description = $d')"
 
 # output the copy name so the caller can hand off to the wizard
 printf '%s' "$copy_name"

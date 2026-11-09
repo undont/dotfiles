@@ -20,8 +20,8 @@ section "fzf --exact: Scripts with search mode"
 # all scripts that toggle search mode via enable-search must use --exact
 # so that exact substring matches rank above fuzzy matches
 scripts_with_search=(
-    "$TMUX_SCRIPTS/launchers/picker.sh"
-    "$TMUX_SCRIPTS/launchers/run.sh"
+    "$REPO_ROOT/launchers/bin/picker.sh"
+    "$REPO_ROOT/launchers/bin/run.sh"
     "$TMUX_SCRIPTS/windows/move.sh"
     "$TMUX_SCRIPTS/instances/connect-nvim.sh"
     "$TMUX_SCRIPTS/utils/pick-url.sh"
@@ -44,7 +44,7 @@ section "fzf --exact: Active filter scripts (no --disabled)"
 
 # scripts with fzf filtering active from the start (no --disabled)
 active_filter_scripts=(
-    "$TMUX_SCRIPTS/launchers/new.sh"
+    "$REPO_ROOT/launchers/bin/new.sh"
 )
 
 for script in "${active_filter_scripts[@]}"; do

@@ -1,0 +1,10 @@
+description = "Dev session - Shell + Neovim"
+# no session key: the session is named after the directory the picker passes
+
+[[window]]
+name = "zsh"
+
+[[window]]
+name = "nvim"
+cmd = "nvim"
+focus = true

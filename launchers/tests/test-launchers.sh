@@ -1,21 +1,25 @@
 #!/usr/bin/env bash
+# cases run in subshells so launcher state can't leak between them; the libs
+# they source assign DOTFILES_ROOT the same path
+# shellcheck disable=SC2030,SC2031
 set -euo pipefail
 
 # unit tests for launcher management scripts:
 #   - launchers/list.sh (output format, launcher discovery, dedup)
-#   - launchers/run.sh (get_base_session_name, is_fixed_session, metadata)
+#   - launchers/run.sh (routing on the session key, metadata)
 #   - launchers/delete.sh (repo protection, path traversal guard)
 #   - launchers/new.sh (name validation)
-#   - _lib/launcher-gen.sh (generated output, load/generate round trip)
+#   - lib/gen.sh (TOML output, load/write round trip)
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
-LIST_LAUNCHERS="$SCRIPT_DIR/../launchers/list.sh"
-RUN_LAUNCHER="$SCRIPT_DIR/../launchers/run.sh"
-DELETE_LAUNCHER="$SCRIPT_DIR/../launchers/delete.sh"
-NEW_LAUNCHER="$SCRIPT_DIR/../launchers/new.sh"
+DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../.." && pwd)"
+LIST_LAUNCHERS="$SCRIPT_DIR/../bin/list.sh"
+RUN_LAUNCHER="$SCRIPT_DIR/../bin/run.sh"
+DELETE_LAUNCHER="$SCRIPT_DIR/../bin/delete.sh"
+NEW_LAUNCHER="$SCRIPT_DIR/../bin/new.sh"
 
-source "$SCRIPT_DIR/_test-helpers.sh"
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../../tmux/scripts/tests/_test-helpers.sh"
 
 # ===========================================================================
 # launchers/list.sh tests
@@ -57,14 +61,14 @@ else
     skip "shellcheck not installed"
 fi
 
-section "launchers/list.sh: Sources common.sh (no find_dotfiles_root duplication)"
+section "launchers/list.sh: Sources the shared libraries (no find_dotfiles_root duplication)"
 
 list_content=$(cat "$LIST_LAUNCHERS")
 
-if [[ "$list_content" == *'source "$SCRIPT_DIR/../_lib/common.sh"'* ]]; then
-    pass "sources common.sh library"
+if [[ "$list_content" == *'source "$SCRIPT_DIR/../lib/data.sh"'* ]]; then
+    pass "sources data.sh (and through it common.sh)"
 else
-    fail "should source common.sh library"
+    fail "should source data.sh"
 fi
 
 if [[ "$list_content" == *"find_dotfiles_root"* ]]; then
@@ -106,10 +110,10 @@ else
 fi
 
 # template should be excluded
-if [[ "$output" != *"launcher.template"* ]]; then
+if [[ "$output" != *"launcher.toml"* && "$output" != *"My project"* ]]; then
     pass "template file is excluded from listing"
 else
-    fail "launcher.template should be excluded from listing"
+    fail "launcher.toml.template should be excluded from listing"
 fi
 
 section "launchers/list.sh: Launcher Dedup (user overrides repo)"
@@ -118,12 +122,14 @@ section "launchers/list.sh: Launcher Dedup (user overrides repo)"
 TEST_XDG=$(mktemp -d)
 TEST_USER_DIR="$TEST_XDG/dotfiles/launchers"
 mkdir -p "$TEST_USER_DIR"
-cat >"$TEST_USER_DIR/dev" <<'TESTEOF'
-#!/usr/bin/env bash
-# @description: User override of dev
-echo "user dev"
+cat >"$TEST_USER_DIR/dev.toml" <<'TESTEOF'
+description = "User override of dev"
+
+[[window]]
+name = "zsh"
 TESTEOF
-chmod +x "$TEST_USER_DIR/dev"
+# not valid TOML: listed without it rather than failing the whole list
+printf 'description = \n' >"$TEST_USER_DIR/broken.toml"
 
 dedup_output=$(XDG_CONFIG_HOME="$TEST_XDG" "$LIST_LAUNCHERS" 2>&1) || true
 # strip ANSI for counting
@@ -143,6 +149,12 @@ else
     fail "dedup: user launcher description should override repo"
 fi
 
+if [[ "$dedup_output" == *"Runs btop"* ]]; then
+    pass "a launcher file that isn't valid TOML doesn't hide the others"
+else
+    fail "an invalid launcher file should be skipped, not empty the list"
+fi
+
 rm -rf "$TEST_XDG"
 
 section "launchers/list.sh: Performance Guardrails"
@@ -153,10 +165,11 @@ else
     pass "launchers/list.sh avoids temp-dir churn"
 fi
 
-if grep -q "grep -m1 '# @description:'" "$LIST_LAUNCHERS"; then
-    fail "launchers/list.sh should not fork grep for each launcher description"
+if grep -q 'launcher_field "\$USER_LAUNCHERS" description' "$LIST_LAUNCHERS" &&
+    grep -q '"\${files\[@\]}"' "$DOTFILES_ROOT/launchers/lib/data.sh"; then
+    pass "launchers/list.sh reads every description in one yq run (launcher_field)"
 else
-    pass "launchers/list.sh parses descriptions without per-file grep"
+    fail "launchers/list.sh should read descriptions in one yq run, not one per file"
 fi
 
 # ===========================================================================
@@ -189,89 +202,81 @@ else
     skip "shellcheck not installed"
 fi
 
-section "launchers/run.sh: get_base_session_name() Regex Parsing"
+section "launchers/run.sh: Routing and Metadata"
 
-# source launchers/run.sh functions by extracting and testing them
-# we can't source the whole file (it has side effects), so test via grep/pattern
 run_content=$(cat "$RUN_LAUNCHER")
 
-# verify function exists
-if [[ "$run_content" == *"get_base_session_name()"* ]]; then
-    pass "get_base_session_name function exists"
+# the session key decides fixed-session vs directory launcher
+if [[ "$run_content" == *'.session // ""'* && "$run_content" == *'if [[ -n "$base_name" ]]; then'* ]]; then
+    pass "routes on the TOML session key"
 else
-    fail "get_base_session_name function should exist"
+    fail "should route fixed vs directory launchers on the session key"
+fi
+if [[ "$run_content" == *'.description // ""'* && "$run_content" == *'.instance // "auto"'* ]]; then
+    pass "reads description and instance mode from the TOML"
+else
+    fail "should read description and instance mode from the TOML"
+fi
+if [[ "$(yq -p toml -o yaml '.session // ""' "$DOTFILES_ROOT/launchers/dev.toml")" == "" ]]; then
+    pass "dev.toml has no session key (directory launcher)"
+else
+    fail "dev.toml should have no session key"
+fi
+if [[ "$(yq -p toml -o yaml '.session // ""' "$DOTFILES_ROOT/launchers/launcher.toml.template")" != "" ]]; then
+    pass "launcher.toml.template has a session key (fixed launcher)"
+else
+    fail "launcher.toml.template should have a session key"
 fi
 
-# test the regex patterns by creating a mini test harness
-test_base_session() {
-    local input="$1"
-    local expected="$2"
-    local desc="$3"
+# instance lookups go through the backend: bare tmux has-session prefix-matches
+# (foo-2 would find a running foo-23), and it can't see rex sessions
+if [[ "$run_content" != *"tmux has-session"* && "$run_content" == *"launcher_session_exists"* ]]; then
+    pass "checks sessions through the backend, exactly"
+else
+    fail "should check sessions with launcher_session_exists, not tmux has-session"
+fi
+if [[ "$run_content" == *'exec "$LAUNCH" "$name"'* ]]; then
+    pass "runs launchers through launch.sh"
+else
+    fail "should exec launch.sh with the launcher name"
+fi
 
-    # replicate the function's logic
-    local val="$input"
-    local result
-    if [[ "$val" =~ :-([^}]+)\} ]]; then
-        result="${BASH_REMATCH[1]}"
+# the metadata block itself, run against a description that spans lines
+meta_block=$(awk '/^# \(NUL-separated/ { on = 1; next } on { print } on && /jq -j/ { exit }' "$RUN_LAUNCHER")
+meta_dir=$(mktemp -d)
+meta_file="$meta_dir/multi.toml"
+printf '%s\n' 'description = """two' 'lines"""' 'instance = "prompt"' 'session = "acme"' '[[window]]' >"$meta_file"
+meta=$(
+    # shellcheck source=launchers/lib/data.sh
+    source "$DOTFILES_ROOT/launchers/lib/data.sh"
+    LAUNCHER_FILE="$meta_file"
+    eval "$meta_block"
+    # shellcheck disable=SC2154 # assigned by the eval'd block
+    printf '%s|%s|%s' "$description" "$instance_mode" "$base_name"
+)
+assert_equals "a multi-line description doesn't shift instance and session" $'two\nlines|prompt|acme' "$meta"
+rm -rf "$meta_dir"
+
+section "launchers/dev: Symlink Resolution"
+
+# a relative link, and a link to that link, from another directory: dev must
+# still find launch.sh (which then asks for the missing directory argument)
+link_dir=$(mktemp -d)
+link_dir=$(cd -P "$link_dir" && pwd)
+mkdir -p "$link_dir/a/b" "$link_dir/c"
+dev_target="$(cd -P "$DOTFILES_ROOT/launchers/bin" && pwd)/dev"
+rel_target=$(python3 -c 'import os,sys; print(os.path.relpath(sys.argv[1], sys.argv[2]))' "$dev_target" "$link_dir/a/b")
+ln -s "$rel_target" "$link_dir/a/b/dev"
+ln -s ../a/b/dev "$link_dir/c/dev"
+for link in "$link_dir/a/b/dev" "$link_dir/c/dev"; do
+    out=$(cd / && "$link" 2>&1 || true)
+    if [[ "$out" == *"dev needs a directory"* ]]; then
+        pass "dev through ${link#"$link_dir"/} finds launch.sh"
     else
-        # shellcheck disable=SC2016
-        result=$(printf '%s' "$val" | tr -d '${}')
+        fail "dev through ${link#"$link_dir"/} should find launch.sh (got: $out)"
     fi
-
-    if [[ "$result" == "$expected" ]]; then
-        pass "get_base_session_name: $desc"
-    else
-        fail "get_base_session_name: $desc (expected '$expected', got '$result')"
-    fi
-}
-
-# plain session name
-test_base_session "myproject" "myproject" "plain value 'myproject'"
-
-# ${SESSION_NAME:-default} pattern
-test_base_session '${SESSION_NAME:-acme}' "acme" '${SESSION_NAME:-acme} extracts default'
-
-# complex default with dashes
-test_base_session '${SESSION_NAME:-my-app}' "my-app" '${SESSION_NAME:-my-app} preserves dashes'
-
-section "launchers/run.sh: is_fixed_session() Detection"
-
-# is_fixed_session returns true when session_value is non-empty
-if [[ "$run_content" == *"is_fixed_session()"* ]]; then
-    pass "is_fixed_session function exists"
-else
-    fail "is_fixed_session function should exist"
-fi
-
-# dev has no SESSION= line, should be detected as parameterised
-if grep -q '^SESSION=' "$DOTFILES_ROOT/launchers/dev"; then
-    fail "dev should NOT have a SESSION= line (it's parameterised)"
-else
-    pass "dev correctly has no SESSION= line (parameterised launcher)"
-fi
-
-# launcher.template has SESSION=, should be detected as fixed
-if grep -q '^SESSION=' "$DOTFILES_ROOT/launchers/launcher.template"; then
-    pass "launcher.template has SESSION= line (fixed launcher)"
-else
-    fail "launcher.template should have a SESSION= line"
-fi
-
-section "launchers/run.sh: Metadata Extraction"
-
-# verify @description extraction pattern
-if [[ "$run_content" == *'# @description:'* ]]; then
-    pass "extracts @description metadata"
-else
-    fail "should extract @description metadata"
-fi
-
-# verify @instance extraction pattern
-if [[ "$run_content" == *'# @instance:'* ]]; then
-    pass "extracts @instance metadata"
-else
-    fail "should extract @instance metadata"
-fi
+done
+rm -rf "$link_dir"
 
 section "launchers/run.sh: Input Sanitisation"
 
@@ -453,9 +458,9 @@ else
     fail "should cap window count at 20"
 fi
 
-section "_lib/launcher-gen.sh: Generated Launcher"
+section "lib/gen.sh: Written Launcher"
 
-LAUNCHER_GEN="$DOTFILES_ROOT/tmux/scripts/_lib/launcher-gen.sh"
+LAUNCHER_GEN="$DOTFILES_ROOT/launchers/lib/gen.sh"
 GEN_TMP="$(mktemp -d)"
 # shellcheck disable=SC2329  # Called indirectly via trap
 _cleanup_gen_tmp() { rm -rf "$GEN_TMP"; }
@@ -477,114 +482,45 @@ gen_fixture() {
     win_split_cmds=("" "printf '%s' x")
 }
 
-gen_file="$GEN_TMP/my.app"
+gen_file="$GEN_TMP/my.app.toml"
 (
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     gen_fixture
-    generate_launcher >"$gen_file"
+    write_launcher "$gen_file"
 )
-gen_content=$(cat "$gen_file")
+gen_json=$(yq -p toml -o json -I0 "$gen_file" 2>/dev/null || true)
 
-if bash -n "$gen_file" 2>/dev/null; then
-    pass "generated launcher is valid bash"
+if [[ -n "$gen_json" ]] && [[ -z "$(
+    source "$DOTFILES_ROOT/launchers/lib/data.sh"
+    launcher_problems "$gen_json"
+)" ]]; then
+    pass "a written launcher is valid TOML that passes the schema"
 else
-    fail "generated launcher has a syntax error"
+    fail "a written launcher should be valid TOML and pass the schema"
 fi
 
-# echo 'hi there' is embedded as 'echo '\''hi there'\'''
-expected_send_keys="tmux send-keys -t \"\$SESSION:one\" 'echo '\\''hi there'\\''' Enter"
-if [[ "$gen_content" == *"$expected_send_keys"* ]]; then
-    pass "escapes single quotes in generated send-keys commands"
-else
-    fail "should escape single quotes in user commands for generated scripts"
-fi
-
-if [[ "$gen_content" == *$'\n# @generated\n'* ]]; then
-    pass "generated launcher carries the @generated marker"
-else
-    fail "generated launcher should carry the @generated marker"
-fi
-
-marker_results=$(
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
-    source "$LAUNCHER_GEN"
-    is_generated_launcher "$gen_file" && echo "generated:yes" || echo "generated:no"
-    is_generated_launcher "$DOTFILES_ROOT/launchers/btop" && echo "btop:yes" || echo "btop:no"
-)
-if [[ "$marker_results" == *generated:yes* && "$marker_results" == *btop:no* ]]; then
-    pass "is_generated_launcher tells generated from hand-written launchers"
-else
-    fail "is_generated_launcher should match only marked launchers"
-fi
-
-section "_lib/launcher-gen.sh: Tmux Exact-Match Session Targets"
-
-# the wizard template must emit `=$SESSION` for tmux
-# session targets. bare `"$SESSION"` triggers tmux's prefix-matching,
-# so launching "foo-15" would silently re-attach to a running "foo-1533"
-# instead of creating a new session
-if [[ "$gen_content" == *'tmux has-session -t "=$SESSION"'* ]]; then
-    pass "generated has-session uses exact-match (=\$SESSION)"
-else
-    fail "generated has-session should use =\$SESSION (prefix-match bug)"
-fi
-
-if [[ "$gen_content" == *'tmux switch-client -t "=$SESSION"'* ]]; then
-    pass "generated switch-client uses exact-match (=\$SESSION)"
-else
-    fail "generated switch-client should use =\$SESSION (prefix-match bug)"
-fi
-
-if [[ "$gen_content" == *'tmux attach-session -t "=$SESSION"'* ]]; then
-    pass "generated attach-session uses exact-match (=\$SESSION)"
-else
-    fail "generated attach-session should use =\$SESSION (prefix-match bug)"
-fi
-
-# same guard for the shared `dev` launcher (uses lowercase $session)
-dev_launcher="$DOTFILES_ROOT/launchers/dev"
-if [[ -f "$dev_launcher" ]]; then
-    dev_content=$(cat "$dev_launcher")
-    if [[ "$dev_content" == *'tmux has-session -t "=$session"'* ]] &&
-        [[ "$dev_content" == *'tmux switch-client -t "=$session"'* ]] &&
-        [[ "$dev_content" == *'tmux attach-session -t "=$session"'* ]]; then
-        pass "launchers/dev uses exact-match for all tmux session targets"
+for want in '.session == "my-app"' \
+    ".root == \"~/src/it's here\"" \
+    '(has("root_env") | not)' \
+    '.instance == "prompt"' \
+    ".window[0].cmd == \"echo 'hi there'\"" \
+    '.window[1].pane[1].split == "h"' \
+    ".window[1].pane[1].cmd == \"printf '%s' x\"" \
+    '(.window[1].pane[0] | length) == 0'; do
+    if jq -e "$want" <<<"$gen_json" >/dev/null 2>&1; then
+        pass "written launcher: $want"
     else
-        fail "launchers/dev should use =\$session for all tmux session targets"
-    fi
-else
-    skip "launchers/dev not found"
-fi
-
-section "Launchers: @launcher Session Tag"
-
-# set-option -t takes a target-pane, so a bare "=$SESSION" is parsed as a
-# window name and fails with "no such session". the trailing colon makes it the
-# exact-match session's current window, and the option lands at session level
-if [[ "$gen_content" == *'tmux set-option -t "=$SESSION:" @launcher my.app'* ]]; then
-    pass "generated launchers tag the session with their own name"
-else
-    fail "generated launchers should emit set-option -t \"=\$SESSION:\" @launcher <name>"
-fi
-
-for launcher_file in "$DOTFILES_ROOT"/launchers/*; do
-    launcher_name=$(basename "$launcher_file")
-    [[ "$launcher_name" == *.template ]] && continue
-    if grep -qE "^tmux set-option -t \"=\\\$(SESSION|session):\" @launcher ${launcher_name}\$" "$launcher_file"; then
-        pass "launchers/$launcher_name tags its session as @launcher $launcher_name"
-    else
-        fail "launchers/$launcher_name should set @launcher $launcher_name on its session (with =\$SESSION: target)"
+        fail "written launcher should satisfy: $want"
     fi
 done
 
-section "_lib/launcher-gen.sh: Load/Generate Round Trip"
+section "lib/gen.sh: Load/Write Round Trip"
 
-# loading a generated launcher must give back the state that wrote it, and
-# writing that state again must reproduce the file byte for byte, so editing
-# in the wizard never drifts (single quotes used to be escaped again per edit)
+# loading a written launcher gives back the state that wrote it, and writing
+# that state again leaves the file as it was
 round_trip=$(
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     gen_fixture
     want=$(declare -p description instance_mode worktree_aware win_names win_cmds win_splits win_split_cmds)
@@ -593,31 +529,204 @@ round_trip=$(
     [[ "$want" == "$got" ]] && echo "state-ok"
     # shellcheck disable=SC2088
     [[ "$project_dir" == "~/src/it's here" ]] && echo "dir-ok"
-    project_dir="${project_dir/#\~/\$HOME}"
-    cmp -s <(generate_launcher) "$gen_file" && echo "regen-ok"
+    before=$(cat "$gen_file")
+    write_launcher "$gen_file"
+    [[ "$(cat "$gen_file")" == "$before" ]] && echo "rewrite-ok"
     true
 )
 
 if [[ "$round_trip" == *state-ok* ]]; then
-    pass "load_existing_launcher returns the state generate_launcher wrote"
+    pass "load_existing_launcher returns the state write_launcher wrote"
 else
-    fail "load_existing_launcher should return the generated state (quotes, splits, instance mode)"
+    fail "load_existing_launcher should return the written state (quotes, splits, instance mode)"
 fi
 if [[ "$round_trip" == *dir-ok* ]]; then
-    pass "load_existing_launcher returns the project dir in ~ form"
+    pass "load_existing_launcher returns the root in ~ form"
 else
-    fail "load_existing_launcher should return the project dir in ~ form"
+    fail "load_existing_launcher should return the root in ~ form"
 fi
-if [[ "$round_trip" == *regen-ok* ]]; then
-    pass "regenerating a loaded launcher is byte-identical"
+if [[ "$round_trip" == *rewrite-ok* ]]; then
+    pass "writing a loaded launcher back leaves the file unchanged"
 else
-    fail "regenerating a loaded launcher should reproduce the file exactly"
+    fail "writing a loaded launcher back should leave the file unchanged"
 fi
 
-section "_lib/launcher-gen.sh: Rich Windows"
+# focus = true placed anywhere that means the same focus stays where it was
+for placement in "window" "first-pane"; do
+    focus_file="$GEN_TMP/focus-$placement.toml"
+    {
+        printf 'description = "focus"\nsession = "focus"\n\n[[window]]\nname = "a"\n'
+        [[ "$placement" == window ]] && printf 'focus = true\n'
+        printf '\n[[window]]\nname = "b"\n[[window.pane]]\ncmd = "x"\n'
+        [[ "$placement" == first-pane ]] && printf 'focus = true\n'
+        printf '[[window.pane]]\nsplit = "h"\n'
+    } >"$focus_file"
+    before=$(cat "$focus_file")
+    after=$(
+        # shellcheck source=launchers/lib/gen.sh
+        source "$LAUNCHER_GEN"
+        load_existing_launcher "$focus_file"
+        name="focus"
+        write_launcher "$focus_file"
+        cat "$focus_file"
+    )
+    assert_equals "focus = true on a $placement keeps its place" "$before" "$after"
+done
+moved=$(
+    # shellcheck source=launchers/lib/gen.sh
+    source "$LAUNCHER_GEN"
+    load_existing_launcher "$GEN_TMP/focus-first-pane.toml"
+    name="focus"
+    focus_pane=2
+    write_launcher "$GEN_TMP/focus-first-pane.toml"
+    yq -p toml -o json "$GEN_TMP/focus-first-pane.toml" | jq -c '[.window[1].pane[] | .focus // false]'
+)
+assert_equals "a different focus still moves the key" "[false,true]" "$moved"
+
+for repo_launcher in "$DOTFILES_ROOT"/launchers/*.toml; do
+    launcher_name=$(basename "$repo_launcher" .toml)
+    if (
+        # shellcheck source=launchers/lib/gen.sh
+        source "$LAUNCHER_GEN"
+        name="$launcher_name"
+        load_existing_launcher "$repo_launcher"
+        [[ "$(launcher_state_json | jq -S .)" == "$(launcher_json "$repo_launcher" | jq -S .)" ]]
+    ); then
+        pass "launchers/$launcher_name.toml loads and writes back unchanged"
+    else
+        fail "launchers/$launcher_name.toml should load and write back unchanged"
+    fi
+done
+
+# every schema key, and the template, survive a load and write: same data,
+# same comments
+# shellcheck source=launchers/lib/data.sh
+source "$DOTFILES_ROOT/launchers/lib/data.sh"
+cat >"$GEN_TMP/every-key.toml" <<'TOML'
+# a launcher using every key
+description = "every key"
+session = "custom-session"
+instance = "auto"
+root = "~/src/every"
+
+[worktrees]
+dir = "~/src/every-worktrees"
+
+[[window]]
+name = "named"
+auto_rename = true
+dir = "web"
+[[window.pane]]
+cmd = "make dev"
+[[window.pane]]
+split = "v"
+size = 30
+dir = "api"
+cmd = "make api"
+focus = true
+[[window.pane]]
+split = "h"
+of = 1
+size = 50
+
+[[window]]
+auto_rename = true
+cmd = "claude"
+TOML
+cat >"$GEN_TMP/window-focus.toml" <<'TOML'
+# focus on a later window, the other place it can sit
+description = "window focus"
+session = "window-focus"
+
+[[window]]
+name = "shell"
+
+[[window]]
+name = "edit"
+focus = true
+[[window.pane]]
+cmd = "nvim"
+[[window.pane]]
+split = "h"
+TOML
+/bin/cp "$DOTFILES_ROOT/launchers/launcher.toml.template" "$GEN_TMP/template.toml"
+cat >"$GEN_TMP/split-focus.toml" <<'TOML'
+# focus on the second pane of a simple split, the wizard's own window shape
+description = "split focus"
+session = "split-focus"
+
+[[window]]
+name = "dev"
+[[window.pane]]
+cmd = "nvim"
+[[window.pane]]
+split = "h"
+cmd = "claude"
+focus = true
+TOML
+for fixture in every-key window-focus split-focus template; do
+    file="$GEN_TMP/$fixture.toml"
+    want=$(launcher_json "$file" | jq -S .)
+    comments=$(grep -c '#' "$file")
+    (
+        # shellcheck source=launchers/lib/gen.sh
+        source "$LAUNCHER_GEN"
+        name="$fixture"
+        load_existing_launcher "$file"
+        write_launcher "$file"
+    )
+    assert_equals "$fixture: every key loads and writes back" "$want" "$(launcher_json "$file" | jq -S .)"
+    assert_equals "$fixture: every comment is kept" "$comments" "$(grep -c '#' "$file")"
+done
+
+section "lib/gen.sh: Comments Survive a Rewrite"
+
+comment_file="$GEN_TMP/commented.toml"
+cat >"$comment_file" <<'TESTEOF'
+# my notes about this launcher
+description = "Before" # the picker shows this
+session = "commented"
+
+[[window]]
+# the editor window
+name = "edit"
+cmd = "nvim"
+
+[[window]]
+name = "gone"
+TESTEOF
+(
+    # shellcheck source=launchers/lib/gen.sh
+    source "$LAUNCHER_GEN"
+    name="commented"
+    load_existing_launcher "$comment_file"
+    description="After"
+    win_names=(edit)
+    win_cmds=(nvim)
+    win_splits=(no)
+    win_split_cmds=("")
+    win_panes=("")
+    win_layouts=("")
+    write_launcher "$comment_file"
+)
+comment_content=$(cat "$comment_file")
+for want in "# my notes about this launcher" 'description = "After"  # the picker shows this' "# the editor window"; do
+    if [[ "$comment_content" == *"$want"* ]]; then
+        pass "rewrite keeps: $want"
+    else
+        fail "rewrite should keep: $want"
+    fi
+done
+if [[ "$comment_content" != *gone* ]]; then
+    pass "a removed window is dropped from the file"
+else
+    fail "a removed window should be dropped from the file"
+fi
+
+section "lib/gen.sh: Rich Windows"
 
 # a simple window, then a rich one: three panes (one left, two stacked right),
-# each with its own directory, and a command with single quotes
+# each with its own directory, an even split, and a command with single quotes
 # shellcheck disable=SC2329  # Called in subshells below
 rich_fixture() {
     name="rich"
@@ -631,58 +740,38 @@ rich_fixture() {
     win_splits=(no no)
     win_split_cmds=("" "")
     win_panes=("" 3)
-    win_layouts=("" $'1 h 70 2\n2 v 48 3')
+    win_layouts=("" $'1 h 70 2\n2 v - 3')
     pane_cmds=(["1:1"]="make status" ["1:2"]="echo 'it works'" ["1:3"]="")
     pane_dirs=(["1:1"]="" ["1:2"]="backend" ["1:3"]="/tmp")
 }
 
-rich_file="$GEN_TMP/rich"
+rich_file="$GEN_TMP/rich.toml"
 (
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     rich_fixture
-    generate_launcher >"$rich_file"
+    write_launcher "$rich_file"
 )
-rich_content=$(cat "$rich_file")
+rich_json=$(yq -p toml -o json -I0 "$rich_file" 2>/dev/null || true)
 
-if bash -n "$rich_file" 2>/dev/null; then
-    pass "a launcher with a rich window is valid bash"
-else
-    fail "a launcher with a rich window has a syntax error"
-fi
-# shellcheck disable=SC2016
-for want in 'p1=$(tmux display-message -p -t "$SESSION:dev" '\''#{pane_id}'\'')' \
-    'p2=$(tmux split-window -d -t "$p1" -h -l 70% -c "$PROJECT_DIR/backend" -P -F '\''#{pane_id}'\'')' \
-    'p3=$(tmux split-window -d -t "$p2" -v -l 48% -c "/tmp" -P -F '\''#{pane_id}'\'')' \
-    "tmux send-keys -t \"\$p2\" 'echo '\\''it works'\\''' Enter"; do
-    if [[ "$rich_content" == *"$want"* ]]; then
+for want in '.window[1].pane[0] == {cmd: "make status"}' \
+    ".window[1].pane[1] == {split: \"h\", size: 70, dir: \"backend\", cmd: \"echo 'it works'\"}" \
+    '.window[1].pane[2] == {split: "v", dir: "/tmp"}'; do
+    if jq -e "$want" <<<"$rich_json" >/dev/null 2>&1; then
         pass "rich window writes: $want"
     else
         fail "rich window should write: $want"
     fi
 done
-if [[ "$rich_content" != *'send-keys -t "$p3"'* ]]; then
-    pass "a pane without a command gets no send-keys"
-else
-    fail "a pane without a command should get no send-keys"
-fi
-# shellcheck disable=SC2016
-if [[ "$rich_content" == *'-x "$_cols" -y "$_rows"'* && "$rich_content" == *'_cols=$(tmux display-message'* ]]; then
-    pass "rich launchers create the session at the client's size"
-else
-    fail "rich launchers should size the session (-x/-y), or the layout skews on attach"
-fi
 
 rich_round_trip=$(
-    # shellcheck source=tmux/scripts/_lib/launcher-gen.sh
+    # shellcheck source=launchers/lib/gen.sh
     source "$LAUNCHER_GEN"
     rich_fixture
     want=$(declare -p win_names win_cmds win_splits win_split_cmds win_panes win_layouts pane_cmds pane_dirs)
     load_existing_launcher "$rich_file"
     got=$(declare -p win_names win_cmds win_splits win_split_cmds win_panes win_layouts pane_cmds pane_dirs)
     [[ "$want" == "$got" ]] && echo "state-ok"
-    project_dir="${project_dir/#\~/\$HOME}"
-    cmp -s <(generate_launcher) "$rich_file" && echo "regen-ok"
     true
 )
 if [[ "$rich_round_trip" == *state-ok* ]]; then
@@ -690,17 +779,28 @@ if [[ "$rich_round_trip" == *state-ok* ]]; then
 else
     fail "load_existing_launcher should read a rich window back exactly"
 fi
-if [[ "$rich_round_trip" == *regen-ok* ]]; then
-    pass "regenerating a loaded rich launcher is byte-identical"
+
+section "Launchers: tmux Session Targets and @launcher Tag"
+
+backend_content=$(cat "$DOTFILES_ROOT/launchers/lib/tmux.sh")
+# set-option -t takes a target-pane, so a bare "=$session" is parsed as a
+# window name; the trailing colon makes it the exact-match session
+if [[ "$backend_content" == *'tmux set-option -t "=$session:" @launcher "$name"'* ]]; then
+    pass "the tmux backend tags the session with the launcher name"
 else
-    fail "regenerating a loaded rich launcher should reproduce the file exactly"
+    fail "the tmux backend should set @launcher on \"=\$session:\""
+fi
+if [[ "$backend_content" == *'focus_session "=$1"'* ]]; then
+    pass "the tmux backend focuses sessions by exact name"
+else
+    fail "the tmux backend should focus \"=\$session\", not a prefix match"
 fi
 
 section "launchers/picker.sh: Search Mode Keys"
 
 # every single-letter action key must be unbound while searching (/) and
 # rebound on esc, or the letter can't be typed into the search
-picker_content=$(cat "$SCRIPT_DIR/../launchers/picker.sh")
+picker_content=$(cat "$SCRIPT_DIR/../bin/picker.sh")
 unbind_list=$(printf '%s' "$picker_content" | grep -o "enable-search[^']*+unbind([^)]*)" | head -1)
 rebind_list=$(printf '%s' "$picker_content" | grep -o "disable-search[^']*+rebind([^)]*)" | head -1)
 for key in $(printf '%s' "$picker_content" | grep -oE "\-\-bind ['\"][A-Za-z]:(become|execute)" | sed -E "s/--bind ['\"]//; s/:.*//"); do
@@ -715,12 +815,10 @@ if [[ "$picker_content" == *"'s:become(printf \"ACTION:save\")'"* && "$picker_co
 else
     fail "s should save the session and S open settings"
 fi
-# the wizard can only edit its own output; the picker must not send hand-written
-# launchers there
-if [[ "$picker_content" == *"grep -qxF '# @generated'"* && "$picker_content" == *"written by hand"* ]]; then
-    pass "the picker refuses to edit hand-written launchers"
+if [[ "$picker_content" == *'"$USER_LAUNCHERS/$edit_name.toml"'* && "$picker_content" != *"@generated"* ]]; then
+    pass "the picker edits any user launcher, and only user launchers"
 else
-    fail "the picker should refuse to edit hand-written launchers"
+    fail "the picker should edit any user launcher (no @generated gate) and refuse repo ones"
 fi
 
 section "launchers/new.sh: exec < /dev/tty Documentation"
@@ -840,7 +938,7 @@ fi
 
 section "launchers/picker.sh: Name Weighting Configuration"
 
-picker_content=$(cat "$SCRIPT_DIR/../launchers/picker.sh")
+picker_content=$(cat "$SCRIPT_DIR/../bin/picker.sh")
 
 if [[ "$picker_content" == *"--with-nth=2"* ]]; then
     pass "picker uses --with-nth=2 to hide name weight field"
@@ -858,7 +956,7 @@ fi
 # launchers/duplicate.sh tests
 # ===========================================================================
 
-DUPLICATE_LAUNCHER="$SCRIPT_DIR/../launchers/duplicate.sh"
+DUPLICATE_LAUNCHER="$SCRIPT_DIR/../bin/duplicate.sh"
 
 section "launchers/duplicate.sh: Script Exists and Is Executable"
 
@@ -927,9 +1025,9 @@ fi
 section "launchers/duplicate.sh: Description Update"
 
 if [[ "$dup_content" == *"Copy of"* ]]; then
-    pass "updates @description to indicate copy"
+    pass "updates the description to indicate copy"
 else
-    fail "should update @description to 'Copy of <name>'"
+    fail "should update the description to 'Copy of <name>'"
 fi
 
 section "launchers/duplicate.sh: Functional Test"
@@ -938,12 +1036,14 @@ section "launchers/duplicate.sh: Functional Test"
 TEST_XDG=$(mktemp -d)
 TEST_USER_DIR="$TEST_XDG/dotfiles/launchers"
 mkdir -p "$TEST_USER_DIR"
-cat >"$TEST_USER_DIR/test-dup" <<'TESTEOF'
-#!/usr/bin/env bash
-# @description: Test launcher
-echo "test"
+cat >"$TEST_USER_DIR/test-dup.toml" <<'TESTEOF'
+# kept on the copy
+description = "Test launcher"
+session = "test-dup"
+
+[[window]]
+name = "zsh"
 TESTEOF
-chmod +x "$TEST_USER_DIR/test-dup"
 
 # duplicate it
 copy_name=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "test-dup" 2>/dev/null) || true
@@ -954,23 +1054,17 @@ else
     fail "first copy should be 'test-dup-copy', got '$copy_name'"
 fi
 
-if [[ -f "$TEST_USER_DIR/test-dup-copy" ]]; then
+if [[ -f "$TEST_USER_DIR/test-dup-copy.toml" ]]; then
     pass "copy file was created"
 else
-    fail "copy file should exist at $TEST_USER_DIR/test-dup-copy"
+    fail "copy file should exist at $TEST_USER_DIR/test-dup-copy.toml"
 fi
 
-if [[ -x "$TEST_USER_DIR/test-dup-copy" ]]; then
-    pass "copy file is executable"
+if grep -qx 'description = "Copy of test-dup"' "$TEST_USER_DIR/test-dup-copy.toml" 2>/dev/null &&
+    grep -qx '# kept on the copy' "$TEST_USER_DIR/test-dup-copy.toml"; then
+    pass "copy has the new description and keeps its comments"
 else
-    fail "copy file should be executable"
-fi
-
-# check description was updated
-if grep -q "Copy of test-dup" "$TEST_USER_DIR/test-dup-copy" 2>/dev/null; then
-    pass "copy has updated @description"
-else
-    fail "copy should have '@description: Copy of test-dup'"
+    fail "copy should say 'Copy of test-dup' and keep the source's comments"
 fi
 
 # duplicate again, should get -copy-2
@@ -1000,6 +1094,14 @@ if [[ "$empty_result" == *"exit:0"* ]]; then
     pass "empty name exits cleanly"
 else
     fail "empty name should exit 0"
+fi
+
+# a repo launcher duplicates into the user dir
+copy_btop=$(XDG_CONFIG_HOME="$TEST_XDG" "$DUPLICATE_LAUNCHER" "btop" 2>/dev/null) || true
+if [[ "$copy_btop" == "btop-copy" && -f "$TEST_USER_DIR/btop-copy.toml" ]]; then
+    pass "a repo launcher can be duplicated"
+else
+    fail "duplicating btop should write btop-copy.toml, got '$copy_btop'"
 fi
 
 rm -rf "$TEST_XDG"

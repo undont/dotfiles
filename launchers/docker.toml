@@ -1,0 +1,6 @@
+description = "Runs lazydocker from ~"
+session = "docker"
+
+[[window]]
+name = "docker"
+cmd = "lazydocker"

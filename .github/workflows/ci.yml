@@ -47,14 +47,11 @@ jobs:
           shellcheck -x $EXCLUDES tmux/scripts/_lib/*.sh
           shellcheck -x $EXCLUDES -e SC2317 tmux/scripts/tests/*.sh
 
-      - name: Run ShellCheck on session launchers
+      - name: Run ShellCheck on launcher scripts
         run: |
           EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
-          for f in launchers/*; do
-            if file "$f" | grep -q "shell script"; then
-              shellcheck -x $EXCLUDES "$f"
-            fi
-          done
+          shellcheck -x $EXCLUDES launchers/bin/*.sh launchers/bin/dev launchers/lib/*.sh
+          shellcheck -x $EXCLUDES -e SC2317 launchers/tests/*.sh
 
       - name: Run ShellCheck on test scripts
         run: |
@@ -77,7 +74,7 @@ jobs:
       - uses: actions/checkout@v4
 
       - name: Install dependencies
-        run: brew install bash tmux fzf luajit
+        run: brew install bash tmux fzf luajit yq jq
 
       - name: Run all tests with dynamic discovery
         run: |

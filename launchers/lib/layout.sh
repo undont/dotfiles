@@ -1,9 +1,9 @@
 #!/usr/bin/env bash
 # rebuild a tmux window layout from its pane rectangles
-# source this file: source "${BASH_SOURCE%/*}/../_lib/layout.sh"
+# source this file: source "${BASH_SOURCE%/*}/../lib/layout.sh"
 
-[[ -n "${_TMUX_LAYOUT_SH_LOADED:-}" ]] && return 0
-_TMUX_LAYOUT_SH_LOADED=1
+[[ -n "${_LAUNCHER_LAYOUT_SH_LOADED:-}" ]] && return 0
+_LAUNCHER_LAYOUT_SH_LOADED=1
 
 # turn pane rectangles into the split-window steps that rebuild them.
 #

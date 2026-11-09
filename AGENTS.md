@@ -30,8 +30,8 @@ the repo propagate on next `dotfiles update`.
 dir (-> `~/.config/nvim`), the `dotfiles` CLI (`scripts/dotfiles` ->
 `~/.local/bin/dotfiles`), the formatter configs (`formatters/prettierrc.json` ->
 `~/.prettierrc`, `formatters/editorconfig` -> `~/.editorconfig`), the `dev`
-launcher (`launchers/dev` -> `~/.local/launchers/dev`; the other files in
-`launchers/` are not linked by the installer), `gh-dash/dash-repo-sync`,
+launcher wrapper (`launchers/bin/dev` -> `~/.local/launchers/dev`; the
+launcher files in `launchers/` are data and are not linked), `gh-dash/dash-repo-sync`,
 `lazydocker/format-logs.awk`, the statusline theme resolver
 (`scripts/_lib/statusline-theme.sh` -> `~/.config/dotfiles/statusline-theme.sh`),
 the ImageMagick font map (`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`,
@@ -142,6 +142,33 @@ and copy-on-install files and is **not** part of this public repo, so it won't s
 up in `git status` here. Don't assume it exists or edit it as part of a change to
 this repo; if you need to inspect or open it, `dotfiles local status` reports whether
 one is configured and `dotfiles local edit` opens it in `$EDITOR`.
+
+## Session Launchers
+
+A launcher is a TOML file: repo ones in `launchers/*.toml`, user ones in
+`~/.config/dotfiles/launchers/*.toml` (a user file shadows a repo one of the same
+name). The schema is documented in `launchers/launcher.toml.template`. The
+code serves both tmux and Rex, so it lives beside the data rather than under
+`tmux/`: scripts in `launchers/bin/`, libraries in `launchers/lib/`, tests in
+`launchers/tests/` (they source `tmux/scripts/_lib/common.sh` and `ui.sh` and
+the tmux test helpers).
+
+- `launchers/lib/data.sh` loads, validates, resolves (root,
+  worktree instance, focus) and writes launcher files. A file has at most one
+  `focus = true`, on a window (opens at its first pane) or on a pane; every
+  other window opens on its first pane. Writes update an existing file value
+  by value, so hand-written comments survive.
+- `tmux.sh` and `rex.sh` build a resolved launcher; `backend.sh` picks one (`LAUNCHER_BACKEND`, else tmux inside tmux,
+  else Rex inside Rex).
+- `launchers/bin/launch.sh NAME [DIR]` is the runner; the picker and the `dev`
+  wrapper go through it.
+- `scripts/migrations/0.2.158-launchers-to-toml.sh` converts old bash user
+  launchers by running each against a recording tmux stand-in, and moves the
+  bash to `~/.local/share/dotfiles/launcher-backups/bash/`. The run's `PATH`
+  holds only that stand-in and a few read-only tools, so a launcher that runs
+  anything else is left as bash. Each launcher is recorded twice, as its base
+  session and as an instance: a command that names the session in capitals
+  becomes `{SESSION}`, and any other difference leaves the launcher as bash.
 
 ## Change Guidelines
 

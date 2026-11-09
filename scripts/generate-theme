@@ -265,7 +265,7 @@ EOF
     fi
 
     if [[ "$quiet" != "true" ]] && [[ -f "$THEMES_GENERATED/$generated_name.theme" ]]; then
-        "$SCRIPT_DIR/theme-contrast-check" "$THEMES_GENERATED/$generated_name.theme" || true
+        "$SCRIPT_DIR/theme-contrast-check" "$THEMES_GENERATED/$generated_name.theme" >&2 || true
     fi
 
     echo "$generated_name"

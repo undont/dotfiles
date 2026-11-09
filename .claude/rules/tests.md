@@ -24,7 +24,7 @@ Tmux tests use isolated test servers via `setup_test_server`/`cleanup_test_serve
 The test runner (`scripts/run-tests.sh`) automatically discovers all test files:
 
 - Library tests: `*/_lib/test-*-libs.sh`
-- Script tests: `tmux/scripts/tests/test-*.sh`
+- Script tests: `tmux/scripts/tests/test-*.sh` and `launchers/tests/test-*.sh`
 - Integration tests: `scripts/tests/test-*.sh`
 
 Tests requiring tmux are automatically detected and skipped if tmux is not available.

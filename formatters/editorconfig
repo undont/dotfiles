@@ -37,6 +37,9 @@ csharp_preserve_single_line_blocks = true
 [*.{js,jsx,ts,tsx,json,yaml,yml}]
 indent_size = 2
 
+[*.{c,h}]
+indent_size = 2
+
 [*.{md,markdown}]
 trim_trailing_whitespace = false
 

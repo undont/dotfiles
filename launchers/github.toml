@@ -1,0 +1,6 @@
+description = "Launches gh dash from ~"
+session = "github"
+
+[[window]]
+name = "dash"
+cmd = "dash"

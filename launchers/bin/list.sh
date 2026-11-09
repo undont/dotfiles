@@ -10,8 +10,8 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 
-# shellcheck source=tmux/scripts/_lib/common.sh
-source "$SCRIPT_DIR/../_lib/common.sh"
+# shellcheck source=launchers/lib/data.sh
+source "$SCRIPT_DIR/../lib/data.sh"
 
 load_fzf_theme
 
@@ -33,23 +33,6 @@ contains_line() {
     return 1
 }
 
-# extract the first description tag from a launcher file
-extract_description() {
-    local file="$1"
-    local line
-    while IFS= read -r line; do
-        case "$line" in
-            "# @description:"*)
-                line="${line#"# @description:"}"
-                line="${line#"${line%%[![:space:]]*}"}"
-                printf '%s\n' "$line"
-                return 0
-                ;;
-        esac
-    done <"$file"
-    return 1
-}
-
 # list launchers in fzf-compatible format, sorted by most recently used
 list_launchers_for_fzf() {
     # header (consumed by fzf --header-lines)
@@ -65,42 +48,23 @@ list_launchers_for_fzf() {
     local all_launchers="" seen_names=""
 
     collect_launcher() {
-        local file="$1"
-        local source="${2:-}"
-        local name description
-
-        name=$(basename "$file")
-
-        description=$(extract_description "$file" || true)
+        local name="$1" description="$2" source="$3"
         [[ -n "$description" ]] || return 0
-
         all_launchers+="${name}|${description}|${source}"$'\n'
         seen_names+="${name}"$'\n'
     }
 
     # user launchers first (they take priority on name collision)
-    if [[ -d "$USER_LAUNCHERS" ]]; then
-        for file in "$USER_LAUNCHERS"/*; do
-            [[ -f "$file" ]] || continue
-            [[ -x "$file" ]] || continue
-            [[ "$file" != *.template ]] || continue
-            collect_launcher "$file" "user"
-        done
-    fi
+    local name description
+    while IFS=$'\t' read -r name description; do
+        collect_launcher "$name" "$description" user
+    done < <(launcher_field "$USER_LAUNCHERS" description)
 
-    # repo launchers (skip if overridden by user)
-    if [[ -d "$DOTFILES_LAUNCHERS" ]]; then
-        for file in "$DOTFILES_LAUNCHERS"/*; do
-            [[ -f "$file" ]] || continue
-            [[ -x "$file" ]] || continue
-            [[ "$file" != *.template ]] || continue
-            local name
-            name=$(basename "$file")
-            # skip if already seen (user override)
-            contains_line "$name" "$seen_names" && continue
-            collect_launcher "$file" "system"
-        done
-    fi
+    # repo launchers, unless a user launcher has the name
+    while IFS=$'\t' read -r name description; do
+        contains_line "$name" "$seen_names" && continue
+        collect_launcher "$name" "$description" system
+    done < <(launcher_field "$DOTFILES_LAUNCHERS" description)
 
     # build MRU list from history (most recent first, deduplicated)
     local mru_list="" history_lines=()

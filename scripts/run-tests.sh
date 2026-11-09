@@ -187,7 +187,7 @@ cd "$REPO_ROOT"
 
 LIBRARY_TESTS=$(find . -path "*/_lib/test-*-libs.sh" -type f | sort)
 
-SCRIPT_TESTS=$(find tmux/scripts/tests -name "test-*.sh" -type f | sort)
+SCRIPT_TESTS=$(find tmux/scripts/tests launchers/tests -name "test-*.sh" -type f | sort)
 
 INTEGRATION_TESTS=$(find scripts/tests -name "test-*.sh" -type f 2>/dev/null | sort || true)
 

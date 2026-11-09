@@ -1,15 +1,16 @@
 #!/usr/bin/env bash
-# test suite for _lib/layout.sh
+# test suite for lib/layout.sh
 # checks the split steps for known layouts, then replays them on the isolated
 # test server and compares the panes tmux builds with the originals
 
 set -euo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
-source "$SCRIPT_DIR/_test-helpers.sh"
-source "$SCRIPT_DIR/../_lib/common.sh"
-# shellcheck source=tmux/scripts/_lib/layout.sh
-source "$SCRIPT_DIR/../_lib/layout.sh"
+# shellcheck source=tmux/scripts/tests/_test-helpers.sh
+source "$SCRIPT_DIR/../../tmux/scripts/tests/_test-helpers.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/common.sh"
+# shellcheck source=launchers/lib/layout.sh
+source "$SCRIPT_DIR/../lib/layout.sh"
 
 # shellcheck disable=SC2329  # Called indirectly via trap
 _cleanup_layout_tests() {
@@ -133,11 +134,13 @@ done
 section "Launcher with a rich window"
 # ═══════════════════════════════════════════════════════════════════════════
 
-# generate a launcher whose second window is one pane on the left and two
-# stacked on the right, each in its own directory, then run it and read the
+# write a launcher whose second window is one pane on the left and two
+# stacked on the right, each in its own directory, then build it and read the
 # session back
-# shellcheck source=tmux/scripts/_lib/launcher-gen.sh
-source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
+# shellcheck source=launchers/lib/gen.sh
+source "$SCRIPT_DIR/../lib/gen.sh"
+# shellcheck source=launchers/lib/tmux.sh
+source "$SCRIPT_DIR/../lib/tmux.sh"
 RICH_DIR="$(mktemp -d)"
 RICH_DIR="$(cd "$RICH_DIR" && pwd -P)"
 mkdir -p "$RICH_DIR/proj/backend" "$RICH_DIR/elsewhere"
@@ -161,18 +164,20 @@ win_panes=("" 3)
 win_layouts=("" "$(splits "$LEFT_STACK")")
 pane_cmds=(["1:1"]="sleep 300" ["1:2"]="tail -f '$RICH_DIR/proj/my notes.txt'" ["1:3"]="")
 pane_dirs=(["1:1"]="" ["1:2"]="backend" ["1:3"]="$RICH_DIR/elsewhere")
-generate_launcher >"$RICH_DIR/rich"
+write_launcher "$RICH_DIR/rich.toml"
 
-# the launcher attaches at the end, which fails without a terminal. with no
-# client on the test server it sizes itself from tput, which we stand in for
-# shellcheck disable=SC2329  # called by the launcher via export -f
-tput() { [[ "$1" == cols ]] && echo 200 || echo 50; }
-export -f tput
-SESSION_NAME=richrun bash "$RICH_DIR/rich" >/dev/null 2>&1 || true
-unset -f tput
+# with no client on the test server the backend sizes the session from tput,
+# which we stand in for, and has no client to switch to
+(
+    # shellcheck disable=SC2329  # called by tmux_launch
+    tput() { [[ "$1" == cols ]] && echo 200 || echo 50; }
+    # shellcheck disable=SC2329  # replaces the backend's client switch
+    tmux_focus_session() { :; }
+    tmux_launch "$(SESSION_NAME=richrun launcher_resolve "$RICH_DIR/rich.toml")"
+) >/dev/null 2>&1 || true
 sleep 1
 
-out=$("$SCRIPT_DIR/../launchers/capture.sh" richrun)
+out=$("$SCRIPT_DIR/../bin/capture.sh" richrun)
 dev_idx=$(tmux display-message -p -t "=richrun:dev" '#{window_index}')
 dev_rows=$(printf '%s\n' "$out" | awk -F'\t' -v w="$dev_idx" '$1 == "pane" && $2 == w')
 

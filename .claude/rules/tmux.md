@@ -6,8 +6,8 @@ paths:
 # Tmux Scripts Architecture
 
 Scripts live under `tmux/scripts/` in functional subdirectories (`sessions/`,
-`windows/`, `panes/`, `launchers/`, `instances/`, `alerts/`, `resurrect/`,
-`themes/`, `utils/`, `tests/`), with shared libraries in `_lib/` (`common.sh`,
+`windows/`, `panes/`, `instances/`, `alerts/`, `resurrect/`, `themes/`,
+`utils/`, `tests/`), with shared libraries in `_lib/` (`common.sh`,
 `paths.sh`, `session.sh`, `alerts.sh`, `process.sh`, `ui.sh`). `process.sh`
 provides the graceful SIGTERM → wait → SIGKILL termination shared by the
 `kill.sh` scripts across `sessions/`, `panes/`, `windows/`, and `instances/`.

@@ -4,9 +4,9 @@ set -euo pipefail
 # ══════════════════════════════════════════════════════════════
 # capture a session's layout
 # ══════════════════════════════════════════════════════════════
-# reads a tmux session and prints its shape as tab-separated rows, for
-# "save session as launcher" (launchers/save.sh). reports only, no decisions:
-# the caller chooses how to map this onto a launcher
+# reads a tmux or rex session (backend.sh picks) and prints its shape
+# as tab-separated rows, for "save session as launcher" (launchers/save.sh).
+# reports only, no decisions: the caller chooses how to map this onto a launcher
 #
 # usage: capture.sh [session]    (default: the current session)
 #
@@ -14,8 +14,15 @@ set -euo pipefail
 #   session   <name>
 #   launcher  <@launcher tag, empty if untagged>
 #   dir       <most common pane cwd; ties go to the earliest pane>
+#   active    <window index> <pane index> of the session's current pane
 #   window    <index> <name> <pane count> <automatic-rename: 1 or 0>
 #   pane      <window index> <pane index> <left> <top> <width> <height> <cwd> <command> <note>
+#   split     <window index> <pane> <h|v> <percent> <new pane>
+#
+# split rows are the steps that build a window, in order, in layout_splits'
+# format; only rex prints them, as its layout is already a split tree. a tmux
+# window's steps come from its pane rectangles instead, and a rex pane's
+# rectangle is 0 0 0 0
 #
 # <command> is the pane's foreground job with its arguments, empty when the
 # pane sits at a shell prompt. <note> is empty, or a short reason the command
@@ -23,7 +30,9 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
-source "$SCRIPT_DIR/../_lib/common.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/common.sh"
+# shellcheck source=launchers/lib/backend.sh
+source "$SCRIPT_DIR/../lib/backend.sh"
 
 # tabs and newlines would break the row format
 clean_field() {
@@ -172,9 +181,11 @@ replay_note() {
     esac
 }
 
-main() {
-    local session="${1:-}" windows panes dir cmd note
-    local w_index w_name w_panes w_auto p_window p_index p_left p_top p_width p_height p_cwd p_tty
+# read a tmux session into session, launcher_tag, window_rows, pane_rows and
+# active (the rows as tab-separated rows in the window/pane row order, the
+# pane rows ending in the pane's tty)
+read_tmux_session() {
+    session="${1:-}"
     if [[ -z "$session" ]]; then
         # the popup's client session, or the session of the pane this runs in
         session=$(tmux display-message -p '#{session_name}' 2>/dev/null || true)
@@ -183,25 +194,116 @@ main() {
         echo "capture.sh: no such session: ${session:-<none>}" >&2
         exit 1
     fi
+    launcher_tag=$(tmux show-options -qv -t "=$session:" @launcher 2>/dev/null || true)
+    split_rows=""
+    window_rows=$(tmux list-windows -t "=$session" -F '#{window_index}	#{window_name}	#{window_panes}	#{automatic-rename}')
+    pane_rows=$(tmux list-panes -s -t "=$session" -F '#{window_index}	#{pane_index}	#{pane_left}	#{pane_top}	#{pane_width}	#{pane_height}	#{pane_current_path}	#{pane_tty}')
+    active=$(tmux display-message -p -t "=$session:" '#{window_index}	#{pane_index}')
+}
+
+# the same for a rex session (default: this terminal's session), plus
+# split_rows. a window with rex's default label is auto-named after its first
+# pane's program. floating layers (pickers) are left out
+# shellcheck disable=SC2016 # jq source
+read_rex_session() {
+    local sid="" view rows kind a b c d e block proc pid cwd tty
+    session="${1:-}"
+    if [[ -n "$session" ]]; then
+        sid=$(rex_session_id "$session")
+    else
+        sid="${REX_SESSION:-}"
+        session=$(rex ls --json | jq -r --arg s "$sid" '[.sessions[] | select(.session_id == $s)][0].label // empty')
+    fi
+    if [[ -z "$sid" || -z "$session" ]]; then
+        echo "capture.sh: no such session: ${session:-<none>}" >&2
+        exit 1
+    fi
+    launcher_tag=""
+    view=$(rex api call -s "$sid" session.view '{}')
+    # an open picker is the session's focused block, so the pane it opened
+    # from (PICK_ORIGIN_BLOCK, when it's in this session) counts as active
+    rows=$(jq -r --arg origin "${PICK_ORIGIN_BLOCK:-}" '
+        def leaves: if .split then (.split.before | leaves), (.split.after | leaves) else . end;
+        def tiled: [.layers[] | select(.kind == "tiled") | .layout | leaves | .block_id];
+        def first: if .split then .split.before | first else .block_id end;
+        # outer split first, then each side: the order that rebuilds the tree
+        def steps: if .split then
+            [(.split.before | first), (if .split.direction == "horizontal" then "h" else "v" end),
+             ((1 - .split.ratio) * 100 | round | [., 1] | max | [., 99] | min), (.split.after | first)],
+            (.split.before | steps), (.split.after | steps)
+            else empty end;
+        ([.windows[] | select(tiled | index($origin)) | .window_id][0]) as $ow |
+        ($ow // .active_window_id) as $aw |
+        .windows | to_entries[] | (.key + 1) as $w | .value |
+        (if $ow then $origin else .focused_block_id end) as $fb |
+        ([.layers[] | select(.kind == "tiled") | .layout][0]) as $layout |
+        ([$layout | leaves]) as $blocks |
+        ([$blocks[].block_id]) as $ids |
+        (if (.label | test("^Window [0-9a-f]{8}$")) then "" else .label end) as $name |
+        ["W", $w, $name, ($blocks | length)],
+        ($ids | to_entries[] | ["P", $w, (.key + 1), .value]),
+        ($layout | steps as $s | ["S", $w, ($ids | index($s[0])) + 1, $s[1], $s[2], ($ids | index($s[3])) + 1]),
+        (if .window_id == $aw then ["A", $w, ($ids | index($fb) // 0) + 1] else empty end)
+        | map(tostring) | join("\u001f")' <<<"$view")
+
+    window_rows="" pane_rows="" split_rows="" active=""
+    local -A auto_names=()
+    # \x1f separates fields: read collapses runs of a whitespace IFS like tab,
+    # which would shift the fields after an empty window name
+    while IFS=$'\x1f' read -r kind a b c d e; do
+        case "$kind" in
+            W) window_rows+="$a"$'\x1f'"$b"$'\x1f'"$c"$'\x1f'"$([[ -z "$b" ]] && echo 1 || echo 0)"$'\n' ;;
+            A) active="$a"$'\t'"$b" ;;
+            S) split_rows+="$a"$'\t'"$b"$'\t'"$c"$'\t'"$d"$'\t'"$e"$'\n' ;;
+            P)
+                block="$c" cwd="" tty=""
+                proc=$(rex block call -s "$sid" -b "$block" process 2>/dev/null || true)
+                pid=$(jq -r '.foreground.pid // empty' <<<"$proc")
+                cwd=$(jq -r '.foreground.cwd // empty' <<<"$proc")
+                [[ -n "$pid" ]] && tty=$(ps -o tty= -p "$pid" 2>/dev/null | tr -d ' ')
+                [[ -n "$tty" && "$tty" != "??" ]] && tty="/dev/$tty" || tty=""
+                [[ "$b" == 1 ]] && auto_names[$a]=$(jq -r '.foreground.name // empty' <<<"$proc")
+                pane_rows+="$a"$'\t'"$b"$'\t0\t0\t0\t0\t'"$cwd"$'\t'"$tty"$'\n'
+                ;;
+        esac
+    done <<<"$rows"
+    # an auto-named window takes its first pane's program name, as tmux's
+    # automatic-rename would show it
+    window_rows=$(while IFS=$'\x1f' read -r a b c d; do
+        [[ -n "$a" ]] || continue
+        [[ -z "$b" ]] && b="${auto_names[$a]:-shell}"
+        printf '%s\t%s\t%s\t%s\n' "$a" "$b" "$c" "$d"
+    done <<<"$window_rows")
+    pane_rows="${pane_rows%$'\n'}"
+    split_rows="${split_rows%$'\n'}"
+}
+
+main() {
+    local session window_rows pane_rows split_rows active launcher_tag dir cmd note
+    local w_index w_name w_panes w_auto p_window p_index p_left p_top p_width p_height p_cwd p_tty
+    if [[ "$(launcher_backend)" == rex ]]; then
+        read_rex_session "${1:-}"
+    else
+        read_tmux_session "${1:-}"
+    fi
 
     printf 'session\t%s\n' "$session"
-    printf 'launcher\t%s\n' "$(tmux show-options -qv -t "=$session:" @launcher 2>/dev/null || true)"
+    printf 'launcher\t%s\n' "$launcher_tag"
 
-    windows=$(tmux list-windows -t "=$session" -F '#{window_index}	#{window_name}	#{window_panes}	#{automatic-rename}')
-    panes=$(tmux list-panes -s -t "=$session" -F '#{window_index}	#{pane_index}	#{pane_left}	#{pane_top}	#{pane_width}	#{pane_height}	#{pane_current_path}	#{pane_tty}')
-
-    # most common cwd, ties to the earliest pane (list-panes -s is in window,pane order)
-    dir=$(printf '%s\n' "$panes" | awk -F'\t' '
+    # most common cwd, ties to the earliest pane (panes are in window,pane order)
+    dir=$(printf '%s\n' "$pane_rows" | awk -F'\t' '
         { if (!($7 in count)) order[++n] = $7; count[$7]++ }
         END { best = order[1]; for (i = 2; i <= n; i++) if (count[order[i]] > count[best]) best = order[i]; print best }')
     printf 'dir\t%s\n' "$dir"
+    printf 'active\t%s\n' "$active"
 
     while IFS=$'\t' read -r w_index w_name w_panes w_auto; do
         printf 'window\t%s\t%s\t%s\t%s\n' "$w_index" "$(clean_field "$w_name")" "$w_panes" "$w_auto"
-    done <<<"$windows"
+    done <<<"$window_rows"
 
     while IFS=$'\t' read -r p_window p_index p_left p_top p_width p_height p_cwd p_tty; do
-        cmd=$(foreground_command "$p_tty" "$p_cwd")
+        cmd=""
+        [[ -n "$p_tty" ]] && cmd=$(foreground_command "$p_tty" "$p_cwd")
         if is_shell "$cmd"; then
             cmd=""
         fi
@@ -211,7 +313,10 @@ main() {
         printf 'pane\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\t%s\n' \
             "$p_window" "$p_index" "$p_left" "$p_top" "$p_width" "$p_height" \
             "$(clean_field "$p_cwd")" "$cmd" "$note"
-    done <<<"$panes"
+    done <<<"$pane_rows"
+    if [[ -n "$split_rows" ]]; then
+        printf '%s\n' "$split_rows" | sed 's/^/split\t/'
+    fi
 }
 
 # run only when executed, so tests can source the helpers above

@@ -6,6 +6,33 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.158] - 2026-11-09
+
+### Added
+
+- Launchers build their session in Rex as well as tmux from the same file; the launcher picker, Ctrl+O, Ctrl+S and `dev` use whichever one you're in, and saving a session (`s`) works in both. `launchers/bin/`, `launchers/lib/`
+- A launcher command can use `{SESSION}`, the session name in capitals, so an instance like `acme-1234` can run `j ACME-1234`. `launchers/lib/data.sh`, `launchers/launcher.toml.template`
+- Ctrl+O opens the launcher picker from any shell. `zsh/dotfiles.zsh`
+
+### Changed
+
+- Launchers are `<name>.toml` files instead of bash scripts; `dotfiles update` converts your own and keeps the originals in `~/.local/share/dotfiles/launcher-backups/bash/`. A launcher that runs other programs, or whose layout depends on the session name, stays bash and is listed. `scripts/migrations/0.2.158-launchers-to-toml.sh`, `launchers/*.toml`
+- Launcher scripts moved from `tmux/scripts/launchers/` to `launchers/bin/` and `launchers/lib/`; `dotfiles update` re-links `dev` and regenerates the tmux config. `launchers/`, `scripts/manifest.conf`, `tmux/tmux.conf.template`
+- Saving a session over an existing launcher lists what will change before you confirm. `launchers/bin/save.sh`
+- Any of your launchers can be edited with `e`, and repo launchers duplicated with `D`; edits and saves keep your comments. `launchers/bin/picker.sh`, `launchers/bin/new.sh`, `launchers/lib/gen.sh`
+- A launcher has one `focus = true`, on a window or a pane, and the session opens there. `launchers/lib/data.sh`
+- nvim sets the terminal title to `nvim <cwd>`, which Rex shows as the pane title. `nvim/lua/core/options.lua`
+- C files use a 2-space indent in editors that read `.editorconfig`. `formatters/editorconfig`
+
+### Removed
+
+- `tl`; Ctrl+O opens the launcher picker instead. `zsh/dotfiles.zsh`
+- Launchers no longer read a `<NAME>_ROOT` override; the migration writes an override that's set into the launcher's `root`. `launchers/lib/data.sh`
+
+### Fixed
+
+- Theme generation's contrast report goes to stderr, so it no longer mixes into the output scripts capture. `scripts/generate-theme`
+
 ## [0.2.157] - 2026-11-04
 
 ### Changed

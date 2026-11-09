@@ -6,14 +6,14 @@ set -euo pipefail
 # save a session as a launcher
 # ══════════════════════════════════════════════════════════════
 # captures a session (capture.sh), maps it onto the launcher wizard's model and
-# writes it with generate_launcher. one screen: a summary of what will be saved
+# writes it with write_launcher. one screen: a summary of what will be saved
 # above a name prompt
 #
 #   name = an existing user launcher (by default the session's own: its
 #          @launcher tag, else the launcher whose session or instance it is):
 #          replace its windows, keeping its directory, description, instance
-#          and worktree settings. the original is copied to
-#          LAUNCHER_BACKUPS first
+#          and worktree settings, and the file's comments. the original is
+#          copied to LAUNCHER_BACKUPS first
 #   name = anything else: save a new launcher rooted at the session's
 #          directory, or at the main checkout with worktree instances when the
 #          repo has linked worktrees
@@ -25,13 +25,13 @@ set -euo pipefail
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 # shellcheck source=tmux/scripts/_lib/common.sh
-source "$SCRIPT_DIR/../_lib/common.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/common.sh"
 # shellcheck source=tmux/scripts/_lib/ui.sh
-source "$SCRIPT_DIR/../_lib/ui.sh"
-# shellcheck source=tmux/scripts/_lib/launcher-gen.sh
-source "$SCRIPT_DIR/../_lib/launcher-gen.sh"
-# shellcheck source=tmux/scripts/_lib/layout.sh
-source "$SCRIPT_DIR/../_lib/layout.sh"
+source "$SCRIPT_DIR/../../tmux/scripts/_lib/ui.sh"
+# shellcheck source=launchers/lib/gen.sh
+source "$SCRIPT_DIR/../lib/gen.sh"
+# shellcheck source=launchers/lib/layout.sh
+source "$SCRIPT_DIR/../lib/layout.sh"
 
 DIM=$'\033[2m'
 
@@ -95,7 +95,7 @@ display_path() {
     printf '%s' "${p/#$HOME/\~}"
 }
 
-# $HOME/... form that generate_launcher expects (accepts absolute or ~ paths)
+# $HOME/... form of an absolute or ~ path, as the wizard holds paths
 generator_path() {
     local p="$1"
     p="${p/#\~/$HOME}"
@@ -126,19 +126,17 @@ pane_dir_relative() {
 # base wins. a session tagged with a built-in launcher has none
 session_launcher() {
     if [[ -n "$cap_tag" ]]; then
-        [[ -f "$USER_LAUNCHERS/$cap_tag" ]] && printf '%s' "$cap_tag"
+        [[ -f "$USER_LAUNCHERS/$cap_tag.toml" ]] && printf '%s' "$cap_tag"
         return 0
     fi
-    local file base best="" best_len=0
-    for file in "$USER_LAUNCHERS"/*; do
-        [[ -f "$file" && -x "$file" ]] || continue
-        base=$(launcher_session_name "$file")
+    local name base best="" best_len=0
+    while IFS=$'\t' read -r name base; do
         [[ -n "$base" ]] || continue
         if [[ "$cap_session" == "$base" || "$cap_session" == "$base-"* ]] && ((${#base} > best_len)); then
-            best="${file##*/}"
+            best="$name"
             best_len=${#base}
         fi
-    done
+    done < <(launcher_field "$USER_LAUNCHERS" session)
     printf '%s' "$best"
 }
 
@@ -176,7 +174,7 @@ resolve_root() {
     fi
     if [[ -n "$cap_target" ]]; then
         dir=$(
-            load_existing_launcher "$USER_LAUNCHERS/$cap_target"
+            load_existing_launcher "$USER_LAUNCHERS/$cap_target.toml"
             printf '%s' "${project_dir/#\~/$HOME}"
         )
         if [[ -n "$dir" && ("$cap_dir" == "$dir" || "$cap_dir" == "$dir/"*) ]]; then
@@ -199,7 +197,7 @@ build_state_from_capture() {
     local -a order=()
     # per window: name and ordered pane ids; per pane, by "<win>:<id>":
     # geometry, command, note text, directory
-    local -A wname=() wauto=() plist=() p_left=() p_top=() p_w=() p_h=() p_cmd=() p_text=() p_cwd=() seen=()
+    local -A wname=() wauto=() wsteps=() plist=() p_left=() p_top=() p_w=() p_h=() p_cmd=() p_text=() p_cwd=() seen=()
 
     win_names=()
     win_cmds=()
@@ -208,15 +206,23 @@ build_state_from_capture() {
     win_panes=()
     win_layouts=()
     win_autonames=()
+    win_dirs=()
+    focus_window=0
+    focus_pane=1
     pane_cmds=()
     pane_dirs=()
     save_notes=()
+    local active_window="" active_pane=""
 
     while IFS=$'\t' read -r kind f1 f2 f3 f4 f5 f6 f7 f8 f9; do
         case "$kind" in
             session) cap_session="$f1" ;;
             launcher) cap_tag="$f1" ;;
             dir) cap_dir="$f1" ;;
+            active)
+                active_window="$f1"
+                active_pane="$f2"
+                ;;
             window)
                 order+=("$f1")
                 wname[$f1]="$f2"
@@ -244,6 +250,7 @@ build_state_from_capture() {
                 p_text["$w:$id"]="$text"
                 p_cwd["$w:$id"]="$f7"
                 ;;
+            split) wsteps[$f1]+="$f2 $f3 $f4 $f5"$'\n' ;;
         esac
     done <<<"$rows"
 
@@ -281,7 +288,9 @@ build_state_from_capture() {
         for id in "${ids[@]}"; do
             rects+="${id} ${p_left[$w:$id]} ${p_top[$w:$id]} ${p_w[$w:$id]} ${p_h[$w:$id]}"$'\n'
         done
-        if [[ ${#ids[@]} -gt 1 ]]; then
+        if [[ -n "${wsteps[$w]:-}" ]]; then
+            steps="${wsteps[$w]%$'\n'}"
+        elif [[ ${#ids[@]} -gt 1 ]]; then
             if ! steps=$(printf '%s' "$rects" | layout_splits); then
                 save_notes+=("$name window: layout not recognised, saving it with no splits")
             fi
@@ -304,6 +313,10 @@ build_state_from_capture() {
             rank_of[$new]=$rank
             rank=$((rank + 1))
         done <<<"${steps:-}"
+        if [[ "$w" == "$active_window" ]]; then
+            focus_window="$i"
+            focus_pane="${rank_of[$active_pane]:-1}"
+        fi
 
         # a window the wizard's model can describe (one optional side-by-side
         # split, every pane in the project directory) stays simple, so it can
@@ -373,6 +386,8 @@ write_new_launcher() {
     [[ ${#win_names[@]} -gt 0 ]] || return 1
     name="$1"
     description="Saved from the '$cap_session' session"
+    session_mode=fixed
+    unset session_kept instance_auto prefix_absent
     instance_mode="n"
     worktree_aware="n"
     worktrees_dir=""
@@ -386,20 +401,19 @@ write_new_launcher() {
         project_dir=$(generator_path "$cap_main")
     fi
     mkdir -p "$USER_LAUNCHERS"
-    generate_launcher >"$USER_LAUNCHERS/$name"
-    chmod +x "$USER_LAUNCHERS/$name"
+    write_launcher "$USER_LAUNCHERS/$name.toml"
 }
 
-# replace the windows of a user launcher, keeping everything else
-update_launcher() {
-    [[ ${#win_names[@]} -gt 0 ]] || return 1
+# the captured windows on top of a user launcher's other settings, in the
+# state variables
+merge_with_launcher() {
     name="$1"
-    local file="$USER_LAUNCHERS/$name"
-    backup_launcher "$file"
+    local file="$USER_LAUNCHERS/$name.toml"
     local -a keep_names=("${win_names[@]}") keep_cmds=("${win_cmds[@]}")
     local -a keep_splits=("${win_splits[@]}") keep_split_cmds=("${win_split_cmds[@]}")
     local -a keep_panes=("${win_panes[@]}") keep_layouts=("${win_layouts[@]}")
     local -a keep_autonames=("${win_autonames[@]}")
+    local keep_focus_window="$focus_window" keep_focus_pane="$focus_pane"
     local -A keep_pane_cmds=() keep_pane_dirs=()
     local key
     for key in "${!pane_cmds[@]}"; do keep_pane_cmds[$key]="${pane_cmds[$key]}"; done
@@ -421,8 +435,62 @@ update_launcher() {
     pane_dirs=()
     for key in "${!keep_pane_cmds[@]}"; do pane_cmds[$key]="${keep_pane_cmds[$key]}"; done
     for key in "${!keep_pane_dirs[@]}"; do pane_dirs[$key]="${keep_pane_dirs[$key]}"; done
+    focus_window="$keep_focus_window"
+    focus_pane="$keep_focus_pane"
+    win_dirs=()
+}
 
-    generate_launcher >"$file"
+# replace the windows of a user launcher, keeping everything else
+update_launcher() {
+    [[ ${#win_names[@]} -gt 0 ]] || return 1
+    backup_launcher "$USER_LAUNCHERS/$1.toml"
+    merge_with_launcher "$1"
+    write_launcher "$USER_LAUNCHERS/$1.toml" "$cap_session"
+}
+
+# one line per value update_launcher would change in the file:
+# "<window> <key>: <old> → <new>", or "+ window <name>" / "− window <name>".
+# windows match by name, unnamed ones by position
+# shellcheck disable=SC2016 # jq source
+update_changes() {
+    local new
+    new=$(
+        merge_with_launcher "$1"
+        launcher_state_json_for "$USER_LAUNCHERS/$1.toml" "$cap_session"
+    )
+    jq -rn --argjson old "$(launcher_json "$USER_LAUNCHERS/$1.toml")" --argjson new "$new" '
+        def show: if . == null then "—" else tojson end;
+        def flat: reduce (paths(scalars) as $p | [$p, getpath($p)]) as [$p, $v] ({};
+            .[$p | map(if type == "number" then "[\(. + 1)]" else ".\(.)" end) | join("") | ltrimstr(".")] = $v);
+        def diff($a; $b; $at): ($a | flat) as $x | ($b | flat) as $y |
+            ([$x, $y] | map(keys[]) | unique[]) as $k |
+            select($x[$k] != $y[$k]) | "\($at)\($k): \($x[$k] | show) → \($y[$k] | show)";
+        def keyed: [.window // [] | to_entries[] | {key: (.value.name // "#\(.key + 1)"), value}] | from_entries;
+        def title($k): if $k | startswith("#") then "window \($k[1:])" else $k end;
+        ($old | keyed) as $o | ($new | keyed) as $n |
+        diff($old | del(.window); $new | del(.window); ""),
+        (($old.window // []) | to_entries[] | (.value.name // "#\(.key + 1)") as $k |
+            if $n | has($k) then diff($o[$k]; $n[$k]; "\(title($k))  ") else "− window \(title($k))" end),
+        (($new.window // []) | to_entries[] | (.value.name // "#\(.key + 1)") as $k |
+            select($o | has($k) | not) | "+ window \(title($k))")'
+}
+
+# the update confirmation: what changes, at most a screenful of it
+update_message() {
+    local changes count backup
+    backup=$(display_path "$LAUNCHER_BACKUPS/$1.toml")
+    changes=$(update_changes "$1")
+    printf "Replace the windows of '%s' with this session's?\n" "$1"
+    printf 'Its directory, worktrees, description and instance settings stay.\n'
+    printf 'The original is copied to %s.\n\n' "$backup"
+    if [[ -z "$changes" ]]; then
+        printf 'Nothing in the file changes.'
+        return
+    fi
+    count=$(printf '%s\n' "$changes" | wc -l | tr -d ' ')
+    printf '%s\n' "$changes" | head -n 12 | sed 's/\\/\\\\/g'
+    [[ $count -gt 12 ]] && printf '… %d more\n' "$((count - 12))"
+    return 0
 }
 
 # summary shown above the name prompt
@@ -516,27 +584,19 @@ main() {
             continue
         fi
 
-        if [[ -e "$USER_LAUNCHERS/$name" ]]; then
-            local backup
-            backup=$(display_path "$LAUNCHER_BACKUPS/$name")
-            local confirm_title="Update launcher"
-            local confirm_text="Replace the windows of '$name' with this session's?\nIts directory, worktrees, description and instance settings stay.\nThe original is copied to $backup."
-            if ! is_generated_launcher "$USER_LAUNCHERS/$name"; then
-                confirm_title="Replace hand-written launcher"
-                confirm_text="Rewrite '$name' as a generated launcher with this session's windows?\nIts directory, worktrees, description and instance settings carry over; other custom logic is lost.\nThe original is copied to $backup."
-            fi
-            if ! show_visual_confirm "$confirm_title" "$confirm_text"; then
+        if [[ -e "$USER_LAUNCHERS/$name.toml" ]]; then
+            if ! show_visual_confirm "Update launcher" "$(update_message "$name")"; then
                 message=""
                 continue
             fi
             update_launcher "$name"
-            show_centered_message "Launcher updated" "$USER_LAUNCHERS/$name"
-        elif [[ -e "$DOTFILES_LAUNCHERS/$name" ]]; then
+            show_centered_message "Launcher updated" "$USER_LAUNCHERS/$name.toml"
+        elif [[ -e "$DOTFILES_LAUNCHERS/$name.toml" ]]; then
             message="'$name' is a built-in launcher, pick another name"
             continue
         else
             write_new_launcher "$name"
-            show_centered_message "Launcher saved" "$USER_LAUNCHERS/$name" \
+            show_centered_message "Launcher saved" "$USER_LAUNCHERS/$name.toml" \
                 "It will appear in the launcher picker (prefix + p)"
         fi
         sleep 1

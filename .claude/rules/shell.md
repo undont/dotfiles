@@ -4,7 +4,6 @@ paths:
   - "**/*.zsh"
   - "zsh/**"
   - "scripts/**"
-  - "launchers/**"
 ---
 
 # Shell Script Conventions
@@ -54,7 +53,7 @@ Full `cd` + `pwd` ensures absolute paths when tests are invoked from different d
 
 - `install.sh` - Uses `$(cd "$(dirname ...)" && pwd)` assigned to `DOTFILES_DIR` (entry point)
 - `tmux/scripts/sessions/list.sh` - Uses `${BASH_SOURCE%/*}` (module script)
-- `launchers/dev` - Resolves its own symlink from `${BASH_SOURCE[0]}` (linked into `~/.local/launchers`); the other launchers set no `SCRIPT_DIR`
+- `launchers/bin/dev` - Resolves its own symlink from `${BASH_SOURCE[0]}` (linked into `~/.local/launchers`) to find `launch.sh`
 - `scripts/tests/test-brewfile.sh` - Uses `$(cd "$(dirname ...)" && pwd)` (test script)
 - Don't mix patterns within the same category of scripts
 

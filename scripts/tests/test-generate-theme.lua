@@ -736,10 +736,8 @@ else
 end
 
 -- the band hue is fixed, not taken from the background
-local warm = gen.generate_nvim_colourscheme(
-    "test-warm",
-    nvim_fixture({ bg_primary = "#181616", line_highlight = "#2b2727" })
-)
+local warm =
+    gen.generate_nvim_colourscheme("test-warm", nvim_fixture({ bg_primary = "#181616", line_highlight = "#2b2727" }))
 local warm_hue = colour_utils.hex_to_hsl(warm:match("selection = '(#%x%x%x%x%x%x)'"))
 if warm_hue > 190 and warm_hue < 250 then
     pass("band takes the cool hue on a warm background")
