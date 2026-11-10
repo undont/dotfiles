@@ -100,7 +100,6 @@ return {
       },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-      'saghen/blink.cmp',
       'b0o/SchemaStore.nvim',
     },
     config = function()
@@ -215,8 +214,7 @@ return {
 
       vim.lsp.handlers['textDocument/rename'] = rename_and_save
 
-      -- blink only provides completion capabilities, so they merge over nvim's defaults
-      local caps = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('blink.cmp').get_lsp_capabilities())
+      local caps = require('features.lsp-capabilities').get()
       -- document_color asserts on a stale client id
       vim.lsp.document_color.enable(false)
       vim.lsp.config('*', { capabilities = caps })
