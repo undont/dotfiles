@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.162] - 2026-11-10
+
+### Fixed
+
+- A theme switch on a host with no Rex app, such as `dotfiles update` on a server, sent the theme import to a Rex app on another machine, which failed with "no such file". Each host now imports only into a Rex app on the same machine, and a switch started on another host still themes this one's app. `tmux/scripts/themes/reload-rex.sh`, `scripts/theme-switch`
+
 ## [0.2.161] - 2026-11-10
 
 ### Added
