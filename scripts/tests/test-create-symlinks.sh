@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# checks on scripts/manifest.conf and create-symlinks.sh. the installer runs
+# checks on scripts/manifest.toml and create-symlinks.sh. the installer runs
 # against a sandbox $HOME with a sandbox tmux socket
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CREATE_SYMLINKS="$DOTFILES_DIR/scripts/install/create-symlinks.sh"
 SYMLINK_LIB="$DOTFILES_DIR/scripts/_lib/symlink.sh"
-MANIFEST="$DOTFILES_DIR/scripts/manifest.conf"
+MANIFEST="$DOTFILES_DIR/scripts/manifest.toml"
 
 source "$SCRIPT_DIR/_test-helpers.sh"
 
@@ -44,14 +44,30 @@ source "$DOTFILES_DIR/scripts/_lib/common.sh"
 # shellcheck source=/dev/null
 source "$DOTFILES_DIR/scripts/_lib/manifest.sh"
 
-bad_lines=$(grep -vE '^(#|$|\[.+\]$)' "$MANIFEST" | awk 'NF < 5 || NF > 6 { print NR": "$0 }')
-assert_equals "every entry has 5 or 6 fields" "" "$bad_lines"
+# shellcheck disable=SC2016 # yq source
+bad_tool_keys=$(yq -p toml -o tsv '
+    to_entries[] | .key as $group | .value | keys[]
+    | select(test("^(preset|os|link|copy|local|link-generated|sync)$") | not)
+    | $group + ": " + .' "$MANIFEST")
+assert_equals "every table key is preset, os or a kind" "" "$bad_tool_keys"
+
+# shellcheck disable=SC2016 # yq source
+bad_entry_keys=$(yq -p toml -o tsv '
+    to_entries[] | .key as $group | .value | to_entries[] | select(.value | tag == "!!seq")
+    | .value[] | keys[] | select(test("^(source|dest|os|local)$") | not)
+    | $group + ": " + .' "$MANIFEST")
+assert_equals "every entry key is source, dest, os or local" "" "$bad_entry_keys"
+
+# shellcheck disable=SC2016 # yq source
+link_local_keys=$(yq -p toml -o tsv '
+    to_entries[] | .key as $group | .value.link // [] | .[] | select(has("local")) | $group + ": " + .dest' "$MANIFEST")
+assert_equals "no link entry sets local" "" "$link_local_keys"
 
 rows=$(manifest_entries)
 row_count=$(printf '%s\n' "$rows" | wc -l | tr -d ' ')
 
-ungrouped=$(printf '%s\n' "$rows" | awk -F'\t' '$4 == "" { print $0 }')
-assert_equals "every entry is under a [group] header" "" "$ungrouped"
+missing_fields=$(printf '%s\n' "$rows" | awk -F'\t' '$6 == "" || ($1 != "sync" && $5 == "-") { print $0 }')
+assert_equals "every entry has a dest, and a source unless it is sync" "" "$missing_fields"
 
 bad_values=$(printf '%s\n' "$rows" | awk -F'\t' '
     $1 !~ /^(link|copy|local|link-generated|sync)$/ { print "kind: "$0; next }

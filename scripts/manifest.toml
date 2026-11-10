@@ -1,0 +1,119 @@
+# every path the installer manages. read by scripts/_lib/manifest.sh
+#
+# a table is one tool, its name the group shown during install. it sets
+# preset (minimal, core or full) and optionally os (any, macos or linux;
+# default any), then lists entries by kind:
+#   link            symlink into the repo
+#   copy            copied once, then user-owned
+#   local           override created from a template
+#   link-generated  symlink to a file theme-switch writes; created after theme
+#                   generation
+#   sync            local layer only, never installed; no source
+#
+# an entry has a source and dest, and optionally os (overrides the table's).
+# source and dest are repo-relative, or outside the repo when starting ~/,
+# $cfg/ ($XDG_CONFIG_HOME) or $appsupport/ (~/Library/Application Support).
+# local, copy and sync entries are synced through the private local-layer
+# repo, at dest with ~/. dropped, $cfg/ as config/ and $appsupport/ dropped;
+# local overrides that path
+
+[Zsh]
+preset = "minimal"
+link = [{ source = "zsh/zprofile", dest = "~/.zprofile" }]
+local = [{ source = "zsh/zshrc.template", dest = "~/.zshrc" }]
+
+[Tmux]
+preset = "minimal"
+link = [{ source = "tmux", dest = "~/.tmux" }]
+local = [{ source = "tmux/local.conf.template", dest = "$cfg/tmux/local.conf" }]
+link-generated = [{ source = "$cfg/tmux/tmux.conf", dest = "~/.tmux.conf" }]
+
+["Dotfiles CLI"]
+preset = "minimal"
+link = [{ source = "scripts/dotfiles", dest = "~/.local/bin/dotfiles" }]
+
+[Formatters]
+preset = "minimal"
+link = [
+  { source = "formatters/prettierrc.json", dest = "~/.prettierrc" },
+  { source = "formatters/editorconfig", dest = "~/.editorconfig" },
+]
+
+[Neovim]
+preset = "core"
+link = [{ source = "nvim", dest = "$cfg/nvim" }]
+local = [{ source = "nvim/local.lua.template", dest = "$cfg/nvim/local.lua" }]
+
+[Hammerspoon]
+preset = "full"
+link = [{ source = "hammerspoon/init.lua", dest = "~/.hammerspoon/init.lua" }]
+local = [{ source = "hammerspoon/local.lua.template", dest = "~/.hammerspoon/local.lua" }]
+
+[Ghostty]
+preset = "core"
+local = [{ source = "ghostty/local.template", dest = "$cfg/ghostty/local" }]
+
+[Zed]
+preset = "core"
+link = [
+  { source = "zed/keymap.json", dest = "$cfg/zed/keymap.json" },
+  { source = "zed/tasks.json", dest = "$cfg/zed/tasks.json" },
+]
+copy = [{ source = "zed/settings.json", dest = "$cfg/zed/settings.json" }]
+
+[Karabiner]
+preset = "full"
+copy = [{ source = "karabiner/karabiner.json", dest = "$cfg/karabiner/karabiner.json" }]
+
+[gh-dash]
+preset = "core"
+link = [{ source = "gh-dash/dash-repo-sync", dest = "~/.local/bin/dash-repo-sync" }]
+local = [{ source = "gh-dash/local.yml.template", dest = "$cfg/gh-dash/local.yml" }]
+
+[btop]
+preset = "core"
+copy = [{ source = "btop/btop.conf", dest = "$cfg/btop/btop.conf" }]
+
+[Yazi]
+preset = "core"
+link = [
+  { source = "yazi/yazi.toml", dest = "$cfg/yazi/yazi.toml" },
+  { source = "yazi/keymap.toml", dest = "$cfg/yazi/keymap.toml" },
+]
+
+[Launchers]
+preset = "core"
+link = [{ source = "launchers/bin/dev", dest = "~/.local/launchers/dev" }]
+
+[LazyGit]
+preset = "core"
+link = [{ source = "lazygit/config.yml", dest = "$cfg/lazygit/config.yml" }]
+local = [{ source = "lazygit/local.yml.template", dest = "$cfg/lazygit/local.yml" }]
+
+[LazyDocker]
+preset = "core"
+link = [
+  { os = "macos", source = "lazydocker/format-logs.awk", dest = "$appsupport/lazydocker/format-logs.awk" },
+  { os = "linux", source = "lazydocker/format-logs.awk", dest = "$cfg/lazydocker/format-logs.awk" },
+]
+copy = [
+  { os = "macos", source = "lazydocker/config.yml", dest = "$appsupport/lazydocker/config.yml" },
+  # shares the macos entry's local-layer path
+  { os = "linux", source = "lazydocker/config.yml", dest = "$cfg/lazydocker/config.yml", local = "lazydocker/config.yml" },
+]
+
+["ImageMagick font map"]
+preset = "core"
+os = "macos"
+link = [{ source = "imagemagick/type.xml", dest = "$cfg/ImageMagick/type.xml" }]
+
+["Statusline theme resolver"]
+preset = "core"
+link = [{ source = "scripts/_lib/statusline-theme.sh", dest = "$cfg/dotfiles/statusline-theme.sh" }]
+
+["Local layer"]
+preset = "core"
+sync = [
+  { dest = "~/.ai/instructions/local.md" },
+  { dest = "$cfg/dotfiles/launchers/" },
+]

@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # creates the symlinks, local override files and generated configs listed in
-# scripts/manifest.conf for a preset
+# scripts/manifest.toml for a preset
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)}"
@@ -17,6 +17,11 @@ source "$SCRIPT_DIR/../_lib/manifest.sh"
 
 PRESET="${DOTFILES_PRESET:-full}"
 FAILED=0
+
+if ! command_exists yq; then
+    error "yq is required to read $MANIFEST_FILE (brew install yq)"
+    exit 1
+fi
 
 print_section "Creating symlinks"
 echo "Source: $DOTFILES_DIR"

@@ -14,10 +14,12 @@ make lint         # Run all linters (shell, zsh, lua, theme contrast)
 
 Three patterns are used for configuration files. Choose based on whether the tool
 supports a local override mechanism and how personal the config tends to be.
-`scripts/manifest.conf` is the source of truth for which file uses which pattern:
-one row per managed path (kind, preset, os, source, dest, local-layer key). The
-installer, `dotfiles links`, `health-check`, `uninstall` and the local layer all
-read it through `scripts/_lib/manifest.sh`, so a new managed file is one new row.
+`scripts/manifest.toml` is the source of truth for which file uses which
+pattern: one table per tool (preset, os) listing its entries by kind (source,
+dest; a synced entry's local-layer path is derived from dest). The installer,
+`dotfiles links`, `health-check`, `uninstall` and the local layer all read it
+through `scripts/_lib/manifest.sh` (which needs `yq`), so a new managed file is
+one new entry.
 Changing preset on install removes the previous preset's links before creating
 the new ones, so the saved preset always matches what is on disk.
 
