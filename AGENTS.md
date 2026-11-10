@@ -127,7 +127,7 @@ The public repo never references it; the link is a machine-local pointer at
 `~/.config/dotfiles/local-repo` (env override: `DOTFILES_LOCAL_DIR`). Logic
 lives in `scripts/_lib/local-layer.sh`. The synced files are the manifest rows
 with a local key; a `sync` row carries a purely-personal file the installer
-never touches (e.g. `~/.ai/claude/CLAUDE.local.md`).
+never touches (e.g. `~/.ai/instructions/local.md`).
 Secrets (`~/.config/zsh/secrets.zsh`), `.state/`, the saved preset file, and
 the `current-theme` pointer are hard-excluded and must stay that way: theme is a
 per-machine choice, so it is never synced. The `.gitignore` seeded into the
