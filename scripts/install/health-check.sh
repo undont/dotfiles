@@ -360,17 +360,14 @@ else
     ISSUES=1
 fi
 
-# yq (required for gh-dash local merge)
-if should_install "core"; then
-    printf "Checking %-44s " "yq (gh-dash merge)..."
-    if command_exists yq; then
-        printf '%sOK%s\n' "${GREEN}" "${NC}"
-    else
-        printf '%sNOT FOUND%s\n' "${YELLOW}" "${NC}"
-        printf '  gh-dash local overrides will not apply without yq\n'
-        printf '  Install with: brew install yq\n'
-        ISSUES=1
-    fi
+printf "Checking %-44s " "yq..."
+if command_exists yq; then
+    printf '%sOK%s\n' "${GREEN}" "${NC}"
+else
+    printf '%sNOT FOUND%s\n' "${RED}" "${NC}"
+    printf '  the install manifest, launchers and gh-dash local merge need yq\n'
+    printf '  Install with: brew install yq\n'
+    ISSUES=1
 fi
 
 # compinit prompts on its full run when compaudit reports insecure dirs
