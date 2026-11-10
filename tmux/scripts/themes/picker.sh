@@ -43,7 +43,6 @@ main() {
         --bind "start:clear-query+execute-silent(rm -f /tmp/.fzf-theme-pos)" \
         --bind "load:pos($theme_pos)" \
         --bind 'result:transform:[[ -f /tmp/.fzf-theme-pos ]] && { echo "clear-query+$(cat /tmp/.fzf-theme-pos)"; rm -f /tmp/.fzf-theme-pos; } || true' \
-        --color="label:${TMUX_FG_PRIMARY:-#ffffff}" \
         --header-lines=5 \
         --padding=0,0,1,0 \
         --prompt ': ' \
@@ -54,7 +53,7 @@ main() {
         --bind 'enter:accept' \
         --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
         --bind "f:execute-silent($SCRIPT_DIR/pick.sh --toggle-fav {1})+reload-sync($SCRIPT_DIR/pick.sh --reload {1})" \
-        --bind "r:become($SCRIPT_DIR/pick.sh --random)" \
+        --bind "r:become(echo random)" \
         --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,d,u,q,space,f,r)' \
         --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,d,u,q,space,f,r)" || echo "abort"' \
         --bind 'ctrl-k:up,ctrl-l:clear-query' \
@@ -63,11 +62,10 @@ main() {
     local theme="${selected%% *}"
     [[ -n "$theme" ]] || return 0
 
-    "$DOTFILES_ROOT/scripts/theme-switch" "$theme" --no-reload --quiet &&
-        tmux source-file "$HOME/.tmux.conf" &&
-        "$SCRIPT_DIR/reload-ghostty.sh" &&
-        "$SCRIPT_DIR/reload-fzf.sh" &&
-        tmux display-message "Theme: $theme"
+    "$DOTFILES_ROOT/scripts/theme-switch" "$theme" --quiet || return 0
+    theme=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme")
+    [[ -n "${TMUX:-}" ]] && tmux display-message "Theme: $theme"
+    return 0
 }
 
 main "$@"

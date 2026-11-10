@@ -77,6 +77,8 @@ Ghostty's `selection-background` does not reach the Neovim output. It is tuned f
 5. Current theme name is saved to `~/.config/dotfiles/current-theme`
 6. Running applications are reloaded (tmux, ghostty, fzf); gh-dash and yazi read their config at launch time
 
+The tmux reload runs in the background, since TPM re-initialisation takes about 2s. `THEME_SWITCH_TIMING=1 dotfiles theme switch <theme>` prints the time taken by each step.
+
 ### Neovim Theme Integration
 
 The Neovim theme loader (`nvim/lua/core/theme.lua`) reads `~/.config/dotfiles/current-theme` and applies the corresponding colourscheme:
@@ -173,6 +175,9 @@ dotfiles theme switch dracula
 dotfiles theme switch catppuccin-mocha
 dotfiles theme switch zenburn    # generated theme
 
+# Switch to a random dark Ghostty theme (the picker's r)
+dotfiles theme switch random
+
 # List available themes
 dotfiles theme list
 
@@ -184,7 +189,12 @@ dotfiles theme switch <theme> --no-reload
 
 # Switch quietly (for automation)
 dotfiles theme switch <theme> --quiet
+
+# Show each generate and reload step, and the full contrast report
+dotfiles theme switch <theme> --verbose
 ```
+
+By default a switch prints one line, `Theme applied: <name>`, noting when some colours might be hard to read (a failed `theme-contrast-check`).
 
 ### Theme Generation
 

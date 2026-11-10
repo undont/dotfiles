@@ -2093,6 +2093,7 @@ SUBCOMMANDS
   list                 List available themes (default)
   current              Show the current theme
   switch <name>        Switch to a named theme
+  switch random        Switch to a random dark theme
   generate <ghostty>   Generate a theme from a Ghostty preset
   delete <name>        Remove a generated theme
 
@@ -2103,6 +2104,7 @@ EXAMPLES
   dotfiles theme list
   dotfiles theme current
   dotfiles theme switch dracula
+  dotfiles theme switch random
   dotfiles theme generate zenburn
   dotfiles theme delete zenburn
 EOF

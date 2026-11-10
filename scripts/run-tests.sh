@@ -183,6 +183,13 @@ printf "${CYAN}═════════════════════�
 
 cd "$REPO_ROOT"
 
+# fzf-theme.sh caches its exports under XDG_CACHE_HOME and theme-switch
+# appends to a history under XDG_DATA_HOME; tests that redirect only
+# XDG_CONFIG_HOME would otherwise write their theme into the live ones
+TEST_XDG_ROOT=$(mktemp -d)
+export XDG_CACHE_HOME="$TEST_XDG_ROOT/cache" XDG_DATA_HOME="$TEST_XDG_ROOT/data"
+trap 'rm -rf "$TEST_XDG_ROOT"' EXIT
+
 # test file paths are newline-delimited strings (bash 3.2 has no mapfile)
 
 LIBRARY_TESTS=$(find . -path "*/_lib/test-*-libs.sh" -type f | sort)

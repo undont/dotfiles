@@ -7,6 +7,9 @@ DOTFILES_ROOT="$(cd "$_SCRIPTS_TEST_HELPERS_DIR/../.." && pwd)"
 # shellcheck source=scripts/_lib/colours.sh
 source "$DOTFILES_ROOT/scripts/_lib/colours.sh"
 
+# theme-switch otherwise reloads the live tmux server and ghostty
+export DOTFILES_NO_RELOAD=1
+
 PASS=0
 FAIL=0
 SKIP=0

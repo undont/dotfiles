@@ -266,13 +266,13 @@ if ! $theme_picker_bound; then
     skip "theme-picker tmux binding check (not configured yet)"
 fi
 
-# check that theme picker script calls reload-ghostty.sh
+# reloads (tmux, ghostty, fzf) are theme-switch's
 PICKER_SCRIPT="$SCRIPT_DIR/../themes/picker.sh"
 if [[ -f "$PICKER_SCRIPT" ]]; then
-    if grep -q "reload-ghostty.sh" "$PICKER_SCRIPT"; then
-        pass "theme picker calls reload-ghostty.sh"
+    if grep -q 'theme-switch" "$theme"' "$PICKER_SCRIPT" && ! grep -q -- '--no-reload' "$PICKER_SCRIPT"; then
+        pass "theme picker leaves reloads to theme-switch"
     else
-        fail "theme picker should call reload-ghostty.sh"
+        fail "theme picker should call theme-switch without --no-reload"
     fi
 fi
 
@@ -341,11 +341,8 @@ else
     fail "--pos position should be >= 1"
 fi
 
-# count available themes
-theme_count=0
-for tf in "$THEMES_DIR"/*.theme; do
-    [[ -f "$tf" ]] && theme_count=$((theme_count + 1))
-done
+# every listed theme: hand-crafted, generated and ghostty, after the 5 header lines
+theme_count=$(($("$THEME_PICKER" 2>/dev/null | wc -l) - 5))
 
 # position should not exceed theme count
 if [[ -n "$pos_output" ]] && [[ "$pos_output" -le "$theme_count" ]]; then

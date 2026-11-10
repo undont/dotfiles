@@ -12,6 +12,21 @@ NVIM_GENERATED="$DOTFILES_ROOT/nvim/colors/generated"
 
 source "$SCRIPT_DIR/_test-helpers.sh"
 
+# theme-delete and generate-theme work on the repo's generated dirs, which
+# hold the user's generated themes, so they are put back on exit
+GENERATED_BACKUP=$(mktemp -d)
+mkdir -p "$THEMES_GENERATED" "$NVIM_GENERATED" "$GENERATED_BACKUP/themes" "$GENERATED_BACKUP/nvim"
+cp -Rp "$THEMES_GENERATED/." "$GENERATED_BACKUP/themes/"
+cp -Rp "$NVIM_GENERATED/." "$GENERATED_BACKUP/nvim/"
+
+restore_generated() {
+    rm -f "$THEMES_GENERATED"/*.theme "$NVIM_GENERATED"/*.lua
+    cp -Rp "$GENERATED_BACKUP/themes/." "$THEMES_GENERATED/"
+    cp -Rp "$GENERATED_BACKUP/nvim/." "$NVIM_GENERATED/"
+    rm -rf "$GENERATED_BACKUP"
+}
+trap restore_generated EXIT
+
 section "Script Exists and Is Executable"
 
 if [[ -f "$THEME_DELETE" ]]; then

@@ -140,24 +140,6 @@ toggle_favourite() {
     fi
 }
 
-# pick a random non-bright theme and apply it
-random_theme() {
-    local all_themes bright_themes
-    all_themes=$("$DOTFILES_ROOT/scripts/generate-theme" list 2>/dev/null)
-    bright_themes=$("$DOTFILES_ROOT/scripts/generate-theme" bright-list 2>/dev/null)
-
-    # filter out bright themes and current theme, pick one at random
-    local current_theme pick
-    current_theme=$(cat "${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme" 2>/dev/null || true)
-    pick=$(comm -23 <(echo "$all_themes" | sort) <(echo "$bright_themes" | sort) |
-        grep -vxF "$current_theme" |
-        awk -v seed="$RANDOM" 'BEGIN{srand(seed)} {a[NR]=$0} END{print a[int(rand()*NR)+1]}')
-
-    if [[ -n "$pick" ]]; then
-        echo "$pick"
-    fi
-}
-
 # 1-based position of the current theme in the fzf item list: generates the
 # list (header lines skipped) and finds the ● marker
 get_current_position() {
@@ -193,9 +175,6 @@ main() {
             ;;
         --toggle-fav)
             toggle_favourite "${2:?theme name required}"
-            ;;
-        --random)
-            random_theme
             ;;
         *)
             list_themes_for_fzf

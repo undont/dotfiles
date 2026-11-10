@@ -13,8 +13,13 @@ DOTFILES_ROOT="$(cd "$SCRIPT_DIR/../../.." && pwd)"
 THEME_SWITCH="$DOTFILES_ROOT/scripts/theme-switch"
 THEMES_DIR="$DOTFILES_ROOT/themes"
 TMUX_TEMPLATE="$DOTFILES_ROOT/tmux/tmux.conf.template"
-# use XDG path where theme-switch actually writes the config
-TMUX_OUTPUT="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
+
+# theme-switch writes every generated config, current-theme and the theme
+# history under these, which would otherwise be the live ones
+TEST_XDG=$(mktemp -d)
+export XDG_CONFIG_HOME="$TEST_XDG/config" XDG_DATA_HOME="$TEST_XDG/data"
+trap 'rm -rf "$TEST_XDG"' EXIT
+TMUX_OUTPUT="$XDG_CONFIG_HOME/tmux/tmux.conf"
 
 # ===========================================================================
 # pre-flight checks
@@ -61,7 +66,7 @@ else
 fi
 
 # ensure cleanup on exit
-trap cleanup_test_server EXIT
+trap 'cleanup_test_server; rm -rf "$TEST_XDG"' EXIT
 
 # create a test session for theme testing
 $TEST_TMUX_CMD new-session -d -s theme-test 2>/dev/null || true
@@ -106,12 +111,6 @@ fi
 # ===========================================================================
 
 section "Config Generation Tests"
-
-# save original config if it exists
-original_config=""
-if [[ -f "$TMUX_OUTPUT" ]]; then
-    original_config=$(cat "$TMUX_OUTPUT")
-fi
 
 # apply a theme to generate config
 theme_output=$("$THEME_SWITCH" dracula --no-reload 2>&1) && theme_result=0 || theme_result=$?
@@ -349,12 +348,6 @@ $TEST_TMUX_CMD kill-session -t theme-test-2 2>/dev/null || true
 $TEST_TMUX_CMD kill-session -t theme-test-3 2>/dev/null || true
 
 pass "cleaned up test sessions"
-
-# restore original config if we had one
-if [[ -n "$original_config" ]]; then
-    echo "$original_config" >"$TMUX_OUTPUT"
-    pass "restored original tmux config"
-fi
 
 # ===========================================================================
 # summary

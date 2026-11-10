@@ -130,6 +130,7 @@ Two sources feed the picker:
 ```bash
 dotfiles theme                                 # list available themes
 dotfiles theme switch dracula                  # switch by name
+dotfiles theme switch random                   # switch to a random dark theme
 dotfiles theme generate "Catppuccin Latte"     # generate from a Ghostty palette
 ```
 
