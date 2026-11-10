@@ -32,7 +32,6 @@ Generated (gitignored, created by `dotfiles theme generate`):
 
 User Configuration (outside repo, created by `dotfiles theme`):
   ~/.config/tmux/tmux.conf         - Generated tmux config (XDG standard)
-  ~/.tmux.conf                     - Compatibility symlink -> ~/.config/tmux/tmux.conf
   ~/.config/ghostty/config         - Generated ghostty config (XDG, all platforms)
   ~/.config/gh-dash/config.yml     - Generated gh-dash config (XDG standard)
   ~/.config/yazi/theme.toml        - Generated yazi theme
@@ -366,10 +365,6 @@ Tests: script existence, shellcheck validation, help output, custom theme protec
 ### Generated theme has low contrast
 
 The generator applies WCAG 4.5:1 corrections automatically. If a specific colour still feels low-contrast, the source Ghostty theme may have inherently similar foreground/background values. Try a different Ghostty theme or create a hand-crafted theme.
-
-### Git shows tmux config as modified
-
-Tmux config is generated to `~/.config/tmux/tmux.conf` and should not affect the repository. If you see git changes, check that `~/.tmux.conf` is a symlink to the XDG location.
 
 ## See Also
 

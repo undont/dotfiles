@@ -81,7 +81,7 @@ echo ""
 SYMLINKS=()
 while IFS=$'\t' read -r _ _ _ dest _; do
     SYMLINKS+=("$dest")
-done < <(manifest_rows link link-generated)
+done < <(manifest_rows link)
 
 # the installer creates no ghostty Application Support symlink; one that exists is removed
 if [[ "$(uname)" == "Darwin" ]] && [[ -L "$HOME/Library/Application Support/com.mitchellh.ghostty/config" ]]; then

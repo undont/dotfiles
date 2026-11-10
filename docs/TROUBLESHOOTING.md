@@ -134,7 +134,7 @@ cat ~/dotfiles/.install-state/state.txt 2>/dev/null
 
 ```bash
 # Check symlink targets (~/.zshrc is a user-owned file, not a symlink)
-ls -la ~/.zprofile ~/.tmux.conf ~/.config/nvim
+ls -la ~/.zprofile ~/.tmux ~/.config/nvim
 
 # Run health check
 ./scripts/install/health-check.sh
@@ -858,7 +858,7 @@ cat startup.log
 ./scripts/install/health-check.sh
 
 # Check all symlinks
-ls -la ~/{.zprofile,.tmux,.tmux.conf} ~/.config/nvim
+ls -la ~/{.zprofile,.tmux} ~/.config/nvim
 
 # Check XDG directories
 echo "Config: ${XDG_CONFIG_HOME:-~/.config}"

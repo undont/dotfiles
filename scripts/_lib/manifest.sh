@@ -34,7 +34,7 @@ manifest_entries() {
     fi
     yq -p toml -o tsv '
         to_entries[] | .key as $group | .value as $tool
-        | ($tool | to_entries[] | select(.key | test("^(link|copy|local|link-generated|sync)$"))) as $kind
+        | ($tool | to_entries[] | select(.key | test("^(link|copy|local|sync)$"))) as $kind
         | $kind.value[]
         | (.local // (.dest | sub("/$"; "") | sub("^~/\\."; "") | sub("^\\$cfg/"; "config/") | sub("^\\$appsupport/"; ""))) as $derived
         | [$kind.key, $tool.preset, .os // $tool.os // "any", $group, .source // "-", .dest,

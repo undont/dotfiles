@@ -4,7 +4,6 @@
 # this template is processed by dotfiles theme and written to:
 #   ~/.config/tmux/tmux.conf (XDG standard location)
 #
-# ~/.tmux.conf is a compatibility symlink to it
 # change themes with: dotfiles theme switch <theme-name>
 #
 # quick reference:

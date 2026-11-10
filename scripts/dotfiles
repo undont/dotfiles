@@ -911,7 +911,7 @@ cmd_links() {
             group_shown="$group"
         fi
         _check_link "$dest"
-    done < <(manifest_rows link link-generated)
+    done < <(manifest_rows link)
 
     local total=$((ok + broken + absent + file_exists))
     echo ""

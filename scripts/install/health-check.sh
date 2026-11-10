@@ -184,10 +184,10 @@ check_file "$HOME/.p10k.zsh" ".p10k.zsh"
 
 while IFS=$'\t' read -r kind _ source dest _; do
     case "$kind" in
-        link | link-generated) check_symlink "$dest" "$source" "${dest/#"$HOME"/\~}" ;;
+        link) check_symlink "$dest" "$source" "${dest/#"$HOME"/\~}" ;;
         copy) check_file "$dest" "${dest/#"$HOME"/\~} (copy-on-install)" ;;
     esac
-done < <(manifest_rows link link-generated copy)
+done < <(manifest_rows link copy)
 
 # config is generated to the XDG location, which ghostty reads on all platforms
 if should_install "core"; then
@@ -198,7 +198,7 @@ echo ""
 echo "Generated Configs:"
 echo "------------------"
 
-# tmux generated config (minimal): the file that .tmux.conf symlinks to
+# tmux generated config (minimal)
 check_file "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf" "tmux config (generated)"
 
 # current theme (minimal)

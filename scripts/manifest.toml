@@ -3,12 +3,10 @@
 # a table is one tool, its name the group shown during install. it sets
 # preset (minimal, core or full) and optionally os (any, macos or linux;
 # default any), then lists entries by kind:
-#   link            symlink into the repo
-#   copy            copied once, then user-owned
-#   local           override created from a template
-#   link-generated  symlink to a file theme-switch writes; created after theme
-#                   generation
-#   sync            local layer only, never installed; no source
+#   link   symlink into the repo
+#   copy   copied once, then user-owned
+#   local  override created from a template
+#   sync   local layer only, never installed; no source
 #
 # an entry has a source and dest, and optionally os (overrides the table's).
 # source and dest are repo-relative, or outside the repo when starting ~/,
@@ -26,7 +24,6 @@ local = [{ source = "zsh/zshrc.template", dest = "~/.zshrc" }]
 preset = "minimal"
 link = [{ source = "tmux", dest = "~/.tmux" }]
 local = [{ source = "tmux/local.conf.template", dest = "$cfg/tmux/local.conf" }]
-link-generated = [{ source = "$cfg/tmux/tmux.conf", dest = "~/.tmux.conf" }]
 
 ["Dotfiles CLI"]
 preset = "minimal"

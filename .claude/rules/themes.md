@@ -20,11 +20,10 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts.
 2. `tmux/tmux.conf.template` - Tmux template with `{{PLACEHOLDERS}}` (in repo)
 3. `ghostty/config.template` - Ghostty template with `{{PLACEHOLDERS}}` (in repo)
 4. `~/.config/tmux/tmux.conf` - Generated config (XDG location)
-5. `~/.tmux.conf` - Compatibility symlink -> `~/.config/tmux/tmux.conf`
-6. `~/.config/ghostty/config` - Generated ghostty config (XDG location, read natively on all platforms)
-7. `yazi/theme.toml.template` - Yazi theme template with `{{PLACEHOLDERS}}` (in repo); reuses the `{{TMUX_*}}` palette vars
-8. `~/.config/yazi/theme.toml` - Generated yazi theme (XDG location). yazi is symlinked per-file (`yazi.toml`, `keymap.toml`) so the generated theme can sit alongside without being tracked. theme-switch skips generation if the dir is still a legacy whole-dir symlink (the 0.2.109 migration converts it).
-9. `nvim/colors/*.lua` - Hand-crafted nvim schemes with no hex values: `core.palette` reads each colour from `themes/<theme>.theme`, and nvim-only colours live under `NVIM_*` keys. Change a colour in the `.theme` file, never in the scheme
+5. `~/.config/ghostty/config` - Generated ghostty config (XDG location, read natively on all platforms)
+6. `yazi/theme.toml.template` - Yazi theme template with `{{PLACEHOLDERS}}` (in repo); reuses the `{{TMUX_*}}` palette vars
+7. `~/.config/yazi/theme.toml` - Generated yazi theme (XDG location). yazi is symlinked per-file (`yazi.toml`, `keymap.toml`) so the generated theme can sit alongside without being tracked. theme-switch skips generation if the dir is still a legacy whole-dir symlink (the 0.2.109 migration converts it).
+8. `nvim/colors/*.lua` - Hand-crafted nvim schemes with no hex values: `core.palette` reads each colour from `themes/<theme>.theme`, and nvim-only colours live under `NVIM_*` keys. Change a colour in the `.theme` file, never in the scheme
 
 ## Local Override Files (user-owned, survive theme changes)
 
