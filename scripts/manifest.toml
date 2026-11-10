@@ -104,6 +104,10 @@ preset = "core"
 os = "macos"
 link = [{ source = "imagemagick/type.xml", dest = "$cfg/ImageMagick/type.xml" }]
 
+[Rex]
+preset = "core"
+link = [{ source = "rex", dest = "$cfg/rex" }]
+
 ["Statusline theme resolver"]
 preset = "core"
 link = [{ source = "scripts/_lib/statusline-theme.sh", dest = "$cfg/dotfiles/statusline-theme.sh" }]

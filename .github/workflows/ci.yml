@@ -53,6 +53,11 @@ jobs:
           shellcheck -x $EXCLUDES launchers/bin/*.sh launchers/bin/dev launchers/lib/*.sh
           shellcheck -x $EXCLUDES -e SC2317 launchers/tests/*.sh
 
+      - name: Run ShellCheck on rex scripts
+        run: |
+          EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
+          shellcheck -x $EXCLUDES rex/bash/*.sh
+
       - name: Run ShellCheck on test scripts
         run: |
           EXCLUDES="-e SC1091 -e SC2001 -e SC2009 -e SC2059 -e SC2015 -e SC2016 -e SC2034 -e SC2329"
@@ -115,6 +120,9 @@ jobs:
 
       - name: Run luacheck on scripts Lua modules
         run: luacheck scripts/_lib/*.lua --config nvim/.luacheckrc
+
+      - name: Run luacheck on rex config
+        run: luacheck rex --config rex/.luacheckrc
 
   startup-benchmark:
     name: Startup Benchmark

@@ -29,18 +29,21 @@ Config lives in the repo. The installed path is a symlink. Changes committed to
 the repo propagate on next `dotfiles update`.
 
 **Used for:** zprofile, the whole `tmux/` dir (-> `~/.tmux`), the whole `nvim/`
-dir (-> `~/.config/nvim`), the `dotfiles` CLI (`scripts/dotfiles` ->
-`~/.local/bin/dotfiles`), the formatter configs (`formatters/prettierrc.json` ->
-`~/.prettierrc`, `formatters/editorconfig` -> `~/.editorconfig`), the `dev`
-launcher wrapper (`launchers/bin/dev` -> `~/.local/launchers/dev`; the
-launcher files in `launchers/` are data and are not linked), `gh-dash/dash-repo-sync`,
+dir (-> `~/.config/nvim`), the whole `rex/` dir (-> `~/.config/rex`), the
+`dotfiles` CLI (`scripts/dotfiles` -> `~/.local/bin/dotfiles`), the formatter
+configs (`formatters/prettierrc.json` -> `~/.prettierrc`,
+`formatters/editorconfig` -> `~/.editorconfig`), the `dev` launcher wrapper
+(`launchers/bin/dev` -> `~/.local/launchers/dev`; the launcher files in
+`launchers/` are data and are not linked), `gh-dash/dash-repo-sync`,
 `lazydocker/format-logs.awk`, the statusline theme resolver
-(`scripts/_lib/statusline-theme.sh` -> `~/.config/dotfiles/statusline-theme.sh`),
-the ImageMagick font map (`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`,
-macOS only; see the note below), zed's `keymap.json` and `tasks.json`.
+(`scripts/_lib/statusline-theme.sh` ->
+`~/.config/dotfiles/statusline-theme.sh`), the ImageMagick font map
+(`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`, macOS only; see the
+note below), zed's `keymap.json` and `tasks.json`.
 
-Because `tmux/` and `nvim/` are linked as whole directories, files written under
-the installed paths land inside the repo working tree and are gitignored there:
+Because `tmux/`, `nvim/` and `rex/` are linked as whole directories, files
+written under the installed paths land inside the repo working tree and are
+gitignored there:
 `~/.config/nvim/local.lua` is `nvim/local.lua`, and TPM plugins install into
 `tmux/plugins/`.
 
