@@ -4,7 +4,13 @@ set -euo pipefail
 # imports a .theme file into the rex app as a ghostty theme and selects it
 # usage: reload-rex.sh <theme-name> <theme-file>
 
-command -v rex >/dev/null 2>&1 || exit 0
+# a switch from the dotfiles_theme action runs with the macOS server's PATH,
+# which has no rex
+if ! command -v rex >/dev/null 2>&1; then
+    app_dir="$HOME/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS"
+    [[ -x "$app_dir/rex" ]] || exit 0
+    PATH="$app_dir:$PATH"
+fi
 
 theme_name="${1:?theme name required}"
 theme_file="${2:?theme file required}"
