@@ -52,6 +52,8 @@ if ((!${+_CMD_ALERT_EXCLUDE})); then
         vim nvim v vi nano bat diffnav
         psql sqlite3 tmux
         jiru
+        "dotfiles theme"
+        source .
         fg bg
     )
 fi

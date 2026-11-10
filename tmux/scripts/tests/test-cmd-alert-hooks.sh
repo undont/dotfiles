@@ -446,6 +446,31 @@ if command -v zsh &>/dev/null; then
     else
         fail "Expected the truncated-\$2-only case to still track (sanity check on the regression), got: $start"
     fi
+
+    # `dot` is an alias for `dotfiles`, so the typed command only matches
+    # "dotfiles theme" through the expanded $3
+    start=$(zsh -c '
+        source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+        _cmd_alert_preexec "dot theme switch random" "$1" "$1"
+        echo "$_cmd_alert_start:[$_cmd_alert_label]"
+    ' _ "dotfiles theme switch random" 2>/dev/null)
+    assert_equals "dot theme (alias of dotfiles theme) is excluded" "-1:[]" "$start"
+
+    start=$(zsh -c '
+        source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+        _cmd_alert_preexec "dotfiles update"
+        echo "[$_cmd_alert_label]"
+    ' 2>/dev/null)
+    assert_equals "dotfiles update is still tracked" "[dotfiles update]" "$start"
+
+    for typed in "source ~/.zshrc" ". ~/.zshrc"; do
+        start=$(zsh -c '
+            source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+            _cmd_alert_preexec "$1"
+            echo "$_cmd_alert_start:[$_cmd_alert_label]"
+        ' _ "$typed" 2>/dev/null)
+        assert_equals "$typed is excluded" "-1:[]" "$start"
+    done
 else
     skip "zsh not available — skipping label truncation tests"
 fi
