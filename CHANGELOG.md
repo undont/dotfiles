@@ -6,6 +6,24 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- pi sessions raise tmux alerts and show agent state in the switcher, with a `π` marker. `scripts/hooks/wrappers/pi-*.sh`, `tmux/scripts/_lib/alerts.sh`
+- The nvim dashboard has a Mason shortcut (`M`). `nvim/lua/plugins/dashboard.lua`
+- `zls` is installed through Mason, pinned to 0.17.0. `nvim/lua/plugins/lsp.lua`
+
+### Changed
+
+- nvim starts faster: telescope, blink.cmp capabilities, treesitter parser checks and the parser-update check load lazily or skip git. `nvim/lua/plugins/telescope.lua`, `nvim/lua/features/`
+- The `dev` launcher opens a single nvim window. `launchers/dev.toml`
+- The Brewfile installs `zig` instead of `zls`. `Brewfile`
+
+### Removed
+
+- Shell no longer exports `HOMEBREW_REQUIRE_TAP_TRUST=1`; `dotfiles update` still trusts the taps it installs from. `zsh/dotfiles.zsh`
+- The per-project zig version pin for `zigfmt`. `nvim/lua/plugins/conform.lua`
+- The dashboard's Find Text and Projects entries. `nvim/lua/plugins/dashboard.lua`
+
 ## [0.2.158] - 2026-11-09
 
 ### Added
