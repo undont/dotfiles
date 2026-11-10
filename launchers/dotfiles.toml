@@ -3,5 +3,4 @@ session = "dotfiles"
 root = "~/dotfiles"
 
 [[window]]
-name = "nvim"
 cmd = "nvim ."

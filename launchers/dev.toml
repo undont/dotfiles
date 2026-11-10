@@ -2,5 +2,4 @@ description = "Open Neovim in a project"
 # no session key: the session is named after the directory the picker passes
 
 [[window]]
-name = "nvim"
 cmd = "nvim"

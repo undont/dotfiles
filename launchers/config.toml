@@ -3,5 +3,4 @@ session = "config"
 root = "~/.config"
 
 [[window]]
-name = "nvim"
 cmd = "nvim ."
