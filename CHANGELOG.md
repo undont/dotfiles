@@ -6,6 +6,12 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.160] - 2026-11-10
+
+### Changed
+
+- The local layer syncs personal agent instructions to `~/.ai/instructions/local.md`, where `~/.ai` now reads them. `scripts/manifest.conf`
+
 ## [0.2.159] - 2026-11-10
 
 ### Added
