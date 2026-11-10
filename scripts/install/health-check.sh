@@ -184,10 +184,10 @@ check_file "$HOME/.p10k.zsh" ".p10k.zsh"
 
 while IFS=$'\t' read -r kind _ source dest _; do
     case "$kind" in
-        link | link-generated) check_symlink "$dest" "$source" "${dest/#"$HOME"/\~}" ;;
+        link) check_symlink "$dest" "$source" "${dest/#"$HOME"/\~}" ;;
         copy) check_file "$dest" "${dest/#"$HOME"/\~} (copy-on-install)" ;;
     esac
-done < <(manifest_rows link link-generated copy)
+done < <(manifest_rows link copy)
 
 # config is generated to the XDG location, which ghostty reads on all platforms
 if should_install "core"; then
@@ -198,7 +198,7 @@ echo ""
 echo "Generated Configs:"
 echo "------------------"
 
-# tmux generated config (minimal): the file that .tmux.conf symlinks to
+# tmux generated config (minimal)
 check_file "${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf" "tmux config (generated)"
 
 # current theme (minimal)
@@ -360,17 +360,14 @@ else
     ISSUES=1
 fi
 
-# yq (required for gh-dash local merge)
-if should_install "core"; then
-    printf "Checking %-44s " "yq (gh-dash merge)..."
-    if command_exists yq; then
-        printf '%sOK%s\n' "${GREEN}" "${NC}"
-    else
-        printf '%sNOT FOUND%s\n' "${YELLOW}" "${NC}"
-        printf '  gh-dash local overrides will not apply without yq\n'
-        printf '  Install with: brew install yq\n'
-        ISSUES=1
-    fi
+printf "Checking %-44s " "yq..."
+if command_exists yq; then
+    printf '%sOK%s\n' "${GREEN}" "${NC}"
+else
+    printf '%sNOT FOUND%s\n' "${RED}" "${NC}"
+    printf '  the install manifest, launchers and gh-dash local merge need yq\n'
+    printf '  Install with: brew install yq\n'
+    ISSUES=1
 fi
 
 # compinit prompts on its full run when compaudit reports insecure dirs

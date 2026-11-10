@@ -80,6 +80,8 @@ if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
     source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
 fi
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# a shell killed mid-startup leaves p10k's temp file behind; the age filter spares a live write
+rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/p10k-*.tmp.*(N.mh+24)
 
 # =============================================================================
 # PATH CONFIGURATION
@@ -366,6 +368,21 @@ _update_git_branch_once() {
     precmd_functions=(${precmd_functions:#_update_git_branch_once})
 }
 precmd_functions+=(_update_git_branch_once)
+
+# the project variables tmux popups get via update-environment, as bash
+# exports for popups that start from a bare environment (rex pickers). written
+# at the first prompt so the values set in ~/.zshrc are included
+_write_project_env_once() {
+    precmd_functions=(${precmd_functions:#_write_project_env_once})
+    local dir="${XDG_CACHE_HOME:-$HOME/.cache}/zsh"
+    local file="$dir/project-env.sh" name lines=()
+    for name in DEV_ROOT PROJECTS_ROOT PROJECT_DIRS; do
+        [[ -n "${(P)name}" ]] && lines+=("export $name=${(qq)${(P)name}}")
+    done
+    [[ -d "$dir" ]] || mkdir -p "$dir"
+    print -rl -- $lines >|"$file.$$" && command mv -f "$file.$$" "$file"
+}
+precmd_functions+=(_write_project_env_once)
 
 _dotfiles_precmd() {
     if ((_git_branch_stale)); then

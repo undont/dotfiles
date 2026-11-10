@@ -4,7 +4,6 @@
 # this template is processed by dotfiles theme and written to:
 #   ~/.config/tmux/tmux.conf (XDG standard location)
 #
-# ~/.tmux.conf is a compatibility symlink to it
 # change themes with: dotfiles theme switch <theme-name>
 #
 # quick reference:
@@ -64,7 +63,9 @@ set -g focus-events on
 # import the launcher root vars from each attaching client into the session
 # environment so the launcher picker popup (prefix + p) can see them. without
 # this a popup only sees the server's start-time global env, so vars exported
-# later in ~/.zshrc never reach it and the directory list comes up empty
+# later in ~/.zshrc never reach it and the directory list comes up empty.
+# reset first: -ga appends again on every source-file
+set -gu update-environment
 set -ga update-environment "DEV_ROOT"
 set -ga update-environment "PROJECTS_ROOT"
 set -ga update-environment "PROJECT_DIRS"
@@ -629,6 +630,10 @@ set -g clock-mode-colour "{{TMUX_ACCENT_CYAN}}"
 # Plugins (managed by TPM)
 # ══════════════════════════════════════════════════════════════
 # install: prefix + I    update: prefix + U    clean: prefix + alt + u
+
+# tpm defaults to ~/.config/tmux/plugins when the config is there; the
+# installer, health-check and uninstall use ~/.tmux/plugins
+set-environment -g TMUX_PLUGIN_MANAGER_PATH "$HOME/.tmux/plugins/"
 
 set -g @plugin 'tmux-plugins/tpm'              # plugin manager
 set -g @plugin 'tmux-plugins/tmux-resurrect'   # save/restore sessions

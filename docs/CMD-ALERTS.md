@@ -142,7 +142,7 @@ Running rows come from a per-pane registry the `preexec` hook writes while a tra
 
 Rerun reads the full command (stored as typed, so `$VAR` references stay references and are re-expanded by the shell on rerun) from the finished history by key, so the raw text never crosses the fzf/shell boundary. `R` types into whatever the target pane's foreground is, so it is safest at an idle prompt; `r` is the safe default when in doubt.
 
-Running entries are self-cleaning: the `precmd` hook removes them on completion, and the reader prunes any whose owning shell has died or whose pane has closed. Finished entries roll off once they age past an hour or fall outside the most recent 20, and they also clear when you view their window (the same window-switch clear that dismisses exit and agent alerts).
+Running entries are self-cleaning: the `precmd` hook removes them on completion, and the reader prunes any whose owning shell has died or whose pane has closed. Finished entries roll off once they age past an hour or fall outside the most recent 20, and they also clear when you view their window (the same window-switch clear that dismisses exit and agent alerts) or when their window closes, however it closed.
 
 ## Clearing Alerts
 
@@ -160,6 +160,7 @@ alerts-clear    # Alias for rm -rf ~/.config/tmux-alerts
 - Running registry: `~/.config/tmux-alerts/running` (one file per pane, named by pane number; fields `pane_id<tab>start_epoch<tab>shell_pid<tab>label`)
 - Finished history: `~/.config/tmux-alerts/finished` (one line per completion; fields `finish_epoch<tab>exit_code<tab>session<tab>window_id<tab>window<tab>label<tab>cmd`, where `cmd` is the full command as typed for rerun and is absent on rows written before rerun shipped; reader keeps last 20 within the hour)
 - Kill-suppress markers: `~/.config/tmux-alerts/suppress` (one file per pane, touched by proclist's `x` binding right before it interrupts a tracked command; precmd deletes it on that completion and skips the finished row + alert; orphans older than 10s are pruned by the reader)
+- Rex panes (`REX_BLOCK` set, outside tmux): no alerts; the hooks write the same three under `~/.cache/rex/procs/` (`running/`, `finished`, `suppress/`), keyed on block id, with running fields `block_id<tab>session_id<tab>start_epoch<tab>shell_pid<tab>label` and finished fields `finish_epoch<tab>exit_code<tab>session_id<tab>block_id<tab>label<tab>cmd`. They are kept apart from tmux's because `proclist.sh` prunes running entries for panes tmux doesn't know
 - Agent-state registry: `~/.config/tmux-alerts/agent-state` (one file per pane, named by pane id; fields `agent<tab>state<tab>epoch<tab>event<tab>session_id<tab>cwd`, written by Claude Code hooks and the OpenCode plugin via `scripts/hooks/agent-state.sh` and read by the prefix+c and prefix+o instance switchers; see [AGENT-HOOKS.md](AGENT-HOOKS.md))
 - Hook script: `scripts/hooks/cmd-alert.sh`
 - Process list: `tmux/scripts/alerts/proclist.sh` (reader), `tmux/scripts/alerts/proclist-action.sh` (the `x` binding), and `tmux/scripts/alerts/proclist-rerun.sh` (the `r`/`R` bindings)

@@ -2,5 +2,4 @@ description = "Runs btop from ~"
 session = "btop"
 
 [[window]]
-name = "btop"
 cmd = "btop"

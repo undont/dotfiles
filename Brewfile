@@ -22,6 +22,7 @@ brew "fzf"                    # >= 0.53 for the --tmux flag
 brew "direnv"
 brew "carapace"               # multi-shell completion provider (bridges zsh completion)
 brew "luajit"                 # required for theme-switch and generate-theme
+brew "yq"                     # reads the install manifest and launcher files
 
 # =============================================================================
 # @preset: core
@@ -57,7 +58,6 @@ brew "ripgrep"       # >= 13.0
 brew "fd"            # fast find alternative
 brew "tree"
 brew "jq"
-brew "yq"            # used by the gh-dash local merge
 brew "wget"
 brew "bat"           # cat with syntax highlighting
 brew "diffnav"       # diff navigator for GitHub PRs

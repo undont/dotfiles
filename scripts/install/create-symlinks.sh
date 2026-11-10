@@ -3,7 +3,7 @@
 set -euo pipefail
 
 # creates the symlinks, local override files and generated configs listed in
-# scripts/manifest.conf for a preset
+# scripts/manifest.toml for a preset
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)}"
@@ -18,6 +18,11 @@ source "$SCRIPT_DIR/../_lib/manifest.sh"
 PRESET="${DOTFILES_PRESET:-full}"
 FAILED=0
 
+if ! command_exists yq; then
+    error "yq is required to read $MANIFEST_FILE (brew install yq)"
+    exit 1
+fi
+
 print_section "Creating symlinks"
 echo "Source: $DOTFILES_DIR"
 echo "Preset: $PRESET"
@@ -29,6 +34,15 @@ if should_install "core" && [[ -L "${XDG_CONFIG_HOME:-$HOME/.config}/yazi" ]]; t
     rm "${XDG_CONFIG_HOME:-$HOME/.config}/yazi"
 fi
 
+# tmux loads ~/.tmux.conf as well as the generated config, so a ~/.tmux.conf
+# symlink to it is removed
+tmux_conf="${XDG_CONFIG_HOME:-$HOME/.config}/tmux/tmux.conf"
+if [[ -L "$HOME/.tmux.conf" && "$(readlink "$HOME/.tmux.conf")" == "$tmux_conf" ]]; then
+    rm "$HOME/.tmux.conf"
+elif [[ -e "$HOME/.tmux.conf" ]]; then
+    warn "tmux loads $HOME/.tmux.conf as well as the generated $tmux_conf"
+fi
+
 # on a preset change, the previous preset's links are removed before this
 # preset's are created; one re-pointed by hand is kept
 saved_preset_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/preset"
@@ -38,7 +52,7 @@ if [[ -n "$saved_preset" && "$saved_preset" != "$PRESET" ]]; then
         if [[ -L "$dest" && "$(readlink "$dest")" == "$source" ]]; then
             rm "$dest"
         fi
-    done < <(PRESET="$saved_preset" manifest_rows link link-generated)
+    done < <(PRESET="$saved_preset" manifest_rows link)
     info "Removed the $saved_preset preset's links"
 fi
 
@@ -98,16 +112,6 @@ if [[ -x "$DOTFILES_DIR/scripts/theme-switch" ]]; then
         "$DOTFILES_DIR/scripts/theme-switch" dracula --quiet
     }
     success "Generated themed configurations"
-
-    echo ""
-    info "Linking generated configs"
-    while IFS=$'\t' read -r _ _ source dest _; do
-        if [[ -f "$source" ]]; then
-            create_link "$source" "$dest"
-        else
-            warn "Generated config not found at $source"
-        fi
-    done < <(manifest_rows link-generated)
 else
     warn "theme-switch script not found, skipping theme generation"
 fi

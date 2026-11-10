@@ -1,6 +1,6 @@
 # Themes Directory
 
-This directory contains theme definitions for the dotfiles environment. Themes apply to tmux, Ghostty, FZF, Neovim, gh-dash, yazi, and the AI CLI agent statusline.
+This directory contains theme definitions for the dotfiles environment. Themes apply to tmux, Ghostty, Rex, FZF, Neovim, gh-dash, yazi, and the AI CLI agent statusline.
 
 ## Available Themes
 
@@ -151,7 +151,7 @@ TMUX_STATUS_BELL_FG="#8be9fd"    # Cyan, overrides the purple default
 
 Two scripts source the `.theme` file, then `theme-defaults.sh`, then call `apply_theme_defaults()`:
 
-1. **`scripts/theme-switch`**: Renders the tmux, Ghostty, gh-dash and yazi templates
+1. **`scripts/theme-switch`**: Renders the tmux, Ghostty, gh-dash and yazi templates, and imports the theme into Rex
 2. **`scripts/fzf-theme.sh`**: Generates FZF colours (sourced by `zsh/dotfiles.zsh`)
 
 A third, **`scripts/_lib/statusline-theme.sh`**, parses the `.theme` file by pattern without sourcing it, to colour an AI CLI agent's statusline. See [Theme System](../docs/THEME-SYSTEM.md).

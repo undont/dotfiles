@@ -14,10 +14,12 @@ make lint         # Run all linters (shell, zsh, lua, theme contrast)
 
 Three patterns are used for configuration files. Choose based on whether the tool
 supports a local override mechanism and how personal the config tends to be.
-`scripts/manifest.conf` is the source of truth for which file uses which pattern:
-one row per managed path (kind, preset, os, source, dest, local-layer key). The
-installer, `dotfiles links`, `health-check`, `uninstall` and the local layer all
-read it through `scripts/_lib/manifest.sh`, so a new managed file is one new row.
+`scripts/manifest.toml` is the source of truth for which file uses which
+pattern: one table per tool (preset, os) listing its entries by kind (source,
+dest; a synced entry's local-layer path is derived from dest). The installer,
+`dotfiles links`, `health-check`, `uninstall` and the local layer all read it
+through `scripts/_lib/manifest.sh` (which needs `yq`), so a new managed file is
+one new entry.
 Changing preset on install removes the previous preset's links before creating
 the new ones, so the saved preset always matches what is on disk.
 
@@ -27,18 +29,21 @@ Config lives in the repo. The installed path is a symlink. Changes committed to
 the repo propagate on next `dotfiles update`.
 
 **Used for:** zprofile, the whole `tmux/` dir (-> `~/.tmux`), the whole `nvim/`
-dir (-> `~/.config/nvim`), the `dotfiles` CLI (`scripts/dotfiles` ->
-`~/.local/bin/dotfiles`), the formatter configs (`formatters/prettierrc.json` ->
-`~/.prettierrc`, `formatters/editorconfig` -> `~/.editorconfig`), the `dev`
-launcher wrapper (`launchers/bin/dev` -> `~/.local/launchers/dev`; the
-launcher files in `launchers/` are data and are not linked), `gh-dash/dash-repo-sync`,
+dir (-> `~/.config/nvim`), the whole `rex/` dir (-> `~/.config/rex`), the
+`dotfiles` CLI (`scripts/dotfiles` -> `~/.local/bin/dotfiles`), the formatter
+configs (`formatters/prettierrc.json` -> `~/.prettierrc`,
+`formatters/editorconfig` -> `~/.editorconfig`), the `dev` launcher wrapper
+(`launchers/bin/dev` -> `~/.local/launchers/dev`; the launcher files in
+`launchers/` are data and are not linked), `gh-dash/dash-repo-sync`,
 `lazydocker/format-logs.awk`, the statusline theme resolver
-(`scripts/_lib/statusline-theme.sh` -> `~/.config/dotfiles/statusline-theme.sh`),
-the ImageMagick font map (`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`,
-macOS only; see the note below), zed's `keymap.json` and `tasks.json`.
+(`scripts/_lib/statusline-theme.sh` ->
+`~/.config/dotfiles/statusline-theme.sh`), the ImageMagick font map
+(`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`, macOS only; see the
+note below), zed's `keymap.json` and `tasks.json`.
 
-Because `tmux/` and `nvim/` are linked as whole directories, files written under
-the installed paths land inside the repo working tree and are gitignored there:
+Because `tmux/`, `nvim/` and `rex/` are linked as whole directories, files
+written under the installed paths land inside the repo working tree and are
+gitignored there:
 `~/.config/nvim/local.lua` is `nvim/local.lua`, and TPM plugins install into
 `tmux/plugins/`.
 
@@ -130,7 +135,9 @@ with a local key; a `sync` row carries a purely-personal file the installer
 never touches (e.g. `~/.ai/instructions/local.md`).
 Secrets (`~/.config/zsh/secrets.zsh`), `.state/`, the saved preset file, and
 the `current-theme` pointer are hard-excluded and must stay that way: theme is a
-per-machine choice, so it is never synced. The `.gitignore` seeded into the
+per-machine choice, so it is never synced through the local layer (a theme
+switch reaches other rex hosts through rex instead; see
+`docs/THEME-SYSTEM.md`). The `.gitignore` seeded into the
 local repo also lists `statusline-theme.sh`. Launcher pruning on `import` is gated behind
 `--prune` (not `--force`), so a launcher created on one machine survives an
 overwrite import on another.

@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# the user-owned local layer (scripts/manifest.conf rows with a local key) and
+# the user-owned local layer (scripts/manifest.toml rows with a local key) and
 # private-repo helpers for export/import. source after common.sh and cli.sh
 
 [[ -n "${_DOTFILES_LOCAL_LAYER_SH_LOADED:-}" ]] && return 0

@@ -5,10 +5,14 @@ set -euo pipefail
 # Theme Switcher for tmux, ghostty, gh-dash & yazi
 # ══════════════════════════════════════════════════════════════
 # usage:
-#   theme-switch <theme-name> [--no-reload] [--quiet|-q]
+#   theme-switch <theme-name> [--no-reload] [--quiet|-q] [--verbose|-v]
+#   theme-switch random [--no-reload] [--quiet|-q] [--verbose|-v]
 #   theme-switch list
 #   theme-switch current
 #   theme-switch help
+#
+# DOTFILES_NO_RELOAD=1 implies --no-reload, including when theme-delete calls
+# this script; the test suites set it
 
 SCRIPT_DIR="$(cd "$(dirname "$(readlink -f "${BASH_SOURCE[0]}" 2>/dev/null || realpath "${BASH_SOURCE[0]}")")" && pwd)"
 DOTFILES_ROOT="$(cd "$SCRIPT_DIR/.." && pwd)"
@@ -44,6 +48,15 @@ render_template() {
         return 1
     fi
     mv "$tmp" "$output"
+}
+
+# per-step timing to stderr when THEME_SWITCH_TIMING=1
+_lap_last="${EPOCHREALTIME:-0}"
+lap() {
+    [[ "${THEME_SWITCH_TIMING:-}" == "1" ]] || return 0
+    local now="$EPOCHREALTIME"
+    printf '%7.0f ms  %s\n' "$(bc <<<"($now - $_lap_last) * 1000")" "$1" >&2
+    _lap_last="$now"
 }
 
 THEMES_DIR="$DOTFILES_ROOT/themes"
@@ -131,15 +144,18 @@ list_themes() {
 
 usage() {
     printf "\n${CYAN}Usage:${NC}\n"
-    printf "  %s <theme-name> [--no-reload] [--quiet]\n" "$invoked_as"
+    printf "  %s <theme-name> [--no-reload] [--quiet] [--verbose]\n" "$invoked_as"
+    printf "  %s random [--no-reload] [--quiet] [--verbose]\n" "$invoked_as"
     printf "  %s list\n" "$invoked_as"
     printf "  %s current\n" "$invoked_as"
     printf "  %s help\n" "$invoked_as"
     printf "\n${CYAN}Options:${NC}\n"
     printf "  --no-reload    Generate config files without reloading tmux/ghostty\n"
     printf "  --quiet, -q    Suppress output\n"
+    printf "  --verbose, -v  Show each generate and reload step\n"
     printf "\n${CYAN}Examples:${NC}\n"
     printf "  %s dracula\n" "$invoked_as"
+    printf "  %s random\n" "$invoked_as"
     printf "  %s tokyo-night --no-reload\n" "$invoked_as"
     printf "\n"
 }
@@ -152,12 +168,24 @@ get_current_theme() {
     fi
 }
 
+# a random ghostty theme, skipping bright ones and the current theme
+random_theme() {
+    local all bright
+    all=$("$SCRIPT_DIR/generate-theme" list 2>/dev/null)
+    bright=$("$SCRIPT_DIR/generate-theme" bright-list 2>/dev/null)
+    comm -23 <(printf '%s\n' "$all" | sort) <(printf '%s\n' "$bright" | sort) |
+        grep -vxF "$(get_current_theme)" |
+        awk -v seed="$RANDOM" 'BEGIN{srand(seed)} {a[NR]=$0} END{if (NR) print a[int(rand()*NR)+1]}'
+}
+
 # render every template for a theme, then reload the tools
 apply_theme() {
     local theme_name="$1"
     local no_reload="${2:-false}"
     local quiet="${3:-false}"
+    local verbose="${4:-false}"
     local theme_file="$THEMES_DIR/$theme_name.theme"
+    local generated=false
 
     # tier 1: hand-crafted theme
     if [[ -f "$theme_file" ]]; then
@@ -167,13 +195,14 @@ apply_theme() {
         theme_file="$THEMES_DIR/generated/$theme_name.theme"
     # tier 3: generate from a ghostty theme
     else
-        if [[ "$quiet" != "true" ]]; then
+        if [[ "$verbose" == "true" ]]; then
             theme_info "Theme '$theme_name' not found locally, checking Ghostty themes..."
         fi
-        local generated_name quiet_flag=""
-        [[ "$quiet" == "true" ]] && quiet_flag="--quiet"
+        local generated_name quiet_flag="--quiet"
+        [[ "$verbose" == "true" ]] && quiet_flag=""
         if generated_name=$("$SCRIPT_DIR/generate-theme" "$theme_name" $quiet_flag); then
             theme_file="$THEMES_DIR/generated/$generated_name.theme"
+            generated=true
         else
             [[ "$quiet" != "true" ]] && theme_error "Theme '$theme_name' not found"
             [[ "$quiet" != "true" ]] && theme_info "Run 'dotfiles theme list' to see available themes"
@@ -188,6 +217,7 @@ apply_theme() {
     # shellcheck disable=SC1091
     source "$THEMES_DIR/theme-defaults.sh"
     apply_theme_defaults
+    lap "source + defaults"
 
     local required_vars=(
         THEME_NAME TMUX_BG_PRIMARY TMUX_FG_PRIMARY TMUX_STATUS_BG TMUX_STATUS_FG
@@ -203,7 +233,7 @@ apply_theme() {
     local LUA
     LUA=$(find_lua) || return 1
 
-    [[ "$quiet" != "true" ]] && theme_info "Applying theme: $THEME_NAME"
+    [[ "$verbose" == "true" ]] && theme_info "Applying theme: $THEME_NAME"
 
     if [[ -f "$TMUX_TEMPLATE" ]]; then
         # platform clipboard command, shared with the tmux scripts
@@ -211,7 +241,8 @@ apply_theme() {
         CLIPBOARD_CMD="$(clipboard_copy_cmd)"
 
         render_template "$TMUX_TEMPLATE" "$TMUX_OUTPUT" || return 1
-        [[ "$quiet" != "true" ]] && theme_success "Generated tmux configuration"
+        [[ "$verbose" == "true" ]] && theme_success "Generated tmux configuration"
+        lap "render tmux"
     else
         [[ "$quiet" != "true" ]] && theme_warn "Tmux template not found, skipping"
     fi
@@ -227,7 +258,8 @@ macos-option-as-alt = left"
         fi
 
         render_template "$GHOSTTY_TEMPLATE" "$GHOSTTY_OUTPUT" || return 1
-        [[ "$quiet" != "true" ]] && theme_success "Generated ghostty configuration"
+        [[ "$verbose" == "true" ]] && theme_success "Generated ghostty configuration"
+        lap "render ghostty"
 
         # ghostty errors on a missing config-file include
         local ghostty_local="${XDG_CONFIG_HOME:-$HOME/.config}/ghostty/local"
@@ -244,11 +276,14 @@ macos-option-as-alt = left"
         # merge user local overrides on top
         if [[ "$quiet" == "true" ]]; then
             ghdash_merge_local --quiet
-        else
+        elif [[ "$verbose" == "true" ]]; then
             ghdash_merge_local
+        else
+            ghdash_merge_local >/dev/null
         fi
 
-        [[ "$quiet" != "true" ]] && theme_success "Generated gh-dash configuration"
+        [[ "$verbose" == "true" ]] && theme_success "Generated gh-dash configuration"
+        lap "render gh-dash (+merge local)"
     fi
 
     if [[ -f "$YAZI_TEMPLATE" ]]; then
@@ -259,7 +294,8 @@ macos-option-as-alt = left"
         # theme in version control; the 0.2.109 migration converts it
         if [[ -d "$yazi_dir" && ! -L "$yazi_dir" ]]; then
             render_template "$YAZI_TEMPLATE" "$YAZI_OUTPUT" || return 1
-            [[ "$quiet" != "true" ]] && theme_success "Generated yazi theme"
+            [[ "$verbose" == "true" ]] && theme_success "Generated yazi theme"
+            lap "render yazi"
         else
             [[ "$quiet" != "true" ]] && theme_warn "Yazi config dir is a legacy symlink; run 'dotfiles update' to migrate"
         fi
@@ -267,6 +303,7 @@ macos-option-as-alt = left"
 
     mkdir -p "$CONFIG_DIR"
     echo "$theme_name" >"$CURRENT_THEME_FILE"
+    lap "write current-theme"
 
     # theme history, for MRU sorting in the picker
     local theme_history="${XDG_DATA_HOME:-$HOME/.local/share}/dotfiles/theme-history"
@@ -279,34 +316,57 @@ macos-option-as-alt = left"
     if [[ "$no_reload" != "true" ]]; then
         # shellcheck disable=SC2033
         if command -v tmux >/dev/null 2>&1 && tmux info &>/dev/null; then
+            # tpm re-init takes about 2s, so the reload runs detached.
             # XDG location first, then ~/.tmux.conf
-            if tmux source-file "$TMUX_OUTPUT" 2>/dev/null; then
-                [[ "$quiet" != "true" ]] && theme_success "Reloaded tmux configuration"
-            elif [[ -f "$HOME/.tmux.conf" ]] && tmux source-file "$HOME/.tmux.conf" 2>/dev/null; then
-                [[ "$quiet" != "true" ]] && theme_success "Reloaded tmux configuration (legacy path)"
-            else
-                [[ "$quiet" != "true" ]] && theme_warn "Failed to reload tmux"
-            fi
+            (
+                tmux source-file "$TMUX_OUTPUT" ||
+                    { [[ -f "$HOME/.tmux.conf" ]] && tmux source-file "$HOME/.tmux.conf"; }
+            ) >/dev/null 2>&1 &
+            [[ "$verbose" == "true" ]] && theme_success "Reloading tmux configuration in the background"
         else
             # tmux missing or no server running
-            [[ "$quiet" != "true" ]] && theme_success "Theme files generated (start tmux to see changes)"
+            [[ "$verbose" == "true" ]] && theme_success "Theme files generated (start tmux to see changes)"
         fi
 
         # the script detects whether ghostty is running
+        lap "reload tmux"
         if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh" ]]; then
             "$DOTFILES_ROOT/tmux/scripts/themes/reload-ghostty.sh"
-            [[ "$quiet" != "true" ]] && theme_success "Reloaded ghostty configuration"
+            [[ "$verbose" == "true" ]] && theme_success "Reloaded ghostty configuration"
         fi
+        lap "reload ghostty"
+
+        # rex themes its own app; skipped when rex is absent, and for a switch
+        # sent by another rex host (rex/lua/dotfiles-theme.lua), which has already
+        # themed the app and the other hosts
+        if [[ -z "${DOTFILES_THEME_FROM_HOST:-}" ]]; then
+            "$DOTFILES_ROOT/tmux/scripts/themes/reload-rex.sh" "$theme_name" "$theme_file"
+        fi
+        lap "reload rex"
 
         if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh" ]]; then
             "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh"
-            [[ "$quiet" != "true" ]] && theme_success "Reloaded FZF theme colours"
+            [[ "$verbose" == "true" ]] && theme_success "Reloaded FZF theme colours"
         fi
+        lap "reload fzf"
     fi
 
     if [[ "$quiet" != "true" ]]; then
-        printf "\n"
-        theme_success "Theme applied: $THEME_NAME"
+        local readable=true
+        # generate-theme already printed the report for a theme it just made
+        if [[ "$verbose" == "true" && "$generated" != "true" ]]; then
+            "$SCRIPT_DIR/theme-contrast-check" "$theme_file" || readable=false
+        elif ! "$SCRIPT_DIR/theme-contrast-check" "$theme_file" >/dev/null 2>&1; then
+            readable=false
+        fi
+        [[ "$verbose" == "true" ]] && printf "\n"
+        if [[ "$readable" == "true" ]]; then
+            theme_success "Theme applied: $THEME_NAME"
+        elif [[ "$verbose" == "true" ]]; then
+            printf "${GREEN}✓${NC} Theme applied: %s ${YELLOW}(some colours might be hard to read)${NC}\n" "$THEME_NAME"
+        else
+            printf "${GREEN}✓${NC} Theme applied: %s ${YELLOW}(some colours might be hard to read, -v for details)${NC}\n" "$THEME_NAME"
+        fi
         if [[ "$no_reload" == "true" ]]; then
             theme_info "Run 'tmux source ~/.config/tmux/tmux.conf' to apply tmux changes"
             theme_info "Restart ghostty to see changes"
@@ -322,18 +382,21 @@ main() {
     local command="${1:-}"
     local no_reload=false
     local quiet=false
+    local verbose=false
+    [[ -n "${DOTFILES_NO_RELOAD:-}" ]] && no_reload=true
 
     for arg in "$@"; do
         case "$arg" in
             --no-reload) no_reload=true ;;
             --quiet | -q) quiet=true ;;
+            --verbose | -v) verbose=true ;;
         esac
     done
 
     args=()
     for arg in "$@"; do
         case "$arg" in
-            --no-reload | --quiet | -q) continue ;;
+            --no-reload | --quiet | -q | --verbose | -v) continue ;;
             *) args+=("$arg") ;;
         esac
     done
@@ -359,6 +422,15 @@ main() {
         help | --help | -h)
             usage
             ;;
+        random)
+            local theme
+            theme=$(random_theme) || true
+            if [[ -z "$theme" ]]; then
+                theme_error "No themes to pick from"
+                exit 1
+            fi
+            apply_theme "$theme" "$no_reload" "$quiet" "$verbose"
+            ;;
         "")
             theme_error "No theme specified"
             usage
@@ -370,7 +442,7 @@ main() {
             exit 1
             ;;
         *)
-            apply_theme "$command" "$no_reload" "$quiet"
+            apply_theme "$command" "$no_reload" "$quiet" "$verbose"
             ;;
     esac
 }

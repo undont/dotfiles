@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+# open or copy a URL from the origin pane's scrollback, run inside a floating
+# layer by the pick_url action. the URLs come from do/urls.lua, newest first
+# usage: pick-url.sh <client_id> <origin_session_id> <origin_block_id> <origin_zoomed>
+set -euo pipefail
+
+# shellcheck source=/dev/null
+source "${BASH_SOURCE%/*}/_lib.sh"
+
+picker_start "$1" "$2" "$3" "$4"
+[[ -n "$PICK_ORIGIN_BLOCK" ]] || exit 0
+
+urls=$(pick cmd=urls.list) || true
+
+wait_for_resize
+if [[ -z "$urls" ]]; then
+    show_notification "No URLs found in scrollback" 1
+    exit 0
+fi
+
+selected=$(
+    printf '%s\n' "$urls" | fzf \
+        --reverse --exact --no-sort --disabled --cycle \
+        --prompt ': ' --border=rounded \
+        --border-label=' j/k · g/G · f/b · d/u · o/spc/⏎ open · y yank · / search · q/esc quit ' \
+        --border-label-pos=bottom \
+        --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept,o:accept' \
+        --bind 'f:page-down,b:page-up' \
+        --bind 'd:half-page-down,u:half-page-up' \
+        --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
+        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,f,b,d,u,q,space,y,o)' \
+        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,f,b,d,u,q,space,y,o)" || echo "abort"' \
+        --bind 'ctrl-k:up,ctrl-l:clear-query' \
+        --bind "y:execute-silent(printf '%s' {} | $(clipboard_copy_cmd))+abort"
+) || exit 0
+
+[[ -n "$selected" ]] && open_url "$selected"

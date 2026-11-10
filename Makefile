@@ -72,6 +72,7 @@ lint-shell: ## Run ShellCheck on shell scripts
 	@shellcheck -x scripts/dotfiles scripts/run-tests.sh scripts/hooks/*.sh
 	@shellcheck -x scripts/theme-switch scripts/theme-delete scripts/generate-theme scripts/theme-contrast-check
 	@shellcheck -x launchers/bin/*.sh launchers/bin/dev launchers/lib/*.sh launchers/tests/*.sh
+	@shellcheck -x rex/bash/*.sh
 	@printf '\033[0;32m✓ ShellCheck passed\033[0m\n'
 
 lint-zsh: ## Syntax-check zsh framework with zsh -n (shellcheck has no zsh dialect)
@@ -85,9 +86,10 @@ lint-zsh: ## Syntax-check zsh framework with zsh -n (shellcheck has no zsh diale
 		printf '\033[0;32m✓ zsh syntax passed\033[0m\n'; \
 	fi
 
-lint-lua: ## Run luacheck on Neovim config
+lint-lua: ## Run luacheck on the nvim and rex configs
 	@printf '\033[1;36mRunning luacheck...\033[0m\n'
 	@luacheck nvim/lua/ --config nvim/.luacheckrc
+	@luacheck rex --config rex/.luacheckrc
 	@printf '\033[0;32m✓ luacheck passed\033[0m\n'
 
 theme-check: ## Run WCAG contrast checker on all themes

@@ -27,6 +27,7 @@ yazi/theme.toml
 # Neovim generated/cache
 nvim/.luarc.json
 .luarc.json
+!rex/.luarc.json
 
 # Neovim backup files
 nvim/init.lua.backup

@@ -6,6 +6,31 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.161] - 2026-11-10
+
+### Added
+
+- The Rex config lives in the repo and is linked to `~/.config/rex` on the `core` preset, so every Rex host gets the same bindings, pickers and actions. `rex/`, `scripts/manifest.toml`
+- `dotfiles theme switch` themes the Rex app and switches the theme on every other Rex host, and the theme picker opens in Rex. `tmux/scripts/themes/reload-rex.sh`, `rex/lua/dotfiles-theme.lua`, `scripts/theme-switch`
+- Commands run in Rex panes are listed in Rex's process picker. `scripts/hooks/cmd-alert-hook.zsh`, `rex/do/procs.lua`
+- `dotfiles theme switch random` switches to a random dark theme, and `--verbose` shows each step and the full contrast report. `scripts/theme-switch`
+
+### Changed
+
+- The install manifest is TOML, one table per tool, and every preset installs `yq` to read it. `scripts/manifest.toml`, `scripts/_lib/manifest.sh`, `Brewfile`
+- A theme switch prints one line, and notes when some colours might be hard to read. `scripts/theme-switch`
+- Most launchers no longer set `name`, so tmux and Rex name their windows automatically. `launchers/`
+
+### Fixed
+
+- tmux loaded its config twice at startup through the `~/.tmux.conf` link; the install removes the link and warns about a real `~/.tmux.conf`. `scripts/install/create-symlinks.sh`
+- Each tmux config reload added another copy of the launcher variables to `update-environment`. `tmux/tmux.conf.template`
+- TPM loaded plugins from `~/.config/tmux/plugins` while the installer and health check used `~/.tmux/plugins`. It now uses `~/.tmux/plugins`: update plugins once with `prefix + U`, then delete the old directory. `tmux/tmux.conf.template`
+- The process list drops finished commands whose window has closed. `tmux/scripts/alerts/proclist.sh`
+- `dotfiles theme` and sourcing a file (`source`, `.`) are no longer tracked as commands. `scripts/hooks/cmd-alert-hook.zsh`
+- The test suites no longer write their theme into the live fzf cache, theme history or tmux server. `scripts/tests/_test-helpers.sh`, `scripts/fzf-theme.sh`
+- p10k temp files left by a shell killed during startup are cleared. `zsh/dotfiles.zsh`
+
 ## [0.2.160] - 2026-11-10
 
 ### Changed

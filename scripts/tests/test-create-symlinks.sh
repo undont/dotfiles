@@ -1,14 +1,14 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# checks on scripts/manifest.conf and create-symlinks.sh. the installer runs
+# checks on scripts/manifest.toml and create-symlinks.sh. the installer runs
 # against a sandbox $HOME with a sandbox tmux socket
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 DOTFILES_DIR="$(cd "$SCRIPT_DIR/../.." && pwd)"
 CREATE_SYMLINKS="$DOTFILES_DIR/scripts/install/create-symlinks.sh"
 SYMLINK_LIB="$DOTFILES_DIR/scripts/_lib/symlink.sh"
-MANIFEST="$DOTFILES_DIR/scripts/manifest.conf"
+MANIFEST="$DOTFILES_DIR/scripts/manifest.toml"
 
 source "$SCRIPT_DIR/_test-helpers.sh"
 
@@ -44,17 +44,33 @@ source "$DOTFILES_DIR/scripts/_lib/common.sh"
 # shellcheck source=/dev/null
 source "$DOTFILES_DIR/scripts/_lib/manifest.sh"
 
-bad_lines=$(grep -vE '^(#|$|\[.+\]$)' "$MANIFEST" | awk 'NF < 5 || NF > 6 { print NR": "$0 }')
-assert_equals "every entry has 5 or 6 fields" "" "$bad_lines"
+# shellcheck disable=SC2016 # yq source
+bad_tool_keys=$(yq -p toml -o tsv '
+    to_entries[] | .key as $group | .value | keys[]
+    | select(test("^(preset|os|link|copy|local|sync)$") | not)
+    | $group + ": " + .' "$MANIFEST")
+assert_equals "every table key is preset, os or a kind" "" "$bad_tool_keys"
+
+# shellcheck disable=SC2016 # yq source
+bad_entry_keys=$(yq -p toml -o tsv '
+    to_entries[] | .key as $group | .value | to_entries[] | select(.value | tag == "!!seq")
+    | .value[] | keys[] | select(test("^(source|dest|os|local)$") | not)
+    | $group + ": " + .' "$MANIFEST")
+assert_equals "every entry key is source, dest, os or local" "" "$bad_entry_keys"
+
+# shellcheck disable=SC2016 # yq source
+link_local_keys=$(yq -p toml -o tsv '
+    to_entries[] | .key as $group | .value.link // [] | .[] | select(has("local")) | $group + ": " + .dest' "$MANIFEST")
+assert_equals "no link entry sets local" "" "$link_local_keys"
 
 rows=$(manifest_entries)
 row_count=$(printf '%s\n' "$rows" | wc -l | tr -d ' ')
 
-ungrouped=$(printf '%s\n' "$rows" | awk -F'\t' '$4 == "" { print $0 }')
-assert_equals "every entry is under a [group] header" "" "$ungrouped"
+missing_fields=$(printf '%s\n' "$rows" | awk -F'\t' '$6 == "" || ($1 != "sync" && $5 == "-") { print $0 }')
+assert_equals "every entry has a dest, and a source unless it is sync" "" "$missing_fields"
 
 bad_values=$(printf '%s\n' "$rows" | awk -F'\t' '
-    $1 !~ /^(link|copy|local|link-generated|sync)$/ { print "kind: "$0; next }
+    $1 !~ /^(link|copy|local|sync)$/ { print "kind: "$0; next }
     $2 !~ /^(minimal|core|full)$/ { print "preset: "$0; next }
     $3 !~ /^(any|macos|linux)$/ { print "os: "$0 }')
 assert_equals "kind, preset and os take known values" "" "$bad_values"
@@ -129,7 +145,7 @@ fi
 wrong_links=""
 while IFS=$'\t' read -r _ _ source dest _; do
     [[ "$(readlink "$dest" 2>/dev/null)" == "$source" ]] || wrong_links+="$dest "
-done < <(sandbox_rows full link link-generated)
+done < <(sandbox_rows full link)
 assert_equals "every full-preset link points at its source" "" "$wrong_links"
 
 missing_files=""
@@ -148,13 +164,13 @@ stale_links=""
 while IFS=$'\t' read -r _ _ source dest _; do
     [[ "$dest" == "$repointed" ]] && continue
     [[ -L "$dest" ]] && stale_links+="$dest "
-done < <(comm -23 <(sandbox_rows full link link-generated | sort) <(sandbox_rows minimal link link-generated | sort))
+done < <(comm -23 <(sandbox_rows full link | sort) <(sandbox_rows minimal link | sort))
 assert_equals "switching to minimal removes the full preset's other links" "" "$stale_links"
 
 kept_links=""
 while IFS=$'\t' read -r _ _ source dest _; do
     [[ "$(readlink "$dest" 2>/dev/null)" == "$source" ]] || kept_links+="$dest "
-done < <(sandbox_rows minimal link link-generated)
+done < <(sandbox_rows minimal link)
 assert_equals "switching to minimal keeps the minimal links" "" "$kept_links"
 
 assert_equals "a link re-pointed by hand is kept" "/dev/null" "$(readlink "$repointed")"
@@ -163,6 +179,22 @@ if [[ -f "$SANDBOX/home/.config/btop/btop.conf" ]]; then
     pass "switching to minimal keeps copied files"
 else
     fail "switching to minimal should keep copied files"
+fi
+
+ln -s "$SANDBOX/home/.config/tmux/tmux.conf" "$SANDBOX/home/.tmux.conf"
+run_install minimal
+if [[ ! -e "$SANDBOX/home/.tmux.conf" && ! -L "$SANDBOX/home/.tmux.conf" ]]; then
+    pass "a ~/.tmux.conf symlink to the generated config is removed"
+else
+    fail "a ~/.tmux.conf symlink to the generated config should be removed"
+fi
+
+echo "set -g @user yes" >"$SANDBOX/home/.tmux.conf"
+run_install minimal
+if [[ -f "$SANDBOX/home/.tmux.conf" ]] && grep -q 'tmux loads .*\.tmux\.conf as well' "$SANDBOX/install.log"; then
+    pass "a real ~/.tmux.conf is kept with a warning"
+else
+    fail "a real ~/.tmux.conf should be kept with a warning"
 fi
 
 section "copy_config Function Behaviour"
