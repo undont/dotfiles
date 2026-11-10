@@ -3,7 +3,8 @@
 #
 # sends a tmux alert when a command runs for at least $_CMD_ALERT_MIN_SECONDS
 # and its pane is not being viewed. interactive commands (pagers, editors) are
-# excluded
+# excluded. in a rex pane (REX_BLOCK set, no TMUX) it only records running
+# and finished commands, for the rex process picker
 #
 # override before sourcing:
 #   _CMD_ALERT_MIN_SECONDS=30
@@ -24,6 +25,10 @@ _CMD_FINISHED_FILE="${_CMD_FINISHED_FILE:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux
 # per pane, touched by proclist-action.sh before it interrupts a tracked
 # command; precmd then skips the alert and the finished row
 _CMD_SUPPRESS_DIR="${_CMD_SUPPRESS_DIR:-${XDG_CONFIG_HOME:-$HOME/.config}/tmux-alerts/suppress}"
+# rex panes get the same three under _CMD_REX_DIR (running/, finished,
+# suppress/), keyed on block id. proclist.sh drops running entries for panes
+# tmux doesn't know, so they're kept apart
+_CMD_REX_DIR="${_CMD_REX_DIR:-${XDG_CACHE_HOME:-$HOME/.cache}/rex/procs}"
 # $EPOCHSECONDS: wall-clock start time for the proclist reader
 zmodload zsh/datetime 2>/dev/null || true
 
@@ -32,6 +37,7 @@ _cmd_alert_exit=0
 _cmd_alert_label=""
 _cmd_alert_cmd="" # full command as typed, for proclist rerun (R)
 _cmd_alert_pane=""
+_cmd_alert_block="" # rex block id, when the command runs in rex outside tmux
 
 # commands that never trigger alerts. a single-word entry matches the first
 # word of the command (git covers every git subcommand); a multi-word entry
@@ -56,6 +62,7 @@ _CMD_ALERT_SCRIPT="${_CMD_ALERT_SCRIPT:-${${(%):-%x}:A:h}/cmd-alert.sh}"
 
 _cmd_alert_preexec() {
     _cmd_alert_exit=0
+    _cmd_alert_block=""
 
     # short label from what was typed ($1). :t is the basename
     local cmd="$1"
@@ -131,6 +138,7 @@ _cmd_alert_preexec() {
         _cmd_alert_pane=$(tmux display-message -p '#{pane_id}' 2>/dev/null || true)
     else
         _cmd_alert_pane=""
+        _cmd_alert_block="${REX_BLOCK:-}"
     fi
 
     # register the in-flight command (one file per pane, named by pane number).
@@ -141,6 +149,32 @@ _cmd_alert_preexec() {
             "$_cmd_alert_pane" "${EPOCHSECONDS:-0}" "$$" "$_cmd_alert_label" \
             >"$_CMD_RUNNING_DIR/${_cmd_alert_pane#%}" 2>/dev/null
     fi
+
+    # fields: block_id, session_id, start epoch, shell pid, label
+    if [[ -n "$_cmd_alert_block" ]]; then
+        [[ -d "$_CMD_REX_DIR/running" ]] || mkdir -p "$_CMD_REX_DIR/running" 2>/dev/null
+        printf '%s\t%s\t%s\t%s\t%s\n' \
+            "$_cmd_alert_block" "${REX_SESSION:-}" "${EPOCHSECONDS:-0}" "$$" "${_cmd_alert_label//\#\#/#}" \
+            >"$_CMD_REX_DIR/running/${_cmd_alert_block#block:}" 2>/dev/null
+    fi
+}
+
+# precmd for a rex pane: drop the running entry, then append the finished row
+# (epoch, exit, session_id, block_id, label, command) unless the process picker
+# stopped the command or it ran under the threshold
+_cmd_alert_rex_finish() {
+    local elapsed="$1"
+    local key="${_cmd_alert_block#block:}"
+    rm -f "$_CMD_REX_DIR/running/$key" 2>/dev/null
+    if [[ -e "$_CMD_REX_DIR/suppress/$key" ]]; then
+        rm -f "$_CMD_REX_DIR/suppress/$key" 2>/dev/null
+        return 0
+    fi
+    ((elapsed >= _CMD_ALERT_MIN_SECONDS)) || return 0
+    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
+        "${EPOCHSECONDS:-0}" "$_cmd_alert_exit" "${REX_SESSION:-}" "$_cmd_alert_block" \
+        "${_cmd_alert_label//\#\#/#}" "$_cmd_alert_cmd" \
+        >>"$_CMD_REX_DIR/finished" 2>/dev/null
 }
 
 # must run first in precmd so $? is captured before other precmd functions clobber it
@@ -155,6 +189,14 @@ _cmd_alert_precmd() {
     _cmd_alert_exit=$exit_code
     local elapsed=$((SECONDS - _cmd_alert_start))
     _cmd_alert_start=-1
+
+    if [[ -n "$_cmd_alert_block" ]]; then
+        _cmd_alert_rex_finish "$elapsed"
+        _cmd_alert_label=""
+        _cmd_alert_cmd=""
+        _cmd_alert_block=""
+        return
+    fi
 
     # drop the in-flight registry entry, for every tracked command regardless
     # of the alert threshold

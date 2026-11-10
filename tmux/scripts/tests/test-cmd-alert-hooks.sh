@@ -25,6 +25,8 @@ export ALERTS_FILE="$ALERT_TEST_DIR/alerts"
 export FINISHED_FILE="$ALERT_TEST_DIR/finished"
 # isolate the running registry too so proclist.sh can't touch the real one
 export RUNNING_DIR="$ALERT_TEST_DIR/running"
+# a run inside rex has REX_BLOCK set, which the hook records under _CMD_REX_DIR
+export _CMD_REX_DIR="$ALERT_TEST_DIR/rex"
 
 # create a test session
 TEST_SESSION="test-cmd-alerts-$$"
@@ -559,6 +561,88 @@ if command -v zsh &>/dev/null; then
     fi
 else
     skip "zsh not available — skipping kill-suppress marker test"
+fi
+
+# ═══════════════════════════════════════════════════════════════
+# rex panes: running entry while the command is in flight, a finished row
+# after it, and no tmux alert
+# ═══════════════════════════════════════════════════════════════
+
+section "Rex Pane Registry"
+
+if command -v zsh &>/dev/null; then
+    REX_TEST_DIR="$ALERT_TEST_DIR/rex-registry"
+    REX_AF="$ALERT_TEST_DIR/alerts-rex"
+    rex_out=$(env -u TMUX REX_BLOCK="block:0001" REX_SESSION="session:0002" \
+        ALERTS_FILE="$REX_AF" \
+        _CMD_REX_DIR="$REX_TEST_DIR" \
+        _CMD_ALERT_SCRIPT="$HOOKS_DIR/cmd-alert.sh" \
+        _CMD_ALERT_MIN_SECONDS=0 \
+        zsh -c '
+            source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+            _cmd_alert_preexec "make test"
+            echo "running:$(cat "'"$REX_TEST_DIR"'/running/0001" 2>/dev/null)"
+            false; _cmd_alert_precmd
+            echo "after:$([[ -e "'"$REX_TEST_DIR"'/running/0001" ]] && echo present || echo gone)"
+            echo "finished:$(cat "'"$REX_TEST_DIR"'/finished" 2>/dev/null)"
+            echo "alerts:$(cat "'"$REX_AF"'" 2>/dev/null)"
+        ' 2>/dev/null)
+    if [[ "$rex_out" == *$'running:block:0001\tsession:0002\t'*$'\tmake test'* ]]; then
+        pass "rex preexec writes the running entry keyed on block id"
+    else
+        fail "rex preexec should write running/0001 (got: '$rex_out')"
+    fi
+    if [[ "$rex_out" == *"after:gone"* ]]; then
+        pass "rex precmd removes the running entry"
+    else
+        fail "rex precmd should remove the running entry (got: '$rex_out')"
+    fi
+    if [[ "$rex_out" == *$'\t1\tsession:0002\tblock:0001\tmake test\tmake test'* ]]; then
+        pass "rex precmd appends the finished row with exit code and command"
+    else
+        fail "rex precmd should append a finished row (got: '$rex_out')"
+    fi
+    if [[ "$rex_out" == *"alerts:" ]]; then
+        pass "rex pane writes no tmux alert"
+    else
+        fail "rex pane should not write a tmux alert (got: '$rex_out')"
+    fi
+
+    mkdir -p "$REX_TEST_DIR/suppress"
+    : >"$REX_TEST_DIR/suppress/0001"
+    : >"$REX_TEST_DIR/finished"
+    rex_sup=$(env -u TMUX REX_BLOCK="block:0001" REX_SESSION="session:0002" \
+        _CMD_REX_DIR="$REX_TEST_DIR" \
+        _CMD_ALERT_MIN_SECONDS=0 \
+        zsh -c '
+            source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+            _cmd_alert_preexec "sleep 100"
+            false; _cmd_alert_precmd
+            echo "finished:$(cat "'"$REX_TEST_DIR"'/finished")"
+            echo "marker:$([[ -e "'"$REX_TEST_DIR"'/suppress/0001" ]] && echo present || echo gone)"
+        ' 2>/dev/null)
+    if [[ "$rex_sup" == *$'finished:\nmarker:gone'* ]]; then
+        pass "rex suppress marker skips the finished row and is consumed"
+    else
+        fail "rex suppress marker should skip the finished row (got: '$rex_sup')"
+    fi
+
+    rex_short=$(env -u TMUX REX_BLOCK="block:0001" REX_SESSION="session:0002" \
+        _CMD_REX_DIR="$REX_TEST_DIR" \
+        _CMD_ALERT_MIN_SECONDS=9999 \
+        zsh -c '
+            source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+            _cmd_alert_preexec "make test"
+            _cmd_alert_precmd
+            cat "'"$REX_TEST_DIR"'/finished"
+        ' 2>/dev/null)
+    if [[ -z "$rex_short" ]]; then
+        pass "rex command under the threshold leaves no finished row"
+    else
+        fail "rex command under the threshold should not be recorded (got: '$rex_short')"
+    fi
+else
+    skip "zsh not available: skipping rex registry tests"
 fi
 
 # ═══════════════════════════════════════════════════════════════
