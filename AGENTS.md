@@ -135,7 +135,9 @@ with a local key; a `sync` row carries a purely-personal file the installer
 never touches (e.g. `~/.ai/instructions/local.md`).
 Secrets (`~/.config/zsh/secrets.zsh`), `.state/`, the saved preset file, and
 the `current-theme` pointer are hard-excluded and must stay that way: theme is a
-per-machine choice, so it is never synced. The `.gitignore` seeded into the
+per-machine choice, so it is never synced through the local layer (a theme
+switch reaches other rex hosts through rex instead; see
+`docs/THEME-SYSTEM.md`). The `.gitignore` seeded into the
 local repo also lists `statusline-theme.sh`. Launcher pruning on `import` is gated behind
 `--prune` (not `--force`), so a launcher created on one machine survives an
 overwrite import on another.

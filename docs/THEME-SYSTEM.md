@@ -25,6 +25,7 @@ Repository (tracked in git):
   scripts/generate-theme           - CLI wrapper for the Lua generator (bash)
   scripts/theme-delete             - Remove generated themes
   scripts/theme-switch             - Apply themes to all tools
+  tmux/scripts/themes/reload-rex.sh - Import the active theme into the rex app
 
 Generated (gitignored, created by `dotfiles theme generate`):
   themes/generated/*.theme         - Auto-generated themes from Ghostty
@@ -74,9 +75,15 @@ Ghostty's `selection-background` does not reach the Neovim output. It is tuned f
 3. Script processes templates, replacing `{{PLACEHOLDERS}}` with actual values
 4. Generated configs are written to XDG locations
 5. Current theme name is saved to `~/.config/dotfiles/current-theme`
-6. Running applications are reloaded (tmux, ghostty, fzf); gh-dash and yazi read their config at launch time
+6. Running applications are reloaded (tmux, ghostty, rex, fzf); gh-dash and yazi read their config at launch time
 
-The tmux reload runs in the background, since TPM re-initialisation takes about 2s. `THEME_SWITCH_TIMING=1 dotfiles theme switch <theme>` prints the time taken by each step.
+The tmux reload runs in the background, since TPM re-initialisation takes about 2s. Rex receives the theme as a Ghostty-format file through `client.theme.import`, and is skipped when `rex` is not installed. `THEME_SWITCH_TIMING=1 dotfiles theme switch <theme>` prints the time taken by each step.
+
+### Other Rex Hosts
+
+A switch also reaches every host in `rex hosts`: `reload-rex.sh` calls each host's `dotfiles_theme` action (`rex/lua/dotfiles-theme.lua`) in the background with the theme name, the `.theme` file contents and, for a generated theme, its nvim colourscheme, which a host without ghostty's theme sources can't build. The host runs its own `theme-switch`. A host that is down, or lacks the action, is skipped.
+
+The host writes the theme to `themes/generated/` unless a tracked theme of that name exists, and switches with `DOTFILES_THEME_FROM_HOST=1`, which skips its rex import and fan-out.
 
 ### Neovim Theme Integration
 

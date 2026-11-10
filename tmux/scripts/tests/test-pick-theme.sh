@@ -46,24 +46,33 @@ fi
 section "Output Format - Header"
 
 output=$("$THEME_PICKER" 2>&1) || true
+header_src=$(cat "$SCRIPT_DIR/../themes/picker.sh")
 
-if [[ "$output" == *"Theme Switcher"* ]]; then
-    pass "output includes 'Theme Switcher' header"
+# picker.sh sets the header with transform-header: --with-nth would cut the
+# first field of header lines in the list
+if [[ "${output%%$'\n'*}" == *"○ "* || "${output%%$'\n'*}" == *"● "* ]]; then
+    pass "list output starts with a theme row, no header lines"
 else
-    fail "output should include 'Theme Switcher' header"
+    fail "list output should start with a theme row, got: ${output%%$'\n'*}"
 fi
 
-# check for box drawing characters or similar header formatting
-if [[ "$output" == *"╭"* ]] || [[ "$output" == *"─"* ]] || [[ "$output" =~ ^[[:space:]]*═+ ]]; then
-    pass "output has formatted header box"
+if [[ "$header_src" == *"start:"*"transform-header:"* && "$header_src" == *"resize:transform-header:"* &&
+    "$header_src" != *"--header-lines"* ]]; then
+    pass "picker centres the header on start and resize, not --header-lines"
 else
-    fail "output should have formatted header box"
+    fail "picker should set the header with transform-header on start and resize"
 fi
 
-if [[ "$output" == *"tmux"* ]] && [[ "$output" == *"ghostty"* ]]; then
-    pass "output mentions tmux and ghostty"
+if [[ "$header_src" == *"Theme Switcher"* && "$header_src" == *"╭"* ]]; then
+    pass "picker header has the 'Theme Switcher' box"
 else
-    fail "output should mention tmux and ghostty"
+    fail "picker header should have the 'Theme Switcher' box"
+fi
+
+if [[ "$header_src" == *"tmux, ghostty and rex"* ]]; then
+    pass "picker header mentions tmux, ghostty and rex"
+else
+    fail "picker header should mention tmux, ghostty and rex"
 fi
 
 section "Output Format - Theme List"
@@ -111,12 +120,11 @@ section "Output Format - Line Count"
 # count non-empty lines
 line_count=$(echo "$output" | grep -c . || true)
 
-# should have header lines + theme lines
-# at least: 3 header lines + 4 themes = 7+ lines
+# at least 7 themes
 if [[ $line_count -ge 7 ]]; then
     pass "output has sufficient lines (${line_count} lines)"
 else
-    fail "output should have at least 7 lines (header + themes), got $line_count"
+    fail "output should have at least 7 theme lines, got $line_count"
 fi
 
 section "Output Format - fzf Compatibility"
@@ -266,7 +274,7 @@ if ! $theme_picker_bound; then
     skip "theme-picker tmux binding check (not configured yet)"
 fi
 
-# reloads (tmux, ghostty, fzf) are theme-switch's
+# reloads (tmux, ghostty, rex, fzf) are theme-switch's
 PICKER_SCRIPT="$SCRIPT_DIR/../themes/picker.sh"
 if [[ -f "$PICKER_SCRIPT" ]]; then
     if grep -q 'theme-switch" "$theme"' "$PICKER_SCRIPT" && ! grep -q -- '--no-reload' "$PICKER_SCRIPT"; then
@@ -341,8 +349,8 @@ else
     fail "--pos position should be >= 1"
 fi
 
-# every listed theme: hand-crafted, generated and ghostty, after the 5 header lines
-theme_count=$(($("$THEME_PICKER" 2>/dev/null | wc -l) - 5))
+# every listed theme: hand-crafted, generated and ghostty
+theme_count=$("$THEME_PICKER" 2>/dev/null | wc -l)
 
 # position should not exceed theme count
 if [[ -n "$pos_output" ]] && [[ "$pos_output" -le "$theme_count" ]]; then

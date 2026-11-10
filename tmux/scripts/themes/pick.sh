@@ -36,13 +36,6 @@ list_themes_for_fzf() {
     local current_theme
     current_theme=$(get_current_theme)
 
-    # header (consumed by fzf --header-lines)
-    printf "${CYAN}╭─────────────────────────────────────────────────────────────╮${NC}\n"
-    printf "${CYAN}│${NC}  ${GREEN}Theme Switcher${NC}                                            ${CYAN}│${NC}\n"
-    printf "${CYAN}│${NC}  Select a theme to apply to tmux and ghostty               ${CYAN}│${NC}\n"
-    printf "${CYAN}╰─────────────────────────────────────────────────────────────╯${NC}\n"
-    printf "\n"
-
     # collect all themes into temp files
     tmpdir=$(mktemp -d)
     trap 'rm -rf "${tmpdir:-}"' EXIT
@@ -141,12 +134,12 @@ toggle_favourite() {
 }
 
 # 1-based position of the current theme in the fzf item list: generates the
-# list (header lines skipped) and finds the ● marker
+# list and finds the ● marker
 get_current_position() {
     local output
     output=$(list_themes_for_fzf)
     local pos
-    pos=$(printf '%s\n' "$output" | tail -n +6 | grep -n '● ' | head -1 | cut -d: -f1) || true
+    pos=$(printf '%s\n' "$output" | grep -n '● ' | head -1 | cut -d: -f1) || true
     echo "${pos:-1}"
 }
 
@@ -160,7 +153,7 @@ reload_with_position() {
     local output
     output=$(list_themes_for_fzf)
     local pos
-    pos=$(printf '%s\n' "$output" | tail -n +6 | grep -n "^${target} " | head -1 | cut -d: -f1)
+    pos=$(printf '%s\n' "$output" | grep -n "^${target} " | head -1 | cut -d: -f1)
     printf 'pos(%s)\n' "${pos:-1}" >"$pos_file"
     printf '%s\n' "$output"
 }

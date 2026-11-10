@@ -336,6 +336,14 @@ macos-option-as-alt = left"
         fi
         lap "reload ghostty"
 
+        # rex themes its own app; skipped when rex is absent, and for a switch
+        # sent by another rex host (rex/lua/dotfiles-theme.lua), which has already
+        # themed the app and the other hosts
+        if [[ -z "${DOTFILES_THEME_FROM_HOST:-}" ]]; then
+            "$DOTFILES_ROOT/tmux/scripts/themes/reload-rex.sh" "$theme_name" "$theme_file"
+        fi
+        lap "reload rex"
+
         if [[ -f "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh" ]]; then
             "$DOTFILES_ROOT/tmux/scripts/themes/reload-fzf.sh"
             [[ "$verbose" == "true" ]] && theme_success "Reloaded FZF theme colours"
