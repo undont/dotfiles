@@ -30,9 +30,8 @@ FILTERED_BREWFILE=$(create_filtered_brewfile "$PRESET" "$DOTFILES_DIR/Brewfile")
 cleanup() { rm -f "$FILTERED_BREWFILE"; }
 trap cleanup EXIT
 
-# the shell exports HOMEBREW_REQUIRE_TAP_TRUST=1, under which `brew bundle`
-# refuses untrusted third-party taps. homebrew versions without `brew trust`
-# skip this
+# `brew bundle` refuses untrusted third-party taps; homebrew versions without
+# `brew trust` skip this
 if brew trust --help >/dev/null 2>&1; then
     while read -r _ tap_name; do
         tap_name="${tap_name%\"}"

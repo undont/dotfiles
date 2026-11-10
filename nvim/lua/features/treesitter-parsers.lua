@@ -11,12 +11,10 @@ function M.purge_if_updated()
   local query_dir = vim.fn.stdpath 'data' .. '/site/queries'
   local marker_path = vim.fn.stdpath 'data' .. '/nvim-treesitter-rev'
   local plugin_dir = vim.fn.stdpath 'data' .. '/lazy/nvim-treesitter'
-  -- argv form, no shell, so only git's output is captured. --git-dir overrides
-  -- an inherited GIT_DIR (an empty env override makes git fail). only a hex rev
-  -- is accepted
-  local res = vim.system({ 'git', '-C', plugin_dir, '--git-dir', '.git', 'rev-parse', '--short', 'HEAD' }):wait()
-  local out = res.code == 0 and vim.trim(res.stdout or '') or ''
-  local current_rev = out:match '^%x+$' and out or ''
+  -- lazy reads .git/HEAD and its ref from disk, so no git process runs at startup
+  local info = require('lazy.manage.git').info(plugin_dir)
+  local commit = info and info.commit or ''
+  local current_rev = commit:match '^%x+$' and commit or ''
   if current_rev ~= '' then
     local stored_rev = ''
     local f = io.open(marker_path, 'r')
@@ -25,7 +23,8 @@ function M.purge_if_updated()
       f:close()
       stored_rev = stored_rev:gsub('%s+', '')
     end
-    if stored_rev ~= current_rev then
+    -- older markers hold `git rev-parse --short`, so revs compare at that length
+    if stored_rev:sub(1, 7) ~= current_rev:sub(1, 7) then
       local stat = vim.uv.fs_stat(parser_dir)
       if stat and stat.type == 'directory' then
         local handle = vim.uv.fs_scandir(parser_dir)

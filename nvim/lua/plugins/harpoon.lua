@@ -62,12 +62,9 @@ return {
         harpoon:list():clear()
       end, { desc = '[H]arpoon: clear all (X marks the spot)' })
 
-      local has_telescope, _ = pcall(require, 'telescope')
-      if has_telescope then
-        vim.keymap.set('n', '<leader>hs', function()
-          require('telescope').extensions.harpoon.marks(require('telescope.themes').get_dropdown {})
-        end, { desc = '[H]arpoon: [s]earch in Telescope' })
-      end
+      vim.keymap.set('n', '<leader>hs', function()
+        require('telescope').extensions.harpoon.marks(require('telescope.themes').get_dropdown {})
+      end, { desc = '[H]arpoon: [s]earch in Telescope' })
     end,
   },
 }

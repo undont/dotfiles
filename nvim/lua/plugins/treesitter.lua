@@ -64,10 +64,11 @@ return {
       }
 
       -- installs parsers missing from disk or lacking a highlights query on
-      -- runtimepath. a file existence check: query.get would compile every query
+      -- runtimepath. file existence checks: language.inspect would load every
+      -- parser and query.get would compile every query
       local missing = vim.tbl_filter(function(lang)
-        local ok = pcall(vim.treesitter.language.inspect, lang)
-        return not ok or #vim.api.nvim_get_runtime_file('queries/' .. lang .. '/highlights.scm', false) == 0
+        local has_parser = #vim.api.nvim_get_runtime_file('parser/' .. lang .. '.so', false) > 0
+        return not has_parser or #vim.api.nvim_get_runtime_file('queries/' .. lang .. '/highlights.scm', false) == 0
       end, parsers)
       if #missing > 0 then
         -- force: the plugin counts a language as installed when its query dir exists

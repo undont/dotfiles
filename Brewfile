@@ -95,7 +95,7 @@ brew "oven-sh/bun/bun" # >= 1.0
 brew "go"
 
 # Zig
-brew "zls"           # zig language server for nvim; pulls in zig
+brew "zig"
 
 # Python
 brew "python@3.13"

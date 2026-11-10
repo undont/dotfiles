@@ -42,10 +42,6 @@ case "$(uname)" in
         ;;
 esac
 
-# a newly tapped third-party repo needs `brew trust --tap <user/repo>` before
-# brew loads its formulae or casks. the Brewfile's taps are trusted during install
-export HOMEBREW_REQUIRE_TAP_TRUST=1
-
 # =============================================================================
 # HOMEBREW ENVIRONMENT (non-login shells)
 # =============================================================================

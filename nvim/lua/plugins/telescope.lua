@@ -1,9 +1,142 @@
 -- telescope fuzzy finder
 
+local function builtin(name)
+  return function()
+    require('telescope.builtin')[name]()
+  end
+end
+
 return {
   {
     'nvim-telescope/telescope.nvim',
-    event = 'VimEnter',
+    cmd = 'Telescope',
+    keys = {
+      { '<leader>sh', builtin 'help_tags', desc = 'Search [H]elp' },
+      { '<leader>sk', builtin 'keymaps', desc = 'Search [K]eymaps' },
+      { '<leader>sf', builtin 'find_files', desc = 'Search [F]iles' },
+      {
+        '<leader>sF',
+        function()
+          -- re-runs `fd --regex <prompt>` on every keystroke. the fuzzy sorter
+          -- would reject regex metacharacters, hence highlighter_only
+          local pickers = require 'telescope.pickers'
+          local finders = require 'telescope.finders'
+          local make_entry = require 'telescope.make_entry'
+          local sorters = require 'telescope.sorters'
+          local values = require('telescope.config').values
+          pickers
+            .new({}, {
+              prompt_title = 'Find Files (regex)',
+              finder = finders.new_job(function(prompt)
+                if not prompt or prompt == '' then
+                  return nil
+                end
+                return { 'fd', '--type', 'f', '--hidden', '--exclude', '.git', '--regex', prompt }
+              end, make_entry.gen_from_file {}, nil, vim.uv.cwd()),
+              sorter = sorters.highlighter_only {},
+              previewer = values.file_previewer {},
+            })
+            :find()
+        end,
+        desc = 'Search [F]iles (regex)',
+      },
+      { '<leader>ss', builtin 'builtin', desc = 'Telescope built-in[S]' },
+      { '<leader>sw', builtin 'grep_string', desc = 'Search [W]ord' },
+      { '<leader>sg', builtin 'live_grep', desc = 'Search [G]rep' },
+      {
+        '<leader>sG',
+        function()
+          -- call-site additional_args replaces the picker default outright
+          -- (shallow tbl_extend), so the .git exclusion has to be repeated here
+          require('telescope.builtin').live_grep { additional_args = { '--hidden', '--glob=!.git/', '--fixed-strings' } }
+        end,
+        desc = 'Search [G]rep (literal)',
+      },
+      {
+        '<leader>sm',
+        function()
+          -- same file set as the <leader>xm / <leader>lm scans
+          -- (features/ticket.lua): changes vs HEAD plus untracked files
+          local files = require('features.ticket').modified_files()
+          if not files then
+            return
+          end
+          if #files == 0 then
+            vim.notify('No modified files', vim.log.levels.INFO)
+            return
+          end
+          local pickers = require 'telescope.pickers'
+          local finders = require 'telescope.finders'
+          local make_entry = require 'telescope.make_entry'
+          local values = require('telescope.config').values
+          pickers
+            .new({}, {
+              prompt_title = 'Git Modified Files',
+              finder = finders.new_table { results = files, entry_maker = make_entry.gen_from_file {} },
+              sorter = values.file_sorter {},
+              previewer = values.file_previewer {},
+            })
+            :find()
+        end,
+        desc = 'Search git [M]odified files',
+      },
+      { '<leader>sd', builtin 'diagnostics', desc = 'Search [D]iagnostics' },
+      {
+        '<leader>sr',
+        function()
+          -- resume reuses the previous picker's cached entries; refresh them
+          vim.api.nvim_create_autocmd('User', {
+            pattern = 'TelescopeResumePost',
+            once = true,
+            callback = function()
+              vim.schedule(function()
+                local ok_state, action_state = pcall(require, 'telescope.actions.state')
+                if not ok_state then
+                  return
+                end
+                local picker = action_state.get_current_picker(vim.api.nvim_get_current_buf())
+                if picker and picker.finder then
+                  picker:refresh(nil, { reset_prompt = false })
+                end
+              end)
+            end,
+          })
+          require('telescope.builtin').resume()
+        end,
+        desc = 'Search [R]esume (fresh)',
+      },
+      { '<leader>s.', builtin 'oldfiles', desc = 'Recent files [.]' },
+      { '<leader><leader>', builtin 'buffers', desc = 'Buffers' },
+      {
+        '<leader>s/',
+        function()
+          require('telescope.builtin').current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
+            winblend = 10,
+            previewer = false,
+          })
+        end,
+        desc = 'Fuzzy search buffer',
+      },
+      {
+        '<leader>sn',
+        function()
+          require('telescope.builtin').find_files { cwd = vim.fn.stdpath 'config' }
+        end,
+        desc = 'Search [N]eovim files',
+      },
+    },
+    -- the first vim.ui.select loads telescope, whose config installs the real one
+    init = function()
+      local builtin_select = vim.ui.select
+      local function stub(...)
+        require('lazy').load { plugins = { 'telescope.nvim' } }
+        if vim.ui.select == stub then
+          vim.ui.select = builtin_select
+        end
+        return vim.ui.select(...)
+      end
+      vim.ui.select = stub
+    end,
     dependencies = {
       'nvim-lua/plenary.nvim',
       {
@@ -178,99 +311,6 @@ return {
         end
         return ui_select(items, opts, on_choice)
       end
-
-      local builtin = require 'telescope.builtin'
-      vim.keymap.set('n', '<leader>sh', builtin.help_tags, { desc = 'Search [H]elp' })
-      vim.keymap.set('n', '<leader>sk', builtin.keymaps, { desc = 'Search [K]eymaps' })
-      vim.keymap.set('n', '<leader>sf', builtin.find_files, { desc = 'Search [F]iles' })
-      vim.keymap.set('n', '<leader>sF', function()
-        -- re-runs `fd --regex <prompt>` on every keystroke. the fuzzy sorter
-        -- would reject regex metacharacters, hence highlighter_only
-        local pickers = require 'telescope.pickers'
-        local finders = require 'telescope.finders'
-        local make_entry = require 'telescope.make_entry'
-        local sorters = require 'telescope.sorters'
-        local values = require('telescope.config').values
-        pickers
-          .new({}, {
-            prompt_title = 'Find Files (regex)',
-            finder = finders.new_job(function(prompt)
-              if not prompt or prompt == '' then
-                return nil
-              end
-              return { 'fd', '--type', 'f', '--hidden', '--exclude', '.git', '--regex', prompt }
-            end, make_entry.gen_from_file {}, nil, vim.uv.cwd()),
-            sorter = sorters.highlighter_only {},
-            previewer = values.file_previewer {},
-          })
-          :find()
-      end, { desc = 'Search [F]iles (regex)' })
-      vim.keymap.set('n', '<leader>ss', builtin.builtin, { desc = 'Telescope built-in[S]' })
-      vim.keymap.set('n', '<leader>sw', builtin.grep_string, { desc = 'Search [W]ord' })
-      vim.keymap.set('n', '<leader>sg', builtin.live_grep, { desc = 'Search [G]rep' })
-      vim.keymap.set('n', '<leader>sG', function()
-        -- call-site additional_args replaces the picker default outright
-        -- (shallow tbl_extend), so the .git exclusion has to be repeated here
-        builtin.live_grep { additional_args = { '--hidden', '--glob=!.git/', '--fixed-strings' } }
-      end, { desc = 'Search [G]rep (literal)' })
-      vim.keymap.set('n', '<leader>sm', function()
-        -- same file set as the <leader>xm / <leader>lm scans
-        -- (features/ticket.lua): changes vs HEAD plus untracked files
-        local files = require('features.ticket').modified_files()
-        if not files then
-          return
-        end
-        if #files == 0 then
-          vim.notify('No modified files', vim.log.levels.INFO)
-          return
-        end
-        local pickers = require 'telescope.pickers'
-        local finders = require 'telescope.finders'
-        local make_entry = require 'telescope.make_entry'
-        local values = require('telescope.config').values
-        pickers
-          .new({}, {
-            prompt_title = 'Git Modified Files',
-            finder = finders.new_table { results = files, entry_maker = make_entry.gen_from_file {} },
-            sorter = values.file_sorter {},
-            previewer = values.file_previewer {},
-          })
-          :find()
-      end, { desc = 'Search git [M]odified files' })
-      vim.keymap.set('n', '<leader>sd', builtin.diagnostics, { desc = 'Search [D]iagnostics' })
-      vim.keymap.set('n', '<leader>sr', function()
-        -- resume reuses the previous picker's cached entries; refresh them
-        vim.api.nvim_create_autocmd('User', {
-          pattern = 'TelescopeResumePost',
-          once = true,
-          callback = function()
-            vim.schedule(function()
-              local ok_state, action_state = pcall(require, 'telescope.actions.state')
-              if not ok_state then
-                return
-              end
-              local picker = action_state.get_current_picker(vim.api.nvim_get_current_buf())
-              if picker and picker.finder then
-                picker:refresh(nil, { reset_prompt = false })
-              end
-            end)
-          end,
-        })
-        builtin.resume()
-      end, { desc = 'Search [R]esume (fresh)' })
-      vim.keymap.set('n', '<leader>s.', builtin.oldfiles, { desc = 'Recent files [.]' })
-      vim.keymap.set('n', '<leader><leader>', builtin.buffers, { desc = 'Buffers' })
-
-      vim.keymap.set('n', '<leader>s/', function()
-        builtin.current_buffer_fuzzy_find(require('telescope.themes').get_dropdown {
-          winblend = 10,
-          previewer = false,
-        })
-      end, { desc = 'Fuzzy search buffer' })
-
-      vim.keymap.set('n', '<leader>sn', function()
-        builtin.find_files { cwd = vim.fn.stdpath 'config' }
-      end, { desc = 'Search [N]eovim files' })
     end,
   },
 }

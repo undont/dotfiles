@@ -236,5 +236,9 @@ return {
       },
     },
     opts_extend = { 'sources.default' },
+    config = function(_, opts)
+      require('blink.cmp').setup(opts)
+      require('features.lsp-capabilities').check_blink()
+    end,
   },
 }

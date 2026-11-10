@@ -151,7 +151,7 @@ My own tools installed by it (gh-bench as a `gh` extension, the rest from the Br
 | [jiru](https://github.com/undont/jiru)             | Bubble Tea TUI for managing Jira issues and Confluence pages                               |
 | [gh-bench](https://github.com/undont/gh-bench)     | `gh` CLI extension for benchmarking GitHub Actions and tracking failures                   |
 
-Homebrew is set to require explicit trust for non-official taps (`HOMEBREW_REQUIRE_TAP_TRUST=1`). The taps these tools come from are trusted during install; to add your own, approve it once with `brew trust --tap <user/repo>`.
+Homebrew requires explicit trust for non-official taps. The taps these tools come from are trusted during install; to add your own, approve it once with `brew trust --tap <user/repo>`.
 
 The full preset adds macOS-only pieces (Hammerspoon window management, Karabiner remapping, Raycast) and Linux picks up keyd as the Karabiner equivalent.
 

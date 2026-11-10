@@ -96,7 +96,7 @@ else
 fi
 
 # should show description from @description tag
-if [[ "$output" == *"Dev session"* ]]; then
+if [[ "$output" == *"Open Neovim"* ]]; then
     pass "output shows dev description"
 else
     fail "output should show dev @description text"

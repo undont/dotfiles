@@ -100,7 +100,6 @@ return {
       },
       'mason-org/mason-lspconfig.nvim',
       'WhoIsSethDaniel/mason-tool-installer.nvim',
-      'saghen/blink.cmp',
       'b0o/SchemaStore.nvim',
     },
     config = function()
@@ -215,8 +214,7 @@ return {
 
       vim.lsp.handlers['textDocument/rename'] = rename_and_save
 
-      -- blink only provides completion capabilities, so they merge over nvim's defaults
-      local caps = vim.tbl_deep_extend('force', vim.lsp.protocol.make_client_capabilities(), require('blink.cmp').get_lsp_capabilities())
+      local caps = require('features.lsp-capabilities').get()
       -- document_color asserts on a stale client id
       vim.lsp.document_color.enable(false)
       vim.lsp.config('*', { capabilities = caps })
@@ -332,11 +330,6 @@ return {
         vim.lsp.enable 'sourcekit'
       end
 
-      -- zls comes from brew: mason's zls has no build for the installed zig
-      if vim.fn.executable 'zls' == 1 then
-        vim.lsp.enable 'zls'
-      end
-
       -- basedpyright's default `recommended` reports the inferred-Any rules
       -- on untyped code; `standard` is pyright's mode. the rest of the
       -- settings table comes from lspconfig
@@ -422,6 +415,9 @@ return {
             'ts_ls',
             'rust_analyzer',
             'yamlls',
+            -- zls only attaches to its own zig minor series, and the servers
+            -- list above takes no version, so zls is pinned here
+            { 'zls', version = '0.17.0' },
             -- from Crashdummyy/mason-registry
             'roslyn',
             -- configured in plugins/sonarlint.lua
