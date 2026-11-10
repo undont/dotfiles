@@ -142,7 +142,7 @@ Running rows come from a per-pane registry the `preexec` hook writes while a tra
 
 Rerun reads the full command (stored as typed, so `$VAR` references stay references and are re-expanded by the shell on rerun) from the finished history by key, so the raw text never crosses the fzf/shell boundary. `R` types into whatever the target pane's foreground is, so it is safest at an idle prompt; `r` is the safe default when in doubt.
 
-Running entries are self-cleaning: the `precmd` hook removes them on completion, and the reader prunes any whose owning shell has died or whose pane has closed. Finished entries roll off once they age past an hour or fall outside the most recent 20, and they also clear when you view their window (the same window-switch clear that dismisses exit and agent alerts).
+Running entries are self-cleaning: the `precmd` hook removes them on completion, and the reader prunes any whose owning shell has died or whose pane has closed. Finished entries roll off once they age past an hour or fall outside the most recent 20, and they also clear when you view their window (the same window-switch clear that dismisses exit and agent alerts) or when their window closes, however it closed.
 
 ## Clearing Alerts
 

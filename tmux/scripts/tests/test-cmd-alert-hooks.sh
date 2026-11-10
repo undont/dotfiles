@@ -335,6 +335,25 @@ else
     skip "no rerun test window — skipping GC preservation test"
 fi
 
+# a fresh row whose window is gone is dropped from the picker and the file
+if [[ -n "$RW_ID" ]]; then
+    NOW=$(date +%s)
+    printf '%s\n' \
+        "${NOW}${TAB}0${TAB}$TEST_SESSION${TAB}@99999${TAB}gone${TAB}gone${TAB}echo CLOSEDCMD" \
+        "${NOW}${TAB}0${TAB}$TEST_SESSION${TAB}$RW_ID${TAB}rerunwin${TAB}live${TAB}echo LIVECMD" \
+        >"$FINISHED_FILE"
+    listed=$(bash "$SCRIPTS_DIR/alerts/proclist.sh" 2>/dev/null || true)
+    remaining=$(cat "$FINISHED_FILE" 2>/dev/null || true)
+    if [[ "$listed" != *gone* && "$remaining" != *CLOSEDCMD* ]]; then
+        pass "proclist drops a finished row whose window is closed"
+    else
+        fail "proclist should drop rows for closed windows (remaining: '$remaining')"
+    fi
+    assert_equals "proclist keeps the row whose window is open" "1" "$(grep -c LIVECMD "$FINISHED_FILE")"
+else
+    skip "no rerun test window — skipping closed window test"
+fi
+
 # ═══════════════════════════════════════════════════════════════
 # set_exit_alert function
 # ═══════════════════════════════════════════════════════════════

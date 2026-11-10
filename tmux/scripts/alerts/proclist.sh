@@ -132,6 +132,11 @@ if [[ -f "$FINISHED_FILE" ]]; then
             [[ -n "$f_wid" ]] && drop_wids["$f_wid"]=1
             continue
         fi
+        # window closed, however it went: drop the row, its indicator went with
+        # it. an empty pane scan means list-panes failed, so nothing is dropped
+        if ((${#wid_exists[@]})) && [[ -z "$f_wid" || -z "${wid_exists[$f_wid]:-}" ]]; then
+            continue
+        fi
         # within age: retain verbatim (epoch sort-key prefix stripped on write),
         # cmd field (rerun source) rides along untouched
         fresh+=("$(printf '%s%s%s%s%s%s%s%s%s%s%s%s%s%s%s' \
