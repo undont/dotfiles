@@ -80,6 +80,8 @@ if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
     source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
 fi
 [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
+# a shell killed mid-startup leaves p10k's temp file behind; the age filter spares a live write
+rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/p10k-*.tmp.*(N.mh+24)
 
 # =============================================================================
 # PATH CONFIGURATION
