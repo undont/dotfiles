@@ -63,7 +63,9 @@ set -g focus-events on
 # import the launcher root vars from each attaching client into the session
 # environment so the launcher picker popup (prefix + p) can see them. without
 # this a popup only sees the server's start-time global env, so vars exported
-# later in ~/.zshrc never reach it and the directory list comes up empty
+# later in ~/.zshrc never reach it and the directory list comes up empty.
+# reset first: -ga appends again on every source-file
+set -gu update-environment
 set -ga update-environment "DEV_ROOT"
 set -ga update-environment "PROJECTS_ROOT"
 set -ga update-environment "PROJECT_DIRS"
