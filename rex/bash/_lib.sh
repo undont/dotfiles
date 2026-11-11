@@ -120,6 +120,15 @@ save_popup_size() {
     ) >/dev/null 2>&1 &
 }
 
+# open a URL on the machine running the app, the home server, through its
+# open_url action: a popup over another host's session runs on that host
+open_in_app() {
+    local home server=()
+    home=$(rex hosts --json 2>/dev/null | jq -r 'if .home.this_machine then "" else .home.endpoint end')
+    [[ -n "$home" ]] && server=(-S "$home")
+    rex "${server[@]}" "do" open_url "url=$1" >/dev/null
+}
+
 prompt_name() {
     local prompt="$1" query="$2" label="$3"
     printf '' | fzf --print-query --query="$query" --prompt="$prompt" \

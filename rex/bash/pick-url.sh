@@ -31,7 +31,7 @@ selected=$(
         --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,f,b,d,u,q,space,y,o)' \
         --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,f,b,d,u,q,space,y,o)" || echo "abort"' \
         --bind 'ctrl-k:up,ctrl-l:clear-query' \
-        --bind "y:execute-silent(printf '%s' {} | $(clipboard_copy_cmd))+abort"
+        --bind "y:execute-silent(printf '%s' {} | \"${BASH_SOURCE%/*}/copy-in-app.sh\")+abort"
 ) || exit 0
 
-[[ -n "$selected" ]] && open_url "$selected"
+[[ -n "$selected" ]] && open_in_app "$selected"

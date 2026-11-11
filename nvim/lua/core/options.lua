@@ -65,12 +65,23 @@ function M.setup()
 
   vim.o.clipboard = 'unnamedplus'
 
+  -- a rex pane on a host without the app: the app ignores OSC 52 from another
+  -- host's panes, and a DISPLAY there is that host's own clipboard, so a yank
+  -- also goes to the app's machine (rex/bash/copy-in-app.sh)
+  local rex_copy = nil
+  if vim.env.REX_SESSION and vim.fn.has 'mac' == 0 then
+    rex_copy = vim.fn.expand '~/.config/rex/bash/copy-in-app.sh'
+    if vim.fn.executable(rex_copy) == 0 then
+      rex_copy = nil
+    end
+  end
+
   -- bare ssh with no display server and no tmux: nvim finds no clipboard tool,
   -- and its OSC 52 fallback is skipped whenever 'clipboard' is non-empty (see
   -- provider/clipboard.vim). copy goes out over OSC 52; paste reads a cache
   -- file, since an OSC 52 read blocks on a response most terminals never send
   local has_clipboard = vim.env.DISPLAY or vim.env.WAYLAND_DISPLAY or vim.env.TMUX or vim.fn.has 'mac' == 1
-  if not has_clipboard then
+  if rex_copy or not has_clipboard then
     local osc52 = require 'vim.ui.clipboard.osc52'
     local cache = vim.fn.stdpath 'cache' .. '/clipboard'
 
@@ -78,6 +89,9 @@ function M.setup()
       local send = osc52.copy(reg)
       return function(lines, regtype)
         send(lines)
+        if rex_copy then
+          vim.system({ rex_copy }, { stdin = table.concat(lines, '\n') })
+        end
         -- regtype rides along as the first line so blockwise/linewise yanks
         -- paste back with the shape they were yanked with
         pcall(vim.fn.writefile, vim.list_extend({ regtype or 'v' }, lines), cache)
