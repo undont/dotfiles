@@ -23,18 +23,10 @@ end
 -- whichever was killed last, a session or a tab, from its undo snapshot
 local function undo_last()
     local sessions, tabs = require("sessions"), require("tabs")
-    -- bsd stat on macOS, gnu stat on linux
-    local function mtime(path)
-        local stat = rex.exec({ "stat", "-f", "%m", path })
-        if not stat.ok then
-            stat = rex.exec({ "stat", "-c", "%Y", path })
-        end
-        return stat.ok and tonumber(stat.stdout) or nil
-    end
-    local session_time, tab_time = mtime(sessions.UNDO_FILE), mtime(tabs.UNDO_FILE)
-    if session_time and (not tab_time or session_time > tab_time) then
+    local session, tab = common.read_undo(sessions.UNDO_FILE), common.read_undo(tabs.UNDO_FILE)
+    if session and (not tab or session.killed_at > tab.killed_at) then
         sessions.undo()
-    elseif tab_time then
+    elseif tab then
         tabs.undo()
     end
 end

@@ -99,17 +99,17 @@ function M.kill(args)
     if not window or #view.windows <= 1 then
         return
     end
-    common.write_private(UNDO_FILE, rex.json.encode(snapshot(args.session, window)))
+    common.write_undo(UNDO_FILE, snapshot(args.session, window))
     -- killing the tab this picker floats over ends the picker too
     rex.session.close_window({ session_id = args.session, window_id = window.window_id })
 end
 
 function M.undo()
-    local text = common.read_file(UNDO_FILE)
-    if not text or text == "" then
+    local undo = common.read_undo(UNDO_FILE)
+    if not undo then
         return
     end
-    local args = rex.json.decode(text)
+    local args = undo.args
     if not common.session_label(args.session_id) then
         return
     end

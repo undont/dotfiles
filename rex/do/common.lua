@@ -339,6 +339,24 @@ function M.write_private(path, text)
     rex.exec({ "/bin/sh", "-c", 'umask 077 && cat >"$1"', "sh", path }, { stdin = text })
 end
 
+-- undo files hold { killed_at, args }; a file without killed_at is from an
+-- older format and reads as none
+function M.write_undo(path, args)
+    M.write_private(path, rex.json.encode({ killed_at = os.time(), args = args }))
+end
+
+function M.read_undo(path)
+    local text = M.read_file(path)
+    if not text or text == "" then
+        return nil
+    end
+    local ok, undo = pcall(rex.json.decode, text)
+    if not ok or type(undo) ~= "table" or not undo.killed_at then
+        return nil
+    end
+    return undo
+end
+
 function M.write_file(path, text)
     local f = io.open(path, "w")
     if f then

@@ -94,7 +94,7 @@ function M.kill(args)
         label = common.session_label(session_id),
         initial_windows = common.snapshot_windows(session_id, view.windows),
     }
-    common.write_private(UNDO_FILE, rex.json.encode(snapshot))
+    common.write_undo(UNDO_FILE, snapshot)
     -- this picker runs inside the origin session, so killing it ends the picker too
     if session_id == common.origin_session then
         common.show_in_client(other)
@@ -103,11 +103,11 @@ function M.kill(args)
 end
 
 function M.undo()
-    local text = common.read_file(UNDO_FILE)
-    if not text or text == "" then
+    local undo = common.read_undo(UNDO_FILE)
+    if not undo then
         return
     end
-    rex.call("session.create", rex.json.decode(text))
+    rex.call("session.create", undo.args)
     os.remove(UNDO_FILE)
 end
 
