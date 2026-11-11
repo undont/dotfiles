@@ -11,7 +11,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Added
 
 - Back/forward (`` ` ``+`-`/`=`) steps through tabs on every Rex host, so the history follows you between machines. `rex/do/recent.lua`, `rex/do/nav.lua`
-- Yanks and opened URLs from a Rex pane on another host reach this machine's clipboard and browser, including copy mode and nvim. `rex/bash/copy-in-app.sh`, `rex/lua/actions.lua`, `nvim/lua/core/options.lua`
+- Yanks and opened URLs from a Rex pane on another host reach this machine's clipboard and browser, including copy mode and nvim. `rex/bash/copy-in-app.sh`, `rex/lua/app-actions.lua`, `nvim/lua/core/options.lua`
 
 ### Changed
 
@@ -19,7 +19,8 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ### Fixed
 
-- Copy mode, duplicate tab, undo and the launcher failed over another host's sessions. `rex/lua/layers.lua`, `rex/bash/_lib.sh`, `rex/do/common.lua`
+- Copy mode, duplicate tab, undo and the launcher failed over another host's sessions. `rex/lua/hosts.lua`, `rex/bash/_lib.sh`, `rex/do/common.lua`
+- Undo (`alt+u`) switches to the session or tab it restores, as in tmux. `rex/lua/actions.lua`, `rex/do/pick.lua`
 - A theme switch on a host with no Rex app, such as `dotfiles update` on a server, sent the theme import to a Rex app on another machine, which failed with "no such file". Each host now imports only into a Rex app on the same machine, and a switch started on another host still themes this one's app. `tmux/scripts/themes/reload-rex.sh`, `scripts/theme-switch`
 
 ## [0.2.161] - 2026-11-10
