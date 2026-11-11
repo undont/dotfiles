@@ -20,14 +20,20 @@ local function preview(args)
     io.write(common.last_lines(content, tonumber(os.getenv("FZF_PREVIEW_LINES")) or 40), "\n")
 end
 
--- whichever was killed last, a session or a tab, from its undo snapshot
-local function undo_last()
+-- whichever was killed last, a session or a tab, from its undo snapshot,
+-- shown in the client; the pickers' u restores without switching
+local function undo_last(args)
+    common.client = args.client or ""
     local sessions, tabs = require("sessions"), require("tabs")
     local session, tab = common.read_undo(sessions.UNDO_FILE), common.read_undo(tabs.UNDO_FILE)
+    local session_id, window_id
     if session and (not tab or session.killed_at > tab.killed_at) then
-        sessions.undo()
+        session_id = sessions.undo()
     elseif tab then
-        tabs.undo()
+        session_id, window_id = tabs.undo()
+    end
+    if session_id then
+        common.show_in_client(session_id, window_id)
     end
 end
 
@@ -44,7 +50,7 @@ if cmd == "restore" then
     return
 end
 if cmd == "undo" then
-    undo_last()
+    undo_last(args)
     return
 end
 if cmd == "preview" then

@@ -104,18 +104,20 @@ function M.kill(args)
     rex.session.close_window({ session_id = args.session, window_id = window.window_id })
 end
 
+---@return string|nil session_id, string|nil window_id
 function M.undo()
     local undo = common.read_undo(UNDO_FILE)
     if not undo then
-        return
+        return nil
     end
     local args = undo.args
     if not common.session_label(args.session_id) then
-        return
+        return nil
     end
     common.view(args.session_id)
-    rex.session.new_window(args)
+    local created = rex.session.new_window(args)
     os.remove(UNDO_FILE)
+    return args.session_id, created.window_id
 end
 
 -- a copy of the tab holding block beside it: same layout, directories and

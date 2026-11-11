@@ -102,13 +102,15 @@ function M.kill(args)
     rex.call("session.destroy", { session_id = session_id })
 end
 
+---@return string|nil session_id
 function M.undo()
     local undo = common.read_undo(UNDO_FILE)
     if not undo then
-        return
+        return nil
     end
-    rex.call("session.create", undo.args)
+    local created = rex.call("session.create", undo.args)
     os.remove(UNDO_FILE)
+    return created.session_id
 end
 
 M.UNDO_FILE = UNDO_FILE

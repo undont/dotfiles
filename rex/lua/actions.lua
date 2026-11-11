@@ -57,7 +57,7 @@ action("alt+u", "undo_kill", "Undo Last Kill", function(ctx)
         rex.server(ctx.server).call("client.action", { action = "undo_kill" })
         return
     end
-    run_pick({ "cmd=undo" })
+    run_pick({ "cmd=undo", "client=" .. ctx.client_id })
 end)
 
 -- kills ask y/n first, like the tmux binds. the last session and a session's
