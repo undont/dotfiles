@@ -5,7 +5,6 @@ local common = require("common")
 local M = {}
 
 local UNDO_FILE = common.CACHE .. "/session-undo.json"
-local UNDO_DIR = common.CACHE .. "/session-undo"
 
 -- rows are session_id, block_id to preview, label
 function M.list()
@@ -93,7 +92,7 @@ function M.kill(args)
     local view = common.view(session_id)
     local snapshot = {
         label = common.session_label(session_id),
-        initial_windows = common.snapshot_windows(session_id, view.windows, UNDO_DIR),
+        initial_windows = common.snapshot_windows(session_id, view.windows),
     }
     common.write_private(UNDO_FILE, rex.json.encode(snapshot))
     -- this picker runs inside the origin session, so killing it ends the picker too

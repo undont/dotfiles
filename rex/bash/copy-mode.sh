@@ -10,7 +10,7 @@ source "${BASH_SOURCE%/*}/_lib.sh"
 picker_start "$1" "$2" "$3" "$4"
 [[ -n "$PICK_ORIGIN_BLOCK" ]] || exit 0
 
-scrollback=$(mktemp -t rex-scrollback)
+scrollback=$(mktemp "${TMPDIR:-/tmp}/rex-scrollback.XXXXXX")
 rex capture -s "$PICK_ORIGIN_SESSION" -b "$PICK_ORIGIN_BLOCK" --unwrap --trim >"$scrollback"
 
 wait_for_resize

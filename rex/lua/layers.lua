@@ -2,7 +2,6 @@
 
 local M = {}
 
-M.bash = os.getenv("HOME") .. "/.config/rex/bash/"
 M.do_scripts = os.getenv("HOME") .. "/.config/rex/do/"
 -- the macOS server's PATH has no rex
 M.rex = "rex"
@@ -17,10 +16,15 @@ end
 local PICKER_LABEL = "picker"
 
 -- run a script in the background. the server's PATH has no homebrew (no jq, and
--- /usr/bin/env bash finds bash 3.2), so a login zsh loads it, as popup shells do
+-- /usr/bin/env bash finds bash 3.2), so the user's login shell loads it, as
+-- popup shells do. the server's environment may not set SHELL, and on linux
+-- the shell can live outside /bin (linuxbrew's zsh)
+local LOGIN_SHELL = 's=${SHELL:-$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)}; '
+    .. "exec \"${s:-/bin/zsh}\" -lc 'exec \"$@\"' sh \"$@\""
+
 ---@param argv string[]
 function M.run_script(argv)
-    local command = { "/bin/zsh", "-lc", 'exec "$@"', "zsh" }
+    local command = { "/bin/sh", "-c", LOGIN_SHELL, "sh" }
     for _, arg in ipairs(argv) do
         table.insert(command, arg)
     end
@@ -58,11 +62,32 @@ function M.block_rect(win, block_id)
     end
 end
 
--- run pick.lua with KEY=VALUE args in the background. the server's PATH has
--- no rex, so it's called by its installed path
+-- the label the app gave its client, which names the same app on every host
+---@param client_id string
+---@return string
+function M.client_label(client_id)
+    local list = rex.call("client.list", {})
+    for _, client in ipairs(list and list.clients or {}) do
+        if client.client_id == client_id then
+            return client.info and client.info.label or ""
+        end
+    end
+    return ""
+end
+
+-- run pick.lua with KEY=VALUE args in the background, against the session's
+-- host when it isn't this one. the server's PATH has no rex, so it's called by
+-- its installed path
 ---@param args string[]
-function M.run_pick(args)
-    local command = { M.rex, "do", M.do_scripts .. "pick.lua" }
+---@param server? string ctx.server
+function M.run_pick(args, server)
+    local command = { M.rex, "--timeout", "3s" }
+    if server then
+        table.insert(command, "-S")
+        table.insert(command, server)
+    end
+    table.insert(command, "do")
+    table.insert(command, M.do_scripts .. "pick.lua")
     for _, arg in ipairs(args) do
         table.insert(command, arg)
     end
@@ -85,8 +110,36 @@ end
 
 -- popup sizes the app gave before, one "key columns rows" line each. the app
 -- sizes a layer from pixels, so the size is learned here, not computed;
--- wait_for_resize in bash/_lib.sh writes it
+-- wait_for_resize in bash/_lib.sh reports it through save_popup_size, which
+-- runs here even when the popup is on another host
 local POPUP_SIZES = (os.getenv("XDG_CACHE_HOME") or (os.getenv("HOME") .. "/.cache")) .. "/rex/popup-sizes"
+
+rex.action({
+    name = "save_popup_size",
+    title = "Save Popup Size",
+    args = { key = "string", columns = "number", rows = "number" },
+    run = function(_, args)
+        local lines = {}
+        local f = io.open(POPUP_SIZES, "r")
+        if f then
+            for line in f:lines() do
+                if line:match("^(%S+)") ~= args.key then
+                    table.insert(lines, line)
+                end
+            end
+            f:close()
+        end
+        table.insert(lines, string.format("%s %d %d", args.key, args.columns, args.rows))
+        local tmp = POPUP_SIZES .. ".tmp"
+        local out = io.open(tmp, "w")
+        if not out then
+            return
+        end
+        out:write(table.concat(lines, "\n"), "\n")
+        out:close()
+        os.rename(tmp, POPUP_SIZES)
+    end,
+})
 
 -- the popup's bounds and its window's size in cells, read from the origin
 -- block's size and the fraction of the window it fills
@@ -148,14 +201,29 @@ function M.open(ctx, script, bounds, args)
     end
     -- the pickers sort by the visits recent.lua logs
     M.start_recent()
-    local command = { M.bash .. script, ctx.client_id, ctx.session_id, ctx.block_id or "", zoomed }
+    -- the layer's terminal runs on the session's host, which may not be the one
+    -- running this action, so its own shell resolves $HOME
+    local command = {
+        "/bin/sh",
+        "-c",
+        'exec "$HOME/.config/rex/bash/$0" "$@"',
+        script,
+        ctx.client_id,
+        ctx.session_id,
+        ctx.block_id or "",
+        zoomed,
+    }
     for _, arg in ipairs(args or {}) do
         table.insert(command, arg)
     end
+    -- the script matches the label to the app's client on the session's host
+    local env = { "/usr/bin/env", "PICK_CLIENT_LABEL=" .. M.client_label(ctx.client_id) }
     local key = popup_size_key(ctx, win, bounds)
     if key then
-        table.insert(command, 1, "/usr/bin/env")
-        table.insert(command, 2, "PICK_SIZE_KEY=" .. key)
+        table.insert(env, "PICK_SIZE_KEY=" .. key)
+    end
+    for i, arg in ipairs(env) do
+        table.insert(command, i, arg)
     end
     local layer = rex.session.new_layer({
         bounds = bounds,

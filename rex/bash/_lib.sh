@@ -30,8 +30,30 @@ header_count() {
 # focusing the popup also undoes a zoom, so a zoomed origin is zoomed again
 # (which focuses it too); PICK_ORIGIN_ZOOMED is 1 when it was zoomed
 picker_start() {
-    export PICK_CLIENT="$1" PICK_ORIGIN_SESSION="$2" PICK_ORIGIN_BLOCK="$3" PICK_ORIGIN_ZOOMED="${4:-}"
+    export PICK_CLIENT PICK_ORIGIN_SESSION="$2" PICK_ORIGIN_BLOCK="$3" PICK_ORIGIN_ZOOMED="${4:-}"
+    PICK_CLIENT=$(local_client "$1" "$2")
     trap restore_focus EXIT
+}
+
+# the action that opens a popup runs on the home server and passes the app's
+# client id there. a popup over another host's session calls that host's
+# server, which knows the app by another id: the app labelled
+# PICK_CLIENT_LABEL, else the app showing the origin session, else any app
+local_client() {
+    local clients
+    if ! clients=$(rex client ls --json 2>/dev/null); then
+        printf '%s\n' "$1"
+        return 0
+    fi
+    jq -r --arg id "$1" --arg label "${PICK_CLIENT_LABEL:-}" --arg session "$2" '
+        [.clients[] | select(.info.kind == "app")] as $apps
+        | if any(.clients[]; .client_id == $id) then $id
+          else first(
+              ($apps[] | select($label != "" and .info.label == $label)),
+              ($apps[] | select(any(.session_ids[]?; . == $session))),
+              $apps[]
+          ).client_id // $id
+          end' <<<"$clients"
 }
 
 restore_focus() {
@@ -84,16 +106,18 @@ wait_for_resize() {
 }
 
 # PICK_SIZE_KEY comes from M.open in lua/layers.lua, which resizes the next
-# popup with the same key to this size up front
+# popup with the same key to this size up front. the size goes to the
+# save_popup_size action on the home server, where M.open runs, in the
+# background so the popup doesn't wait on it
 save_popup_size() {
     local rows="${1% *}" columns="${1#* }"
     [[ -n "${PICK_SIZE_KEY:-}" ]] || return 0
-    local file="${XDG_CACHE_HOME:-$HOME/.cache}/rex/popup-sizes"
-    mkdir -p "${file%/*}"
-    {
-        awk -v key="$PICK_SIZE_KEY" '$1 != key' "$file" 2>/dev/null || true
-        printf '%s %s %s\n' "$PICK_SIZE_KEY" "$columns" "$rows"
-    } >"$file.$$" && /bin/mv -f "$file.$$" "$file"
+    (
+        server=()
+        home=$(rex hosts --json 2>/dev/null | jq -r 'if .home.this_machine then "" else .home.endpoint end')
+        [[ -n "$home" ]] && server=(-S "$home")
+        rex "${server[@]}" "do" save_popup_size "key=$PICK_SIZE_KEY" "columns=$columns" "rows=$rows"
+    ) >/dev/null 2>&1 &
 }
 
 prompt_name() {
