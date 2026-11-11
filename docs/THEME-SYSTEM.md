@@ -81,9 +81,9 @@ The tmux reload runs in the background, since TPM re-initialisation takes about 
 
 ### Other Rex Hosts
 
-A switch also reaches every host in `rex hosts`: `reload-rex.sh` calls each host's `dotfiles_theme` action (`rex/lua/dotfiles-theme.lua`) in the background with the theme name, the `.theme` file contents and, for a generated theme, its nvim colourscheme, which a host without ghostty's theme sources can't build. The host runs its own `theme-switch`. A host that is down, or lacks the action, is skipped.
+A switch also reaches every host in `rex hosts`: `reload-rex.sh` calls each host's `dotfiles_theme` action (`rex/lua/app-actions.lua`) in the background with the theme name, the `.theme` file contents and, for a generated theme, its nvim colourscheme, which a host without ghostty's theme sources can't build. The host runs its own `theme-switch`. A host that is down, or lacks the action, is skipped.
 
-The host writes the theme to `themes/generated/` unless a tracked theme of that name exists, and switches with `DOTFILES_THEME_FROM_HOST=1`, which skips its rex import and fan-out.
+The host writes the theme to `themes/generated/` unless a tracked theme of that name exists, and switches with `DOTFILES_THEME_FROM_HOST=1`, which skips its fan-out. Each host imports the theme only into a Rex app running on the same machine, since the app reads the imported file from its own disk.
 
 ### Neovim Theme Integration
 

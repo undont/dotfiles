@@ -5,7 +5,6 @@ local common = require("common")
 local M = {}
 
 local UNDO_FILE = common.CACHE .. "/window-undo.json"
-local UNDO_DIR = common.CACHE .. "/window-undo"
 
 -- rows are window_id, block_id to preview, session_id, display. all=1 lists
 -- every session's tabs, prefixed with the session's label
@@ -87,9 +86,9 @@ function M.kill_check(args)
     common.out("ask\tKill tab '" .. name .. "'?")
 end
 
--- new_window args that rebuild the window, with its scrollback saved under dir
-local function snapshot(session_id, window, dir)
-    local args = common.snapshot_windows(session_id, { window }, dir)[1]
+-- new_window args that rebuild the window, with its scrollback
+local function snapshot(session_id, window)
+    local args = common.snapshot_windows(session_id, { window })[1]
     args.session_id = session_id
     args.focus = false
     return args
@@ -100,23 +99,25 @@ function M.kill(args)
     if not window or #view.windows <= 1 then
         return
     end
-    common.write_private(UNDO_FILE, rex.json.encode(snapshot(args.session, window, UNDO_DIR)))
+    common.write_undo(UNDO_FILE, snapshot(args.session, window))
     -- killing the tab this picker floats over ends the picker too
     rex.session.close_window({ session_id = args.session, window_id = window.window_id })
 end
 
+---@return string|nil session_id, string|nil window_id
 function M.undo()
-    local text = common.read_file(UNDO_FILE)
-    if not text or text == "" then
-        return
+    local undo = common.read_undo(UNDO_FILE)
+    if not undo then
+        return nil
     end
-    local args = rex.json.decode(text)
+    local args = undo.args
     if not common.session_label(args.session_id) then
-        return
+        return nil
     end
     common.view(args.session_id)
-    rex.session.new_window(args)
+    local created = rex.session.new_window(args)
     os.remove(UNDO_FILE)
+    return args.session_id, created.window_id
 end
 
 -- a copy of the tab holding block beside it: same layout, directories and
@@ -127,7 +128,7 @@ function M.duplicate(args)
     if not window then
         return
     end
-    local new = snapshot(args.session, window, common.CACHE .. "/window-duplicate")
+    local new = snapshot(args.session, window)
     new.focus = true
     local created = rex.session.new_window(new)
     common.show_in_client(args.session, created.window_id)

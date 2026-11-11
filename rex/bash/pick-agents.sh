@@ -1,7 +1,7 @@
 #!/usr/bin/env bash
 # fzf picker over one agent's panes in every session, run inside a floating
 # layer by the pick_<agent> actions, and over nvim's by pick_nvim. rows and
-# actions are in pick/panes.lua
+# actions are in do/panes.lua
 # usage: pick-agents.sh <client_id> <origin_session_id> <origin_block_id> <origin_zoomed> <program>
 #   program: claude, codex, opencode, copilot or nvim
 set -euo pipefail

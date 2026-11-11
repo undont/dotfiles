@@ -1,6 +1,6 @@
 -- entry point for the pickers' rows, previews and actions
 -- run with: rex do pick.lua cmd=MODULE.COMMAND [KEY=VALUE...]
---   modules are beside it: sessions, tabs, panes (agents and nvim), procs
+--   modules are beside it: sessions, tabs, panes (agents and nvim), procs, urls, nav
 --   shared: cmd=restore, cmd=undo (the last kill), cmd=preview session=ID block=ID
 
 package.path = os.getenv("HOME") .. "/.config/rex/do/?.lua;" .. package.path
@@ -20,23 +20,25 @@ local function preview(args)
     io.write(common.last_lines(content, tonumber(os.getenv("FZF_PREVIEW_LINES")) or 40), "\n")
 end
 
--- rex do types KEY=VALUE pairs (all=1 arrives as a number), so every value is
--- read back as a string; typed names come through PICK_NAME, not an argument
--- whichever was killed last, a session or a tab, from its undo snapshot
-local function undo_last()
+-- whichever was killed last, a session or a tab, from its undo snapshot,
+-- shown in the client; the pickers' u restores without switching
+local function undo_last(args)
+    common.client = args.client or ""
     local sessions, tabs = require("sessions"), require("tabs")
-    local function mtime(path)
-        local stat = rex.exec({ "stat", "-f", "%m", path })
-        return stat.ok and tonumber(stat.stdout) or nil
+    local session, tab = common.read_undo(sessions.UNDO_FILE), common.read_undo(tabs.UNDO_FILE)
+    local session_id, window_id
+    if session and (not tab or session.killed_at > tab.killed_at) then
+        session_id = sessions.undo()
+    elseif tab then
+        session_id, window_id = tabs.undo()
     end
-    local session_time, tab_time = mtime(sessions.UNDO_FILE), mtime(tabs.UNDO_FILE)
-    if session_time and (not tab_time or session_time > tab_time) then
-        sessions.undo()
-    elseif tab_time then
-        tabs.undo()
+    if session_id then
+        common.show_in_client(session_id, window_id)
     end
 end
 
+-- rex do types KEY=VALUE pairs (all=1 arrives as a number), so every value is
+-- read back as a string; typed names come through PICK_NAME, not an argument
 local args = {}
 for key, value in pairs(rex.args) do
     args[key] = tostring(value)
@@ -48,7 +50,7 @@ if cmd == "restore" then
     return
 end
 if cmd == "undo" then
-    undo_last()
+    undo_last(args)
     return
 end
 if cmd == "preview" then

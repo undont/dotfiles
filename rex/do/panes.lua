@@ -14,22 +14,11 @@ local GLYPHS = {
     error = { "✗", "#c07878" },
 }
 local NO_STATUS = { "·", "#6272a4" }
+local RESET = common.RESET
 local AGENT_TITLES = { ["Claude Code"] = true, claude = true, codex = true, opencode = true, copilot = true }
-local RESET = "\27[0m"
 
 local function glyph(state)
-    local style = GLYPHS[state] or NO_STATUS
-    return common.hex_fg(style[2]) .. style[1] .. RESET
-end
-
--- 45s, 12m, 1h03m
-local function elapsed(seconds)
-    if seconds < 60 then
-        return string.format("%ds", seconds)
-    elseif seconds < 3600 then
-        return string.format("%dm", math.floor(seconds / 60))
-    end
-    return string.format("%dh%02dm", math.floor(seconds / 3600), math.floor(seconds % 3600 / 60))
+    return common.paint(GLYPHS[state] or NO_STATUS)
 end
 
 -- days from 1970-01-01 to a date in the proleptic gregorian calendar
@@ -113,7 +102,7 @@ local function agent_display(pane, agent)
     -- the age is the wait for a finished or blocked agent; a working one updates constantly
     local seconds = updated ~= "" and age(updated)
     if state ~= "" and state ~= "working" and seconds then
-        row = row .. "  " .. elapsed(seconds)
+        row = row .. "  " .. common.elapsed(seconds)
     end
     return row
 end

@@ -18,20 +18,13 @@ if [[ -z "$urls" ]]; then
     exit 0
 fi
 
+picker_fzf_opts 'j,k,g,G,f,b,d,u,q,space,y,o' \
+    'j/k · g/G · f/b · d/u · o/spc/⏎ open · y yank · / search · q/esc quit'
 selected=$(
-    printf '%s\n' "$urls" | fzf \
-        --reverse --exact --no-sort --disabled --cycle \
-        --prompt ': ' --border=rounded \
-        --border-label=' j/k · g/G · f/b · d/u · o/spc/⏎ open · y yank · / search · q/esc quit ' \
-        --border-label-pos=bottom \
-        --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept,o:accept' \
-        --bind 'f:page-down,b:page-up' \
-        --bind 'd:half-page-down,u:half-page-up' \
-        --bind 'change:transform:[[ $FZF_PROMPT == ": " ]] && echo "clear-query"' \
-        --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,f,b,d,u,q,space,y,o)' \
-        --bind 'esc:transform:[[ $FZF_PROMPT == "> " ]] && echo "disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,f,b,d,u,q,space,y,o)" || echo "abort"' \
-        --bind 'ctrl-k:up,ctrl-l:clear-query' \
-        --bind "y:execute-silent(printf '%s' {} | $(clipboard_copy_cmd))+abort"
+    printf '%s\n' "$urls" |
+        fzf "${PICKER_FZF_OPTS[@]}" --no-sort \
+            --bind 'o:accept,f:page-down,b:page-up,d:half-page-down,u:half-page-up' \
+            --bind "y:execute-silent(printf '%s' {} | \"${BASH_SOURCE%/*}/copy-in-app.sh\")+abort"
 ) || exit 0
 
-[[ -n "$selected" ]] && open_url "$selected"
+[[ -n "$selected" ]] && open_in_app "$selected"

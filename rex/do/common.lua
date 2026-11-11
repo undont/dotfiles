@@ -17,6 +17,8 @@ M.origin_zoomed = os.getenv("PICK_ORIGIN_ZOOMED") == "1"
 -- the picker's own block, when this runs inside one
 M.popup = os.getenv("REX_BLOCK") or ""
 
+M.RESET = "\27[0m"
+
 function M.out(line)
     io.write(line, "\n")
 end
@@ -28,6 +30,21 @@ function M.hex_fg(hex)
         tonumber(hex:sub(4, 5), 16),
         tonumber(hex:sub(6, 7), 16)
     )
+end
+
+-- style is { text, hex colour }
+function M.paint(style)
+    return M.hex_fg(style[2]) .. style[1] .. M.RESET
+end
+
+-- 45s, 12m, 1h03m
+function M.elapsed(seconds)
+    if seconds < 60 then
+        return string.format("%ds", seconds)
+    elseif seconds < 3600 then
+        return string.format("%dm", math.floor(seconds / 60))
+    end
+    return string.format("%dh%02dm", math.floor(seconds / 3600), math.floor(seconds % 3600 / 60))
 end
 
 -- a hex colour at pct percent brightness
@@ -72,6 +89,14 @@ end
 
 function M.sessions()
     return rex.call("session.list", {}).sessions
+end
+
+---@param host? string a rex.servers() label; nil or "" for the server this script calls
+function M.api(host)
+    if not host or host == "" then
+        return rex
+    end
+    return rex.server(host)
 end
 
 -- a script only reads the sessions it's attached to; attaching returns the view
@@ -169,11 +194,57 @@ function M.tab_name(session_id, window)
     return name ~= "" and name or label
 end
 
+-- the app's client on a host: an action passes the app's id on the server
+-- that ran it, and another host knows the same app by another id: the app with
+-- the same label, else the app showing the session, else any app
+-- (local_client in bash/_lib.sh picks the same way)
+local clients = {}
+
+---@param host? string
+---@param session_id? string
+function M.client_for(host, session_id)
+    host = host or ""
+    if clients[host] then
+        return clients[host]
+    end
+    local label = os.getenv("PICK_CLIENT_LABEL") or ""
+    for _, client in ipairs(rex.call("client.list", {}).clients or {}) do
+        if client.client_id == M.client and client.info and client.info.label then
+            label = client.info.label
+        end
+    end
+    local list = M.api(host).call("client.list", {})
+    local apps, found = {}, nil
+    for _, client in ipairs(list and list.clients or {}) do
+        if client.client_id == M.client then
+            found = M.client
+        elseif client.info and client.info.kind == "app" then
+            table.insert(apps, client)
+        end
+    end
+    for _, app in ipairs(apps) do
+        if not found and label ~= "" and app.info.label == label then
+            found = app.client_id
+        end
+    end
+    for _, app in ipairs(apps) do
+        for _, id in ipairs(app.session_ids or {}) do
+            if not found and id == session_id then
+                found = app.client_id
+            end
+        end
+    end
+    clients[host] = found or (apps[1] and apps[1].client_id) or M.client
+    return clients[host]
+end
+
 -- show a session, and optionally one of its windows, in the client that opened the picker.
 -- the app ignores the server-side focus of a new window, so the client is told
-function M.show_in_client(session_id, window_id)
+---@param host? string the session's host, when it isn't the server this script calls
+function M.show_in_client(session_id, window_id, host)
     local args = { session_id = session_id, window_id = window_id }
-    rex.call("client.perform", { client_id = M.client, action = "session.select", args = args })
+    M.api(host)
+        .call("client.perform", { client_id = M.client_for(host, session_id), action = "session.select", args = args })
 end
 
 -- focus the origin pane again: if the popup still has focus when its layer
@@ -268,6 +339,24 @@ function M.write_private(path, text)
     rex.exec({ "/bin/sh", "-c", 'umask 077 && cat >"$1"', "sh", path }, { stdin = text })
 end
 
+-- undo files hold { killed_at, args }; a file without killed_at is from an
+-- older format and reads as none
+function M.write_undo(path, args)
+    M.write_private(path, rex.json.encode({ killed_at = os.time(), args = args }))
+end
+
+function M.read_undo(path)
+    local text = M.read_file(path)
+    if not text or text == "" then
+        return nil
+    end
+    local ok, undo = pcall(rex.json.decode, text)
+    if not ok or type(undo) ~= "table" or not undo.killed_at then
+        return nil
+    end
+    return undo
+end
+
 function M.write_file(path, text)
     local f = io.open(path, "w")
     if f then
@@ -286,13 +375,23 @@ function M.read_file(path)
     return text
 end
 
+-- linux caps one exec argument at 128 KiB, and a restored block's scrollback
+-- is one argument of its command
+local MAX_SCROLLBACK_BYTES = 100000
+
+-- the tail of text, at most max bytes, starting on a line
+local function tail_bytes(text, max)
+    if #text <= max then
+        return text
+    end
+    local cut = text:sub(-max)
+    return cut:match("\n(.*)$") or cut
+end
+
 -- block_id -> { cwd, scrollback } for the tiled blocks of windows: the cwd of
 -- each block's foreground process, and its last UNDO_SCROLLBACK_LINES of
--- screen and scrollback saved under dir, which is emptied first
-local function snapshot_blocks(session_id, windows, dir)
-    rex.exec({ "rm", "-rf", dir })
-    rex.exec({ "mkdir", "-p", (dir:gsub("/[^/]*$", "")) })
-    rex.exec({ "mkdir", "-m", "700", dir })
+-- screen and scrollback
+local function snapshot_blocks(session_id, windows)
     local blocks = {}
     for _, window in ipairs(windows) do
         for _, block_id in ipairs(M.layout_blocks(M.tiled_layout(window))) do
@@ -300,18 +399,19 @@ local function snapshot_blocks(session_id, windows, dir)
             local entry = { cwd = process and process.foreground and process.foreground.cwd }
             local content = M.capture(session_id, block_id)
             if content ~= "" then
-                entry.scrollback = dir .. "/" .. block_id:gsub("^block:", "") .. ".vt"
-                local f = io.open(entry.scrollback, "w")
-                if f then
-                    f:write(M.last_lines(content, UNDO_SCROLLBACK_LINES), "\n")
-                    f:close()
-                end
+                entry.scrollback = tail_bytes(M.last_lines(content, UNDO_SCROLLBACK_LINES), MAX_SCROLLBACK_BYTES)
             end
             blocks[block_id] = entry
         end
     end
     return blocks
 end
+
+-- prints the saved scrollback, then the login shell of the host the block
+-- runs on, which may not be the one running this script
+local RESTORE_SCRIPT = 'printf "%s\\n" "$1"; '
+    .. 's=${SHELL:-$(getent passwd "$(id -un)" 2>/dev/null | cut -d: -f7)}; '
+    .. 'exec "${s:-/bin/sh}" -l'
 
 -- a session.create / new_window layout node rebuilding a view layout node:
 -- each block a login shell in its saved cwd, printing its saved scrollback first
@@ -332,8 +432,7 @@ local function layout_node(node, blocks)
         options.cwd = saved.cwd
     end
     if saved.scrollback then
-        local shell = os.getenv("SHELL") or "/bin/zsh"
-        options.command = { "/bin/sh", "-c", 'cat "$1"; exec "$2" -l', "sh", saved.scrollback, shell }
+        options.command = { "/bin/sh", "-c", RESTORE_SCRIPT, "sh", saved.scrollback }
     end
     local block = { flavor = M.SHELL_FLAVOR }
     if next(options) then
@@ -342,9 +441,9 @@ local function layout_node(node, blocks)
     return { block = block }
 end
 
--- new_window args rebuilding each window's tiled layout, with saved scrollback under dir
-function M.snapshot_windows(session_id, windows, dir)
-    local blocks = snapshot_blocks(session_id, windows, dir)
+-- new_window args rebuilding each window's tiled layout, with its scrollback
+function M.snapshot_windows(session_id, windows)
+    local blocks = snapshot_blocks(session_id, windows)
     local snapshots = {}
     for _, window in ipairs(windows) do
         table.insert(snapshots, {

@@ -2,49 +2,37 @@
 -- order. rex has no "session switched" event, but the app resizes the panes of
 -- the session it shows, so a size change marks that session as viewed; within
 -- it, view changes carry tab and pane focus
--- it also keeps the tab history nav.lua steps back and forward through
--- run with: rex do --all recent.lua   (start_recent in lua/layers.lua keeps one running)
+-- it also keeps the tab history nav.lua steps back and forward through, one
+-- history across hosts: the machine running the app runs one of these per
+-- server, all writing its own cache (start_recent in lua/hosts.lua)
+-- run with: rex [-S HOST] do --all recent.lua [host=HOST]
 
 package.path = os.getenv("HOME") .. "/.config/rex/do/?.lua;" .. package.path
+local common = require("common")
 local procs = require("procs")
 
-local cache = (os.getenv("XDG_CACHE_HOME") or (os.getenv("HOME") .. "/.cache")) .. "/rex"
+local cache = common.CACHE
+-- the server this watcher listens to: "" for the home server, else its rex
+-- hosts label. only the home server's visits feed the pickers' recent order
+local host = rex.args.host and tostring(rex.args.host) or ""
 local log_path = cache .. "/recent"
 -- lines are session, tab, pane. the log only needs each entry's latest line,
--- so it's compacted once it grows past this
+-- so it's compacted at start and once it grows past this
 local MAX_LINES = 1000
 
 local last_entry = ""
 local last_session, last_seen = "", 0
 local appended = 0
 
--- back/forward history: "session<tab>window" lines, oldest first, plus how many
--- entries back from the newest nav.lua has stepped (0 = at the newest). skip
--- holds the tab a nav.lua jump is landing on, so the jump isn't a new visit
+-- back/forward history: "host<tab>session<tab>window" lines, oldest first, plus
+-- how many entries back from the newest nav.lua has stepped (0 = at the
+-- newest). current holds the host and session on screen, which every
+-- watcher reads, since each only sees its own server's switches
 local nav_history = cache .. "/nav/history"
 local nav_position = cache .. "/nav/position"
-local nav_skip = cache .. "/nav/skip"
+local nav_current = cache .. "/nav/current"
 local NAV_MAX = 100
 rex.exec({ "mkdir", "-p", cache .. "/nav" })
-local last_tab = ""
-
-local function read_file(path)
-    local f = io.open(path, "r")
-    if not f then
-        return nil
-    end
-    local text = f:read("*a")
-    f:close()
-    return text
-end
-
-local function write_file(path, text)
-    local f = io.open(path, "w")
-    if f then
-        f:write(text)
-        f:close()
-    end
-end
 
 local function read_lines(path)
     local lines = {}
@@ -59,38 +47,60 @@ local function read_lines(path)
     return lines
 end
 
--- a visit after stepping back drops the forward entries, as in a browser
+-- a visit after stepping back drops the forward entries, as in a browser.
+-- the tab at the current position is no visit: a repeat event, or the tab a
+-- nav.lua jump landed on. the history is shared with the other hosts'
+-- watchers, so it's the only record of where you are
 local function nav_visit(tab)
-    if tab == last_tab then
-        return
-    end
-    last_tab = tab
-    local skip = read_file(nav_skip)
-    os.remove(nav_skip)
-    if skip == tab then
-        return
-    end
     local lines = read_lines(nav_history)
-    local position = tonumber(read_file(nav_position)) or 0
+    local position = tonumber(common.read_file(nav_position)) or 0
+    if lines[#lines - position] == tab then
+        return
+    end
     for _ = 1, position do
         table.remove(lines)
     end
-    if lines[#lines] ~= tab then
-        table.insert(lines, tab)
-    end
+    table.insert(lines, tab)
     while #lines > NAV_MAX do
         table.remove(lines, 1)
     end
-    write_file(nav_history, table.concat(lines, "\n") .. "\n")
-    write_file(nav_position, "0")
+    -- another host's watcher writes the same file, so it's replaced whole
+    common.write_file(nav_history .. ".tmp", table.concat(lines, "\n") .. "\n")
+    os.rename(nav_history .. ".tmp", nav_history)
+    common.write_file(nav_position, "0")
 end
 
--- rewrite the log keeping only the latest line for each entry, in order
+-- the window ids open in every session, or nil when a lookup fails, so a
+-- failed lookup drops nothing
+local function open_windows()
+    local ok, sessions = pcall(common.sessions)
+    if not ok or not sessions then
+        return nil
+    end
+    local open = {}
+    for _, session in ipairs(sessions) do
+        local viewed, view = pcall(common.view, session.session_id)
+        if not viewed or not view then
+            return nil
+        end
+        for _, window in ipairs(view.windows) do
+            open[window.window_id] = true
+        end
+    end
+    return open
+end
+
+-- rewrite the log keeping only the latest line for each entry, in order,
+-- and dropping entries for tabs that have closed
 local function compact()
+    local open = open_windows()
     local lines, latest = {}, {}
-    for line in io.lines(log_path) do
-        table.insert(lines, line)
-        latest[line] = #lines
+    for _, line in ipairs(read_lines(log_path)) do
+        local window = line:match("^[^\t]*\t([^\t]*)")
+        if not open or open[window] then
+            table.insert(lines, line)
+            latest[line] = #lines
+        end
     end
     local tmp = log_path .. ".tmp"
     local out = assert(io.open(tmp, "w"))
@@ -107,8 +117,11 @@ end
 -- the active tab and its focused pane, skipping a picker popup, which takes
 -- focus while it's open
 local function focus_of(session)
-    local ok, view = pcall(rex.call, "session.view", { session_id = session })
-    if not ok then
+    -- some builds' --all delivers every session's events without attaching to
+    -- them, and reading a view needs the attachment; attaching returns the view
+    local ok, attached = pcall(rex.session.attach, { session_id = session })
+    local view = ok and attached and attached.view
+    if not view then
         return nil, nil
     end
     for _, win in ipairs(view.windows) do
@@ -131,7 +144,10 @@ local function record(session)
     if not window then
         return
     end
-    nav_visit(session .. "\t" .. window)
+    nav_visit(host .. "\t" .. session .. "\t" .. window)
+    if host ~= "" then
+        return
+    end
     local entry = session .. "\t" .. window .. "\t" .. (block or "")
     if entry == last_entry then
         return
@@ -159,13 +175,42 @@ rex.on("terminal.size_changed", function(_, ev)
         return
     end
     last_session, last_seen = ev.session_id, now
+    common.write_file(nav_current, host .. "\t" .. ev.session_id)
     record(ev.session_id)
 end)
 
--- tab and pane focus changes; only for the session on screen, since any
--- session's view changes when something in it does, seen or not
+-- tab and pane focus changes; only for the session on screen, on whichever
+-- host, since any session's view changes when something in it does, seen or not
 rex.on("session_view_changed", function(_, ev)
-    if ev.session_id == last_session then
+    if common.read_file(nav_current) == host .. "\t" .. ev.session_id then
         record(ev.session_id)
     end
 end)
+
+-- the home server's watcher starts one for each other host that has none, and
+-- checks again every SUPERVISE_SECONDS: one for a host that doesn't answer
+-- exits, and comes back once the host does
+local SUPERVISE_SECONDS = 30
+local SELF = os.getenv("HOME") .. "/.config/rex/do/recent.lua"
+
+local function supervise()
+    for _, label in ipairs(rex.servers()) do
+        local pattern = "do --all .*/rex/do/recent\\.lua host=" .. label .. "$"
+        local running = rex.exec({ "/usr/bin/pgrep", "-f", pattern })
+        if not (running and running.ok) then
+            rex.exec.start(
+                { tostring(rex.args.rex), "-S", label, "do", "--all", SELF, "host=" .. label },
+                { detach = true, stdout = false, stderr = false }
+            )
+        end
+    end
+end
+
+if host == "" then
+    compact()
+end
+
+if host == "" and rex.args.rex then
+    supervise()
+    rex.every(SUPERVISE_SECONDS, supervise)
+end

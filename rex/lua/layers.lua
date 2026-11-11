@@ -1,30 +1,19 @@
--- floating layers that run the scripts in bash/, and the view lookups they need
+-- floating layers that run the scripts in bash/, the view lookups they need,
+-- and the key + action helper
+
+local hosts = require("hosts")
 
 local M = {}
 
-M.bash = os.getenv("HOME") .. "/.config/rex/bash/"
-M.do_scripts = os.getenv("HOME") .. "/.config/rex/do/"
--- the macOS server's PATH has no rex
-M.rex = "rex"
-local app_rex = os.getenv("HOME")
-    .. "/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS/rex"
-local app_file = io.open(app_rex)
-if app_file then
-    app_file:close()
-    M.rex = app_rex
-end
-
 local PICKER_LABEL = "picker"
 
--- run a script in the background. the server's PATH has no homebrew (no jq, and
--- /usr/bin/env bash finds bash 3.2), so a login zsh loads it, as popup shells do
----@param argv string[]
-function M.run_script(argv)
-    local command = { "/bin/zsh", "-lc", 'exec "$@"', "zsh" }
-    for _, arg in ipairs(argv) do
-        table.insert(command, arg)
-    end
-    rex.exec.start(command, { detach = true })
+---@param key string
+---@param name string
+---@param title string
+---@param run fun(ctx: table)
+function M.action(key, name, title, run)
+    rex.action({ name = name, title = title, run = run })
+    rex.bind(key, name)
 end
 
 function M.active_window()
@@ -58,35 +47,19 @@ function M.block_rect(win, block_id)
     end
 end
 
--- run pick.lua with KEY=VALUE args in the background. the server's PATH has
--- no rex, so it's called by its installed path
----@param args string[]
-function M.run_pick(args)
-    local command = { M.rex, "do", M.do_scripts .. "pick.lua" }
-    for _, arg in ipairs(args) do
-        table.insert(command, arg)
+-- the rect a pane fills: the whole window when it's zoomed
+function M.pane_rect(win, block_id)
+    if win.zoomed_block_id == block_id then
+        return { 0, 0, 1, 1 }
     end
-    M.run_script(command)
-end
-
--- start the recent.lua watcher unless one is running, so a config reload
--- doesn't start a second. rex's own path has a space in it, so the match is
--- on the arguments
-function M.start_recent()
-    local running = rex.exec({ "/usr/bin/pgrep", "-f", "do --all .*/rex/do/recent\\.lua$" })
-    if running and running.ok then
-        return
-    end
-    rex.exec.start(
-        { M.rex, "do", "--all", M.do_scripts .. "recent.lua" },
-        { detach = true, stdout = false, stderr = false }
-    )
+    return M.block_rect(win, block_id)
 end
 
 -- popup sizes the app gave before, one "key columns rows" line each. the app
 -- sizes a layer from pixels, so the size is learned here, not computed;
--- wait_for_resize in bash/_lib.sh writes it
-local POPUP_SIZES = (os.getenv("XDG_CACHE_HOME") or (os.getenv("HOME") .. "/.cache")) .. "/rex/popup-sizes"
+-- wait_for_resize in bash/_lib.sh reports it through save_popup_size
+-- (lua/app-actions.lua), on the home server even when the popup is on another host
+M.POPUP_SIZES = (os.getenv("XDG_CACHE_HOME") or (os.getenv("HOME") .. "/.cache")) .. "/rex/popup-sizes"
 
 -- the popup's bounds and its window's size in cells, read from the origin
 -- block's size and the fraction of the window it fills
@@ -95,10 +68,7 @@ local function popup_size_key(ctx, win, bounds)
     if not ctx.block_id then
         return nil
     end
-    local rect = { 0, 0, 1, 1 }
-    if win.zoomed_block_id ~= ctx.block_id then
-        rect = M.block_rect(win, ctx.block_id)
-    end
+    local rect = M.pane_rect(win, ctx.block_id)
     if not rect then
         return nil
     end
@@ -116,7 +86,7 @@ end
 
 ---@return integer|nil columns, integer|nil rows
 local function cached_popup_size(key)
-    local f = io.open(POPUP_SIZES, "r")
+    local f = io.open(M.POPUP_SIZES, "r")
     if not f then
         return nil
     end
@@ -147,15 +117,30 @@ function M.open(ctx, script, bounds, args)
         zoomed = "1"
     end
     -- the pickers sort by the visits recent.lua logs
-    M.start_recent()
-    local command = { M.bash .. script, ctx.client_id, ctx.session_id, ctx.block_id or "", zoomed }
+    hosts.start_recent()
+    -- the layer's terminal runs on the session's host, which may not be the one
+    -- running this action, so its own shell resolves $HOME
+    local command = {
+        "/bin/sh",
+        "-c",
+        'exec "$HOME/.config/rex/bash/$0" "$@"',
+        script,
+        ctx.client_id,
+        ctx.session_id,
+        ctx.block_id or "",
+        zoomed,
+    }
     for _, arg in ipairs(args or {}) do
         table.insert(command, arg)
     end
+    -- the script matches the label to the app's client on the session's host
+    local env = { "/usr/bin/env", "PICK_CLIENT_LABEL=" .. hosts.client_label(ctx.client_id) }
     local key = popup_size_key(ctx, win, bounds)
     if key then
-        table.insert(command, 1, "/usr/bin/env")
-        table.insert(command, 2, "PICK_SIZE_KEY=" .. key)
+        table.insert(env, "PICK_SIZE_KEY=" .. key)
+    end
+    for i, arg in ipairs(env) do
+        table.insert(command, i, arg)
     end
     local layer = rex.session.new_layer({
         bounds = bounds,

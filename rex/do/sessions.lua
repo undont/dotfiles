@@ -5,7 +5,6 @@ local common = require("common")
 local M = {}
 
 local UNDO_FILE = common.CACHE .. "/session-undo.json"
-local UNDO_DIR = common.CACHE .. "/session-undo"
 
 -- rows are session_id, block_id to preview, label
 function M.list()
@@ -93,9 +92,9 @@ function M.kill(args)
     local view = common.view(session_id)
     local snapshot = {
         label = common.session_label(session_id),
-        initial_windows = common.snapshot_windows(session_id, view.windows, UNDO_DIR),
+        initial_windows = common.snapshot_windows(session_id, view.windows),
     }
-    common.write_private(UNDO_FILE, rex.json.encode(snapshot))
+    common.write_undo(UNDO_FILE, snapshot)
     -- this picker runs inside the origin session, so killing it ends the picker too
     if session_id == common.origin_session then
         common.show_in_client(other)
@@ -103,13 +102,15 @@ function M.kill(args)
     rex.call("session.destroy", { session_id = session_id })
 end
 
+---@return string|nil session_id
 function M.undo()
-    local text = common.read_file(UNDO_FILE)
-    if not text or text == "" then
-        return
+    local undo = common.read_undo(UNDO_FILE)
+    if not undo then
+        return nil
     end
-    rex.call("session.create", rex.json.decode(text))
+    local created = rex.call("session.create", undo.args)
     os.remove(UNDO_FILE)
+    return created.session_id
 end
 
 M.UNDO_FILE = UNDO_FILE
