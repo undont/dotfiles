@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # fzf window (tab) picker, run inside a floating layer by the pick_window action.
-# rows and actions are in pick/tabs.lua
+# rows and actions are in do/tabs.lua
 # usage: pick-window.sh <client_id> <origin_session_id> <origin_block_id> <origin_zoomed>
 set -euo pipefail
 

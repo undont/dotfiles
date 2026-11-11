@@ -17,6 +17,8 @@ M.origin_zoomed = os.getenv("PICK_ORIGIN_ZOOMED") == "1"
 -- the picker's own block, when this runs inside one
 M.popup = os.getenv("REX_BLOCK") or ""
 
+M.RESET = "\27[0m"
+
 function M.out(line)
     io.write(line, "\n")
 end
@@ -28,6 +30,21 @@ function M.hex_fg(hex)
         tonumber(hex:sub(4, 5), 16),
         tonumber(hex:sub(6, 7), 16)
     )
+end
+
+-- style is { text, hex colour }
+function M.paint(style)
+    return M.hex_fg(style[2]) .. style[1] .. M.RESET
+end
+
+-- 45s, 12m, 1h03m
+function M.elapsed(seconds)
+    if seconds < 60 then
+        return string.format("%ds", seconds)
+    elseif seconds < 3600 then
+        return string.format("%dm", math.floor(seconds / 60))
+    end
+    return string.format("%dh%02dm", math.floor(seconds / 3600), math.floor(seconds % 3600 / 60))
 end
 
 -- a hex colour at pct percent brightness
@@ -226,7 +243,8 @@ end
 ---@param host? string the session's host, when it isn't the server this script calls
 function M.show_in_client(session_id, window_id, host)
     local args = { session_id = session_id, window_id = window_id }
-    M.api(host).call("client.perform", { client_id = M.client_for(host, session_id), action = "session.select", args = args })
+    M.api(host)
+        .call("client.perform", { client_id = M.client_for(host, session_id), action = "session.select", args = args })
 end
 
 -- focus the origin pane again: if the popup still has focus when its layer

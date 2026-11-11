@@ -1,6 +1,6 @@
 -- entry point for the pickers' rows, previews and actions
 -- run with: rex do pick.lua cmd=MODULE.COMMAND [KEY=VALUE...]
---   modules are beside it: sessions, tabs, panes (agents and nvim), procs
+--   modules are beside it: sessions, tabs, panes (agents and nvim), procs, urls, nav
 --   shared: cmd=restore, cmd=undo (the last kill), cmd=preview session=ID block=ID
 
 package.path = os.getenv("HOME") .. "/.config/rex/do/?.lua;" .. package.path
@@ -20,8 +20,6 @@ local function preview(args)
     io.write(common.last_lines(content, tonumber(os.getenv("FZF_PREVIEW_LINES")) or 40), "\n")
 end
 
--- rex do types KEY=VALUE pairs (all=1 arrives as a number), so every value is
--- read back as a string; typed names come through PICK_NAME, not an argument
 -- whichever was killed last, a session or a tab, from its undo snapshot
 local function undo_last()
     local sessions, tabs = require("sessions"), require("tabs")
@@ -41,6 +39,8 @@ local function undo_last()
     end
 end
 
+-- rex do types KEY=VALUE pairs (all=1 arrives as a number), so every value is
+-- read back as a string; typed names come through PICK_NAME, not an argument
 local args = {}
 for key, value in pairs(rex.args) do
     args[key] = tostring(value)

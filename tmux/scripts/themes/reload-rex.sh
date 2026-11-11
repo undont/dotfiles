@@ -48,7 +48,7 @@ done < <(rex client ls --json 2>/dev/null | jq -r '
 [[ -z "${DOTFILES_THEME_FROM_HOST:-}" ]] || exit 0
 
 # the other rex hosts switch their dotfiles theme through the dotfiles_theme
-# action (rex/lua/dotfiles-theme.lua). a host that is down or lacks it is skipped.
+# action (rex/lua/app-actions.lua). a host that is down or lacks it is skipped.
 # the home server isn't in its own host list, and a host following it sees
 # itself there, so the targets are the home plus the hosts, minus this machine
 self=$(rex whoami --json 2>/dev/null | jq -r '.host_id // empty')

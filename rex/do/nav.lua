@@ -8,15 +8,9 @@ local M = {}
 
 local NAV = common.CACHE .. "/nav"
 
--- "host<tab>session<tab>window", or "session<tab>window" from before history
--- carried a host, which is this server's
+-- "host<tab>session<tab>window"
 local function parse(line)
-    local host, session_id, window_id = line:match("^([^\t]*)\t([^\t]*)\t(.*)$")
-    if host then
-        return host, session_id, window_id
-    end
-    session_id, window_id = line:match("^([^\t]*)\t(.*)$")
-    return "", session_id, window_id
+    return line:match("^([^\t]*)\t([^\t]*)\t(.*)$")
 end
 
 -- hosts that didn't answer this step, so their other entries don't each wait

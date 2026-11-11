@@ -105,6 +105,14 @@ wait_for_resize() {
     return 0
 }
 
+# rex against the home server, the machine running the app
+home_rex() {
+    local home server=()
+    home=$(rex hosts --json 2>/dev/null | jq -r 'if .home.this_machine then "" else .home.endpoint end')
+    [[ -n "$home" ]] && server=(-S "$home")
+    rex "${server[@]}" "$@"
+}
+
 # PICK_SIZE_KEY comes from M.open in lua/layers.lua, which resizes the next
 # popup with the same key to this size up front. the size goes to the
 # save_popup_size action on the home server, where M.open runs, in the
@@ -112,21 +120,13 @@ wait_for_resize() {
 save_popup_size() {
     local rows="${1% *}" columns="${1#* }"
     [[ -n "${PICK_SIZE_KEY:-}" ]] || return 0
-    (
-        server=()
-        home=$(rex hosts --json 2>/dev/null | jq -r 'if .home.this_machine then "" else .home.endpoint end')
-        [[ -n "$home" ]] && server=(-S "$home")
-        rex "${server[@]}" "do" save_popup_size "key=$PICK_SIZE_KEY" "columns=$columns" "rows=$rows"
-    ) >/dev/null 2>&1 &
+    home_rex "do" save_popup_size "key=$PICK_SIZE_KEY" "columns=$columns" "rows=$rows" >/dev/null 2>&1 &
 }
 
 # open a URL on the machine running the app, the home server, through its
 # open_url action: a popup over another host's session runs on that host
 open_in_app() {
-    local home server=()
-    home=$(rex hosts --json 2>/dev/null | jq -r 'if .home.this_machine then "" else .home.endpoint end')
-    [[ -n "$home" ]] && server=(-S "$home")
-    rex "${server[@]}" "do" open_url "url=$1" >/dev/null
+    home_rex "do" open_url "url=$1" >/dev/null
 }
 
 prompt_name() {

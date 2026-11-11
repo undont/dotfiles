@@ -4,13 +4,14 @@
 -- it, view changes carry tab and pane focus
 -- it also keeps the tab history nav.lua steps back and forward through, one
 -- history across hosts: the machine running the app runs one of these per
--- server, all writing its own cache (start_recent in lua/layers.lua)
+-- server, all writing its own cache (start_recent in lua/hosts.lua)
 -- run with: rex [-S HOST] do --all recent.lua [host=HOST]
 
 package.path = os.getenv("HOME") .. "/.config/rex/do/?.lua;" .. package.path
+local common = require("common")
 local procs = require("procs")
 
-local cache = (os.getenv("XDG_CACHE_HOME") or (os.getenv("HOME") .. "/.cache")) .. "/rex"
+local cache = common.CACHE
 -- the server this watcher listens to: "" for the home server, else its rex
 -- hosts label. only the home server's visits feed the pickers' recent order
 local host = rex.args.host and tostring(rex.args.host) or ""
@@ -36,24 +37,6 @@ local NAV_MAX = 100
 rex.exec({ "mkdir", "-p", cache .. "/nav" })
 local last_tab = ""
 
-local function read_file(path)
-    local f = io.open(path, "r")
-    if not f then
-        return nil
-    end
-    local text = f:read("*a")
-    f:close()
-    return text
-end
-
-local function write_file(path, text)
-    local f = io.open(path, "w")
-    if f then
-        f:write(text)
-        f:close()
-    end
-end
-
 local function read_lines(path)
     local lines = {}
     local f = io.open(path, "r")
@@ -73,13 +56,13 @@ local function nav_visit(tab)
         return
     end
     last_tab = tab
-    local skip = read_file(nav_skip)
+    local skip = common.read_file(nav_skip)
     os.remove(nav_skip)
     if skip == tab then
         return
     end
     local lines = read_lines(nav_history)
-    local position = tonumber(read_file(nav_position)) or 0
+    local position = tonumber(common.read_file(nav_position)) or 0
     for _ = 1, position do
         table.remove(lines)
     end
@@ -90,9 +73,9 @@ local function nav_visit(tab)
         table.remove(lines, 1)
     end
     -- another host's watcher writes the same file, so it's replaced whole
-    write_file(nav_history .. ".tmp", table.concat(lines, "\n") .. "\n")
+    common.write_file(nav_history .. ".tmp", table.concat(lines, "\n") .. "\n")
     os.rename(nav_history .. ".tmp", nav_history)
-    write_file(nav_position, "0")
+    common.write_file(nav_position, "0")
 end
 
 -- rewrite the log keeping only the latest line for each entry, in order
@@ -175,14 +158,14 @@ rex.on("terminal.size_changed", function(_, ev)
         return
     end
     last_session, last_seen = ev.session_id, now
-    write_file(nav_current, host .. "\t" .. ev.session_id)
+    common.write_file(nav_current, host .. "\t" .. ev.session_id)
     record(ev.session_id)
 end)
 
 -- tab and pane focus changes; only for the session on screen, on whichever
 -- host, since any session's view changes when something in it does, seen or not
 rex.on("session_view_changed", function(_, ev)
-    if read_file(nav_current) == host .. "\t" .. ev.session_id then
+    if common.read_file(nav_current) == host .. "\t" .. ev.session_id then
         record(ev.session_id)
     end
 end)

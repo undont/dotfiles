@@ -1,5 +1,5 @@
 -- keybindings migrated from tmux (prefix `) and ghostty, with rex's native closes.
--- the custom floats (pickers, copy mode, y/n kills) are in lua/actions.lua.
+-- the custom floats (pickers, copy mode, y/n kills) are in lua/.
 -- ctrl+s and ctrl+o are zle widgets in ~/.zshrc
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
@@ -25,7 +25,6 @@ rex.bind("alt+t", "client.tab.new")
 rex.bind("alt+shift+[", "client.tab.move", { direction = "backward" })
 rex.bind("alt+shift+]", "client.tab.move", { direction = "forward" })
 rex.bind("alt+r", "client.tab.rename")
-rex.bind("alt+x", "client.tab.close")
 
 -- panes
 for key, direction in pairs({ h = "left", j = "down", k = "up", l = "right" }) do
@@ -50,8 +49,6 @@ rex.bind("cmd+\\", "client.sidebar.toggle")
 rex.bind("cmd+shift+\\", "client.sidebar.toggle")
 rex.bind("cmd+shift+/", "client.sidebar.toggle")
 
-rex.bind("alt+q", "session.close")
-
 rex.bind("cmd+p", "session.switch")
 rex.bind("cmd+j", "session.switch")
 rex.bind("cmd+k", "pane.go_to")
@@ -61,4 +58,4 @@ require("nav")
 require("copy-mode")
 require("actions")
 require("marks")
-require("dotfiles-theme")
+require("app-actions")

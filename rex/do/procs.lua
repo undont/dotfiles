@@ -13,17 +13,12 @@ local SUPPRESS = DIR .. "/suppress"
 local FINISHED_MAX_AGE = 3600
 local FINISHED_MAX_SHOW = 20
 local FINISHED_MAX_KEEP = 200
-local RESET = "\27[0m"
 
 -- glyphs and colours match tmux/scripts/_lib/alerts.sh
 local RUNNING_STYLE = { "●", "#d8a657" }
 local DONE_STYLE = { "✓", "#7aab88" }
 local FAILED_STYLE = { "✗", "#c07878" }
 local STOPPED_STYLE = { "⊘", "#8a8f98" }
-
-local function paint(style)
-    return common.hex_fg(style[2]) .. style[1] .. RESET
-end
 
 -- a shell reports a signal death as 128+N, an interruption rather than a failure
 local function exit_style(code)
@@ -34,16 +29,6 @@ local function exit_style(code)
         return DONE_STYLE
     end
     return FAILED_STYLE
-end
-
--- 45s, 12m, 1h03m
-local function elapsed(seconds)
-    if seconds < 60 then
-        return string.format("%ds", seconds)
-    elseif seconds < 3600 then
-        return string.format("%dm", math.floor(seconds / 60))
-    end
-    return string.format("%dh%02dm", math.floor(seconds / 3600), math.floor(seconds % 3600 / 60))
 end
 
 local function fields(line)
@@ -101,8 +86,8 @@ local function running_rows(where, now)
             os.remove(path)
         else
             local seconds = start > 0 and math.max(0, now - start) or 0
-            local meta = start > 0 and elapsed(seconds) or "·"
-            local display = paint(RUNNING_STYLE) .. "  " .. place.name() .. "  " .. label .. "  " .. meta
+            local meta = start > 0 and common.elapsed(seconds) or "·"
+            local display = common.paint(RUNNING_STYLE) .. "  " .. place.name() .. "  " .. label .. "  " .. meta
             table.insert(rows, {
                 seconds = seconds,
                 line = table.concat({ block, place.session, place.window, "run", "0", display }, "\t"),
@@ -168,13 +153,13 @@ local function finished_rows(where, now)
     for i = 1, math.min(#entries, FINISHED_MAX_SHOW) do
         local entry = entries[i]
         local place = where[entry.block]
-        local display = paint(exit_style(entry.exit))
+        local display = common.paint(exit_style(entry.exit))
             .. "  "
             .. place.name()
             .. "  "
             .. entry.label
             .. "  ("
-            .. elapsed(math.max(0, now - entry.epoch))
+            .. common.elapsed(math.max(0, now - entry.epoch))
             .. " ago)"
         table.insert(
             rows,
@@ -188,10 +173,10 @@ end
 local function header()
     local legend = string.format(
         "  %s running  %s done  %s failed  %s stopped",
-        paint(RUNNING_STYLE),
-        paint(DONE_STYLE),
-        paint(FAILED_STYLE),
-        paint(STOPPED_STYLE)
+        common.paint(RUNNING_STYLE),
+        common.paint(DONE_STYLE),
+        common.paint(FAILED_STYLE),
+        common.paint(STOPPED_STYLE)
     )
     for _, line in ipairs({ "", legend, "" }) do
         common.out("\t\t\t\t\t" .. line)

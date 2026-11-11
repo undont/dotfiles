@@ -3,8 +3,7 @@
 # server's copy_text action: the app ignores OSC 52 from another host's panes
 set -euo pipefail
 
-text=$(cat)
-server=()
-home=$(rex hosts --json 2>/dev/null | jq -r 'if .home.this_machine then "" else .home.endpoint end')
-[[ -n "$home" ]] && server=(-S "$home")
-rex "${server[@]}" "do" copy_text "text=$text" >/dev/null
+# shellcheck source=/dev/null
+source "${BASH_SOURCE%/*}/_lib.sh"
+
+home_rex "do" copy_text "text=$(cat)" >/dev/null

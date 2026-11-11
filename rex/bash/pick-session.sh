@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # fzf session picker, run inside a floating layer by the pick_session action.
-# rows and actions are in pick/sessions.lua
+# rows and actions are in do/sessions.lua
 # usage: pick-session.sh <client_id> <origin_session_id> <origin_block_id> <origin_zoomed>
 set -euo pipefail
 
