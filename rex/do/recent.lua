@@ -26,16 +26,13 @@ local appended = 0
 
 -- back/forward history: "host<tab>session<tab>window" lines, oldest first, plus
 -- how many entries back from the newest nav.lua has stepped (0 = at the
--- newest). skip holds the tab a nav.lua jump is landing on, so the jump isn't
--- a new visit. current holds the host and session on screen, which every
+-- newest). current holds the host and session on screen, which every
 -- watcher reads, since each only sees its own server's switches
 local nav_history = cache .. "/nav/history"
 local nav_position = cache .. "/nav/position"
-local nav_skip = cache .. "/nav/skip"
 local nav_current = cache .. "/nav/current"
 local NAV_MAX = 100
 rex.exec({ "mkdir", "-p", cache .. "/nav" })
-local last_tab = ""
 
 local function read_lines(path)
     local lines = {}
@@ -50,25 +47,20 @@ local function read_lines(path)
     return lines
 end
 
--- a visit after stepping back drops the forward entries, as in a browser
+-- a visit after stepping back drops the forward entries, as in a browser.
+-- the tab at the current position is no visit: a repeat event, or the tab a
+-- nav.lua jump landed on. the history is shared with the other hosts'
+-- watchers, so it's the only record of where you are
 local function nav_visit(tab)
-    if tab == last_tab then
-        return
-    end
-    last_tab = tab
-    local skip = common.read_file(nav_skip)
-    os.remove(nav_skip)
-    if skip == tab then
-        return
-    end
     local lines = read_lines(nav_history)
     local position = tonumber(common.read_file(nav_position)) or 0
+    if lines[#lines - position] == tab then
+        return
+    end
     for _ = 1, position do
         table.remove(lines)
     end
-    if lines[#lines] ~= tab then
-        table.insert(lines, tab)
-    end
+    table.insert(lines, tab)
     while #lines > NAV_MAX do
         table.remove(lines, 1)
     end

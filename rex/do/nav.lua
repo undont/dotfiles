@@ -45,8 +45,7 @@ local function go(args, step)
         local entry = entries[#entries - target]
         local host, session_id, window_id = parse(entry)
         if session_id and tab_exists(host, session_id, window_id) then
-            -- recent.lua skips the visit this jump causes
-            common.write_file(NAV .. "/skip", host .. "\t" .. session_id .. "\t" .. window_id)
+            -- written before the jump, so recent.lua reads it as no visit
             common.write_file(NAV .. "/position", tostring(target))
             common.show_in_client(session_id, window_id, host)
             return
