@@ -17,7 +17,7 @@ local cache = common.CACHE
 local host = rex.args.host and tostring(rex.args.host) or ""
 local log_path = cache .. "/recent"
 -- lines are session, tab, pane. the log only needs each entry's latest line,
--- so it's compacted once it grows past this
+-- so it's compacted at start and once it grows past this
 local MAX_LINES = 1000
 
 local last_entry = ""
@@ -78,12 +78,37 @@ local function nav_visit(tab)
     common.write_file(nav_position, "0")
 end
 
--- rewrite the log keeping only the latest line for each entry, in order
+-- the window ids open in every session, or nil when a lookup fails, so a
+-- failed lookup drops nothing
+local function open_windows()
+    local ok, sessions = pcall(common.sessions)
+    if not ok or not sessions then
+        return nil
+    end
+    local open = {}
+    for _, session in ipairs(sessions) do
+        local viewed, view = pcall(common.view, session.session_id)
+        if not viewed or not view then
+            return nil
+        end
+        for _, window in ipairs(view.windows) do
+            open[window.window_id] = true
+        end
+    end
+    return open
+end
+
+-- rewrite the log keeping only the latest line for each entry, in order,
+-- and dropping entries for tabs that have closed
 local function compact()
+    local open = open_windows()
     local lines, latest = {}, {}
-    for line in io.lines(log_path) do
-        table.insert(lines, line)
-        latest[line] = #lines
+    for _, line in ipairs(read_lines(log_path)) do
+        local window = line:match("^[^\t]*\t([^\t]*)")
+        if not open or open[window] then
+            table.insert(lines, line)
+            latest[line] = #lines
+        end
     end
     local tmp = log_path .. ".tmp"
     local out = assert(io.open(tmp, "w"))
@@ -187,6 +212,10 @@ local function supervise()
             )
         end
     end
+end
+
+if host == "" then
+    compact()
 end
 
 if host == "" and rex.args.rex then
