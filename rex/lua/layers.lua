@@ -8,6 +8,8 @@ M.rex = "rex"
 local app_rex = os.getenv("HOME")
     .. "/Library/Application Support/com.superlogical.rex/RexServer/Versions/Current/Rex Server.app/Contents/MacOS/rex"
 local app_file = io.open(app_rex)
+-- the machine running the app, which keeps the back/forward history
+M.has_app = app_file ~= nil
 if app_file then
     app_file:close()
     M.rex = app_rex
@@ -95,15 +97,20 @@ function M.run_pick(args, server)
 end
 
 -- start the recent.lua watcher unless one is running, so a config reload
--- doesn't start a second. rex's own path has a space in it, so the match is
--- on the arguments
+-- doesn't start a second; it starts the other hosts' watchers itself, since
+-- rex.servers() is empty while the config loads. only on the machine running
+-- the app, which keeps the history. rex's own path has a space in it, so the
+-- match is on the arguments
 function M.start_recent()
-    local running = rex.exec({ "/usr/bin/pgrep", "-f", "do --all .*/rex/do/recent\\.lua$" })
+    if not M.has_app then
+        return
+    end
+    local running = rex.exec({ "/usr/bin/pgrep", "-f", "do --all .*/rex/do/recent\\.lua rex=" })
     if running and running.ok then
         return
     end
     rex.exec.start(
-        { M.rex, "do", "--all", M.do_scripts .. "recent.lua" },
+        { M.rex, "do", "--all", M.do_scripts .. "recent.lua", "rex=" .. M.rex },
         { detach = true, stdout = false, stderr = false }
     )
 end
