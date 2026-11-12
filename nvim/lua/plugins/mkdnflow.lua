@@ -76,9 +76,10 @@ return {
           wo.list = false -- listchars conflict with linebreak
 
           local map = vim.keymap.set
-          local bopts = { buffer = ev.buf, silent = true }
-          map('n', 'j', 'gj', bopts)
-          map('n', 'k', 'gk', bopts)
+          -- a count moves by buffer line, so `7k` matches the relativenumber gutter
+          local motion_opts = { buffer = ev.buf, silent = true, expr = true }
+          map('n', 'j', "v:count == 0 ? 'gj' : 'j'", motion_opts)
+          map('n', 'k', "v:count == 0 ? 'gk' : 'k'", motion_opts)
 
           vim.api.nvim_create_autocmd('TextChanged', {
             buffer = ev.buf,

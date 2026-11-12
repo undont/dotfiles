@@ -575,8 +575,6 @@ cdf() {
 # directory history picker for the command line; the Opt+A widget has its own inline copy
 autoload -Uz _cdl
 
-# @cheat: Opt+A | cd from history (fzf)
-
 autoload -Uz edit-command-line
 zle -N edit-command-line
 bindkey '^g' edit-command-line # Ctrl+G: edit the command line in $EDITOR
@@ -587,7 +585,7 @@ bindkey ' ' magic-space # Space: history expansion
 
 # BSD ls uses -G, GNU ls uses --color=auto
 if [[ "$IS_MACOS" == "1" ]]; then
-    alias ls="ls -G" # ls (colour-aware)
+    alias ls="ls -G"
 else
     alias ls="ls --color=auto"
 fi
@@ -595,8 +593,8 @@ alias ll="ls -alF" # ls -alF
 alias la="ls -A"   # ls -A
 alias l="ls -lF"   # ls -lF
 
-alias cp="cp -i" # cp -i (safe overwrite)
-alias mv="mv -i" # mv -i (safe overwrite)
+alias cp="cp -i"
+alias mv="mv -i"
 
 alias -s md='glow -t' # open .md files with glow
 
@@ -614,8 +612,7 @@ y() {
 
 # @section: SEARCH & PROCESS
 
-alias grep="grep --color=auto" # grep --color=auto
-# @cheat: rg | ripgrep (fast search)
+alias grep="grep --color=auto"
 # @cheat: psg <name> | ps aux | grep
 alias psg="ps aux | grep -v grep | grep"
 alias ports="lsof -i -P -n | grep LISTEN" # lsof ports (local)
@@ -726,8 +723,8 @@ compdef _tmux_sessions_running tattach
 
 # @section: SYSTEM & NETWORK
 
-alias df="df -h"                 # df -h
-alias du="du -sh"                # du -sh
+alias df="df -h"
+alias du="du -sh"
 alias myip="curl -s ifconfig.me" # curl ifconfig.me
 alias v="cl && nvim"             # clear + nvim
 
@@ -746,14 +743,8 @@ else
     alias o="xdg-open"
 fi
 
-alias config="v ~/.config"                       # open nvim in ~/.config (dir)
-alias cache="v ~/.cache"                         # open nvim in ~/.cache (dir)
-alias zshrc="v ~/.zshrc"                         # open nvim in ~/.zshrc (file)
-alias secrets="v ~/.config/zsh/secrets.zsh"      # open nvim in secrets.zsh (file)
-alias launchers="v ~/.config/dotfiles/launchers" # open launcher configs (dir)
-alias nconf="v ~/.config/nvim/local.lua"         # open nvim local config (file)
-alias gconf="v ~/.config/ghostty/local"          # open ghostty local config (file)
-alias tconf="v ~/.config/tmux/local.conf"        # open tmux local config (file)
+alias config="v ~/.config" # open nvim in ~/.config (dir)
+alias cache="v ~/.cache"   # open nvim in ~/.cache (dir)
 
 # font preview (figlet/toilet font browser with fzf)
 # @cheat: font-preview | font browser (fzf)
@@ -881,12 +872,13 @@ fi
 
 # @section: DEVELOPMENT
 
-alias opencode="cl && opencode" # cl + opencode
+alias opencode="cl && opencode"
 alias oc="opencode"
-alias claude="cl && claude" # cl + claude
+alias claude="cl && claude"
 alias ralph="cl && ralph"
 alias ralf="cl && ralf"
-alias copilot="cl && copilot" # cl + copilot
+alias pi="cl && pi"
+alias copilot="cl && copilot"
 alias btop="cl && btop"
 alias drs="dash-repo-sync"                                                            # sync repo paths
 alias ff="fastfetch"                                                                  # fastfetch system info
@@ -987,7 +979,7 @@ alias brewup="brew update && brew upgrade"                                      
 alias nuke-node='killall -9 node 2>/dev/null && echo "done" || echo "no node processes"'                                                                                                                                                                                                     # kill all node procs
 alias nuke-nvim='ps -eo pid,ppid,args | awk "/nvim --embed/ && \$2 == 1 {print \$1}" | xargs kill 2>/dev/null && echo "done" || echo "no stale nvim processes"'                                                                                                                              # kill stale nvim procs
 alias nuke-dotnet='dotnet build-server shutdown 2>/dev/null; pkill -f "OmniSharp.dll" 2>/dev/null; pkill -f "EasyDotnet.BuildServer.dll" 2>/dev/null; pkill -f "dotnet-easydotnet" 2>/dev/null; pkill -f "VBCSCompiler" 2>/dev/null; pkill -f "vstest.console.dll" 2>/dev/null; echo "done"' # kill stale dotnet procs
-alias dot="dotfiles"
+alias dot="dotfiles"                                                                                                                                                                                                                                                                         # dotfiles CLI (dot help)
 
 # relocate claude code per-project data (session transcripts + memories) so it
 # follows a moved project. claude keys the dir on the absolute path with every
@@ -1085,6 +1077,8 @@ alias demote="relegate"
 # ZSH LINE EDITOR (ZLE) KEYBINDINGS
 # =============================================================================
 # bindkey -e and KEYTIMEOUT are set earlier, before plugins
+# @section: KEYS
+# @cheat: Opt+A | cd from history (fzf)
 
 bindkey '^[^?' backward-kill-word # Option+Backspace: delete word backwards
 bindkey '^W' backward-kill-word   # Ctrl+W: delete word backwards
@@ -1156,7 +1150,6 @@ _launcher-picker-widget() {
 }
 zle -N _launcher-picker-widget
 bindkey '^o' _launcher-picker-widget
-# @cheat: Cmd+Backspace | delete to line start
 bindkey '\e[127;5u' backward-kill-line # Cmd+Backspace (via Ghostty: super+backspace → Ctrl+Backspace)
 
 # ghostty sends these sequences for modifier+enter combos; bind them to
@@ -1184,6 +1177,22 @@ bindkey -s '\e[27;5;61~' '' # Ctrl+= (swallow)
 autoload -Uz _dotfiles
 compdef _dotfiles dotfiles
 compdef _dotfiles dot
+
+# a child process can't change this shell's directory, so `dotfiles cd` prints
+# the path and this function cds to it
+dotfiles() {
+    if [[ "$1" != cd ]]; then
+        command dotfiles "$@"
+        return
+    fi
+    local out
+    out=$(command dotfiles "$@") || return
+    if [[ -d "$out" ]]; then
+        cd "$out"
+    else
+        print -r -- "$out"
+    fi
+}
 
 # =============================================================================
 # COMMAND EXIT ALERTS (auto-alert for long-running commands)
@@ -1222,31 +1231,6 @@ zsh-profile() {
 zsh-profile-detailed() {
     ZPROF=1 zsh -i -c exit
 }
-
-# =============================================================================
-# DOTFILES CLI CHEATSHEET
-# =============================================================================
-# `dotfiles` subcommands, declared as free-form rows so `dotfiles aliases`
-# renders them with the shell shortcuts above
-# @section: DOTFILES CLI
-# @cheat: update  -u | smart update
-# @cheat: status  -s | version + sync + changes
-# @cheat: health | full health check
-# @cheat: links   -l | managed symlinks
-# @cheat: theme   -t | colour themes
-# @cheat: set dev <d> | set DEV_ROOT
-# @cheat: diff    -d | copy-on-install diffs
-# @cheat: sync | sync copy-on-install
-# @cheat: export | local layer to private repo
-# @cheat: import | local layer from private repo
-# @cheat: local | manage local-layer repo
-# @cheat: notes   -n | browse changelog
-# @cheat: version -v | version, preset, theme
-# @cheat: edit    -e | open in $EDITOR
-# @cheat: cd | print dotfiles path
-# @cheat: aliases -a | show this reference
-# @cheat: dot | shorthand for dotfiles
-# @cheat: help | show help message
 
 # =============================================================================
 # ZPROF OUTPUT (end of startup)

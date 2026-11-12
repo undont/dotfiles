@@ -226,6 +226,7 @@ Case-aware substitute (live preview) | :S/{from}/{to}/
 
 ## diff @differ
 Diff open (vs index) | <leader>do (or :D)
+Diff close | <leader>dc
 Diff branch total (vs base) | <leader>dt
 Diff branch by ticket | <leader>dT
 Diff file history | <leader>dh

@@ -16,14 +16,38 @@ commands=(
   'import:Import local layer from the private repo'
   'local:Manage the private local-layer repo'
   'notes:Browse the full changelog in a pager'
-  'version:Show current dotfiles version, preset, and theme'
-  'edit:Open dotfiles directory in $EDITOR'
-  'cd:Print dotfiles path'
+  'version:Print the dotfiles version'
+  'edit:Open dotfiles or a local config in $EDITOR'
+  'cd:cd into dotfiles or a target directory'
   'help:Show help message'
 )
 
+local -a short_flags
+short_flags=(
+  '-u:update'
+  '-s:status'
+  '-t:theme'
+  '-l:links'
+  '-d:diff'
+  '-a:aliases'
+  '-n:notes'
+  '-v:version'
+  '-e:edit'
+)
+
+# names from `dotfiles help edit`, which lists them from the CLI's target table
+_dotfiles_targets() {
+  local -a targets
+  targets=(${(f)"$(command dotfiles help edit 2>/dev/null | awk '/^TARGETS/ {on=1; next} /^$/ {on=0} on {print $1}')"})
+  _describe 'target' targets
+}
+
 if (( CURRENT == 2 )); then
-  _describe 'dotfiles command' commands
+  if [[ "$PREFIX" == -* ]]; then
+    _describe 'dotfiles shorthand' short_flags
+  else
+    _describe 'dotfiles command' commands
+  fi
 elif (( CURRENT == 3 )); then
   case "${words[2]}" in
     update|-u)
@@ -89,8 +113,13 @@ elif (( CURRENT == 3 )); then
         'clone:Clone an existing local-layer repo'
         'diff:Show system vs repo differences'
         'edit:Open the local-layer repo in $EDITOR'
+        'export:Export local layer to the private repo'
+        'import:Import local layer from the private repo'
       )
       _describe 'local' local_opts
+      ;;
+    edit|-e|cd)
+      _dotfiles_targets
       ;;
   esac
 elif (( CURRENT == 4 )); then
@@ -102,6 +131,7 @@ elif (( CURRENT == 4 )); then
       case "${words[3]}" in
         switch)
           local -a switch_opts
+          switch_opts=('random:Switch to a random dark theme')
           local dotfiles_dir="${DOTFILES_DIR:-$HOME/dotfiles}"
           local theme_file
           for theme_file in "$dotfiles_dir"/themes/*.theme(N); do
@@ -143,6 +173,28 @@ elif (( CURRENT == 4 )); then
             del_opts+=("${name}:Delete generated theme")
           done
           _describe 'theme-delete' del_opts
+          ;;
+      esac
+      ;;
+    local)
+      case "${words[3]}" in
+        init|clone)
+          local -a dir_opts
+          dir_opts=('--dir:Use a custom repo location')
+          _describe 'local option' dir_opts
+          ;;
+        import)
+          local -a import_opts
+          import_opts=(
+            '--force:Overwrite differing system files'
+            '--prune:Delete launchers not tracked in the repo'
+          )
+          _describe 'import option' import_opts
+          ;;
+        export)
+          local -a export_opts
+          export_opts=('--push:Push to origin after committing')
+          _describe 'export option' export_opts
           ;;
       esac
       ;;

@@ -92,13 +92,13 @@ else
     fail "-h broken"
 fi
 
-if [[ "$("$DOTFILES_CLI" --version 2>&1)" == *"Version:"* ]]; then
+if [[ "$("$DOTFILES_CLI" --version 2>&1)" == "dotfiles "[0-9]* ]]; then
     pass "--version works"
 else
     fail "--version broken"
 fi
 
-if [[ "$("$DOTFILES_CLI" -V 2>&1)" == *"Version:"* ]]; then
+if [[ "$("$DOTFILES_CLI" -V 2>&1)" == "dotfiles "[0-9]* ]]; then
     pass "-V works"
 else
     fail "-V broken"
@@ -147,10 +147,10 @@ fi
 section "cmd_cd"
 
 cd_out=$("$DOTFILES_CLI" cd 2>&1)
-if [[ -d "$cd_out" ]]; then
-    pass "cd outputs a valid directory"
+if [[ "$cd_out" == "$DOTFILES_DIR" ]]; then
+    pass "cd with no target prints the repo path"
 else
-    fail "cd outputs an invalid directory: $cd_out"
+    fail "cd should print the repo path, got: $cd_out"
 fi
 
 cd_lines=$(printf '%s' "$cd_out" | wc -l | tr -d ' ')
@@ -160,29 +160,91 @@ else
     fail "cd output should be single-line, got $((cd_lines + 1)) lines"
 fi
 
+if out=$("$DOTFILES_CLI" cd no_such_target 2>&1); then
+    fail "cd with an unknown target should fail"
+else
+    code=$?
+    if [[ $code -eq 2 && "$out" == *"Unknown target"* && "$out" == *"nvim"* ]]; then
+        pass "cd <unknown> exits 2 and lists the targets"
+    else
+        fail "cd <unknown> exited $code: $out"
+    fi
+fi
+
+section "cmd_cd / cmd_edit targets (sandboxed)"
+
+setup_cli_sandbox
+
+mkdir -p "$HOME/.config/nvim" "$HOME/.config/dotfiles/launchers"
+touch "$HOME/.config/nvim/local.lua"
+
+out=$(dotfiles_run cd nvim)
+if [[ "$out" == "$HOME/.config/nvim" ]]; then
+    pass "cd on a file target prints its directory"
+else
+    fail "cd nvim should print ~/.config/nvim, got: $out"
+fi
+
+out=$(dotfiles_run cd launchers)
+if [[ "$out" == "$HOME/.config/dotfiles/launchers" ]]; then
+    pass "cd on a directory target prints the directory"
+else
+    fail "cd launchers should print the launchers dir, got: $out"
+fi
+
+out=$(EDITOR="echo" dotfiles_run edit nvim)
+if [[ "$out" == "$HOME/.config/nvim/local.lua" ]]; then
+    pass "edit on a file target opens the file"
+else
+    fail "edit nvim should open local.lua, got: $out"
+fi
+
+out=$(EDITOR="echo" dotfiles_run edit launchers)
+if [[ "$out" == "." ]]; then
+    pass "edit on a directory target opens it from inside"
+else
+    fail "edit launchers should open '.', got: $out"
+fi
+
+if out=$(dotfiles_run edit tmux); then
+    fail "edit on a missing target should fail"
+elif [[ "$out" == *"Not installed"* ]]; then
+    pass "edit on a missing target reports it as not installed"
+else
+    fail "edit on a missing target: unexpected output: $out"
+fi
+
+cleanup_sandbox
+
+section "Edit targets follow the manifest"
+
+# every target except local and secrets is a local, copy or sync dest
+manifest_dests=$(
+    # shellcheck source=scripts/_lib/common.sh
+    source "$DOTFILES_DIR/scripts/_lib/common.sh"
+    # shellcheck source=scripts/_lib/manifest.sh
+    source "$DOTFILES_DIR/scripts/_lib/manifest.sh"
+    PRESET=full
+    manifest_rows local copy sync | cut -f4 | sed 's|/$||'
+)
+while read -r name path; do
+    [[ -z "$name" || "$name" == local || "$name" == secrets ]] && continue
+    path="${path/#\~/$HOME}"
+    if grep -qFx "$path" <<<"$manifest_dests"; then
+        pass "edit target '$name' is a manifest dest"
+    else
+        fail "edit target '$name' ($path) is not in scripts/manifest.toml"
+    fi
+done < <("$DOTFILES_CLI" help edit | awk '/^TARGETS/ {on=1; next} /^$/ {on=0} on {name=$1; sub(/^ *[^ ]+ +/, ""); print name, $0}')
+
 section "cmd_version"
 
 ver_out=$("$DOTFILES_CLI" version 2>&1)
-
-for label in "Version:" "Released:" "Preset:" "Branch:" "Path:"; do
-    if [[ "$ver_out" == *"$label"* ]]; then
-        pass "version output includes '$label'"
-    else
-        fail "version output missing '$label'"
-    fi
-done
-
-# "Updated:" renders only after install.sh has written a last-update time,
-# so it is absent on a fresh clone and in CI
-update_stamp="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/.state/last-update"
-if [[ -f "$update_stamp" ]]; then
-    if [[ "$ver_out" == *"Updated:"* ]]; then
-        pass "version output includes 'Updated:' (stamp present)"
-    else
-        fail "version output missing 'Updated:' despite a last-update stamp"
-    fi
+ver_lines=$(printf '%s' "$ver_out" | wc -l | tr -d ' ')
+if [[ "$ver_out" == "dotfiles "[0-9]* && "$ver_lines" == "0" ]]; then
+    pass "version prints one line"
 else
-    skip "Updated: shown only after an install/update has stamped a time"
+    fail "version should print one 'dotfiles X.Y.Z' line, got: $ver_out"
 fi
 
 section "cmd_links"
@@ -241,7 +303,7 @@ else
     fail "aliases missing header"
 fi
 
-for sect in NAVIGATION FILES GIT TMUX "DOTFILES CLI"; do
+for sect in NAVIGATION FILES GIT TMUX KEYS; do
     if [[ "$aliases_out" == *"$sect"* ]]; then
         pass "aliases includes section: $sect"
     else
@@ -260,11 +322,135 @@ done
 section "cmd_status"
 
 # `status` runs git fetch
-if "$DOTFILES_CLI" status >/dev/null 2>&1; then
+if status_out=$("$DOTFILES_CLI" status 2>&1); then
     pass "status exits 0"
 else
     fail "status exits non-zero"
 fi
+
+for label in "Version:" "Released:" "Preset:" "Branch:" "Path:"; do
+    if [[ "$status_out" == *"$label"* ]]; then
+        pass "status output includes '$label'"
+    else
+        fail "status output missing '$label'"
+    fi
+done
+
+# "Updated:" renders only after install.sh has written a last-update time,
+# so it is absent on a fresh clone and in CI
+update_stamp="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/.state/last-update"
+if [[ -f "$update_stamp" ]]; then
+    if [[ "$status_out" == *"Updated:"* ]]; then
+        pass "status output includes 'Updated:' (stamp present)"
+    else
+        fail "status output missing 'Updated:' despite a last-update stamp"
+    fi
+else
+    skip "Updated: shown only after an install/update has stamped a time"
+fi
+
+section "cmd_status: project roots (sandboxed)"
+
+setup_cli_sandbox
+# shellcheck disable=SC2016
+printf 'export DEV_ROOT="$HOME/src"\nexport PROJECTS_ROOT="/opt/play"\n' >"$HOME/.zshrc"
+out=$(dotfiles_run status)
+if [[ "$out" == *"Dev root:"*"~/src"* && "$out" == *"Projects:"*"/opt/play"* ]]; then
+    pass "status shows DEV_ROOT and PROJECTS_ROOT from ~/.zshrc"
+else
+    fail "status should show the project roots: $out"
+fi
+cleanup_sandbox
+
+section "cmd_aliases: layout (synthetic source)"
+
+setup_cli_sandbox
+cat >"$TEST_DOTFILES_DIR/zsh/dotfiles.zsh" <<'EOF'
+# @section: Demo
+alias alpha="x" # short one
+alias beta="x"  # short two
+# @cheat: wide | a description long enough that it cannot share its line with another entry at all
+alias gamma="x" # short three
+EOF
+cat >"$HOME/.zshrc" <<'EOF'
+alias src="cd \$DEV_ROOT"
+alias kv="pkill -f \"vite\""
+EOF
+
+stripped=$(dotfiles_run aliases | sed -E $'s/\x1b\\[[0-9;]*m//g')
+order=$(printf '%s\n' "$stripped" | awk '/^  / {for (i = 1; i <= NF; i++) if ($i ~ /^(alpha|beta|wide|gamma)$/) printf "%s ", $i}')
+if [[ "$order" == "alpha beta wide gamma " ]]; then
+    pass "entries render in source order around a wide entry"
+else
+    fail "entries should keep source order, got: $order"
+fi
+if printf '%s\n' "$stripped" | grep -q '^  wide .*at all$'; then
+    pass "a wide entry gets a line of its own"
+else
+    fail "the wide entry should be alone on its line"
+fi
+# shellcheck disable=SC2016
+if [[ "$stripped" == *'cd $DEV_ROOT'* && "$stripped" == *'pkill -f "vite"'* ]]; then
+    pass "user alias values are shown unescaped"
+else
+    fail "user alias values should be unescaped"
+fi
+cleanup_sandbox
+
+section "cmd_update: upstream (sandboxed)"
+
+setup_cli_sandbox
+
+git_sandbox() { git -C "$TEST_DOTFILES_DIR" -c user.name=test -c user.email=test@test "$@"; }
+git_sandbox init -q -b work
+git_sandbox add -A
+git_sandbox commit -q -m init
+
+if out=$(dotfiles_run update </dev/null); then
+    fail "update on a branch with no upstream should fail"
+elif [[ "$out" == *"No upstream for work"* ]]; then
+    pass "update with no upstream names the branch"
+else
+    fail "update with no upstream: unexpected output: $out"
+fi
+
+out=$(dotfiles_run status)
+if [[ "$out" == *"No upstream for work"* ]]; then
+    pass "status reports a missing upstream"
+else
+    fail "status should report the missing upstream"
+fi
+
+git init -q --bare "$TEST_DIR/remote.git"
+git_sandbox remote add origin "$TEST_DIR/remote.git"
+git_sandbox push -q -u origin work 2>/dev/null
+
+out=$(dotfiles_run update --force --preview </dev/null)
+if [[ "$out" == *"tracking origin/work"* && "$out" == *"Already up-to-date"* && "$out" == *"update --force"* ]]; then
+    pass "update --force --preview on an up-to-date branch plans a full re-run"
+else
+    fail "update --force --preview should plan a re-run against origin/work: $out"
+fi
+
+out=$(dotfiles_run update </dev/null)
+if [[ "$out" == *"Already up-to-date"* && "$out" != *"Re-run"* ]]; then
+    pass "update without --force stops when up to date"
+else
+    fail "update without --force should stop when up to date: $out"
+fi
+
+cleanup_sandbox
+
+section "local subcommand help"
+
+for sub in status init clone diff edit; do
+    out=$("$DOTFILES_CLI" local "$sub" --help 2>&1)
+    if [[ "$out" == *"dotfiles local: manage the private local-layer repo"* ]]; then
+        pass "local $sub --help shows local help"
+    else
+        fail "local $sub --help should show local help"
+    fi
+done
 
 # ─── 5. flag parsing contract ──────────────────────────────────────────
 
@@ -579,7 +765,8 @@ section "Cheatsheet: intentional omissions stay omitted"
 
 # aliases in zsh/dotfiles.zsh that carry no description and so stay out of
 # `dotfiles aliases`: platform-conditional twins of a described alias,
-# implementations behind a shorter public alias, and `cl &&` wrappers.
+# implementations behind a shorter public alias, `cl &&` wrappers, and
+# overrides that add flags to the command of the same name.
 # an entry removed here needs a description on its alias
 omitted_aliases=(
     "demo-rec"     # asciinema recording (developer-only)
@@ -590,6 +777,15 @@ omitted_aliases=(
     "ralph"        # cl && ralph wrapper
     "ralf"         # cl && ralf wrapper
     "btop"         # cl && btop wrapper
+    "opencode"     # cl && opencode wrapper
+    "claude"       # cl && claude wrapper
+    "copilot"      # cl && copilot wrapper
+    "ls"           # ls with colour flags
+    "grep"         # grep --color=auto
+    "cp"           # cp -i
+    "mv"           # mv -i
+    "df"           # df -h
+    "du"           # du -sh
 )
 
 # an empty HOME keeps the real ~/.zshrc aliases out of the output
