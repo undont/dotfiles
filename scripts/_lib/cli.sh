@@ -37,6 +37,17 @@ get_local_dir() {
     fi
 }
 
+# the current branch's upstream (origin/main); fails when it has none
+get_upstream_branch() {
+    git -C "$DOTFILES_DIR" rev-parse --abbrev-ref --symbolic-full-name '@{upstream}' 2>/dev/null
+}
+
+current_theme() {
+    if [[ -f "$CONFIG_DIR/current-theme" ]]; then
+        cat "$CONFIG_DIR/current-theme"
+    fi
+}
+
 # origin/HEAD, falling back to origin/main then origin/master
 get_remote_branch() {
     local ref

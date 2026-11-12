@@ -41,6 +41,97 @@ missing_arg() {
     return 2
 }
 
+# usage: _no_args <cmd> "$@" || return
+_no_args() {
+    local cmd="$1"
+    shift
+    [[ $# -eq 0 ]] || unknown_flag "$cmd" "$1"
+}
+
+# command name for a short flag or alias, else the argument unchanged
+_canonical_cmd() {
+    case "$1" in
+        -u) echo update ;;
+        -s) echo status ;;
+        -t) echo theme ;;
+        -l) echo links ;;
+        -d) echo diff ;;
+        -a | alias | cheat) echo aliases ;;
+        -n) echo notes ;;
+        -v | -V | --version) echo version ;;
+        -e) echo edit ;;
+        -h | --help) echo help ;;
+        *) printf '%s\n' "$1" ;;
+    esac
+}
+
+# name|path rows for edit and cd. local overrides and copy-on-install files
+# follow scripts/manifest.toml; test-dotfiles-cli.sh checks each path is a
+# manifest dest
+_edit_targets() {
+    local cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
+    local lazydocker="$cfg/lazydocker/config.yml"
+    is_macos && lazydocker="$HOME/Library/Application Support/lazydocker/config.yml"
+    printf '%s\n' \
+        "btop|$cfg/btop/btop.conf" \
+        "gh-dash|$cfg/gh-dash/local.yml" \
+        "ghostty|$cfg/ghostty/local" \
+        "hammerspoon|$HOME/.hammerspoon/local.lua" \
+        "karabiner|$cfg/karabiner/karabiner.json" \
+        "launchers|$cfg/dotfiles/launchers" \
+        "lazydocker|$lazydocker" \
+        "lazygit|$cfg/lazygit/local.yml" \
+        "local|$(get_local_dir)" \
+        "nvim|$cfg/nvim/local.lua" \
+        "secrets|$cfg/zsh/secrets.zsh" \
+        "tmux|$cfg/tmux/local.conf" \
+        "zed|$cfg/zed/settings.json" \
+        "zshrc|$HOME/.zshrc"
+}
+
+# the repo with no name, else the named target's path, which must exist
+_target_path() {
+    local name="${1:-}"
+    if [[ -z "$name" ]]; then
+        printf '%s\n' "$DOTFILES_DIR"
+        return 0
+    fi
+    if [[ "$name" == local ]]; then
+        _local_dir_required
+        return
+    fi
+
+    local row path=""
+    while IFS= read -r row; do
+        [[ "${row%%|*}" == "$name" ]] && path="${row#*|}"
+    done < <(_edit_targets)
+
+    if [[ -z "$path" ]]; then
+        error "Unknown target: $name"
+        printf "  Targets: %s\n" "$(_edit_targets | cut -d'|' -f1 | paste -sd' ' -)" >&2
+        return 2
+    fi
+    if [[ ! -e "$path" ]]; then
+        error "Not installed: ${path/#"$HOME"/\~}"
+        return 1
+    fi
+    printf '%s\n' "$path"
+}
+
+# install.sh with the saved preset; skip_steps is a comma-separated list
+_run_installer() {
+    local preset="$1" skip_steps="$2"
+    local install_args=("--$preset" --skip-backup --update --yes)
+    [[ -n "$skip_steps" ]] && install_args+=(--skip-steps "$skip_steps")
+
+    if ! "$DOTFILES_DIR/install.sh" "${install_args[@]}"; then
+        _print_update_notices
+        error "Update failed, check output above"
+        return 1
+    fi
+    _print_update_notices
+}
+
 # ─── Internal helpers (single-use, kept inline for locality) ───────────
 
 # installer steps that can be skipped given the files changed between two refs,
@@ -55,7 +146,7 @@ _compute_skip_steps() {
     # homebrew and packages always run so upstream upgrades flow in;
     # install-packages.sh skips the install when `brew bundle check` passes
 
-    local symlink_patterns='^scripts/install/create-symlinks\.sh|\.template$|^zsh/|^tmux/|^nvim/|^ghostty/|^hammerspoon/|^karabiner/|^launchers/|^scripts/manifest\.conf$|^lazygit/|^lazydocker/|^formatters/|^gh-dash/|^btop/|^themes/|^keyd/'
+    local symlink_patterns='^scripts/install/create-symlinks\.sh|\.template$|^zsh/|^tmux/|^nvim/|^ghostty/|^hammerspoon/|^karabiner/|^launchers/|^scripts/manifest\.toml$|^scripts/_lib/(manifest|symlink)\.sh$|^lazygit/|^lazydocker/|^formatters/|^gh-dash/|^btop/|^themes/|^keyd/|^rex/|^yazi/|^zed/|^imagemagick/'
     if ! printf '%s\n' "$changed_files" | grep -qE "$symlink_patterns"; then
         skippable+=(symlinks)
     fi
@@ -302,27 +393,7 @@ _check_link() {
 # cheatsheet renderer. section and entry data is parsed from zsh/dotfiles.zsh;
 # see _aliases_parse for the source conventions
 cmd_aliases() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_aliases
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag aliases "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag aliases "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args aliases "$@" || return
 
     local source_file="$DOTFILES_DIR/zsh/dotfiles.zsh"
     if [[ ! -f "$source_file" ]]; then
@@ -339,18 +410,30 @@ cmd_aliases() {
     # the parser emits tab-separated records:
     #   SECTION<tab><name>            start a new section (flush the pending pair first)
     #   ENTRY<tab><name><tab><desc>   a row in the current section
+    # read here: inside $(...) stdout is a pipe, not the terminal
+    local width=100 rows cols
+    if [[ -t 1 ]] && read -r rows cols < <(stty size </dev/tty 2>/dev/null); then
+        width=$cols
+    fi
+    if ((width > 100)); then
+        width=100
+    fi
+
+    local -a names=() descs=()
     while IFS=$'\t' read -r kind a b; do
         case "$kind" in
             SECTION)
-                _aliases_flush_pending
+                _aliases_render_section
+                names=() descs=()
                 printf "\n${CYAN}%s${NC}\n" "$a"
                 ;;
             ENTRY)
-                _aliases_emit "$a" "$b"
+                names+=("$a")
+                descs+=("$b")
                 ;;
         esac
     done < <(_aliases_parse "$source_file")
-    _aliases_flush_pending
+    _aliases_render_section
 
     _aliases_render_zshrc
 
@@ -438,113 +521,87 @@ _aliases_parse() {
     ' "$file"
 }
 
-# two-column emit: buffers one entry, prints when paired
-_ALIASES_PENDING_NAME=""
-_ALIASES_PENDING_DESC=""
+# prints the caller's names/descs in order: two columns when every entry fits
+# in half the caller's width, else one column
+_aliases_render_section() {
+    [[ ${#names[@]} -gt 0 ]] || return 0
 
-_aliases_emit() {
-    local name="$1" desc="$2"
-    if [[ -z "$_ALIASES_PENDING_NAME" ]]; then
-        _ALIASES_PENDING_NAME="$name"
-        _ALIASES_PENDING_DESC="$desc"
-        return
+    local half=$(((width - 7) / 2))
+    local i name_w=0 two_col=1
+    for i in "${!names[@]}"; do
+        ((${#names[i]} > name_w)) && name_w=${#names[i]}
+    done
+    local desc_w=$((half - name_w - 1))
+    for i in "${!descs[@]}"; do
+        ((${#descs[i]} > desc_w)) && two_col=0
+    done
+
+    if [[ $two_col -eq 0 ]]; then
+        for i in "${!names[@]}"; do
+            printf "  ${YELLOW}%-*s${NC} ${GREY}%s${NC}\n" "$name_w" "${names[i]}" "${descs[i]}"
+        done
+        return 0
     fi
-    printf "  ${YELLOW}%-12s${NC} ${GREY}%-22s${NC}  ${GREY}│${NC}  ${YELLOW}%-12s${NC} ${GREY}%s${NC}\n" \
-        "$_ALIASES_PENDING_NAME" "$_ALIASES_PENDING_DESC" "$name" "$desc"
-    _ALIASES_PENDING_NAME=""
-    _ALIASES_PENDING_DESC=""
+
+    local n=${#names[@]}
+    for ((i = 0; i < n; i += 2)); do
+        if ((i + 1 == n)); then
+            printf "  ${YELLOW}%-*s${NC} ${GREY}%s${NC}\n" "$name_w" "${names[i]}" "${descs[i]}"
+            continue
+        fi
+        printf "  ${YELLOW}%-*s${NC} ${GREY}%-*s${NC}  ${GREY}│${NC}  ${YELLOW}%-*s${NC} ${GREY}%s${NC}\n" \
+            "$name_w" "${names[i]}" "$desc_w" "${descs[i]}" "$name_w" "${names[i + 1]}" "${descs[i + 1]}"
+    done
 }
 
-_aliases_flush_pending() {
-    if [[ -n "$_ALIASES_PENDING_NAME" ]]; then
-        printf "  ${YELLOW}%-12s${NC} ${GREY}%s${NC}\n" \
-            "$_ALIASES_PENDING_NAME" "$_ALIASES_PENDING_DESC"
-        _ALIASES_PENDING_NAME=""
-        _ALIASES_PENDING_DESC=""
-    fi
-}
-
-# dynamic sections: project dirs and user aliases from ~/.zshrc
+# the aliases in ~/.zshrc, names and values as written, values cut at the
+# caller's width
 _aliases_render_zshrc() {
     local zshrc="$HOME/.zshrc"
     [[ -f "$zshrc" ]] || return 0
 
-    local dev_root projects_root
-    dev_root=$(grep -E '^\s*export\s+DEV_ROOT=' "$zshrc" 2>/dev/null |
-        head -1 | sed 's/.*=//; s/^"//; s/"$//' || true)
-    projects_root=$(grep -E '^\s*export\s+PROJECTS_ROOT=' "$zshrc" 2>/dev/null |
-        head -1 | sed 's/.*=//; s/^"//; s/"$//' || true)
-    if [[ -n "$dev_root" || -n "$projects_root" ]]; then
-        printf "\n${CYAN}DOTFILES DIRECTORIES${NC}  ${GREY}(set via dotfiles set)${NC}\n"
-        [[ -n "$dev_root" ]] && printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "DEV_ROOT" "$dev_root"
-        [[ -n "$projects_root" ]] && printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "PROJECTS_ROOT" "$projects_root"
-    fi
+    local line name value trailing name_w=0
+    local -a names=() values=()
+    while IFS= read -r line; do
+        name="${line%%=*}"
+        value="${line#*=}"
+        value="${value%%[[:space:]]# *}"
+        trailing="${value##*[^[:space:]]}"
+        value="${value%"$trailing"}"
+        value="${value#[\"\']}"
+        value="${value%[\"\']}"
+        value="${value//\\\"/\"}"
+        value="${value//\\\$/\$}"
+        names+=("$name")
+        values+=("$value")
+        ((${#name} > name_w)) && name_w=${#name}
+    done < <(grep -E '^\s*alias\s+' "$zshrc" 2>/dev/null | sed 's/^[[:space:]]*alias[[:space:]]*//')
+    [[ ${#names[@]} -gt 0 ]] || return 0
 
-    local user_aliases
-    user_aliases=$(grep -E '^\s*alias\s+' "$zshrc" 2>/dev/null |
-        sed 's/^[[:space:]]*alias[[:space:]]*//' || true)
-    if [[ -n "$user_aliases" ]]; then
-        printf "\n${CYAN}USER ALIASES${NC}  ${GREY}(~/.zshrc)${NC}\n"
-        while IFS= read -r line; do
-            local name="${line%%=*}"
-            local value="${line#*=}"
-            value="${value%%[[:space:]]# *}"
-            local trailing="${value##*[^[:space:]]}"
-            value="${value%"$trailing"}"
-            value="${value#[\"\']}"
-            value="${value%[\"\']}"
-            printf "  ${YELLOW}%-14s${NC} ${GREY}%s${NC}\n" "$name" "$value"
-        done <<<"$user_aliases"
-    fi
+    local value_w=$((width - name_w - 3)) i
+    printf "\n${CYAN}USER ALIASES${NC}  ${GREY}(~/.zshrc)${NC}\n"
+    for i in "${!names[@]}"; do
+        value="${values[i]}"
+        ((${#value} > value_w)) && value="${value:0:value_w-1}…"
+        printf "  ${YELLOW}%-*s${NC} ${GREY}%s${NC}\n" "$name_w" "${names[i]}" "$value"
+    done
 }
 
 cmd_cd() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_cd
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag cd "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag cd "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
-    echo "$DOTFILES_DIR"
+    if [[ "${1:-}" == -* ]]; then
+        unknown_flag cd "$1"
+        return
+    fi
+    _no_args cd "${@:2}" || return
+
+    local path
+    path=$(_target_path "${1:-}") || return
+    [[ -d "$path" ]] || path=$(dirname "$path")
+    printf '%s\n' "$path"
 }
 
 cmd_diff() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_diff
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag diff "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag diff "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args diff "$@" || return
 
     local found=0
     _copy_pairs
@@ -568,29 +625,21 @@ cmd_diff() {
 }
 
 cmd_edit() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_edit
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag edit "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag edit "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
-    cd "$DOTFILES_DIR"
-    ${EDITOR:-vim} .
+    if [[ "${1:-}" == -* ]]; then
+        unknown_flag edit "$1"
+        return
+    fi
+    _no_args edit "${@:2}" || return
+
+    local path
+    path=$(_target_path "${1:-}") || return
+    if [[ -d "$path" ]]; then
+        cd "$path"
+        ${EDITOR:-nvim} .
+    else
+        cd "$(dirname "$path")"
+        ${EDITOR:-nvim} "$path"
+    fi
 }
 
 cmd_export() {
@@ -598,10 +647,6 @@ cmd_export() {
     local -a selectors=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                _help_export
-                return 0
-                ;;
             -p | --push) push=1 ;;
             --)
                 shift
@@ -683,48 +728,17 @@ cmd_export() {
 }
 
 cmd_health() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_health
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag health "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag health "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args health "$@" || return
     "$DOTFILES_DIR/scripts/install/health-check.sh"
 }
 
 cmd_help() {
-    local topic="${1:-}"
-    if [[ -z "$topic" ]]; then
+    local topic
+    topic=$(_canonical_cmd "${1:-help}")
+    if [[ "$topic" == help ]]; then
         _help_main
         return 0
     fi
-    # short flags to canonical names
-    case "$topic" in
-        -u) topic="update" ;;
-        -s) topic="status" ;;
-        -t) topic="theme" ;;
-        -l) topic="links" ;;
-        -d) topic="diff" ;;
-        -a) topic="aliases" ;;
-        -n) topic="notes" ;;
-        -v) topic="version" ;;
-        -e) topic="edit" ;;
-    esac
     local fn="_help_${topic//-/_}"
     if declare -F "$fn" >/dev/null; then
         "$fn"
@@ -788,10 +802,6 @@ cmd_import() {
     local -a selectors=()
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                _help_import
-                return 0
-                ;;
             -f | --force) force=1 ;;
             -p | --prune) prune=1 ;;
             --)
@@ -874,27 +884,7 @@ cmd_import() {
 }
 
 cmd_links() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_links
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag links "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag links "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args links "$@" || return
 
     local PRESET
     PRESET=$(get_preset)
@@ -921,13 +911,13 @@ cmd_links() {
 }
 
 cmd_local() {
-    if [[ "${1:-}" == "-h" || "${1:-}" == "--help" ]]; then
+    local sub="${1:-status}"
+    shift || true
+
+    if [[ "${1:-}" == -h || "${1:-}" == --help || "${1:-}" == help ]]; then
         _help_local
         return 0
     fi
-
-    local sub="${1:-status}"
-    shift || true
 
     case "$sub" in
         init) cmd_local_init "$@" ;;
@@ -950,10 +940,6 @@ cmd_local_init() {
     local url="" dir_flag=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                _help_local
-                return 0
-                ;;
             --dir)
                 if [[ -z "${2:-}" ]]; then
                     missing_arg local --dir
@@ -1010,10 +996,6 @@ cmd_local_clone() {
     local url="" dir_flag=""
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                _help_local
-                return 0
-                ;;
             --dir)
                 if [[ -z "${2:-}" ]]; then
                     missing_arg local --dir
@@ -1067,23 +1049,7 @@ cmd_local_clone() {
 }
 
 cmd_local_status() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_local
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            *)
-                unknown_flag local "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args local "$@" || return
 
     local dir
     dir=$(get_local_dir)
@@ -1165,23 +1131,7 @@ cmd_local_status() {
 }
 
 cmd_local_diff() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_local
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            *)
-                unknown_flag local "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args local "$@" || return
 
     local dir
     dir=$(_local_dir_required) || return $?
@@ -1261,56 +1211,12 @@ cmd_local_diff() {
 }
 
 cmd_local_edit() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_local
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag local "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag local "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
-
-    local dir
-    dir=$(_local_dir_required) || return $?
-    cd "$dir"
-    ${EDITOR:-vim} .
+    _no_args local "$@" || return
+    cmd_edit local
 }
 
 cmd_notes() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_notes
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag notes "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag notes "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args notes "$@" || return
 
     local changelog="$DOTFILES_DIR/CHANGELOG.md"
     if [[ ! -f "$changelog" ]]; then
@@ -1344,10 +1250,6 @@ cmd_notes() {
 cmd_set() {
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                _help_set
-                return 0
-                ;;
             --)
                 shift
                 break
@@ -1408,34 +1310,52 @@ cmd_set() {
     info "Run 'source ~/.zshrc' or open a new shell to apply."
 }
 
+# an export's value in ~/.zshrc, unquoted and with $HOME as ~ (dotfiles set
+# writes these)
+_zshrc_export() {
+    local value
+    value=$(sed -n "s/^[[:space:]]*export[[:space:]]*$1=//p" "$HOME/.zshrc" 2>/dev/null | head -1)
+    value="${value#\"}"
+    value="${value%\"}"
+    # shellcheck disable=SC2016
+    printf '%s\n' "${value/#'$HOME'/\~}"
+}
+
+# ahead/behind counts against the upstream, with its incoming changelog
+_print_upstream_state() {
+    local upstream="$1" behind ahead
+    behind=$(git -C "$DOTFILES_DIR" rev-list HEAD.."$upstream" --count 2>/dev/null) || behind=0
+    ahead=$(git -C "$DOTFILES_DIR" rev-list "$upstream"..HEAD --count 2>/dev/null) || ahead=0
+
+    if [[ $behind -eq 0 && $ahead -eq 0 ]]; then
+        printf "  ${GREEN}✓${NC} Up-to-date with %s\n" "$upstream"
+        return 0
+    fi
+    if [[ $behind -gt 0 ]]; then
+        printf "  ${YELLOW}↓${NC} %d commit(s) behind %s\n" "$behind" "$upstream"
+    fi
+    if [[ $ahead -gt 0 ]]; then
+        printf "  ${YELLOW}↑${NC} %d commit(s) ahead of %s\n" "$ahead" "$upstream"
+    fi
+    [[ $behind -gt 0 ]] || return 0
+
+    local incoming
+    incoming=$(_changelog_incoming "$upstream") || true
+    [[ -n "$incoming" ]] || return 0
+    echo ""
+    printf "  ${CYAN}Incoming changes:${NC}\n"
+    printf '%s\n' "$incoming" | _changelog_colorise | sed 's/^/  /'
+    echo ""
+    printf "  ${GREY}Run 'dotfiles update' to apply.${NC}\n"
+}
+
 cmd_status() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_status
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag status "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag status "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args status "$@" || return
 
-    local preset remote_branch behind ahead version
-
-    preset=$(get_preset)
-    remote_branch=$(get_remote_branch)
+    local version branch theme upstream
     version=$(_changelog_local_version) || true
+    branch=$(git -C "$DOTFILES_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null) || branch="unknown"
+    theme=$(current_theme)
 
     print_logo
     print_header "Dotfiles Status"
@@ -1448,39 +1368,23 @@ cmd_status() {
     [[ -n "$released" ]] && printf "${CYAN}Released:${NC}  %s\n" "$released"
     [[ -n "$updated" ]] && printf "${CYAN}Updated:${NC}   %s\n" "$updated"
 
-    printf "${CYAN}Preset:${NC}    %s\n" "$preset"
-    local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
-    [[ -f "$theme_file" ]] && printf "${CYAN}Theme:${NC}     %s\n" "$(<"$theme_file")"
-    printf "${CYAN}Branch:${NC}    %s\n" "$(git -C "$DOTFILES_DIR" rev-parse --abbrev-ref HEAD)"
+    printf "${CYAN}Preset:${NC}    %s\n" "$(get_preset)"
+    [[ -n "$theme" ]] && printf "${CYAN}Theme:${NC}     %s\n" "$theme"
+    local dev_root projects_root
+    dev_root=$(_zshrc_export DEV_ROOT)
+    projects_root=$(_zshrc_export PROJECTS_ROOT)
+    [[ -n "$dev_root" ]] && printf "${CYAN}Dev root:${NC}  %s\n" "$dev_root"
+    [[ -n "$projects_root" ]] && printf "${CYAN}Projects:${NC}  %s\n" "$projects_root"
+    printf "${CYAN}Branch:${NC}    %s\n" "$branch"
     printf "${CYAN}Path:${NC}      %s\n" "$DOTFILES_DIR"
     echo ""
 
-    git -C "$DOTFILES_DIR" fetch origin --quiet 2>/dev/null || true
+    git -C "$DOTFILES_DIR" fetch --quiet 2>/dev/null || true
 
-    behind=$(git -C "$DOTFILES_DIR" rev-list HEAD.."$remote_branch" --count 2>/dev/null) || behind=0
-    ahead=$(git -C "$DOTFILES_DIR" rev-list "$remote_branch"..HEAD --count 2>/dev/null) || ahead=0
-
-    if [[ $behind -eq 0 && $ahead -eq 0 ]]; then
-        printf "  ${GREEN}✓${NC} Up-to-date with %s\n" "$remote_branch"
+    if upstream=$(get_upstream_branch); then
+        _print_upstream_state "$upstream"
     else
-        if [[ $behind -gt 0 ]]; then
-            printf "  ${YELLOW}↓${NC} %d commit(s) behind %s\n" "$behind" "$remote_branch"
-        fi
-        if [[ $ahead -gt 0 ]]; then
-            printf "  ${YELLOW}↑${NC} %d commit(s) ahead of %s\n" "$ahead" "$remote_branch"
-        fi
-
-        if [[ $behind -gt 0 ]]; then
-            local incoming
-            incoming=$(_changelog_incoming "$remote_branch") || true
-            if [[ -n "$incoming" ]]; then
-                echo ""
-                printf "  ${CYAN}Incoming changes:${NC}\n"
-                printf '%s\n' "$incoming" | _changelog_colorise | sed 's/^/  /'
-                echo ""
-                printf "  ${GREY}Run 'dotfiles update' to apply.${NC}\n"
-            fi
-        fi
+        printf "  ${YELLOW}!${NC} No upstream for %s\n" "$branch"
     fi
 
     if [[ -n $(git -C "$DOTFILES_DIR" status --porcelain 2>/dev/null) ]]; then
@@ -1496,10 +1400,6 @@ cmd_sync() {
     local force=0
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                _help_sync
-                return 0
-                ;;
             -f | --force) force=1 ;;
             --)
                 shift
@@ -1621,14 +1521,33 @@ cmd_theme() {
     esac
 }
 
+# update --force with nothing to pull: every installer step, no migrations
+_rerun_installer() {
+    local preset="$1" dry_run="$2"
+
+    if [[ $dry_run -eq 1 ]]; then
+        printf "  ${CYAN}Update steps:${NC}\n"
+        _show_step_plan ""
+        echo ""
+        printf "  ${GREY}Run 'dotfiles update --force' to re-run them.${NC}\n"
+        echo ""
+        return 0
+    fi
+
+    local response
+    read -r -p "  Re-run every installer step? [Y/n] " response
+    if [[ "$response" =~ ^[Nn]$ ]]; then
+        printf "  ${GREY}Cancelled.${NC}\n"
+        return 0
+    fi
+    echo ""
+    _run_installer "$preset" ""
+}
+
 cmd_update() {
     local force=0 dry_run=0
     while [[ $# -gt 0 ]]; do
         case "$1" in
-            -h | --help)
-                _help_update
-                return 0
-                ;;
             -f | --force) force=1 ;;
             -p | --preview) dry_run=1 ;;
             --)
@@ -1647,47 +1566,48 @@ cmd_update() {
         shift
     done
 
-    local preset remote_branch local_branch
+    local preset upstream local_branch
 
     cd "$DOTFILES_DIR"
 
     preset=$(get_preset)
-    remote_branch=$(get_remote_branch)
     local_branch=$(git rev-parse --abbrev-ref HEAD)
+    if ! upstream=$(get_upstream_branch); then
+        error "No upstream for $local_branch"
+        printf "  Set one with: ${CYAN}git branch --set-upstream-to origin/<branch>${NC}\n" >&2
+        return 1
+    fi
 
     print_logo
     print_header "Dotfiles Update"
 
     printf "${CYAN}Preset:${NC}  %s\n" "$preset"
-    printf "${CYAN}Branch:${NC}  %s (tracking %s)\n" "$local_branch" "$remote_branch"
+    printf "${CYAN}Branch:${NC}  %s (tracking %s)\n" "$local_branch" "$upstream"
     echo ""
 
-    printf "  ${CYAN}→${NC} Fetching from origin...\n"
-    git fetch origin --quiet
+    printf "  ${CYAN}→${NC} Fetching %s...\n" "$upstream"
+    git fetch --quiet
 
     local behind ahead
-    behind=$(git rev-list HEAD.."$remote_branch" --count 2>/dev/null) || behind=0
-    ahead=$(git rev-list "$remote_branch"..HEAD --count 2>/dev/null) || ahead=0
-
-    if [[ $behind -eq 0 && $ahead -eq 0 ]]; then
-        printf "  ${GREEN}✓${NC} Already up-to-date!\n"
-        echo ""
-        return 0
-    fi
+    behind=$(git rev-list HEAD.."$upstream" --count 2>/dev/null) || behind=0
+    ahead=$(git rev-list "$upstream"..HEAD --count 2>/dev/null) || ahead=0
 
     if [[ $ahead -gt 0 ]]; then
         printf "  ${YELLOW}!${NC} You have %d unpushed commit(s)\n" "$ahead"
     fi
 
     if [[ $behind -eq 0 ]]; then
+        printf "  ${GREEN}✓${NC} Already up-to-date!\n"
         echo ""
-        return 0
+        [[ $force -eq 1 ]] || return 0
+        _rerun_installer "$preset" "$dry_run"
+        return
     fi
 
     printf "  ${CYAN}→${NC} %d new commit(s) available\n" "$behind"
 
     local incoming
-    incoming=$(_changelog_incoming "$remote_branch") || true
+    incoming=$(_changelog_incoming "$upstream") || true
     if [[ -n "$incoming" ]]; then
         echo ""
         printf "  ${CYAN}What's new:${NC}\n"
@@ -1698,17 +1618,17 @@ cmd_update() {
     if [[ $dry_run -eq 1 ]]; then
         echo ""
         printf "  ${CYAN}Changed files:${NC}\n"
-        _preview_changed_files HEAD "$remote_branch"
+        _preview_changed_files HEAD "$upstream"
 
         echo ""
         local would_skip=""
         if [[ $force -eq 0 ]]; then
-            would_skip=$(_compute_skip_steps HEAD "$remote_branch")
+            would_skip=$(_compute_skip_steps HEAD "$upstream")
         fi
         printf "  ${CYAN}Update steps:${NC}\n"
         _show_step_plan "$would_skip"
 
-        _show_pending_migrations HEAD "$remote_branch"
+        _show_pending_migrations HEAD "$upstream"
 
         echo ""
         printf "  ${GREY}Run 'dotfiles update' to apply these changes.${NC}\n"
@@ -1731,7 +1651,7 @@ cmd_update() {
     old_head=$(git rev-parse HEAD)
 
     printf "  ${CYAN}→${NC} Pulling changes...\n"
-    git pull --ff-only --quiet origin "$local_branch" || {
+    git merge --ff-only --quiet "$upstream" || {
         error "Pull failed. You may have local changes that conflict."
         echo "Try: cd $DOTFILES_DIR && git status"
         return 1
@@ -1754,70 +1674,19 @@ cmd_update() {
     fi
 
     echo ""
-
-    local install_args=("--$preset" --skip-backup --update --yes)
-    [[ -n "$skip_steps" ]] && install_args+=(--skip-steps "$skip_steps")
-
-    if ! "$DOTFILES_DIR/install.sh" "${install_args[@]}"; then
-        _print_update_notices
-        error "Update failed, check output above"
-        return 1
-    fi
-
-    _print_update_notices
+    _run_installer "$preset" "$skip_steps"
 }
 
 cmd_version() {
-    while [[ $# -gt 0 ]]; do
-        case "$1" in
-            -h | --help)
-                _help_version
-                return 0
-                ;;
-            --)
-                shift
-                break
-                ;;
-            -*)
-                unknown_flag version "$1"
-                return $?
-                ;;
-            *)
-                unknown_flag version "$1"
-                return $?
-                ;;
-        esac
-        shift
-    done
+    _no_args version "$@" || return
 
     local version
     version=$(_changelog_local_version) || true
-
     if [[ -z "$version" ]]; then
         error "Could not determine version from CHANGELOG.md"
         return 1
     fi
-
-    print_logo
-
-    printf "${CYAN}Version:${NC}  %s\n" "$(_format_version "$version")"
-
-    local released updated
-    released=$(_release_datetime "$version") || true
-    updated=$(_last_update_datetime) || true
-    [[ -n "$released" ]] && printf "${CYAN}Released:${NC} %s\n" "$released"
-    [[ -n "$updated" ]] && printf "${CYAN}Updated:${NC}  %s\n" "$updated"
-
-    printf "${CYAN}Preset:${NC}   %s\n" "$(get_preset)"
-
-    local theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
-    if [[ -f "$theme_file" ]]; then
-        printf "${CYAN}Theme:${NC}    %s\n" "$(<"$theme_file")"
-    fi
-
-    printf "${CYAN}Branch:${NC}   %s\n" "$(git -C "$DOTFILES_DIR" rev-parse --abbrev-ref HEAD 2>/dev/null || echo "unknown")"
-    printf "${CYAN}Path:${NC}     %s\n" "$DOTFILES_DIR"
-    echo ""
+    printf 'dotfiles %s\n' "$(_format_version "$version")"
 }
 
 # ─── Per-command help (_help_*) ───────────────────────────────────────
@@ -1841,16 +1710,21 @@ EOF
 
 _help_cd() {
     cat <<'EOF'
-dotfiles cd: print the dotfiles installation path
+dotfiles cd: cd into the dotfiles repo, or a target's directory
+
+The binary prints the path; the dotfiles shell function in zsh/dotfiles.zsh
+changes directory to it. Targets are the same as for dotfiles edit.
 
 USAGE
-  dotfiles cd [OPTIONS]
+  dotfiles cd [TARGET]
 
 OPTIONS
   -h, --help     Show this help
 
 EXAMPLES
-  cd "$(dotfiles cd)"   # Navigate to the dotfiles directory
+  dotfiles cd              # The dotfiles repo
+  dotfiles cd launchers    # ~/.config/dotfiles/launchers
+  dotfiles cd local        # The private local-layer repo
 EOF
 }
 
@@ -1872,17 +1746,29 @@ EOF
 
 _help_edit() {
     cat <<'EOF'
-dotfiles edit: open the dotfiles directory in $EDITOR
+dotfiles edit: open the dotfiles repo, or a local config file, in $EDITOR
 
 USAGE
-  dotfiles edit [OPTIONS]
-  dotfiles -e
+  dotfiles edit [TARGET]
+  dotfiles -e [TARGET]
+
+TARGETS
+  local          The private local-layer repo
+EOF
+    local row path
+    while IFS= read -r row; do
+        [[ "${row%%|*}" == local ]] && continue
+        path="${row#*|}"
+        printf '  %-14s %s\n' "${row%%|*}" "${path/#"$HOME"/\~}"
+    done < <(_edit_targets)
+    cat <<'EOF'
 
 OPTIONS
   -h, --help     Show this help
 
 EXAMPLES
-  dotfiles edit
+  dotfiles edit              # The dotfiles repo
+  dotfiles edit nvim         # ~/.config/nvim/local.lua
   EDITOR=code dotfiles edit
 EOF
 }
@@ -2112,27 +1998,27 @@ EOF
 
 _help_update() {
     cat <<'EOF'
-dotfiles update: pull latest changes and apply incrementally
+dotfiles update: pull the branch's upstream and apply incrementally
 
 USAGE
   dotfiles update [OPTIONS]
   dotfiles -u
 
 OPTIONS
-  -f, --force    Re-run all installer steps regardless of changes
+  -f, --force    Re-run all installer steps, even with nothing to pull
   -p, --preview  Show what would change without applying
   -h, --help     Show this help
 
 EXAMPLES
   dotfiles update              # Smart incremental update
   dotfiles update --preview    # Preview without applying
-  dotfiles update --force      # Force full re-run
+  dotfiles update --force      # Re-run every installer step
 EOF
 }
 
 _help_version() {
     cat <<'EOF'
-dotfiles version: show the current version, release/update dates, preset, and theme
+dotfiles version: print the version
 
 USAGE
   dotfiles version [OPTIONS]
@@ -2143,6 +2029,7 @@ OPTIONS
 
 EXAMPLES
   dotfiles version
+  dotfiles status            # Version plus release date, preset, theme and sync state
 EOF
 }
 
@@ -2169,9 +2056,9 @@ COMMANDS
   local           Manage the private local-layer repo
   aliases   -a    Show shell aliases and shortcuts (also: alias, cheat)
   notes     -n    Browse changelog in pager
-  version   -v    Show version, dates, preset, theme (also: -V, --version)
-  edit      -e    Open dotfiles in $EDITOR
-  cd              Print dotfiles path
+  version   -v    Print the version (also: -V, --version)
+  edit      -e    Open dotfiles or a local config in $EDITOR
+  cd              cd into dotfiles or a target's directory
 
 For details on any command:
   dotfiles help <command>
@@ -2182,38 +2069,33 @@ EOF
 # ─── Dispatcher ───────────────────────────────────────────────────────
 
 main() {
-    local cmd="${1:-help}"
+    local cmd
+    cmd=$(_canonical_cmd "${1:-help}")
     shift || true
 
-    # top-level shorthands
-    case "$cmd" in
-        --help | -h) cmd=help ;;
-        --version | -V) cmd=version ;;
-    esac
-
-    # `dotfiles <cmd> help` is an alias for `dotfiles <cmd> --help`, except for
-    # `help` itself (which takes a topic) and `theme`, which delegates `help`
-    # to its child scripts
-    if [[ "$cmd" != "help" && "$cmd" != "theme" && "$cmd" != "-t" && "${1:-}" == "help" ]]; then
-        set -- "--help" "${@:2}"
+    # `theme` passes help on to its child scripts, and `help` takes a topic
+    if [[ "$cmd" != theme && "$cmd" != help ]] &&
+        [[ "${1:-}" == -h || "${1:-}" == --help || "${1:-}" == help ]]; then
+        cmd_help "$cmd"
+        return
     fi
 
     case "$cmd" in
-        update | -u) cmd_update "$@" ;;
-        status | -s) cmd_status "$@" ;;
+        update) cmd_update "$@" ;;
+        status) cmd_status "$@" ;;
         health) cmd_health "$@" ;;
         set) cmd_set "$@" ;;
-        theme | -t) cmd_theme "$@" ;;
-        links | -l) cmd_links "$@" ;;
-        diff | -d) cmd_diff "$@" ;;
+        theme) cmd_theme "$@" ;;
+        links) cmd_links "$@" ;;
+        diff) cmd_diff "$@" ;;
         sync) cmd_sync "$@" ;;
         export) cmd_export "$@" ;;
         import) cmd_import "$@" ;;
         local) cmd_local "$@" ;;
-        aliases | alias | cheat | -a) cmd_aliases "$@" ;;
-        notes | -n) cmd_notes "$@" ;;
-        version | -v) cmd_version "$@" ;;
-        edit | -e) cmd_edit "$@" ;;
+        aliases) cmd_aliases "$@" ;;
+        notes) cmd_notes "$@" ;;
+        version) cmd_version "$@" ;;
+        edit) cmd_edit "$@" ;;
         cd) cmd_cd "$@" ;;
         help) cmd_help "$@" ;;
         *)

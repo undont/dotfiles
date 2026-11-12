@@ -100,8 +100,8 @@ Modular config based on kickstart.nvim with lazy.nvim, Treesitter, and Mason-man
 ### Dotfiles CLI
 
 ```bash
-dotfiles update    # smart incremental update (only re-runs changed steps)
-dotfiles status    # version, sync status, and local changes
+dotfiles update    # pull the branch's upstream, re-running only changed steps
+dotfiles status    # version, preset, theme, sync status, and local changes
 dotfiles health    # full health check (symlinks, plugins, env vars)
 dotfiles links     # show all managed symlinks and their status
 dotfiles theme     # list, switch, or generate themes
@@ -110,8 +110,9 @@ dotfiles import    # import your local layer from a private repo
 dotfiles local     # manage the private local-layer repo
 dotfiles aliases   # browse all shell aliases and shortcuts
 dotfiles notes     # browse the changelog in a pager
-dotfiles version   # current version, release/update dates, preset, and theme
-dotfiles edit      # open dotfiles in $EDITOR
+dotfiles version   # current version
+dotfiles edit nvim # open dotfiles, or a local config such as nvim's local.lua, in $EDITOR
+dotfiles cd tmux   # cd into dotfiles, or a target's directory
 ```
 
 `dot` is a shorthand for `dotfiles`. Both have full tab completion.

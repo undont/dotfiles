@@ -6,6 +6,29 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.163] - 2026-11-12
+
+### Added
+
+- `dotfiles edit <target>` and `dotfiles cd <target>` open or cd into a local config or the local-layer repo (`nvim`, `tmux`, `ghostty`, `secrets`, `launchers`, `local`, …); `dotfiles help edit` lists them. `scripts/dotfiles`, `zsh/dotfiles.zsh`
+- Tab completion for the short flags, edit targets and `local` subcommand options. `zsh/functions/_dotfiles`
+- `<leader>dc` closes the Differ view. `nvim/lua/plugins/differ.lua`
+- `pi` alias clears the screen before starting pi. `zsh/dotfiles.zsh`
+
+### Changed
+
+- `dotfiles update` pulls the current branch's upstream rather than `origin`'s default branch, and stops with a hint on a branch without one. `--force` re-runs every installer step even with nothing to pull. `scripts/dotfiles`, `scripts/_lib/cli.sh`
+- `dotfiles version` prints one line; `dotfiles status` also shows the theme, `DEV_ROOT` and `PROJECTS_ROOT`. `scripts/dotfiles`
+- `dotfiles aliases` sizes its columns to the terminal and no longer lists the `dotfiles` subcommands, which `dotfiles help` covers. `scripts/dotfiles`, `zsh/dotfiles.zsh`
+
+### Removed
+
+- The `nconf`, `gconf`, `tconf`, `secrets`, `zshrc` and `launchers` aliases; use `dotfiles edit nvim`, `ghostty`, `tmux`, `secrets`, `zshrc` or `launchers`. `zsh/dotfiles.zsh`
+
+### Fixed
+
+- A counted `j`/`k` in markdown moves by buffer line instead of display line. `nvim/lua/plugins/mkdnflow.lua`
+
 ## [0.2.162] - 2026-11-11
 
 ### Added

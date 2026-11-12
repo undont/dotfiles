@@ -17,7 +17,7 @@ The installer uses presets to filter `Brewfile` packages and symlinks:
 - **core**: + nvim, ghostty, AI tools, launchers (marked with `# @preset: core`)
 - **full**: + Hammerspoon, Karabiner on macOS; keyd keyboard remapping on Linux (marked with `# @preset: full`)
 
-Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`. Updates are incremental by default -- only installer steps relevant to changed files are re-run. Use `--force` to re-run all steps. See [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) for detailed walkthrough of each installation step.
+Preset is saved to `~/.config/dotfiles/preset` and used by `dotfiles update`. Updates are incremental by default -- only installer steps relevant to changed files are re-run. Use `--force` to re-run all steps, which also works with nothing to pull. Updates pull the current branch's upstream and fail on a branch without one. See [docs/INSTALLATION-GUIDE.md](docs/INSTALLATION-GUIDE.md) for detailed walkthrough of each installation step.
 
 ## Versioning
 
