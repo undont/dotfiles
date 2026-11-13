@@ -779,7 +779,6 @@ omitted_aliases=(
     "btop"         # cl && btop wrapper
     "opencode"     # cl && opencode wrapper
     "claude"       # cl && claude wrapper
-    "copilot"      # cl && copilot wrapper
     "ls"           # ls with colour flags
     "grep"         # grep --color=auto
     "cp"           # cp -i

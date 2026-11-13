@@ -901,7 +901,6 @@ alias claude="cl && claude"
 alias ralph="cl && ralph"
 alias ralf="cl && ralf"
 alias pi="cl && pi"
-alias copilot="cl && copilot"
 alias btop="cl && btop"
 alias drs="dash-repo-sync"                                                            # sync repo paths
 alias ff="fastfetch"                                                                  # fastfetch system info

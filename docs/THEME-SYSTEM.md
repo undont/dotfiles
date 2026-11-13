@@ -129,7 +129,7 @@ whose upstream defaults link `Desc` and `File` to `Special`.
 
 `scripts/_lib/statusline-theme.sh` lets an AI CLI coding agent's statusline
 colour itself from the active theme. It targets agents that render their
-statusline by running a script: currently Claude Code, GitHub Copilot CLI, and
+statusline by running a script: currently Claude Code and
 Antigravity CLI. It is symlinked to `~/.config/dotfiles/statusline-theme.sh` on
 install (core preset). Sourcing it reads `current-theme`, parses the matching
 `.theme` file, and sets `SL_*` variables holding ANSI 24-bit foreground escapes

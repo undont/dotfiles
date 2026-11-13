@@ -82,7 +82,7 @@ The installer supports three presets to customise what gets installed:
 - Editor: Neovim with LSP, Telescope, and plugins
 - Editor: Zed keymap/tasks (settings.json copied once, then user-owned)
 - Terminal: Ghostty configuration
-- AI Tools: OpenCode (brewed); Claude Code, Codex, Copilot CLIs install separately
+- AI Tools: OpenCode (brewed); Claude Code, Codex, pi CLIs install separately
 - Session launchers (`dev`, `github`, `btop`, `docker`, `dotfiles`, `config`)
 - Ideal for: Linux desktops, cross-platform setups
 
@@ -171,7 +171,7 @@ Step 1: Setting up Homebrew...
 | ------------------- | ----------------------------------------------------------------- |
 | Shell & Terminal    | zsh, tmux, powerlevel10k, fzf, direnv, carapace, zoxide           |
 | Editors             | neovim                                                            |
-| AI Tools            | opencode (Claude/Codex/Copilot install separately)                |
+| AI Tools            | opencode (Claude/Codex/pi install separately)                     |
 | Git Tools           | git, gh (GitHub CLI), lazygit, diffnav, act                       |
 | Search & Navigation | ripgrep, fd, tree, jq, yq, bat, zoxide                            |
 | Languages           | fnm (Node.js), bun, Go, Python 3.13 + uv, openjdk, dotnet-sdk     |
@@ -733,7 +733,7 @@ dotfiles set projects ~/playground
 - **Mouse support**: Click to select panes, drag to resize
 - **Vim-style navigation**: hjkl keys for pane movement
 - **Session persistence**: Survives terminal restarts (via tmux-resurrect + continuum)
-- **Agent alerts**: Visual indicators for AI agent activity (Claude, OpenCode, Codex, Copilot)
+- **Agent alerts**: Visual indicators for AI agent activity (Claude, OpenCode, Codex, pi)
 - **Command exit alerts**: ✓/✗ markers when long commands finish in other windows
 
 ### Editor (Neovim)

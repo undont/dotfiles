@@ -100,7 +100,6 @@ get_agent_colour() {
         claude) echo "#f1fa8c" ;;   # yellow
         codex) echo "#50fa7b" ;;    # dracula green (matches codex logo)
         opencode) echo "#bd93f9" ;; # dracula purple
-        copilot) echo "#58a6ff" ;;  # GitHub blue
         pi) echo "#ff79c6" ;;       # dracula pink
         *) echo "#6272a4" ;;        # dracula blue
     esac
@@ -115,7 +114,6 @@ get_agent_display() {
         codex) echo "⌘|#50fa7b" ;;
         pi) echo "π|#ff79c6" ;;
         opencode) echo "|#bd93f9" ;;
-        copilot) echo "|#58a6ff" ;;
         *) echo "󱜙|#6272a4" ;;
     esac
 }
@@ -296,15 +294,7 @@ build_alert_icons() {
             fi
             display=$(get_agent_display "$agent")
             icon="${display%%|*}"
-            colour="${display##*|}"
-            case "$agent" in
-                copilot)
-                    icons="${icons}\033[38;2;$(printf '%d;%d;%d' "0x${colour:1:2}" "0x${colour:3:2}" "0x${colour:5:2}")m${icon}\033[0m "
-                    ;;
-                *)
-                    icons="${icons}${icon} "
-                    ;;
-            esac
+            icons="${icons}${icon} "
         fi
     done <<<"$alerts_content"
 
@@ -410,7 +400,7 @@ set_window_alert() {
     local ring_bell="${2:-true}"
 
     case "$agent" in
-        claude | codex | opencode | copilot | pi) ;;
+        claude | codex | opencode | pi) ;;
         *) return 1 ;;
     esac
 

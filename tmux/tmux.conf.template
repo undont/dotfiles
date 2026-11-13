@@ -596,7 +596,7 @@ set -g status-right-length 150
 bind-key -N "tools: clear poke notifications" b run-shell "poke clear"
 
 # window tabs: a bell or alert recolours an inactive tab
-setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@codex_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@copilot_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
+setw -g window-status-format '#[fg={{TMUX_STATUS_INACTIVE_FG}}]#{?window_bell_flag,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@claude_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@codex_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@opencode_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@pi_alert,#[fg={{TMUX_STATUS_BELL_FG}}],}#{?@exit_alert,#[fg=#{@exit_alert_colour}],} #I:#W '
 setw -g window-status-current-format '#[fg={{TMUX_STATUS_ACTIVE_FG}},bg={{TMUX_STATUS_ACTIVE_BG}},bold] #I:#W '
 setw -g window-status-current-style default  # upstream default is underscore
 
