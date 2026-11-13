@@ -10,10 +10,12 @@ rex.bind("ctrl+enter", "com.superlogical.terminal.write", { data = "\27[13;5u" }
 rex.bind("ctrl+shift+enter", "com.superlogical.terminal.write", { data = "\27[13;6u" })
 -- rex's default sends ctrl+u, which scrolls claude code; this is ghostty's ctrl+backspace
 rex.bind("cmd+backspace", "com.superlogical.terminal.write", { data = "\27[127;5u" })
--- rex's prompt jumps need OSC 133 shell integration rex doesn't inject into zsh;
--- these are ghostty's ctrl+home/end, which zsh binds to line start/end
+-- ghostty's ctrl+home/end, which zsh binds to line start/end
 rex.bind("cmd+up", "com.superlogical.terminal.write", { data = "\27[1;5H" })
 rex.bind("cmd+down", "com.superlogical.terminal.write", { data = "\27[1;5F" })
+-- the prompt marks come from POWERLEVEL9K_TERM_SHELL_INTEGRATION in ~/.p10k.zsh
+rex.bind("cmd+shift+up", "client.prompt.previous")
+rex.bind("cmd+shift+down", "client.prompt.next")
 
 rex.bind("`>`", "pane.send_key", { key = "`" })
 rex.bind("`>ctrl+b", "pane.send_key", { key = "ctrl+b" })
