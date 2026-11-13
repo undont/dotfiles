@@ -32,7 +32,7 @@ action("`>n", "pick_nvim", "Pick Nvim (fzf)", home_only(picker("pick-agents.sh",
 action("`>c", "pick_claude", "Pick Claude (fzf)", home_only(picker("pick-agents.sh", 0.9, { "claude" })))
 action("`>x", "pick_codex", "Pick Codex (fzf)", home_only(picker("pick-agents.sh", 0.9, { "codex" })))
 action("`>o", "pick_opencode", "Pick OpenCode (fzf)", home_only(picker("pick-agents.sh", 0.9, { "opencode" })))
-action("`>a", "pick_copilot", "Pick Copilot (fzf)", home_only(picker("pick-agents.sh", 0.9, { "copilot" })))
+action("`>a", "pick_pi", "Pick Pi (fzf)", home_only(picker("pick-agents.sh", 0.9, { "pi" })))
 action("`>t", "pick_theme", "Pick Theme (fzf)", picker("pick-theme.sh", { 0.5, 0.6 }))
 action("`>shift+p", "pick_procs", "Process List (fzf)", home_only(picker("pick-procs.sh", 0.9)))
 
