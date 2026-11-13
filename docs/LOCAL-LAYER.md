@@ -62,7 +62,7 @@ top-level commands and take the same arguments.
 
 ## What is never synced
 
-Secrets (`~/.config/zsh/secrets.zsh`), the `.state/` directory, the saved
+Secrets (`~/.config/dotfiles/secrets`, `~/.config/zsh/secrets.zsh`), the `.state/` directory, the saved
 preset, and the `current-theme` pointer are hard-excluded. Theme is a
 per-machine choice.
 

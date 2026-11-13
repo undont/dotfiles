@@ -50,7 +50,9 @@ return {
           end,
           anthropic = function()
             return require('codecompanion.adapters').extend('anthropic', {
-              env = { api_key = 'ANTHROPIC_API_KEY' },
+              env = {
+                api_key = os.getenv 'ANTHROPIC_API_KEY' and 'ANTHROPIC_API_KEY' or 'cmd:secret ANTHROPIC_API_KEY',
+              },
             })
           end,
         },

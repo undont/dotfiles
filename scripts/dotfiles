@@ -72,6 +72,8 @@ _edit_targets() {
     local cfg="${XDG_CONFIG_HOME:-$HOME/.config}"
     local lazydocker="$cfg/lazydocker/config.yml"
     is_macos && lazydocker="$HOME/Library/Application Support/lazydocker/config.yml"
+    local secrets="$cfg/dotfiles/secrets"
+    [[ -f "$cfg/zsh/secrets.zsh" ]] && secrets="$cfg/zsh/secrets.zsh"
     printf '%s\n' \
         "btop|$cfg/btop/btop.conf" \
         "gh-dash|$cfg/gh-dash/local.yml" \
@@ -83,7 +85,7 @@ _edit_targets() {
         "lazygit|$cfg/lazygit/local.yml" \
         "local|$(get_local_dir)" \
         "nvim|$cfg/nvim/local.lua" \
-        "secrets|$cfg/zsh/secrets.zsh" \
+        "secrets|$secrets" \
         "tmux|$cfg/tmux/local.conf" \
         "zed|$cfg/zed/settings.json" \
         "zshrc|$HOME/.zshrc"

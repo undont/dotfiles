@@ -6,6 +6,19 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.164] - 2026-11-13
+
+### Added
+
+- `secret` keeps API keys in `~/.config/dotfiles/secrets`, a mode 600 file the shell never sources, so keys stay out of the environment every process inherits. `secret set NAME` stores a key, `secret NAME` prints one for tools that take a key command, and `secret import` copies the exports from `secrets.zsh`. `scripts/secret`, `scripts/manifest.toml`
+- `with-secret NAME... -- command` sets the listed keys for that command only. `zsh/dotfiles.zsh`
+- codecompanion's anthropic adapter reads its key through `secret` when `ANTHROPIC_API_KEY` isn't exported. `nvim/lua/plugins/codecompanion.lua`
+
+### Changed
+
+- New installs get an empty secrets file instead of `~/.config/zsh/secrets.zsh`. An existing `secrets.zsh` is still sourced, and `dotfiles health` points at `secret import` while it exists. `install.sh`, `scripts/install/health-check.sh`, `docs/SECRETS.md`
+- `dotfiles edit secrets` opens the secrets file once `secrets.zsh` is gone, and the local layer never syncs it. `scripts/dotfiles`, `scripts/_lib/local-layer.sh`
+
 ## [0.2.163] - 2026-11-12
 
 ### Added

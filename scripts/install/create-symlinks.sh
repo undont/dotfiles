@@ -75,8 +75,6 @@ if ! grep -q "dotfiles.zsh" "$HOME/.zshrc" 2>/dev/null; then
     info "Add this line to source the framework: source ~/dotfiles/zsh/dotfiles.zsh"
 fi
 
-mkdir -p "${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-
 if should_install "core"; then
     # .luarc.json (lua_ls workspace config) lives at the repo root, which is
     # lua_ls's workspace. gitignored, and overwritten from the template each run

@@ -30,7 +30,8 @@ the repo propagate on next `dotfiles update`.
 
 **Used for:** zprofile, the whole `tmux/` dir (-> `~/.tmux`), the whole `nvim/`
 dir (-> `~/.config/nvim`), the whole `rex/` dir (-> `~/.config/rex`), the
-`dotfiles` CLI (`scripts/dotfiles` -> `~/.local/bin/dotfiles`), the formatter
+`dotfiles` CLI (`scripts/dotfiles` -> `~/.local/bin/dotfiles`) and `secret`
+(`scripts/secret` -> `~/.local/bin/secret`), the formatter
 configs (`formatters/prettierrc.json` -> `~/.prettierrc`,
 `formatters/editorconfig` -> `~/.editorconfig`), the `dev` launcher wrapper
 (`launchers/bin/dev` -> `~/.local/launchers/dev`; the launcher files in
@@ -110,8 +111,9 @@ Config is copied on first install, then becomes fully user-owned. Repo changes d
 `CHANGELOG.md` so users know to apply it manually.
 
 **Used for:** btop, lazydocker's `config.yml`, karabiner, zshrc, zed's
-`settings.json`, and the secrets file (`zsh/secrets.zsh.template` ->
-`~/.config/zsh/secrets.zsh`, mode 600, created by `install.sh`).
+`settings.json`, and the secrets file (`~/.config/dotfiles/secrets`, mode 600,
+created empty by `install.sh` unless an older `~/.config/zsh/secrets.zsh` exists;
+see `docs/SECRETS.md`).
 
 ### Outside the three patterns
 
@@ -133,7 +135,7 @@ The public repo never references it; the link is a machine-local pointer at
 lives in `scripts/_lib/local-layer.sh`. The synced files are the manifest rows
 with a local key; a `sync` row carries a purely-personal file the installer
 never touches (e.g. `~/.ai/instructions/local.md`).
-Secrets (`~/.config/zsh/secrets.zsh`), `.state/`, the saved preset file, and
+Secrets (`~/.config/dotfiles/secrets`, `~/.config/zsh/secrets.zsh`), `.state/`, the saved preset file, and
 the `current-theme` pointer are hard-excluded and must stay that way: theme is a
 per-machine choice, so it is never synced through the local layer (a theme
 switch reaches other rex hosts through rex instead; see

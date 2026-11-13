@@ -479,35 +479,16 @@ Step 9: Setting default apps...
 
 **What it does**:
 
-- Creates `~/.config/zsh/secrets.zsh` if it doesn't exist
-- Copies from template (`zsh/secrets.zsh.template`) if available
-- Sets file permissions to 600 (read/write for owner only)
+- Creates an empty `~/.config/dotfiles/secrets` (mode 600) for `secret set`, unless `~/.config/zsh/secrets.zsh` exists
+- Leaves an existing `secrets.zsh` alone, and notes that `secret import` moves it
 
-The zsh framework sources the secrets file on shell startup.
-
-**Example secrets file content**:
-
-```bash
-# ~/.config/zsh/secrets.zsh
-
-# API Keys
-export OPENAI_API_KEY="sk-..."
-export ANTHROPIC_API_KEY="sk-ant-..."
-
-# Database URLs
-export DATABASE_URL="postgres://user:pass@localhost:5432/db"
-
-# Cloud credentials
-export AWS_ACCESS_KEY_ID="..."
-export AWS_SECRET_ACCESS_KEY="..."
-```
+See [Secrets](SECRETS.md) for how keys are stored and read.
 
 **What you'll see**:
 
 ```
 Step 10: Setting up secrets...
-  ! Created secrets file from template.
-  Edit ~/.config/zsh/secrets.zsh to add your API keys and tokens.
+  Created ~/.config/dotfiles/secrets; add keys with: secret set NAME
 ```
 
 ---
@@ -534,7 +515,7 @@ Step 10: Setting up secrets...
 | Symlinks  | full    | `hammerspoon/init.lua`; `karabiner.json` (file check)                                                    |
 | TPM       | minimal | `~/.tmux/plugins/tpm` exists                                                                             |
 | lazy.nvim | core    | `~/.local/share/nvim/lazy` exists (after first nvim launch)                                              |
-| Secrets   | minimal | `~/.config/zsh/secrets.zsh` exists                                                                       |
+| Secrets   | minimal | `~/.config/zsh/secrets.zsh` or `~/.config/dotfiles/secrets` exists                                       |
 
 **What you'll see**:
 
@@ -718,13 +699,10 @@ node --version
 
 ### 5. Add Your Secrets
 
-Shown only if `~/.config/zsh/secrets.zsh` doesn't contain any `export` lines yet.
+Shown only if no secrets are stored yet.
 
 ```bash
-# Edit secrets file
-nvim ~/.config/zsh/secrets.zsh
-
-# Add your API keys and credentials
+secret set ANTHROPIC_API_KEY   # prompts for the value without echoing it
 ```
 
 ### 6. Configure Project Directories

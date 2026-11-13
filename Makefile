@@ -70,7 +70,7 @@ lint-shell: ## Run ShellCheck on shell scripts
 	@shellcheck -x install.sh scripts/install/*.sh scripts/_lib/*.sh
 	@shellcheck -x tmux/scripts/*/*.sh tmux/scripts/_lib/*.sh
 	@shellcheck -x scripts/dotfiles scripts/run-tests.sh scripts/hooks/*.sh
-	@shellcheck -x scripts/theme-switch scripts/theme-delete scripts/generate-theme scripts/theme-contrast-check
+	@shellcheck -x scripts/theme-switch scripts/theme-delete scripts/generate-theme scripts/theme-contrast-check scripts/secret
 	@shellcheck -x launchers/bin/*.sh launchers/bin/dev launchers/lib/*.sh launchers/tests/*.sh
 	@shellcheck -x rex/bash/*.sh
 	@printf '\033[0;32m✓ ShellCheck passed\033[0m\n'
