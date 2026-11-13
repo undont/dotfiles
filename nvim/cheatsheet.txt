@@ -321,17 +321,12 @@ Next/prev heading | ]] / [[
 Follow link or anchor / go back | <C-]> / <BS>
 
 ## obsidian @obsidian
-Open today's daily note | <leader>oo
-Open yesterday's daily note | <leader>oy
-Open tomorrow's daily note | <leader>oT
-New note (from template if available) | <leader>on
+New note | <leader>on
 Find note (quick switch) | <leader>of
 Grep vault | <leader>og
 Tags | <leader>ot
 Backlinks | <leader>ob
 Links in current note | <leader>ol
-Insert template into note | <leader>oi
-New blank note (no template) | <leader>oN
 Switch workspace | <leader>ow
 Rename note | <leader>or
 Extract selection to new note | <leader>oe (normal/visual)
