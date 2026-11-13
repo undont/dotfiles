@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
-# list all running codex or copilot instances across all tmux sessions
+# list all running codex or pi instances across all tmux sessions
 # emits a logo header then tab-delimited rows for fzf, in claude.sh's format:
 #   {1}=display(shown)  {2}=jump/preview target session:window.pane
 # the display leads with the agent's alert icon while its window has an alert.
 # most recently viewed first. agents with per-pane state have their own
 # listers (claude.sh, opencode.sh)
-# usage: agents.sh <codex|copilot>
+# usage: agents.sh <codex|pi>
 
 set -euo pipefail
 
@@ -16,9 +16,9 @@ source "$SCRIPT_DIR/../_lib/process.sh"
 
 agent="${1:-}"
 case "$agent" in
-    codex | copilot) ;;
+    codex | pi) ;;
     *)
-        echo "usage: agents.sh <codex|copilot>" >&2
+        echo "usage: agents.sh <codex|pi>" >&2
         exit 2
         ;;
 esac
@@ -65,7 +65,6 @@ while IFS="$TAB" read -r _viewed session window_idx pane_idx pane_pid; do
     if alerts_has_agent "$alerts_content" "$agent" "$session" "$window_name" "${window_ids["${session}:${window_idx}"]:-}"; then
         display=$(get_agent_display "$agent")
         icon="${display%%|*}"
-        [[ "$agent" == copilot ]] && icon=$(_ansi "${display##*|}" "$icon")
     fi
 
     panes+=("${icon}  ${target} ${window_name}${TAB}${target}")
@@ -80,15 +79,14 @@ case "$agent" in
         printf "${GREEN}▀▀▀ ▀▀▀▀ ▀▀▀  ▀▀▀ ▀ ▀${NC}\n"
         echo ""
         ;;
-    copilot)
-        # periwinkle eyes, purple/green mouth bar
-        periwinkle="\033[38;5;147m"
-        purple="\033[38;5;176m"
-        mouth_green="\033[38;5;107m"
-        printf "   ${periwinkle}╭─╮╭─╮${NC}\n"
-        printf "   ${periwinkle}╰─╯╰─╯${NC}\n"
-        printf "   ${purple}█${NC} ${mouth_green}▘▝${NC} ${purple}█${NC}\n"
-        printf "    ${purple}▔▔▔▔${NC}\n"
+    pi)
+        salmon="\033[38;2;232;130;120m"
+        blue="\033[38;2;78;128;190m"
+        yellow="\033[38;2;232;190;90m"
+        printf "${salmon}██████${NC}\n"
+        printf "${blue}██  ${salmon}██${NC}\n"
+        printf "${blue}████${NC}${yellow}  ██${NC}\n"
+        printf "${blue}██${NC}    ${yellow}██${NC}\n"
         echo ""
         ;;
 esac

@@ -314,13 +314,13 @@ bind -N "tools: opencode instances" o display-popup -w 95% -h 95% -E "\
   cut -f2 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────
-# GitHub Copilot instance switcher (prefix + a)
+# pi instance switcher (prefix + a)
 # Navigation: j/k (↓/↑), g/G (top/bottom)
 # press / to start searching, Esc to return to navigation mode
 # ─────────────────────────────────────────
-bind -N "tools: copilot instances" a display-popup -w 95% -h 95% -E "\
+bind -N "tools: pi instances" a display-popup -w 95% -h 95% -E "\
   source {{DOTFILES_ROOT}}/scripts/fzf-theme.sh 2>/dev/null || true; \
-  ~/.tmux/scripts/instances/agents.sh copilot | \
+  ~/.tmux/scripts/instances/agents.sh pi | \
   fzf --ansi --reverse --exact --disabled --cycle \
       --color=label:{{TMUX_FG_PRIMARY}} \
       --delimiter=\$'\\t' \
@@ -333,15 +333,15 @@ bind -N "tools: copilot instances" a display-popup -w 95% -h 95% -E "\
       --preview '~/.tmux/scripts/utils/preview-pane.sh {2}' \
       --preview-window='right,70%,<80(bottom,40%)' \
       --bind 'every(0.5):refresh-preview' \
-      --bind 'every(2):reload-sync(~/.tmux/scripts/instances/agents.sh copilot)' \
+      --bind 'every(2):reload-sync(~/.tmux/scripts/instances/agents.sh pi)' \
       --bind 'j:down,k:up,g:first,G:last,q:abort,space:accept' \
       --bind 'enter:accept' \
       --bind 'change:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"clear-query\"' \
       --bind '/:enable-search+change-prompt(> )+unbind(j,k,g,G,q,space,n,x)' \
       --bind 'esc:transform:[[ \$FZF_PROMPT == \"> \" ]] && echo \"disable-search+clear-query+change-prompt(: )+rebind(j,k,g,G,q,space,n,x)\" || echo \"abort\"' \
       --bind 'ctrl-k:up,ctrl-l:clear-query' \
-      --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh copilot)+abort' \
-      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh {2} copilot)+reload-sync(~/.tmux/scripts/instances/agents.sh copilot)' | \
+      --bind 'n:execute-silent(~/.tmux/scripts/instances/new.sh pi)+abort' \
+      --bind 'x:execute(~/.tmux/scripts/instances/kill.sh {2} pi)+reload-sync(~/.tmux/scripts/instances/agents.sh pi)' | \
   cut -f2 | xargs -r tmux switch-client -t"
 
 # ─────────────────────────────────────────
@@ -652,7 +652,7 @@ set -g @resurrect-capture-pane-contents 'on'
 # restore specific programs (space-separated list)
 # default: vi vim view nvim emacs man less more tail top htop irssi weechat mutt
 # add more as needed:
-set -g @resurrect-processes 'ssh psql mysql sqlite3 claude codex opencode copilot btop "~gh dash" "~rails server" "~npm start"'
+set -g @resurrect-processes 'ssh psql mysql sqlite3 claude codex opencode pi btop "~gh dash" "~rails server" "~npm start"'
 
 # alternative: restore ALL running programs (use with caution)
 # set -g @resurrect-processes ':all:'

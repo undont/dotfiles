@@ -2,7 +2,7 @@
 set -euo pipefail
 
 # unit tests for instances/agents.sh
-# static checks on the codex/copilot lister's row format, mirroring
+# static checks on the codex/pi lister's row format, mirroring
 # test-list-claude.sh
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
@@ -47,10 +47,10 @@ else
     fail "Should emit display<TAB>target rows"
 fi
 
-if [[ "$script_content" == *'usage: agents.sh <codex|copilot>'* ]]; then
-    pass "Lists codex and copilot only"
+if [[ "$script_content" == *'usage: agents.sh <codex|pi>'* ]]; then
+    pass "Lists codex and pi only"
 else
-    fail "Should list codex and copilot only (opencode has opencode.sh)"
+    fail "Should list codex and pi only (opencode has opencode.sh)"
 fi
 
 if [[ "$script_content" != *'AGENT_STATE_DIR'* && "$script_content" != *'agent_state_'* ]]; then

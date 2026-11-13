@@ -4,7 +4,7 @@ set -euo pipefail
 # create a new window in the current session and launch a process
 #
 # usage: new.sh <process_name>
-#   process_name: claude, codex, opencode, copilot, or nvim
+#   process_name: claude, codex, opencode, pi, or nvim
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -19,7 +19,7 @@ fi
 PROCESS="$1"
 
 case "$PROCESS" in
-    claude | codex | opencode | copilot | nvim) ;;
+    claude | codex | opencode | pi | nvim) ;;
     *)
         show_error "Unknown process: $PROCESS"
         exit 1
