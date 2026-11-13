@@ -21,7 +21,8 @@ source "$DOTFILES_DIR/scripts/_lib/manifest.sh"
 
 # build LOCAL_PAIRS (files) and LOCAL_DIR_PAIRS (directories) as
 # "repo-relative|system-absolute" strings from the manifest rows with a local
-# key. secrets.zsh, .state/, the preset file and current-theme are never listed
+# key. secrets.zsh, the secrets file, .state/, the preset file and current-theme
+# are never listed
 _local_pairs() {
     # should_install reads $PRESET, which is unset when invoked via the CLI
     local PRESET="${PRESET:-$(get_preset)}"
@@ -125,7 +126,7 @@ _local_dir_required() {
 _local_seed_gitignore() {
     local dir="$1"
     [[ -f "$dir/.gitignore" ]] && return 0
-    printf '%s\n' ".DS_Store" "secrets.zsh" ".state/" "statusline-theme.sh" "config/dotfiles/current-theme" >"$dir/.gitignore"
+    printf '%s\n' ".DS_Store" "secrets.zsh" ".state/" "statusline-theme.sh" "config/dotfiles/current-theme" "config/dotfiles/secrets" >"$dir/.gitignore"
 }
 
 _local_write_pointer() {

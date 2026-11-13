@@ -11,7 +11,7 @@
 #   ~/.zshrc                           - your personal config (sources this file)
 #   ~/.zprofile                        - login shell config (PATH additions from installers)
 #   ~/.p10k.zsh                        - powerlevel10k theme configuration
-#   ~/.config/zsh/secrets.zsh          - API keys and credentials (not version controlled)
+#   ~/.config/dotfiles/secrets         - API keys, read with `secret NAME` (not version controlled)
 
 # =============================================================================
 # STARTUP PROFILING (optional)
@@ -425,11 +425,34 @@ preexec_functions+=(_dotfiles_preexec)
 # =============================================================================
 # SECRETS & CREDENTIALS
 # =============================================================================
-# API keys and tokens, not version controlled. see zsh/secrets.zsh.template
+# exported to every shell when present. secrets kept with `secret set` are
+# read one at a time instead. see docs/SECRETS.md
 ZSH_CONFIG_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
 if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
     source "$ZSH_CONFIG_DIR/secrets.zsh"
 fi
+
+# @cheat: secret <NAME> | print a secret (secret set NAME stores one)
+# @cheat: with-secret <NAME>... -- <cmd> | run cmd with secrets set
+with-secret() {
+    local -a assigns
+    local value
+    while (($#)) && [[ "$1" != -- ]]; do
+        value=$(secret "$1") || return
+        assigns+=("$1=$value")
+        shift
+    done
+    if [[ "$1" != -- || $# -lt 2 ]]; then
+        print -u2 "usage: with-secret NAME... -- command [args]"
+        return 2
+    fi
+    shift
+    # exported in a subshell, not passed to env, so values stay out of ps
+    (
+        export "${assigns[@]}"
+        exec "$@"
+    )
+}
 
 # android SDK (homebrew cask android-commandlinetools): sdkmanager, avdmanager,
 # adb, fastboot, emulator

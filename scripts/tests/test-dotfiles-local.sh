@@ -251,6 +251,14 @@ if [[ -z "$(find "$repo" -name 'secrets.zsh' -not -path '*/.git/*')" ]]; then
 else
     fail "secrets.zsh must not appear in the local repo"
 fi
+mkdir -p "$TEST_HOME/.config/dotfiles"
+printf 'API_KEY=nope\n' >"$TEST_HOME/.config/dotfiles/secrets"
+dotfiles_run export >/dev/null
+if [[ ! -e "$repo/config/dotfiles/secrets" ]] && grep -qx "config/dotfiles/secrets" "$repo/.gitignore"; then
+    pass "the secrets file is never exported, and is gitignored"
+else
+    fail "the secrets file must not appear in the local repo"
+fi
 
 # --push to a bare remote
 git clone -q --bare "$repo" "$TEST_DIR/remote.git"

@@ -27,7 +27,10 @@ local = [{ source = "tmux/local.conf.template", dest = "$cfg/tmux/local.conf" }]
 
 ["Dotfiles CLI"]
 preset = "minimal"
-link = [{ source = "scripts/dotfiles", dest = "~/.local/bin/dotfiles" }]
+link = [
+  { source = "scripts/dotfiles", dest = "~/.local/bin/dotfiles" },
+  { source = "scripts/secret", dest = "~/.local/bin/secret" },
+]
 
 [Formatters]
 preset = "minimal"

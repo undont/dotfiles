@@ -37,7 +37,7 @@ jobs:
           shellcheck -x $EXCLUDES scripts/_lib/*.sh
           shellcheck -x $EXCLUDES scripts/hooks/*.sh
           # theme tools (no .sh extension)
-          shellcheck -x $EXCLUDES scripts/theme-switch scripts/theme-delete scripts/generate-theme scripts/theme-contrast-check
+          shellcheck -x $EXCLUDES scripts/theme-switch scripts/theme-delete scripts/generate-theme scripts/theme-contrast-check scripts/secret
 
       - name: Run ShellCheck on tmux scripts
         run: |

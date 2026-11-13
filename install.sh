@@ -378,24 +378,18 @@ fi
 # step 10: create secrets file if needed
 echo ""
 print_step 10 "Setting up secrets..."
-SECRETS_DIR="${XDG_CONFIG_HOME:-$HOME/.config}/zsh"
-mkdir -p "$SECRETS_DIR"
+SECRETS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/secrets"
+LEGACY_SECRETS="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/secrets.zsh"
 
-if [[ ! -f "$SECRETS_DIR/secrets.zsh" ]]; then
-    if [[ -f "$DOTFILES_DIR/zsh/secrets.zsh.template" ]]; then
-        cp "$DOTFILES_DIR/zsh/secrets.zsh.template" "$SECRETS_DIR/secrets.zsh"
-        chmod 600 "$SECRETS_DIR/secrets.zsh"
-        warn "Created secrets file from template."
-        echo "Edit $SECRETS_DIR/secrets.zsh to add your API keys and tokens."
-    else
-        # create secrets file with restrictive permissions from the start
-        (
-            umask 077
-            touch "$SECRETS_DIR/secrets.zsh"
-        )
-        chmod 600 "$SECRETS_DIR/secrets.zsh"
-        warn "Created empty secrets file."
-    fi
+if [[ -f "$LEGACY_SECRETS" ]]; then
+    echo "$LEGACY_SECRETS exports to every shell; secret import moves it (docs/SECRETS.md)."
+elif [[ ! -f "$SECRETS_FILE" ]]; then
+    mkdir -p "$(dirname "$SECRETS_FILE")"
+    (
+        umask 077
+        touch "$SECRETS_FILE"
+    )
+    echo "Created $SECRETS_FILE; add keys with: secret set NAME"
 else
     echo "Secrets file already exists."
 fi
@@ -533,10 +527,10 @@ if command -v node &>/dev/null; then
     has_node=true
 fi
 
-# an `export` line that is not one of the template's placeholders
-secrets_file="${XDG_CONFIG_HOME:-$HOME/.config}/zsh/secrets.zsh"
-secrets_template="$DOTFILES_DIR/zsh/secrets.zsh.template"
-if [[ -f "$secrets_file" ]] && grep -vxF -f "$secrets_template" "$secrets_file" 2>/dev/null | grep -q '^export '; then
+# a non-empty secrets file, or an export in secrets.zsh other than an old
+# template placeholder
+config_home="${XDG_CONFIG_HOME:-$HOME/.config}"
+if [[ -s "$config_home/dotfiles/secrets" ]] || grep '^export ' "$config_home/zsh/secrets.zsh" 2>/dev/null | grep -qv '="your_'; then
     has_secrets_content=true
 fi
 
@@ -586,7 +580,7 @@ if [[ "$has_p10k" == false ]]; then
 fi
 
 if [[ "$has_secrets_content" == false ]]; then
-    STEPS+=("Edit ~/.config/zsh/secrets.zsh to add your API keys")
+    STEPS+=("Add your API keys: secret set NAME")
 fi
 
 if [[ "$has_dev_root" == false ]] || [[ "$has_projects_root" == false ]]; then

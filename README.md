@@ -199,6 +199,7 @@ The full sets are all available in-product, and stay current because they're gen
 - [Command Exit Alerts](docs/CMD-ALERTS.md): auto ✓/✗ alerts when commands finish in other windows
 - [Installation Guide](docs/INSTALLATION-GUIDE.md): detailed walkthrough of each installation step
 - [Local Layer](docs/LOCAL-LAYER.md): override files, and syncing them between your machines
+- [Secrets](docs/SECRETS.md): API keys read on demand rather than exported to every shell
 - [SonarLint](docs/SONARLINT.md): SonarQube/SonarCloud diagnostics in Neovim
 - [Theme System](docs/THEME-SYSTEM.md): how themes work, the Ghostty theme generator, and WCAG contrast checks
 - [Troubleshooting](docs/TROUBLESHOOTING.md): common issues and solutions

@@ -189,6 +189,16 @@ if [[ -f "$ZSH_CONFIG_DIR/secrets.zsh" ]]; then
     fi
 fi
 
+SECRETS_FILE="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/secrets"
+if [[ -f "$SECRETS_FILE" ]]; then
+    if [[ ! -s "$SECRETS_FILE" ]]; then
+        rm -f "$SECRETS_FILE"
+        success "Removed empty secrets file"
+    else
+        warn "Kept $SECRETS_FILE (contains data)"
+    fi
+fi
+
 # local-aliases.zsh is not created by the installer; an empty one and its
 # backup are removed
 if [[ -f "$ZSH_CONFIG_DIR/local-aliases.zsh.bak" ]]; then
