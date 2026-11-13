@@ -15,45 +15,45 @@
 # repo, at dest with ~/. dropped, $cfg/ as config/ and $appsupport/ dropped;
 # local overrides that path
 
-[Zsh]
+[zsh]
 preset = "minimal"
 link = [{ source = "zsh/zprofile", dest = "~/.zprofile" }]
 local = [{ source = "zsh/zshrc.template", dest = "~/.zshrc" }]
 
-[Tmux]
+[tmux]
 preset = "minimal"
 link = [{ source = "tmux", dest = "~/.tmux" }]
 local = [{ source = "tmux/local.conf.template", dest = "$cfg/tmux/local.conf" }]
 
-["Dotfiles CLI"]
+["dotfiles cli"]
 preset = "minimal"
 link = [
   { source = "scripts/dotfiles", dest = "~/.local/bin/dotfiles" },
   { source = "scripts/secret", dest = "~/.local/bin/secret" },
 ]
 
-[Formatters]
+[formatters]
 preset = "minimal"
 link = [
   { source = "formatters/prettierrc.json", dest = "~/.prettierrc" },
   { source = "formatters/editorconfig", dest = "~/.editorconfig" },
 ]
 
-[Neovim]
+[neovim]
 preset = "core"
 link = [{ source = "nvim", dest = "$cfg/nvim" }]
 local = [{ source = "nvim/local.lua.template", dest = "$cfg/nvim/local.lua" }]
 
-[Hammerspoon]
+[hammerspoon]
 preset = "full"
 link = [{ source = "hammerspoon/init.lua", dest = "~/.hammerspoon/init.lua" }]
 local = [{ source = "hammerspoon/local.lua.template", dest = "~/.hammerspoon/local.lua" }]
 
-[Ghostty]
+[ghostty]
 preset = "core"
 local = [{ source = "ghostty/local.template", dest = "$cfg/ghostty/local" }]
 
-[Zed]
+[zed]
 preset = "core"
 link = [
   { source = "zed/keymap.json", dest = "$cfg/zed/keymap.json" },
@@ -61,7 +61,7 @@ link = [
 ]
 copy = [{ source = "zed/settings.json", dest = "$cfg/zed/settings.json" }]
 
-[Karabiner]
+[karabiner]
 preset = "full"
 copy = [{ source = "karabiner/karabiner.json", dest = "$cfg/karabiner/karabiner.json" }]
 
@@ -74,23 +74,23 @@ local = [{ source = "gh-dash/local.yml.template", dest = "$cfg/gh-dash/local.yml
 preset = "core"
 copy = [{ source = "btop/btop.conf", dest = "$cfg/btop/btop.conf" }]
 
-[Yazi]
+[yazi]
 preset = "core"
 link = [
   { source = "yazi/yazi.toml", dest = "$cfg/yazi/yazi.toml" },
   { source = "yazi/keymap.toml", dest = "$cfg/yazi/keymap.toml" },
 ]
 
-[Launchers]
+[launchers]
 preset = "core"
 link = [{ source = "launchers/bin/dev", dest = "~/.local/launchers/dev" }]
 
-[LazyGit]
+[lazygit]
 preset = "core"
 link = [{ source = "lazygit/config.yml", dest = "$cfg/lazygit/config.yml" }]
 local = [{ source = "lazygit/local.yml.template", dest = "$cfg/lazygit/local.yml" }]
 
-[LazyDocker]
+[lazydocker]
 preset = "core"
 link = [
   { os = "macos", source = "lazydocker/format-logs.awk", dest = "$appsupport/lazydocker/format-logs.awk" },
@@ -102,20 +102,20 @@ copy = [
   { os = "linux", source = "lazydocker/config.yml", dest = "$cfg/lazydocker/config.yml", local = "lazydocker/config.yml" },
 ]
 
-["ImageMagick font map"]
+["imagemagick font map"]
 preset = "core"
 os = "macos"
 link = [{ source = "imagemagick/type.xml", dest = "$cfg/ImageMagick/type.xml" }]
 
-[Rex]
+[rex]
 preset = "core"
 link = [{ source = "rex", dest = "$cfg/rex" }]
 
-["Statusline theme resolver"]
+["statusline theme resolver"]
 preset = "core"
 link = [{ source = "scripts/_lib/statusline-theme.sh", dest = "$cfg/dotfiles/statusline-theme.sh" }]
 
-["Local layer"]
+["local layer"]
 preset = "core"
 sync = [
   { dest = "~/.ai/instructions/local.md" },

@@ -257,7 +257,7 @@ else
     fail "links missing header"
 fi
 
-for section_name in Zsh Tmux CLI; do
+for section_name in zsh tmux cli; do
     if [[ "$links_out" == *"$section_name"* ]]; then
         pass "links includes $section_name section"
     else
