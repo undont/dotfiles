@@ -47,6 +47,7 @@ brew "duti"              # macOS-only; sets Zed as default handler for code file
 
 # AI Coding Assistants
 brew "opencode"
+brew "pi-coding-agent"
 cask "codexbar" # menu bar usage monitor for Codex and Claude
 
 # Git & GitHub

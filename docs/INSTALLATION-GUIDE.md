@@ -82,7 +82,7 @@ The installer supports three presets to customise what gets installed:
 - Editor: Neovim with LSP, Telescope, and plugins
 - Editor: Zed keymap/tasks (settings.json copied once, then user-owned)
 - Terminal: Ghostty configuration
-- AI Tools: OpenCode (brewed); Claude Code, Codex, pi CLIs install separately
+- AI Tools: OpenCode and pi (brewed); Claude Code and Codex through their native installers
 - Session launchers (`dev`, `github`, `btop`, `docker`, `dotfiles`, `config`)
 - Ideal for: Linux desktops, cross-platform setups
 
@@ -171,7 +171,7 @@ Step 1: Setting up Homebrew...
 | ------------------- | ----------------------------------------------------------------- |
 | Shell & Terminal    | zsh, tmux, powerlevel10k, fzf, direnv, carapace, zoxide           |
 | Editors             | neovim                                                            |
-| AI Tools            | opencode (Claude/Codex/pi install separately)                     |
+| AI Tools            | opencode, pi-coding-agent; Claude Code and Codex native installs  |
 | Git Tools           | git, gh (GitHub CLI), lazygit, diffnav, act                       |
 | Search & Navigation | ripgrep, fd, tree, jq, yq, bat, zoxide                            |
 | Languages           | fnm (Node.js), bun, Go, Python 3.13 + uv, openjdk, dotnet-sdk     |
