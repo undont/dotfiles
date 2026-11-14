@@ -16,10 +16,10 @@ Open URL/file under cursor | gx
 ## harpoon @harpoon
 Add file | <leader>ha
 List files | <leader>hl
-Go to file 1 | <leader>1
-Go to file 2 | <leader>2
-Go to file 3 | <leader>3
-Go to file 4 | <leader>4
+Go to file 1 | <C-1>
+Go to file 2 | <C-2>
+Go to file 3 | <C-3>
+Go to file 4 | <C-4>
 Remove current file | <leader>hd
 Clear all marks | <leader>hX
 Search in Telescope | <leader>hs

@@ -62,10 +62,6 @@ return {
           { '<leader>N', group = '[N]otifications', icon = { icon = '󰈸 ', color = 'yellow' } },
 
           -- ── always-hidden standalone keys (muscle memory) ──
-          { '<leader>1', hidden = true },
-          { '<leader>2', hidden = true },
-          { '<leader>3', hidden = true },
-          { '<leader>4', hidden = true },
           { '<leader>e', hidden = true },
           { '<leader>g', hidden = true },
           { '<leader>i', hidden = true },
