@@ -1,8 +1,8 @@
 -- SonarLint project scan. SonarLint only analyses opened buffers, so scannable
 -- files are hidden-loaded, their diagnostics snapshotted into the quickfix via
 -- features/scan-runner, and the created buffers unloaded.
--- <leader>lm / lb / lT / lS take the same file sets as <leader>xm / xb / xT /
--- xS in features/diag-scan.lua
+-- the `sonar:` picker entries take the same file sets as the scans in
+-- features/diag-scan.lua
 
 local common = require 'features.sonar-common'
 
@@ -81,14 +81,14 @@ end
 --- @param mode 'changed' | 'branch' | 'all'
 local function list_scan_targets(mode)
   if mode == 'changed' then
-    -- same file set as <leader>xm / <leader>sm (features/ticket.lua). nil
+    -- same file set as `scan: modified` / <leader>sm (features/ticket.lua). nil
     -- (already notified) outside a git repo
     local paths = require('features.ticket').modified_files()
     return paths and scannable(paths) or nil
   end
 
   if mode == 'branch' then
-    -- every file changed vs merge-base(main), same set as <leader>xb
+    -- every file changed vs merge-base(main), same set as `scan: branch vs main`
     local paths = require('features.ticket').branch_files()
     return paths and scannable(paths) or nil
   end
@@ -192,7 +192,7 @@ function M.run_scan(mode)
   end
 
   -- ticket mode resolves its file list asynchronously: same commit
-  -- discovery as <leader>dT / <leader>xT (features/ticket.lua), filtered to
+  -- discovery as <leader>dT / `scan: ticket commits` (features/ticket.lua), filtered to
   -- sonarlint-scannable files
   if mode == 'ticket' then
     local ticket = require 'features.ticket'

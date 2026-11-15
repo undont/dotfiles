@@ -104,7 +104,7 @@ end
 function M.setup()
   vim.keymap.set('n', '<leader>lR', refresh_nvim, { desc = '[R]efresh Neovim (clear buffers, restart LSP, reset layout)' })
   vim.keymap.set('n', '<leader>lt', refresh_treesitter, { desc = 'Refresh [T]reesitter' })
-  vim.keymap.set('n', '<leader>ld', toggle_dashboard, { desc = '[D]ashboard (toggle in current window)' })
+  vim.keymap.set('n', '<leader>wd', toggle_dashboard, { desc = '[D]ashboard (toggle in current window)' })
 end
 
 return M

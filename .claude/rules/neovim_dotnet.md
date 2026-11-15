@@ -144,8 +144,8 @@ means killing the daemon — see Daemon Mode above.
 
 ### Scan snapshots have a second code filter (features/diag-scan.lua)
 
-The diagnostics scans (`<leader>xm` / `<leader>xb` / `<leader>xT` /
-`<leader>xS`, `features/diag-scan.lua`) snapshot `vim.diagnostic.get`
+The diagnostics scans (the `scan:` entries in the `<leader>q` picker,
+`features/diag-scan.lua`) snapshot `vim.diagnostic.get`
 for hidden-loaded buffers into the quickfix. IDE0079 ("Suppression is
 unnecessary") and IDE0005 false positives reach those snapshots despite
 `patch_diagnostic_set`: they vanish when the file is opened for real, and
@@ -221,8 +221,8 @@ there's a _second_, per-file refresh trigger:
 `.cs` buffers. A file's `DiagnosticChanged` is the reliable per-file signal —
 roslyn publishes diagnostics (empty or not) once it has a semantic model for the
 file, which is exactly when its tokens are ready. The visible-buffer gate keeps
-it from piling `force_refresh` onto the 100 hidden buffers during an
-`<leader>xm` scan; re-requesting identical tokens is a no-op repaint, so it
+it from piling `force_refresh` onto the 100 hidden buffers during a
+`scan: modified` run; re-requesting identical tokens is a no-op repaint, so it
 can't reintroduce flicker. The two triggers are complementary: progress-`end`
 covers project-wide re-settles, DiagnosticChanged covers the per-file initial
 population that the global timer races.

@@ -566,8 +566,8 @@ function M.setup()
     vim.cmd 'lclose'
   end, { desc = '[C]lear both quickfix and location lists' })
 
-  -- <leader>xm / xb / xT / xS (scoped diagnostics scans) live in
-  -- features/diag-scan.lua, wired separately from core/keymaps.lua
+  -- scoped diagnostics scans live in features/diag-scan.lua, run from the
+  -- <leader>q picker (features/run.lua)
 end
 
 return M

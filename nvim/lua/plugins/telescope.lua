@@ -55,7 +55,7 @@ return {
       {
         '<leader>sm',
         function()
-          -- same file set as the <leader>xm / <leader>lm scans
+          -- same file set as the `scan: modified` / `sonar: modified` scans
           -- (features/ticket.lua): changes vs HEAD plus untracked files
           local files = require('features.ticket').modified_files()
           if not files then

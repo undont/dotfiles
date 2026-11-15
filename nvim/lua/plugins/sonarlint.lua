@@ -8,7 +8,6 @@ local common = require 'features.sonar-common'
 local rules = require 'features.sonar-rules'
 local actions = require 'features.sonar-actions'
 local rule_popup = require 'features.sonar-rule-popup'
-local scan = require 'features.sonar-scan'
 
 local CONNECTION_ID = 'sonarcloud'
 local FILETYPES = common.FILETYPES
@@ -52,36 +51,7 @@ return {
   {
     'https://gitlab.com/schrieveslaach/sonarlint.nvim',
     ft = FILETYPES,
-    keys = {
-      {
-        '<leader>lm',
-        function()
-          scan.run_scan 'changed'
-        end,
-        desc = 'LSP: Sonar scan [M]odified files',
-      },
-      {
-        '<leader>lb',
-        function()
-          scan.run_scan 'branch'
-        end,
-        desc = 'LSP: Sonar scan [B]ranch vs main',
-      },
-      {
-        '<leader>lT',
-        function()
-          scan.run_scan 'ticket'
-        end,
-        desc = 'LSP: Sonar scan [T]icket commits',
-      },
-      {
-        '<leader>lS',
-        function()
-          scan.run_scan 'all'
-        end,
-        desc = 'LSP: [S]onar scan whole project',
-      },
-    },
+    -- scans run from the <leader>q picker's `sonar:` entries (features/run.lua)
     dependencies = { 'lewis6991/gitsigns.nvim' },
     config = function()
       local cmd = { 'sonarlint-language-server', '-stdio', '-analyzers' }
