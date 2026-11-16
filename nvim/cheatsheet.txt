@@ -16,10 +16,10 @@ Open URL/file under cursor | gx
 ## harpoon @harpoon
 Add file | <leader>ha
 List files | <leader>hl
-Go to file 1 | <leader>1
-Go to file 2 | <leader>2
-Go to file 3 | <leader>3
-Go to file 4 | <leader>4
+Go to file 1 | <C-1>
+Go to file 2 | <C-2>
+Go to file 3 | <C-3>
+Go to file 4 | <C-4>
 Remove current file | <leader>hd
 Clear all marks | <leader>hX
 Search in Telescope | <leader>hs
@@ -103,16 +103,11 @@ Workspace symbols | gW
 Hover documentation | K
 Toggle inlay hints | <leader>lh
 Code lens run | <leader>ll
-Code lens refresh | <leader>lL
 Format buffer | <leader>f
 LSP restart | <leader>lr
 Refresh Neovim | <leader>lR
 Refresh Treesitter + semantic tokens | <leader>lt
-Toggle dashboard in current window | <leader>ld
-Sonar scan changed files | <leader>lm
-Sonar scan branch vs main | <leader>lb
-Sonar scan ticket commits | <leader>lT
-Sonar scan whole project | <leader>lS
+Sonar scans (modified, branch, ticket, project) | <leader>q, then sonar:
 Sonar issue details / silence rule | gra (on sonar finding)
 
 ## tools @tools
@@ -120,8 +115,8 @@ Toggle file tree | <leader>e
 NeoTree reveal | |
 Open LazyGit | <leader>g
 Format file | <leader>f
-Build project / pick Make target | <leader>q
-Pick Make target | <leader>Q
+Run picker (build, make, scripts, tests, dotnet, scans) | <leader>q
+Rerun last pick | <leader>Q
 Notification history | <leader>Nn
 Sort JSON keys | :JsonSort
 Reload theme | :ThemeReload
@@ -139,10 +134,7 @@ Location list toggle | <leader>xl
 Clear quickfix list | <leader>xcq
 Clear location list | <leader>xcl
 Clear both | <leader>xcc
-Git modified → diagnostics qf | <leader>xm
-Branch vs main → diagnostics qf | <leader>xb
-Git ticket commits → diagnostics qf | <leader>xT
-Whole project scan → diagnostics qf | <leader>xS
+Scoped scans (modified, branch, ticket, project) → diagnostics qf | <leader>q, then scan:
 Grep yank register → quickfix | <leader>x/
 Grep → quickfix (silent, opens list) | :grep pat
 Grep → quickfix without jumping | :grep! pat
@@ -162,6 +154,7 @@ Resize left | <leader>wh
 Resize right | <leader>wl
 Resize down | <leader>wj
 Resize up | <leader>wk
+Toggle dashboard in current window | <leader>wd
 Maximise left | <leader>wH
 Maximise right | <leader>wL
 Maximise down | <leader>wJ
@@ -280,7 +273,7 @@ Hover value under cursor | <leader>rh
 Attach (pick an attach config) | <leader>ra
 Start/stop osv in this nvim (debug its lua from another) | <leader>ro
 Debug nvim config from startup | NVIM_OSV=1 nvim, then attach from another nvim
-Debug nearest test | <leader>td
+Debug nearest test | <leader>q, then test: debug nearest
 Switch panel section | W / S / T / B / E / R (in panel)
 Next/prev panel section | ]v / [v (in panel)
 Expand/collapse variable | <CR> (scopes/watches)
@@ -321,17 +314,12 @@ Next/prev heading | ]] / [[
 Follow link or anchor / go back | <C-]> / <BS>
 
 ## obsidian @obsidian
-Open today's daily note | <leader>oo
-Open yesterday's daily note | <leader>oy
-Open tomorrow's daily note | <leader>oT
-New note (from template if available) | <leader>on
+New note | <leader>on
 Find note (quick switch) | <leader>of
 Grep vault | <leader>og
 Tags | <leader>ot
 Backlinks | <leader>ob
 Links in current note | <leader>ol
-Insert template into note | <leader>oi
-New blank note (no template) | <leader>oN
 Switch workspace | <leader>ow
 Rename note | <leader>or
 Extract selection to new note | <leader>oe (normal/visual)
@@ -346,8 +334,7 @@ Toggle summary | <leader>ts
 Show output | <leader>to
 Toggle output panel | <leader>tO
 Stop test | <leader>tS
-Toggle watch | <leader>tw
-Debug nearest test | <leader>td
+Watch, debug nearest | <leader>q, then test:
 Next/prev failed test | ]t / [t (jumps to the failure line, or the failing case)
 Next/prev failed test (summary) | ]t / [t or J / K
 Collapse/expand all (summary) | C / O
@@ -373,13 +360,7 @@ Cancel | <C-c>
 Close | q
 
 ## dotnet @dotnet
-Run project | <leader>nr
-Build project | <leader>nb
-Clean project | <leader>nc
-Manage secrets | <leader>ns
-Watch project | <leader>nw
-New item | <leader>nn
-Outdated packages | <leader>no
+Build, run, watch, clean, secrets, new, outdated | <leader>q, then dotnet:
 Debug project | <leader>nd
 Attach to running .NET process | <leader>na
 

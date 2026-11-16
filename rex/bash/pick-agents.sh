@@ -3,7 +3,7 @@
 # layer by the pick_<agent> actions, and over nvim's by pick_nvim. rows and
 # actions are in do/panes.lua
 # usage: pick-agents.sh <client_id> <origin_session_id> <origin_block_id> <origin_zoomed> <program>
-#   program: claude, codex, opencode, copilot or nvim
+#   program: claude, codex, opencode, pi or nvim
 set -euo pipefail
 
 scripts="${BASH_SOURCE%/*}"
@@ -13,9 +13,9 @@ source "$scripts/_lib.sh"
 picker_start "$1" "$2" "$3" "$4"
 program="${5:-}"
 case "$program" in
-claude | codex | opencode | copilot | nvim) ;;
+claude | codex | opencode | pi | nvim) ;;
 *)
-    printf 'usage: %s <client> <session> <block> <zoomed> claude|codex|opencode|copilot|nvim\n' "${0##*/}" >&2
+    printf 'usage: %s <client> <session> <block> <zoomed> claude|codex|opencode|pi|nvim\n' "${0##*/}" >&2
     exit 2
     ;;
 esac

@@ -147,7 +147,7 @@ local function load_batch(paths)
   return bufnrs, created, target
 end
 
---- driver behind <leader>xm / xb / xT / xS: loads the paths in batches (see
+--- driver behind the modified, branch, ticket and project scans: loads the paths in batches (see
 --- SCAN_BATCH_SIZE), snapshots each batch via scan_runner and merges the items
 --- into one titled quickfix
 --- @param paths string[] absolute paths
@@ -319,7 +319,7 @@ local function scan_files(paths, opts)
   run_batch(1)
 end
 
--- modified-file discovery shared with <leader>lm and <leader>sm
+-- modified-file discovery shared with `sonar: modified` and <leader>sm
 -- (features/ticket.lua), so scan and picker operate on the same set
 local function open_git_modified()
   local paths = require('features.ticket').modified_files()
@@ -408,7 +408,7 @@ local function open_project_scan()
 end
 
 -- the union of files touched by the matched commits, the same commit
--- discovery as <leader>dT and <leader>lT (features/ticket.lua)
+-- discovery as <leader>dT and `sonar: ticket commits` (features/ticket.lua)
 local function open_ticket_scan()
   if scan_in_progress() then
     vim.notify('A scan is already running', vim.log.levels.WARN)
@@ -432,12 +432,18 @@ local function open_ticket_scan()
   end)
 end
 
-function M.setup()
-  vim.keymap.set('n', '<leader>xm', open_git_modified, { desc = 'Git [M]odified → diagnostics qf' })
-  vim.keymap.set('n', '<leader>xb', open_branch_scan, { desc = '[B]ranch vs main → diagnostics qf' })
-  vim.keymap.set('n', '<leader>xT', open_ticket_scan, { desc = 'Git [T]icket commits → diagnostics qf' })
-  vim.keymap.set('n', '<leader>xS', open_project_scan, { desc = 'Whole project [S]can → diagnostics qf' })
+--- for the features/run.lua picker
+---@return RunEntry[]
+function M.entries()
+  return {
+    { name = 'scan: modified', run = open_git_modified },
+    { name = 'scan: branch vs main', run = open_branch_scan },
+    { name = 'scan: ticket commits', run = open_ticket_scan },
+    { name = 'scan: whole project', run = open_project_scan },
+  }
+end
 
+function M.setup()
   vim.api.nvim_create_user_command('GitModified', open_git_modified, { desc = 'Open git-modified files and dump diagnostics to quickfix' })
   vim.api.nvim_create_user_command('BranchScan', open_branch_scan, { desc = 'Scan all files changed vs main and dump diagnostics to quickfix' })
   vim.api.nvim_create_user_command('TicketScan', open_ticket_scan, { desc = 'Scan files from ticket-matching commits and dump diagnostics to quickfix' })

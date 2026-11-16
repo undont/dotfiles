@@ -234,6 +234,25 @@ if should_install "core"; then
     fi
 fi
 
+# codex: native install in place of the brew cask, which is macOS only
+if should_install "core"; then
+    if is_macos && brew list --cask codex &>/dev/null; then
+        echo "Removing Homebrew Codex cask (switching to native install)..."
+        brew uninstall --cask codex || warn "Failed to uninstall brew codex cask"
+    fi
+
+    if ! command_exists codex; then
+        echo "Installing Codex (native)..."
+        # first-party URL (chatgpt.com). it installs to ~/.local/bin and adds a
+        # PATH block to the shell profile unless that's already on PATH
+        if ! curl -fsSL https://chatgpt.com/codex/install.sh | PATH="$HOME/.local/bin:$PATH" sh; then
+            warn "Codex install failed. You can retry manually: curl -fsSL https://chatgpt.com/codex/install.sh | sh"
+        fi
+    else
+        echo "Codex already installed: $(codex --version 2>/dev/null || echo 'unknown version')"
+    fi
+fi
+
 # fzf keybindings and completion
 if command_exists fzf; then
     FZF_INSTALL="$(brew --prefix)/opt/fzf/install"

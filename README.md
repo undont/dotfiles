@@ -82,7 +82,7 @@ Modular config based on kickstart.nvim with lazy.nvim, Treesitter, and Mason-man
 
 - **Session save and restore** with resurrect + continuum, extended to split the combined save into per-session backups, so one session can be restored without bringing back everything else
 - **fzf pickers everywhere**: sessions, windows, running nvim instances, AI agent instances, themes, and URLs from scrollback
-- **Multi-agent alerts** show coloured indicators when Claude, OpenCode, Copilot or Codex need attention, clearing when you switch to the session. The Claude and OpenCode switchers also show live per-instance state and how long it has been waiting. See [docs/AGENT-HOOKS.md](docs/AGENT-HOOKS.md)
+- **Multi-agent alerts** show coloured indicators when Claude, OpenCode, Codex or pi need attention, clearing when you switch to the session. The Claude and OpenCode switchers also show live per-instance state and how long it has been waiting. See [docs/AGENT-HOOKS.md](docs/AGENT-HOOKS.md)
 - **Process list** is one fzf switcher over everything you're watching: live commands with elapsed time plus finished ✓/✗ rows, with jump, stop, clear and rerun
 - **Undo** restores the most recently closed pane or window with directory, scrollback and layout intact
 - **Session launchers** are TOML files (`launchers/*.toml`, plus your own in `~/.config/dotfiles/launchers`) that build a session in tmux or Rex. They cover `dev`, `github`, `btop`, `docker`, `dotfiles` and `config`, with a wizard to scaffold new ones, or `s` in the launcher picker to save the current session as one. Also reachable from a plain shell with Ctrl+O
@@ -195,7 +195,7 @@ The full sets are all available in-product, and stay current because they're gen
 
 ## Documentation
 
-- [Agent Hooks](docs/AGENT-HOOKS.md): setup guide for agent alert hooks (Claude Code, OpenCode, Codex, Copilot)
+- [Agent Hooks](docs/AGENT-HOOKS.md): setup guide for agent alert hooks (Claude Code, OpenCode, Codex, pi)
 - [Command Exit Alerts](docs/CMD-ALERTS.md): auto ✓/✗ alerts when commands finish in other windows
 - [Installation Guide](docs/INSTALLATION-GUIDE.md): detailed walkthrough of each installation step
 - [Local Layer](docs/LOCAL-LAYER.md): override files, and syncing them between your machines

@@ -15,7 +15,7 @@ local GLYPHS = {
 }
 local NO_STATUS = { "·", "#6272a4" }
 local RESET = common.RESET
-local AGENT_TITLES = { ["Claude Code"] = true, claude = true, codex = true, opencode = true, copilot = true }
+local AGENT_TITLES = { ["Claude Code"] = true, claude = true, codex = true, opencode = true, pi = true }
 
 local function glyph(state)
     return common.paint(GLYPHS[state] or NO_STATUS)
@@ -120,7 +120,7 @@ local function logo(program)
     local light_cyan, dark_cyan = common.hex_fg(cyan), common.hex_fg(common.hex_dim(cyan, 65))
     local green = common.hex_fg(os.getenv("TMUX_ACCENT_GREEN") or "#50fa7b")
     local clay, codex = "\27[38;2;215;119;87m", "\27[0;32m"
-    local eyes, mouth, bar = "\27[38;5;147m", "\27[38;5;176m", "\27[38;5;107m"
+    local salmon, blue, yellow = "\27[38;2;232;130;120m", "\27[38;2;78;128;190m", "\27[38;2;232;190;90m"
     local logos = {
         claude = {
             clay .. " ▐▛███▛█" .. RESET,
@@ -156,11 +156,11 @@ local function logo(program)
                 .. "▀▀▀ ▀▀▀▀ ▀▀▀▀ ▀▀▀▀"
                 .. RESET,
         },
-        copilot = {
-            "   " .. eyes .. "╭─╮╭─╮" .. RESET,
-            "   " .. eyes .. "╰─╯╰─╯" .. RESET,
-            "   " .. mouth .. "█" .. RESET .. " " .. bar .. "▘▝" .. RESET .. " " .. mouth .. "█" .. RESET,
-            "    " .. mouth .. "▔▔▔▔" .. RESET,
+        pi = {
+            salmon .. "██████" .. RESET,
+            blue .. "██  " .. salmon .. "██" .. RESET,
+            blue .. "████" .. RESET .. yellow .. "  ██" .. RESET,
+            blue .. "██" .. RESET .. "    " .. yellow .. "██" .. RESET,
         },
         nvim = {
             green .. "            ▗" .. RESET,

@@ -1,8 +1,8 @@
 -- git file/commit discovery shared by the scan, diff and picker keymaps, so
 -- each group operates on one file set:
---   ticket commits  <leader>dT (differ), <leader>xT, <leader>lT
---   modified files  <leader>xm, <leader>lm, <leader>sm
---   branch files    <leader>xb, <leader>lb (the set <leader>dt diffs)
+--   ticket commits  <leader>dT (differ), `scan:` and `sonar: ticket commits`
+--   modified files  `scan:` and `sonar: modified`, <leader>sm
+--   branch files    `scan:` and `sonar: branch vs main` (the set <leader>dt diffs)
 
 local M = {}
 

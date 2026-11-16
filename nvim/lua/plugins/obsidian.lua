@@ -1,6 +1,5 @@
--- obsidian.nvim: vault features only (daily notes, backlinks, tags,
--- templates); rendering and list/link editing are in render-markdown.lua
--- and mkdnflow.lua.
+-- obsidian.nvim: vault features only (notes, backlinks, tags) rendering and
+-- list/link editing are in render-markdown.lua and mkdnflow.lua.
 -- vault root: `vim.g.obsidian_vault_root` (set in local.lua), else ~/obsidian.
 -- when neither exists the spec is empty. the root is a vault itself
 -- (`.obsidian/` directly inside) or a parent directory of vaults
@@ -59,27 +58,8 @@ return {
     ft = { 'markdown' },
     cmd = { 'Obsidian' },
     keys = {
-      { '<leader>oo', '<cmd>Obsidian today<cr>', desc = '[O]pen daily note' },
-      { '<leader>oy', '<cmd>Obsidian yesterday<cr>', desc = '[Y]esterday daily note' },
-      { '<leader>oT', '<cmd>Obsidian tomorrow<cr>', desc = '[T]omorrow daily note' },
       {
         '<leader>on',
-        function()
-          local ok, api = pcall(require, 'obsidian.api')
-          if ok and api.templates_dir() then
-            vim.cmd 'Obsidian new_from_template'
-          else
-            vim.ui.input({ prompt = 'New note title: ' }, function(title)
-              if title and title ~= '' then
-                vim.cmd('Obsidian new ' .. vim.fn.fnameescape(title))
-              end
-            end)
-          end
-        end,
-        desc = '[N]ew note (from template if available)',
-      },
-      {
-        '<leader>oN',
         function()
           vim.ui.input({ prompt = 'New note title: ' }, function(title)
             if title and title ~= '' then
@@ -87,14 +67,13 @@ return {
             end
           end)
         end,
-        desc = '[N]ew blank note (no template)',
+        desc = '[N]ew note',
       },
       { '<leader>of', '<cmd>Obsidian quick_switch<cr>', desc = '[F]ind note' },
       { '<leader>og', '<cmd>Obsidian search<cr>', desc = '[G]rep vault' },
       { '<leader>ot', '<cmd>Obsidian tags<cr>', desc = '[T]ags' },
       { '<leader>ob', '<cmd>Obsidian backlinks<cr>', desc = '[B]acklinks' },
       { '<leader>ol', '<cmd>Obsidian links<cr>', desc = '[L]inks in note' },
-      { '<leader>oi', '<cmd>Obsidian template<cr>', desc = '[I]nsert template into note' },
       { '<leader>ow', '<cmd>Obsidian workspace<cr>', desc = '[W]orkspace switch' },
       { '<leader>or', '<cmd>Obsidian rename<cr>', desc = '[R]ename note' },
       { '<leader>oe', '<cmd>Obsidian extract_note<cr>', mode = { 'n', 'v' }, desc = '[E]xtract to new note' },
@@ -109,19 +88,11 @@ return {
       legacy_commands = false,
       workspaces = workspaces,
 
-      -- matches .obsidian/daily-notes.json (folder, format, template)
-      daily_notes = {
-        folder = 'daily',
-        date_format = 'DD-MM-YYYY',
-        template = 'daily note.md',
-        default_tags = { 'daily' },
-      },
+      daily_notes = { enabled = false },
 
-      templates = {
-        folder = 'templates',
-        date_format = 'YYYY-MM-DD',
-        time_format = 'HH:mm',
-      },
+      -- the vault's templates/ are Templater-only (`<% tp.* %>`), which
+      -- obsidian.nvim can't render; `create_note` below stands in for note.md
+      templates = { enabled = false },
 
       -- completion comes from obsidian.nvim's built-in `obsidian-ls` server
       -- through blink.cmp's `lsp` source
@@ -131,19 +102,18 @@ return {
 
       picker = { name = 'telescope.nvim' },
 
-      -- vault uses [[title]] and ![[embed]] (see templates/daily note.md)
       link = {
         style = 'wiki',
         format = 'shortest',
       },
 
-      -- random/quick notes land in scratchpad; daily_notes override folder
+      -- matches `newFileFolderPath` in .obsidian/app.json
       new_notes_location = 'notes_subdir',
       notes_subdir = 'scratchpad',
 
       -- the filename is the title in this vault, so the builtin's `id` field
-      -- is dropped. aliases are kept only when the note has them; the builtin
-      -- would write an empty `aliases:` line on every save
+      -- is dropped. aliases and tags are kept only when the note has them; the
+      -- builtin would write empty keys on every save
       frontmatter = {
         sort = false,
         func = function(note)
@@ -151,6 +121,9 @@ return {
           out.id = nil
           if not note.aliases or #note.aliases == 0 then
             out.aliases = nil
+          end
+          if not note.tags or #note.tags == 0 then
+            out.tags = nil
           end
           return out
         end,
@@ -168,12 +141,18 @@ return {
       -- render-markdown.lua handles display
       ui = { enable = false },
 
-      attachments = { folder = 'attachments' },
+      attachments = { folder = 'images' },
 
       -- `gf` in vault notes follows links as `<CR>` does. `follow_link` needs
       -- the raw link string, and `open_strategy` is a literal vim command
       -- ('edit' / 'vsplit' / 'split')
       callbacks = {
+        create_note = function(note)
+          -- `note.template` defaults to the plugin's default_template.md, which
+          -- writes the title as an alias
+          note.template = nil
+          note.metadata.date = os.date '%Y-%m-%d'
+        end,
         enter_note = function(note)
           vim.keymap.set('n', 'gf', function()
             local link = require('obsidian.api').cursor_link()

@@ -416,6 +416,21 @@ if command -v zsh &>/dev/null; then
     ' 2>/dev/null)
     assert_equals "Path-prefixed command strips ./ from basename" "run-tests.sh --verbose" "$label"
 
+    # launcher convention, read from the alias map: a clear-then-run alias is
+    # excluded whatever it runs, directly or through a nested alias, and an
+    # alias that merely contains && is not
+    launcher=$(zsh -c '
+        source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+        alias cl="printf x; true" ralph="cl && ralph" open="v ~/x" v="cl && nvim" build="make && make install"
+        for typed in ralph open build; do
+            _cmd_alert_start=5
+            _cmd_alert_preexec "$typed"
+            echo "$typed:$_cmd_alert_start"
+        done
+    ' 2>/dev/null)
+    assert_equals "Clear-then-run aliases are excluded, directly and nested; other && aliases are tracked" \
+        $'ralph:-1\nopen:-1\nbuild:0' "$launcher"
+
     # nested launcher alias: config -> v -> "cl && nvim". when an alias in the
     # chain is compound (contains a `;`), zsh's $2 (history-expansion) truncates
     # right after that alias's own `;`-separated body and drops everything
@@ -603,6 +618,31 @@ if command -v zsh &>/dev/null; then
     else
         fail "suppressed kill should skip alert+finished row and remove marker (got: '$suppress_out')"
     fi
+
+    : >"$SUP_AF"
+    : >"$SUP_FF"
+    sigint_out=$(TMUX="$S_SP,$S_PID,0" TMUX_PANE="$S_PANE" \
+        ALERTS_FILE="$SUP_AF" \
+        _CMD_FINISHED_FILE="$SUP_FF" \
+        _CMD_RUNNING_DIR="$ALERT_TEST_DIR/run-suppress" \
+        _CMD_SUPPRESS_DIR="$SUP_DIR" \
+        _CMD_ALERT_SCRIPT="$HOOKS_DIR/cmd-alert.sh" \
+        _CMD_ALERT_MIN_SECONDS=0 \
+        zsh -c '
+            source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+            _cmd_alert_start=0
+            _cmd_alert_pane="'"$S_PANE"'"
+            _cmd_alert_label="interruptedjob"
+            _cmd_alert_cmd="sleep 100"
+            (exit 130); _cmd_alert_precmd
+            echo "alerts:$(cat "'"$SUP_AF"'" 2>/dev/null)"
+            echo "finished:$(cat "'"$SUP_FF"'" 2>/dev/null)"
+        ' 2>/dev/null)
+    if [[ "$sigint_out" == $'alerts:\nfinished:' ]]; then
+        pass "ctrl-c (exit 130) writes no alert or finished row"
+    else
+        fail "ctrl-c should skip alert+finished row (got: '$sigint_out')"
+    fi
 else
     skip "zsh not available — skipping kill-suppress marker test"
 fi
@@ -684,6 +724,25 @@ if command -v zsh &>/dev/null; then
         pass "rex command under the threshold leaves no finished row"
     else
         fail "rex command under the threshold should not be recorded (got: '$rex_short')"
+    fi
+
+    : >"$REX_TEST_DIR/finished"
+    rex_sig=$(env -u TMUX REX_BLOCK="block:0001" REX_SESSION="session:0002" \
+        _CMD_REX_DIR="$REX_TEST_DIR" \
+        _CMD_ALERT_MIN_SECONDS=0 \
+        zsh -c '
+            source "'"$HOOKS_DIR/cmd-alert-hook.zsh"'" 2>/dev/null
+            _cmd_alert_preexec "make test"
+            (exit 130); _cmd_alert_precmd
+            echo "int:$(cat "'"$REX_TEST_DIR"'/finished")"
+            _cmd_alert_preexec "make test"
+            (exit 143); _cmd_alert_precmd
+            echo "term:$(cat "'"$REX_TEST_DIR"'/finished")"
+        ' 2>/dev/null)
+    if [[ "$rex_sig" == $'int:\nterm:'*$'\t143\t'* ]]; then
+        pass "rex ctrl-c leaves no finished row, another signal does"
+    else
+        fail "rex ctrl-c should leave no finished row (got: '$rex_sig')"
     fi
 else
     skip "zsh not available: skipping rex registry tests"

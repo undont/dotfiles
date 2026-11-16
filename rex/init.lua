@@ -10,10 +10,12 @@ rex.bind("ctrl+enter", "com.superlogical.terminal.write", { data = "\27[13;5u" }
 rex.bind("ctrl+shift+enter", "com.superlogical.terminal.write", { data = "\27[13;6u" })
 -- rex's default sends ctrl+u, which scrolls claude code; this is ghostty's ctrl+backspace
 rex.bind("cmd+backspace", "com.superlogical.terminal.write", { data = "\27[127;5u" })
--- rex's prompt jumps need OSC 133 shell integration rex doesn't inject into zsh;
--- these are ghostty's ctrl+home/end, which zsh binds to line start/end
+-- ghostty's ctrl+home/end, which zsh binds to line start/end
 rex.bind("cmd+up", "com.superlogical.terminal.write", { data = "\27[1;5H" })
 rex.bind("cmd+down", "com.superlogical.terminal.write", { data = "\27[1;5F" })
+-- the prompt marks come from POWERLEVEL9K_TERM_SHELL_INTEGRATION in ~/.p10k.zsh
+rex.bind("cmd+shift+up", "client.prompt.previous")
+rex.bind("cmd+shift+down", "client.prompt.next")
 
 rex.bind("`>`", "pane.send_key", { key = "`" })
 rex.bind("`>ctrl+b", "pane.send_key", { key = "ctrl+b" })
@@ -22,6 +24,8 @@ rex.bind("`>ctrl+b", "pane.send_key", { key = "ctrl+b" })
 rex.bind("alt+[", "client.tab.previous")
 rex.bind("alt+]", "client.tab.next")
 rex.bind("alt+t", "client.tab.new")
+rex.bind("alt+[", "client.tab.move", { direction = "backward" })
+rex.bind("alt+]", "client.tab.move", { direction = "forward" })
 rex.bind("alt+shift+[", "client.tab.move", { direction = "backward" })
 rex.bind("alt+shift+]", "client.tab.move", { direction = "forward" })
 rex.bind("alt+r", "client.tab.rename")
@@ -53,6 +57,9 @@ rex.bind("cmd+p", "session.switch")
 rex.bind("cmd+j", "session.switch")
 rex.bind("cmd+k", "pane.go_to")
 rex.bind("cmd+l", "pane.view_activity")
+
+rex.bind("cmd+[", "client.tab.previous")
+rex.bind("cmd+]", "client.tab.next")
 
 require("nav")
 require("copy-mode")

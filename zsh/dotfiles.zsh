@@ -414,7 +414,7 @@ _dotfiles_preexec() {
     esac
     [[ "$job" == (%*|<->) ]] && cmd="${${jobtexts[$job]:-$cmd}%% *}"
 
-    print -Pn "\e]0;${cmd}\a"
+    print -rn -- $'\e]0;'"${cmd}"$'\a'
 
     case "$cmd" in
         git | gh | tig) _git_branch_stale=1 ;;
@@ -901,7 +901,6 @@ alias claude="cl && claude"
 alias ralph="cl && ralph"
 alias ralf="cl && ralf"
 alias pi="cl && pi"
-alias copilot="cl && copilot"
 alias btop="cl && btop"
 alias drs="dash-repo-sync"                                                            # sync repo paths
 alias ff="fastfetch"                                                                  # fastfetch system info

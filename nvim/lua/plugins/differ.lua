@@ -28,7 +28,7 @@ return {
       {
         '<leader>dT',
         function()
-          -- commit discovery shared with <leader>xT / <leader>lT (features/ticket.lua)
+          -- commit discovery shared with the `scan:` / `sonar: ticket commits` scans (features/ticket.lua)
           require('features.ticket').prompt_commits(function(ctx)
             local oldest, newest = ctx.commits[#ctx.commits], ctx.commits[1]
             if newest == ctx.head then
@@ -61,7 +61,6 @@ return {
       { '<leader>pq', '<cmd>Differ close<CR>', desc = '[Q]uit PR' },
     },
     config = function()
-      -- vim.g.differ_opts is set in local.lua
       require('differ').setup(vim.g.differ_opts or {})
     end,
   },

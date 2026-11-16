@@ -29,9 +29,9 @@ The hooks (`preexec`/`precmd`) are registered in `zsh/dotfiles.zsh` and run tran
 | ------- | ---- | ------ | -------------------------------------------- |
 | Pass    | ✓    | Green  | Exit code 0                                  |
 | Fail    | ✗    | Red    | Exit code non-zero                           |
-| Stopped | ⊘    | Grey   | Killed by a signal (exit > 128, e.g. Ctrl-C) |
+| Stopped | ⊘    | Grey   | Killed by a signal (exit > 128, e.g. SIGHUP) |
 
-A process terminated by a signal exits with `128 + signal` (Ctrl-C is 130, SIGTERM 143, SIGKILL 137). Those are interruptions you caused, not run-to-completion failures, so they show neutral grey rather than red.
+A process terminated by a signal exits with `128 + signal` (Ctrl-C is 130, SIGTERM 143, SIGKILL 137). Those are interruptions you caused, not run-to-completion failures, so they show neutral grey rather than red. Ctrl-C is the exception: you typed it in the pane, so it leaves no alert and no finished row.
 
 ### Status bar
 
@@ -67,13 +67,13 @@ Interactive commands (pagers, editors) never trigger alerts regardless of how lo
 
 ### Launcher convention
 
-Beyond the list, any alias defined as a clear-then-run (`cl && X`, `clear && X`) is treated as an interactive session and excluded automatically. The rule reads the alias definition from zsh's `aliases` map, so launchers you add later (agents, TUIs) are covered with nothing to keep in sync, as long as they follow the convention. This is why `claude`, `opencode`, `lg` (lazygit), and similar launchers never show up as tracked processes.
+Beyond the list, any alias defined as a clear-then-run (`cl && X`, `clear && X`) is treated as an interactive session and excluded automatically. The rule reads the alias definition from zsh's `aliases` map, following nested aliases by their first word (`config` -> `v` -> `cl && nvim`), so launchers you add later (agents, TUIs) are covered with nothing to keep in sync, as long as they follow the convention. This is why `claude`, `opencode`, `lg` (lazygit), and similar launchers never show up as tracked processes.
 
 Defaults:
 
 ```
 git gdn gh
-claude opencode oc codex
+claude opencode oc codex pi
 btop htop top
 docker lazydocker lazygit ssh
 less more man
@@ -126,7 +126,7 @@ Exit alerts only fire once a command has finished. The process list (prefix + Sh
 ● npm run dev   web:1   8m            ← a server that keeps running
 ✓ cargo build   api:3   (30s ago)     ← finished, exit 0
 ✗ bun test      api:3   (2m ago)      ← finished, non-zero (a real failure)
-⊘ make dev      web:1   (1m ago)      ← stopped with Ctrl-C, not a failure
+⊘ make dev      web:1   (1m ago)      ← killed by a signal, not a failure
 ```
 
 Running rows come from a per-pane registry the `preexec` hook writes while a tracked command is in flight, and the `precmd` hook removes on completion. Finished rows come from a separate history the `precmd` hook appends on **every** tracked completion, regardless of whether you switched away: that is what lets a command you watched finish in place still leave a ✓/✗/⊘ entry (the switch-away-gated alerts file only drives the status bar). History keeps the most recent 20 entries within the last hour. The same exclude list governs both halves, so they agree on what counts as a process.

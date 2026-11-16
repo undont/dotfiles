@@ -71,6 +71,8 @@ assert_equals "plain claude is not flagged" "" "$(replay_note "claude")"
 assert_equals "bare claude -r (resume picker) is not flagged" "" "$(replay_note "claude -r")"
 assert_equals "bare --resume before another flag is not flagged" "" "$(replay_note "claude --resume --model opus")"
 assert_equals "claude --continue is not flagged" "" "$(replay_note "claude --continue")"
+assert_equals "pi --fork <id> is flagged" "resumes a specific session" "$(replay_note "pi --fork abc")"
+assert_equals "claude --session-id <id> is flagged" "resumes a specific session" "$(replay_note "claude --session-id abc")"
 assert_equals "nvim is not flagged" "" "$(replay_note "nvim")"
 
 # ═══════════════════════════════════════════════════════════════════════════

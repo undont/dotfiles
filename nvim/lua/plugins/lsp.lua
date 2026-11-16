@@ -188,9 +188,6 @@ return {
           if client and client.name == 'gopls' and client:supports_method(vim.lsp.protocol.Methods.textDocument_codeLens, event.buf) then
             vim.lsp.codelens.enable(true, { bufnr = event.buf })
             map('<leader>ll', vim.lsp.codelens.run, 'Code [L]ens run')
-            map('<leader>lL', function()
-              vim.lsp.codelens.enable(true, { bufnr = event.buf })
-            end, 'Code [L]ens refresh')
           end
         end,
       })

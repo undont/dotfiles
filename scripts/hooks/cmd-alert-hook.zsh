@@ -45,7 +45,7 @@ _cmd_alert_block="" # rex block id, when the command runs in rex outside tmux
 if ((!${+_CMD_ALERT_EXCLUDE})); then
     _CMD_ALERT_EXCLUDE=(
         git gdn gh
-        claude opencode oc codex
+        claude opencode oc codex pi
         btop htop top
         docker lazydocker lazygit ssh
         less more man
@@ -61,6 +61,26 @@ fi
 # path to cmd-alert.sh: ${(%):-%x} is the currently-sourced file in zsh ($0
 # is the shell name)
 _CMD_ALERT_SCRIPT="${_CMD_ALERT_SCRIPT:-${${(%):-%x}:A:h}/cmd-alert.sh}"
+
+# launcher convention: an alias whose definition, followed through nested
+# aliases by first word (config -> v -> "cl && nvim"), is clear-then-run is an
+# interactive session. preexec's expanded command can't show this, since it
+# expands cl too
+_cmd_alert_is_launcher() {
+    local word="$1" def
+    local -a dw
+    local -i depth
+    for depth in {1..8}; do
+        def="${aliases[$word]:-}"
+        [[ -n "$def" ]] || return 1
+        dw=("${(z)def}")
+        case "${dw[1]}" in
+            cl | clear | c) [[ "${dw[2]}" == '&&' ]] && return 0 ;;
+        esac
+        word="${dw[1]}"
+    done
+    return 1
+}
 
 _cmd_alert_preexec() {
     _cmd_alert_exit=0
@@ -96,6 +116,12 @@ _cmd_alert_preexec() {
     done
     local efirst
     efirst="${${ewords[$last_op_at]:-cmd}:t}"
+
+    if _cmd_alert_is_launcher "${words[1]:-}"; then
+        _cmd_alert_start=-1
+        _cmd_alert_label=""
+        return
+    fi
 
     # single-word entries match the typed word or the last-segment word of the
     # expanded chain; multi-word entries match either as a command prefix
@@ -163,7 +189,7 @@ _cmd_alert_preexec() {
 
 # precmd for a rex pane: drop the running entry, then append the finished row
 # (epoch, exit, session_id, block_id, label, command) unless the process picker
-# stopped the command or it ran under the threshold
+# stopped the command, it ran under the threshold, or ctrl-c stopped it
 _cmd_alert_rex_finish() {
     local elapsed="$1"
     local key="${_cmd_alert_block#block:}"
@@ -172,7 +198,8 @@ _cmd_alert_rex_finish() {
         rm -f "$_CMD_REX_DIR/suppress/$key" 2>/dev/null
         return 0
     fi
-    ((elapsed >= _CMD_ALERT_MIN_SECONDS)) || return 0
+    # 130 is SIGINT: a ctrl-c typed in the pane, so already seen
+    ((elapsed >= _CMD_ALERT_MIN_SECONDS && _cmd_alert_exit != 130)) || return 0
     printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
         "${EPOCHSECONDS:-0}" "$_cmd_alert_exit" "${REX_SESSION:-}" "$_cmd_alert_block" \
         "${_cmd_alert_label//\#\#/#}" "$_cmd_alert_cmd" \
@@ -207,10 +234,11 @@ _cmd_alert_precmd() {
     fi
 
     # proclist's x binding marks an intentional kill before it interrupts the
-    # pane: skip the finished row and the alert. a typed Ctrl-C has no marker
+    # pane, and a typed ctrl-c exits 130 (SIGINT): skip the finished row and
+    # the alert
     if [[ -n "$_cmd_alert_pane" ]]; then
         local _suppress_marker="$_CMD_SUPPRESS_DIR/${_cmd_alert_pane#%}"
-        if [[ -e "$_suppress_marker" ]]; then
+        if [[ -e "$_suppress_marker" ]] || ((_cmd_alert_exit == 130)); then
             rm -f "$_suppress_marker" 2>/dev/null
             _cmd_alert_label=""
             _cmd_alert_cmd=""

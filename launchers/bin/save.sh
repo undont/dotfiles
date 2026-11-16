@@ -53,7 +53,7 @@ strip_resume_args() {
     local cmd="$1" prog i w
     prog="${cmd%% *}"
     case "${prog##*/}" in
-        claude | codex | opencode | copilot) ;;
+        claude | codex | opencode | pi) ;;
         *)
             printf '%s' "$cmd"
             return
@@ -64,14 +64,14 @@ strip_resume_args() {
     for ((i = 0; i < ${#words[@]}; i++)); do
         w="${words[$i]}"
         case "$w" in
-            --resume | -r | --session | -s)
+            --resume | -r | --session | -s | --session-id | --fork)
                 if [[ -n "${words[i + 1]:-}" && "${words[i + 1]}" != -* ]]; then
                     i=$((i + 1))
                     continue
                 fi
                 out+=("$w")
                 ;;
-            --resume=* | --session=*) ;;
+            --resume=* | --session=* | --session-id=* | --fork=*) ;;
             *) out+=("$w") ;;
         esac
     done

@@ -155,13 +155,8 @@ return {
 
       vim.keymap.set('n', '<leader>nd', '<cmd>Dotnet debug<cr>', { desc = '[D]ebug project' })
       vim.keymap.set('n', '<leader>na', '<cmd>Dotnet debug attach<cr>', { desc = '[A]ttach to running .NET process' })
-      vim.keymap.set('n', '<leader>nr', '<cmd>Dotnet run<cr>', { desc = '[R]un project' })
-      vim.keymap.set('n', '<leader>nb', '<cmd>Dotnet build<cr>', { desc = '[B]uild project' })
-      vim.keymap.set('n', '<leader>nc', '<cmd>Dotnet clean<cr>', { desc = '[C]lean project' })
-      vim.keymap.set('n', '<leader>ns', '<cmd>Dotnet secrets<cr>', { desc = 'Manage [S]ecrets' })
-      vim.keymap.set('n', '<leader>nw', '<cmd>Dotnet watch<cr>', { desc = '[W]atch project' })
-      vim.keymap.set('n', '<leader>nn', '<cmd>Dotnet new<cr>', { desc = '[N]ew item' })
-      vim.keymap.set('n', '<leader>no', '<cmd>Dotnet outdated<cr>', { desc = '[O]utdated packages' })
+      -- the other :Dotnet subcommands are `dotnet:` entries in the <leader>q
+      -- picker (features/run.lua)
 
       vim.keymap.set('n', '<leader>te', function()
         require('easy-dotnet.test-runner').open()

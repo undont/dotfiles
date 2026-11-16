@@ -1,6 +1,6 @@
 -- entry point for the pickers' rows, previews and actions
 -- run with: rex do pick.lua cmd=MODULE.COMMAND [KEY=VALUE...]
---   modules are beside it: sessions, tabs, panes (agents and nvim), procs, urls, nav
+--   modules are beside it: sessions, tabs, panes (agents and nvim), procs, urls, paths, nav
 --   shared: cmd=restore, cmd=undo (the last kill), cmd=preview session=ID block=ID
 
 package.path = os.getenv("HOME") .. "/.config/rex/do/?.lua;" .. package.path

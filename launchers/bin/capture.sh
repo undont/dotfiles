@@ -171,10 +171,10 @@ replay_note() {
         ssh | mosh | et) printf 'remote session' ;;
         less | more | man | most) printf 'pager' ;;
         sudo | doas) printf 'needs a password' ;;
-        claude | codex | opencode | copilot)
+        claude | codex | opencode | pi)
             # only with an id: a bare `claude -r` opens the resume picker,
             # which replays fine
-            if [[ " $cmd " =~ \ (--resume|-r|--session|-s)(=[^\ ]+|\ [^-\ ][^\ ]*)\  ]]; then
+            if [[ " $cmd " =~ \ (--resume|-r|--session|-s|--session-id|--fork)(=[^\ ]+|\ [^-\ ][^\ ]*)\  ]]; then
                 printf 'resumes a specific session'
             fi
             ;;

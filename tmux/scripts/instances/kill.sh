@@ -1,11 +1,11 @@
 #!/usr/bin/env bash
 set -euo pipefail
 
-# kill a process (claude, codex, opencode, copilot, nvim) running in a specific pane
+# kill a process (claude, codex, opencode, pi, nvim) running in a specific pane
 # without killing the pane itself. shows a confirmation dialog first
 #
 # usage: kill.sh <session:window.pane> <process_name>
-#   process_name: claude, codex, opencode, copilot, or nvim
+#   process_name: claude, codex, opencode, pi, or nvim
 
 SCRIPT_DIR="${BASH_SOURCE%/*}"
 source "$SCRIPT_DIR/../_lib/common.sh"
@@ -24,7 +24,7 @@ TARGET="$1"
 PROCESS="$2"
 
 case "$PROCESS" in
-    claude | codex | opencode | copilot | nvim) ;;
+    claude | codex | opencode | pi | nvim) ;;
     *)
         show_error "Unknown process: $PROCESS"
         exit 1
@@ -73,6 +73,6 @@ fi
 graceful_kill_pids 2 "$CHILD_PID"
 
 # clear alerts for agent processes (nvim doesn't use alerts)
-if [[ "$PROCESS" == "claude" || "$PROCESS" == "codex" || "$PROCESS" == "opencode" || "$PROCESS" == "copilot" ]]; then
+if [[ "$PROCESS" == "claude" || "$PROCESS" == "codex" || "$PROCESS" == "opencode" || "$PROCESS" == "pi" ]]; then
     clear_window_alerts "$SESSION" "$WINDOW_NAME" "$WINDOW_ID"
 fi

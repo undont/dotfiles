@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
-# statusline theme resolver for AI CLI coding agents (Claude Code, GitHub
-# Copilot CLI, Antigravity CLI). sets SL_* ANSI truecolour fg escapes from the
+# statusline theme resolver for AI CLI coding agents (Claude Code,
+# Antigravity CLI). sets SL_* ANSI truecolour fg escapes from the
 # active dotfiles theme, plus SL_HEX_* with the raw theme hexes. sets nothing
 # when the theme can't be resolved, so callers keep their own defaults:
 #

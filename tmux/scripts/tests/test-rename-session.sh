@@ -447,7 +447,7 @@ tmux new-session -d -s multi-sess -n codew
 cat >"$ALERTS_FILE" <<'ALERTS'
 multi-sess:codew:claude
 multi-sess:codew:opencode
-multi-sess:other:copilot
+multi-sess:other:pi
 ALERTS
 # create the "other" window so cleanup doesn't remove its entry
 tmux new-window -t multi-sess -n other
@@ -470,7 +470,7 @@ else
 fi
 
 # unrelated window alert should be untouched
-if grep -q "^multi-sess:other:copilot$" "$ALERTS_FILE" 2>/dev/null; then
+if grep -q "^multi-sess:other:pi$" "$ALERTS_FILE" 2>/dev/null; then
     pass "Unrelated window alert preserved"
 else
     fail "Unrelated window alert was incorrectly modified"

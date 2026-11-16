@@ -82,6 +82,17 @@ local build_configs = {
     efm = 'vet: %f:%l:%c: %m,vet: %f:%l: %m,%f:%l:%c: %m,%f:%l: %m,%-G# %.%#,%-G%.%#',
   },
   {
+    marker = 'Cargo.toml',
+    -- short format puts each diagnostic on one line; the default spans several
+    cmd = { 'cargo', 'check', '--all-targets', '--message-format=short' },
+    efm = '%f:%l:%c: %trror[E%n]: %m,%f:%l:%c: %trror: %m,%f:%l:%c: %tarning: %m,%-G%.%#',
+  },
+  {
+    marker = 'build.zig',
+    cmd = { 'zig', 'build' },
+    efm = '%f:%l:%c: %trror: %m,%-G%.%#',
+  },
+  {
     marker = 'vite.config.*',
     cmd = check_cmd, -- resolved at runtime from the matched directory
     efm = '%f:%l:%c: ERROR: %m,%f:%l:%c: error: %m,%f:%l:%c: warning: %m,%-G%.%#',
@@ -100,37 +111,28 @@ local build_configs = {
   },
 }
 
--- lua patterns that indicate a build-related make target
--- plain find anywhere in the name, so bare 'check' and prefixed
--- variants ('typecheck', 'lint-check') both match
-local make_build_patterns = {
-  { pattern = 'build', plain = true },
-  { pattern = 'compile', plain = true },
-  { pattern = 'check', plain = true },
-}
+-- substrings that mark a make target or package script as a build, so bare
+-- 'check' and prefixed variants ('typecheck', 'lint-check') both match. the
+-- runner waits for exit, so a server or watcher (`dev`, `serve`) stays out
+local build_name_parts = { 'build', 'compile', 'check' }
 
----@param makefile_path string
----@return string[] targets
-local function parse_make_build_targets(makefile_path)
-  local lines = vim.fn.readfile(makefile_path)
-  if not lines or #lines == 0 then
-    return {}
-  end
-
+---@param names string[]
+---@return string[] build names, broader (fewer hyphens) first
+local function build_names(names)
   local targets = {}
   local seen = {}
-  for _, line in ipairs(lines) do
-    -- match target definitions: `target-name:` at start of line
-    -- exclude .PHONY, .DEFAULT_GOAL, etc (dot-prefixed)
-    local target = line:match '^([a-zA-Z][a-zA-Z0-9_-]*):'
-    if target then
-      local name_lower = target:lower()
-      for _, p in ipairs(make_build_patterns) do
-        if name_lower:find(p.pattern, 1, p.plain) and not seen[target] then
-          seen[target] = true
-          table.insert(targets, target)
-          break
-        end
+  for _, name in ipairs(names) do
+    local name_lower = name:lower()
+    -- the conventional default goal, matched whole so 'install' stays out
+    if name_lower == 'all' and not seen[name] then
+      seen[name] = true
+      table.insert(targets, name)
+    end
+    for _, part in ipairs(build_name_parts) do
+      if name_lower:find(part, 1, true) and not seen[name] then
+        seen[name] = true
+        table.insert(targets, name)
+        break
       end
     end
   end
@@ -144,6 +146,20 @@ local function parse_make_build_targets(makefile_path)
     return a < b
   end)
   return targets
+end
+
+---@param makefile_path string
+---@return string[] targets
+local function parse_make_build_targets(makefile_path)
+  local names = {}
+  for _, line in ipairs(vim.fn.readfile(makefile_path)) do
+    -- `target-name:` at line start; dot-prefixed specials (.PHONY) excluded
+    local target = line:match '^([a-zA-Z][a-zA-Z0-9_-]*):'
+    if target then
+      table.insert(names, target)
+    end
+  end
+  return build_names(names)
 end
 
 ---@param cfg table
@@ -172,46 +188,53 @@ local function check_dir_for_markers(dir)
   return nil
 end
 
---- the nearest language-specific marker from the current buffer's directory up
---- to cwd wins; Makefile targets are the fallback
----@return table|nil config, boolean|nil is_makefile
-local function detect_build()
+--- the current buffer's directory up to cwd, nearest first. cwd alone for
+--- special buffers (neo-tree, oil, terminal, dashboard), whose expand() paths
+--- are unusable, and for files outside cwd
+---@return string[]
+local function search_dirs()
   local cwd = vim.fn.getcwd()
-
-  -- normal file buffers only: special buffers (neo-tree, oil, terminal,
-  -- dashboard) return unusable paths from expand()
-  if vim.bo.buftype == '' then
-    local buf_file = vim.fn.expand '%:p'
-    if buf_file ~= '' and buf_file:find(cwd, 1, true) == 1 then
-      local dir = vim.fn.fnamemodify(buf_file, ':h')
-      while #dir >= #cwd do
-        local cfg = check_dir_for_markers(dir)
-        if cfg then
-          return cfg, false
-        end
-        local parent = vim.fn.fnamemodify(dir, ':h')
-        if parent == dir then
-          break
-        end
-        dir = parent
+  local dirs = {}
+  local buf_file = vim.bo.buftype == '' and vim.fn.expand '%:p' or ''
+  if buf_file ~= '' and buf_file:find(cwd, 1, true) == 1 then
+    local dir = vim.fn.fnamemodify(buf_file, ':h')
+    while #dir > #cwd do
+      table.insert(dirs, dir)
+      local parent = vim.fn.fnamemodify(dir, ':h')
+      if parent == dir then
+        break
       end
+      dir = parent
     end
   end
+  table.insert(dirs, cwd)
+  return dirs
+end
 
-  local cfg = check_dir_for_markers(cwd)
-  if cfg then
-    return cfg, false
-  end
-
-  local makefile_path = cwd .. '/Makefile'
-  if vim.fn.filereadable(makefile_path) == 1 then
-    local targets = parse_make_build_targets(makefile_path)
-    if #targets > 0 then
-      return { makefile_path = makefile_path, targets = targets }, true
+---@return table|nil config for the nearest language-specific marker
+local function detect_build()
+  for _, dir in ipairs(search_dirs()) do
+    local cfg = check_dir_for_markers(dir)
+    if cfg then
+      return cfg
     end
   end
+  return nil
+end
 
-  return nil, nil
+---@return string|nil dir of the nearest package.json, string[] its build scripts
+local function package_scripts()
+  for _, dir in ipairs(search_dirs()) do
+    local path = dir .. '/package.json'
+    if vim.fn.filereadable(path) == 1 then
+      local ok, pkg = pcall(vim.json.decode, table.concat(vim.fn.readfile(path), '\n'))
+      if not ok or type(pkg) ~= 'table' or type(pkg.scripts) ~= 'table' then
+        return dir, {}
+      end
+      return dir, build_names(vim.tbl_keys(pkg.scripts))
+    end
+  end
+  return nil, {}
 end
 
 ---@param str string
@@ -417,47 +440,58 @@ local function dedupe_qf_items(items)
   return deduped
 end
 
+--- `vim.g.build_cmd_prefix`, set per project from an exrc `.nvim.lua`, runs
+--- every build through another command, e.g.
+--- `{ 'docker', 'exec', '-w', '{dir}', 'ctr' }`; `{dir}` is the build dir
+---@param cmd string[]
+---@param build_dir string
+---@return string[]
+local function with_cmd_prefix(cmd, build_dir)
+  local prefix = vim.g.build_cmd_prefix
+  if type(prefix) ~= 'table' then
+    return cmd
+  end
+  local full = {}
+  for _, arg in ipairs(prefix) do
+    table.insert(full, arg == '{dir}' and build_dir or arg)
+  end
+  return vim.list_extend(full, cmd)
+end
+
 ---@param cfg table Build config with cmd and optional efm
 local function run_build(cfg)
   local cmd_str = format_cmd_for_display(cfg.cmd)
   local progress = start_build_progress(cmd_str)
+  local build_dir = cfg.build_dir or vim.fn.getcwd()
 
   vim.system(
-    cfg.cmd,
+    with_cmd_prefix(cfg.cmd, build_dir),
     {
       text = true,
-      cwd = cfg.build_dir or vim.fn.getcwd(),
+      cwd = build_dir,
     },
     vim.schedule_wrap(function(result)
+      if progress then
+        progress:finish()
+      end
       local output = strip_ansi((result.stdout or '') .. (result.stderr or ''))
       local lines = vim.split(output, '\n', { trimempty = true })
+      local title = 'Build: ' .. cmd_str
 
       if result.code == 0 then
-        if progress then
-          progress:finish()
-        end
         vim.notify('Build succeeded', vim.log.levels.INFO, { title = 'Build', timeout = 3000 })
         return
       end
 
       if #lines == 0 then
-        if progress then
-          progress:finish()
-        end
         vim.notify('Failed (exit ' .. result.code .. '): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
         return
       end
 
-      local qf_opts = { title = 'Build: ' .. cmd_str, lines = lines }
-      if cfg.efm then
-        qf_opts.efm = cfg.efm
-      end
-      vim.fn.setqflist({}, 'r', qf_opts)
-
+      vim.fn.setqflist({}, 'r', { title = title, lines = lines, efm = cfg.efm })
       local qf_items = dedupe_qf_items(vim.fn.getqflist())
 
-      -- validity is read before repair: when efm matched nothing (e.g. bun
-      -- echoing scripts) a non-zero exit counts as success
+      -- validity is read before repair, which can invalidate an unresolvable item
       local has_valid = false
       for _, item in ipairs(qf_items) do
         if item.valid == 1 then
@@ -466,31 +500,36 @@ local function run_build(cfg)
         end
       end
 
-      qf_items = repair_qf_paths(qf_items, cfg.build_dir or vim.fn.getcwd())
-      vim.fn.setqflist({}, 'r', { title = 'Build: ' .. cmd_str, items = qf_items })
-      if not has_valid then
-        if progress then
-          progress:finish()
+      if has_valid then
+        qf_items = repair_qf_paths(qf_items, build_dir)
+        vim.fn.setqflist({}, 'r', { title = title, items = qf_items })
+        vim.notify('Failed, ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
+      else
+        -- nothing parsed (a link error, a stopped container): the raw output as
+        -- text entries, which qf-auto-clear never prunes
+        local raw = {}
+        for _, line in ipairs(lines) do
+          table.insert(raw, { text = line, valid = 0 })
         end
-        vim.notify('Build succeeded', vim.log.levels.INFO, { title = 'Build', timeout = 3000 })
-        return
+        vim.fn.setqflist({}, 'r', { title = title, items = raw })
+        vim.notify('Failed (exit ' .. result.code .. '): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
       end
-
-      if progress then
-        progress:finish()
-      end
-      vim.notify('Failed, ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
       vim.cmd 'botright copen'
     end)
   )
 end
 
---- efm for Makefile targets, where the underlying tool is unknown: every
---- build_configs efm in order, with each catch-all ignore (%-G%.%#) replaced by
---- one at the end so an earlier config can't swallow a later config's lines
+-- gcc, clang and zig cc diagnostics, typed. ahead of go's untyped
+-- `%f:%l:%c: %m`, which matches the same lines
+local CC_EFM = '%f:%l:%c: %trror: %m,%f:%l:%c: %tarning: %m,%-G%f:%l:%c: note: %m'
+
+--- efm for Makefile targets, where the underlying tool is unknown: CC_EFM, then
+--- every build_configs efm in order, with each catch-all ignore (%-G%.%#)
+--- replaced by one at the end so an earlier config can't swallow a later
+--- config's lines
 ---@return string combined errorformat
 local function combined_efm()
-  local parts = {}
+  local parts = { CC_EFM }
   for _, cfg in ipairs(build_configs) do
     local efm = cfg.efm:gsub(',?%%%-G%%.%%#', '')
     if efm ~= '' then
@@ -501,65 +540,48 @@ local function combined_efm()
   return table.concat(parts, ',')
 end
 
----@param targets string[]
-local function pick_make_target(targets)
-  local efm = combined_efm()
-
-  if #targets == 1 then
-    run_build { cmd = { 'make', targets[1] }, efm = efm }
-    return
-  end
-
-  vim.ui.select(targets, {
-    prompt = 'Make target',
-    format_item = function(target)
-      for i, t in ipairs(targets) do
-        if t == target then
-          return i .. '. make ' .. target
-        end
-      end
-      return 'make ' .. target
-    end,
-  }, function(target)
-    if not target then
+--- the detected build, then build-like Makefile targets and package scripts,
+--- for the features/run.lua picker. duplicate commands keep their first entry
+---@return RunEntry[]
+function M.entries()
+  local entries = {}
+  local seen = {}
+  local function add(cfg)
+    local label = format_cmd_for_display(cfg.cmd)
+    if seen[label] then
       return
     end
-    run_build { cmd = { 'make', target }, efm = efm }
-  end)
-end
+    seen[label] = true
+    table.insert(entries, {
+      name = 'build: ' .. label,
+      run = function()
+        run_build(cfg)
+      end,
+    })
+  end
 
-local function run()
-  local cfg, is_makefile = detect_build()
-  if not cfg then
-    vim.notify('No build config detected (go.mod, vite.config.*, tsconfig.json, *.csproj, Makefile)', vim.log.levels.WARN)
-    return
+  local cfg = detect_build()
+  if cfg then
+    add(cfg)
   end
-  if is_makefile then
-    pick_make_target(cfg.targets)
-  else
-    run_build(cfg)
-  end
-end
 
---- run the Makefile build picker directly, bypassing language-specific detection
-local function run_make()
-  local cwd = vim.fn.getcwd()
-  local makefile_path = cwd .. '/Makefile'
-  if vim.fn.filereadable(makefile_path) ~= 1 then
-    vim.notify('No Makefile in ' .. cwd, vim.log.levels.WARN)
-    return
+  local efm = combined_efm()
+  local makefile_path = vim.fn.getcwd() .. '/Makefile'
+  if vim.fn.filereadable(makefile_path) == 1 then
+    for _, target in ipairs(parse_make_build_targets(makefile_path)) do
+      add { cmd = { 'make', target }, efm = efm }
+    end
   end
-  local targets = parse_make_build_targets(makefile_path)
-  if #targets == 0 then
-    vim.notify('No build targets found in Makefile', vim.log.levels.WARN)
-    return
-  end
-  pick_make_target(targets)
-end
 
-function M.setup()
-  vim.keymap.set('n', '<leader>q', run, { desc = 'Build project or pick Make target' })
-  vim.keymap.set('n', '<leader>Q', run_make, { desc = 'Pick Make target' })
+  local dir, scripts = package_scripts()
+  if dir then
+    local runner = detect_pkg_runner(dir)
+    for _, script in ipairs(scripts) do
+      add { cmd = { runner, 'run', script }, efm = efm, build_dir = dir }
+    end
+  end
+
+  return entries
 end
 
 return M

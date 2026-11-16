@@ -38,21 +38,11 @@ return {
         end
       end
 
-      vim.keymap.set('n', '<leader>1', function()
-        select_harpoon_file(1)
-      end, { desc = 'Harpoon: file 1' })
-
-      vim.keymap.set('n', '<leader>2', function()
-        select_harpoon_file(2)
-      end, { desc = 'Harpoon: file 2' })
-
-      vim.keymap.set('n', '<leader>3', function()
-        select_harpoon_file(3)
-      end, { desc = 'Harpoon: file 3' })
-
-      vim.keymap.set('n', '<leader>4', function()
-        select_harpoon_file(4)
-      end, { desc = 'Harpoon: file 4' })
+      for index = 1, 4 do
+        vim.keymap.set('n', '<C-' .. index .. '>', function()
+          select_harpoon_file(index)
+        end, { desc = 'Harpoon: file ' .. index })
+      end
 
       vim.keymap.set('n', '<leader>hd', function()
         harpoon:list():remove()

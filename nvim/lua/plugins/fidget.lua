@@ -7,7 +7,7 @@ return {
     opts = {
       progress = {
         -- sonarlint.nvim emits LSP progress on every BufEnter for a supported
-        -- filetype. the `<leader>lm` / `<leader>lS` scans report under a
+        -- filetype. the `sonar:` scans report under a
         -- separate `sonar-scan` client name (features/sonar-scan.lua)
         ignore = {
           function(msg)
