@@ -414,7 +414,7 @@ _dotfiles_preexec() {
     esac
     [[ "$job" == (%*|<->) ]] && cmd="${${jobtexts[$job]:-$cmd}%% *}"
 
-    print -Pn "\e]0;${cmd}\a"
+    print -rn -- $'\e]0;'"${cmd}"$'\a'
 
     case "$cmd" in
         git | gh | tig) _git_branch_stale=1 ;;

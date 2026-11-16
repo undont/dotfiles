@@ -27,6 +27,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - A command stopped with ctrl-c, or started through a clear-then-run alias like `claude`, no longer raises a finished-command alert. `scripts/hooks/cmd-alert-hook.zsh`, `docs/CMD-ALERTS.md`
+- A command starting with an assignment like `x=$(cmd)` no longer raises a parse error or runs `cmd` a second time when setting the terminal title. `zsh/dotfiles.zsh`
 
 ## [0.2.164] - 2026-11-13
 
