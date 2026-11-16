@@ -6,6 +6,28 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.165] - 2026-11-16
+
+### Added
+
+- `<leader>q` opens one run picker over builds, Make targets, scripts, tests, dotnet commands and scans, most recently run first per directory; `<leader>Q` reruns the last pick. It replaces the separate `<leader>l`/`<leader>x` scan keys, `<leader>td`/`<leader>tw` and the `<leader>n` dotnet keys. `nvim/lua/features/run.lua`, `nvim/lua/features/build.lua`, `nvim/cheatsheet.txt`
+- Rex path picker (`` `e ``) lists the file paths in the pane's scrollback, newest first, and yanks the one you pick. `rex/do/paths.lua`, `rex/bash/pick-path.sh`, `rex/lua/actions.lua`
+- Rex jumps between prompts on `shift+cmd+up`/`shift+cmd+down`. `rex/init.lua`
+
+### Changed
+
+- pi replaces Copilot CLI in the tmux and rex agent pickers, instance kill/new, alerts and launcher save/capture, which also strip `--session-id` and `--fork` resume args. Copilot's hook wrappers and alias are gone. `tmux/scripts/instances/`, `tmux/scripts/_lib/alerts.sh`, `rex/do/panes.lua`, `launchers/bin/`, `docs/AGENT-HOOKS.md`
+- pi installs from Homebrew, and codex uses its native installer on macOS and Linux, replacing the macOS-only cask. `Brewfile`, `scripts/install/install-packages.sh`
+- Rex switches tabs on `cmd+[`/`cmd+]`, and `alt+[`/`alt+]` move the tab like their `shift` variants. `rex/init.lua`
+- Harpoon slots move from `<leader>1`–`<leader>4` to `<C-1>`–`<C-4>`. `nvim/lua/plugins/harpoon.lua`
+- obsidian.nvim follows the vault's own settings: daily notes and templates are off, attachments go to `images/`, and empty `aliases`/`tags` keys are no longer written. `nvim/lua/plugins/obsidian.lua`
+- Dashboard toggle moves to `<leader>wd`. `nvim/cheatsheet.txt`
+- Install manifest group names are lowercase. `scripts/manifest.toml`
+
+### Fixed
+
+- A command stopped with ctrl-c, or started through a clear-then-run alias like `claude`, no longer raises a finished-command alert. `scripts/hooks/cmd-alert-hook.zsh`, `docs/CMD-ALERTS.md`
+
 ## [0.2.164] - 2026-11-13
 
 ### Added
