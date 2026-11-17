@@ -4,6 +4,33 @@ local M = {}
 
 local mason_packages = vim.fn.stdpath 'data' .. '/mason/packages'
 
+--- argv that opens a pane beside nvim's in the multiplexer nvim runs in, with
+--- the command to run appended. tmux wins when nvim's tmux runs inside rex.
+--- nil outside both
+---@param cwd string?
+---@return string[]?
+local function split_argv(cwd)
+  if vim.env.TMUX then
+    local argv = { 'tmux', 'split-window', '-h' }
+    if vim.env.TMUX_PANE then
+      vim.list_extend(argv, { '-t', vim.env.TMUX_PANE })
+    end
+    if cwd then
+      vim.list_extend(argv, { '-c', cwd })
+    end
+    return argv
+  end
+  if vim.env.REX_BLOCK then
+    local argv = { 'rex', 'split', '-b', vim.env.REX_BLOCK }
+    if cwd then
+      vim.list_extend(argv, { '-c', cwd })
+    end
+    table.insert(argv, '--')
+    return argv
+  end
+  return nil
+end
+
 local function mason()
   require('mason-nvim-dap').setup {
     -- automatic_installation races ensure_installed when an adapter is
@@ -126,11 +153,11 @@ local function wait_for_port(port, timeout_ms)
 end
 
 --- delve's DAP server can't give a launched program a terminal, so a TUI runs
---- under a headless dlv in a tmux pane, whose terminal it inherits, and the
---- session attaches to that. mason's dlv, since a shell's may predate the go
---- toolchain
+--- under a headless dlv in a tmux or rex pane, whose terminal it inherits, and
+--- the session attaches to that. mason's dlv, since a shell's may predate the
+--- go toolchain
 local function go_tui_launch()
-  local base = { type = 'delve', name = 'Debug TUI in tmux split (go)', request = 'attach' }
+  local base = { type = 'delve', name = 'Debug TUI in split (go)', request = 'attach' }
   return setmetatable(base, {
     __call = function(config)
       local aborted = vim.tbl_extend('force', config, { port = require('dap').ABORT })
@@ -145,11 +172,11 @@ local function go_tui_launch()
       local cmd = { dlv, 'debug', program, '--headless', '--listen=127.0.0.1:' .. port, '--api-version=2', '--' }
       vim.list_extend(cmd, args)
       -- beside nvim's pane, in nvim's cwd like the other launches
-      local split = { 'tmux', 'split-window', '-h', '-c', vim.fn.getcwd() }
-      if vim.env.TMUX_PANE then
-        vim.list_extend(split, { '-t', vim.env.TMUX_PANE })
+      local split = split_argv(vim.fn.getcwd())
+      if not split then
+        return aborted
       end
-      table.insert(split, table.concat(vim.tbl_map(vim.fn.shellescape, cmd), ' '))
+      vim.list_extend(split, cmd)
       vim.fn.system(split)
       if not wait_for_port(port, 120000) then
         vim.notify('dlv never started listening on ' .. port, vim.log.levels.ERROR)
@@ -174,7 +201,7 @@ local function go(dap)
     },
   }
   table.insert(dap.configurations.go, 1, go_main_package_launch())
-  if vim.env.TMUX then
+  if split_argv() then
     table.insert(dap.configurations.go, 2, go_tui_launch())
   end
 
@@ -342,7 +369,7 @@ local function prompt_native_program()
 end
 
 local function native_configs()
-  return {
+  local configs = {
     -- `__call` runs before field resolution, so the program prompt comes before args
     setmetatable({ type = 'codelldb', name = 'Launch (codelldb)', request = 'launch' }, {
       __call = function(config)
@@ -363,17 +390,6 @@ local function native_configs()
         return require('dap.utils').pick_process()
       end,
     },
-    -- for TUIs: the program gets its own tmux pane beside nvim
-    setmetatable({ type = 'codelldb', name = 'Launch in tmux split (codelldb)', request = 'launch' }, {
-      __call = function(config)
-        return vim.tbl_extend('force', config, {
-          program = prompt_native_program(),
-          args = require('dap.utils').splitstr(vim.fn.input 'Args: '),
-          cwd = '${workspaceFolder}',
-          terminal = 'external',
-        })
-      end,
-    }),
     -- attaches as soon as the binary starts, to catch startup code (macOS only)
     {
       type = 'codelldb',
@@ -383,6 +399,25 @@ local function native_configs()
       waitFor = true,
     },
   }
+  if not split_argv() then
+    return configs
+  end
+  -- for TUIs: the program gets its own tmux or rex pane beside nvim
+  table.insert(
+    configs,
+    3,
+    setmetatable({ type = 'codelldb', name = 'Launch in split (codelldb)', request = 'launch' }, {
+      __call = function(config)
+        return vim.tbl_extend('force', config, {
+          program = prompt_native_program(),
+          args = require('dap.utils').splitstr(vim.fn.input 'Args: '),
+          cwd = '${workspaceFolder}',
+          terminal = 'external',
+        })
+      end,
+    })
+  )
+  return configs
 end
 
 --- codelldb via mason, for the C family, swift, zig and rust. rustaceanvim
@@ -396,8 +431,12 @@ local function native(dap)
       args = { '--port', '${port}' },
     },
   }
-  -- `terminal = 'external'` runs the program through this command
-  dap.defaults.codelldb.external_terminal = { command = 'tmux', args = { 'split-window', '-h' } }
+  -- `terminal = 'external'` runs the program through this command, in the
+  -- launch's cwd, which a rex split inherits from the spawned cli
+  local split = split_argv()
+  if split then
+    dap.defaults.codelldb.external_terminal = { command = table.remove(split, 1), args = split }
+  end
   local configs = native_configs()
   for _, ft in ipairs { 'c', 'cpp', 'objc', 'swift', 'zig', 'rust' } do
     dap.configurations[ft] = configs
