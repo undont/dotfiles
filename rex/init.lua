@@ -1,5 +1,5 @@
 -- keybindings migrated from tmux (prefix `) and ghostty, with rex's native closes.
--- the custom floats (pickers, copy mode, y/n kills) are in lua/.
+-- the custom floats (pickers, y/n kills) are in lua/.
 -- ctrl+s and ctrl+o are zle widgets in ~/.zshrc
 
 package.path = os.getenv("HOME") .. "/.config/rex/lua/?.lua;" .. package.path
@@ -21,14 +21,10 @@ rex.bind("`>`", "pane.send_key", { key = "`" })
 rex.bind("`>ctrl+b", "pane.send_key", { key = "ctrl+b" })
 
 -- tabs
-rex.bind("alt+[", "client.tab.previous")
-rex.bind("alt+]", "client.tab.next")
-rex.bind("alt+t", "client.tab.new")
 rex.bind("alt+[", "client.tab.move", { direction = "backward" })
 rex.bind("alt+]", "client.tab.move", { direction = "forward" })
 rex.bind("alt+shift+[", "client.tab.move", { direction = "backward" })
 rex.bind("alt+shift+]", "client.tab.move", { direction = "forward" })
-rex.bind("alt+r", "client.tab.rename")
 
 -- panes
 for key, direction in pairs({ h = "left", j = "down", k = "up", l = "right" }) do
@@ -61,8 +57,11 @@ rex.bind("cmd+l", "pane.view_activity")
 rex.bind("cmd+[", "client.tab.previous")
 rex.bind("cmd+]", "client.tab.next")
 
+-- works alongside default cmd+shift+c
+-- enter copy-mode bind
+rex.bind("`>v", "pane.copy_mode.enter")
+
 require("nav")
-require("copy-mode")
 require("actions")
 require("marks")
 require("app-actions")
