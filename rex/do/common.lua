@@ -269,10 +269,12 @@ function M.jump(session_id, window_id, block_id)
         M.restore_focus()
     end
     M.view(session_id)
+    -- select refocuses the pane the app last had focused in the tab, so the
+    -- block is focused after it
+    M.show_in_client(session_id, window_id)
     if block_id then
         rex.session.focus_block({ session_id = session_id, block_id = block_id })
     end
-    M.show_in_client(session_id, window_id)
 end
 
 -- rows ordered most recently viewed first, by the visits recent.lua logs.
