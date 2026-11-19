@@ -63,6 +63,9 @@ function M.setup()
 
   vim.o.autoread = true
 
+  -- macOS debug-symbol bundles; without the trailing slash the directory entries still complete
+  vim.opt.wildignore:append '*.dSYM/'
+
   vim.o.clipboard = 'unnamedplus'
 
   -- a rex pane on a host without the app: the app ignores OSC 52 from another
