@@ -264,6 +264,7 @@ Step out | F3
 Run to cursor | F8
 Run last config again | F9
 Toggle debug UI | F7
+Stack frame up/down (caller/callee) | <leader>rk / <leader>rj
 Toggle breakpoint | <leader>rb
 Conditional breakpoint | <leader>rc
 Logpoint | <leader>rL

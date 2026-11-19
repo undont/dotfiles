@@ -95,6 +95,20 @@ return {
       desc = 'Debug: Run last',
     },
     {
+      '<leader>rk',
+      function()
+        require('dap').up()
+      end,
+      desc = 'Frame up (toward the caller)',
+    },
+    {
+      '<leader>rj',
+      function()
+        require('dap').down()
+      end,
+      desc = 'Frame down (toward the stop)',
+    },
+    {
       '<leader>rb',
       function()
         require('dap').toggle_breakpoint()
