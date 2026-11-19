@@ -26,6 +26,12 @@ local function step(cmd)
   end
 end
 
+-- the config of the last successful top-level launch, after prompts and
+-- placeholders resolved. dap.run_last keeps the unresolved config, so its
+-- prompts run again. attach is left out: a replayed pid is stale
+---@type dap.Configuration|nil
+local last_launch
+
 return {
   'mfussenegger/nvim-dap',
   dependencies = {
@@ -90,9 +96,14 @@ return {
     {
       '<F9>',
       function()
-        require('dap').run_last()
+        local dap = require 'dap'
+        if last_launch then
+          dap.run(last_launch)
+        else
+          dap.run_last()
+        end
       end,
-      desc = 'Debug: Run last',
+      desc = 'Debug: Rerun last launch',
     },
     {
       '<leader>rk',
@@ -173,6 +184,14 @@ return {
     local dapview = require 'dap-view'
 
     require('features.dap-configs').setup()
+
+    -- js-debug's child sessions launch too, with a parent set
+    require('dap').listeners.after.launch['rerun-last'] = function(session, err)
+      if err or session.parent then
+        return
+      end
+      last_launch = vim.deepcopy(session.config)
+    end
 
     -- one bottom panel with a winbar to switch sections, landing on scopes.
     -- `auto_toggle` opens it on session start and closes it when all sessions finish
