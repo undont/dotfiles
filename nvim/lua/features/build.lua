@@ -458,6 +458,34 @@ local function with_cmd_prefix(cmd, build_dir)
   return vim.list_extend(full, cmd)
 end
 
+---@return boolean
+local function current_list_is_build()
+  return vim.fn.getqflist({ title = 0 }).title:find '^Build:' ~= nil
+end
+
+--- replaces a previous build list in place, otherwise pushes a new list so
+--- the current one stays reachable with :colder
+---@param title string
+---@param items table[]
+local function set_build_list(title, items)
+  local action = current_list_is_build() and 'r' or ' '
+  vim.fn.setqflist({}, action, { title = title, items = items })
+end
+
+local function report_clean_build()
+  if current_list_is_build() then
+    vim.fn.setqflist({}, 'r', { items = {} })
+    -- E444 when the qf window is the tab's only non-floating window
+    local splits = vim.tbl_filter(function(win)
+      return vim.api.nvim_win_get_config(win).relative == ''
+    end, vim.api.nvim_tabpage_list_wins(0))
+    if #splits > 1 then
+      vim.cmd 'cclose'
+    end
+  end
+  vim.notify('Build succeeded', vim.log.levels.INFO, { title = 'Build', timeout = 3000 })
+end
+
 ---@param cfg table Build config with cmd and optional efm
 local function run_build(cfg)
   local cmd_str = format_cmd_for_display(cfg.cmd)
@@ -477,32 +505,37 @@ local function run_build(cfg)
       local output = strip_ansi((result.stdout or '') .. (result.stderr or ''))
       local lines = vim.split(output, '\n', { trimempty = true })
       local title = 'Build: ' .. cmd_str
-
-      if result.code == 0 then
-        vim.notify('Build succeeded', vim.log.levels.INFO, { title = 'Build', timeout = 3000 })
-        return
-      end
+      local succeeded = result.code == 0
 
       if #lines == 0 then
-        vim.notify('Failed (exit ' .. result.code .. '): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
+        if succeeded then
+          report_clean_build()
+        else
+          vim.notify('Failed (exit ' .. result.code .. '): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
+        end
         return
       end
 
-      vim.fn.setqflist({}, 'r', { title = title, lines = lines, efm = cfg.efm })
-      local qf_items = dedupe_qf_items(vim.fn.getqflist())
+      local qf_items = dedupe_qf_items(vim.fn.getqflist({ lines = lines, efm = cfg.efm }).items)
 
       -- validity is read before repair, which can invalidate an unresolvable item
-      local has_valid = false
+      local valid_count = 0
       for _, item in ipairs(qf_items) do
         if item.valid == 1 then
-          has_valid = true
-          break
+          valid_count = valid_count + 1
         end
       end
 
-      if has_valid then
-        qf_items = repair_qf_paths(qf_items, build_dir)
-        vim.fn.setqflist({}, 'r', { title = title, items = qf_items })
+      if succeeded and valid_count == 0 then
+        report_clean_build()
+        return
+      end
+
+      if succeeded then
+        set_build_list(title, repair_qf_paths(qf_items, build_dir))
+        vim.notify('Succeeded, ' .. valid_count .. ' warning(s): ' .. cmd_str, vim.log.levels.WARN, { title = 'Build', timeout = 3000 })
+      elseif valid_count > 0 then
+        set_build_list(title, repair_qf_paths(qf_items, build_dir))
         vim.notify('Failed, ' .. #lines .. ' line(s): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
       else
         -- nothing parsed (a link error, a stopped container): the raw output as
@@ -511,7 +544,7 @@ local function run_build(cfg)
         for _, line in ipairs(lines) do
           table.insert(raw, { text = line, valid = 0 })
         end
-        vim.fn.setqflist({}, 'r', { title = title, items = raw })
+        set_build_list(title, raw)
         vim.notify('Failed (exit ' .. result.code .. '): ' .. cmd_str, vim.log.levels.ERROR, { title = 'Build', timeout = 3000 })
       end
       vim.cmd 'botright copen'
