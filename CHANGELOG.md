@@ -6,6 +6,26 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.166] - 2026-11-19
+
+### Added
+
+- Nvim's split debug launches (`Launch in split (codelldb)`, `Debug TUI in split (go)`) open the program in a rex pane beside nvim as well as a tmux one. Inside tmux running in rex the tmux pane wins, and outside both the split configs aren't offered. `nvim/lua/features/dap-configs.lua`, `nvim/cheatsheet.txt`
+- `<leader>rk`/`<leader>rj` move up and down the stopped thread's stack frames, so a crash inside libc or the ASan runtime can be followed back to the source line that caused it. `nvim/lua/plugins/debug.lua`, `nvim/cheatsheet.txt`
+- Rex copy mode jumps to the line's first non-blank character on `m` and to its end on `M`. `rex/init.lua`
+
+### Changed
+
+- Rex `` `v `` enters rex's native copy mode, replacing the nvim float over the pane's scrollback; `cmd+shift+c` enters it too. `rex/init.lua`, `rex/lua/copy-mode.lua`, `rex/bash/copy-mode.sh`
+- A successful build with warnings loads them into the quickfix list instead of only reporting success. A build replaces only an earlier build's list, so other lists stay reachable with `:colder`, and a clean build clears the build list and closes its window. `nvim/lua/features/build.lua`
+- Rex `alt+t` and `alt+r` no longer open or rename a tab. `rex/init.lua`
+
+### Fixed
+
+- `F9` reruns the last debug launch with the program and args it resolved, instead of prompting for them again. `nvim/lua/plugins/debug.lua`, `nvim/cheatsheet.txt`
+- Rex pickers focus the chosen pane; switching to its tab refocused the pane last focused there, which overrode the pick. `rex/do/common.lua`
+- `:e` completion skips macOS `*.dSYM` debug-symbol bundles. `nvim/lua/core/options.lua`
+
 ## [0.2.165] - 2026-11-16
 
 ### Added
