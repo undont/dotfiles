@@ -9,6 +9,9 @@ function M.setup()
 
   vim.g.have_nerd_font = true
 
+  -- .h detects as cpp otherwise
+  vim.g.c_syntax_for_h = true
+
   vim.o.number = true
   vim.o.relativenumber = true
 
