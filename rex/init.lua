@@ -62,6 +62,8 @@ rex.bind("cmd+]", "client.tab.next")
 rex.bind("`>v", "pane.copy_mode.enter")
 rex.bind("copy/m", "pane.copy_mode.move", { to = "line_first_non_blank" })
 rex.bind("copy/shift+m", "pane.copy_mode.move", { to = "line_end" })
+rex.bind("copy/u", "pane.copy_mode.move", { to = "half_page_up" })
+rex.bind("copy/d", "pane.copy_mode.move", { to = "half_page_down" })
 
 require("nav")
 require("actions")
