@@ -78,6 +78,7 @@ function M.setup()
   require('features.binary-view').setup()
   require('features.go').setup()
   require('features.snippets').setup()
+  require('features.cheatsheet').setup()
 end
 
 return M

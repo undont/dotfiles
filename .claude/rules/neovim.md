@@ -19,7 +19,7 @@ smart `i`/`a`, `<leader>i` insert-space, `m`/`M`/`gm` line nav, count-free
 escape, `<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
 and then calls `setup()` on the focused modules: core (folding, windows,
 macos-nav, refresh, spellcheck) and features (lists, diag-scan, run,
-qf-auto-clear, binary-view, go, snippets).
+qf-auto-clear, binary-view, go, snippets, cheatsheet).
 Each focused module owns its own keymaps; add new ones where they belong
 rather than letting `keymaps.lua` regrow into a grab-bag.
 
