@@ -48,7 +48,7 @@ return {
         'regex',
       }
 
-      require('features.treesitter-parsers').purge_if_updated()
+      require('features.treesitter-parsers').remove_shadowed()
 
       -- the go grammar takes new/make's first argument as a type, so go 1.26's
       -- new(expr) is a syntax error and the file collapses into ERROR nodes

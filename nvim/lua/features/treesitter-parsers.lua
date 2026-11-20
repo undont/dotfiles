@@ -1,58 +1,11 @@
--- nvim-treesitter parser maintenance. purge_if_updated() runs before install()
+-- nvim-treesitter parser maintenance. remove_shadowed() runs before install()
 
 local M = {}
 
 --- idempotent
-function M.purge_if_updated()
-  -- .so files compiled against a previous treesitter ABI can crash nvim, so
-  -- compiled parsers are purged when the plugin rev changes. their query
-  -- directories go too, or health checks report orphaned queries
+function M.remove_shadowed()
   local parser_dir = vim.fn.stdpath 'data' .. '/site/parser'
-  local query_dir = vim.fn.stdpath 'data' .. '/site/queries'
-  local marker_path = vim.fn.stdpath 'data' .. '/nvim-treesitter-rev'
   local plugin_dir = vim.fn.stdpath 'data' .. '/lazy/nvim-treesitter'
-  -- lazy reads .git/HEAD and its ref from disk, so no git process runs at startup
-  local info = require('lazy.manage.git').info(plugin_dir)
-  local commit = info and info.commit or ''
-  local current_rev = commit:match '^%x+$' and commit or ''
-  if current_rev ~= '' then
-    local stored_rev = ''
-    local f = io.open(marker_path, 'r')
-    if f then
-      stored_rev = f:read '*a' or ''
-      f:close()
-      stored_rev = stored_rev:gsub('%s+', '')
-    end
-    -- older markers hold `git rev-parse --short`, so revs compare at that length
-    if stored_rev:sub(1, 7) ~= current_rev:sub(1, 7) then
-      local stat = vim.uv.fs_stat(parser_dir)
-      if stat and stat.type == 'directory' then
-        local handle = vim.uv.fs_scandir(parser_dir)
-        if handle then
-          while true do
-            local name, typ = vim.uv.fs_scandir_next(handle)
-            if not name then
-              break
-            end
-            if typ == 'file' and name:match '%.so$' then
-              os.remove(parser_dir .. '/' .. name)
-              local lang = name:gsub('%.so$', '')
-              local qdir = query_dir .. '/' .. lang
-              if vim.uv.fs_stat(qdir) then
-                vim.fn.delete(qdir, 'rf')
-              end
-            end
-          end
-        end
-        vim.notify('nvim-treesitter updated, reinstalling parsers', vim.log.levels.INFO)
-      end
-      f = io.open(marker_path, 'w')
-      if f then
-        f:write(current_rev)
-        f:close()
-      end
-    end
-  end
 
   -- nvim-treesitter copies of parsers bundled with nvim are removed, so nvim's
   -- own are used
@@ -65,8 +18,7 @@ function M.purge_if_updated()
   end
 
   -- the plugin dir is a legacy parser location (main installs to site).
-  -- binaries there shadow the install dir, satisfy the missing-parser probe and
-  -- are skipped by the rev purge above
+  -- binaries there shadow the install dir and satisfy the missing-parser probe
   local legacy_dir = plugin_dir .. '/parser'
   local scan = vim.uv.fs_scandir(legacy_dir)
   if scan then
