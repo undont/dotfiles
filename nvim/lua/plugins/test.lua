@@ -473,6 +473,9 @@ return {
     { '<leader>tS', neotest_fn(function()
       require('neotest').run.stop()
     end), desc = '[S]top' },
+    { '<leader>td', neotest_fn(function()
+      require('neotest').run.run { strategy = 'dap' }
+    end), desc = '[D]ebug nearest' },
     -- watch and debug nearest are `test:` entries in the <leader>q picker
     -- (features/run.lua)
   },
