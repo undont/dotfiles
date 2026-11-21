@@ -38,11 +38,14 @@ out="$out_dir/$theme_name"
 command -v jq >/dev/null 2>&1 || exit 0
 
 # the app opens the import path on its own machine, so only an app connected
-# over this machine's socket (principal peer, not tailscale) can read the file
-while IFS= read -r client; do
-    rex -C "$client" "do" client.theme.import "path=$out" >/dev/null 2>&1 || true
-done < <(rex client ls --json 2>/dev/null | jq -r '
-    .clients[] | select(.info.kind == "app" and .principal.kind == "peer") | .client_id')
+# over this machine's socket (principal peer, not tailscale) can read the file.
+# linux has no rex app, and an app attached over ssh shows up there as a peer
+if [[ "$(uname)" == "Darwin" ]]; then
+    while IFS= read -r client; do
+        rex -C "$client" "do" client.theme.import "path=$out" >/dev/null 2>&1 || true
+    done < <(rex client ls --json 2>/dev/null | jq -r '
+        .clients[] | select(.info.kind == "app" and .principal.kind == "peer") | .client_id')
+fi
 
 # a switch sent by another host has already reached the rest
 [[ -z "${DOTFILES_THEME_FROM_HOST:-}" ]] || exit 0
