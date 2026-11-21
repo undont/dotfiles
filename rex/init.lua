@@ -69,3 +69,10 @@ require("nav")
 require("actions")
 require("marks")
 require("app-actions")
+
+local local_config = os.getenv("HOME") .. "/.config/rex/local.lua"
+local f = io.open(local_config, "r")
+if f then
+    f:close()
+    dofile(local_config)
+end

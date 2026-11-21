@@ -35,6 +35,9 @@ nvim/init.lua.backup
 # Neovim local override (user-owned, not tracked)
 nvim/local.lua
 
+# Rex local override
+rex/local.lua
+
 # Generated themes (auto-generated from Ghostty, local cache)
 themes/generated/
 !themes/generated/.gitkeep
