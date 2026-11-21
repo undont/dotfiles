@@ -272,7 +272,7 @@ Hover value under cursor | <leader>rh
 Attach (pick an attach config) | <leader>ra
 Start/stop osv in this nvim (debug its lua from another) | <leader>ro
 Debug nvim config from startup | NVIM_OSV=1 nvim, then attach from another nvim
-Debug nearest test | <leader>q, then test: debug nearest
+Debug nearest test | <leader>td
 Switch panel section | W / S / T / B / E / R (in panel)
 Next/prev panel section | ]v / [v (in panel)
 Expand/collapse variable | <CR> (scopes/watches)
@@ -333,7 +333,8 @@ Toggle summary | <leader>ts
 Show output | <leader>to
 Toggle output panel | <leader>tO
 Stop test | <leader>tS
-Watch, debug nearest | <leader>q, then test:
+Debug nearest test | <leader>td
+Watch | <leader>q, then test:
 Next/prev failed test | ]t / [t (jumps to the failure line, or the failing case)
 Next/prev failed test (summary) | ]t / [t or J / K
 Collapse/expand all (summary) | C / O
