@@ -42,7 +42,6 @@ return {
         ['grug-far'] = false,
         ['grug-far-help'] = false,
         DressingInput = false,
-        codecompanion = false,
         ['copilot-chat'] = false,
         snacks_input = false,
         snacks_notif = false,

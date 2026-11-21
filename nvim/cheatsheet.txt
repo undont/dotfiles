@@ -420,11 +420,6 @@ Previous misspelling | [s
 ## undo @undo
 Undo tree | <leader>u
 
-## ai @ai
-Chat toggle | <leader>ac
-Inline assist | <leader>ai
-Action palette | <leader>aa
-
 ## music @music
 Toggle now playing | <leader>kp
 Next track | <leader>kn
