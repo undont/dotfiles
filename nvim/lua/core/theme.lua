@@ -131,7 +131,7 @@ function M.reload(force)
 
   if apply_colourscheme(scheme) then
     current_theme = theme
-    if ghostty_transparent() then
+    if vim.env.REX_SESSION or ghostty_transparent() then
       apply_transparency()
     end
     -- stay silent on the startup apply
