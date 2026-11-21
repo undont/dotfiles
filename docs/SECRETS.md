@@ -15,7 +15,6 @@ dotfiles edit secrets        # edit the file
 - **One command**: `with-secret NAME... -- command` sets the listed variables for that command only.
 - **Tools that take a key command**: give them `secret NAME`, e.g. a pi `auth.json` key of `"!secret ANTHROPIC_API_KEY"`.
 - **Inline**: `$(secret NAME)`.
-- **codecompanion.nvim**: the anthropic adapter uses `ANTHROPIC_API_KEY` when it is exported, and `secret ANTHROPIC_API_KEY` otherwise.
 
 ## Moving from secrets.zsh
 

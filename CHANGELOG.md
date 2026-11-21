@@ -6,6 +6,30 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.167] - 2026-11-21
+
+### Added
+
+- Rex loads `~/.config/rex/local.lua` after the base config, created from a template on install and synced through the local layer. Its returned `font_size` sets the size `cmd+0` resets to, beside new `cmd+=`/`cmd+-` resize and `cmd+shift+r` reload bindings; `dotfiles edit rex` opens it. `rex/init.lua`, `rex/local.lua.template`, `scripts/manifest.toml`, `scripts/dotfiles`
+- Rex copy mode moves half a page with `u` and `d`. `rex/init.lua`
+- `<leader>td` debugs the nearest test through neotest; .NET test buffers keep their own `<leader>td`. `nvim/lua/plugins/test.lua`, `nvim/cheatsheet.txt`
+- A `#ifndef` header guard snippet for C, and `.h` files detect as C instead of C++. `nvim/snippets/c.json`, `nvim/lua/core/options.lua`
+
+### Changed
+
+- `<leader>?` opens the cheatsheet in a plain telescope picker, replacing cheatsheet.nvim and popup.nvim. `nvim/lua/features/cheatsheet.lua`
+- Neo-tree is removed and `<leader>e` is unbound; oil covers file browsing. Its highlight groups are gone from the generated colourschemes. `nvim/lua/core/keymaps.lua`, `scripts/_lib/generate-theme.lua`, `nvim/colors/*.lua`
+- CodeCompanion is removed along with its `<leader>a` keys, as are the unused blink.compat and vim-repeat; gitignore.nvim loads on `:Gitignore`. `nvim/lua/plugins/`, `nvim/cheatsheet.txt`
+- The build picker uses the nearest makefile between the buffer's directory and cwd, and offers its `debug` target as well as `all`. `nvim/lua/features/build.lua`
+- Nvim's background is transparent inside rex. `nvim/lua/core/theme.lua`
+- Treesitter parsers are no longer purged and reinstalled when nvim-treesitter updates. `nvim/lua/features/treesitter-parsers.lua`
+
+### Fixed
+
+- Selecting a snippet placeholder no longer ends the snippet session, so tabstop jumps keep working after it. `nvim/lua/core/autocmds.lua`
+- An LSP jump to a file missing on disk, such as a stale clangd index after a move, warns instead of opening an empty buffer. `nvim/lua/features/lsp-patches.lua`
+- A theme switch on linux no longer sends `client.theme.import` to rex apps attached over ssh, which couldn't read the file; the switch still reaches the other rex hosts. `tmux/scripts/themes/reload-rex.sh`
+
 ## [0.2.166] - 2026-11-19
 
 ### Added

@@ -12,7 +12,6 @@ return {
     event = { 'InsertEnter', 'CmdlineEnter' },
     dependencies = {
       'rafamadriz/friendly-snippets',
-      { 'saghen/blink.compat', opts = {} },
       'giuxtaposition/blink-cmp-copilot',
       { 'mikavilpas/blink-ripgrep.nvim', version = '*' },
       {

@@ -85,6 +85,7 @@ _edit_targets() {
         "lazygit|$cfg/lazygit/local.yml" \
         "local|$(get_local_dir)" \
         "nvim|$cfg/nvim/local.lua" \
+        "rex|$cfg/rex/local.lua" \
         "secrets|$secrets" \
         "tmux|$cfg/tmux/local.conf" \
         "zed|$cfg/zed/settings.json" \

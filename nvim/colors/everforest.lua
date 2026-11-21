@@ -196,20 +196,6 @@ hl('TelescopeResultsTitle', { fg = colors.pink, bold = true })
 hl('TelescopeSelection', { fg = colors.pink, bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = colors.purple, bold = true })
 
--- Neo-tree
-hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = colors.selection })
-hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
-hl('NeoTreeDirectoryName', { fg = colors.cyan })
-hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = colors.purple })
-hl('NeoTreeGitModified', { fg = colors.orange })
-hl('NeoTreeGitAdded', { fg = colors.green })
-hl('NeoTreeGitDeleted', { fg = colors.red })
-hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = colors.purple, bold = true })
-
 -- Which-key
 hl('WhichKey', { fg = colors.pink })
 hl('WhichKeyGroup', { fg = colors.purple })

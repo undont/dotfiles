@@ -292,7 +292,7 @@ if should_install "core"; then
     if "$SCRIPT_DIR/../secret" ANTHROPIC_API_KEY >/dev/null 2>&1; then
         printf "Checking %-44s %sOK%s (secret)\n" "ANTHROPIC_API_KEY..." "${GREEN}" "${NC}"
     else
-        check_env_var "ANTHROPIC_API_KEY" "Optional: enables anthropic adapter in codecompanion.nvim"
+        check_env_var "ANTHROPIC_API_KEY" "Optional: anthropic API key"
     fi
 fi
 

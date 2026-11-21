@@ -1,0 +1,17 @@
+-- =============================================================================
+-- REX LOCAL OVERRIDES
+-- =============================================================================
+-- your personal rex settings; this file is yours, add anything you want.
+-- it is loaded AFTER the base config, so bindings here override the base.
+-- the returned table carries values the base reads (font_size).
+--
+-- this file survives dotfiles update (it's gitignored).
+-- after making changes, reload with: cmd+shift+r
+--
+
+local M = {}
+
+-- examples:
+--   M.font_size = 15
+
+return M

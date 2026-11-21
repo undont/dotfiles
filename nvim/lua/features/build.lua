@@ -117,14 +117,14 @@ local build_configs = {
 local build_name_parts = { 'build', 'compile', 'check' }
 
 ---@param names string[]
+---@param whole_names table<string, true> names matched whole, so 'all' leaves 'install' out
 ---@return string[] build names, broader (fewer hyphens) first
-local function build_names(names)
+local function build_names(names, whole_names)
   local targets = {}
   local seen = {}
   for _, name in ipairs(names) do
     local name_lower = name:lower()
-    -- the conventional default goal, matched whole so 'install' stays out
-    if name_lower == 'all' and not seen[name] then
+    if whole_names[name_lower] and not seen[name] then
       seen[name] = true
       table.insert(targets, name)
     end
@@ -159,7 +159,7 @@ local function parse_make_build_targets(makefile_path)
       table.insert(names, target)
     end
   end
-  return build_names(names)
+  return build_names(names, { all = true, debug = true })
 end
 
 ---@param cfg table
@@ -189,7 +189,7 @@ local function check_dir_for_markers(dir)
 end
 
 --- the current buffer's directory up to cwd, nearest first. cwd alone for
---- special buffers (neo-tree, oil, terminal, dashboard), whose expand() paths
+--- special buffers (oil, terminal, dashboard), whose expand() paths
 --- are unusable, and for files outside cwd
 ---@return string[]
 local function search_dirs()
@@ -231,10 +231,25 @@ local function package_scripts()
       if not ok or type(pkg) ~= 'table' or type(pkg.scripts) ~= 'table' then
         return dir, {}
       end
-      return dir, build_names(vim.tbl_keys(pkg.scripts))
+      -- no `debug`: as a package script it usually starts an inspector and never exits
+      return dir, build_names(vim.tbl_keys(pkg.scripts), { all = true })
     end
   end
   return nil, {}
+end
+
+---@return string|nil dir of the nearest makefile, string|nil its path
+local function nearest_makefile()
+  for _, dir in ipairs(search_dirs()) do
+    -- the order GNU make itself looks in
+    for _, name in ipairs { 'GNUmakefile', 'makefile', 'Makefile' } do
+      local path = dir .. '/' .. name
+      if vim.fn.filereadable(path) == 1 then
+        return dir, path
+      end
+    end
+  end
+  return nil, nil
 end
 
 ---@param str string
@@ -599,10 +614,10 @@ function M.entries()
   end
 
   local efm = combined_efm()
-  local makefile_path = vim.fn.getcwd() .. '/Makefile'
-  if vim.fn.filereadable(makefile_path) == 1 then
+  local make_dir, makefile_path = nearest_makefile()
+  if make_dir then
     for _, target in ipairs(parse_make_build_targets(makefile_path)) do
-      add { cmd = { 'make', target }, efm = efm }
+      add { cmd = { 'make', target }, efm = efm, build_dir = make_dir }
     end
   end
 

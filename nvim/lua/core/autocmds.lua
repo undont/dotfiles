@@ -160,15 +160,18 @@ function M.setup()
 
   -- the built-in session only ends on cursor moves in insert/select mode, so
   -- Esc leaves the tabstop extmark alive. `*:n`, not InsertLeave, so tabstop
-  -- jumps via select mode survive
+  -- jumps via select mode survive. deferred because selecting a placeholder
+  -- passes through normal mode (i:n, n:v, v:s)
   vim.api.nvim_create_autocmd('ModeChanged', {
     desc = 'Stop snippet session on return to normal mode',
     group = snippet_group,
     pattern = '*:n',
     callback = function()
-      if vim.snippet.active() then
-        vim.snippet.stop()
-      end
+      vim.schedule(function()
+        if vim.snippet.active() and vim.api.nvim_get_mode().mode == 'n' then
+          vim.snippet.stop()
+        end
+      end)
     end,
   })
 

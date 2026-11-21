@@ -45,7 +45,7 @@ note below), zed's `keymap.json` and `tasks.json`.
 Because `tmux/`, `nvim/` and `rex/` are linked as whole directories, files
 written under the installed paths land inside the repo working tree and are
 gitignored there:
-`~/.config/nvim/local.lua` is `nvim/local.lua`, and TPM plugins install into
+`~/.config/nvim/local.lua` is `nvim/local.lua` (likewise `rex/local.lua`), and TPM plugins install into
 `tmux/plugins/`.
 
 Zed has no include/override mechanism for its config files (no
@@ -83,8 +83,8 @@ never overwritten by `dotfiles update`.
 
 The base takes one of two forms:
 
-- **Symlinked base** (nvim, lazygit, hammerspoon): the installed base is a
-  symlink into the repo (`nvim/`, `lazygit/config.yml`, `hammerspoon/init.lua`),
+- **Symlinked base** (nvim, rex, lazygit, hammerspoon): the installed base is a
+  symlink into the repo (`nvim/`, `rex/`, `lazygit/config.yml`, `hammerspoon/init.lua`),
   so a repo edit is live immediately.
 - **Generated base** (tmux, ghostty, gh-dash): `scripts/theme-switch` renders the
   base from a repo `*.template` into the XDG location
@@ -93,13 +93,14 @@ The base takes one of two forms:
   a template edit reaches the installed config on the next theme generation
   (`dotfiles theme switch`, or the installer run).
 
-**Used for:** tmux, ghostty, nvim, lazygit, hammerspoon, gh-dash.
+**Used for:** tmux, ghostty, nvim, rex, lazygit, hammerspoon, gh-dash.
 
 | Tool        | Local override                | Mechanism                                         |
 | ----------- | ----------------------------- | ------------------------------------------------- |
 | tmux        | `~/.config/tmux/local.conf`   | `source-file -q` at end of config                 |
 | ghostty     | `~/.config/ghostty/local`     | `config-file =` at end of config                  |
 | nvim        | `~/.config/nvim/local.lua`    | `dofile(local_config)` in init.lua                |
+| rex         | `~/.config/rex/local.lua`     | `dofile` at end of init.lua; returns `font_size`  |
 | lazygit     | `~/.config/lazygit/local.yml` | `LG_CONFIG_FILE="base,local"` env var             |
 | hammerspoon | `~/.hammerspoon/local.lua`    | `pcall(require, "local")` at end of init.lua      |
 | gh-dash     | `~/.config/gh-dash/local.yml` | `yq` deep-merge after `dotfiles theme` generation |

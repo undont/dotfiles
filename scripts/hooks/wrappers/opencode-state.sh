@@ -4,7 +4,7 @@
 # vars (OPENCODE_AGENT_STATE, OPENCODE_STATE_EVENT, OPENCODE_SESSION_ID,
 # OPENCODE_DIRECTORY) and expects stdin to be left alone
 
-# skip when running as ACP subprocess inside nvim (e.g. codecompanion.nvim)
+# skip when running as ACP subprocess inside nvim
 [[ -n "${NVIM:-}" ]] && exit 0
 
 # without a state agent-state.sh would fall back to reading hook JSON on stdin

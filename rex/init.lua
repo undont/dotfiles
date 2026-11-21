@@ -62,8 +62,27 @@ rex.bind("cmd+]", "client.tab.next")
 rex.bind("`>v", "pane.copy_mode.enter")
 rex.bind("copy/m", "pane.copy_mode.move", { to = "line_first_non_blank" })
 rex.bind("copy/shift+m", "pane.copy_mode.move", { to = "line_end" })
+rex.bind("copy/u", "pane.copy_mode.move", { to = "half_page_up" })
+rex.bind("copy/d", "pane.copy_mode.move", { to = "half_page_down" })
 
 require("nav")
 require("actions")
 require("marks")
 require("app-actions")
+
+local overrides = {}
+local local_path = os.getenv("HOME") .. "/.config/rex/local.lua"
+local f = io.open(local_path, "r")
+if f then
+    f:close()
+    overrides = dofile(local_path) or {}
+end
+
+local font_size = overrides.font_size or 17
+
+-- resize all terminals in the client with cmd+/-
+rex.bind("cmd+=", "client.setting.terminal.typography.size", { increase = 1 })
+rex.bind("cmd+-", "client.setting.terminal.typography.size", { decrease = 1 })
+rex.bind("cmd+0", "client.setting.terminal.typography.size", { value = font_size })
+
+rex.bind("cmd+shift+r", "client.config.reload")

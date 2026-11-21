@@ -510,8 +510,6 @@ local BAND_ACCENTS = { "fg_primary", "fg_variable", "purple", "pink", "cyan", "g
 ---@param colours table semantic colour palette
 ---@return string lua file content
 function M.generate_nvim_colourscheme(name, colours)
-    local neotree_cursor = colour.lighten(colours.bg_secondary, 12)
-
     -- the selection band is derived from line_highlight, not ghostty's
     -- selection-background: an inverted selection (Bluloco Dark) needs a fg on
     -- Visual, which overrides syntax colours, and a saturated one (Aura) leaves
@@ -813,20 +811,6 @@ function M.generate_nvim_colourscheme(name, colours)
     add("hl('TelescopeResultsTitle', { fg = colors.purple, bold = true })")
     add("hl('TelescopeSelection', { fg = colors.purple, bg = colors.selection, bold = true })")
     add("hl('TelescopeMatching', { fg = colors.green, bold = true })")
-    add("")
-    add("-- Neo-tree")
-    add("hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })")
-    add("hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })")
-    add(string.format("hl('NeoTreeCursorLine', { bg = '%s' })", neotree_cursor))
-    add("hl('NeoTreeDirectoryIcon', { fg = colors.cyan })")
-    add("hl('NeoTreeDirectoryName', { fg = colors.cyan })")
-    add("hl('NeoTreeFileName', { fg = colors.fg_primary })")
-    add("hl('NeoTreeFileNameOpened', { fg = colors.pink })")
-    add("hl('NeoTreeGitModified', { fg = colors.yellow })")
-    add("hl('NeoTreeGitAdded', { fg = colors.green })")
-    add("hl('NeoTreeGitDeleted', { fg = colors.red })")
-    add("hl('NeoTreeIndentMarker', { fg = colors.comment })")
-    add("hl('NeoTreeRootName', { fg = colors.pink, bold = true })")
     add("")
     add("-- Which-key")
     add("hl('WhichKey', { fg = colors.cyan })")

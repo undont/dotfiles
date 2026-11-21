@@ -63,8 +63,6 @@ local function apply_transparency()
     'MiniStatuslineFilename',
     'MiniStatuslineFileinfo',
     'MiniStatuslineInactive',
-    'NeoTreeNormal',
-    'NeoTreeNormalNC',
   }
   for _, group in ipairs(groups) do
     local existing = vim.api.nvim_get_hl(0, { name = group })
@@ -133,7 +131,7 @@ function M.reload(force)
 
   if apply_colourscheme(scheme) then
     current_theme = theme
-    if ghostty_transparent() then
+    if vim.env.REX_SESSION or ghostty_transparent() then
       apply_transparency()
     end
     -- stay silent on the startup apply

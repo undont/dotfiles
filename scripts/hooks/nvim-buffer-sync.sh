@@ -11,7 +11,7 @@ set -euo pipefail
 file_path=$(jq -r '.tool_input.file_path // empty' 2>/dev/null) || exit 0
 [[ -z "$file_path" ]] && exit 0
 
-# badd lists the buffer without loading it, so it shows in neo-tree buffers
+# badd lists the buffer without loading it, so it shows in buffer pickers
 nvim --headless --server "$NVIM_SOCKET" --remote-expr "execute('badd ' . fnameescape('$file_path'))" 2>/dev/null || true
 
 exit 0

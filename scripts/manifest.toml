@@ -110,6 +110,7 @@ link = [{ source = "imagemagick/type.xml", dest = "$cfg/ImageMagick/type.xml" }]
 [rex]
 preset = "core"
 link = [{ source = "rex", dest = "$cfg/rex" }]
+local = [{ source = "rex/local.lua.template", dest = "$cfg/rex/local.lua" }]
 
 ["statusline theme resolver"]
 preset = "core"

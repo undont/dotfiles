@@ -51,8 +51,6 @@ function M.setup()
     vim.notify(path, vim.log.levels.INFO)
   end, { desc = '[Y]ank file path' })
 
-  vim.keymap.set('n', '<leader>e', ':Neotree toggle<CR>', { desc = 'File [E]xplorer' })
-
   vim.keymap.set('n', '<leader>g', function()
     if not git_root() and not (vim.env.GIT_DIR and vim.env.GIT_WORK_TREE) then
       vim.notify('not in a git repository', vim.log.levels.WARN)
@@ -78,6 +76,7 @@ function M.setup()
   require('features.binary-view').setup()
   require('features.go').setup()
   require('features.snippets').setup()
+  require('features.cheatsheet').setup()
 end
 
 return M

@@ -1,6 +1,6 @@
 -- monkeypatches to vim.lsp internals. patch_lsp_start blocks LSP attach to
--- non-file:// scheme buffers; patch_show_document recovers from servers
--- reporting invalid cursor ranges
+-- non-file:// scheme buffers; patch_show_document skips targets missing on
+-- disk and recovers from servers reporting invalid cursor ranges
 
 local M = {}
 
@@ -24,17 +24,23 @@ function M.patch_lsp_start()
   end
 end
 
---- handles cursor-position-outside-buffer errors from servers that report
---- invalid ranges
 function M.patch_show_document()
   local orig = vim.lsp.util.show_document
   vim.lsp.util.show_document = function(location, offset_encoding, opts)
+    local uri = location.uri or location.targetUri
+    -- a stale server index (clangd after a file move) points at deleted paths
+    if uri and uri:match '^file://' then
+      local fname = vim.uri_to_fname(uri)
+      if not vim.uv.fs_stat(fname) and vim.fn.bufloaded(fname) == 0 then
+        vim.notify('LSP target not on disk: ' .. vim.fn.fnamemodify(fname, ':~:.'), vim.log.levels.WARN)
+        return false
+      end
+    end
     local ok, ret = pcall(orig, location, offset_encoding, opts)
     if ok then
       return ret
     end
-    if ret:match 'Cursor position outside buffer' then
-      local uri = location.uri or location.targetUri
+    if ret:match 'Cursor position outside buffer' or ret:match 'Invalid cursor line' then
       if uri then
         vim.cmd('edit ' .. vim.uri_to_fname(uri))
         vim.notify('Jumped to file (cursor position was invalid)', vim.log.levels.WARN)
