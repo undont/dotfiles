@@ -13,6 +13,7 @@ repo-owned base config:
 | ----------- | --------------------------------- |
 | Tmux        | `~/.config/tmux/local.conf`       |
 | Neovim      | `~/.config/nvim/local.lua`        |
+| Rex         | `~/.config/rex/local.lua`         |
 | Ghostty     | `~/.config/ghostty/local`         |
 | gh-dash     | `~/.config/gh-dash/local.yml`     |
 | LazyGit     | `~/.config/lazygit/local.yml`     |

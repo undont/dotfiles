@@ -70,9 +70,19 @@ require("actions")
 require("marks")
 require("app-actions")
 
-local local_config = os.getenv("HOME") .. "/.config/rex/local.lua"
-local f = io.open(local_config, "r")
+local overrides = {}
+local local_path = os.getenv("HOME") .. "/.config/rex/local.lua"
+local f = io.open(local_path, "r")
 if f then
     f:close()
-    dofile(local_config)
+    overrides = dofile(local_path) or {}
 end
+
+local font_size = overrides.font_size or 17
+
+-- resize all terminals in the client with cmd+/-
+rex.bind("cmd+=", "client.setting.terminal.typography.size", { increase = 1 })
+rex.bind("cmd+-", "client.setting.terminal.typography.size", { decrease = 1 })
+rex.bind("cmd+0", "client.setting.terminal.typography.size", { value = font_size })
+
+rex.bind("cmd+shift+r", "client.config.reload")
