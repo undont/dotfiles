@@ -189,7 +189,7 @@ local function check_dir_for_markers(dir)
 end
 
 --- the current buffer's directory up to cwd, nearest first. cwd alone for
---- special buffers (neo-tree, oil, terminal, dashboard), whose expand() paths
+--- special buffers (oil, terminal, dashboard), whose expand() paths
 --- are unusable, and for files outside cwd
 ---@return string[]
 local function search_dirs()

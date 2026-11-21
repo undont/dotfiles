@@ -35,7 +35,6 @@ local colors = require('core.palette').load('nord', {
   -- syntax roles (mirroring upstream nordtheme/vim and gbprod/nord.nvim)
   ident = 'NVIM_IDENT', -- nord4, identifiers, fields, constants
   teal = 'GHOSTTY_PALETTE_14', -- nord7, types
-  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
 })
 
 -- set a highlight group
@@ -200,20 +199,6 @@ hl('TelescopePreviewTitle', { fg = colors.cyan, bold = true })
 hl('TelescopeResultsTitle', { fg = colors.cyan, bold = true })
 hl('TelescopeSelection', { fg = colors.cyan, bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = colors.purple, bold = true })
-
--- Neo-tree
-hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
-hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
-hl('NeoTreeDirectoryName', { fg = colors.cyan })
-hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = colors.purple })
-hl('NeoTreeGitModified', { fg = colors.yellow })
-hl('NeoTreeGitAdded', { fg = colors.green })
-hl('NeoTreeGitDeleted', { fg = colors.red })
-hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = colors.purple, bold = true })
 
 -- Which-key
 hl('WhichKey', { fg = colors.cyan })

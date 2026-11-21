@@ -31,7 +31,6 @@ local colors = require('core.palette').load('monokai-pro-astro', {
   ghost = 'NVIM_GHOST',
   line_highlight = 'NVIM_LINE_HIGHLIGHT',
   indent = 'NVIM_INDENT',
-  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
 })
 
 local function hl(group, opts)
@@ -196,20 +195,6 @@ hl('TelescopePreviewTitle', { fg = colors.green, bold = true })
 hl('TelescopeResultsTitle', { fg = colors.cyan, bold = true })
 hl('TelescopeSelection', { fg = colors.yellow, bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = colors.orange, bold = true })
-
--- Neo-tree
-hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
-hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
-hl('NeoTreeDirectoryName', { fg = colors.cyan })
-hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = colors.green })
-hl('NeoTreeGitModified', { fg = colors.orange })
-hl('NeoTreeGitAdded', { fg = colors.green })
-hl('NeoTreeGitDeleted', { fg = colors.red })
-hl('NeoTreeIndentMarker', { fg = colors.line_nr })
-hl('NeoTreeRootName', { fg = colors.red, bold = true })
 
 -- Which-key
 hl('WhichKey', { fg = colors.cyan })

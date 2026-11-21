@@ -41,8 +41,6 @@ return {
         TelescopePrompt = false,
         ['grug-far'] = false,
         ['grug-far-help'] = false,
-        ['neo-tree'] = false,
-        ['neo-tree-popup'] = false,
         DressingInput = false,
         codecompanion = false,
         ['copilot-chat'] = false,

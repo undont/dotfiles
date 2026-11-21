@@ -49,7 +49,6 @@ local colors = require('core.palette').load('gruvbox-dark', {
   -- syntax roles (mirroring upstream gruvbox.nvim dark)
   orange = 'NVIM_ORANGE', -- operators, builtins, specials
   punct = 'NVIM_PUNCT', -- fg3, subtle punctuation (upstream uses it for brackets in several langs)
-  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
 })
 
 -- helper to set highlight groups
@@ -215,20 +214,6 @@ hl('TelescopePreviewTitle', { fg = colors.cyan, bold = true })
 hl('TelescopeResultsTitle', { fg = colors.cyan, bold = true })
 hl('TelescopeSelection', { fg = colors.yellow, bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = colors.green, bold = true })
-
--- Neo-tree
-hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
-hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
-hl('NeoTreeDirectoryName', { fg = colors.cyan })
-hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = colors.green })
-hl('NeoTreeGitModified', { fg = colors.yellow })
-hl('NeoTreeGitAdded', { fg = colors.green })
-hl('NeoTreeGitDeleted', { fg = colors.red })
-hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = colors.green, bold = true })
 
 -- Which-key
 hl('WhichKey', { fg = colors.green })

@@ -38,7 +38,6 @@ local colors = require('core.palette').load('tokyo-night', {
   green1 = 'NVIM_GREEN1', -- properties, members
   fg_dark = 'GHOSTTY_PALETTE_7', -- brackets
   deep_purple = 'NVIM_DEEP_PURPLE', -- keywords (upstream purple; the purple slot above holds upstream magenta)
-  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
 })
 
 -- helper to set highlight groups
@@ -203,20 +202,6 @@ hl('TelescopePreviewTitle', { fg = colors.purple, bold = true })
 hl('TelescopeResultsTitle', { fg = colors.purple, bold = true })
 hl('TelescopeSelection', { fg = colors.purple, bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = colors.pink, bold = true })
-
--- Neo-tree
-hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
-hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
-hl('NeoTreeDirectoryName', { fg = colors.cyan })
-hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = colors.pink })
-hl('NeoTreeGitModified', { fg = colors.yellow })
-hl('NeoTreeGitAdded', { fg = colors.green })
-hl('NeoTreeGitDeleted', { fg = colors.red })
-hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = colors.pink, bold = true })
 
 -- Which-key
 hl('WhichKey', { fg = colors.purple })

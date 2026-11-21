@@ -29,7 +29,6 @@ local colors = require('core.palette').load('dracula', {
   reference = 'NVIM_REFERENCE',
   comment = 'NVIM_COMMENT',
   line_highlight = 'NVIM_LINE_HIGHLIGHT',
-  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
 
   -- syntax roles (mirroring upstream dracula.nvim)
   orange = 'NVIM_ORANGE', -- parameters, members, modules
@@ -199,20 +198,6 @@ hl('TelescopePreviewTitle', { fg = colors.purple, bold = true })
 hl('TelescopeResultsTitle', { fg = colors.purple, bold = true })
 hl('TelescopeSelection', { fg = colors.purple, bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = colors.green, bold = true })
-
--- Neo-tree
-hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
-hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
-hl('NeoTreeDirectoryName', { fg = colors.cyan })
-hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = colors.pink })
-hl('NeoTreeGitModified', { fg = colors.yellow })
-hl('NeoTreeGitAdded', { fg = colors.green })
-hl('NeoTreeGitDeleted', { fg = colors.red })
-hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = colors.pink, bold = true })
 
 -- Which-key
 hl('WhichKey', { fg = colors.cyan })

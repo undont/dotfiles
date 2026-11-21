@@ -110,7 +110,7 @@ return {
       local prev_vis = {}
 
       local function update_filetype_groups()
-        -- special buffers (differ, telescope, neo-tree) keep the previous state
+        -- special buffers (differ, telescope) keep the previous state
         if vim.bo.buftype ~= '' then
           return
         end

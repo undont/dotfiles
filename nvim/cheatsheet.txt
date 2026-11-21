@@ -111,8 +111,6 @@ Sonar scans (modified, branch, ticket, project) | <leader>q, then sonar:
 Sonar issue details / silence rule | gra (on sonar finding)
 
 ## tools @tools
-Toggle file tree | <leader>e
-NeoTree reveal | |
 Open LazyGit | <leader>g
 Format file | <leader>f
 Run picker (build, make, scripts, tests, dotnet, scans) | <leader>q

@@ -112,24 +112,6 @@ return {
       -- ]f/[f walk DD-MM-YYYY note directories by date rather than lexically
       require('features.dated-notes').setup_bracketed()
 
-      -- redirect ]f/[f from neo-tree to the first normal editing window
-      vim.api.nvim_create_autocmd('FileType', {
-        pattern = 'neo-tree',
-        callback = function(ev)
-          for key, dir in pairs { [']f'] = 'forward', ['[f'] = 'backward' } do
-            vim.keymap.set('n', key, function()
-              for _, win in ipairs(vim.api.nvim_tabpage_list_wins(0)) do
-                if vim.bo[vim.api.nvim_win_get_buf(win)].buftype == '' then
-                  vim.api.nvim_set_current_win(win)
-                  MiniBracketed.file(dir)
-                  return
-                end
-              end
-            end, { buffer = ev.buf })
-          end
-        end,
-      })
-
       local splitjoin = require 'mini.splitjoin'
       splitjoin.setup()
 

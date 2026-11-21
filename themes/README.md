@@ -58,7 +58,7 @@ Create a custom colourscheme file. Use any existing file as a template (e.g. `nv
 - **Diff / Git signs**: DiffAdd, DiffChange, DiffDelete, GitSignsAdd
 - **Diagnostics / LSP**: DiagnosticError, DiagnosticWarn, DiagnosticInfo
 - **Treesitter**: @variable, @function, @keyword, @string, @type, etc.
-- **Plugins**: Telescope, Neo-tree, Which-key, Mini statusline
+- **Plugins**: Telescope, Which-key, Mini statusline
 
 The scheme holds no hex values. Its `colors` table maps each colour name to a key in the `.theme` file:
 
@@ -123,7 +123,7 @@ scripts/theme-contrast-check --fix themes/my-theme.theme
 - **FG_SECONDARY** is the most common failure: it needs to pass 4.5:1 on _both_ BG_PRIMARY and BG_SECONDARY
 - **GHOSTTY_PALETTE_8** should match or be close to FG_SECONDARY
 - Use [WebAIM Contrast Checker](https://webaim.org/resources/contrastchecker/) for quick manual checks
-- Test visually with `dotfiles theme switch <name>` and open Neovim, LazyGit, and Neo-tree
+- Test visually with `dotfiles theme switch <name>` and open Neovim and LazyGit
 
 ## Theme Architecture
 

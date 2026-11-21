@@ -63,8 +63,6 @@ local function apply_transparency()
     'MiniStatuslineFilename',
     'MiniStatuslineFileinfo',
     'MiniStatuslineInactive',
-    'NeoTreeNormal',
-    'NeoTreeNormalNC',
   }
   for _, group in ipairs(groups) do
     local existing = vim.api.nvim_get_hl(0, { name = group })

@@ -5,9 +5,6 @@ local M = {}
 
 local function refresh_nvim()
   pcall(function()
-    vim.cmd 'Neotree close'
-  end)
-  pcall(function()
     vim.cmd 'Differ close'
   end)
 

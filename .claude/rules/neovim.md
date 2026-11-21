@@ -16,7 +16,7 @@ runs `{ import = 'plugins' }`, so a lazy spec placed anywhere else never loads.
 editing tweaks (`<Esc>` hl-clear, `<leader>v`/`<leader>V` paste-last-yank,
 smart `i`/`a`, `<leader>i` insert-space, `m`/`M`/`gm` line nav, count-free
 `<C-^>`, `gx`, terminal
-escape, `<leader>by`/`<leader>e`/`<leader>g`/`<leader>u`)
+escape, `<leader>by`/`<leader>g`/`<leader>u`)
 and then calls `setup()` on the focused modules: core (folding, windows,
 macos-nav, refresh, spellcheck) and features (lists, diag-scan, run,
 qf-auto-clear, binary-view, go, snippets, cheatsheet).

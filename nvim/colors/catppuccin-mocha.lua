@@ -39,7 +39,6 @@ local colors = require('core.palette').load('catppuccin-mocha', {
   flamingo = 'NVIM_FLAMINGO', -- identifiers
   sapphire = 'NVIM_SAPPHIRE', -- labels
   overlay2 = 'NVIM_OVERLAY2', -- punctuation
-  tree_cursor_line = 'NVIM_TREE_CURSOR_LINE',
 })
 
 -- helper to set highlight groups
@@ -204,20 +203,6 @@ hl('TelescopePreviewTitle', { fg = colors.purple, bold = true })
 hl('TelescopeResultsTitle', { fg = colors.purple, bold = true })
 hl('TelescopeSelection', { fg = colors.purple, bg = colors.selection, bold = true })
 hl('TelescopeMatching', { fg = colors.pink, bold = true })
-
--- neo-tree
-hl('NeoTreeNormal', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeNormalNC', { fg = colors.fg_primary, bg = colors.bg_secondary })
-hl('NeoTreeCursorLine', { bg = colors.tree_cursor_line })
-hl('NeoTreeDirectoryIcon', { fg = colors.cyan })
-hl('NeoTreeDirectoryName', { fg = colors.cyan })
-hl('NeoTreeFileName', { fg = colors.fg_primary })
-hl('NeoTreeFileNameOpened', { fg = colors.pink })
-hl('NeoTreeGitModified', { fg = colors.yellow })
-hl('NeoTreeGitAdded', { fg = colors.green })
-hl('NeoTreeGitDeleted', { fg = colors.red })
-hl('NeoTreeIndentMarker', { fg = colors.comment })
-hl('NeoTreeRootName', { fg = colors.pink, bold = true })
 
 -- which-key
 hl('WhichKey', { fg = colors.purple })
