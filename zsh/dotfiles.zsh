@@ -67,6 +67,16 @@ fi
 [[ "$IS_MACOS" == "1" ]] && ulimit -n 10240 2>/dev/null
 
 # =============================================================================
+# HISTORY
+# =============================================================================
+# macOS /etc/zshrc sets these, linuxbrew zsh reads no system config; same path
+# as macOS so existing history carries over
+HISTFILE="${ZDOTDIR:-$HOME}/.zsh_history"
+HISTSIZE=50000
+SAVEHIST=50000
+setopt EXTENDED_HISTORY SHARE_HISTORY HIST_IGNORE_ALL_DUPS HIST_IGNORE_SPACE
+
+# =============================================================================
 # TERMINFO FALLBACK
 # =============================================================================
 # ghostty sets TERM=xterm-ghostty; fall back to xterm-256color on machines
