@@ -211,7 +211,7 @@ read_rex_session() {
     if [[ -n "$session" ]]; then
         sid=$(rex_session_id "$session")
     else
-        sid="${REX_SESSION:-}"
+        sid=$(rex whoami --json | jq -r '.session_id // empty')
         session=$(rex ls --json | jq -r --arg s "$sid" '[.sessions[] | select(.session_id == $s)][0].label // empty')
     fi
     if [[ -z "$sid" || -z "$session" ]]; then

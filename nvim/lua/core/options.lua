@@ -75,7 +75,7 @@ function M.setup()
   -- host's panes, and a DISPLAY there is that host's own clipboard, so a yank
   -- also goes to the app's machine (rex/bash/copy-in-app.sh)
   local rex_copy = nil
-  if vim.env.REX_SESSION and vim.fn.has 'mac' == 0 then
+  if vim.env.REX_BLOCK and vim.fn.has 'mac' == 0 then
     rex_copy = vim.fn.expand '~/.config/rex/bash/copy-in-app.sh'
     if vim.fn.executable(rex_copy) == 0 then
       rex_copy = nil
