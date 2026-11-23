@@ -85,7 +85,7 @@ brew "morantron/tmux-fingers/tmux-fingers" # quick pattern copy (requires gcc on
 brew "undont/tap/poke"                     # teammate pokes (tmux status segment)
 
 # Rex Extras
-brew "cemcatik/tap/rexurrect" if OS.mac?  # save and restore rex sessions (no linuxbrew support)
+brew "cemcatik/tap/rexurrect"  # save and restore rex sessions
 
 # =============================================================================
 # @preset: core

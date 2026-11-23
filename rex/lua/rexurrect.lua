@@ -1,7 +1,13 @@
 -- restores the latest rexurrect snapshot when the server starts. `auto-restore`
 -- returns at once and restores at most once per server instance
 
-for _, bin in ipairs({ "/opt/homebrew/bin/rexurrect", "/usr/local/bin/rexurrect" }) do
+local bins = {
+    "/opt/homebrew/bin/rexurrect",
+    "/usr/local/bin/rexurrect",
+    "/home/linuxbrew/.linuxbrew/bin/rexurrect",
+}
+
+for _, bin in ipairs(bins) do
     local f = io.open(bin)
     if f then
         f:close()

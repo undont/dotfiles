@@ -114,7 +114,6 @@ local = [{ source = "rex/local.lua.template", dest = "$cfg/rex/local.lua" }]
 
 [rexurrect]
 preset = "core"
-os = "macos"
 link = [{ source = "rex/rexurrect.toml", dest = "$cfg/rexurrect/config.toml" }]
 
 ["statusline theme resolver"]
