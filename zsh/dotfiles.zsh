@@ -1234,6 +1234,12 @@ dotfiles() {
 [[ -f "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh" ]] && source "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh"
 
 # =============================================================================
+# REXURRECT
+# =============================================================================
+# records each rex block's last command for `rexurrect restore`; a no-op outside rex
+[[ -f "$HOMEBREW_PREFIX/share/rexurrect/rexurrect.plugin.zsh" ]] && source "$HOMEBREW_PREFIX/share/rexurrect/rexurrect.plugin.zsh"
+
+# =============================================================================
 # ZOXIDE
 # =============================================================================
 # eager init so the zoxide `cd` is defined in every shell mode: interactive,

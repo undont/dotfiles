@@ -1,0 +1,17 @@
+auto_resume = ["nvim", "btop", "dash", "jiru", "claude", "pi", "opencode", "codex"]
+
+[programs.btop]
+resume = "btop"
+
+[programs.dash]
+match = ["gh"]
+resume = "gh dash"
+
+[programs.jiru]
+resume = "jiru"
+
+[programs.pi]
+resume = "pi"
+
+[programs.opencode]
+resume = "opencode"

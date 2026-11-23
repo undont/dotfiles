@@ -40,7 +40,9 @@ configs (`formatters/prettierrc.json` -> `~/.prettierrc`,
 (`scripts/_lib/statusline-theme.sh` ->
 `~/.config/dotfiles/statusline-theme.sh`), the ImageMagick font map
 (`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`, macOS only; see the
-note below), zed's `keymap.json` and `tasks.json`.
+note below), the rexurrect config (`rex/rexurrect.toml` ->
+`~/.config/rexurrect/config.toml`, macOS only; see the note below), zed's
+`keymap.json` and `tasks.json`.
 
 Because `tmux/`, `nvim/` and `rex/` are linked as whole directories, files
 written under the installed paths land inside the repo working tree and are
@@ -74,6 +76,13 @@ the type cache. Linux imagemagick has a working fontconfig cache, so it is skipp
 there. **Never put a backtick anywhere in this file**, even inside a comment:
 imagemagick's config parser treats `` ` `` as command interpolation and silently
 drops the entire type cache, which leaves imagemagick with zero fonts.
+
+rexurrect (macOS only) saves and restores rex sessions. Its config is in
+`rex/` because it only serves rex, so it is also visible, and ignored, at
+`~/.config/rex/rexurrect.toml`. `rex/lua/rexurrect.lua` runs
+`rexurrect auto-restore` when the rex server starts, and `install-packages.sh`
+runs `rexurrect autosave install` (a launchd agent) when no agent exists yet,
+so a hand-installed interval survives `dotfiles update`.
 
 ### 2. Layered (repo-owned base + local override)
 

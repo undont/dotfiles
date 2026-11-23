@@ -270,6 +270,13 @@ if command_exists gh; then
     gh extension install undont/gh-bench 2>/dev/null || true
 fi
 
+# rexurrect autosave: a launchd agent that saves the rex app's server
+if is_macos && command_exists rexurrect &&
+    [[ ! -f "$HOME/Library/LaunchAgents/io.github.cemcatik.rexurrect.autosave.plist" ]]; then
+    echo "Installing rexurrect autosave..."
+    rexurrect autosave install || warn "rexurrect autosave install failed. Retry with: rexurrect autosave install"
+fi
+
 if command_exists fnm; then
     echo ""
     info "fnm installed. To install Node.js:"
