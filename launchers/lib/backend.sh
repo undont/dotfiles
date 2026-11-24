@@ -16,7 +16,7 @@ launcher_backend() {
         printf '%s\n' "$LAUNCHER_BACKEND"
     elif [[ -n "${TMUX:-}" ]]; then
         printf 'tmux\n'
-    elif [[ -n "${PICK_CLIENT:-}${REX_SESSION:-}" ]]; then
+    elif [[ -n "${PICK_CLIENT:-}${REX_BLOCK:-}" ]]; then
         printf 'rex\n'
     else
         printf 'tmux\n'

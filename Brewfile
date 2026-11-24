@@ -31,6 +31,7 @@ brew "yq"                     # reads the install manifest and launcher files
 
 # Taps
 tap "Adembc/homebrew-tap"
+tap "cemcatik/tap"
 tap "charmbracelet/tap"
 tap "libsql/sqld"
 tap "morantron/tmux-fingers"
@@ -82,6 +83,9 @@ brew "bear"     # generates compile_commands.json for clang tooling (C/C++/ObjC)
 # Tmux Extras
 brew "morantron/tmux-fingers/tmux-fingers" # quick pattern copy (requires gcc on Linux)
 brew "undont/tap/poke"                     # teammate pokes (tmux status segment)
+
+# Rex Extras
+brew "cemcatik/tap/rexurrect"  # save and restore rex sessions
 
 # =============================================================================
 # @preset: core

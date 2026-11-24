@@ -263,7 +263,7 @@ if [[ -n "$RW_ID" ]]; then
         >"$FINISHED_FILE"
     bash "$SCRIPTS_DIR/alerts/proclist-rerun.sh" 2001 "$RW_ID" 2>/dev/null || true
     sleep 0.4
-    pasted=$(test_tmux capture-pane -t "$RW_ID" -p 2>/dev/null | tr -d '\000')
+    pasted=$(test_tmux capture-pane -t "$RW_ID" -J -p 2>/dev/null | tr -d '\000')
     if [[ "$pasted" == *"grep -r RERUNNEEDLE src/"* ]]; then
         pass "proclist-rerun (stage) types the matched row's command into its window"
     else
