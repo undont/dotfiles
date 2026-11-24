@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.168] - 2026-11-24
+
+### Added
+
+- Rex sessions save and restore through rexurrect: an autosave agent (launchd, or a systemd user timer on linux) snapshots each session's layout, directories and scrollback, and the rex server restores the latest snapshot when it starts. `Brewfile`, `rex/lua/rexurrect.lua`, `rex/rexurrect.toml`, `scripts/manifest.toml`, `scripts/install/install-packages.sh`, `zsh/dotfiles.zsh`
+
+### Fixed
+
+- Zsh keeps a shared 50000-line history where no system zshrc sets the history options. `zsh/dotfiles.zsh`
+- Launchers, nvim's rex transparency and the remote clipboard detect rex panes from `REX_BLOCK`. `launchers/`, `nvim/lua/core/options.lua`, `nvim/lua/core/theme.lua`
+- lua_ls resolves a lua workspace's own `lua/` modules when its `.luarc.json` declares a library. `nvim/lua/plugins/lazydev.lua`
+
 ## [0.2.167] - 2026-11-21
 
 ### Added
