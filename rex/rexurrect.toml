@@ -11,7 +11,9 @@ resume = "gh dash"
 resume = "jiru"
 
 [programs.pi]
-resume = "pi"
+state = "id"
+resume = "pi --session-id {state}"
 
 [programs.opencode]
-resume = "opencode"
+state = "id"
+resume = "opencode --session {state}"
