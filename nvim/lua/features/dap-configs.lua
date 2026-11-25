@@ -362,10 +362,34 @@ local function native_build_dir()
   return vim.fn.getcwd() .. '/'
 end
 
+--- warns when a binary carries no debug info, so breakpoints can't bind and it
+--- runs to exit. macOS keeps DWARF in a .dSYM or in the objects its OSO stabs name
+---@param program string
+local function warn_without_debug_info(program)
+  if vim.fn.has 'mac' == 1 and vim.fn.isdirectory(program .. '.dSYM') == 1 then
+    return
+  end
+  local cmd = vim.fn.has 'mac' == 1 and { 'nm', '-a', program } or { 'objdump', '-h', program }
+  local marker = vim.fn.has 'mac' == 1 and ' OSO ' or '.debug_info'
+  -- pcall: vim.system throws when the tool isn't installed
+  pcall(vim.system, cmd, { text = true }, function(result)
+    if result.code ~= 0 or result.stdout:find(marker, 1, true) then
+      return
+    end
+    vim.schedule(function()
+      vim.notify(('%s has no debug info: rebuild with -g -O0'):format(vim.fs.basename(program)), vim.log.levels.WARN)
+    end)
+  end)
+end
+
 ---@return string|table program path, or dap.ABORT on an empty answer
 local function prompt_native_program()
   local program = vim.fn.input('Path to executable: ', native_build_dir(), 'file')
-  return program ~= '' and program or require('dap').ABORT
+  if program == '' then
+    return require('dap').ABORT
+  end
+  warn_without_debug_info(vim.fn.fnamemodify(program, ':p'))
+  return program
 end
 
 local function native_configs()
