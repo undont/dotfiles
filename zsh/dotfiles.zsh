@@ -922,6 +922,10 @@ alias gols="ls ~/go/bin"                                                        
 alias rsls="ls ~/.cargo/bin"                                                          # list Rust binaries
 alias nvim-clear="rm -rf ~/.cache/nvim/luac/ && echo 'Cleared Neovim bytecode cache'" # clear nvim cache
 
+# rex draws kitty graphics but is not on claude code's image allowlist; the
+# image-inline mod needs this to draw. skipped in tmux, which blocks the pixels
+[[ "$TERM_PROGRAM" == "rex" && -z "$TMUX" ]] && export CLAUDE_CODE_FORCE_TERMINAL_IMAGES=1
+
 # @cheat: nvim-sync | sync Lazy.nvim plugins
 nvim-sync() {
     printf "Syncing Neovim plugins...\n"
