@@ -33,4 +33,4 @@ selected=$(
 IFS=$'\t' read -r block session window <<<"$selected"
 [[ -n "$session" ]] || exit 0
 trap - EXIT
-pick cmd=procs.select session="$session" window="$window" block="$block"
+pick_final cmd=procs.select session="$session" window="$window" block="$block"

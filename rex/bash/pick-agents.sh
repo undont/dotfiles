@@ -42,8 +42,8 @@ selected=$(
 [[ -n "$selected" ]] || exit 0
 trap - EXIT
 if [[ "$selected" == new ]]; then
-    pick cmd=panes.new program="$program"
+    pick_final cmd=panes.new program="$program"
     exit 0
 fi
 IFS=$'\t' read -r block session window <<<"$selected"
-pick cmd=panes.select session="$session" window="$window" block="$block"
+pick_final cmd=panes.select session="$session" window="$window" block="$block"

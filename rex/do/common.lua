@@ -238,13 +238,39 @@ function M.client_for(host, session_id)
     return clients[host]
 end
 
+-- one line per switch; the file restarts once it passes 64 KiB
+local function log_pick(line)
+    local path = M.CACHE .. "/pick.log"
+    local file = io.open(path, "a")
+    if not file then
+        return
+    end
+    local full = file:seek("end") > 65536
+    file:close()
+    file = io.open(path, full and "w" or "a")
+    if file then
+        file:write(line, "\n")
+        file:close()
+    end
+end
+
 -- show a session, and optionally one of its windows, in the client that opened the picker.
 -- the app ignores the server-side focus of a new window, so the client is told
 ---@param host? string the session's host, when it isn't the server this script calls
 function M.show_in_client(session_id, window_id, host)
     local args = { session_id = session_id, window_id = window_id }
-    M.api(host)
-        .call("client.perform", { client_id = M.client_for(host, session_id), action = "session.select", args = args })
+    local client_id = M.client_for(host, session_id)
+    log_pick(
+        string.format(
+            "select client=%s picked=%s host=%s session=%s window=%s",
+            client_id,
+            M.client,
+            host or "",
+            session_id,
+            window_id or ""
+        )
+    )
+    M.api(host).call("client.perform", { client_id = client_id, action = "session.select", args = args })
 end
 
 -- focus the origin pane again: if the popup still has focus when its layer

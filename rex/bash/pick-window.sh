@@ -35,4 +35,4 @@ selected=$(
 
 [[ -n "$selected" ]] || exit 0
 trap - EXIT
-pick cmd=tabs.select session="${selected#*$'\t'}" window="${selected%%$'\t'*}"
+pick_final cmd=tabs.select session="${selected#*$'\t'}" window="${selected%%$'\t'*}"

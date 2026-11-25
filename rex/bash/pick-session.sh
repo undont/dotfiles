@@ -31,4 +31,4 @@ selected=$(
 
 [[ -n "$selected" ]] || exit 0
 trap - EXIT
-pick cmd=sessions.select session="$selected"
+pick_final cmd=sessions.select session="$selected"

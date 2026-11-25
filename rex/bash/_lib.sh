@@ -31,8 +31,22 @@ header_count() {
 # (which focuses it too); PICK_ORIGIN_ZOOMED is 1 when it was zoomed
 picker_start() {
     export PICK_CLIENT PICK_ORIGIN_SESSION="$2" PICK_ORIGIN_BLOCK="$3" PICK_ORIGIN_ZOOMED="${4:-}"
-    PICK_CLIENT=$(local_client "$1" "$2")
+    PICK_CLIENT=$(local_client "$1" "$2") || pick_failed "client lookup failed (is jq installed?)"
     trap restore_focus EXIT
+}
+
+# a failure in a layer closes with the layer, so show it and wait for a key
+pick_failed() {
+    printf '\n  pick failed: %s\n\n  press any key to close' "$1" >/dev/tty
+    read -rsn1 </dev/tty || true
+    exit 1
+}
+
+# the picker's closing pick call; a failure stays on screen. its call is
+# logged to pick.log (show_in_client in do/common.lua)
+pick_final() {
+    local output
+    output=$(pick "$@" 2>&1) || pick_failed "${output:-pick $* exited non-zero}"
 }
 
 # the action that opens a popup runs on the home server and passes the app's
