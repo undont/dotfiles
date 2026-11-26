@@ -65,18 +65,10 @@ function M.setup()
   end, { desc = '[U]ndo tree' })
 
   require('core.folding').setup()
-  require('features.lists').setup()
-  require('features.diag-scan').setup()
   require('core.windows').setup()
   require('core.macos-nav').setup()
   require('core.refresh').setup()
   require('core.spellcheck').setup()
-  require('features.run').setup()
-  require('features.qf-auto-clear').setup()
-  require('features.binary-view').setup()
-  require('features.go').setup()
-  require('features.snippets').setup()
-  require('features.cheatsheet').setup()
 end
 
 return M
