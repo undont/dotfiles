@@ -85,11 +85,16 @@ if [[ "$TERM" == "xterm-ghostty" ]] && ! infocmp xterm-ghostty &>/dev/null; then
     export TERM=xterm-256color
 fi
 
-# powerlevel10k theme and its config
-if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
-    source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
+# powerlevel10k theme and its config, skipped in a `zsh -ic CMD` shell (how rex
+# resumes a program): there is no prompt to draw, and starting gitstatus runs
+# `setopt monitor`, which moves the shell out of the terminal's foreground
+# process group and stops the program it then runs
+if [[ -z "$ZSH_EXECUTION_STRING" ]]; then
+    if [[ -f "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme" ]]; then
+        source "$HOMEBREW_PREFIX/share/powerlevel10k/powerlevel10k.zsh-theme"
+    fi
+    [[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 fi
-[[ ! -f ~/.p10k.zsh ]] || source ~/.p10k.zsh
 # a shell killed mid-startup leaves p10k's temp file behind; the age filter spares a live write
 rm -f "${XDG_CACHE_HOME:-$HOME/.cache}"/p10k-*.tmp.*(N.mh+24)
 
@@ -1236,12 +1241,6 @@ dotfiles() {
 # sends a tmux alert when a command outlives $_CMD_ALERT_MIN_SECONDS and its
 # window is not being viewed
 [[ -f "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh" ]] && source "$DOTFILES_ROOT/scripts/hooks/cmd-alert-hook.zsh"
-
-# =============================================================================
-# REXURRECT
-# =============================================================================
-# records each rex block's last command for `rexurrect restore`; a no-op outside rex
-[[ -f "$HOMEBREW_PREFIX/share/rexurrect/rexurrect.plugin.zsh" ]] && source "$HOMEBREW_PREFIX/share/rexurrect/rexurrect.plugin.zsh"
 
 # =============================================================================
 # ZOXIDE

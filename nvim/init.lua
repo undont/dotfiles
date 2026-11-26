@@ -31,6 +31,7 @@ require('features.snippets').setup()
 require('features.cheatsheet').setup()
 require('features.tag-rename').setup()
 require('features.std-paths').setup()
+require('features.rex-resume').setup()
 
 require('lazy-bootstrap').setup()
 
