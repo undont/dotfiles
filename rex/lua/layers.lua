@@ -84,20 +84,45 @@ local function popup_size_key(ctx, win, bounds)
     return string.format("%dx%d@%gx%g", columns, rows, bounds[3], bounds[4])
 end
 
----@return integer|nil columns, integer|nil rows
+-- the cached size for key, else an estimate scaled from the entry with the same
+-- bounds whose window size is nearest
+---@param key? string
+---@return integer|nil columns, integer|nil rows, boolean|nil estimated
 local function cached_popup_size(key)
+    if not key then
+        return nil
+    end
+    local columns, rows, bounds = key:match("^(%d+)x(%d+)@(%S+)$")
+    columns, rows = tonumber(columns), tonumber(rows)
     local f = io.open(M.POPUP_SIZES, "r")
     if not f then
         return nil
     end
+    local nearest, nearest_distance
     for line in f:lines() do
-        local k, columns, rows = line:match("^(%S+) (%d+) (%d+)$")
+        local k, popup_columns, popup_rows = line:match("^(%S+) (%d+) (%d+)$")
         if k == key then
             f:close()
-            return tonumber(columns), tonumber(rows)
+            return tonumber(popup_columns), tonumber(popup_rows), false
+        end
+        local window_columns, window_rows, k_bounds = (k or ""):match("^(%d+)x(%d+)@(%S+)$")
+        if k_bounds == bounds then
+            window_columns, window_rows = tonumber(window_columns), tonumber(window_rows)
+            local distance = math.abs(window_columns - columns) + math.abs(window_rows - rows)
+            if not nearest_distance or distance < nearest_distance then
+                nearest_distance = distance
+                nearest = {
+                    column_scale = tonumber(popup_columns) / window_columns,
+                    row_scale = tonumber(popup_rows) / window_rows,
+                }
+            end
         end
     end
     f:close()
+    if not nearest then
+        return nil
+    end
+    return math.floor(columns * nearest.column_scale + 0.5), math.floor(rows * nearest.row_scale + 0.5), true
 end
 
 -- a script in a floating layer, which closes when the script exits
@@ -135,9 +160,17 @@ function M.open(ctx, script, bounds, args)
     end
     -- the script matches the label to the app's client on the session's host
     local env = { "/usr/bin/env", "PICK_CLIENT_LABEL=" .. hosts.client_label(ctx.client_id) }
+    -- a client id from this server is valid on the popup's host when it's this one
+    if not ctx.server then
+        table.insert(env, "PICK_CLIENT_SAME_HOST=1")
+    end
     local key = popup_size_key(ctx, win, bounds)
     if key then
         table.insert(env, "PICK_SIZE_KEY=" .. key)
+    end
+    local columns, rows, estimated = cached_popup_size(key)
+    if estimated then
+        table.insert(env, "PICK_SIZE_ESTIMATED=1")
     end
     for i, arg in ipairs(env) do
         table.insert(command, i, arg)
@@ -152,7 +185,6 @@ function M.open(ctx, script, bounds, args)
         }),
     })
     -- sized before the script reads it, so wait_for_resize returns at once
-    local columns, rows = cached_popup_size(key)
     if columns and layer and layer.block_ids then
         pcall(rex.block.call, "com.superlogical.terminal", "resize", {
             session_id = ctx.session_id,

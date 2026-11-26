@@ -38,9 +38,14 @@ picker_start() {
 # the action that opens a popup runs on the home server and passes the app's
 # client id there. a popup over another host's session calls that host's
 # server, which knows the app by another id: the app labelled
-# PICK_CLIENT_LABEL, else the app showing the origin session, else any app
+# PICK_CLIENT_LABEL, else the app showing the origin session, else any app.
+# M.open sets PICK_CLIENT_SAME_HOST when the popup runs on the home server
 local_client() {
     local clients
+    if [[ -n "${PICK_CLIENT_SAME_HOST:-}" ]]; then
+        printf '%s\n' "$1"
+        return 0
+    fi
     if ! clients=$(rex client ls --json 2>/dev/null); then
         printf '%s\n' "$1"
         return 0
@@ -89,20 +94,37 @@ import_shell_env() {
 }
 
 # the popup's terminal starts at 80x24 and the app resizes it once the layer
-# is drawn; starting fzf before that draws it small with a clipped preview
+# is drawn; starting fzf before that draws it small with a clipped preview.
+# M.open sizes it up front from the popup-size cache; a size it estimated
+# (PICK_SIZE_ESTIMATED) is replaced by the app's, which is saved instead
 wait_for_resize() {
     local start size
     start=$(stty size </dev/tty)
-    [[ "$start" == "24 80" ]] || return 0
+    size="$start"
     for _ in $(seq 25); do
+        [[ "$size" == "24 80" ]] || break
         sleep 0.02
         size=$(stty size </dev/tty)
-        if [[ "$size" != "$start" ]]; then
+    done
+    if [[ -n "${PICK_SIZE_ESTIMATED:-}" ]]; then
+        save_next_size "$size" &
+    elif [[ "$size" != "$start" ]]; then
+        save_popup_size "$size"
+    fi
+    return 0
+}
+
+# the next size the layer gets within a second, if any
+save_next_size() {
+    local size
+    for _ in $(seq 50); do
+        sleep 0.02
+        size=$(stty size </dev/tty)
+        if [[ "$size" != "$1" ]]; then
             save_popup_size "$size"
-            break
+            return 0
         fi
     done
-    return 0
 }
 
 # rex against the home server, the machine running the app
