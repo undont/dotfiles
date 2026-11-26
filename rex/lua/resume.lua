@@ -11,6 +11,8 @@ rex.set("resume.trust.jiru", {
     flags = {
         ["--profile"] = { "keep", values = 1 },
         ["-p"] = { "keep", values = 1 },
+        ["--key"] = { "keep", values = 1 },
+        ["-k"] = { "keep", values = 1 },
     },
 })
 
