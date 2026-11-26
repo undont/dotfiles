@@ -21,8 +21,17 @@ end
 require('core.options').setup()
 require('core.keymaps').setup()
 require('core.autocmds').setup()
+require('features.lists').setup()
+require('features.diag-scan').setup()
+require('features.run').setup()
+require('features.qf-auto-clear').setup()
+require('features.binary-view').setup()
+require('features.go').setup()
+require('features.snippets').setup()
+require('features.cheatsheet').setup()
 require('features.tag-rename').setup()
 require('features.std-paths').setup()
+require('features.rex-resume').setup()
 
 require('lazy-bootstrap').setup()
 

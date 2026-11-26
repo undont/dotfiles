@@ -40,8 +40,7 @@ configs (`formatters/prettierrc.json` -> `~/.prettierrc`,
 (`scripts/_lib/statusline-theme.sh` ->
 `~/.config/dotfiles/statusline-theme.sh`), the ImageMagick font map
 (`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`, macOS only; see the
-note below), the rexurrect config (`rex/rexurrect.toml` ->
-`~/.config/rexurrect/config.toml`; see the note below), zed's
+note below), zed's
 `keymap.json` and `tasks.json`.
 
 Because `tmux/`, `nvim/` and `rex/` are linked as whole directories, files
@@ -77,13 +76,11 @@ there. **Never put a backtick anywhere in this file**, even inside a comment:
 imagemagick's config parser treats `` ` `` as command interpolation and silently
 drops the entire type cache, which leaves imagemagick with zero fonts.
 
-rexurrect saves and restores rex sessions. Its config is in
-`rex/` because it only serves rex, so it is also visible, and ignored, at
-`~/.config/rex/rexurrect.toml`. `rex/lua/rexurrect.lua` runs
-`rexurrect auto-restore` when the rex server starts, and `install-packages.sh`
-runs `rexurrect autosave install` (a launchd agent, or a systemd user timer on
-linux) when none exists yet,
-so a hand-installed interval survives `dotfiles update`.
+Rex restores sessions after a server restart and resumes the programs that
+report themselves over OSC 7577. `rex/lua/resume.lua` holds the trust rules
+beyond rex's built-in ones: pi (reported from `~/.ai`) and nvim, which
+`nvim/lua/features/rex-resume.lua` keeps a session file for under
+`~/.local/state/nvim/rex-sessions/`.
 
 ### 2. Layered (repo-owned base + local override)
 

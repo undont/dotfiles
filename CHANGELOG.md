@@ -6,6 +6,23 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.169] - 2026-11-26
+
+### Added
+
+- Rex resumes pi and nvim after a server restart; nvim keeps a session file per rex block. `rex/lua/resume.lua`, `nvim/lua/features/rex-resume.lua`, `nvim/init.lua`
+- A warning appears when a codelldb launch target has no debug info. `nvim/lua/features/dap-configs.lua`
+
+### Changed
+
+- Rex's native program resume replaces rexurrect; the migration removes its brew package, tap and launchd or systemd agent. `Brewfile`, `rex/lua/rexurrect.lua`, `rex/rexurrect.toml`, `scripts/manifest.toml`, `scripts/install/install-packages.sh`, `scripts/migrations/0.2.169-remove-rexurrect.sh`, `zsh/dotfiles.zsh`
+
+### Fixed
+
+- Rex pickers open at the right size on first use. `rex/lua/layers.lua`, `rex/bash/_lib.sh`
+- Claude Code draws images in rex. `zsh/dotfiles.zsh`
+- A program resumed through `zsh -ic` no longer stops under powerlevel10k. `zsh/dotfiles.zsh`
+
 ## [0.2.168] - 2026-11-24
 
 ### Added

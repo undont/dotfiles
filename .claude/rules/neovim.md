@@ -17,11 +17,11 @@ editing tweaks (`<Esc>` hl-clear, `<leader>v`/`<leader>V` paste-last-yank,
 smart `i`/`a`, `<leader>i` insert-space, `m`/`M`/`gm` line nav, count-free
 `<C-^>`, `gx`, terminal
 escape, `<leader>by`/`<leader>g`/`<leader>u`)
-and then calls `setup()` on the focused modules: core (folding, windows,
-macos-nav, refresh, spellcheck) and features (lists, diag-scan, run,
-qf-auto-clear, binary-view, go, snippets, cheatsheet).
-Each focused module owns its own keymaps; add new ones where they belong
-rather than letting `keymaps.lua` regrow into a grab-bag.
+and then calls `setup()` on the focused core modules (folding, windows,
+macos-nav, refresh, spellcheck). Each focused module owns its own keymaps; add
+new ones where they belong rather than letting `keymaps.lua` regrow into a
+grab-bag. Features that run at startup are set up from `init.lua`; the rest are
+required from the lazy spec of the plugin they depend on.
 
 ## lua_ls Workspace Config (`.luarc.json`)
 

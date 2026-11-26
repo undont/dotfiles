@@ -112,10 +112,6 @@ preset = "core"
 link = [{ source = "rex", dest = "$cfg/rex" }]
 local = [{ source = "rex/local.lua.template", dest = "$cfg/rex/local.lua" }]
 
-[rexurrect]
-preset = "core"
-link = [{ source = "rex/rexurrect.toml", dest = "$cfg/rexurrect/config.toml" }]
-
 ["statusline theme resolver"]
 preset = "core"
 link = [{ source = "scripts/_lib/statusline-theme.sh", dest = "$cfg/dotfiles/statusline-theme.sh" }]

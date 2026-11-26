@@ -69,7 +69,7 @@ require("nav")
 require("actions")
 require("marks")
 require("app-actions")
-require("rexurrect")
+require("resume")
 
 local overrides = {}
 local local_path = os.getenv("HOME") .. "/.config/rex/local.lua"
