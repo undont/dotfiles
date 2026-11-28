@@ -6,6 +6,18 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+## [0.2.170] - 2026-11-28
+
+### Added
+
+- Pi, codex and opencode prompt buffers in nvim get the `@` file picker, and claude, pi and codex prompts complete skill names. `nvim/lua/features/agent-prompt.lua`, `nvim/lua/features/claude-comments.lua`, `nvim/lua/plugins/completion.lua`, `nvim/init.lua`
+- The rex tab picker can move a tab to another session. `rex/bash/pick-action.sh`, `rex/bash/pick-window.sh`, `rex/do/tabs.lua`
+- gh-dash's differ review opens in a new rex window under rex. `gh-dash/config.yml.template`, `rex/bash/run-window.sh`
+
+### Fixed
+
+- A URL picked in a rex popup opens in the browser of the app showing the popup. `rex/bash/_lib.sh`, `rex/lua/app-actions.lua`
+
 ## [0.2.169] - 2026-11-26
 
 ### Added
