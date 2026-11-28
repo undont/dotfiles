@@ -12,6 +12,12 @@ source "$SCRIPT_DIR/../_lib/brewfile.sh"
 DOTFILES_DIR="${DOTFILES_DIR:-$(cd "$(dirname "$(dirname "$SCRIPT_DIR")")" && pwd)}"
 PRESET="${DOTFILES_PRESET:-full}"
 
+# try-omarchy puts a ghostty wrapper on PATH that exits 127 when the package
+# is missing, so being on PATH is not enough
+ghostty_installed() {
+    command_exists ghostty && ghostty +version &>/dev/null
+}
+
 print_section "Installing Homebrew Packages"
 
 if [[ ! -f "$DOTFILES_DIR/Brewfile" ]]; then
@@ -150,7 +156,7 @@ if should_install "core" && is_linux; then
     fi
 
     # ghostty (cask on macOS, system package on linux)
-    if ! command_exists ghostty; then
+    if ! ghostty_installed; then
         if grep -qi steamos /etc/os-release 2>/dev/null; then
             info "Ghostty not available on SteamOS (read-only filesystem)."
             echo "  Install manually: sudo steamos-readonly disable && sudo pacman -S ghostty"
@@ -278,7 +284,7 @@ if command_exists fnm; then
 fi
 
 # ubuntu/debian have no official ghostty apt package
-if should_install "core" && is_linux && ! command_exists ghostty; then
+if should_install "core" && is_linux && ! ghostty_installed; then
     if command_exists apt-get; then
         ghostty_commit="655c77ad73ff1a6c38d1141e30d4c53eccb5a054"
         echo ""
