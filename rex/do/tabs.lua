@@ -6,6 +6,23 @@ local M = {}
 
 local UNDO_FILE = common.CACHE .. "/window-undo.json"
 
+-- every pane's name in layout order, after the tab's own label when it has one
+local function tab_title(session_id, window)
+    local names = {}
+    for _, block in ipairs(common.layout_blocks(common.tiled_layout(window))) do
+        local name = common.pane_name(session_id, block)
+        if name ~= "" then
+            table.insert(names, name)
+        end
+    end
+    local panes = table.concat(names, ", ")
+    local label = window.label or ""
+    if common.is_default_tab_label(label) then
+        return panes ~= "" and panes or label
+    end
+    return panes ~= "" and label .. ": " .. panes or label
+end
+
 -- rows are window_id, block_id to preview, session_id, display. all=1 lists
 -- every session's tabs, prefixed with the session's label
 function M.list(args)
@@ -23,7 +40,7 @@ function M.list(args)
                 window = window.window_id,
                 block = common.window_focus(window),
                 session = session.session_id,
-                display = prefix .. n .. "  " .. common.tab_name(session.session_id, window),
+                display = prefix .. n .. "  " .. tab_title(session.session_id, window),
             })
         end
     end
@@ -48,7 +65,7 @@ local function find(args)
     if args.window then
         return view, common.find_window(view, args.window)
     end
-    for _, window in ipairs(view.windows) do
+    for _, window in ipairs(view.windows or {}) do
         for _, layer in ipairs(window.layers) do
             for _, block in ipairs(layer.blocks) do
                 if block.block_id == args.block then
@@ -84,6 +101,58 @@ function M.kill_check(args)
         return
     end
     common.out("ask\tKill tab '" .. name .. "'?")
+end
+
+-- "ask" or "deny", then the message, for the move prompt
+function M.move_check(args)
+    local view, window = find(args)
+    if not window then
+        return
+    end
+    local name = common.tab_name(args.session, window)
+    if #view.windows <= 1 then
+        common.out("deny\tCan't move '" .. name .. "': it's the session's only tab.")
+        return
+    end
+    if #common.sessions() <= 1 then
+        common.out("deny\tCan't move '" .. name .. "': there's no other session.")
+        return
+    end
+    local from = common.session_label(args.session) or ""
+    common.out("ask\tMove tab '" .. name .. "' from '" .. from .. "' to:")
+end
+
+-- rows are session_id, label: every session but the tab's own
+function M.move_targets(args)
+    local rows = {}
+    for _, session in ipairs(common.sessions()) do
+        if session.session_id ~= args.session then
+            table.insert(rows, { id = session.session_id, label = session.label or "" })
+        end
+    end
+    local sorted = common.sort_recent(rows, "session", function(r)
+        return r.id
+    end)
+    for _, row in ipairs(sorted) do
+        common.out(row.id .. "\t" .. row.label)
+    end
+end
+
+function M.move(args)
+    common.view(args.session)
+    common.view(args.to)
+    rex.call("session.transfer_window", { session_id = args.session, window_id = args.window, to_session_id = args.to })
+end
+
+-- 1 when the picker's own tab has left the origin session, taking the picker with it
+function M.popup_moved()
+    if common.popup == "" then
+        return
+    end
+    local _, window = find({ session = common.origin_session, block = common.popup })
+    if not window then
+        common.out("1")
+    end
 end
 
 -- new_window args that rebuild the window, with its scrollback
