@@ -79,6 +79,10 @@ Ghostty's `selection-background` does not reach the Neovim output. It is tuned f
 
 The tmux reload runs in the background, since TPM re-initialisation takes about 2s. Rex receives the theme as a Ghostty-format file through `client.theme.import`, and is skipped when `rex` is not installed. `THEME_SWITCH_TIMING=1 dotfiles theme switch <theme>` prints the time taken by each step.
 
+### Omarchy
+
+On omarchy the omarchy theme wins. The installer links `scripts/hooks/omarchy-theme-set.sh` into `~/.config/omarchy/hooks/theme-set.d/`, so every `omarchy theme set` runs it with the theme's slug, and the installer runs it in place of reapplying `current-theme`. The hook uses the hand-crafted theme of the same name (`catppuccin` maps to `catppuccin-mocha` and `gruvbox` to `gruvbox-dark`). For any other theme, it generates `omarchy-<slug>` from the theme's `ghostty.conf`, then runs `theme-switch`. A `dotfiles theme switch` still works, but the next omarchy switch replaces it.
+
 ### Other Rex Hosts
 
 A switch also reaches every host in `rex hosts`: `reload-rex.sh` calls each host's `dotfiles_theme` action (`rex/lua/app-actions.lua`) in the background with the theme name, the `.theme` file contents and, for a generated theme, its nvim colourscheme, which a host without ghostty's theme sources can't build. The host runs its own `theme-switch`. A host that is down, or lacks the action, is skipped.
@@ -214,6 +218,9 @@ dotfiles theme generate list
 
 # Generate quietly (for scripting)
 dotfiles theme generate zenburn --quiet
+
+# Generate from any file in Ghostty's theme format; the filename names the theme
+dotfiles theme generate ~/path/to/my-theme
 ```
 
 ### Theme Deletion

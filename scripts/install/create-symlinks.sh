@@ -96,7 +96,15 @@ fi
 echo ""
 info "Generating themed configurations"
 
-if [[ -x "$DOTFILES_DIR/scripts/theme-switch" ]]; then
+if should_install "core" && is_omarchy; then
+    info "Applying the omarchy theme"
+    if "$DOTFILES_DIR/scripts/hooks/omarchy-theme-set.sh"; then
+        success "Generated themed configurations"
+    else
+        warn "Failed to apply the omarchy theme, using default (dracula)"
+        "$DOTFILES_DIR/scripts/theme-switch" dracula --quiet
+    fi
+elif [[ -x "$DOTFILES_DIR/scripts/theme-switch" ]]; then
     current_theme="dracula"
     theme_file="${XDG_CONFIG_HOME:-$HOME/.config}/dotfiles/current-theme"
 

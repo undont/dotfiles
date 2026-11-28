@@ -1,8 +1,8 @@
 # every path the installer manages. read by scripts/_lib/manifest.sh
 #
 # a table is one tool, its name the group shown during install. it sets
-# preset (minimal, core or full) and optionally os (any, macos or linux;
-# default any), then lists entries by kind:
+# preset (minimal, core or full) and optionally os (any, macos, linux or
+# omarchy; default any), then lists entries by kind:
 #   link   symlink into the repo
 #   copy   copied once, then user-owned
 #   local  override created from a template
@@ -111,6 +111,11 @@ link = [{ source = "imagemagick/type.xml", dest = "$cfg/ImageMagick/type.xml" }]
 preset = "core"
 link = [{ source = "rex", dest = "$cfg/rex" }]
 local = [{ source = "rex/local.lua.template", dest = "$cfg/rex/local.lua" }]
+
+["omarchy theme hook"]
+preset = "core"
+os = "omarchy"
+link = [{ source = "scripts/hooks/omarchy-theme-set.sh", dest = "$cfg/omarchy/hooks/theme-set.d/50-dotfiles-theme" }]
 
 ["statusline theme resolver"]
 preset = "core"

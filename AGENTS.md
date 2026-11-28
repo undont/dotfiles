@@ -15,7 +15,8 @@ make lint         # Run all linters (shell, zsh, lua, theme contrast)
 Three patterns are used for configuration files. Choose based on whether the tool
 supports a local override mechanism and how personal the config tends to be.
 `scripts/manifest.toml` is the source of truth for which file uses which
-pattern: one table per tool (preset, os) listing its entries by kind (source,
+pattern: one table per tool (preset, os, where os `omarchy` means linux with
+omarchy present) listing its entries by kind (source,
 dest; a synced entry's local-layer path is derived from dest). The installer,
 `dotfiles links`, `health-check`, `uninstall` and the local layer all read it
 through `scripts/_lib/manifest.sh` (which needs `yq`), so a new managed file is
@@ -36,7 +37,11 @@ configs (`formatters/prettierrc.json` -> `~/.prettierrc`,
 `formatters/editorconfig` -> `~/.editorconfig`), the `dev` launcher wrapper
 (`launchers/bin/dev` -> `~/.local/launchers/dev`; the launcher files in
 `launchers/` are data and are not linked), `gh-dash/dash-repo-sync`,
-`lazydocker/format-logs.awk`, the statusline theme resolver
+`lazydocker/format-logs.awk`, the omarchy theme hook
+(`scripts/hooks/omarchy-theme-set.sh` ->
+`~/.config/omarchy/hooks/theme-set.d/50-dotfiles-theme`, omarchy only; it
+applies each omarchy theme as the dotfiles theme, see `docs/THEME-SYSTEM.md`),
+the statusline theme resolver
 (`scripts/_lib/statusline-theme.sh` ->
 `~/.config/dotfiles/statusline-theme.sh`), the ImageMagick font map
 (`imagemagick/type.xml` -> `~/.config/ImageMagick/type.xml`, macOS only; see the

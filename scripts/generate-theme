@@ -1,6 +1,6 @@
 #!/usr/bin/env bash
 # generate a dotfiles theme from a ghostty built-in theme
-# usage: generate-theme <ghostty-theme-name> [--quiet|-q]
+# usage: generate-theme <ghostty-theme-name|path> [--quiet|-q]
 #        generate-theme list | bright-list | help
 
 set -euo pipefail
@@ -203,10 +203,12 @@ main() {
             help | -h | --help)
                 cat <<EOF
 Usage: $invoked_as <ghostty-theme-name> [--quiet]
+       $invoked_as <path/to/ghostty-theme-file> [--quiet]
        $invoked_as list
        $invoked_as help
 
-Generate dotfiles theme files from a Ghostty built-in theme.
+Generate dotfiles theme files from a Ghostty built-in theme, or from any file
+in Ghostty's theme format (the filename names the theme).
 
 COMMANDS:
     list                List all Ghostty themes
@@ -230,29 +232,33 @@ EOF
         esac
     done
 
-    if [[ ! -d "$GHOSTTY_THEMES" ]]; then
-        error "Ghostty themes directory not found: $GHOSTTY_THEMES"
-        info "Is Ghostty installed?"
-        exit 1
-    fi
-
-    mkdir -p "$THEMES_GENERATED" "$NVIM_GENERATED"
-
-    local LUA
-    LUA=$(find_lua)
-
     if [[ -z "$theme_name" ]]; then
         error "No theme name specified"
         info "Usage: $invoked_as <ghostty-theme-name>"
         exit 1
     fi
 
+    # a path to a ghostty theme file is used as is; its filename names the theme
     local ghostty_path
-    if ! ghostty_path=$(resolve_ghostty_theme "$theme_name"); then
-        error "Ghostty theme not found: $theme_name"
-        info "Run '$invoked_as list' to see available themes"
-        exit 1
+    if [[ "$theme_name" == */* && -f "$theme_name" ]]; then
+        ghostty_path="$theme_name"
+    else
+        if [[ ! -d "$GHOSTTY_THEMES" ]]; then
+            error "Ghostty themes directory not found: $GHOSTTY_THEMES"
+            info "Is Ghostty installed?"
+            exit 1
+        fi
+        if ! ghostty_path=$(resolve_ghostty_theme "$theme_name"); then
+            error "Ghostty theme not found: $theme_name"
+            info "Run '$invoked_as list' to see available themes"
+            exit 1
+        fi
     fi
+
+    mkdir -p "$THEMES_GENERATED" "$NVIM_GENERATED"
+
+    local LUA
+    LUA=$(find_lua)
 
     local quiet_flag=""
     [[ "$quiet" == "true" ]] && quiet_flag="--quiet"

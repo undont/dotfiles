@@ -6,6 +6,11 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 
 ## [Unreleased]
 
+### Added
+
+- On omarchy, switching the omarchy theme switches the dotfiles theme to match, so tmux, ghostty, yazi, gh-dash and nvim follow it. `scripts/hooks/omarchy-theme-set.sh`, `scripts/manifest.toml`, `scripts/_lib/manifest.sh`, `scripts/_lib/common.sh`, `scripts/install/create-symlinks.sh`
+- `dotfiles theme generate` accepts a path to a file in Ghostty's theme format. `scripts/generate-theme`
+
 ## [0.2.169] - 2026-11-26
 
 ### Added

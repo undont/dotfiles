@@ -24,6 +24,7 @@ Theme configuration follows XDG Base Directory standard to avoid git conflicts.
 6. `yazi/theme.toml.template` - Yazi theme template with `{{PLACEHOLDERS}}` (in repo); reuses the `{{TMUX_*}}` palette vars
 7. `~/.config/yazi/theme.toml` - Generated yazi theme (XDG location). yazi is symlinked per-file (`yazi.toml`, `keymap.toml`) so the generated theme can sit alongside without being tracked. theme-switch skips generation if the dir is still a legacy whole-dir symlink (the 0.2.109 migration converts it).
 8. `nvim/colors/*.lua` - Hand-crafted nvim schemes with no hex values: `core.palette` reads each colour from `themes/<theme>.theme`, and nvim-only colours live under `NVIM_*` keys. Change a colour in the `.theme` file, never in the scheme
+9. on omarchy, `scripts/hooks/omarchy-theme-set.sh` runs from omarchy's theme-set hook and switches the dotfiles theme to the omarchy one (hand-crafted when the name matches, else generated as `omarchy-<slug>` from its `ghostty.conf`)
 
 ## Local Override Files (user-owned, survive theme changes)
 

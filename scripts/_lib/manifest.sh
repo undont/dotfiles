@@ -50,7 +50,11 @@ manifest_rows() {
     is_macos && os=macos
 
     while IFS=$'\t' read -r kind preset row_os group source dest local_key; do
-        [[ "$row_os" == any || "$row_os" == "$os" ]] || continue
+        case "$row_os" in
+            any | "$os") ;;
+            omarchy) is_omarchy || continue ;;
+            *) continue ;;
+        esac
         should_install "$preset" || continue
         if [[ $# -gt 0 ]]; then
             want=0

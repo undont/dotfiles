@@ -72,7 +72,7 @@ assert_equals "every entry has a dest, and a source unless it is sync" "" "$miss
 bad_values=$(printf '%s\n' "$rows" | awk -F'\t' '
     $1 !~ /^(link|copy|local|sync)$/ { print "kind: "$0; next }
     $2 !~ /^(minimal|core|full)$/ { print "preset: "$0; next }
-    $3 !~ /^(any|macos|linux)$/ { print "os: "$0 }')
+    $3 !~ /^(any|macos|linux|omarchy)$/ { print "os: "$0 }')
 assert_equals "kind, preset and os take known values" "" "$bad_values"
 
 bad_dests=$(printf '%s\n' "$rows" | awk -F'\t' '$6 !~ /^(~|\$cfg|\$appsupport)\// { print $0 }')

@@ -146,6 +146,10 @@ is_linux() {
     [[ "$(uname)" == "Linux" ]]
 }
 
+is_omarchy() {
+    is_linux && [[ -d "${OMARCHY_PATH:-/usr/share/omarchy}" ]]
+}
+
 # portable in-place sed (macOS BSD sed vs GNU sed)
 # writes to a temp file first to prevent corruption on sed errors
 # usage: sed_inplace 'sed-expression' file
