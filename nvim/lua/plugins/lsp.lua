@@ -379,6 +379,14 @@ return {
         yamlls = {},
       }
 
+      -- mason has no clangd build for linux arm64; there it comes from brew's llvm
+      if vim.fn.has 'linux' == 1 and vim.uv.os_uname().machine == 'aarch64' then
+        servers.clangd = nil
+        if vim.fn.executable 'clangd' == 1 then
+          vim.lsp.enable 'clangd'
+        end
+      end
+
       -- scheduled: the mason `setup{}` calls are slow on cold start and would block the triggering buffer
       vim.schedule(function()
         -- `vim.g.disable_mason_auto_install = true` in local.lua skips
@@ -400,7 +408,6 @@ return {
             'astro',
             'basedpyright',
             'bashls',
-            'clangd',
             'cssls',
             'eslint',
             'gopls',

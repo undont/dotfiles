@@ -14,6 +14,7 @@ The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.1.0/).
 ### Fixed
 
 - The installer installs ghostty on try-omarchy, where a wrapper script stood in for the missing package. `scripts/install/install-packages.sh`
+- C and C++ files get clangd on Linux ARM, which mason has no build for. `nvim/lua/plugins/lsp.lua`, `Brewfile`
 
 ## [0.2.169] - 2026-11-26
 

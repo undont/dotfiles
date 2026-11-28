@@ -100,6 +100,9 @@ brew "go"
 # Zig
 brew "zig"
 
+# C / C++ (clangd; mason has no Linux ARM build)
+brew "llvm" if OS.linux? && Hardware::CPU.arm?
+
 # Python
 brew "python@3.13"
 brew "uv"            # python package and tool manager (`uv tool install`, `uvx`)
