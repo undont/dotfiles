@@ -80,7 +80,7 @@ local function running_rows(where, now)
     for _, name in ipairs(lines(listing.ok and listing.stdout or "")) do
         local path = RUNNING .. "/" .. name
         local f = fields((common.read_file(path) or ""):gsub("\n$", ""))
-        local block, start, shell, label = f[1], tonumber(f[3]) or 0, f[4], f[5] or ""
+        local block, start, shell, label = f[1], tonumber(f[2]) or 0, f[3], f[4] or ""
         local place = block and where[block]
         if not place or not shell or not rex.exec({ "kill", "-0", shell }).ok then
             os.remove(path)
@@ -110,9 +110,9 @@ local function finished_entries(now)
             table.insert(entries, {
                 epoch = epoch,
                 exit = tonumber(f[2]) or 0,
-                block = f[4] or "",
-                label = f[5] or "",
-                command = f[6] or "",
+                block = f[3] or "",
+                label = f[4] or "",
+                command = f[5] or "",
                 line = line,
             })
         end
