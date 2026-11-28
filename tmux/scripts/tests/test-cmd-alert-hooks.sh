@@ -657,7 +657,7 @@ section "Rex Pane Registry"
 if command -v zsh &>/dev/null; then
     REX_TEST_DIR="$ALERT_TEST_DIR/rex-registry"
     REX_AF="$ALERT_TEST_DIR/alerts-rex"
-    rex_out=$(env -u TMUX REX_BLOCK="block:0001" REX_SESSION="session:0002" \
+    rex_out=$(env -u TMUX REX_BLOCK="block:0001" \
         ALERTS_FILE="$REX_AF" \
         _CMD_REX_DIR="$REX_TEST_DIR" \
         _CMD_ALERT_SCRIPT="$HOOKS_DIR/cmd-alert.sh" \
@@ -671,7 +671,7 @@ if command -v zsh &>/dev/null; then
             echo "finished:$(cat "'"$REX_TEST_DIR"'/finished" 2>/dev/null)"
             echo "alerts:$(cat "'"$REX_AF"'" 2>/dev/null)"
         ' 2>/dev/null)
-    if [[ "$rex_out" == *$'running:block:0001\tsession:0002\t'*$'\tmake test'* ]]; then
+    if [[ "$rex_out" == *$'running:block:0001\t'*$'\tmake test'* ]]; then
         pass "rex preexec writes the running entry keyed on block id"
     else
         fail "rex preexec should write running/0001 (got: '$rex_out')"
@@ -681,7 +681,7 @@ if command -v zsh &>/dev/null; then
     else
         fail "rex precmd should remove the running entry (got: '$rex_out')"
     fi
-    if [[ "$rex_out" == *$'\t1\tsession:0002\tblock:0001\tmake test\tmake test'* ]]; then
+    if [[ "$rex_out" == *$'\t1\tblock:0001\tmake test\tmake test'* ]]; then
         pass "rex precmd appends the finished row with exit code and command"
     else
         fail "rex precmd should append a finished row (got: '$rex_out')"
@@ -695,7 +695,7 @@ if command -v zsh &>/dev/null; then
     mkdir -p "$REX_TEST_DIR/suppress"
     : >"$REX_TEST_DIR/suppress/0001"
     : >"$REX_TEST_DIR/finished"
-    rex_sup=$(env -u TMUX REX_BLOCK="block:0001" REX_SESSION="session:0002" \
+    rex_sup=$(env -u TMUX REX_BLOCK="block:0001" \
         _CMD_REX_DIR="$REX_TEST_DIR" \
         _CMD_ALERT_MIN_SECONDS=0 \
         zsh -c '
@@ -711,7 +711,7 @@ if command -v zsh &>/dev/null; then
         fail "rex suppress marker should skip the finished row (got: '$rex_sup')"
     fi
 
-    rex_short=$(env -u TMUX REX_BLOCK="block:0001" REX_SESSION="session:0002" \
+    rex_short=$(env -u TMUX REX_BLOCK="block:0001" \
         _CMD_REX_DIR="$REX_TEST_DIR" \
         _CMD_ALERT_MIN_SECONDS=9999 \
         zsh -c '
@@ -727,7 +727,7 @@ if command -v zsh &>/dev/null; then
     fi
 
     : >"$REX_TEST_DIR/finished"
-    rex_sig=$(env -u TMUX REX_BLOCK="block:0001" REX_SESSION="session:0002" \
+    rex_sig=$(env -u TMUX REX_BLOCK="block:0001" \
         _CMD_REX_DIR="$REX_TEST_DIR" \
         _CMD_ALERT_MIN_SECONDS=0 \
         zsh -c '

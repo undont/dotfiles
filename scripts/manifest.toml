@@ -28,15 +28,15 @@ local = [{ source = "tmux/local.conf.template", dest = "$cfg/tmux/local.conf" }]
 ["dotfiles cli"]
 preset = "minimal"
 link = [
-  { source = "scripts/dotfiles", dest = "~/.local/bin/dotfiles" },
-  { source = "scripts/secret", dest = "~/.local/bin/secret" },
+    { source = "scripts/dotfiles", dest = "~/.local/bin/dotfiles" },
+    { source = "scripts/secret", dest = "~/.local/bin/secret" },
 ]
 
 [formatters]
 preset = "minimal"
 link = [
-  { source = "formatters/prettierrc.json", dest = "~/.prettierrc" },
-  { source = "formatters/editorconfig", dest = "~/.editorconfig" },
+    { source = "formatters/prettierrc.json", dest = "~/.prettierrc" },
+    { source = "formatters/editorconfig", dest = "~/.editorconfig" },
 ]
 
 [neovim]
@@ -47,7 +47,9 @@ local = [{ source = "nvim/local.lua.template", dest = "$cfg/nvim/local.lua" }]
 [hammerspoon]
 preset = "full"
 link = [{ source = "hammerspoon/init.lua", dest = "~/.hammerspoon/init.lua" }]
-local = [{ source = "hammerspoon/local.lua.template", dest = "~/.hammerspoon/local.lua" }]
+local = [
+    { source = "hammerspoon/local.lua.template", dest = "~/.hammerspoon/local.lua" },
+]
 
 [ghostty]
 preset = "core"
@@ -56,19 +58,25 @@ local = [{ source = "ghostty/local.template", dest = "$cfg/ghostty/local" }]
 [zed]
 preset = "core"
 link = [
-  { source = "zed/keymap.json", dest = "$cfg/zed/keymap.json" },
-  { source = "zed/tasks.json", dest = "$cfg/zed/tasks.json" },
+    { source = "zed/keymap.json", dest = "$cfg/zed/keymap.json" },
+    { source = "zed/tasks.json", dest = "$cfg/zed/tasks.json" },
 ]
 copy = [{ source = "zed/settings.json", dest = "$cfg/zed/settings.json" }]
 
 [karabiner]
 preset = "full"
-copy = [{ source = "karabiner/karabiner.json", dest = "$cfg/karabiner/karabiner.json" }]
+copy = [
+    { source = "karabiner/karabiner.json", dest = "$cfg/karabiner/karabiner.json" },
+]
 
 [gh-dash]
 preset = "core"
-link = [{ source = "gh-dash/dash-repo-sync", dest = "~/.local/bin/dash-repo-sync" }]
-local = [{ source = "gh-dash/local.yml.template", dest = "$cfg/gh-dash/local.yml" }]
+link = [
+    { source = "gh-dash/dash-repo-sync", dest = "~/.local/bin/dash-repo-sync" },
+]
+local = [
+    { source = "gh-dash/local.yml.template", dest = "$cfg/gh-dash/local.yml" },
+]
 
 [btop]
 preset = "core"
@@ -77,8 +85,8 @@ copy = [{ source = "btop/btop.conf", dest = "$cfg/btop/btop.conf" }]
 [yazi]
 preset = "core"
 link = [
-  { source = "yazi/yazi.toml", dest = "$cfg/yazi/yazi.toml" },
-  { source = "yazi/keymap.toml", dest = "$cfg/yazi/keymap.toml" },
+    { source = "yazi/yazi.toml", dest = "$cfg/yazi/yazi.toml" },
+    { source = "yazi/keymap.toml", dest = "$cfg/yazi/keymap.toml" },
 ]
 
 [launchers]
@@ -88,18 +96,20 @@ link = [{ source = "launchers/bin/dev", dest = "~/.local/launchers/dev" }]
 [lazygit]
 preset = "core"
 link = [{ source = "lazygit/config.yml", dest = "$cfg/lazygit/config.yml" }]
-local = [{ source = "lazygit/local.yml.template", dest = "$cfg/lazygit/local.yml" }]
+local = [
+    { source = "lazygit/local.yml.template", dest = "$cfg/lazygit/local.yml" },
+]
 
 [lazydocker]
 preset = "core"
 link = [
-  { os = "macos", source = "lazydocker/format-logs.awk", dest = "$appsupport/lazydocker/format-logs.awk" },
-  { os = "linux", source = "lazydocker/format-logs.awk", dest = "$cfg/lazydocker/format-logs.awk" },
+    { os = "macos", source = "lazydocker/format-logs.awk", dest = "$appsupport/lazydocker/format-logs.awk" },
+    { os = "linux", source = "lazydocker/format-logs.awk", dest = "$cfg/lazydocker/format-logs.awk" },
 ]
 copy = [
-  { os = "macos", source = "lazydocker/config.yml", dest = "$appsupport/lazydocker/config.yml" },
-  # shares the macos entry's local-layer path
-  { os = "linux", source = "lazydocker/config.yml", dest = "$cfg/lazydocker/config.yml", local = "lazydocker/config.yml" },
+    { os = "macos", source = "lazydocker/config.yml", dest = "$appsupport/lazydocker/config.yml" },
+    # shares the macos entry's local-layer path
+    { os = "linux", source = "lazydocker/config.yml", dest = "$cfg/lazydocker/config.yml", local = "lazydocker/config.yml" },
 ]
 
 ["imagemagick font map"]
@@ -114,11 +124,13 @@ local = [{ source = "rex/local.lua.template", dest = "$cfg/rex/local.lua" }]
 
 ["statusline theme resolver"]
 preset = "core"
-link = [{ source = "scripts/_lib/statusline-theme.sh", dest = "$cfg/dotfiles/statusline-theme.sh" }]
+link = [
+    { source = "scripts/_lib/statusline-theme.sh", dest = "$cfg/dotfiles/statusline-theme.sh" },
+]
 
 ["local layer"]
 preset = "core"
 sync = [
-  { dest = "~/.ai/instructions/local.md" },
-  { dest = "$cfg/dotfiles/launchers/" },
+    { dest = "~/.ai/instructions/local.md" },
+    { dest = "$cfg/dotfiles/launchers/" },
 ]

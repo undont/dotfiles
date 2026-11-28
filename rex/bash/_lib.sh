@@ -145,10 +145,9 @@ save_popup_size() {
     home_rex "do" save_popup_size "key=$PICK_SIZE_KEY" "columns=$columns" "rows=$rows" >/dev/null 2>&1 &
 }
 
-# open a URL on the machine running the app, the home server, through its
-# open_url action: a popup over another host's session runs on that host
+# open a URL in the browser of the app the popup belongs to
 open_in_app() {
-    home_rex "do" open_url "url=$1" >/dev/null
+    rex -C "$PICK_CLIENT" open "$1" >/dev/null
 }
 
 prompt_name() {

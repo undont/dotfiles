@@ -1,6 +1,4 @@
--- Claude-prompt comment-block CRUD: buffer-local <leader>c* keymaps for
--- markdown files. setup(bufnr) is called from the claude-prompt spec's
--- markdown autocmd
+-- comment-block CRUD: buffer-local <leader>c* keymaps for markdown files
 
 local M = {}
 
@@ -34,7 +32,7 @@ local function insert_snippet(trigger)
   end
 end
 
-function M.setup(bufnr)
+local function attach(bufnr)
   local opts = function(desc)
     return { buffer = bufnr, desc = desc }
   end
@@ -223,6 +221,16 @@ function M.setup(bufnr)
     local line_count = vim.api.nvim_buf_line_count(0)
     vim.api.nvim_win_set_cursor(0, { math.min(new_line, line_count), 0 })
   end, opts '[D]elete comment block')
+end
+
+function M.setup()
+  vim.api.nvim_create_autocmd({ 'BufRead', 'BufNewFile' }, {
+    pattern = '*.md',
+    group = vim.api.nvim_create_augroup('claude-comments', { clear = true }),
+    callback = function(ev)
+      attach(ev.buf)
+    end,
+  })
 end
 
 return M

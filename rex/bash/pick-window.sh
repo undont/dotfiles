@@ -14,8 +14,8 @@ wait_for_resize
 
 list="rex do $PICK_LUA cmd=tabs.list"
 action="$scripts/pick-action.sh"
-picker_fzf_opts 'j,k,g,G,q,space,a,r,x,u' \
-    'j/k ↓/↑ · g/G top/bottom · spc/⏎ sel · / srch · a all · r rename · x kill · u undo · q/esc'
+picker_fzf_opts 'j,k,g,G,q,space,a,m,r,x,u' \
+    'j/k ↓/↑ · g/G top/bottom · spc/⏎ sel · / srch · a all · m move · r rename · x kill · u undo · q/esc'
 
 # ": " lists this session's windows, "* " every session's; reloads keep the mode
 reload="transform:[[ \$FZF_PROMPT == \"* \" ]] && echo \"reload-sync($list all=1)\" || echo \"reload-sync($list)\""
@@ -27,6 +27,7 @@ selected=$(
             --preview "rex do $PICK_LUA cmd=preview session={3} block={2}" \
             --bind 'change:transform:[[ $FZF_PROMPT == ": " || $FZF_PROMPT == "* " ]] && echo "clear-query"' \
             --bind "a:transform:[[ \$FZF_PROMPT == \": \" ]] && echo \"change-prompt(* )+reload-sync($list all=1)\" || echo \"change-prompt(: )+reload-sync($list)\"" \
+            --bind "m:execute($action move tabs session={3} window={1})+transform($action after-move)" \
             --bind "r:execute($action rename tabs session={3} window={1})+$reload" \
             --bind "x:execute($action kill tabs session={3} window={1})+$reload" \
             --bind "u:execute-silent(rex do $PICK_LUA cmd=tabs.undo)+$reload" |

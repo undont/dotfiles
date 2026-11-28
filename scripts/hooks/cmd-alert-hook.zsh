@@ -178,17 +178,17 @@ _cmd_alert_preexec() {
             >"$_CMD_RUNNING_DIR/${_cmd_alert_pane#%}" 2>/dev/null
     fi
 
-    # fields: block_id, session_id, start epoch, shell pid, label
+    # fields: block_id, start epoch, shell pid, label
     if [[ -n "$_cmd_alert_block" ]]; then
         [[ -d "$_CMD_REX_DIR/running" ]] || mkdir -p "$_CMD_REX_DIR/running" 2>/dev/null
-        printf '%s\t%s\t%s\t%s\t%s\n' \
-            "$_cmd_alert_block" "${REX_SESSION:-}" "${EPOCHSECONDS:-0}" "$$" "${_cmd_alert_label//\#\#/#}" \
+        printf '%s\t%s\t%s\t%s\n' \
+            "$_cmd_alert_block" "${EPOCHSECONDS:-0}" "$$" "${_cmd_alert_label//\#\#/#}" \
             >"$_CMD_REX_DIR/running/${_cmd_alert_block#block:}" 2>/dev/null
     fi
 }
 
 # precmd for a rex pane: drop the running entry, then append the finished row
-# (epoch, exit, session_id, block_id, label, command) unless the process picker
+# (epoch, exit, block_id, label, command) unless the process picker
 # stopped the command, it ran under the threshold, or ctrl-c stopped it
 _cmd_alert_rex_finish() {
     local elapsed="$1"
@@ -200,8 +200,8 @@ _cmd_alert_rex_finish() {
     fi
     # 130 is SIGINT: a ctrl-c typed in the pane, so already seen
     ((elapsed >= _CMD_ALERT_MIN_SECONDS && _cmd_alert_exit != 130)) || return 0
-    printf '%s\t%s\t%s\t%s\t%s\t%s\n' \
-        "${EPOCHSECONDS:-0}" "$_cmd_alert_exit" "${REX_SESSION:-}" "$_cmd_alert_block" \
+    printf '%s\t%s\t%s\t%s\t%s\n' \
+        "${EPOCHSECONDS:-0}" "$_cmd_alert_exit" "$_cmd_alert_block" \
         "${_cmd_alert_label//\#\#/#}" "$_cmd_alert_cmd" \
         >>"$_CMD_REX_DIR/finished" 2>/dev/null
 }

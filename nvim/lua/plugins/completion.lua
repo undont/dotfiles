@@ -136,7 +136,7 @@ return {
         },
       },
       sources = {
-        default = { 'lazydev', 'lsp', 'path', 'snippets', 'buffer', 'ripgrep', 'copilot' },
+        default = { 'lazydev', 'prompt_skills', 'lsp', 'path', 'snippets', 'buffer', 'ripgrep', 'copilot' },
         providers = {
           lsp = {
             -- lua_ls keyword snippets (`do .. end`, `if .. then`) filter on their
@@ -159,6 +159,12 @@ return {
           lazydev = {
             name = 'LazyDev',
             module = 'lazydev.integrations.blink',
+            score_offset = 100,
+          },
+          -- skill names in harness prompt buffers only
+          prompt_skills = {
+            name = 'Skills',
+            module = 'features.agent-prompt',
             score_offset = 100,
           },
           copilot = {

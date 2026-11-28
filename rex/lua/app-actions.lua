@@ -1,21 +1,7 @@
--- actions the other hosts call on the machine running the app: open a URL,
--- copy text, remember a popup's size, switch the dotfiles theme
+-- actions the other hosts call on the machine running the app: copy text,
+-- remember a popup's size, switch the dotfiles theme
 
 local layers = require("layers")
-
--- opens a URL on this machine, where the app runs; a URL picked in a popup on
--- another host's session comes here (open_in_app in bash/_lib.sh)
-rex.action({
-    name = "open_url",
-    title = "Open URL",
-    args = { url = "string" },
-    run = function(_, args)
-        if not args.url:match("^https?://") then
-            error("not an http(s) URL: " .. args.url, 0)
-        end
-        rex.exec({ "open", args.url })
-    end,
-})
 
 -- copies text to this machine's clipboard, for a yank on another host's
 -- session (bash/copy-in-app.sh), whose OSC 52 the app ignores

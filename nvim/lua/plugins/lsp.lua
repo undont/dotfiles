@@ -3,85 +3,7 @@
 local lsp_nav = require 'features.lsp-navigation'
 local lsp_code_action = require 'features.lsp-code-action'
 local lsp_patches = require 'features.lsp-patches'
-
-local function restart_lsp_clients(bufnr)
-  local clients = vim.lsp.get_clients { bufnr = bufnr }
-
-  -- roslyn's on_exit nils vim.g.roslyn_nvim_selected_solution, so the
-  -- restarted client's on_init misses the lock_target fast path and stops at
-  -- the multi-target prompt (filtered by features/notify-filter). LspDetach
-  -- fires after on_exit and before the new client's on_init, so the solution
-  -- is restored there
-  local has_roslyn = false
-  for _, c in ipairs(clients) do
-    if c.name == 'roslyn' then
-      has_roslyn = true
-      break
-    end
-  end
-  if has_roslyn and vim.g.roslyn_nvim_selected_solution then
-    local saved = vim.g.roslyn_nvim_selected_solution
-    local id
-    id = vim.api.nvim_create_autocmd('LspDetach', {
-      callback = function(ev)
-        local detached = vim.lsp.get_client_by_id(ev.data.client_id)
-        if detached and detached.name == 'roslyn' then
-          vim.g.roslyn_nvim_selected_solution = saved
-          vim.api.nvim_del_autocmd(id)
-        end
-      end,
-    })
-  end
-
-  local count = 0
-  for _, client in ipairs(clients) do
-    if client.server_capabilities then
-      vim.cmd('lsp restart ' .. client.name)
-      count = count + 1
-    end
-  end
-  if count > 0 then
-    vim.notify(string.format('Restarted %d LSP server(s)', count), vim.log.levels.INFO)
-  else
-    vim.notify('No LSP servers attached to buffer', vim.log.levels.WARN)
-  end
-end
-
---- rename handler that writes the files it touched. the default handler
---- leaves files that weren't open as unsaved background buffers, which never
---- fire the autosave
-local function rename_and_save(_, result, ctx)
-  if not result then
-    vim.notify("Language server couldn't provide rename result", vim.log.levels.INFO)
-    return
-  end
-  local client = assert(vim.lsp.get_client_by_id(ctx.client_id))
-  vim.lsp.util.apply_workspace_edit(result, client.offset_encoding)
-
-  -- documentChanges is an array of edits; changes is a map keyed by URI
-  local uris = {}
-  if result.documentChanges then
-    for _, change in ipairs(result.documentChanges) do
-      -- skip create/rename/delete resource ops, which have no textDocument
-      if change.textDocument and change.textDocument.uri then
-        uris[change.textDocument.uri] = true
-      end
-    end
-  elseif result.changes then
-    for uri in pairs(result.changes) do
-      uris[uri] = true
-    end
-  end
-
-  for uri in pairs(uris) do
-    local buf = vim.uri_to_bufnr(uri)
-    if vim.api.nvim_buf_is_loaded(buf) and vim.bo[buf].modified and vim.bo[buf].modifiable and vim.bo[buf].buftype == '' then
-      vim.api.nvim_buf_call(buf, function()
-        vim.cmd 'silent! write'
-      end)
-    end
-  end
-end
+local lsp_commands = require 'features.lsp-commands'
 
 return {
   {
@@ -151,7 +73,7 @@ return {
           end, 'Workspace symbols')
           map('grt', lsp_nav.dedup 'type_definition', '[T]ype definition')
           map('<leader>lr', function()
-            restart_lsp_clients(event.buf)
+            lsp_commands.restart(event.buf)
           end, '[R]estart')
 
           local client = vim.lsp.get_client_by_id(event.data.client_id)
@@ -209,7 +131,7 @@ return {
         virtual_lines = false,
       }
 
-      vim.lsp.handlers['textDocument/rename'] = rename_and_save
+      vim.lsp.handlers['textDocument/rename'] = lsp_commands.rename_and_save
 
       local caps = require('features.lsp-capabilities').get()
       -- document_color asserts on a stale client id
